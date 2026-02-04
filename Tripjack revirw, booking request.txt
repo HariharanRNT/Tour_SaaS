@@ -1,0 +1,43 @@
+
+Review Call
+Endpoint: https://apitest.tripjack.com/fms/v1/review
+
+Request:
+{
+  "priceIds" : [ "12-5936970268_DELBOM9W313BOMBLR9W443_216104423654421","5-5936970268_BOMDELAI313BOMBLR9W443_216104423654421"]
+}
+
+
+Endpoint: https://apitest.tripjack.com/oms/v1/air/book
+
+Request:
+{
+  "bookingId": "TJS108301888128",
+  "paymentInfos": [
+    {
+      "amount": "5987.30"
+      
+    }
+  ],
+  "travellerInfo": [
+    {
+      "ti": "Mr",
+      "fN": "Test",
+      "lN": "AdultA",
+      "pt": "ADULT",
+      "dob":"1996-08-09",
+      "pNat":"IN",
+      "pNum":"87UYITB",
+      "eD":"2030-09-08"
+    }
+  ],
+ 
+  "deliveryInfo": {
+    "emails": [
+      "xyz@xyz.com"
+    ],
+    "contacts": [
+      "9489275524"
+    ]
+  }
+} 

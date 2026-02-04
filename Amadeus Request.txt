@@ -1,0 +1,541 @@
+Request: 
+Params: 
+latitude  1.357107
+longitude  103.8194992
+radius  5
+
+
+Response: 
+{
+    "data": [
+        {
+            "type": "activity",
+            "id": "139046304",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139046304",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Discovery of 3 Ethnic Neighbourhoods and UNESCO Street Food Tour",
+            "description": "<div><p>Immerse yourself in Singapore’s street food on this 3.5-hour tasting tour, led by a guide who shares in-depth local knowledge \nThis private/small group and personalized hawker center food tour is conducted by a passionate group of people who not only love food, but also enjoy sharing the Singapore food culture with people from all over the world. They feel that cuisines speak a lot about a country, and find great joy in sharing with those who want to discover more about Singapore’s culture, history and it’s people through the appreciation of a wide smorgasbord of local cuisines available within the country.\nYou will get an in-depth and personalized culinary experience of Singapore street food at one of the many neighborhood hawker centers. Such hawker centers offer a wide range of local street food of Chinese, Malay, Indian and other cuisines.  You will be brought to one of many neighborhood hawker centers such as popular Chinatown, Little India, Arab Street or Kampong Glam District, and get the chance to sample a wide range of local delicacies as well as participate in a walkabout around the neighborhood shops and markets where you will be immersed in the whole vibrancy of local living. The entire food sampling and neighborhood walkabout will last approximately 3.5-hours. \nFor a hassle-free experience, this tour includes pickup and drop-off at your hotel during the selected tour options and stipulated session times for your total convenience. \n</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "136.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBhOWNmLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBhYzJlLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjA5OGFmLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBiNjExLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBiM2M4LTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjA5MWFhLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjA5ZGYwLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjA5YjUxLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBhMDVhLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBhZTY1LTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjA5NjE3LTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBiMThhLTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I3YjBhMmE1LTQ1NTItMTFlYi05NTM3LTBhY2NiZDZmOTJkMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/495abca1-21b6-11ea-b729-06829e32ec62",
+            "minimumDuration": "3 hours 30 minutes"
+        },
+        {
+            "type": "activity",
+            "id": "139046364",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139046364",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Public Housing - Into the HDB Heartlands",
+            "description": "<div><p>If you want to see a different side of Singapore, this tour to Toa Payoh is a fun and enlightening trip. Outside of the glitzy center of Singapore are the housing estates where most ordinary Singaporeans live. You’ll learn all about these developments, and the lives of the people who call them home, on this tour with a local guide. Visit a mall, a showroom where you can see what typical apartments look like, and more.</p></div>",
+            "geoCode": {
+                "latitude": 1.3326718,
+                "longitude": 103.8473498
+            },
+            "price": {
+                "amount": "43.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzVmMDgzMDY2LTQzOGItNDMxMi05OTQxLTY5MTdiZjIzZDk4ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM4ZmYxMjk0LWI0MzEtNGViNS04Yjc1LWQyNDgwYmY0ZjU5OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2UyMTk5ZDJkLTE3ZDMtNDVhZi1iNTdkLWU0YzA1ODE0MGFlZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2Q5NDY4NmQ3LTc0NGUtNGI2Ny1hN2NlLTQwYTE0ZDAzNTU2ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2E3NGJlMmVkLTVlMTgtNGRmNC04NWNjLTQ5N2ZjMzRlMmZjZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzczY2ZjYWFkLWFkYTQtNGVmNy1hODU0LTY2NDBlZTYzZDY5ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA5Y2VmNWZiLWNkMzMtNDAyNC04MmJiLWFmYjZkYmExN2YwYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2JiZDllNWVmLTk1YTktNDA2ZC04ZDY3LWM4NTNmNWM4ZmY1OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/1b2f84f9-c04a-452a-b007-3625797495ac",
+            "minimumDuration": "3 hours"
+        },
+        {
+            "type": "activity",
+            "id": "139046696",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139046696",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Private Limousine Transfer in Singapore",
+            "description": "<div><p>We provide luxury private Toyota Alphard/Vellfire 6 seater MVP &amp; Combi MiniBus 13 Seater with covered insurance &amp; chauffeurs with PDVL licenced. Our chauffeurs are professional, punctual/polite with good attitude. Our priority is ensure you to have a safe &amp; pleasant journey with us! Ensure Vehicle to be clean exterior &amp; interior. Bottled water to be provided.</p><p>Essence limousine provide services for Arrival, Departure, Transfer, Disposal/Hourly, Corporate Meeting, Private Event, City Tour, Roadshow, Wedding &amp; Cross Border Malaysia</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "67.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA1MWM2YmRlLTdjMWUtNDlmYi04OTJhLWE0NTk1ZTg1Y2Q2MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUxZWNmYWYzLTk0ZjAtNGNmOC04Zjc3LTUzY2I0Nzg3ZDgzNCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ2ZWIzZWNkLWZmYzUtNDc4Yi04MWNmLWNmOWRiNWJhZTRkYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZjMTdmNTY2LTg0OTUtNGE4NS04NDIyLTAyMWUyMTM4ZDdjYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUyZDA1NGZhLTVlYzMtNDc1MC04OTg0LWYxNTZhYjUzNWFlMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzBhYmNiNTgwLWQ5NzgtNDNmZC1hNjQ0LTYwY2ZhMDBkNjgzOCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM2ZDEyYzZlLTMzZTktNDY3MC1iMWJiLWM0NjgyZWJkM2ZhYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzlkMDdhNjhmLWQ2MTEtNDk3ZS1hMzJjLTlkMTEyYzIwYjQ2NCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUxODBiY2M0LWRmZWItNDBmMy04MDRlLWFjY2I2ZDEzZGQxOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NiYmQ5MmE3LWUxYmEtNGVmZi1hYWE4LWI4NDU5NTljM2Q3YyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM3YWU0YzZiLTE2YzctNDRmYS04MGYzLWFkNDA3YzE1ODYwNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJlZWIxZDYzLWE0NjgtNDM3MC05OTU5LWFmOWIyMTI2MTYxNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2MzZDIxZWZmLWZmM2ItNDc0NS04OWQ0LThiYTcyNmM0NGY0MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2FiNmYzMzBkLTMxZTItNDU0Mi1iNWM3LWRhZTUwYjZkMGQ5YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzczMDU4ZjcyLWY2ODMtNDQ1Yi1iMzQ5LTFjMjg5MTdmZmU3YyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzFiM2I5MmEwLTQ4ODAtNDNkYi1iN2Q2LWNiMjBjZjc2ZDY5OCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzFmZWE2NjI1LTc0YzgtNDk1OC05MjNiLTY4YjE4NGI4MjQzYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2VlMzhhNDYzLTU1N2ItNDY0MC04MzRhLTJmNTRmMGY0ZGRjOCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdjMjlhOTEzLTQ3MzItNDFkMy04NjhkLTJiNTY4YjQ5YmQyMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUwOTdhZmIwLWVhYTAtNDE3ZC1iYTRiLTAyYzAwNDJiMTExNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2I4NjQ0NjU1LTU2ZGYtNGQxMi1hMzk0LWYwYmM3ZGM0MDRhYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJlZDNjNzQxLTc2OTQtNDAwYy04MDZjLTEzNmVlMjAxZjM1ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2M3N2E0ZWEyLTFjYjUtNDlmYy1hNDhhLTNhMzQ4NTY2ZmNhZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI4NTQwODM4LTVlMzUtNDNkZS1iNGMyLTRjNzVlNTc0ODY0NCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJlZjVkOTBiLTgwNWItNGJkMC1iZWQ2LTczNDg4MDNjZmMyYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2JkNzI4YThkLWJlMjQtNDZkYi1iYjFkLTA0NjA4YzBkMTE5YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzAyNTJhMzIyLTc4ZjktNDhjMy1iZTE2LTFkMzI4MGUyZTU3OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzFhNGZlOTY4LTkyYmUtNGI1ZC05YzRmLWFhYjYwYjA5OWVmYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2MxZDBjYjg3LWRkMWUtNDlhMC04ZGY1LWZjNmM1MWMyMjZhMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzNlYjQ1MDNiLWJkMTEtNGE2ZC1hNmM1LWI5MTZmN2I5OGMzNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZhZWY5MWE1LTVkYWUtNDkxOS1iYjMyLWMzM2FlMzc3YzEzMCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzNlZTZjNGNkLTk2NjEtNDhmMC1iMjZiLTgwMDFiNzkyNjk2ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzE5YzNmMjQwLTBiYTUtNGI4YS05YjVlLTU2MmVhNzFmMjE5NiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZmMDg1ZDQ4LWJhMDgtNGY1YS1iYmQ3LWU2MWVlNTE5ZGNkNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM4NGY2Y2FlLWQ4ZmYtNDkyZi1iOGZkLTQyMTExMGQ2OTU4MyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzVmMzJmOWZiLWMzNDEtNDEwOC1iMmRkLWZjNzBkYWIxN2ExNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2JmNzc4ZTUzLTNiYmEtNDgyMy1hZDVjLTAwNWJhOGQyNTFjZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzVhZjk4NzkwLTUyYmQtNDM0Ny05YzNiLWQwYmM3ZWY5NzYxYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg5Yjc1OWUzLTZiMmItNDFjOC1hMDdiLWFiMzlmZWQzZTI5ZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZhZTFmN2I5LWFiNDItNDY3NS1hN2FkLWFhYjdjOGFkMWZiOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/7e2ce4a5-f382-4dc4-917a-1c10efd930f6",
+            "minimumDuration": ""
+        },
+        {
+            "type": "activity",
+            "id": "139630208",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139630208",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Tioman Island: Private 3-Day Stay With Snorkeling and Pickup",
+            "description": "<div><p>Experience Tioman Island for three days on this private experience. Journey from Singapore or Johor Bahru to this Malaysian island nature reserve to enjoy snorkeling, kayaking, and/or paddleboarding, as well as plenty of chances to relax on the beach. Your chalet room will have either a beach or garden view, and round-trip pickup means you don’t have to worry about anything but having fun.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "421.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzBkYjhmMGMzLWJlYzAtNGFlZC04ZmMxLTNlZmNkMWNjOWNmYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdjZThjZGQwLTMwN2ItNGE2MS1hMDA0LTljMmU3YjAyZDY5NSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzE0ZmZiYzJlLTViMTAtNGY2NC04YjVjLTNlYmUzMTRhMGYyMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2M2ZjJkMzc4LWU5ODMtNDU3Zi05ZDI3LTdmMWY2ODJlNjJiMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM2ODNkZGE2LTRjMTUtNGM5MC1hM2Y1LWNlMTA0ZjgzYjcwNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2M5ZjdmMDk3LWM5NGQtNGI5ZC1hNWY3LTE1MDljZjMxNzY2ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJkYzYxYTA2LTg5ZDAtNDZlYi1iNzNhLTZkNjcwODFiMjNlNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZlNjllOTkwLTBmODItNDU2ZS1iMDU0LTYxMzE4MThjZGUwMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzE0NjU1ZmJjLTUyYzAtNGY1ZC1iYzQ1LTcxNWE2ZGMzNTE3YyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2UyZDM1ZDY1LTA3OWMtNDFlYi05Mzk2LWQ1NGY4NzEzMWQ0ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzYzNjc5YTcxLTU5YzItNGM1ZC05MmEyLWY1OTViMDNhN2U5YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzczMTJlMzk2LWU1NTUtNGFhZi05NDZhLTY3ODIyODBmYzZhNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2QxOGNjNTZhLTZiOTgtNGU3Ni1hOWUyLWU0NzBiNTlkMWVhZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI1ZjlmYzY3LTVjOTctNDlhNS05YWMwLTczYzcyOWI5ODIxMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI1N2E5OWUzLTJiOTMtNDMwZS04ZjI4LTM2N2M4YTk1ZGQ1ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA4Yjk5ZWM5LTFmZGYtNDM1NC1hZTQ0LTQ3NDFjNzM2YTdhYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzIxMjY0OGY1LWFkMDgtNGVlMC1hMWJjLTNkNTllNmIyY2Q4MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzgzNGMzNmQzLTkzYjQtNDBjYy1iZDJmLWQzNDczYjk2YWU5NyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzU4YThjMjI4LTJmNzEtNDYwMC05NjY0LTljNjE3N2RlNjNkMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzRmOGYxMzk3LWQ1ODYtNGNhNC04YzRjLTdjZGM5ZjAwZWE0MyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2Q2NjFkNjJmLWJlZDgtNDU5OC04MmVkLThiOWE5YWU1NmE1ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZmM2M2Y2NkLTk3YjctNDZmYi05MThkLTAzMmI1NmE5NmQ5NiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzEzYzJlY2ZjLWE1NGMtNDRjYi1iMTdjLTM3NTFkZGI2NWFhMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2FkZWNiNDA1LTQ4YTYtNDc4MC1hZTZhLTczMzIwYmRhMjEzYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdiZWIxM2ZkLTBjMGMtNDNhYS1hMzJlLTQ5MzAwNzZkM2I2MiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzVkYmEzYWFhLTI3OTYtNDhmYi04ZTU1LWMxMmM2M2RkZTRhYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzIyYmE0YTcwLWQxM2UtNDlmNS04MTY5LTFmOWVhMDllOTY0NyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA1NTU2NWY0LTI0ZjctNDQ0Yy1hNjFjLTc4MjFhZTRlNzIzNCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzcwNmQyYTU5LWQ3NmUtNDMwNi04ZDdmLWNmNWE4Zjc3ZmIzOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZmOWQ3NGU1LTc3ZjItNGU4ZS05YTBlLTMwNTBkZjVlMDVkMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2Q3NmRkZTIzLTI0NTAtNGE5Ny04MzY3LTA3NWNjNjhhNjJjZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQyYTI4MWVkLWJiY2EtNDQxNi1iNjM1LTFlNzZmOTY3ZTkxMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ3M2Y2YWQ2LTgzNzQtNDYyMC04YzQ0LTFlMmRiNTA3N2UwYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzk2OGE1MmEzLThkY2YtNGNiMy05NTE0LTMxYWIyMDIxYjhlMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/ffd29009-2325-47d0-b354-e3fc98f8231a",
+            "minimumDuration": "3 days"
+        },
+        {
+            "type": "activity",
+            "id": "139046238",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139046238",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Sentosa Experiential + Roundtrip Transfers",
+            "description": "<div><p>Highlights:</p><p>Cable Car, Madame Tussauds (4-in-1), Sentosa 4D AdventureLand (Any 2 rides), Wings of Time</p><p>Fly above the hill from Faber Peak Singapore, through a skyscraper and cross the harbour on the Mount Faber Line.</p><p>First stop after the Cable Car ride, enjoy any 2 rides at 4D AdventureLand. Proceed to Madame Tussauds, get ready for the world famous celebrity wax attraction with fully themed interactive zones! </p><p>Note:</p><p>*Min. height for Extreme Log Ride is 90cm.</p><p>Estimated Pick-up Time: 1400hrs</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "101.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI3YjZhYmQ3LTZmYTMtNDNjZi1hOTQ5LTI5NjA4ZTQ5ZmUyYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2JlMzc4MzU5LWZkNmEtNDQwNi1iNmZmLTEyZmNhZjM2ZmNhNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzU2NmU5MDM5LTBlOGYtNDBiYy05NTY3LTIxMGU3ZDdhMDExNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2JjZGU2MGZiLWYxYTctNDI2Yi1hN2Y3LWQ3OGY3NjVhZDhhNCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2E2MTIxOGRlLWU4OTctNGIyZi05NjczLTVlNjhmODY3MGVlMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/7ad77dbe-43de-4a08-ab15-2fce78a16cb0",
+            "minimumDuration": "6 hours"
+        },
+        {
+            "type": "activity",
+            "id": "139046468",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139046468",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Convenient Self-Guided MP3 Audio Tour, Highlights of Singapore",
+            "description": "<div><p>Combine the freedom of independent travel with the support and information of a guided tour on this handy self-guided audio tour. Access the MP3 files from your device and listen at your convenience at each location. The files will be available for 72 hours, so take your take and go at your own pace. Learn more about each destination than you would visiting totally independently.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "7.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzU1ODMxZTcyLTI0NDQtNGUyMS04ZjQxLTA3MDJjYWU2NGQ1NCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM4Mzk2YjVhLTNhN2UtNDY0Mi04OTYwLTkxOWY5NTg0YWNlMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2RkZDYzYTBlLTRmN2QtNDAxZC1hMGI3LWU2ZDZjZGNmYThhOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZmZWU2NGEyLWM0YWYtNDFkNy04ZjE3LWI5NjYxMTY1MDc5ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ1MGY2YWZlLTBjZDUtNGEwOC05NWY5LWM3NGZkYjMxZWEyZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI3NDJlZjRkLWE3ODAtNDJkOS04MWJiLWMwMWU4MjI3Y2I5YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ExNmM5YjllLWZkMDctNDdjMS1iOGQ5LTA1YzE2M2MzN2VjNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2EyNjBiODdjLTAyN2UtNDU2Zi1hNmExLTE0NDIwYjIxYjE1YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzZjMjg4ZDM4LTI5OGUtNDRjZC05YzQ3LTU3NDk1MWJlMDJiOCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzEwYjU2NGM1LTIxNTQtNDlhNy04MDA0LTE2NzEzNGVmYmE3OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzFmMzc5MGI1LWZiYWItNGNkYi04N2ZhLTFmMDNiMjczZTk5NyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2IxM2FjZTQyLWY0ZjUtNDYwNi04ZGNlLTUwODkzYTdmNDdiZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzE0ODY3YjJlLThiOGEtNGI1NC05ODI3LTBhMDg0ZTJjMTRmOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzk3ZTNkMTg3LTkxNzMtNDg0OS1iOTVlLTYyYzExMzU0ODk1YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZmNGFjYmQwLTVkMWEtNGMyNS05ZWYwLTIyNmIyZGE5YzYwMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzYyZjhmZWZhLWJiMmMtNDQ0Zi05NDM1LTQ2YjQ1NzNiZGVlYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI3MjgzMDc3LTAzMmQtNDExYi05OTJiLTQwYjlkZjE1NjkwZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZjYzIzNWM2LWNlNTktNDk4Yi05OTY1LWY4YzU3M2RiMWJlYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2U5NTc0NTNiLTY3MjEtNGMyNC05ODM2LTFhNDI0YTU1ZmYwNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ4NWYzMmZlLTkzYTEtNDcwMC1iNTQwLWI0ZTBjNGUzYzJjYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzMyMjRjMmUzLWMwOTYtNGU1ZS1iOWNjLWQ3OTc5MWQ4NzIwZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUxMmZmZjM2LTU0ZDMtNDRmMi04YWRjLWYzY2JlNmVkMmQwYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI5YjA3NWU5LTMxNjAtNGFkOS05MTE2LWZiYzFhNThhYTc4OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2IzMmE1MjdiLWNlOGYtNDY2OC05YTgwLThiZjlkMjIyZDJiMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJkMmQwOTk1LTZiZGEtNGYwOS05Nzg3LWFiNzUyOWVlY2ExNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzRhNjRhMWNkLTU3OGQtNGNlZC04OGVmLTQ1ODdhMzAyNjUxNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzRmMDRjNzE4LTRjYzUtNGJiZS1hZGRjLTVlZDA5ZjQwODAyYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2FhNWQ5OGYzLWY0NGMtNDIzZC05OTAxLWI0OTFlZWZjMzFkZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/bb4ffc7a-0c8d-4ef8-be97-7111908483c0",
+            "minimumDuration": ""
+        },
+        {
+            "type": "activity",
+            "id": "139473623",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139473623",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Kuala Lumpur City To Singapore City En-route Putrajaya Tour",
+            "description": "<div><p>PICK-UP FROM KUALA LUMPUR CITY HOTELS BY AN AIR-CONDITIONED VEHICLE WITH ENGLISH SPEAKING PROFESSIONAL DRIVER AND EN-ROUTE MALAYSIA ADMINISTRATIVE CAPITAL PUTRAJAYA (PHOTO-STOP ONLY) DROP-OFF AT SINGAPORE CITY HOTELS.</p><p>PICK-UP AT 11PM TO 6AM 50% SURCHARGE APPLY.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "197.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUwNjU4ZjRmLTllZWMtNGQwNC05MTMwLTg0ZGRlMWRiOTk0MyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2IzMzRkZTY3LWIxNDEtNDQ4Mi05OTU3LTIyNWYzODVjM2M5YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2IwZGI2MDRkLTZmMzktNDNjZC05NGJhLWMxZGJmZDA4ODQ1YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzAzNmM1NWVlLTMwNzItNGFmMi05ODQ4LTNkYWE3MTNkNDIxMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2YxMWI3NDgyLTIzYWYtNGMxYS1iZTlmLTRhZGRmOGIwY2IzZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ViM2NlOWMwLTJmZGItNDdkZC04OTcxLTQ1MDk4YzFkNjYzMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzkxOWIwYzM3LTdkNGItNDk4ZS1iNDczLTA5ZThjNGJlNDg2MSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ1MGE1MjNlLTQzM2MtNDRhNi04YzMwLTM0OTIyZDdkNWQyYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJmOTUxNjFjLTgyOWEtNGY2NC05NjZiLTNjM2Q5ZjdmZmQ3YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2RkOGViYjY1LWRmZmUtNGIzMC1iMjQyLThhY2I0OWY5OWIwZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2IxMTU3NDA1LTk2MWYtNGU4NC1iMDY3LTcyY2E1MzdjZmQxZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzYzYzkxNmNkLWQ0MTktNDU1Yy04ZGFlLWM1ZmE1YzU2NDFmOCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/72109fb9-14eb-4f66-ad44-5b4d9cdece11",
+            "minimumDuration": "6 hours"
+        },
+        {
+            "type": "activity",
+            "id": "139472613",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139472613",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Kuala Lumpur: Private, Customized Full-Day Tour from Singapore",
+            "description": "<div><p>Discover the best of Kuala Lumpur in just one day by booking this private tour from Singapore. You'll be picked up from your Singapore hotel and taken on a comfortable journey to Kuala Lumpur where you will enjoy such attractions as the Batu Caves and Petronas Towers and visit such local hotspots as food markets and temples. The itinerary is customizable so that you can choose how you spend your day.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "792.0",
+                "currencyCode": "USD"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzlkY2I1MjA0LWU2MDMtNGQxNC1iYzc1LWYzMTdjODk1ZjExOCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ4M2NlYTY4LTUxMTItNDdkYi1hMWVkLTVmN2VmZDgxODRhZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzczNTc3Yjc0LTE5ODItNDFiMC04YTBlLTZjYzllOTQ2NzVkZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2RlMTliYzAxLThkM2QtNGRjNy04MjRiLTkxMzQxOGFhZTUzZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzExMjZiNzMyLWVlZTctNGI4Ny04MTNmLWRkZmUzZjY0MGUzNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzkwZjJkZmZiLTg5NjgtNGZmZC1hMDZjLWQzOTYzNWNmOTcxZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2QzYjU2ODA1LTRhYzAtNGNmZi05YWI2LWY0OWQ3NTJlYmJlNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2Q4ZTg2M2ZkLTc5ZTYtNDYxOC1hYmI5LTY3ZmU3MDc1MmRhYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2E3Y2Q3Yzk2LTA0ZjctNDA2NS1iYjdkLTMxMjMyZDJlZmM4ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUyNWZlYTMxLWMzNzctNDNkYy05ZWU5LTNmMDhkMTUzODE3NyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzY4MjBhNTdiLTJhNDUtNDEwNC04ZDZkLWJkZmE5OGI1N2Y3MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/866bb914-8b84-4725-a292-d4a88f978a69",
+            "minimumDuration": "16 hours"
+        },
+        {
+            "type": "activity",
+            "id": "139473580",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139473580",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Kuala Lumpur Hotels To Singapore Hotels",
+            "description": "<div><p>Pick-Up From Kuala Lumpur City Hotels By An Air-Conditioned Vehicle With English Speaking Professional Driver And Drop-Off At Singapore City Hotels.</p><p>Pick-Up At 11pm To 6am 50% Surcharge Apply.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "197.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ5ODI4ZDdjLWVkMjgtNGNmOS04YzY0LTUxNGM4ZGU3MGU4MSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM2MGU2NzQ4LTg3OTUtNGZkOS1hYTQ1LWU2MTAzMGM1YTk2ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2QyODcxYTkwLTE0ZWItNGU4NS04NTAwLTMyMzIxYjk3NWUyOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQxNzM5ZDFmLTNhNDMtNGI5ZC05ODRmLThiOWZiOWUzYWVhZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ1YmQ0OTIzLWM1NzgtNDJkZi05ZjE2LTIzN2VlNjdlMjg0YSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZlMmFmNmMyLTBjMGYtNDJjYS05OTg4LTcyZjY2OWU1OWQ3OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA0NTZhNzY0LTE3NmYtNDI2OC05MWUyLWI1ZmM4NmFhNWQ5NiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2FhMzM1MjJkLTExYmEtNDVmYi04MDFhLTIxMDY3YWM3ODNhYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg2OGVhNjMyLTgzMWEtNDk5Zi1iOWRkLTZmYTYyYjYzMjBlMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NhZTQ1NzcwLWMwOWUtNGZjYy04MDM2LTM5YTJlNTQyNGE2OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2RhOWQ3MmNiLTU1MGItNGVmZi05OWU0LTc3ZTVjOGQxZjMxMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg4Mjg1MWFiLWE2NmMtNDQ5Zi05YmQ0LTUyOTcxYWY1OGExMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI1ZDQ0ZDY4LTZiY2QtNGQ0OC1hZTczLWNiZmRiM2M1YjBhMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2FmMWNhNmIyLTVlNDItNDIyYS04ODliLTlhZDBmYjQ4OTc1MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzcxMGFlZDVlLTFmZTUtNGU1Yi1iMzExLTYwZThhMTVmZWRkZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI3MTJlNWRiLTQ3MjctNGQwOS05ZmM0LTM5MzVlMjgxZmIwNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ5ZTczNTNlLTJhZDItNDI2My05ZDgyLWU2NGM2NDJkNzI4ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/24dab4f8-7ac1-47a5-99d3-2a34d7207e9f",
+            "minimumDuration": ""
+        },
+        {
+            "type": "activity",
+            "id": "139546431",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139546431",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Private Transfer from Johor Bahru City Center to Singapore Hotels",
+            "description": "<div><p>• Sit back and relax as you enjoy a transfer from Johor Bahru City Center to Singapore Hotels.</p><p> • Enjoy scenery without having to worry about traffic or maps.</p><p> • Travel to Singapore Hotels knowing that a punctual and safe trip to your destination awaits you.</p><p>Enjoy a private transfer from Johor Bahru City Center to Singapore Hotels. Begin your trip in a safe, convenient, and easy way in a private vehicle. Skip the long cab lines and head straight toward your destination in Singapore Hotels. The transfer length is around 1hrs 20 minutes and is available year-round, 24-hours a day.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "82.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzkyNGZkMmUyLTJiYWQtNDU5ZS05MDE1LTg2Zjc1ODAxNDk1OSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJmNjYxZGVlLWZiZWUtNDVmMS1hNmYxLTkwNTZmYjQ2NzA5OCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzM0MjI2N2U1LWQzNzMtNDM1Yi1iYThlLTcwZjQ4NGI2NGIxZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI4OTBiMmUyLTdkYTYtNDZhZC1iZmRjLTA5NDcyN2FkNjBiNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NiODUyY2QxLWY4MWMtNDQ5MS1hZmRjLWIwMWQ3NWVjOTAzNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2E5MTAxNDY0LTgyODQtNDM4Yy1iNDEwLWIxZjJhMjAwNzhlMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzViMDc0Njk3LWIzMzYtNGY4OC1iYzVhLThlNWNhNjNjNDRhYyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzk5YTBmODBkLWY1NzctNDFlMS1iNGQ5LWQ3NTczMTQ4ZGYyNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdlOTRlYjAxLTBmMWMtNGRiMi05NzViLTNjMmFjOTQ3ZTE1MSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/01de2b35-33ab-4701-a079-cf3091aa983c",
+            "minimumDuration": "1 hour"
+        },
+        {
+            "type": "activity",
+            "id": "139630191",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139630191",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "KL City Hotels to Singapore City Hotels One-way Transfer",
+            "description": "<div><p>Pick-up from Kuala Lumpur city hotels by an Air-conditioned vehicle with English speaking professional driver and drop-off at Singapore city hotels as per your booking.</p><p>It's a one-way private transfer only..!!!</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "197.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2E3NmQwOWZmLTlkZWEtNDc2Ny05NWQ5LWE5NDY3OGEyYzMyOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2YxNzcwMGI1LTVlMDktNGMwNS1hN2I2LTY1NTQxOTgwZDhmYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NhOGEyZDY4LTQ3ZjgtNDdiMi04MmM0LTFlOTM1ZTUzOTA4MyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg4NDIwYjI0LWVlOWMtNDYyNS05NDBmLTQzYjhkNjZkYWViZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzNjMDU2OGJkLTVjZTItNGM4OS04NjgxLTY0ZThmMTc0MmI0OCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzgwNTc4NzE4LWYwMjAtNGU0OC1iYmUxLWExMDlmMWU3MDNhOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUzNDc3YzlmLWQ5ZWItNDZlYy05ZWFiLTI2Y2VlOTBlYTI2NSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg1MTliOTg2LTI4ZjYtNDkxMC1hM2MwLWUwMTRkNjFiY2Q3YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/36681830-3587-43a0-a12a-8eb5b26baf81",
+            "minimumDuration": ""
+        },
+        {
+            "type": "activity",
+            "id": "139473489",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139473489",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Kuala Lumpur Hotels to Singapore Hotels",
+            "description": "<div><p>Pick-Up From Kuala Lumpur City Hotels By An Air-Conditioned Vehicle With English Speaking Professional Driver And Drop-Off At Singapore City Hotels.</p><p>Pick-Up At 11pm To 6am 50% Surcharge Apply.</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "197.0",
+                "currencyCode": "EUR"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdkZmVhMDM5LWQyMTgtNDVkMC05MzA3LThkYWNiNDNjNDE0MSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NjYzllNGEwLTI4YTQtNDdkMS05NzQyLTZkYzBiYWI2MjFjZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2U1MjhiZTI4LWM3YzEtNGRjYS05NmJhLWRhMTc0ZGMyMjRmMCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzYyNDI0NWVkLTllNjctNDFlNi04NmRkLTFiZjRmZmQyOGM4MCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzNjMWJjODFiLWFhOTAtNDJiYi05ZDZmLWQ3MzRjNjI2OGQ4NiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzNhYjYzMWMyLWI2NmMtNGJjOC1iNGYyLTBiNmNlNDQ5NmJjOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzI3MzY4YjM5LTYzYTQtNGIxZS1iMDAwLWE1YjViNmU5Y2Q0NSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2YwMzk4M2RhLTE3OWEtNGY1MC05YTk5LTQ2ZmRhOWY0NThhNyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzJhOWNhM2VjLTRhMjAtNDk0NS1iMmFmLTIwOTkwODNkZjJiMCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzRkMWRmMThmLTIyMmEtNDUyOS04NWYzLTE1ZjkyMDRkZTQxMiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzczNTQ1NDk5LWE5YTItNDliMi05MTQyLTM1MDhjODA0MDFjMyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzlmZTc4ODQxLTg0OWUtNDAwYy05NmNhLTVjZGFkNTc4NzBmMCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzhlOTQxMDI1LWE1OGQtNGRmNC1hMmNmLWVmZDM1YzY3MjdmNiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg2YmMzMTA5LWRlMTQtNDNhMi05MThjLWUwMDQxYTQyZThjNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2EyMDZkMmY1LTUyNDItNDNiZi05MTczLWY1MmMwMmI1MDY1MSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2NmNjNmZGQyLWVhMDQtNGQzYS05NWEyLWVlZTU0ZTQ5NzU3OCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/601fc260-c596-4ec8-b7d4-c4203f0cbb39",
+            "minimumDuration": "5 hours"
+        },
+        {
+            "type": "activity",
+            "id": "139472738",
+            "self": {
+                "href": "https://test.api.amadeus.com/v1/shopping/activities/139472738",
+                "methods": [
+                    "GET"
+                ]
+            },
+            "name": "Johor Day Tour From Singapore - Lasertag, Eco Farm, Go Kart [Car]",
+            "description": "<div><p>Leave the concrete jungle of Singapore and venture over the causeway into family friendly destination - Johor Bahru. Start with an action game, test your physical coordination capabilities and shooting skills at Laser Battle. After a 60 mins ride with cartoon movie, feed the small animals and learn the interesting fun facts of the Eco farm includes visiting the plantations and perfectly ends the day by having an adrenaline-filled racing go-kart and being surprised to see how your kids can actually drive so well even for the first timer. This tour program and transportation arrangement is tailored made for family with kids age from 1 to 12 years old and explore the day trip at your own pace.</p><p>Highlights</p><p>* Educational and cultivate loving characters in kids</p><p>* Feed and cuddle various small animal in the eco-farm</p><p>* Enjoy the natural beauty of plants and local tropical fruits trees</p><p>* Entertained by cartoon movies in the private transport</p><p>* Amazed by the kid's driving skills and empower them</p></div>",
+            "geoCode": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+            },
+            "price": {
+                "amount": "495.0",
+                "currencyCode": "USD"
+            },
+            "pictures": [
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg4M2Q0OWFiLTgyYTItNGE5Ny1hODUyLWViMjRjMjMyOWM4ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2U5YjVlY2RhLTBjMzEtNDQ2NS1hY2Y2LTg3MzYzMjFkZGRiZCIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzL2ZlMmQ3OTE2LWI5ZTAtNDI2Yy1iNTZmLTVkZjI0NWZmN2RhNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQyNzBmMzJkLTI1ZTYtNDc5NS1hZmY3LTRkZDE1ZjU5NmNlYSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzYzOWI0YjcyLWQ1NGQtNDgwMS04MGQ5LTkwMGQwYmVlNTJiNSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzdjMGNjY2QzLWM2YWEtNDg4Yy1hNjJkLWIzYzdjYmVmODE2MyIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ1YTZhOThkLTI2YWEtNGU3OC04YjA3LWI1MmM3NmFmMTI4ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzgwODkxYTVmLTA4NjgtNGUzOS1iMzg1LWMyZTlmMGFlZmRmMSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzA0YjdmYWFjLTc0NjQtNDFlNS04NGU4LWUwMTk3ZmNmOWQ0ZSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
+                "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzQ2NDg2MTVmLTk2MGUtNDE1ZC1hZTY0LWFhMjY3YTExM2E5ZiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
+            ],
+            "bookingLink": "https://amadeus.booking.holibob.tech/product/c24c6e33-e320-49ae-a9dc-e58f1c3e4cfe",
+            "minimumDuration": "12 hours"
+        }
+    ],
+    "meta": {
+        "count": 13,
+        "links": {
+            "self": "https://test.api.amadeus.com/v1/shopping/activities?latitude=1.357107&longitude=103.8194992&radius=5"
+        }
+    }
+}

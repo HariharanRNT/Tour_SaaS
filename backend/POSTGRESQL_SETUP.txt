@@ -1,0 +1,62 @@
+"""
+PostgreSQL Setup Instructions for Tour SaaS Backend
+
+STEP 1: Ensure PostgreSQL is installed and running
+----------------------------------------
+- Download from: https://www.postgresql.org/download/
+- Default port: 5432
+- Default username: postgres
+
+STEP 2: Set PostgreSQL Password (if not already set)
+----------------------------------------
+Open Command Prompt as Administrator and run:
+    psql -U postgres
+    ALTER USER postgres PASSWORD 'your_password';
+    \q
+
+STEP 3: Update .env file
+----------------------------------------
+Edit the .env file and update the DATABASE_URL:
+    DATABASE_URL=postgresql+asyncpg://postgres:your_password@localhost:5432/tour_saas
+
+Replace 'your_password' with your actual PostgreSQL password.
+
+STEP 4: Create Database
+----------------------------------------
+Run: python create_database.py
+
+STEP 5: Initialize Tables
+----------------------------------------
+Run: python init_db.py
+
+STEP 6: Create Admin User
+----------------------------------------
+Run: python create_admin.py
+
+STEP 7: Restart Server
+----------------------------------------
+Stop the current server (Ctrl+C) and run:
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+========================================
+QUICK SETUP (if PostgreSQL password is 'postgres'):
+========================================
+1. python setup_postgresql.py
+2. python create_database.py
+3. python init_db.py
+4. python create_admin.py
+5. Restart the server
+
+========================================
+TROUBLESHOOTING:
+========================================
+If you get connection errors:
+1. Check if PostgreSQL service is running
+2. Verify the password is correct
+3. Check if port 5432 is accessible
+4. Ensure PostgreSQL allows local connections
+
+For help, check: backend/README.md
+"""
+
+print(__doc__)
