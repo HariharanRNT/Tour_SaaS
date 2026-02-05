@@ -48,23 +48,36 @@ async def create_payment_order(
     
     try:
         # Check for dummy keys to mock response
-        if "1234567890" in settings.RAZORPAY_KEY_ID:
-            import uuid
-            order = {
-                "id": f"order_{uuid.uuid4().hex[:14]}",
-                "amount": amount_in_paise,
-                "currency": "INR",
-                "status": "created"
+        # Similar logic to subscriptions: force mock if key looks like default dummy
+        use_mock = "1234567890" in settings.RAZORPAY_KEY_ID or "mock" in settings.RAZORPAY_KEY_ID.lower()
+        
+        if use_mock:
+            raise Exception("Force Mock")
+
+        order = razorpay_client.order.create({
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "receipt": booking.booking_reference,
+            "payment_capture": 1,
+            "notes": {
+                 "booking_id": str(booking.id),
+                 "user_id": str(current_user.id)
             }
-        else:
-            order = razorpay_client.order.create({
-                "amount": amount_in_paise,
-                "currency": "INR",
-                "receipt": booking.booking_reference,
-                "payment_capture": 1
-            })
+        })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create payment order: {str(e)}")
+        print(f"Payment Order Creation Failed (falling back to mock if dev): {str(e)}")
+        
+        # In production, do not silent fallback. Raise error.
+        if settings.APP_ENV == "production" and "Force Mock" not in str(e):
+             raise HTTPException(status_code=500, detail=f"Payment Gateway Error: {str(e)}")
+
+        import uuid
+        order = {
+            "id": f"order_mock_{uuid.uuid4().hex[:14]}",
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "status": "created"
+        }
     
     # Save payment record
     payment = Payment(

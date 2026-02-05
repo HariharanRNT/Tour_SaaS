@@ -331,12 +331,12 @@ export default function CheckoutPage() {
             setCurrentOrder(orderData)
 
             // 4. Prompt Payment (Mock or Real)
-            if (orderData.key_id === 'rzp_test_1234567890') {
+            // 4. Prompt Payment (Mock or Real)
+            // Logic similar to Subscription Page: check if key is default/test-mock
+            if (orderData.key_id === 'rzp_test_1234567890' || orderData.key_id.includes('1234567890')) {
                 // Use Mock Modal for dummy keys
                 console.log("Using Mock Payment Modal for Test Key")
                 setShowMockModal(true)
-                // Keep 'PROCESSING' state in BG or change to 'PAYMENT'?
-                // Keeping PROCESSING spinner on button is fine as modal covers it.
             } else {
                 // Use Real Razorpay
                 const options = {
@@ -351,10 +351,15 @@ export default function CheckoutPage() {
                     },
                     prefill: {
                         name: travelers[0].first_name,
-                        email: "test@example.com",
-                        contact: "9999999999"
+                        email: contactEmail || "test@example.com",
+                        contact: contactPhone || "9999999999"
                     },
-                    theme: { color: "#3399cc" }
+                    theme: { color: "#3399cc" },
+                    modal: {
+                        ondismiss: function () {
+                            setStep('DETAILS') // Reset button state
+                        }
+                    }
                 };
                 const rzp1 = new window.Razorpay(options);
                 rzp1.open();

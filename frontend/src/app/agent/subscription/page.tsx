@@ -208,7 +208,7 @@ export default function SubscriptionPage() {
             // -----------------------
 
             // 2. Open Razorpay (REAL MODE)
-            if (!isRazorpayLoaded && !window.location.hostname.includes('localhost')) {
+            if (!isRazorpayLoaded) {
                 toast.error("Payment gateway is loading. Please wait a moment...");
                 setProcessingId(null);
                 return;
@@ -246,10 +246,17 @@ export default function SubscriptionPage() {
                     } catch (e) {
                         console.error(e);
                         toast.error("An error occurred during verification. Please try again.");
+                    } finally {
+                        setProcessingId(null);
                     }
                 },
                 prefill: { email: "agent@example.com" },
-                theme: { color: "#3399cc" }
+                theme: { color: "#3399cc" },
+                modal: {
+                    ondismiss: function () {
+                        setProcessingId(null);
+                    }
+                }
             };
 
             const rzp1 = new (window as any).Razorpay(options);

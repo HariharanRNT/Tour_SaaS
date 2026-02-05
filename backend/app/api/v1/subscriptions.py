@@ -289,21 +289,35 @@ async def purchase_subscription(
     # Given the user request, I'll force mock if the key looks suspicious or if we hardcode a 'mock' param.
     # Let's add a safe fallback: if key is invalid, we return a mock order.
     
+    # Mock Mode Logic: Use mock if key explicitly indicates mock/test environment default
     use_mock = "1234567890" in settings.RAZORPAY_KEY_ID or "mock" in settings.RAZORPAY_KEY_ID.lower()
     
-    # Temporary: Force mock if the real key is failing (User Request)
-    # We will simulate a Mock Key for the frontend to detect
-    mock_key_id = "rzp_test_mock_123456" 
+    # Check if user wants to force mock via a query param or similar (optional, but good for testing)
+    # For now, we rely on the key.
     
+    key_id_to_return = settings.RAZORPAY_KEY_ID
+    mock_key_id = "rzp_test_mock_123456" 
+
     try:
         if use_mock:
+            print("Using Mock Mode due to default/mock key detection.")
             raise Exception("Force Mock")
             
+        print(f"Attempting Razorpay Order with Key: {settings.RAZORPAY_KEY_ID[:8]}...")
         order = client.order.create(data=order_data)
-        key_id_to_return = settings.RAZORPAY_KEY_ID
+        print(f"Razorpay Order Created: {order['id']}")
         
     except Exception as e:
-        # Fallback to Mock Order
+        print(f"Razorpay Order Creation Failed: {str(e)}")
+        
+        # If it wasn't a forced mock, this is a real error we should probably let the user know about
+        # causing a 500 or 400. But if we want to fallback to mock for development robustness:
+        if not use_mock and settings.APP_ENV == "production":
+            # In production, do not silent fallback. Raise error.
+            raise HTTPException(status_code=500, detail=f"Payment Gateway Error: {str(e)}")
+            
+        # In dev, fallback to mock with a warning log
+        print("Falling back to Mock Order due to error or mock configuration.")
         import uuid
         order = {
             "id": f"order_mock_{uuid.uuid4().hex[:14]}",
@@ -340,10 +354,6 @@ async def verify_subscription_payment(
     current_user: User = Depends(get_current_active_user),
 ):
     """Verify subscription payment and activate"""
-    # NOTE: I need to update imports to include SubscriptionPaymentVerification
-    # For now, I'll assume I can import it or use the generic one if compatible.
-    # The previous tool added SubscriptionPaymentVerification to schemas.py
-    
     from app.schemas import SubscriptionPaymentVerification, MessageResponse
     from app.models import Payment, PaymentStatus
     from app.config import settings
@@ -352,6 +362,7 @@ async def verify_subscription_payment(
     # Verify signature
     client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
     
+    # 1. Signature Verification
     try:
         # Check if it's a mock order
         if "order_mock_" in verification_data.razorpay_order_id:
@@ -375,7 +386,38 @@ async def verify_subscription_payment(
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
 
-    # Get Payment
+    # Get Plan for Amount Validation
+    stmt = select(SubscriptionPlan).where(SubscriptionPlan.id == sub.plan_id)
+    result = await db.execute(stmt)
+    plan = result.scalar_one()
+
+    # 2. Secure Backend Verification (Fetch from Razorpay)
+    if "order_mock_" not in verification_data.razorpay_order_id and "1234567890" not in settings.RAZORPAY_KEY_ID:
+        try:
+            # Fetch payment details from Razorpay
+            fetched_payment = client.payment.fetch(verification_data.razorpay_payment_id)
+            
+            # A. Status Check
+            if fetched_payment['status'] != 'captured':
+                 raise HTTPException(status_code=400, detail=f"Payment status is {fetched_payment['status']}, expected 'captured'")
+            
+            # B. Amount Check
+            expected_amount_paise = int(plan.price * 100)
+            if fetched_payment['amount'] != expected_amount_paise:
+                 raise HTTPException(
+                     status_code=400, 
+                     detail=f"Amount mismatch: Paid {fetched_payment['amount']/100}, Expected {plan.price}"
+                 )
+                 
+            # C. Currency Check
+            if fetched_payment['currency'] != 'INR':
+                raise HTTPException(status_code=400, detail="Invalid currency")
+
+        except Exception as e:
+             print(f"Payment Verification Failed: {str(e)}")
+             raise HTTPException(status_code=400, detail=f"Payment Verification Failed: {str(e)}")
+
+    # Update Payment Record
     stmt = select(Payment).where(Payment.razorpay_order_id == verification_data.razorpay_order_id)
     result = await db.execute(stmt)
     payment = result.scalar_one_or_none()
@@ -390,10 +432,6 @@ async def verify_subscription_payment(
     await SubscriptionService.handle_purchase_activation(sub.user_id, sub, db)
 
     # Create Invoice
-    stmt = select(SubscriptionPlan).where(SubscriptionPlan.id == sub.plan_id)
-    result = await db.execute(stmt)
-    plan = result.scalar_one()
-
     new_invoice = Invoice(
         user_id=current_user.id,
         subscription_id=sub.id,
