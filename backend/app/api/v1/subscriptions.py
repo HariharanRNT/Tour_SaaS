@@ -270,7 +270,7 @@ async def purchase_subscription(
     await db.flush() # Get ID
 
     # Create Razorpay Order
-    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+    client = razorpay.Client(auth=(settings.RAZORPAY_SUBSCRIPTION_KEY_ID, settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET))
     amount_in_paise = int(plan.price * 100)
     
     order_data = {
@@ -284,18 +284,13 @@ async def purchase_subscription(
         }
     }
     
-    # Mock Mode Logic: Use mock if key contains 'test' and 'mock' OR if explicitly '1234567890'
-    # Or simply if the user requested it. For now, let's treat any error as a signal to maybe fallback or just support a specific mock key.
-    # Given the user request, I'll force mock if the key looks suspicious or if we hardcode a 'mock' param.
-    # Let's add a safe fallback: if key is invalid, we return a mock order.
-    
     # Mock Mode Logic: Use mock if key explicitly indicates mock/test environment default
-    use_mock = "1234567890" in settings.RAZORPAY_KEY_ID or "mock" in settings.RAZORPAY_KEY_ID.lower()
+    use_mock = "1234567890" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID or "mock" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID.lower()
     
     # Check if user wants to force mock via a query param or similar (optional, but good for testing)
     # For now, we rely on the key.
     
-    key_id_to_return = settings.RAZORPAY_KEY_ID
+    key_id_to_return = settings.RAZORPAY_SUBSCRIPTION_KEY_ID
     mock_key_id = "rzp_test_mock_123456" 
 
     try:
@@ -303,7 +298,7 @@ async def purchase_subscription(
             print("Using Mock Mode due to default/mock key detection.")
             raise Exception("Force Mock")
             
-        print(f"Attempting Razorpay Order with Key: {settings.RAZORPAY_KEY_ID[:8]}...")
+        print(f"Attempting Razorpay Order with Key: {settings.RAZORPAY_SUBSCRIPTION_KEY_ID[:8]}...")
         order = client.order.create(data=order_data)
         print(f"Razorpay Order Created: {order['id']}")
         
@@ -360,7 +355,7 @@ async def verify_subscription_payment(
     import razorpay
 
     # Verify signature
-    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+    client = razorpay.Client(auth=(settings.RAZORPAY_SUBSCRIPTION_KEY_ID, settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET))
     
     # 1. Signature Verification
     try:
@@ -368,7 +363,7 @@ async def verify_subscription_payment(
         if "order_mock_" in verification_data.razorpay_order_id:
              # Skip Razorpay verification for mock orders
              pass
-        elif "1234567890" not in settings.RAZORPAY_KEY_ID:
+        elif "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
             client.utility.verify_payment_signature({
                 'razorpay_order_id': verification_data.razorpay_order_id,
                 'razorpay_payment_id': verification_data.razorpay_payment_id,
@@ -392,7 +387,7 @@ async def verify_subscription_payment(
     plan = result.scalar_one()
 
     # 2. Secure Backend Verification (Fetch from Razorpay)
-    if "order_mock_" not in verification_data.razorpay_order_id and "1234567890" not in settings.RAZORPAY_KEY_ID:
+    if "order_mock_" not in verification_data.razorpay_order_id and "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
         try:
             # Fetch payment details from Razorpay
             fetched_payment = client.payment.fetch(verification_data.razorpay_payment_id)

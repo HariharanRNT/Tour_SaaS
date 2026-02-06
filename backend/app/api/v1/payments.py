@@ -18,7 +18,7 @@ from app.config import settings
 router = APIRouter()
 
 # Initialize Razorpay client
-razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_BOOKING_KEY_ID, settings.RAZORPAY_BOOKING_KEY_SECRET))
 
 
 @router.post("/create-order", response_model=PaymentOrderResponse)
@@ -49,7 +49,7 @@ async def create_payment_order(
     try:
         # Check for dummy keys to mock response
         # Similar logic to subscriptions: force mock if key looks like default dummy
-        use_mock = "1234567890" in settings.RAZORPAY_KEY_ID or "mock" in settings.RAZORPAY_KEY_ID.lower()
+        use_mock = "1234567890" in settings.RAZORPAY_BOOKING_KEY_ID or "mock" in settings.RAZORPAY_BOOKING_KEY_ID.lower()
         
         if use_mock:
             raise Exception("Force Mock")
@@ -95,7 +95,7 @@ async def create_payment_order(
         order_id=order["id"],
         amount=order["amount"],
         currency=order["currency"],
-        key_id=settings.RAZORPAY_KEY_ID
+        key_id=settings.RAZORPAY_BOOKING_KEY_ID
     )
 
 
@@ -118,7 +118,7 @@ async def verify_payment(
     # Verify signature
     try:
         # Skip verification for dummy keys
-        if "1234567890" in settings.RAZORPAY_KEY_ID:
+        if "1234567890" in settings.RAZORPAY_BOOKING_KEY_ID:
             pass
         else:
             params_dict = {

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Table,
     TableBody,
@@ -19,6 +20,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -29,7 +32,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye } from 'lucide-react'
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, DollarSign, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface Package {
     id: string
@@ -46,11 +58,17 @@ export default function AdminPackagesPage() {
     const [packages, setPackages] = useState<Package[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<string>('all')
 
-    // Delete Confirmation State
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [destinationFilter, setDestinationFilter] = useState('all')
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [selectedPackages, setSelectedPackages] = useState<string[]>([])
+
+    // Pagination & Sort State
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage] = useState(5)
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Package; direction: 'asc' | 'desc' } | null>(null)
 
     useEffect(() => {
         // Check if agent is logged in
@@ -159,6 +177,58 @@ export default function AdminPackagesPage() {
         }
     }
 
+    // Bulk Actions Handlers
+    const handleSelectRow = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedPackages(prev => [...prev, id])
+        } else {
+            setSelectedPackages(prev => prev.filter(pkgId => pkgId !== id))
+        }
+    }
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = filteredPackages.map(pkg => pkg.id)
+            setSelectedPackages(allIds)
+        } else {
+            setSelectedPackages([])
+        }
+    }
+
+    const handleBulkDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete ${selectedPackages.length} packages?`)) return
+
+        setIsDeleting(true)
+        try {
+            const token = localStorage.getItem('token')
+            const deletePromises = selectedPackages.map(id =>
+                fetch(`http://localhost:8000/api/v1/agent/packages/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }).then(res => {
+                    if (!res.ok) throw new Error(`Failed to delete ${id}`)
+                    return id
+                })
+            )
+
+            await Promise.all(deletePromises)
+
+            toast.success(`${selectedPackages.length} packages deleted successfully`)
+            setSelectedPackages([])
+            loadPackages()
+        } catch (error) {
+            console.error('Bulk delete failed:', error)
+            toast.error('Failed to delete some packages')
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
+    // Filter & Sort Logic
+    const uniqueDestinations = Array.from(new Set(packages.map(p => p.destination)));
+
     const filteredPackages = packages.filter(pkg => {
         const matchesSearch =
             pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -167,73 +237,164 @@ export default function AdminPackagesPage() {
         const matchesStatus = statusFilter === 'all' ||
             pkg.status.toLowerCase() === statusFilter.toLowerCase();
 
-        return matchesSearch && matchesStatus;
+        const matchesDestination = destinationFilter === 'all' ||
+            pkg.destination === destinationFilter;
+
+        return matchesSearch && matchesStatus && matchesDestination;
     })
 
-    const getStatusBadge = (status: string) => {
-        const lowerStatus = status.toLowerCase()
-        const variants: Record<string, any> = {
-            published: 'default',
-            draft: 'secondary',
-            archived: 'outline'
+    const sortedPackages = [...filteredPackages].sort((a, b) => {
+        if (!sortConfig) return 0;
+        const { key, direction } = sortConfig;
+
+        // Handle numeric values
+        if (typeof a[key] === 'number' && typeof b[key] === 'number') {
+            return direction === 'asc' ? (a[key] as number) - (b[key] as number) : (b[key] as number) - (a[key] as number);
         }
+
+        // Handle strings
+        const valA = String(a[key]).toLowerCase();
+        const valB = String(b[key]).toLowerCase();
+
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalPages = Math.ceil(sortedPackages.length / itemsPerPage);
+    const paginatedPackages = sortedPackages.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const handleSort = (key: keyof Package) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const clearFilters = () => {
+        setSearchQuery('');
+        setStatusFilter('all');
+        setDestinationFilter('all');
+        setSortConfig(null);
+        setCurrentPage(1);
+    };
+
+    const StatusBadge = ({ status }: { status: string }) => {
+        const lowerStatus = status.toLowerCase()
+        const styles: Record<string, string> = {
+            published: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/30',
+            draft: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/30',
+            archived: 'bg-slate-50 text-slate-700 border-slate-200 ring-slate-500/30',
+        }
+
+        const dots: Record<string, string> = {
+            published: 'bg-emerald-500',
+            draft: 'bg-amber-500',
+            archived: 'bg-slate-500',
+        }
+
         return (
-            <Badge variant={variants[lowerStatus] || 'secondary'} className="uppercase">
-                {lowerStatus}
-            </Badge>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ring-4 ring-opacity-20 ${styles[lowerStatus] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${dots[lowerStatus] || 'bg-gray-400'}`}></span>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+            </div>
         )
     }
 
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-white border-b">
-                <div className="container mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
+            <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
+                <div className="container mx-auto px-6 py-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => router.push('/agent/dashboard')}
-                                >
-                                    ← Back to Dashboard
-                                </Button>
+                            {/* Breadcrumb */}
+                            <nav className="flex items-center text-sm text-gray-500 mb-2">
+                                <span className="hover:text-gray-900 cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
+                                <span className="mx-2">/</span>
+                                <span className="font-medium text-gray-900">Packages</span>
+                            </nav>
+
+                            {/* Title & Subtitle */}
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-lg">
+                                    <Package className="h-6 w-6 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Agent Package Management</h1>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-gray-500 text-sm">Create and manage your tour packages</p>
+                                        <span className="hidden md:inline text-gray-300">•</span>
+                                        <div className="hidden md:flex items-center gap-3 text-sm font-medium text-gray-600">
+                                            <span className="flex items-center gap-1">
+                                                <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                                {packages.length} Packages
+                                            </span>
+                                            <span className="flex items-center gap-1 text-emerald-600">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                {packages.filter(p => p.status.toLowerCase() === 'published').length} Published
+                                            </span>
+                                            <span className="flex items-center gap-1 text-amber-600">
+                                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                {packages.filter(p => p.status.toLowerCase() === 'draft').length} Drafts
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <h1 className="text-3xl font-bold">Agent Package Management</h1>
-                            <p className="text-gray-600 mt-1">Create and manage your tour packages</p>
                         </div>
-                        <Button onClick={() => router.push('/agent/packages/new')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Package
-                        </Button>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3">
+                            <Button
+                                onClick={() => router.push('/agent/packages/new')}
+                                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create New Package
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Mobile Stats (Visible only on small screens) */}
+                    <div className="md:hidden mt-4 pt-4 border-t flex justify-between text-sm">
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-gray-900">{packages.length}</span>
+                            <span className="text-gray-500 text-xs">Total</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-emerald-600">{packages.filter(p => p.status.toLowerCase() === 'published').length}</span>
+                            <span className="text-gray-500 text-xs">Published</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-amber-600">{packages.filter(p => p.status.toLowerCase() === 'draft').length}</span>
+                            <span className="text-gray-500 text-xs">Drafts</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Content */}
             <div className="container mx-auto px-4 py-8">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
+                <Card className="border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="border-b bg-gray-50/50 pb-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <CardTitle>All Packages</CardTitle>
-                                <CardDescription>
-                                    {filteredPackages.length} package(s) found
+                                <CardTitle className="flex items-center gap-2 text-xl">
+                                    <Package className="h-5 w-5 text-indigo-600" />
+                                    All Packages
+                                </CardTitle>
+                                <CardDescription className="mt-1">
+                                    Manage, track, and update your {filteredPackages.length} tour packages
                                 </CardDescription>
                             </div>
-                            <div className="flex gap-2">
-                                {/* Status Filter */}
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border rounded-md px-3 py-2"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="draft">Draft</option>
-                                    <option value="published">Published</option>
-                                </select>
 
+                            {/* Enhanced Search & Filter Toolbar */}
+                            <div className="flex flex-wrap items-center gap-3">
                                 {/* Search */}
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -241,89 +402,358 @@ export default function AdminPackagesPage() {
                                         placeholder="Search packages..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 w-64"
+                                        className="pl-10 w-48 sm:w-64 rounded-full border-gray-200 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                     />
                                 </div>
+
+                                {/* Filters */}
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="appearance-none pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
+                                        >
+                                            <option value="all">All Status</option>
+                                            <option value="draft">Draft</option>
+                                            <option value="published">Published</option>
+                                        </select>
+                                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                                    </div>
+
+                                    <div className="relative">
+                                        <select
+                                            value={destinationFilter}
+                                            onChange={(e) => setDestinationFilter(e.target.value)}
+                                            className="appearance-none pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
+                                            style={{ maxWidth: '150px' }}
+                                        >
+                                            <option value="all">All Destinations</option>
+                                            {uniqueDestinations.map(dest => (
+                                                <option key={dest} value={dest}>{dest}</option>
+                                            ))}
+                                        </select>
+                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                                    </div>
+
+
+
+                                    {(statusFilter !== 'all' || destinationFilter !== 'all' || sortConfig !== null || searchQuery) && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={clearFilters}
+                                            className="text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full px-3"
+                                        >
+                                            Clear
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
+
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0">
                         {loading ? (
-                            <div className="text-center py-12">
-                                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                <p className="mt-4 text-gray-600">Loading packages...</p>
+                            <div className="text-center py-20">
+                                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
+                                <p className="mt-4 text-gray-500 font-medium">Loading your packages...</p>
                             </div>
                         ) : filteredPackages.length === 0 ? (
-                            <div className="text-center py-12">
-                                <p className="text-gray-500">No packages found</p>
+                            <div className="text-center py-20 px-4">
+                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Package className="h-8 w-8 text-gray-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900">No packages found</h3>
+                                <p className="text-gray-500 mt-1 max-w-sm mx-auto">
+                                    Get started by creating your first tour package to reach more travelers.
+                                </p>
                                 <Button
                                     onClick={() => router.push('/agent/packages/new')}
-                                    className="mt-4"
+                                    className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-8 shadow-lg shadow-indigo-600/20"
                                 >
-                                    Create Your First Package
+                                    Create First Package
                                 </Button>
                             </div>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Title</TableHead>
-                                        <TableHead>Destination</TableHead>
-                                        <TableHead>Duration</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredPackages.map((pkg) => (
-                                        <TableRow key={pkg.id}>
-                                            <TableCell className="font-medium">{pkg.title}</TableCell>
-                                            <TableCell>{pkg.destination}</TableCell>
-                                            <TableCell>{pkg.duration_days} days</TableCell>
-                                            <TableCell>₹{pkg.price_per_person}</TableCell>
-                                            <TableCell>{getStatusBadge(pkg.status)}</TableCell>
-                                            <TableCell className="text-right">
+                            <>
+                                {/* Desktop View */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <Table>
+                                        <TableHeader className="bg-gray-50/80">
+                                            <TableRow className="hover:bg-transparent border-b border-gray-200">
+                                                <TableHead className="w-12 pl-6">
+                                                    <Checkbox
+                                                        checked={filteredPackages.length > 0 && selectedPackages.length === filteredPackages.length}
+                                                        onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                                    />
+                                                </TableHead>
+                                                <TableHead className="py-4 pl-6 font-semibold text-gray-600 w-[30%] cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('title')}>
+                                                    <div className="flex items-center gap-2">
+                                                        Package Details
+                                                        {sortConfig?.key === 'title' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                    </div>
+                                                </TableHead>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('destination')}>
+                                                    <div className="flex items-center gap-2">
+                                                        Destination
+                                                        {sortConfig?.key === 'destination' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                    </div>
+                                                </TableHead>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('duration_days')}>
+                                                    <div className="flex items-center gap-2">
+                                                        Duration
+                                                        {sortConfig?.key === 'duration_days' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                    </div>
+                                                </TableHead>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('price_per_person')}>
+                                                    <div className="flex items-center gap-2">
+                                                        Price
+                                                        {sortConfig?.key === 'price_per_person' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                    </div>
+                                                </TableHead>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('status')}>
+                                                    <div className="flex items-center gap-2">
+                                                        Status
+                                                        {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                                    </div>
+                                                </TableHead>
+                                                <TableHead className="py-4 pr-6 text-right font-semibold text-gray-600">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {paginatedPackages.map((pkg, index) => (
+                                                <TableRow
+                                                    key={pkg.id}
+                                                    className={`
+                                                        group transition-all duration-200 hover:bg-indigo-50/30 hover:shadow-sm border-b border-gray-100
+                                                        ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}
+                                                        ${selectedPackages.includes(pkg.id) ? 'bg-indigo-50/50' : ''}
+                                                    `}
+                                                >
+                                                    <TableCell className="pl-6">
+                                                        <Checkbox
+                                                            checked={selectedPackages.includes(pkg.id)}
+                                                            onCheckedChange={(checked) => handleSelectRow(pkg.id, checked as boolean)}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="py-5 pl-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 text-lg">
+                                                                {pkg.title.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-semibold text-gray-900">{pkg.title}</div>
+                                                                <div className="text-xs text-gray-500 mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-5">
+                                                        <div className="flex items-center gap-2 text-gray-600">
+                                                            <MapPin className="h-4 w-4 text-gray-400" />
+                                                            <span className="font-medium">{pkg.destination}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-5">
+                                                        <div className="flex items-center gap-2 text-gray-600">
+                                                            <Calendar className="h-4 w-4 text-gray-400" />
+                                                            <span>{pkg.duration_days} Days</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-5">
+                                                        <div className="flex items-center gap-1 font-bold text-gray-900">
+                                                            <DollarSign className="h-4 w-4 text-gray-400" />
+                                                            {pkg.price_per_person.toLocaleString('en-IN')}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-5">
+                                                        <StatusBadge status={pkg.status} />
+                                                    </TableCell>
+                                                    <TableCell className="py-5 pr-6 text-right">
+                                                        <div className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
+                                                                onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
+                                                                title="Edit"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-56 shadow-xl border-gray-100 rounded-xl p-1">
+                                                                    <DropdownMenuItem
+                                                                        className="rounded-lg focus:bg-indigo-50 focus:text-indigo-700 py-2.5 px-3 cursor-pointer"
+                                                                        onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
+                                                                    >
+                                                                        <Edit className="mr-2 h-4 w-4 text-indigo-500" />
+                                                                        <span className="font-medium">Edit Package</span>
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        className="rounded-lg focus:bg-gray-50 py-2.5 px-3 cursor-pointer"
+                                                                        onClick={() => window.open(`/packages/${pkg.id}`, '_blank')}
+                                                                    >
+                                                                        <Eye className="mr-2 h-4 w-4 text-gray-500" />
+                                                                        Preview Listing
+                                                                    </DropdownMenuItem>
+                                                                    <div className="h-px bg-gray-100 my-1" />
+                                                                    <DropdownMenuItem
+                                                                        className="rounded-lg focus:bg-amber-50 focus:text-amber-700 py-2.5 px-3 cursor-pointer"
+                                                                        onClick={() => handleToggleStatus(pkg.id, pkg.status)}
+                                                                    >
+                                                                        {pkg.status.toLowerCase() === 'published' ? (
+                                                                            <>
+                                                                                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                                                                                Unpublish (Draft)
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                                                                Publish Live
+                                                                            </>
+                                                                        )}
+                                                                    </DropdownMenuItem>
+                                                                    <div className="h-px bg-gray-100 my-1" />
+                                                                    <DropdownMenuItem
+                                                                        className="rounded-lg focus:bg-red-50 focus:text-red-700 group/delete py-2.5 px-3 cursor-pointer"
+                                                                        onClick={() => handleDeleteClick(pkg.id)}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
+                                                                        <span className="text-gray-600 group-hover/delete:text-red-600">Delete Package</span>
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                {/* Mobile View (Cards) */}
+                                <div className="md:hidden grid gap-4 p-4 bg-gray-50/50">
+                                    {paginatedPackages.map((pkg) => (
+                                        <div key={pkg.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-indigo-500 bg-indigo-50/30' : ''}`}>
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <Checkbox
+                                                        checked={selectedPackages.includes(pkg.id)}
+                                                        onCheckedChange={(checked) => handleSelectRow(pkg.id, checked as boolean)}
+                                                        className="mr-1"
+                                                    />
+                                                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                                        {pkg.title.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-900 line-clamp-1">{pkg.title}</h3>
+                                                        <p className="text-xs text-gray-500">ID: {pkg.id.slice(0, 8)}</p>
+                                                    </div>
+                                                </div>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm">
+                                                        <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8 text-gray-400">
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={() => router.push(`/agent/packages/${pkg.id}`)}
-                                                        >
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            View/Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => router.push(`/packages/${pkg.id}`)}
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Preview
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleToggleStatus(pkg.id, pkg.status)}
-                                                        >
-                                                            {pkg.status.toLowerCase() === 'published' ? 'Unpublish' : 'Publish'}
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDeleteClick(pkg.id)}
-                                                            className="text-red-600"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}>Edit</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => window.open(`/packages/${pkg.id}`, '_blank')}>Preview</DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>Delete</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-600 mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin className="h-4 w-4 text-gray-400" />
+                                                    <span className="truncate">{pkg.destination}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                                    <span>{pkg.duration_days} Days</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 col-span-2 mt-1">
+                                                    <StatusBadge status={pkg.status} />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                                                <div className="font-bold text-lg text-gray-900">
+                                                    ₹{pkg.price_per_person.toLocaleString('en-IN')}
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
+                                                    className="rounded-full text-xs h-8"
+                                                >
+                                                    Manage
+                                                </Button>
+                                            </div>
+                                        </div>
                                     ))}
-                                </TableBody>
-                            </Table>
+                                </div>
+                            </>
+                        )}
+                        {/* Pagination */}
+                        {filteredPackages.length > 0 && (
+                            <div className="py-4 border-t border-gray-100 bg-gray-50/50">
+                                <Pagination>
+                                    <PaginationContent>
+                                        <PaginationItem>
+                                            <PaginationPrevious
+                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                            />
+                                        </PaginationItem>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                            <PaginationItem key={page}>
+                                                <PaginationLink
+                                                    isActive={page === currentPage}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className="cursor-pointer"
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        ))}
+                                        <PaginationItem>
+                                            <PaginationNext
+                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                            />
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </div>
                         )}
                     </CardContent>
+
+                    {/* Floating Bulk Action Bar */}
+                    {selectedPackages.length > 0 && (
+                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 px-6 py-3 rounded-full shadow-2xl border border-gray-200 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+                            <span className="font-medium text-sm border-r border-gray-200 pr-4">
+                                {selectedPackages.length} selected
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-indigo-600 hover:bg-indigo-50" onClick={() => setSelectedPackages([])}>
+                                    Cancel
+                                </Button>
+                                <Button variant="destructive" size="sm" className="rounded-full shadow-sm" onClick={handleBulkDelete}>
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Selected
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
 
@@ -346,6 +776,6 @@ export default function AdminPackagesPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div >
+        </div>
     )
 }

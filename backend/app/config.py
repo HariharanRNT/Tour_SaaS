@@ -25,8 +25,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
     # Razorpay
+    # Razorpay
     RAZORPAY_KEY_ID: str = "rzp_test_1234567890"
     RAZORPAY_KEY_SECRET: str = "test_secret_key_1234567890"
+
+    # Razorpay - Subscriptions (Agent B2B)
+    RAZORPAY_SUBSCRIPTION_KEY_ID: str = "rzp_test_1234567890"
+    RAZORPAY_SUBSCRIPTION_KEY_SECRET: str = "test_secret_key_1234567890"
+
+    # Razorpay - Bookings (Customer B2C)
+    RAZORPAY_BOOKING_KEY_ID: str = "rzp_test_1234567890"
+    RAZORPAY_BOOKING_KEY_SECRET: str = "test_secret_key_1234567890"
     
     # Amadeus Tours & Activities API
     AMADEUS_CLIENT_ID: str

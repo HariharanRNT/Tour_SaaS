@@ -53,68 +53,82 @@ export function ServiceCard({
     }
 
     return (
-        <Card className={`border-l-4 transition-all hover:shadow-md ${status === 'selected' ? 'border-l-green-500' : 'border-l-yellow-400'}`}>
+        <Card className={`
+            overflow-hidden transition-all duration-300 border hover:shadow-lg rounded-2xl
+            ${status === 'selected'
+                ? 'bg-gradient-to-br from-green-50 to-white border-green-200 shadow-green-100 ring-1 ring-green-100'
+                : 'bg-white border-gray-100 hover:border-blue-100'
+            }
+        `}>
             <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                     {/* Icon Box */}
-                    <div className={`p-3 rounded-lg ${status === 'selected' ? 'bg-green-50' : 'bg-gray-100'}`}>
-                        <Icon className={`h-6 w-6 ${status === 'selected' ? 'text-green-600' : 'text-gray-500'}`} />
+                    <div className={`p-3 rounded-xl transition-colors ${status === 'selected' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <Icon className="h-6 w-6" />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-lg text-gray-900">{title}</h3>
+                            <h3 className={`font-bold text-lg ${status === 'selected' ? 'text-green-900' : 'text-gray-900'}`}>{title}</h3>
                             {price !== undefined && (
-                                <span className="font-medium text-gray-900">
-                                    ${price.toLocaleString()}
+                                <span className="font-bold text-gray-900">
+                                    ₹{price.toLocaleString()}
                                 </span>
                             )}
                         </div>
 
-                        <p className="text-gray-500 text-sm mb-3">{description}</p>
+                        <p className="text-gray-500 text-sm mb-4 font-medium">{description}</p>
 
                         {/* Details Grid */}
                         {details && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 bg-gray-50 p-3 rounded mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 bg-white/60 p-3 rounded-lg border border-gray-100/50 mb-4">
                                 {details.from && details.to && (
                                     <div className="col-span-full flex items-center gap-2">
-                                        <span className="font-medium">{details.from}</span>
+                                        <span className="font-semibold text-gray-700">{details.from}</span>
                                         <ArrowRight className="h-3 w-3 text-gray-400" />
-                                        <span className="font-medium">{details.to}</span>
+                                        <span className="font-semibold text-gray-700">{details.to}</span>
                                     </div>
                                 )}
                                 {details.date && (
-                                    <div>📅 {details.date}</div>
+                                    <div className="flex items-center gap-2"><span className="opacity-75">📅</span> {details.date}</div>
                                 )}
                                 {details.duration && (
-                                    <div>⏱️ {details.duration}</div>
+                                    <div className="flex items-center gap-2"><span className="opacity-75">⏱️</span> {details.duration}</div>
                                 )}
                                 {details.rating && (
-                                    <div>⭐ {details.rating} / 5</div>
+                                    <div className="flex items-center gap-2"><span className="opacity-75">⭐</span> {details.rating} / 5</div>
                                 )}
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className={`${statusColors[status]} border`}>
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100/50">
+                            <Badge variant="outline" className={`px-3 py-1 ${statusColors[status]} border-0 bg-opacity-50`}>
                                 {status === 'selected' ? (
-                                    <div className="flex items-center gap-1">
-                                        <CheckCircle2 className="h-3 w-3" />
+                                    <div className="flex items-center gap-1.5 font-semibold">
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
                                         Selected
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-1">
-                                        <Circle className="h-3 w-3" />
+                                    <div className="flex items-center gap-1.5">
+                                        <Circle className="h-3.5 w-3.5" />
                                         Pending
                                     </div>
                                 )}
                             </Badge>
 
                             {onAction && (
-                                <Button variant="ghost" size="sm" onClick={onAction} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                                    <Edit2 className="h-4 w-4 mr-1" />
-                                    {status === 'selected' ? 'Change' : 'Select'}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onAction}
+                                    className={`
+                                        font-medium text-sm hover:bg-white
+                                        ${status === 'selected' ? 'text-green-700 hover:text-green-800' : 'text-blue-600 hover:text-blue-700'}
+                                    `}
+                                >
+                                    <Edit2 className="h-3.5 w-3.5 mr-1.5" />
+                                    {status === 'selected' ? 'Change Selection' : 'Select Option'}
                                 </Button>
                             )}
                         </div>

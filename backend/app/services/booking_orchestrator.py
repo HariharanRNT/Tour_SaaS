@@ -116,11 +116,11 @@ class BookingOrchestrator:
              return
 
         # 2. Verify Signature
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        client = razorpay.Client(auth=(settings.RAZORPAY_BOOKING_KEY_ID, settings.RAZORPAY_BOOKING_KEY_SECRET))
         
         try:
              # Skip signature verification if using dummy/test keys globally (fallback safety)
-             if "1234567890" not in settings.RAZORPAY_KEY_ID:
+             if "1234567890" not in settings.RAZORPAY_BOOKING_KEY_ID:
                 client.utility.verify_payment_signature({
                     'razorpay_order_id': verification['razorpay_order_id'],
                     'razorpay_payment_id': verification['razorpay_payment_id'],
@@ -130,7 +130,7 @@ class BookingOrchestrator:
              raise HTTPException(status_code=400, detail="Invalid payment signature")
 
         # 3. Secure Fetch & Amount Validation
-        if "1234567890" not in settings.RAZORPAY_KEY_ID:
+        if "1234567890" not in settings.RAZORPAY_BOOKING_KEY_ID:
             try:
                 # Fetch payment details from Razorpay
                 fetched_payment = client.payment.fetch(verification['razorpay_payment_id'])

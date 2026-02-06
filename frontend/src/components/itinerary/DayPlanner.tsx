@@ -177,19 +177,40 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity }: DayPlannerP
         )
     }
 
+    const totalActivities = (day.morning?.length || 0) + (day.afternoon?.length || 0) + (day.evening?.length || 0) + (day.night?.length || 0)
+
+    let pace = 'Balanced'
+    if (totalActivities <= 2) pace = 'Relaxed'
+    else if (totalActivities >= 5) pace = 'Packed'
+
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-50/50 to-white px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-white border border-gray-100 text-blue-600 flex items-center justify-center font-bold text-xl shadow-sm">
+            <div className="bg-gradient-to-r from-blue-50/30 via-white to-blue-50/10 px-8 py-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-blue-500/30 transform -rotate-3">
                         {day.day_number}
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 text-lg">Day {day.day_number} Itinerary</h3>
-                        <p className="text-sm text-gray-500">
-                            {(day.morning?.length || 0) + (day.afternoon?.length || 0) + (day.evening?.length || 0) + (day.night?.length || 0)} Activities Planned
-                        </p>
+                        <h3 className="font-extrabold text-gray-900 text-xl tracking-tight mb-1">
+                            Day {day.day_number} – Destination Highlights
+                        </h3>
+                        <div className="flex items-center gap-3 text-sm font-medium text-gray-500">
+                            <span className="flex items-center gap-1.5">
+                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">{totalActivities} Experiences</span>
+                            </span>
+                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                            <span className={cn(
+                                "flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider",
+                                pace === 'Relaxed' ? "bg-emerald-100 text-emerald-700" :
+                                    pace === 'Balanced' ? "bg-amber-100 text-amber-700" : "bg-orange-100 text-orange-700"
+                            )}>
+                                {pace === 'Relaxed' && '🌱'}
+                                {pace === 'Balanced' && '⚖️'}
+                                {pace === 'Packed' && '⚡'}
+                                {pace} Pace
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
