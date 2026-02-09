@@ -49,7 +49,7 @@ class PackageService:
             day = item.day_number
             # Ensure slot exists in dictionary
             slot = item.time_slot or 'unassigned'
-            if slot not in ['morning', 'afternoon', 'evening', 'night']:
+            if slot not in ['morning', 'afternoon', 'evening', 'night', 'full_day', 'half_day']:
                 slot = 'unassigned'
             
             if day not in itinerary_by_day:
@@ -59,6 +59,8 @@ class PackageService:
                     'afternoon': [],
                     'evening': [],
                     'night': [],
+                    'full_day': [],
+                    'half_day': [],
                     'unassigned': []
                 }
             
@@ -147,7 +149,7 @@ class PackageService:
             raise ValueError(f"Package {package_id} not found")
         
         # Validate time slot
-        valid_slots = ['morning', 'afternoon', 'evening', 'night', 'full_day']
+        valid_slots = ['morning', 'afternoon', 'evening', 'night', 'full_day', 'half_day']
         if time_slot and time_slot not in valid_slots:
             raise ValueError(f"Time slot must be one of: {', '.join(valid_slots)}")
         

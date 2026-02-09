@@ -29,6 +29,8 @@ class PackageDayItinerary(BaseModel):
     afternoon: List[PackageItineraryItemResponse] = []
     evening: List[PackageItineraryItemResponse] = []
     night: List[PackageItineraryItemResponse] = []
+    half_day: List[PackageItineraryItemResponse] = []
+    full_day: List[PackageItineraryItemResponse] = []
     unassigned: List[PackageItineraryItemResponse] = []
 
 
@@ -49,7 +51,7 @@ class PackageWithItineraryResponse(BaseModel):
 # Booking Customization Schemas
 class BookingCustomizationCreate(BaseModel):
     day_number: int = Field(..., ge=1)
-    time_slot: Optional[str] = Field(None, pattern="^(morning|afternoon|evening|night)$")
+    time_slot: Optional[str] = Field(None, pattern="^(morning|afternoon|evening|night|half_day|full_day)$")
     activity_title: str = Field(..., min_length=1, max_length=255)
     activity_description: Optional[str] = None
     activity_price: Optional[Decimal] = None
@@ -100,7 +102,7 @@ class BookingWithCustomizationsResponse(BaseModel):
 # Admin Package Management Schemas
 class ItineraryItemCreate(BaseModel):
     day_number: int = Field(..., ge=1)
-    time_slot: str = Field(..., pattern="^(morning|afternoon|evening|night|full_day)$")
+    time_slot: str = Field(..., pattern="^(morning|afternoon|evening|night|half_day|full_day)$")
     title: str = Field(..., min_length=1, max_length=255)
     description: str
     activities: Optional[List[str]] = []

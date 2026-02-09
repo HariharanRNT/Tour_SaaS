@@ -161,10 +161,75 @@ class SubscriptionService:
             if user:
                 pdf_bytes = InvoiceService.generate_invoice_pdf(new_sub, user, str(new_sub.id))
                 if pdf_bytes:
+                    summary_html = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }}
+                            .header {{ background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 3px solid #0056b3; }}
+                            .header h1 {{ margin: 0; color: #0056b3; font-size: 24px; }}
+                            .content {{ padding: 30px 20px; }}
+                            .details-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                            .details-table th {{ text-align: left; padding: 12px; background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0; color: #475569; }}
+                            .details-table td {{ padding: 12px; border-bottom: 1px solid #e2e8f0; }}
+                            .amount {{ font-weight: bold; color: #0056b3; }}
+                            .footer {{ background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e0e0e0; }}
+                            .button {{ display: inline-block; padding: 12px 24px; background-color: #0056b3; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Subscription Confirmed</h1>
+                            </div>
+                            <div class="content">
+                                <p>Dear {user.first_name} {user.last_name},</p>
+                                <p>Thank you for subscribing to the <strong>{new_sub.plan.name}</strong> on TourSaaS. Your payment has been successfully processed.</p>
+                                
+                                <table class="details-table">
+                                    <tr>
+                                        <th>Plan Name</th>
+                                        <td>{new_sub.plan.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Billing Cycle</th>
+                                        <td style="text-transform: capitalize;">{new_sub.plan.billing_cycle}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Start Date</th>
+                                        <td>{new_sub.start_date.strftime('%d %b %Y')}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>End Date</th>
+                                        <td>{new_sub.end_date.strftime('%d %b %Y')}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Amount Paid</th>
+                                        <td class="amount">INR {new_sub.plan.price}</td>
+                                    </tr>
+                                </table>
+
+                                <p>Please find attached the official tax invoice for your records.</p>
+                                
+                                <div style="text-align: center;">
+                                    <a href="http://localhost:3000/admin/dashboard" class="button" style="color: white !important;">Go to Dashboard</a>
+                                </div>
+                            </div>
+                            <div class="footer">
+                                <p>&copy; {date.today().year} TourSaaS. All rights reserved.</p>
+                                <p>Resh and Thosh pvt Ltd, Chennai - 600043, India</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+
                     await EmailService.send_email(
                         to_email=user.email,
-                        subject=f"Invoice for {new_sub.plan.name} Subscription",
-                        body=f"Dear {user.first_name} {user.last_name},\n\nPlease find attached the invoice for your recent subscription purchase.\n\nThank you,\nTour SaaS Team",
+                        subject=f"TourSaaS – Subscription Invoice & Payment Confirmation",
+                        body=summary_html,
                         attachment_bytes=pdf_bytes,
                         attachment_filename=f"Invoice_{new_sub.id}.pdf"
                     )

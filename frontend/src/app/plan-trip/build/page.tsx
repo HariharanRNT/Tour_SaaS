@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones } from 'lucide-react'
+import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
+import { formatDate } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
 import { flightsAPI } from '@/lib/api'
@@ -30,6 +31,8 @@ interface TimeSlot {
     afternoon: Activity[]
     evening: Activity[]
     night: Activity[]
+    half_day: Activity[]
+    full_day: Activity[]
 }
 
 interface DayItinerary {
@@ -38,6 +41,8 @@ interface DayItinerary {
     afternoon: Activity[]
     evening: Activity[]
     night: Activity[]
+    half_day: Activity[]
+    full_day: Activity[]
 }
 
 export default function BuildTripPage() {
@@ -256,7 +261,9 @@ export default function BuildTripPage() {
                             morning: [],
                             afternoon: [],
                             evening: [],
-                            night: []
+                            night: [],
+                            half_day: [],
+                            full_day: []
                         })
                     }
                     setItinerary(emptyItinerary)
@@ -418,312 +425,248 @@ export default function BuildTripPage() {
     const preferences = session.preferences || {}
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-32 font-sans selection:bg-blue-100 selection:text-blue-900">
-            {/* Modern Header Area */}
-            <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white pb-40 pt-16 overflow-hidden shadow-2xl">
-                {/* Abstract Background pattern */}
-                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
+        <div className="min-h-screen bg-gray-50 pb-32 font-sans">
+            {/* Hero Section */}
+            <div className="relative h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
+                {/* Background Image & Overlay */}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[3s] group-hover:scale-105"
+                    style={{
+                        backgroundImage: `url('${getValidImageUrl(session.destination_image || '/images/default-destination.jpg')}')`,
+                    }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent z-10" />
 
-                <div className="container mx-auto px-6 relative z-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                        <div className="space-y-5 max-w-4xl">
-                            {/* Title */}
-                            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-xl leading-tight">
-                                Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300">{session.destination}</span> Getaway
-                            </h1>
-
-                            {/* Friendly Tone Subtitle */}
-                            <p className="text-xl text-blue-100/90 font-medium leading-relaxed max-w-2xl">
-                                {session.duration_days} Days &middot; {session.duration_nights} Nights &middot; Curated exclusively for you
-                            </p>
-
-                            {/* Micro-Badges */}
-                            <div className="flex flex-wrap items-center gap-3 pt-1">
-                                <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/20 text-blue-50 px-3 py-1.5 flex items-center gap-2 bg-opacity-10 hover:bg-opacity-20 transition-all font-medium">
-                                    <Calendar className="h-3.5 w-3.5 text-cyan-300" />
-                                    {session.duration_days} Days
-                                </Badge>
-                                <Badge variant="outline" className="bg-white/10 backdrop-blur-md border-white/20 text-blue-50 px-3 py-1.5 flex items-center gap-2 bg-opacity-10 hover:bg-opacity-20 transition-all font-medium">
-                                    <Users className="h-3.5 w-3.5 text-cyan-300" />
-                                    {travelers.adults + travelers.children + travelers.infants} Travelers
-                                </Badge>
-                                <Badge variant="outline" className="bg-amber-500/10 backdrop-blur-md border-amber-500/30 text-amber-100 px-3 py-1.5 flex items-center gap-2 bg-opacity-10 hover:bg-opacity-20 transition-all font-medium">
-                                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                                    Personalized Itinerary
-                                </Badge>
-                            </div>
+                <div className="container mx-auto px-4 relative z-20">
+                    <div className="max-w-4xl space-y-6">
+                        {/* Badges */}
+                        <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-700">
+                            <Badge className="bg-white/20 hover:bg-white/30 text-white border-white/40 backdrop-blur-md px-4 py-1.5 text-sm font-semibold tracking-wide shadow-sm">
+                                <MapPin className="h-4 w-4 mr-1.5" />
+                                {session.trip_type}
+                            </Badge>
+                            <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 px-4 py-1.5 text-sm font-bold shadow-lg shadow-orange-500/20">
+                                <Sparkles className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
+                                AI Optimized Itinerary
+                            </Badge>
                         </div>
 
-                        {/* Save Button */}
-                        <div className="flex-shrink-0 mb-2">
-                            <Button
-                                id="save-btn"
-                                className={`
-                                    relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 border border-white/20 h-12 px-8
-                                    ${success ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-white text-blue-900 hover:bg-blue-50'}
-                                 `}
-                                onClick={saveItinerary}
-                                disabled={saving}
-                            >
-                                {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : success ? <CheckCircle className="h-5 w-5 mr-2" /> : null}
-                                <span className="font-bold tracking-wide text-base">{saving ? 'Saving...' : success ? 'Itinerary Saved!' : 'Save Itinerary'}</span>
-                            </Button>
+                        {/* Title */}
+                        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.1] drop-shadow-2xl tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                            Trip to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">{session.destination}</span>
+                        </h1>
+
+                        {/* Trip Details Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                                <div className="flex items-center gap-3 text-white">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <Calendar className="h-5 w-5 md:h-6 md:w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Dates</p>
+                                        <p className="font-semibold text-sm md:text-base whitespace-nowrap">{formatDate(session.start_date)}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                                <div className="flex items-center gap-3 text-white">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <Clock className="h-5 w-5 md:h-6 md:w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Duration</p>
+                                        <p className="font-semibold text-sm md:text-base">{session.duration_days} Days / {session.duration_nights} Nights</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                                <div className="flex items-center gap-3 text-white">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <Users className="h-5 w-5 md:h-6 md:w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Travelers</p>
+                                        <p className="font-semibold text-sm md:text-base">{travelers.adults + travelers.children + travelers.infants} Travelers</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                                <div className="flex items-center gap-3 text-white">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <Wallet className="h-5 w-5 md:h-6 md:w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Budget</p>
+                                        <p className="font-semibold text-sm md:text-base">{session.budget} Tier</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Save Button Floating */}
+                <div className="absolute top-6 right-6 z-30">
+                    <Button
+                        id="save-btn"
+                        className={`
+                            bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 shadow-xl
+                            ${success ? 'bg-emerald-500/80 hover:bg-emerald-600/80 text-white border-transparent' : ''}
+                        `}
+                        onClick={saveItinerary}
+                        disabled={saving}
+                    >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : success ? <CheckCircle className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        <span className="font-semibold">{saving ? 'Saving...' : success ? 'Saved!' : 'Save Trip'}</span>
+                    </Button>
+                </div>
             </div>
 
-            <div className="container mx-auto px-4 md:px-6 -mt-32 relative z-20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="container mx-auto px-4 -mt-16 pb-24 relative z-30">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                    {/* Left Column - Modules & Itinerary */}
-                    <div className="lg:col-span-8 xl:col-span-9 space-y-8">
+                    {/* Left Column - Main Content */}
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-12">
 
-                        {/* Match Score Banner */}
-                        {session.matched_package_id ? (
-                            <div className="bg-gradient-to-r from-violet-50 via-white to-fuchsia-50 rounded-2xl p-1 shadow-lg shadow-violet-100/50 border border-white/60 mb-8">
-                                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6 border border-white/50 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700"></div>
-
-                                    <div className="relative z-10 p-3.5 bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-600 rounded-2xl shadow-sm ring-1 ring-violet-200/50">
-                                        <Sparkles className="h-6 w-6 animate-pulse" />
-                                    </div>
-
-                                    <div className="relative z-10 flex-1 space-y-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h3 className="font-bold text-lg text-gray-900 tracking-tight">
-                                                Intelligently Designed for You
-                                            </h3>
-                                            {session.match_score > 0 && (
-                                                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 text-xs font-semibold">
-                                                    {Math.round(session.match_score * 100)}% Match
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-gray-600 font-medium leading-relaxed">
-                                            We’ve crafted this itinerary based on your preferences, destination highlights, and popular travel patterns.
-                                        </p>
-                                        <p className="text-xs text-gray-400 font-medium flex items-center gap-1.5 pt-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
-                                            Fully flexible — feel free to tweak any details below
-                                        </p>
-                                    </div>
-
-                                    <div className="relative z-10 hidden md:flex flex-col items-center gap-1 opacity-80">
-                                        <Badge variant="outline" className="border-violet-200 bg-violet-50/50 text-violet-700 text-xs px-2.5 py-1">
-                                            AI-Powered
-                                        </Badge>
+                        {/* AI Summary Banner */}
+                        <div className="bg-gradient-to-br from-violet-50 via-fuchsia-50 to-white p-8 rounded-[2rem] shadow-sm border border-violet-100/50 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                            <div className="flex flex-col md:flex-row gap-6 relative z-10">
+                                <div className="shrink-0 flex items-start">
+                                    <div className="p-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl text-white shadow-lg shadow-violet-500/30 ring-4 ring-white">
+                                        <Sparkles className="h-8 w-8 animate-pulse" />
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border-l-4 border-l-orange-500 p-6 flex items-start gap-4">
-                                <div className="p-2 bg-orange-100/50 text-orange-600 rounded-lg">
-                                    <Sparkles className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-900">Starting Fresh</h3>
-                                    <p className="text-sm text-gray-600">
-                                        We've started a blank itinerary. Add activities below to build your dream trip!
+                                <div className="space-y-3">
+                                    <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-700 to-fuchsia-700">
+                                        Your Personalized AI Itinerary
+                                    </h3>
+                                    <p className="text-gray-700 leading-relaxed text-lg">
+                                        We've crafted this {session.duration_days}-day journey through <span className="font-semibold text-violet-700">{session.destination}</span> based on your love for <span className="font-semibold text-violet-700">{session.trip_type}</span> experiences.
                                     </p>
+                                    <div className="flex flex-wrap gap-3 pt-1">
+                                        <Badge variant="outline" className="bg-white/60 border-violet-200 text-violet-700 hover:bg-violet-50">✨ Perfectly Paced</Badge>
+                                        <Badge variant="outline" className="bg-white/60 border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-50">📍 Top Rated Spots</Badge>
+                                        <Badge variant="outline" className="bg-white/60 border-blue-200 text-blue-700 hover:bg-blue-50">💎 Local Gems</Badge>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Package Description */}
-                        {/* Trip Overview Section */}
-                        {session.package_description && (
-                            <Card className="rounded-2xl border border-gray-100 shadow-xl shadow-blue-50/50 bg-white overflow-hidden mb-8">
-                                <CardHeader className="bg-gradient-to-r from-gray-50 to-white pb-6 border-b border-gray-100/50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-blue-100/50 text-blue-600 rounded-xl">
-                                            <MapPin className="h-5 w-5" />
-                                        </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Trip Overview</h2>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-6 space-y-8">
-                                    {/* Summary Paragraph */}
-                                    <div className="prose prose-blue max-w-none">
-                                        <p className="text-gray-600 leading-7 text-lg font-medium">
-                                            {session.package_description}
-                                        </p>
-                                    </div>
-
-                                    {/* Highlights Subsection */}
-                                    <div>
-                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                            <Sparkles className="h-4 w-4 text-amber-500" />
-                                            Experience Highlights
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {[
-                                                { icon: "🏛️", title: "Cultural Immersion", desc: "Expert-guided tours of heritage sites" },
-                                                { icon: "✨", title: "Premium Comfort", desc: "Handpicked stays with top-tier amenities" },
-                                                { icon: "🍽️", title: "Culinary Journey", desc: "Authentic local dining experiences" }
-                                            ].map((item, idx) => (
-                                                <div key={idx} className="bg-gray-50/50 rounded-xl p-4 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all group">
-                                                    <div className="text-2xl mb-3 group-hover:scale-110 transition-transform duration-300 inline-block">{item.icon}</div>
-                                                    <h4 className="font-bold text-gray-900 text-sm mb-1">{item.title}</h4>
-                                                    <p className="text-xs text-gray-500 font-medium leading-relaxed">{item.desc}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* ITINERARY MODULE */}
-                        <div>
-                            <div className="mb-6">
-                                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Your Day-by-Day Journey</h2>
-                                <div className="flex items-center gap-3 text-gray-500 font-medium">
-                                    <Badge variant="outline" className="text-blue-600 bg-blue-50 border-blue-200 px-3 py-1">
-                                        {itinerary.length} Days Planned
-                                    </Badge>
-                                    <span className="flex items-center gap-1.5 text-sm">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                                        Flexible &amp; Editable
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-3xl shadow-xl shadow-blue-50/50 border border-gray-100 p-1 md:p-6 overflow-hidden">
-                                <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
-                                    <TabsList className="mb-8 w-full flex justify-start overflow-x-auto bg-transparent p-2 gap-3 scrollbar-hide h-auto">
-                                        {itinerary.map((day) => (
-                                            <TabsTrigger
-                                                key={day.day_number}
-                                                value={day.day_number.toString()}
-                                                className="
-                                                    px-6 py-3 rounded-2xl border border-gray-100 bg-gray-50/50 text-gray-600 font-semibold min-w-[100px]
-                                                    data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 
-                                                    data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/30 data-[state=active]:border-transparent
-                                                    transition-all duration-300 hover:bg-white hover:border-gray-200 hover:shadow-md
-                                                "
-                                            >
-                                                Day {day.day_number}
-                                            </TabsTrigger>
-                                        ))}
-                                    </TabsList>
-
-                                    {itinerary.map((day) => (
-                                        <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                            <div className="px-2">
-                                                <DayPlanner
-                                                    day={day}
-                                                    onAddActivity={addActivity}
-                                                    onRemoveActivity={removeActivity}
-                                                />
-                                            </div>
-                                        </TabsContent>
-                                    ))}
-                                </Tabs>
                             </div>
                         </div>
 
-                        {/* FLIGHTS MODULE */}
+                        {/* Trip Overview Cards */}
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                <h2 className="text-2xl font-bold text-gray-900">Trip Overview</h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {[
+                                    { icon: <Plane className="h-8 w-8" />, label: "Flights", desc: "Best connections", color: "blue" },
+                                    { icon: <Hotel className="h-8 w-8" />, label: "Hotels", desc: "4★ & 5★ stays", color: "emerald" },
+                                    { icon: <Camera className="h-8 w-8" />, label: "Activities", desc: "Curated experiences", color: "amber" },
+                                    { icon: <Car className="h-8 w-8" />, label: "Transfers", desc: "Private cabs", color: "purple" }
+                                ].map((item, i) => (
+                                    <Card key={i} className="border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white group cursor-pointer rounded-2xl overflow-hidden ring-1 ring-gray-100 hover:ring-2 hover:ring-blue-100">
+                                        <CardContent className="p-6 flex flex-col items-center text-center gap-4">
+                                            <div className={`p-4 rounded-full bg-${item.color}-50 text-${item.color}-600 group-hover:scale-110 transition-transform duration-300 group-hover:bg-${item.color}-100`}>
+                                                {item.icon}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-gray-900 text-lg mb-1">{item.label}</h3>
+                                                <p className="text-sm text-gray-500 font-medium">{item.desc}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </section>
+
+                        <div className="border-t border-gray-100"></div>
+
+                        {/* Itinerary Tabs - Clean & Modern */}
+                        <section>
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                    <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
+                                </div>
+                                <Button variant="outline" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-600 gap-2">
+                                    <Download className="h-4 w-4" /> Download PDF
+                                </Button>
+                            </div>
+
+                            <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
+                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto bg-transparent p-2 gap-3 scrollbar-hide h-auto">
+                                    {itinerary.map((day) => (
+                                        <TabsTrigger
+                                            key={day.day_number}
+                                            value={day.day_number.toString()}
+                                            className="
+                                                px-6 py-3 rounded-full border border-gray-200 bg-white min-w-[100px]
+                                                data-[state=active]:bg-gray-900 data-[state=active]:text-white data-[state=active]:border-gray-900 data-[state=active]:shadow-lg 
+                                                text-gray-600 font-semibold
+                                                hover:border-gray-300 transition-all duration-300
+                                            "
+                                        >
+                                            Day {day.day_number}
+                                        </TabsTrigger>
+                                    ))}
+                                </TabsList>
+
+                                {itinerary.map((day) => (
+                                    <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-5 duration-500">
+                                        <DayPlanner
+                                            day={day}
+                                            onAddActivity={addActivity}
+                                            onRemoveActivity={removeActivity}
+                                        />
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        </section>
+
+                        <div className="border-t border-gray-100"></div>
+
+                        {/* FLIGHTS MODULE - Enhanced */}
                         {preferences.include_flights && (
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                            <Sparkles className="h-5 w-5" />
-                                        </div>
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                    <div className="flex-1 flex items-center justify-between">
                                         <h2 className="text-2xl font-bold text-gray-900">Flights</h2>
+                                        {flightError && <Badge variant="destructive">{flightError}</Badge>}
                                     </div>
-                                    {loadingFlights && <Badge variant="secondary" className="animate-pulse bg-blue-50 text-blue-600">Checking live fares...</Badge>}
-                                    {flightError && <Badge variant="destructive">{flightError}</Badge>}
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {/* ONWARD FLIGHT */}
-                                    <div className="space-y-3">
-                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                            Onward Journey
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-blue-500"></span> Onward Journey
                                         </h3>
                                         {selectedOnwardFlight ? (
-                                            <div className="relative group">
-                                                <div className="transition-transform duration-300 group-hover:-translate-y-1">
+                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 overflow-hidden group">
+                                                <div className="p-1">
                                                     <FlightCard
                                                         flight={selectedOnwardFlight}
                                                         isSelected={true}
                                                         onSelect={() => { }}
                                                     />
-                                                </div>
-                                                <div className="absolute top-4 right-4 md:static md:mt-3 flex justify-end">
-                                                    <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="bg-white/80 backdrop-blur border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm">
-                                                                Change Flight
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl">
-                                                            <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
-                                                                <DialogTitle>Select Onward Flight</DialogTitle>
-                                                            </DialogHeader>
-                                                            <div className="flex flex-1 overflow-hidden">
-                                                                {/* (Filter Sidebar + List Content - kept same logic, just container style) */}
-                                                                <div className="hidden md:block w-72 border-r bg-white p-6 overflow-y-auto">
-                                                                    <div className="flex items-center justify-between mb-6">
-                                                                        <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                        <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
-                                                                    </div>
-                                                                    <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
-                                                                </div>
-                                                                <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-                                                                    <div className="space-y-4">
-                                                                        {filteredOnwardFlights.length === 0 ? (
-                                                                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-                                                                                <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
-                                                                                <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
-                                                                            </div>
-                                                                        ) : (
-                                                                            filteredOnwardFlights.map(f => (
-                                                                                <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
-                                                                            ))
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            !loadingFlights && <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl text-center text-gray-400">No onward flights available</div>
-                                        )}
-                                    </div>
-
-                                    {/* RETURN FLIGHT */}
-                                    {returnFlights.length > 0 && (
-                                        <div className="space-y-3">
-                                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                                Return Journey
-                                            </h3>
-                                            {selectedReturnFlight ? (
-                                                <div className="relative group">
-                                                    <div className="transition-transform duration-300 group-hover:-translate-y-1">
-                                                        <FlightCard
-                                                            flight={selectedReturnFlight}
-                                                            isSelected={true}
-                                                            onSelect={() => { }}
-                                                        />
-                                                    </div>
-                                                    <div className="absolute top-4 right-4 md:static md:mt-3 flex justify-end">
-                                                        <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
+                                                    <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
+                                                        <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="outline" size="sm" className="bg-white/80 backdrop-blur border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm">
-                                                                    Change Flight
+                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1">
+                                                                    Change Onward Flight
                                                                 </Button>
                                                             </DialogTrigger>
                                                             <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl">
                                                                 <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
-                                                                    <DialogTitle>Select Return Flight</DialogTitle>
+                                                                    <DialogTitle>Select Onward Flight</DialogTitle>
                                                                 </DialogHeader>
                                                                 <div className="flex flex-1 overflow-hidden">
                                                                     <div className="hidden md:block w-72 border-r bg-white p-6 overflow-y-auto">
@@ -735,9 +678,16 @@ export default function BuildTripPage() {
                                                                     </div>
                                                                     <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
                                                                         <div className="space-y-4">
-                                                                            {filteredReturnFlights.map(f => (
-                                                                                <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
-                                                                            ))}
+                                                                            {filteredOnwardFlights.length === 0 ? (
+                                                                                <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                                                                    <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
+                                                                                    <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                filteredOnwardFlights.map(f => (
+                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
+                                                                                ))
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -745,34 +695,90 @@ export default function BuildTripPage() {
                                                         </Dialog>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        ) : (
+                                            <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-gray-200 shadow-none bg-gray-50">
+                                                <div className="flex flex-col items-center gap-3 text-gray-400">
+                                                    {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
+                                                    <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
+                                                </div>
+                                            </Card>
+                                        )}
+                                    </div>
+
+                                    {returnFlights.length > 0 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Return Journey
+                                            </h3>
+                                            {selectedReturnFlight ? (
+                                                <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 overflow-hidden group">
+                                                    <div className="p-1">
+                                                        <FlightCard
+                                                            flight={selectedReturnFlight}
+                                                            isSelected={true}
+                                                            onSelect={() => { }}
+                                                        />
+                                                        <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
+                                                            <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
+                                                                <DialogTrigger asChild>
+                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1">
+                                                                        Change Return Flight
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl">
+                                                                    <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
+                                                                        <DialogTitle>Select Return Flight</DialogTitle>
+                                                                    </DialogHeader>
+                                                                    <div className="flex flex-1 overflow-hidden">
+                                                                        <div className="hidden md:block w-72 border-r bg-white p-6 overflow-y-auto">
+                                                                            <div className="flex items-center justify-between mb-6">
+                                                                                <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                                <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                            </div>
+                                                                            <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
+                                                                        </div>
+                                                                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                                                            <div className="space-y-4">
+                                                                                {filteredReturnFlights.map(f => (
+                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                !loadingFlights && <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl text-center text-gray-400">No return flights available</div>
+                                                <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-gray-200 shadow-none bg-gray-50">
+                                                    <div className="flex flex-col items-center gap-3 text-gray-400">
+                                                        {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
+                                                        <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
+                                                    </div>
+                                                </Card>
                                             )}
                                         </div>
                                     )}
                                 </div>
-
-                                {(selectedOnwardFlight || selectedReturnFlight) && (
-                                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-center gap-2 text-green-800 shadow-sm">
-                                        <CheckCircle className="h-5 w-5" />
-                                        <span className="font-semibold">Flights successfully added to your package</span>
-                                    </div>
-                                )}
-                            </div>
+                            </section>
                         )}
 
-                        {/* HOTELS & TRANSFERS MODULES (Grid Layout) */}
-                        <div className="grid md:grid-cols-2 gap-8">
-                            {/* HOTELS MODULE */}
+
+                        {/* Add-ons Section - Enhanced Cards */}
+                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* HOTELS & TRANSFERS MODULES */}
                             {preferences.include_hotels && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
-                                            <Sparkles className="h-5 w-5" />
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                                            <Hotel className="h-6 w-6" />
                                         </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Accommodation</h2>
+                                        <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
                                     </div>
-                                    <div className="hover:shadow-xl transition-shadow duration-300 rounded-2xl">
+
+                                    <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
                                         <ServiceCard
                                             type="hotel"
                                             status={hotelSelected ? 'selected' : 'pending'}
@@ -789,21 +795,20 @@ export default function BuildTripPage() {
                                 </div>
                             )}
 
-                            {/* TRANSFERS MODULE */}
                             {preferences.include_transfers && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                                            <Sparkles className="h-5 w-5" />
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
+                                            <Car className="h-6 w-6" />
                                         </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Transfers</h2>
+                                        <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
                                     </div>
-                                    <div className="hover:shadow-xl transition-shadow duration-300 rounded-2xl">
+                                    <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
                                         <ServiceCard
                                             type="transfer"
                                             status={transferSelected ? 'selected' : 'pending'}
-                                            title={transferSelected ? 'Private Transfers' : 'Add Transfers'}
-                                            description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Include cab services'}
+                                            title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
+                                            description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
                                             price={transferSelected ? TRANSFER_ESTIMATE : undefined}
                                             details={transferSelected ? {
                                                 duration: 'Full Trip Coverage'
@@ -813,32 +818,39 @@ export default function BuildTripPage() {
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </section>
 
-                        {/* Footer Confidence Boost */}
-                        <div className="mt-12 mb-8 border-t border-gray-200 pt-8">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6 text-center">Why book with us?</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex flex-col items-center text-center gap-2 group">
-                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-full group-hover:bg-blue-100 transition-colors">
-                                        <ShieldCheck className="h-6 w-6" />
+
+                        {/* Footer Confidence Boost - Redesigned */}
+                        <div className="mt-16 mb-8 pt-12 border-t border-gray-100">
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-10 text-center">Why book with RNT Tour?</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="flex flex-col items-center text-center gap-4 group">
+                                    <div className="p-5 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-blue-200">
+                                        <ShieldCheck className="h-8 w-8" />
                                     </div>
-                                    <h4 className="font-bold text-gray-900 text-sm">Verified & Secure</h4>
-                                    <p className="text-xs text-gray-500">Curated packages & 100% secure payments</p>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 text-lg mb-1">Verified & Secure</h4>
+                                        <p className="text-sm text-gray-500 leading-relaxed">Curated packages & 100% secure payments via reliable gateways.</p>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-center text-center gap-2 group">
-                                    <div className="p-3 bg-green-50 text-green-600 rounded-full group-hover:bg-green-100 transition-colors">
-                                        <CheckCircle className="h-6 w-6" />
+                                <div className="flex flex-col items-center text-center gap-4 group">
+                                    <div className="p-5 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-emerald-200">
+                                        <CheckCircle className="h-8 w-8" />
                                     </div>
-                                    <h4 className="font-bold text-gray-900 text-sm">Flexible & Transparent</h4>
-                                    <p className="text-xs text-gray-500">Customizable plans with no hidden fees</p>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 text-lg mb-1">Flexible & Transparent</h4>
+                                        <p className="text-sm text-gray-500 leading-relaxed">Customizable plans with absolutely no hidden fees.</p>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-center text-center gap-2 group">
-                                    <div className="p-3 bg-purple-50 text-purple-600 rounded-full group-hover:bg-purple-100 transition-colors">
-                                        <Headphones className="h-6 w-6" />
+                                <div className="flex flex-col items-center text-center gap-4 group">
+                                    <div className="p-5 bg-violet-50 text-violet-600 rounded-2xl group-hover:bg-violet-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-violet-200">
+                                        <Headphones className="h-8 w-8" />
                                     </div>
-                                    <h4 className="font-bold text-gray-900 text-sm">24/7 Expert Support</h4>
-                                    <p className="text-xs text-gray-500">Instant confirmation & dedicated assistance</p>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 text-lg mb-1">24/7 Expert Support</h4>
+                                        <p className="text-sm text-gray-500 leading-relaxed">Instant confirmation & dedicated assistance throughout your trip.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -850,7 +862,7 @@ export default function BuildTripPage() {
                         <div className="sticky top-8">
                             <div className="relative">
                                 {/* Decorative elements behind cart */}
-                                <div className="absolute inset-x-0 -top-10 -bottom-10 bg-gradient-to-b from-blue-50 to-transparent rounded-3xl -z-10 translate-y-4"></div>
+                                <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
                                 <TripCart
                                     basePrice={session.price_per_person || 18000}
                                     travelers={session.travelers}

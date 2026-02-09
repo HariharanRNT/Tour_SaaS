@@ -575,7 +575,7 @@ export default function AdminPackagesPage() {
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
-                                                                onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
+                                                                onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                 title="Edit"
                                                             >
                                                                 <Edit className="h-4 w-4" />
@@ -590,7 +590,7 @@ export default function AdminPackagesPage() {
                                                                 <DropdownMenuContent align="end" className="w-56 shadow-xl border-gray-100 rounded-xl p-1">
                                                                     <DropdownMenuItem
                                                                         className="rounded-lg focus:bg-indigo-50 focus:text-indigo-700 py-2.5 px-3 cursor-pointer"
-                                                                        onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
+                                                                        onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                     >
                                                                         <Edit className="mr-2 h-4 w-4 text-indigo-500" />
                                                                         <span className="font-medium">Edit Package</span>

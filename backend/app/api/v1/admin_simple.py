@@ -443,7 +443,9 @@ async def get_package_with_itinerary_simple(
                     "morning": [],
                     "afternoon": [],
                     "evening": [],
-                    "night": []
+                    "night": [],
+                    "half_day": [],
+                    "full_day": []
                 }
             
             time_slot = (item.time_slot or 'morning').lower()

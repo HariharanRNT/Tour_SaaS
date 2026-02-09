@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { MapPin, Calendar as CalendarIcon, Users, Sparkles, Loader2, Plane, Hotel, Car, ChevronRight, ChevronLeft, CheckCircle2, Clock, User, Baby } from 'lucide-react'
+import { MapPin, Calendar as CalendarIcon, Users, Sparkles, Loader2, Plane, Hotel, Car, ChevronRight, ChevronLeft, CheckCircle2, Clock, User, Baby, Search, Palmtree, Mountain, Umbrella, Building2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from "react-toastify"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -228,126 +229,100 @@ export default function PlanTripPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
             {/* Hero Section */}
-            <div className="relative bg-blue-900 text-white overflow-hidden shadow-md z-10 min-h-[240px] md:min-h-[300px] flex items-end">
+            <div className="relative bg-blue-900 text-white overflow-hidden shadow-2xl z-10 min-h-[350px] md:min-h-[450px] flex items-center justify-center text-center">
                 {/* Background Image Overlay */}
                 <div
-                    className="absolute inset-0 z-0 opacity-40 bg-cover bg-center"
+                    className="absolute inset-0 z-0 opacity-60 bg-cover bg-center"
                     style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2021&q=80")' }}
                 />
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-0" />
+                {/* Gradient Overlays */}
+                <div className="absolute inset-0 bg-blue-900/30 mix-blend-multiply z-0" />
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-transparent to-black/30 z-0" />
 
-                <div className="container mx-auto px-4 relative z-10 pt-16 pb-24">
-                    <div className="flex flex-col items-start max-w-2xl">
-                        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                            <Sparkles className="h-4 w-4 text-yellow-300" />
-                            <span className="text-xs font-semibold text-blue-100 uppercase tracking-wider">AI Trip Planner</span>
-                        </div>
-                        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-3 md:mb-4 leading-tight">
-                            Plan Your Perfect Trip
+                <div className="container mx-auto px-4 relative z-10 -mt-12">
+                    <div className="flex flex-col items-center max-w-4xl mx-auto">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="inline-flex items-center gap-2 mb-6 px-5 py-2 bg-white/10 backdrop-blur-xl rounded-full border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-pulse"
+                        >
+                            <Sparkles className="h-5 w-5 text-yellow-300 fill-yellow-300" />
+                            <span className="text-sm font-bold text-white tracking-widest uppercase">AI Trip Planner</span>
+                        </motion.div>
+
+                        <h1 className="text-4xl md:text-7xl font-black tracking-tight mb-6 leading-tight drop-shadow-2xl">
+                            Plan Your Perfect Trip<br className="hidden md:block" />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-blue-200">
+                                in Minutes
+                            </span>
                         </h1>
-                        <p className="text-lg md:text-xl text-blue-100 font-light opacity-90 leading-relaxed max-w-xl">
-                            Create your custom itinerary in seconds.
+
+                        <p className="text-xl md:text-2xl text-blue-100 font-medium leading-relaxed max-w-2xl drop-shadow-lg">
+                            Create your custom itinerary in seconds with our intelligent planner.
                         </p>
                     </div>
                 </div>
             </div>
-
             {/* Planning Form Container */}
             <div className="container mx-auto px-4 -mt-12 relative z-20 pb-12">
                 <div className="max-w-4xl mx-auto space-y-8">
                     {/* Stepper Component */}
-                    {/* Stepper Component - Pill Style */}
-                    <div className="bg-white rounded-3xl shadow-xl shadow-blue-100/50 p-6 border border-white relative overflow-hidden">
-                        {/* Decorative Background Elements */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 -z-10 pointer-events-none"></div>
+                    {/* Stepper Component - Connected Line Style */}
+                    <div className="bg-white rounded-[2rem] shadow-2xl p-8 pb-12 relative overflow-hidden">
+                        {/* Progress Bar Container */}
+                        <div className="relative mx-auto max-w-4xl mt-4">
+                            {/* Connected Line Background */}
+                            <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 rounded-full"></div>
 
-                        {/* Progress Text */}
-                        <div className="flex justify-between items-end mb-6 px-2">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 text-sm font-bold">
-                                        {currentStep}
-                                    </span>
-                                    {steps[currentStep - 1].title}
-                                </h2>
-                                <p className="text-blue-500/80 font-medium text-sm mt-1 ml-10">
-                                    Step {currentStep} of {steps.length} — {steps[currentStep - 1].description}
-                                </p>
+                            {/* Active Progress Line */}
+                            <div
+                                className="absolute top-5 left-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 ease-out"
+                                style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+                            ></div>
+
+                            <div className="flex justify-between relative z-10">
+                                {steps.map((step, index) => {
+                                    const isCompleted = currentStep > step.number;
+                                    const isActive = currentStep === step.number;
+                                    const isInteractive = currentStep > step.number; // Allow clicking back
+
+                                    return (
+                                        <div
+                                            key={step.number}
+                                            onClick={() => {
+                                                if (isInteractive) setCurrentStep(step.number);
+                                            }}
+                                            className={`flex flex-col items-center group ${isInteractive ? 'cursor-pointer' : 'cursor-default'}`}
+                                        >
+                                            {/* Circle Indicator */}
+                                            <div className={`
+                                                w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-4 transition-all duration-300 bg-white
+                                                ${isActive
+                                                    ? 'border-blue-600 text-blue-600 scale-125 shadow-lg shadow-blue-200'
+                                                    : isCompleted
+                                                        ? 'border-blue-600 bg-blue-600 text-white'
+                                                        : 'border-gray-200 text-gray-400'
+                                                }
+                                            `}>
+                                                {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : step.number}
+                                            </div>
+
+                                            {/* Labels */}
+                                            <div className="mt-4 text-center">
+                                                <div className={`text-sm font-bold transition-colors duration-300 ${isActive || isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
+                                                    {step.title}
+                                                </div>
+                                                <div className={`text-xs font-medium transition-colors duration-300 mt-1 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                    {isActive ? 'In Progress' : isCompleted ? 'Completed' : 'Upcoming'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
-
-                        <div className="flex flex-col md:flex-row gap-3 md:gap-4 overflow-x-auto md:overflow-visible no-scrollbar pb-2 md:pb-0">
-                            {steps.map((step, index) => {
-                                const isCompleted = currentStep > step.number;
-                                const isActive = currentStep === step.number;
-                                const isInteractive = currentStep > step.number; // Allow clicking back
-
-                                return (
-                                    <div
-                                        key={step.number}
-                                        onClick={() => {
-                                            if (isInteractive) setCurrentStep(step.number);
-                                        }}
-                                        className={`
-                                            flex-1 min-w-[200px] md:min-w-0 flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all duration-500 ease-out relative group overflow-hidden
-                                            ${isActive
-                                                ? 'border-blue-500 bg-blue-50/50 shadow-[0_4px_20px_-2px_rgba(59,130,246,0.2)] ring-1 ring-blue-500/30 translate-y-[-2px]'
-                                                : isCompleted
-                                                    ? 'border-blue-100 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer'
-                                                    : 'border-slate-100 bg-slate-50/50 text-slate-400 cursor-not-allowed opacity-70'
-                                            }
-                                        `}
-                                    >
-                                        {/* Number Badge */}
-                                        <div className={`
-                                            w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-500 shrink-0 relative z-10
-                                            ${isActive
-                                                ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/40 scale-110'
-                                                : isCompleted
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-slate-200 text-slate-400'
-                                            }
-                                        `}>
-                                            {isCompleted ? <CheckCircle2 className="h-5 w-5 animate-in zoom-in duration-300" /> : step.number}
-                                        </div>
-
-                                        {/* Text Content */}
-                                        <div className="flex flex-col relative z-10">
-                                            <span className={`
-                                                text-sm font-bold transition-colors duration-300 leading-tight mb-0.5
-                                                ${isActive ? 'text-blue-900' : isCompleted ? 'text-blue-900/80' : 'text-slate-400'}
-                                            `}>
-                                                {step.title}
-                                            </span>
-                                            <span className={`
-                                                text-[10px] font-bold uppercase tracking-wider transition-colors duration-300
-                                                ${isActive ? 'text-blue-600' : isCompleted ? 'text-blue-400' : 'text-slate-300'}
-                                            `}>
-                                                {isActive ? (
-                                                    <span className="animate-pulse">In Progress</span>
-                                                ) : isCompleted ? (
-                                                    'Completed'
-                                                ) : (
-                                                    'Upcoming'
-                                                )}
-                                            </span>
-                                        </div>
-
-                                        {/* Active Glow Overlay */}
-                                        {isActive && (
-                                            <>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-transparent z-0" />
-                                                <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-400/20 rounded-full blur-2xl animate-pulse" />
-                                            </>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
                     </div>
-
                     {/* Step Content */}
                     <Card>
                         <CardHeader>
@@ -357,10 +332,10 @@ export default function PlanTripPage() {
                         <CardContent className="space-y-6">
                             {/* Step 1: Destination */}
                             {currentStep === 1 && (
-                                <div className="space-y-6">
-                                    <div className="space-y-1">
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="space-y-4">
                                         <div className="relative group">
-                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-10" />
+                                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-20" />
                                             <div className="relative">
                                                 <Input
                                                     id="destination"
@@ -372,19 +347,19 @@ export default function PlanTripPage() {
                                                         setShowSuggestions(true)
                                                     }}
                                                     onFocus={() => setShowSuggestions(true)}
-                                                    className="pl-12 pt-6 pb-2 h-14 w-full bg-white border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all shadow-sm peer text-base"
+                                                    className="pl-14 pt-6 pb-2 h-16 w-full bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl transition-all shadow-sm peer text-lg font-medium"
                                                     autoFocus
                                                 />
                                                 <Label
                                                     htmlFor="destination"
-                                                    className="absolute left-12 top-2.5 text-gray-500 text-xs font-medium transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base pointer-events-none"
+                                                    className="absolute left-14 top-3 text-gray-500 text-xs font-semibold uppercase tracking-wider transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:capitalize peer-placeholder-shown:font-normal pointer-events-none"
                                                 >
                                                     Where do you want to go? <span className="text-red-500">*</span>
                                                 </Label>
                                             </div>
 
                                             {showSuggestions && suggestions.length > 0 && (
-                                                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-1">
+                                                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
                                                     {suggestions.map((s, i) => (
                                                         <div
                                                             key={i}
@@ -411,32 +386,63 @@ export default function PlanTripPage() {
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-xs text-gray-400 pl-4 pt-1">
-                                            Enter a city or country e.g., Tokyo, Paris, Bali...
-                                        </p>
+
+                                        {/* Popular Chips */}
+                                        <div className="flex flex-wrap gap-2 pl-1">
+                                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-2 mt-1.5">Popular:</span>
+                                            {['Bali', 'Paris', 'Dubai', 'Singapore', 'London'].map((city) => (
+                                                <button
+                                                    key={city}
+                                                    onClick={() => {
+                                                        setDestination(city)
+                                                        fetchDurations(city)
+                                                    }}
+                                                    className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                                                >
+                                                    {city}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
 
-                                    {/* Trip Type */}
-                                    <div className="relative group">
-                                        <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-10" />
-                                        <Select value={category} onValueChange={setCategory}>
-                                            <SelectTrigger className="pl-12 pt-6 pb-2 h-14 w-full bg-white border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all shadow-sm text-left">
-                                                <div className="absolute left-12 top-2.5 text-xs text-gray-500 font-medium">Trip Type</div>
-                                                <SelectValue placeholder="Select style" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Adventure">Adventure</SelectItem>
-                                                <SelectItem value="Relaxation">Relaxation</SelectItem>
-                                                <SelectItem value="Cultural">Cultural</SelectItem>
-                                                <SelectItem value="Beach">Beach</SelectItem>
-                                                <SelectItem value="City">City Break</SelectItem>
-                                                <SelectItem value="Nature">Nature & Wildlife</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                    {/* Trip Type Selector */}
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-semibold text-gray-700 ml-1">Trip Style</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {[
+                                                { id: 'Adventure', icon: Mountain, color: 'text-orange-500', bg: 'bg-orange-50', hover: 'hover:border-orange-200' },
+                                                { id: 'Relaxation', icon: Umbrella, color: 'text-cyan-500', bg: 'bg-cyan-50', hover: 'hover:border-cyan-200' },
+                                                { id: 'Cultural', icon: Building2, color: 'text-purple-500', bg: 'bg-purple-50', hover: 'hover:border-purple-200' },
+                                                { id: 'Nature', icon: Palmtree, color: 'text-green-500', bg: 'bg-green-50', hover: 'hover:border-green-200' },
+                                            ].map((type) => (
+                                                <div
+                                                    key={type.id}
+                                                    onClick={() => setCategory(prev => prev === type.id ? '' : type.id)}
+                                                    className={`
+                                                        relative cursor-pointer rounded-2xl border-2 p-4 transition-all duration-200 flex flex-col items-center gap-2 text-center group
+                                                        ${category === type.id
+                                                            ? `border-blue-500 bg-blue-50/50`
+                                                            : `border-gray-100 bg-white ${type.hover} hover:shadow-md`
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className={`p-2 rounded-full ${type.bg} ${type.color} transition-transform group-hover:scale-110 duration-300`}>
+                                                        <type.icon className="h-5 w-5" />
+                                                    </div>
+                                                    <span className={`text-sm font-semibold ${category === type.id ? 'text-blue-700' : 'text-gray-600'}`}>
+                                                        {type.id}
+                                                    </span>
+                                                    {category === type.id && (
+                                                        <div className="absolute top-2 right-2 text-blue-500">
+                                                            <CheckCircle2 className="h-4 w-4 fill-blue-500 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
-
                             {/* Step 2: Duration & Dates */}
                             {/* Step 2: Duration & Dates */}
                             {currentStep === 2 && (
@@ -783,9 +789,9 @@ export default function PlanTripPage() {
                                     onClick={currentStep === 4 ? handleStartPlanning : handleContinue}
                                     disabled={loading}
                                     className={`
-                                        h-14 px-8 text-base font-semibold rounded-xl transition-all duration-300 shadow-lg hover:-translate-y-1 hover:shadow-xl
+                                        h-16 px-8 text-lg font-bold rounded-2xl transition-all duration-300 shadow-xl hover:-translate-y-1 hover:shadow-2xl w-full
                                         ${currentStep === 4
-                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/25 hover:shadow-blue-500/40 min-w-[200px]'
+                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/25 hover:shadow-blue-500/40'
                                             : 'bg-gray-900 hover:bg-black text-white shadow-gray-900/10 hover:shadow-gray-900/20'
                                         }
                                     `}
@@ -796,8 +802,8 @@ export default function PlanTripPage() {
                                             Building Itinerary...
                                         </>
                                     ) : (
-                                        <>
-                                            {currentStep === 1 && "Choose Dates"}
+                                        <div className="w-full flex items-center justify-center">
+                                            {currentStep === 1 && "Continue to Step 2"}
                                             {currentStep === 2 && "Add Travelers"}
                                             {currentStep === 3 && "Customize Trip"}
                                             {currentStep === 4 && "Generate My Plan"}
@@ -806,7 +812,7 @@ export default function PlanTripPage() {
                                             ) : (
                                                 <ChevronRight className="ml-2 h-5 w-5" />
                                             )}
-                                        </>
+                                        </div>
                                     )}
                                 </Button>
                             </div>
@@ -835,42 +841,39 @@ export default function PlanTripPage() {
                     </Card>
 
                     {/* Info Cards */}
-                    <div className="grid md:grid-cols-3 gap-6 mt-12">
-                        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none shadow-md bg-white/50 backdrop-blur-sm">
-                            <CardContent className="pt-8 pb-8">
-                                <div className="text-center">
-                                    <div className="text-4xl mb-4 bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto">🎯</div>
-                                    <h3 className="text-lg font-bold mb-2 text-gray-800">Smart Matching</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        Our AI finds the best activities that match your travel style.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                    <div className="grid md:grid-cols-3 gap-8 mt-20">
+                        {/* Card 1 */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                <span className="text-4xl filter drop-shadow-md">🎯</span>
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-600 transition-colors">Smart Matching</h3>
+                            <p className="text-gray-600 leading-relaxed font-medium">
+                                Our AI analyzes millions of data points to find the best activities that match your unique travel style.
+                            </p>
+                        </div>
 
-                        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none shadow-md bg-white/50 backdrop-blur-sm">
-                            <CardContent className="pt-8 pb-8">
-                                <div className="text-center">
-                                    <div className="text-4xl mb-4 bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto">✏️</div>
-                                    <h3 className="text-lg font-bold mb-2 text-gray-800">Full Customization</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        Easily add, remove, or modify any activity in your itinerary.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* Card 2 */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                <span className="text-4xl filter drop-shadow-md">✏️</span>
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-purple-600 transition-colors">Full Customization</h3>
+                            <p className="text-gray-600 leading-relaxed font-medium">
+                                Easily add, remove, or modify any activity. It's your trip, we just help you plan it faster.
+                            </p>
+                        </div>
 
-                        <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-none shadow-md bg-white/50 backdrop-blur-sm">
-                            <CardContent className="pt-8 pb-8">
-                                <div className="text-center">
-                                    <div className="text-4xl mb-4 bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto">💾</div>
-                                    <h3 className="text-lg font-bold mb-2 text-gray-800">Save & Book</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        Save your plan for later or simple checkout when you're ready.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* Card 3 */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                <span className="text-4xl filter drop-shadow-md">💾</span>
+                            </div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-green-600 transition-colors">Save & Book</h3>
+                            <p className="text-gray-600 leading-relaxed font-medium">
+                                Save your plan for later or simple checkout when you're ready to make it a reality.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

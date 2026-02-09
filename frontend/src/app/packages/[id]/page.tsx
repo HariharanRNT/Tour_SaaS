@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Calendar, Users, DollarSign, Sun, Cloud, Sunset, Moon, ArrowLeft } from 'lucide-react'
+import { MapPin, Calendar, Users, DollarSign, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock } from 'lucide-react'
 import { packagesEnhancedAPI } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 
@@ -26,6 +26,8 @@ interface DayItinerary {
     afternoon: Activity[]
     evening: Activity[]
     night: Activity[]
+    full_day: Activity[]
+    half_day: Activity[]
 }
 
 interface PackageDetail {
@@ -42,7 +44,9 @@ interface PackageDetail {
 }
 
 const timeSlotConfig = {
+    full_day: { icon: Calendar, label: 'Full Day', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
     morning: { icon: Sun, label: 'Morning', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+    half_day: { icon: Clock, label: 'Half Day', color: 'text-teal-600', bgColor: 'bg-teal-50' },
     afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-blue-600', bgColor: 'bg-blue-50' },
     evening: { icon: Sunset, label: 'Evening', color: 'text-orange-600', bgColor: 'bg-orange-50' },
     night: { icon: Moon, label: 'Night', color: 'text-purple-600', bgColor: 'bg-purple-50' }
@@ -201,14 +205,24 @@ export default function PackageDetailPage() {
                                                                             className={`p-4 rounded-lg border ${config.bgColor} border-gray-200`}
                                                                         >
                                                                             <div className="flex gap-4">
-                                                                                {(activity.images?.length ? activity.images : (activity.image_url ? [activity.image_url] : [])).length > 0 && (
-                                                                                    <div className="w-24 h-24 flex-shrink-0">
-                                                                                        <ActivityImageGallery
-                                                                                            images={activity.images?.length ? activity.images : (activity.image_url ? [activity.image_url] : [])}
-                                                                                            title={activity.title}
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
+                                                                                {(() => {
+                                                                                    // Normalize images from either 'images' array or 'image_url' (which can be string or string[])
+                                                                                    const rawImages = activity.images || activity.image_url;
+                                                                                    const images = Array.isArray(rawImages)
+                                                                                        ? rawImages
+                                                                                        : (typeof rawImages === 'string' && rawImages ? [rawImages] : []);
+
+                                                                                    if (images.length === 0) return null;
+
+                                                                                    return (
+                                                                                        <div className="w-24 h-24 flex-shrink-0">
+                                                                                            <ActivityImageGallery
+                                                                                                images={images}
+                                                                                                title={activity.title}
+                                                                                            />
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
                                                                                 <div className="flex-1">
                                                                                     <h4 className="font-semibold text-gray-900 mb-1">
                                                                                         {activity.title}
@@ -278,6 +292,6 @@ export default function PackageDetailPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
