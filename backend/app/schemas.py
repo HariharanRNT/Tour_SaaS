@@ -61,6 +61,57 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
+# Agent Settings Schemas
+class AgentSMTPSettingsBase(BaseModel):
+    host: str
+    port: int
+    username: str
+    password: Optional[str] = None  # Optional on update (to keep existing)
+    from_email: str 
+    from_name: str
+    encryption_type: str = "tls"
+
+class AgentSMTPSettingsCreate(AgentSMTPSettingsBase):
+    pass
+
+class AgentSMTPSettingsResponse(AgentSMTPSettingsBase):
+    id: UUID4
+    
+    @field_validator('password', mode='after')
+    @classmethod
+    def mask_password(cls, v):
+        return "********" if v else None
+    
+    class Config:
+        from_attributes = True
+
+class AgentRazorpaySettingsBase(BaseModel):
+    key_id: str
+    key_secret: Optional[str] = None # Optional on update
+
+class AgentRazorpaySettingsCreate(AgentRazorpaySettingsBase):
+    pass
+
+class AgentRazorpaySettingsResponse(AgentRazorpaySettingsBase):
+    id: UUID4
+    
+    @field_validator('key_secret', mode='after')
+    @classmethod
+    def mask_secret(cls, v):
+        return "********" if v else None
+    
+    class Config:
+        from_attributes = True
+
+class AgentSettingsResponse(BaseModel):
+    currency: str = "INR"
+    smtp: Optional[AgentSMTPSettingsResponse] = None
+    razorpay: Optional[AgentRazorpaySettingsResponse] = None
+    
+    class Config:
+        from_attributes = True
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -417,3 +468,25 @@ class SubscriptionPaymentVerification(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+
+
+# Password Reset Schemas
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+class ResetPasswordRequest(BaseModel):
+    token: str # This can be a verification session ID or same OTP/Email combo
+    email: EmailStr
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
+
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('Passwords do not match')
+        return v

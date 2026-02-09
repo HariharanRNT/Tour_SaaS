@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { Clock, MapPin, Star, Users, DollarSign, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Clock, MapPin, Star, Users, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
 interface ActivityDetailsModalProps {
     activity: Activity
@@ -138,10 +138,10 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                         )}
 
                         <div className="flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-muted-foreground" />
+                            <span className="h-5 w-5 text-muted-foreground flex items-center justify-center font-bold">₹</span>
                             <div>
                                 <p className="text-xs text-muted-foreground">Price</p>
-                                <p className="font-semibold">{activity.currency} {activity.price_per_person}</p>
+                                <p className="font-semibold">{activity.price_per_person}</p>
                             </div>
                         </div>
                     </div>

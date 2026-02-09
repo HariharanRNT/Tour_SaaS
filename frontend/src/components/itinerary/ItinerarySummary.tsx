@@ -4,7 +4,7 @@ import { ItineraryDay } from '@/types'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, Calendar, MapPin } from 'lucide-react'
+import { Calendar, MapPin } from 'lucide-react'
 
 interface ItinerarySummaryProps {
     days: ItineraryDay[]
@@ -40,7 +40,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
     )?.activities.morning?.currency ||
         days.find(d => d.activities.evening)?.activities.evening?.currency ||
         days.find(d => d.activities.full_day)?.activities.full_day?.currency ||
-        'USD'
+        '₹'
 
     return (
         <div className="space-y-6">
@@ -63,7 +63,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Estimated Cost</span>
                         <span className="text-lg font-bold text-primary">
-                            {currency} {totalCost.toFixed(2)}
+                            ₹{totalCost.toFixed(2)}
                         </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -114,7 +114,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                                                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                                                         <span>{activity!.duration}</span>
                                                         <span className="font-semibold text-primary">
-                                                            {activity!.currency} {activity!.price_per_person}
+                                                            ₹{activity!.price_per_person}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -122,7 +122,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                                             <div className="pt-2 border-t flex items-center justify-between">
                                                 <span className="text-sm font-medium">Day Total</span>
                                                 <span className="font-bold text-primary">
-                                                    {currency} {dayCost.toFixed(2)}
+                                                    ₹{dayCost.toFixed(2)}
                                                 </span>
                                             </div>
                                         </>

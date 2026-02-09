@@ -58,6 +58,26 @@ export const authAPI = {
         const response = await api.get('/auth/agent-info')
         return response.data
     },
+
+    forgotPassword: async (email: string) => {
+        const response = await api.post('/auth/forgot-password', { email })
+        return response.data
+    },
+
+    verifyOTP: async (email: string, otp: string) => {
+        const response = await api.post('/auth/verify-otp', { email, otp })
+        return response.data
+    },
+
+    resetPassword: async (data: {
+        token: string
+        email: string
+        new_password: string
+        confirm_password: string
+    }) => {
+        const response = await api.post('/auth/reset-password', data)
+        return response.data
+    },
 }
 
 // Packages API

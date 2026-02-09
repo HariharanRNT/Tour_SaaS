@@ -32,6 +32,20 @@ class EmailService:
             logger.warning("SMTP settings not configured. Email not sent.")
             return False
 
+        # Config override support
+        if smtp_config:
+             # Basic validation
+             if not smtp_config.get("host") or not smtp_config.get("user"):
+                 logger.warning("Invalid custom SMTP config provided. Fallback to system?")
+                 # If custom config fails, we probably shouldn't fallback silently to system for an agent's customer, 
+                 # as it might leak system branding where agent branding is expected. 
+                 # But for reliability, maybe we should? 
+                 # For now, let's just log and fail or retry with system if critical. 
+                 # But the current logic (lines 16-30) either sets from config OR settings. 
+                 # So if config provided but empty? 
+                 pass
+
+
         message = EmailMessage()
         message["From"] = f"{from_name} <{from_email}>"
         message["To"] = to_email
@@ -47,17 +61,28 @@ class EmailService:
             )
 
         try:
+            encryption_type = (smtp_config.get("encryption_type") or "tls").lower() if smtp_config else "tls"
+            use_tls = encryption_type in ["ssl", "implicit", "tls_ssl"]
+            start_tls = encryption_type in ["tls", "starttls", "explicit"]
+
+            logger.info(f"Attempting to send email to {to_email} via {host}:{port}")
+            logger.info(f"SMTP Config: User={user}, Encryption={encryption_type}, use_tls={use_tls}, start_tls={start_tls}")
+
             await aiosmtplib.send(
                 message,
                 hostname=host,
                 port=port,
                 username=user,
                 password=password,
-                start_tls=True,
+                use_tls=use_tls,
+                start_tls=start_tls,
                 timeout=20
             )
             logger.info(f"Email sent successfully to {to_email}")
             return True
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {e}")
+            # Log more details about the exception if it's an SMTP error
+            if hasattr(e, 'code'):
+                logger.error(f"SMTP Error Code: {e.code}, Response: {e.message}")
             return False

@@ -11,7 +11,6 @@ import {
     Users,
     Calendar,
     TrendingUp,
-    DollarSign,
     Plus,
     Clock,
     LogOut,
@@ -41,6 +40,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Bot, Send, User } from 'lucide-react'
 
 import {
     Carousel,
@@ -56,6 +64,28 @@ import { Home, Zap, Menu } from 'lucide-react'
 
 import { ChevronDown, Sparkles } from 'lucide-react'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
+
+// Custom Rupee Icon Component
+const RupeeIcon = ({ className }: { className?: string }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <path d="M6 3h12" />
+        <path d="M6 8h12" />
+        <path d="m6 13 8.5 8" />
+        <path d="M6 13h3" />
+        <path d="M9 13c6.667 0 6.667-10 0-10" />
+    </svg>
+)
 
 // Mock data for sparklines
 const revenueData = [
@@ -166,6 +196,20 @@ export default function AgentDashboard() {
     const [dateFilter, setDateFilter] = useState('ALL')
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
+    const [isAIOpen, setIsAIOpen] = useState(false)
+    const [chatMessage, setChatMessage] = useState("")
+
+    const handleTourPackageClick = () => {
+        router.push('/agent/packages/new')
+    }
+
+    const handleCustomerProfileClick = () => {
+        router.push('/agent/customers')
+    }
+
+    const handleAIItineraryClick = () => {
+        setIsAIOpen(true)
+    }
 
     const [stats, setStats] = useState<DashboardStats>({
         totalPackages: 0,
@@ -346,7 +390,7 @@ export default function AgentDashboard() {
             title: "Total Revenue",
             value: `₹${stats.totalRevenue.toLocaleString()}`,
             subtext: "From confirmed bookings",
-            icon: DollarSign,
+            icon: RupeeIcon,
             color: "text-green-600",
             bgColor: "bg-green-50",
             gradientFrom: "from-green-500",
@@ -530,20 +574,29 @@ export default function AgentDashboard() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56 bg-white/80 backdrop-blur-xl border-white/50 shadow-xl rounded-xl p-2 z-[100]">
                                     <DropdownMenuLabel className="text-xs font-bold text-slate-500 uppercase tracking-widest px-2 py-1.5">Create New</DropdownMenuLabel>
-                                    <DropdownMenuItem className="focus:bg-indigo-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5">
+                                    <DropdownMenuItem
+                                        onClick={handleTourPackageClick}
+                                        className="focus:bg-indigo-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                    >
                                         <div className="bg-indigo-100 p-1.5 rounded-md mr-3 text-[#4F46E5] group-hover:bg-[#4F46E5] group-hover:text-white transition-colors">
                                             <Package className="h-4 w-4" />
                                         </div>
                                         Tour Package
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="focus:bg-pink-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5">
+                                    <DropdownMenuItem
+                                        onClick={handleAIItineraryClick}
+                                        className="focus:bg-pink-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                    >
                                         <div className="bg-pink-100 p-1.5 rounded-md mr-3 text-[#EC4899] group-hover:bg-[#EC4899] group-hover:text-white transition-colors">
                                             <Sparkles className="h-4 w-4" />
                                         </div>
                                         AI Itinerary
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-slate-100 my-1" />
-                                    <DropdownMenuItem className="focus:bg-emerald-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5">
+                                    <DropdownMenuItem
+                                        onClick={handleCustomerProfileClick}
+                                        className="focus:bg-emerald-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                    >
                                         <div className="bg-emerald-100 p-1.5 rounded-md mr-3 text-[#10B981] group-hover:bg-[#10B981] group-hover:text-white transition-colors">
                                             <Users className="h-4 w-4" />
                                         </div>
@@ -989,11 +1042,11 @@ export default function AgentDashboard() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="mb-2 w-56">
-                            <DropdownMenuItem className="py-3">
+                            <DropdownMenuItem onClick={handleTourPackageClick} className="py-3">
                                 <Package className="mr-3 h-5 w-5 text-indigo-600" />
                                 <span>New Package</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="py-3">
+                            <DropdownMenuItem onClick={handleCustomerProfileClick} className="py-3">
                                 <Users className="mr-3 h-5 w-5 text-emerald-600" />
                                 <span>New Customer</span>
                             </DropdownMenuItem>
@@ -1029,7 +1082,66 @@ export default function AgentDashboard() {
                         </Link>
                     </div>
                 </div>
-            </div >
-        </div >
+
+                {/* AI Assistant Dialog */}
+                <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
+                    <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
+                        <div className="bg-[linear-gradient(135deg,#4F46E5_0%,#7C3AED_100%)] p-6 text-white flex items-center gap-4">
+                            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                                <Bot className="h-8 w-8 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold">AI Itinerary Assistant</h3>
+                                <p className="text-white/70 text-sm font-medium">Your personal co-pilot for curated travel plans.</p>
+                            </div>
+                        </div>
+
+                        <div className="h-[450px] flex flex-col bg-slate-50/50">
+                            <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                                {/* Message Bubble - AI */}
+                                <div className="flex items-start gap-3">
+                                    <div className="bg-indigo-600 rounded-full p-2 mt-1">
+                                        <Bot className="h-4 w-4 text-white" />
+                                    </div>
+                                    <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-2xl rounded-tl-none max-w-[80%]">
+                                        <p className="text-slate-700 leading-relaxed">
+                                            Hello! I'm your AI Travel Assistant. I can help you create amazing itineraries for your customers. Where would you like to plan a trip today?
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className="p-4 bg-white border-t border-slate-100">
+                                <div className="relative">
+                                    <Input
+                                        placeholder="Tell me destination and duration (e.g. 5 days in Paris)..."
+                                        className="pr-20 py-6 rounded-2xl border-slate-200 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50/50"
+                                        value={chatMessage}
+                                        onChange={(e) => setChatMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                // Handle send logic
+                                                setChatMessage("")
+                                            }
+                                        }}
+                                    />
+                                    <div className="absolute right-2 top-1.5 flex items-center gap-1">
+                                        <Button size="icon" className="h-9 w-9 bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md">
+                                            <Send className="h-4 w-4 text-white" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="mt-3 flex gap-2">
+                                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Suggestions:</span>
+                                    <button className="text-[10px] font-semibold text-indigo-600 hover:underline">7 days in Japan</button>
+                                    <button className="text-[10px] font-semibold text-indigo-600 hover:underline">Honeymoon in Maldives</button>
+                                </div>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </div>
     )
 }

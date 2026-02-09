@@ -1,280 +1,317 @@
-Header Section
-Icon & Title:
+📋 Page Header
+Title & Description:
 
-Airplane icon is nice but too small and faint
-Make icon 2x larger and use a bolder, colorful version
-"Create Account" heading is good but increase size by 25-30%
-Add more vertical spacing between icon and title
+"Settings" title is clear but make it 30% larger and bolder
+Subtitle "Manage your agency preferences and integrations" is good
+Add breadcrumb navigation: Dashboard > Settings
+Consider adding tab navigation if you have multiple settings categories
 
-Subtitle:
+Save Changes Button:
 
-"Sign up to start booking amazing tours" is clear
-Make it slightly larger (currently feels small)
-Consider making it more compelling: "Join thousands of travelers planning their dream trips"
+Good placement in top-right corner
+Make it more prominent - increase size
+Add icon: "💾 Save Changes" or "✓ Save Changes"
+Include keyboard shortcut hint: "Ctrl+S"
+Show disabled state when no changes made
+Add success toast notification after saving
 
-📝 Form Fields
-Name Fields (First Name & Last Name):
-Layout improvements:
+Better header design:
+← Back to Dashboard
 
-Two-column layout is good for desktop
-Increase input field height - they feel cramped (add 8-10px padding)
-Add subtle icons inside fields:
+Settings                    [Cancel] [Save Changes ✓]
+Manage your agency preferences and integrations
 
-First Name: 👤
-Last Name: 👤
+[General] [Email] [Payment] [Notifications] [API]
+─────────────────────────────────────────────────
+🎨 Section Cards Layout
+Overall Card Design:
 
+Cards are clean but too plain and similar
+Add subtle shadows for depth
+Use colored left borders to differentiate sections:
 
-Fields look too plain - add subtle border or shadow on focus
-Consider adding placeholder text: "John" / "Doe"
-
-Email Address Field:
-
-Good label and placeholder
-Add email icon (✉️ or 📧) on the left inside the input
-Implement real-time validation:
-
-Show green checkmark ✓ when valid email format
-Show red warning if invalid
+General: Blue
+Email: Purple
+Payment: Green/Teal
 
 
-Helpful error messages below field if validation fails
+Add hover effect on cards (slight lift)
+Increase spacing between cards (currently too tight)
 
-Phone Field:
-Major improvements needed:
+🔧 General Section
+Section Header:
 
-Country code selector (+91) with flag is good
-Make the flag icon larger and more visible
-Phone field needs better formatting as user types
-Add placeholder: "98765 43210"
-Consider making it truly optional - don't require if marked optional
-Add info tooltip: Why do you need my phone number?
+Icon (⚙️) and title are good
+Make icon larger and more colorful
+Description text is helpful but too small - increase by 15%
+Add expand/collapse functionality for sections
 
-Password Field:
-Critical improvements:
+Default Currency Field:
 
-Add show/hide password toggle (eye icon 👁️) on the right
-Current password hint "Must be at least 8 characters long" is good but small
-Add real-time password strength indicator:
+Label is clear but make it bolder
+Input field looks good
+Consider using a dropdown with currency symbols instead of text input:
 
-  Password strength: ▬▬▬▬▬ Weak | Medium | Strong
+  ┌────────────────────────┐
+  │ 💱 INR (₹)        ▼   │
+  └────────────────────────┘
 
-Show requirements checklist that updates as they type:
+Add currency symbol preview beside field
+Include popular currencies at top of dropdown
 
-  ✓ At least 8 characters
-  ✗ One uppercase letter
-  ✗ One number
-  ✗ One special character
+Better currency selector:
+Default Currency *
+┌────────────────────────────────┐
+│ 🇮🇳 INR - Indian Rupee (₹)  ▼ │
+└────────────────────────────────┘
 
-Make hint text more prominent (currently too subtle)
+Popular: USD ($) | EUR (€) | GBP (£) | INR (₹)
+📧 Email Configuration Section
+Section Header:
 
-Better password field design:
-┌─────────────────────────────────────┐
-│ 🔒  ••••••••••            👁️       │
-└─────────────────────────────────────┘
-Password strength: ▰▰▰▱▱ Medium
+"Email Configuration (SMTP)" is clear
+Make "Test Connection" button more prominent
+Add status indicator: "● Connected" / "● Not configured"
+Consider collapsible advanced settings
 
-Requirements:
-✓ 8+ characters
-✓ Uppercase letter  
-✗ Number
-✗ Special character
-🎯 Form Validation & UX
-Add these features:
-Inline Validation:
+Better header:
+┌──────────────────────────────────────────┐
+│ 📧 Email Configuration (SMTP)            │
+│ Set your own service to send automated   │
+│ confirmations.                           │
+│                                          │
+│ Status: ● Connected ✓  [Test Connection]│
+└──────────────────────────────────────────┘
+Form Layout Issues:
+SMTP Host & Port:
 
-Green checkmarks appear when field is valid
-Red error states with helpful messages
-Validate as user types (not just on submit)
+Side-by-side layout is good for related fields
+Labels need to be bolder and more prominent
+Add help icons (?) with tooltips:
 
-Error Messages:
+SMTP Host: "Example: smtp.gmail.com"
+Port: "Common: 587 (TLS), 465 (SSL), 25"
 
-Show specific errors: "Email already registered"
-"Phone number must be 10 digits"
-Position errors directly below relevant field
 
-Progress Indication:
+Add placeholder text in fields
+Port field should be narrower (it's a number field)
 
-Add form completion indicator: "3 of 5 fields complete"
-Highlight next field to fill
+Better layout:
+SMTP Host *                    Port *
+┌──────────────────────┐      ┌──────┐
+│ smtp.gmail.com    ⓘ  │      │ 587 ⓘ│
+└──────────────────────┘      └──────┘
+Encryption & Sender Name:
 
-Autofill Support:
+Same side-by-side layout works
+"Encryption" should be a dropdown, not text input:
 
-Ensure proper autocomplete attributes for password managers
-Support browser autofill for faster signup
+  Encryption *
+  ┌────────────────┐
+  │ STARTTLS    ▼ │  
+  └────────────────┘
+  Options: STARTTLS | SSL/TLS | None
 
-🔘 Create Account Button
-Current issues:
+Add info tooltip explaining encryption types
+"Sender Name" field is good - maybe add example: "(e.g., TourSaaS Support)"
 
-Good dark button but could be more engaging
-Button is good width but increase height (add more padding)
+Username/Email & Password:
 
-Improvements:
+Good layout but password field needs work
+Add show/hide password toggle (👁️ icon)
+"Leave empty to keep existing password" is helpful but too subtle
+Make helper text more prominent with icon:
 
-Add subtle gradient instead of solid black
-Include icon: "Create Account →" or "Get Started 🚀"
-Add loading state with spinner when clicked
-Hover effect: slight lift and brightness change
-Disabled state until form is valid (grayed out)
-Consider changing text to: "Start Your Journey" or "Join Now"
+  ℹ️ Leave empty to keep existing password
 
-🔗 Sign In Link
-"Already have an account? Sign in":
+Consider "Change Password" checkbox to avoid accidental changes
 
-Good placement at bottom
-Make "Sign in" link more prominent (bolder, larger)
-Add hover effect (underline or color change)
-Consider: "Already a member? Sign in"
+Better password field:
+Password
+┌────────────────────────────────┐
+│ ••••••••••            👁️ 🔄   │
+└────────────────────────────────┘
+🔒 Leave empty to keep current password
+[Change Password ☐]
+Sender Email Address:
 
-✨ Additional Features to Add
-Social Sign-Up Options:
-─────────── or sign up with ───────────
+Field looks good
+Add email validation icon (✓ when valid)
+Consider making it auto-populate from Username field
+Add example: "noreply@youragency.com"
 
-[G] Google    [Apple icon] Apple    [📧] Email
+💳 Payment Gateway Section
+Section Header:
 
-Add social signup buttons above form
-Makes registration faster
-Reduce friction
+"Payment Gateway (Razorpay)" is clear
+Add gateway logo beside title for brand recognition
+Include status indicator: "● Active" / "● Inactive"
+Add "Change Gateway" button if multiple options available
 
-Terms & Privacy:
-☑️ I agree to the Terms of Service and Privacy Policy
+Better header:
+┌──────────────────────────────────────────┐
+│ 💳 Payment Gateway                       │
+│ [Razorpay Logo] Razorpay                │
+│ Configure your Razorpay account to       │
+│ accept payments directly.                │
+│                                          │
+│ Status: ● Active ✓      [Change Gateway]│
+└──────────────────────────────────────────┘
+Key ID Field:
 
-Add checkbox with links to legal docs
-Required before signup
-Make links stand out (blue, underlined)
+Label is clear but make it bolder
+Add copy button (📋) to easily copy the key
+Add mask/unmask toggle for security
+Current key is visible - consider masking by default
 
-Trust Indicators:
+Better Key ID field:
+Key ID *                           [📋 Copy]
+┌────────────────────────────────────────┐
+│ rzp_test_XXXXXXXXXXXXxxx        👁️   │
+└────────────────────────────────────────┘
+Key Secret Field:
 
-Add small text: "🔒 Your data is secure and encrypted"
-"No spam, we promise" near email field
-Show number of users: "Join 50,000+ travelers"
+Should definitely be masked (showing "Enter new key secret" is good)
+Add show/hide toggle
+Add "Test Keys" / "Live Keys" toggle at top:
 
-Email Verification Notice:
-📧 We'll send a verification email after signup
+  Mode: ( ) Test Keys  (●) Live Keys
 
-Set expectations
-Add near email field or after button
+Include warning when using test keys
+Add validation to ensure correct format
 
-🎨 Visual Design Improvements
-Card Styling:
+Better Key Secret field:
+Key Secret *                       [📋 Copy]
+┌────────────────────────────────────────┐
+│ ••••••••••••••••••••••        👁️ 🔄  │
+└────────────────────────────────────────┘
+🔒 Leave empty to keep current secret
+⚠️ Using Test Mode - Switch to Live for production
+🎯 Form Field Improvements
+General field enhancements:
+Labels:
 
-Current card is clean but plain
-Add subtle shadow for depth
-Consider softer, larger border-radius (16px instead of current)
-Add subtle background texture or gradient
+Make all labels bolder (font-weight: 600)
+Add asterisks (*) for required fields
+Use consistent label styling across all sections
 
-Color System:
+Input Fields:
 
-Mostly grayscale - needs brand colors
-Add accent colors for active/focus states
-Use green for success states (valid fields)
-Use red for errors (invalid fields)
-Blue/brand color for primary actions
-
-Input Field Styling:
-
-Add subtle background color to inputs (very light gray)
-Thicker border on focus (2px, brand color)
+Increase height by 20% (add more padding)
+Add subtle background color (very light gray)
+Thicker border on focus (2px, blue color)
 Add smooth transitions for all states
-Rounded corners on inputs (6-8px)
+Rounded corners (6px)
 
-Spacing:
+Better input design:
+Label *                          [Help ⓘ]
+┌─────────────────────────────────────┐
+│ [Icon] Input value here...          │
+└─────────────────────────────────────┘
+Helper text or validation message
+Validation & Feedback:
 
-Add more vertical spacing between fields (currently cramped)
-Increase padding inside card (add 20-30px more)
-More breathing room makes form less intimidating
+Add inline validation (green ✓ or red ✗)
+Show helpful error messages:
 
-📱 Responsive Considerations
-Mobile optimization:
+"Please enter a valid SMTP host"
+"Port must be between 1-65535"
 
-Name fields should stack vertically on mobile (not side-by-side)
-Make touch targets larger (minimum 44px height)
-Larger font sizes on mobile for readability
-Full-width button on mobile
-Ensure keyboard doesn't obscure fields
 
-🎯 Form Field Order Optimization
-Consider reordering:
+Real-time validation as user types
+Success messages when fields are correct
 
-Email (most important)
-Password
-First Name
-Last Name
-Phone (optional - move to end)
+🎨 Visual Hierarchy
+Add section dividers:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-This reduces cognitive load - start with essential fields
-💡 Progressive Disclosure
-Consider two-step signup:
-Step 1 - Essential:
+Use subtle horizontal lines between major sections
+Add section numbers: "1. General", "2. Email", "3. Payment"
 
-Email
-Password
-[Create Account]
+Color coding:
 
-Step 2 - Profile:
+Use subtle background tints for each section:
 
-First Name
-Last Name
-Phone
-Preferences
+General: Very light blue
+Email: Very light purple
+Payment: Very light green
 
-This reduces abandonment - smaller initial commitment
-✨ Micro-Interactions
-Add these delightful touches:
-Field Focus:
 
-Smooth slide up of label when typing
-Subtle glow effect on focused field
-Animated placeholder that fades
+Add colored icons matching the tint
 
-Success States:
+✨ Additional Features
+Unsaved Changes Warning:
+┌────────────────────────────────────┐
+│ ⚠️ You have unsaved changes        │
+│ [Discard] [Save Changes]           │
+└────────────────────────────────────┘
 
-Checkmark animation when field validates
-Progress bar fills as form completes
-Confetti animation on successful signup
+Show sticky warning banner when form is dirty
+Prevent navigation without saving
+Add "Are you sure?" dialog before discarding
 
-Password Strength:
+Test Functionality:
 
-Color-changing bar (red→yellow→green)
-Animated progress as strength improves
+"Test Connection" button should:
 
-Button Click:
+Show loading state while testing
+Display success/error message prominently
+Include detailed error info if fails
+Add retry button if test fails
 
-Ripple effect on click
-Brief loading animation before redirect
-Success checkmark appears in button
 
-🔒 Security Features
-Add visible security:
 
-SSL/Security badge near form
-"🔒 256-bit encryption" text
-Privacy policy link more prominent
-"We never share your data" reassurance
+Better test button:
+[🔄 Testing Connection...]  →  [✓ Connection Successful!]
+                            or  [✗ Connection Failed - Check credentials]
+Help & Documentation:
 
-Password Security:
+Add "?" help icons with tooltips throughout
+Include "Need help?" link at bottom
+Add "View Documentation" button per section
+Provide example configurations for common providers
 
-"Strong password" tips in tooltip
-Breach detection: "This password appears in data breaches"
-Suggest strong password generator option
+Settings Templates:
+Quick Setup:
+[Gmail] [Outlook] [SendGrid] [Custom]
 
-🎊 Welcome Experience
-After signup:
+Pre-fill fields based on popular email providers
+One-click setup for common configurations
 
-Success message: "Welcome aboard! 🎉"
-Confirmation email preview
-Next steps guidance
-Quick tour option
-Skip to personalization wizard
+🔐 Security Enhancements
+Sensitive Data Handling:
+
+Mask API keys by default
+Add "Last updated" timestamp for credentials
+Show "Credentials saved securely" confirmation
+Add two-factor authentication for changing payment settings
+
+Audit Trail:
+Last modified: Feb 9, 2026 by admin@agency.com
+[View History]
+
+Show who and when settings were changed
+Add change history log for compliance
+
+📱 Responsive Design
+Mobile considerations:
+
+Stack side-by-side fields vertically on mobile
+Make touch targets larger (48px minimum)
+Use accordion/collapsible sections to save space
+Sticky save button at bottom on mobile
 
 ✅ Quick Priority Fixes
 
-Add show/hide password toggle (eye icon)
-Increase all input field heights by 30%
-Add icons to input fields (email, phone, lock)
-Implement password strength meter
-Add social signup options (Google, Apple)
-Increase vertical spacing between fields
-Add real-time validation with checkmarks
-Make error messages more helpful
-Add terms & privacy checkbox
-Improve button with hover/loading states
+Add show/hide toggles to password/secret fields
+Make all labels bolder and more prominent
+Add copy buttons to API keys
+Include status indicators (Connected/Active)
+Add help tooltips with (?) icons
+Improve spacing between sections
+Make encryption field a dropdown
+Add unsaved changes warning
+Increase all input field heights
+Add success/error states with colors
+Include test mode toggle for payment
+Add section icons with colors

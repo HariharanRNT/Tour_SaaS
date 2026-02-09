@@ -8,9 +8,10 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.models import Booking, Payment, PaymentStatus, BookingStatus, User, Customer
+from app.models import Booking, Payment, PaymentStatus, BookingStatus, User, Customer, Agent, AgentSMTPSettings, AgentRazorpaySettings
 from app.services.tripjack_adapter import TripJackAdapter
 from app.config import settings
+from app.utils.crypto import decrypt_value
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class BookingOrchestrator:
         booking.status = BookingStatus.CONFIRMED
         booking.updated_at = datetime.utcnow()
         await self.db.commit()
-        await self.db.refresh(booking)
+        # await self.db.refresh(booking) # Keep relationships loaded
         
 
         
@@ -94,10 +95,8 @@ class BookingOrchestrator:
         stmt = select(Booking).where(Booking.id == booking_id).options(
             selectinload(Booking.package),
             selectinload(Booking.travelers),
-            selectinload(Booking.agent),  # Load Agent directly
-            selectinload(Booking.user).selectinload(User.agent_profile),
-            selectinload(Booking.user).selectinload(User.admin_profile),
-            selectinload(Booking.user).selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile)
+            selectinload(Booking.user),
+            selectinload(Booking.agent)
         ).execution_options(populate_existing=True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -116,7 +115,20 @@ class BookingOrchestrator:
              return
 
         # 2. Verify Signature
-        client = razorpay.Client(auth=(settings.RAZORPAY_BOOKING_KEY_ID, settings.RAZORPAY_BOOKING_KEY_SECRET))
+        # Determine Credentials
+        key_id = settings.RAZORPAY_BOOKING_KEY_ID
+        key_secret = settings.RAZORPAY_BOOKING_KEY_SECRET
+        
+        # Check for Agent specific credentials
+        if booking.agent_id:
+            agent = booking.agent
+            if agent and agent.agent_profile and agent.agent_profile.razorpay_settings:
+                rp = agent.agent_profile.razorpay_settings
+                logger.info(f"Using Agent Razorpay credentials for {agent.email}")
+                key_id = rp.key_id
+                key_secret = decrypt_value(rp.key_secret)
+
+        client = razorpay.Client(auth=(key_id, key_secret))
         
         try:
              # Skip signature verification if using dummy/test keys globally (fallback safety)
@@ -130,7 +142,7 @@ class BookingOrchestrator:
              raise HTTPException(status_code=400, detail="Invalid payment signature")
 
         # 3. Secure Fetch & Amount Validation
-        if "1234567890" not in settings.RAZORPAY_BOOKING_KEY_ID:
+        if "1234567890" not in key_id:
             try:
                 # Fetch payment details from Razorpay
                 fetched_payment = client.payment.fetch(verification['razorpay_payment_id'])
@@ -229,13 +241,27 @@ class BookingOrchestrator:
                  agent_user = booking.user.customer_profile.agent
                  if agent_user.agent_profile:
                      ap = agent_user.agent_profile
-                     if ap.smtp_host and ap.smtp_user:
-                         logger.info(f"Using Agent SMTP for {agent_user.email}")
+                     
+                     # Check new settings table first
+                     if ap.smtp_settings:
+                         logger.info(f"Using Agent SMTP Settings (Table) for {agent_user.email}")
+                         smtp = ap.smtp_settings
+                         smtp_config = {
+                             "host": smtp.host,
+                             "port": smtp.port,
+                             "user": smtp.username,
+                             "password": decrypt_value(smtp.password),
+                             "from_email": smtp.from_email,
+                             "from_name": smtp.from_name
+                         }
+                     # Fallback to old columns
+                     elif ap.smtp_host and ap.smtp_user:
+                         logger.info(f"Using Agent SMTP (Legacy) for {agent_user.email}")
                          smtp_config = {
                              "host": ap.smtp_host,
                              "port": ap.smtp_port,
                              "user": ap.smtp_user,
-                             "password": ap.smtp_password, # Decrypt if needed, currently plain
+                             "password": ap.smtp_password, 
                              "from_email": ap.smtp_from_email,
                              "from_name": ap.agency_name or agent_user.first_name
                          }
@@ -261,13 +287,6 @@ class BookingOrchestrator:
 
         # 1. Identify Agent
         agent_user = booking.agent
-        if not agent_user:
-             print(f"DEBUG: No agent_user found (booking.agent is None). Agent ID: {booking.agent_id}")
-             # Attempt manual fetch if relationship failed?
-             if booking.agent_id:
-                  print("DEBUG: Fetching agent manually...")
-                  result = await self.db.execute(select(User).where(User.id == booking.agent_id))
-                  agent_user = result.scalar_one_or_none()
         
         if not agent_user or not agent_user.email:
             print(f"DEBUG: Agent user missing or has no email. Skipping notification.")

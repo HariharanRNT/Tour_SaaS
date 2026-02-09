@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { Sunrise, Sunset, Sun, Moon, Plus, Clock, MapPin, DollarSign, X, ChevronRight, Image as ImageIcon, Calendar } from 'lucide-react'
+import { Sunrise, Sunset, Sun, Moon, Plus, Clock, MapPin, X, ChevronRight, Image as ImageIcon, Calendar } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -129,7 +129,7 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity }: DayPlannerP
                                                 {/* Price Overlay on Image (Mobile) */}
                                                 {activity.price_per_person !== undefined && (
                                                     <div className="absolute top-3 left-3 md:hidden bg-white/90 backdrop-blur text-gray-900 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-                                                        {activity.currency || '$'} {activity.price_per_person}
+                                                        ₹{activity.price_per_person}
                                                     </div>
                                                 )}
                                             </>
@@ -174,8 +174,8 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity }: DayPlannerP
                                             )}
                                             {activity.price_per_person !== undefined && (
                                                 <div className="hidden md:flex items-center text-sm font-bold text-gray-900 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-100 text-green-700">
-                                                    <DollarSign className="h-3.5 w-3.5 mr-0.5" />
-                                                    {activity.currency || '$'} {activity.price_per_person}
+                                                    <span className="mr-0.5">₹</span>
+                                                    {activity.price_per_person}
                                                 </div>
                                             )}
                                             <span className="text-xs font-semibold text-blue-600 ml-auto group-hover/card:underline cursor-pointer">
@@ -365,8 +365,8 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity }: DayPlannerP
                                         )}
                                         {selectedActivity.price_per_person !== undefined && (
                                             <Badge className="px-3 py-1 text-sm bg-green-500/80 text-white border-transparent backdrop-blur-md font-bold">
-                                                <DollarSign className="w-4 h-4 mr-1" />
-                                                {selectedActivity.currency} {selectedActivity.price_per_person}
+                                                <span className="mr-1">₹</span>
+                                                {selectedActivity.price_per_person}
                                             </Badge>
                                         )}
                                     </div>

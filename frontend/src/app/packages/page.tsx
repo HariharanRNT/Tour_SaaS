@@ -12,7 +12,7 @@ import { PassengerCounter } from '@/components/packages/PassengerCounter'
 import { packagesEnhancedAPI } from '@/lib/api'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, DollarSign } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 
 interface PackageSearchResult {
     id: string
@@ -378,7 +378,7 @@ export default function MultiStepPackageSearch() {
                                                     {pkg.destination}
                                                 </Badge>
                                                 <Badge className="bg-green-600">
-                                                    <DollarSign className="h-3 w-3" />
+                                                    <span className="mr-0.5">₹</span>
                                                     {pkg.price_per_person}
                                                 </Badge>
                                             </div>

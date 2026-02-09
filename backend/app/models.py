@@ -126,9 +126,9 @@ class User(Base):
     created_packages = relationship("Package", back_populates="creator")
     
     # Profile Relationships
-    admin_profile = relationship("Admin", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    agent_profile = relationship("Agent", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    customer_profile = relationship("Customer", back_populates="user", uselist=False, cascade="all, delete-orphan", foreign_keys="Customer.user_id")
+    admin_profile = relationship("Admin", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+    agent_profile = relationship("Agent", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+    customer_profile = relationship("Customer", back_populates="user", uselist=False, cascade="all, delete-orphan", foreign_keys="Customer.user_id", lazy="selectin")
     
     # Subscription & Billing Relationships
     subscription = relationship("Subscription", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -179,6 +179,10 @@ class Agent(Base):
     smtp_password = Column(String, nullable=True) # Should be encrypted in application layer
     smtp_from_email = Column(String, nullable=True)
     
+    # Relationships
+    smtp_settings = relationship("AgentSMTPSettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+    razorpay_settings = relationship("AgentRazorpaySettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
+
     user = relationship("User", back_populates="agent_profile")
 
 
@@ -195,7 +199,7 @@ class Customer(Base):
     agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     
     user = relationship("User", back_populates="customer_profile", foreign_keys=[user_id])
-    agent = relationship("User", foreign_keys=[agent_id])
+    agent = relationship("User", foreign_keys=[agent_id], lazy="selectin")
 
 
 class Package(Base):
@@ -311,9 +315,9 @@ class Booking(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    package = relationship("Package", back_populates="bookings")
-    user = relationship("User", back_populates="bookings", foreign_keys=[user_id])
-    agent = relationship("User", foreign_keys=[agent_id])
+    package = relationship("Package", back_populates="bookings", lazy="selectin")
+    user = relationship("User", back_populates="bookings", foreign_keys=[user_id], lazy="selectin")
+    agent = relationship("User", foreign_keys=[agent_id], lazy="selectin")
     travelers = relationship("Traveler", back_populates="booking", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
 
@@ -603,3 +607,56 @@ class Notification(Base):
     user = relationship("User", back_populates="notifications")
 
 
+
+# Agent Settings Models
+class AgentSMTPSettings(Base):
+    __tablename__ = "agent_smtp_settings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), unique=True, nullable=False)
+    
+    host = Column(String, nullable=False)
+    port = Column(Integer, nullable=False)
+    username = Column(String, nullable=False)
+    password = Column(String, nullable=False) # Encrypted
+    encryption_type = Column(String, default="tls") # tls, ssl, none
+    from_email = Column(String, nullable=False)
+    from_name = Column(String, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    agent = relationship("Agent", back_populates="smtp_settings")
+
+
+class AgentRazorpaySettings(Base):
+    __tablename__ = "agent_razorpay_settings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), unique=True, nullable=False)
+    
+    key_id = Column(String, nullable=False)
+    key_secret = Column(String, nullable=False) # Encrypted
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    agent = relationship("Agent", back_populates="razorpay_settings")
+
+
+class UserOTP(Base):
+    __tablename__ = "user_otps"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    otp_hash = Column(String, nullable=False)
+    purpose = Column(String, default="password_reset") # password_reset, email_verification
+    attempts = Column(Integer, default=0)
+    max_attempts = Column(Integer, default=3)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

@@ -14,11 +14,16 @@ from app.schemas import (
 from app.api.deps import get_current_user
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.config import settings
+from app.models import Agent, AgentRazorpaySettings, User
+from app.utils.crypto import decrypt_value
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
 # Initialize Razorpay client
-razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_BOOKING_KEY_ID, settings.RAZORPAY_BOOKING_KEY_SECRET))
+# Initialize Razorpay client (Default/Fallback)
+# We will instantiate per-request for dynamic credentials
+default_razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_BOOKING_KEY_ID, settings.RAZORPAY_BOOKING_KEY_SECRET))
 
 
 @router.post("/create-order", response_model=PaymentOrderResponse)
@@ -29,7 +34,14 @@ async def create_payment_order(
 ):
     """Create Razorpay order for booking"""
     # Get booking
-    result = await db.execute(select(Booking).where(Booking.id == payment_data.booking_id))
+    # Load agent settings
+    result = await db.execute(
+        select(Booking)
+        .where(Booking.id == payment_data.booking_id)
+        .options(
+            selectinload(Booking.agent).selectinload(User.agent_profile).selectinload(Agent.razorpay_settings)
+        )
+    )
     booking = result.scalar_one_or_none()
     
     if not booking:
@@ -46,15 +58,29 @@ async def create_payment_order(
     # Create Razorpay order
     amount_in_paise = int(booking.total_amount * 100)
     
+    # Determine Credentials
+    key_id = settings.RAZORPAY_BOOKING_KEY_ID
+    key_secret = settings.RAZORPAY_BOOKING_KEY_SECRET
+    
+    if booking.agent_id:
+        # Check if agent has custom settings
+        agent = booking.agent
+        if agent and agent.agent_profile and agent.agent_profile.razorpay_settings:
+            rp = agent.agent_profile.razorpay_settings
+            key_id = rp.key_id
+            key_secret = decrypt_value(rp.key_secret)
+            
+    client = razorpay.Client(auth=(key_id, key_secret))
+
     try:
         # Check for dummy keys to mock response
         # Similar logic to subscriptions: force mock if key looks like default dummy
-        use_mock = "1234567890" in settings.RAZORPAY_BOOKING_KEY_ID or "mock" in settings.RAZORPAY_BOOKING_KEY_ID.lower()
+        use_mock = "1234567890" in key_id or "mock" in key_id.lower()
         
         if use_mock:
             raise Exception("Force Mock")
 
-        order = razorpay_client.order.create({
+        order = client.order.create({
             "amount": amount_in_paise,
             "currency": "INR",
             "receipt": booking.booking_reference,
@@ -95,7 +121,7 @@ async def create_payment_order(
         order_id=order["id"],
         amount=order["amount"],
         currency=order["currency"],
-        key_id=settings.RAZORPAY_BOOKING_KEY_ID
+        key_id=key_id
     )
 
 
@@ -116,9 +142,34 @@ async def verify_payment(
         raise NotFoundException("Payment not found")
     
     # Verify signature
+    # Verify signature
+    # Fetch booking to determine agent credentials
+    # We need to reload booking with agent settings
+    result_booking = await db.execute(
+        select(Booking)
+        .where(Booking.id == payment.booking_id)
+        .options(
+            selectinload(Booking.agent).selectinload(User.agent_profile).selectinload(Agent.razorpay_settings)
+        )
+    )
+    booking = result_booking.scalar_one_or_none()
+    
+    # Determine Credentials
+    key_id = settings.RAZORPAY_BOOKING_KEY_ID
+    key_secret = settings.RAZORPAY_BOOKING_KEY_SECRET
+    
+    if booking and booking.agent_id:
+        agent = booking.agent
+        if agent and agent.agent_profile and agent.agent_profile.razorpay_settings:
+            rp = agent.agent_profile.razorpay_settings
+            key_id = rp.key_id
+            key_secret = decrypt_value(rp.key_secret)
+            
+    client = razorpay.Client(auth=(key_id, key_secret))
+
     try:
         # Skip verification for dummy keys
-        if "1234567890" in settings.RAZORPAY_BOOKING_KEY_ID:
+        if "1234567890" in key_id:
             pass
         else:
             params_dict = {
@@ -126,7 +177,7 @@ async def verify_payment(
                 'razorpay_payment_id': verification_data.razorpay_payment_id,
                 'razorpay_signature': verification_data.razorpay_signature
             }
-            razorpay_client.utility.verify_payment_signature(params_dict)
+            client.utility.verify_payment_signature(params_dict)
     except razorpay.errors.SignatureVerificationError:
         # Update payment status to failed
         payment.status = PaymentStatus.FAILED

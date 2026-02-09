@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Calendar, Users, DollarSign, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock } from 'lucide-react'
+import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock } from 'lucide-react'
 import { packagesEnhancedAPI } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 

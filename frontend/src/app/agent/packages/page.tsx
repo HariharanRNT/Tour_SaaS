@@ -41,7 +41,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, DollarSign, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface Package {
     id: string
@@ -562,7 +562,7 @@ export default function AdminPackagesPage() {
                                                     </TableCell>
                                                     <TableCell className="py-5">
                                                         <div className="flex items-center gap-1 font-bold text-gray-900">
-                                                            <DollarSign className="h-4 w-4 text-gray-400" />
+                                                            <span className="text-gray-400">₹</span>
                                                             {pkg.price_per_person.toLocaleString('en-IN')}
                                                         </div>
                                                     </TableCell>

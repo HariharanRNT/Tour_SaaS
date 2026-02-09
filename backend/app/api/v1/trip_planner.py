@@ -40,7 +40,10 @@ async def get_popular_destinations(
         Package.destination, 
         Package.country,
         func.max(Package.description).label('description'),
-        func.count().label('pkg_count')
+        func.count().label('pkg_count'),
+        func.min(Package.price_per_person).label('min_price'),
+        func.min(Package.duration_days).label('min_duration'),
+        func.max(Package.duration_days).label('max_duration')
     ).where(
         Package.created_by == agent_id,
         Package.status == PackageStatus.PUBLISHED,
@@ -109,14 +112,29 @@ async def get_popular_destinations(
         # Check for match in master popular_destinations table
         master_match = pd_data.get(lookup_key)
         
+        destination_data = {
+            "name": dest_name,
+            "country": country_name,
+            "description": pkg_dest.description,
+            "image_url": feat_images.get(dest_name) or dest_images.get(dest_name),
+            "min_price": float(pkg_dest.min_price) if pkg_dest.min_price else 0,
+            "min_duration": pkg_dest.min_duration,
+            "max_duration": pkg_dest.max_duration,
+            "pkg_count": pkg_dest.pkg_count
+        }
+
         if master_match:
             response.append({
                 "id": str(master_match[0]),
                 "name": master_match[1],
                 "country": master_match[2],
-                "description": master_match[3],
-                "image_url": master_match[4] or feat_images.get(dest_name) or dest_images.get(dest_name),
-                "display_order": master_match[5]
+                "description": master_match[3] or destination_data["description"],
+                "image_url": master_match[4] or destination_data["image_url"],
+                "display_order": master_match[5],
+                "min_price": destination_data["min_price"],
+                "min_duration": destination_data["min_duration"],
+                "max_duration": destination_data["max_duration"],
+                "pkg_count": destination_data["pkg_count"]
             })
         else:
             # Create a dynamic entry from package data
@@ -125,8 +143,12 @@ async def get_popular_destinations(
                 "name": dest_name,
                 "country": country_name,
                 "description": pkg_dest.description,
-                "image_url": feat_images.get(dest_name) or dest_images.get(dest_name),
-                "display_order": 999
+                "image_url": destination_data["image_url"],
+                "display_order": 999,
+                "min_price": destination_data["min_price"],
+                "min_duration": destination_data["min_duration"],
+                "max_duration": destination_data["max_duration"],
+                "pkg_count": destination_data["pkg_count"]
             })
             
     # Sort by display order then name

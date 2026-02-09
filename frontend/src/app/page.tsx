@@ -14,6 +14,10 @@ interface Destination {
     country: string
     description: string
     image_url?: string
+    min_price?: number
+    min_duration?: number
+    max_duration?: number
+    pkg_count?: number
 }
 
 export default function Home() {
@@ -285,7 +289,7 @@ export default function Home() {
                                                 <div>
                                                     <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-1">Starting from</p>
                                                     <div className="flex items-baseline gap-1">
-                                                        <span className="text-2xl font-bold">₹{(Math.random() * 20000 + 10000).toFixed(0)}</span>
+                                                        <span className="text-2xl font-bold">₹{dest.min_price || 'N/A'}</span>
                                                         <span className="text-sm text-gray-300 font-normal">/person</span>
                                                     </div>
                                                 </div>
@@ -293,7 +297,11 @@ export default function Home() {
                                                     <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-1">Duration</p>
                                                     <div className="flex items-center gap-1.5 justify-end">
                                                         <Clock className="h-4 w-4" />
-                                                        <span className="font-bold">3-5 Days</span>
+                                                        <span className="font-bold">
+                                                            {dest.min_duration === dest.max_duration
+                                                                ? `${dest.min_duration} Days`
+                                                                : `${dest.min_duration}-${dest.max_duration} Days`}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
