@@ -19,7 +19,16 @@ import {
     Star,
     Clock,
     Trophy,
-    TrendingDown
+    TrendingDown,
+    Bell,
+    HelpCircle,
+    ChevronRight,
+    UserCircle,
+    ArrowUp,
+    ArrowDown,
+    DollarSign,
+    AlertCircle,
+    CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
 import { RevenueChart } from '@/components/admin/dashboard/RevenueChart'
@@ -145,14 +154,46 @@ export default function AdminDashboard() {
                                 <LayoutDashboard className="h-6 w-6 text-white" />
                             </div>
                             <div>
+                                {/* Breadcrumb */}
+                                <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+                                    <span className="hover:text-indigo-600 cursor-pointer">Home</span>
+                                    <ChevronRight className="h-3 w-3" />
+                                    <span className="text-slate-700 font-medium">Dashboard</span>
+                                </div>
                                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4F46E5] to-[#7C3AED]">Admin Dashboard</h1>
-                                <p className="text-sm text-slate-500 font-medium">{adminEmail}</p>
                             </div>
                         </div>
-                        <Button variant="outline" onClick={handleLogout} className="hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-300">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Logout
-                        </Button>
+
+                        {/* Right side actions */}
+                        <div className="flex items-center gap-3">
+                            {/* Quick Action Buttons */}
+                            <Button variant="ghost" size="icon" className="relative hover:bg-indigo-50 hover:text-indigo-600">
+                                <Bell className="h-5 w-5" />
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-indigo-50 hover:text-indigo-600">
+                                <Settings className="h-5 w-5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-indigo-50 hover:text-indigo-600">
+                                <HelpCircle className="h-5 w-5" />
+                            </Button>
+
+                            {/* Admin Profile */}
+                            <div className="flex items-center gap-3 ml-2 pl-3 border-l border-slate-200">
+                                <div className="text-right">
+                                    <p className="text-sm font-medium text-slate-700">Admin</p>
+                                    <p className="text-xs text-slate-500">{adminEmail}</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-full">
+                                    <UserCircle className="h-6 w-6 text-white" />
+                                </div>
+                            </div>
+
+                            <Button variant="outline" onClick={handleLogout} className="hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-300">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -161,18 +202,18 @@ export default function AdminDashboard() {
             <div className="container mx-auto px-4 py-8">
 
                 {/* Date Filter Controls */}
-                <div className="flex flex-wrap items-center gap-4 mb-8 bg-[rgba(79,70,229,0.03)] backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-indigo-50">
-                        <Calendar className="h-4 w-4 text-[#4F46E5]" />
-                        <span className="text-sm font-semibold text-slate-700">Date Range</span>
+                <div className="flex flex-wrap items-center gap-4 mb-8 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 backdrop-blur-md p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                        <Calendar className="h-5 w-5 text-[#4F46E5]" />
+                        <span className="text-sm font-bold text-slate-700">Showing data for:</span>
                     </div>
                     <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-[180px] bg-white border-indigo-50 focus:ring-[#4F46E5]/20 text-slate-700">
+                        <SelectTrigger className="w-[200px] bg-white border-indigo-100 focus:ring-[#4F46E5]/20 text-slate-700 font-medium shadow-sm">
                             <SelectValue placeholder="Select period" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ALL">All Time</SelectItem>
-                            <SelectItem value="1D">Last 24 Hours</SelectItem>
+                            <SelectItem value="1D">Today</SelectItem>
                             <SelectItem value="7D">Last 7 Days</SelectItem>
                             <SelectItem value="30D">Last 30 Days</SelectItem>
                             <SelectItem value="CUSTOM">Custom Range</SelectItem>
@@ -183,92 +224,200 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-5">
                             <Input
                                 type="date"
-                                className="w-auto bg-white/50 border-slate-200"
+                                className="w-auto bg-white border-indigo-100 shadow-sm"
                                 value={customStart}
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomStart(e.target.value)}
                             />
-                            <span className="text-slate-400 font-medium">-</span>
+                            <span className="text-slate-400 font-medium">to</span>
                             <Input
                                 type="date"
-                                className="w-auto bg-white/50 border-slate-200"
+                                className="w-auto bg-white border-indigo-100 shadow-sm"
                                 value={customEnd}
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomEnd(e.target.value)}
                             />
-                            <Button onClick={applyCustomFilter} size="sm" className="bg-slate-900 text-white hover:bg-slate-800 shadow-md">
+                            <Button onClick={applyCustomFilter} size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700 shadow-md">
                                 Apply
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Display selected date range */}
+                    {dateFilter !== 'CUSTOM' && (
+                        <div className="text-sm text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                            {dateFilter === 'ALL' && 'All historical data'}
+                            {dateFilter === '1D' && `Today, ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                            {dateFilter === '7D' && `Last 7 days`}
+                            {dateFilter === '30D' && `Last 30 days`}
+                        </div>
+                    )}
+                    {dateFilter === 'CUSTOM' && customStart && customEnd && (
+                        <div className="text-sm text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                            {new Date(customStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(customEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                     )}
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
                     {/* Active Subscriptions */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#4F46E5]/5 to-[#7C3AED]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                            <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Active Plans</CardTitle>
-                            <div className="bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] p-2 rounded-lg shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <Star className="h-4 w-4 text-white" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Active Plans</CardTitle>
+                            <div className="bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] p-2.5 rounded-lg shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <Star className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>
                         <CardContent className="relative z-10">
-                            <div className="text-3xl font-bold text-slate-900 mt-2">{stats.activeSubscriptions}</div>
-                            <p className="text-sm font-medium text-[#4F46E5] bg-indigo-50 w-fit px-2 py-0.5 rounded-full mt-2">Active agents</p>
+                            <div className="text-4xl font-bold text-slate-900 mb-2">{stats.activeSubscriptions}</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                    <ArrowUp className="h-3 w-3" />
+                                    <span>8%</span>
+                                </div>
+                                <span className="text-xs text-slate-500">vs last month</span>
+                            </div>
+                            <Link href="/admin/billing" className="text-xs font-medium text-[#4F46E5] hover:underline">
+                                View all plans →
+                            </Link>
                         </CardContent>
                     </Card>
 
                     {/* Total Bookings */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#F59E0B]/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                            <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Bookings</CardTitle>
-                            <div className="bg-gradient-to-br from-[#F59E0B] to-orange-500 p-2 rounded-lg shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <FileText className="h-4 w-4 text-white" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Bookings</CardTitle>
+                            <div className="bg-gradient-to-br from-[#F59E0B] to-orange-500 p-2.5 rounded-lg shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <FileText className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>
                         <CardContent className="relative z-10">
-                            <div className="text-3xl font-bold text-slate-900 mt-2">{stats.totalBookings}</div>
-                            <p className="text-sm font-medium text-[#F59E0B] bg-amber-50 w-fit px-2 py-0.5 rounded-full mt-2">Confirmed & Pending</p>
+                            <div className="text-4xl font-bold text-slate-900 mb-2">{stats.totalBookings}</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                    <ArrowUp className="h-3 w-3" />
+                                    <span>12%</span>
+                                </div>
+                                <span className="text-xs text-slate-500">vs last month</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 text-xs">
+                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">15 Confirmed</span>
+                                <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">10 Pending</span>
+                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">5 Completed</span>
+                            </div>
                         </CardContent>
                     </Card>
 
                     {/* Total Agents */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#10B981]/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                            <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Agents</CardTitle>
-                            <div className="bg-gradient-to-br from-[#10B981] to-emerald-600 p-2 rounded-lg shadow-md shadow-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <Users className="h-4 w-4 text-white" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Agents</CardTitle>
+                            <div className="bg-gradient-to-br from-[#10B981] to-emerald-600 p-2.5 rounded-lg shadow-md shadow-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <Users className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>
                         <CardContent className="relative z-10">
-                            <div className="text-3xl font-bold text-slate-900 mt-2">{stats.agents.total}</div>
-                            <p className="text-sm font-medium text-[#10B981] bg-emerald-50 w-fit px-2 py-0.5 rounded-full mt-2 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></span>
-                                {stats.agents.active} Active
-                            </p>
+                            <div className="text-4xl font-bold text-slate-900 mb-2">{stats.agents.total}</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                    <ArrowUp className="h-3 w-3" />
+                                    <span>4%</span>
+                                </div>
+                                <span className="text-xs text-slate-500">vs last month</span>
+                            </div>
+                            <div className="flex gap-2 text-xs">
+                                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                                    {stats.agents.active} Active
+                                </span>
+                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                                    {stats.agents.inactive} Inactive
+                                </span>
+                            </div>
                         </CardContent>
                     </Card>
 
                     {/* Nearing Expiry */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#EC4899]/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                            <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Expiring Soon</CardTitle>
-                            <div className="bg-gradient-to-br from-[#EC4899] to-pink-600 p-2 rounded-lg shadow-md shadow-pink-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <Clock className="h-4 w-4 text-white" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Expiring Soon</CardTitle>
+                            <div className="bg-gradient-to-br from-[#EC4899] to-pink-600 p-2.5 rounded-lg shadow-md shadow-pink-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <Clock className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>
                         <CardContent className="relative z-10">
-                            <div className="text-3xl font-bold text-slate-900 mt-2">{stats.subscriptionsNearingExpiry}</div>
-                            <p className="text-sm font-medium text-[#EC4899] bg-pink-50 w-fit px-2 py-0.5 rounded-full mt-2 truncate max-w-full">
+                            <div className="text-4xl font-bold text-slate-900 mb-2">{stats.subscriptionsNearingExpiry}</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-slate-500 text-sm font-medium">
+                                    <span>—</span>
+                                </div>
+                                <span className="text-xs text-slate-500">no change</span>
+                            </div>
+                            <p className="text-xs font-medium text-[#EC4899] bg-pink-50 w-fit px-2 py-1 rounded-full truncate max-w-full">
                                 {stats.expiryDetails && stats.expiryDetails.length > 0
                                     ? `Next: ${stats.expiryDetails[0].name.split(' ')[0]}`
                                     : "Agents expiring in 7d"}
                             </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Revenue This Month - NEW */}
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Revenue (Month)</CardTitle>
+                            <div className="bg-gradient-to-br from-[#8B5CF6] to-purple-600 p-2.5 rounded-lg shadow-md shadow-purple-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <DollarSign className="h-6 w-6 text-white" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="relative z-10">
+                            <div className="text-4xl font-bold text-slate-900 mb-2">₹{Math.round(stats.totalRevenue / 1000)}k</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                    <ArrowUp className="h-3 w-3" />
+                                    <span>15%</span>
+                                </div>
+                                <span className="text-xs text-slate-500">vs last month</span>
+                            </div>
+                            <p className="text-xs text-slate-600">
+                                Total: ₹{stats.totalRevenue.toLocaleString()}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pending Actions - NEW */}
+                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#EF4444]/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Requires Attention</CardTitle>
+                            <div className="bg-gradient-to-br from-[#EF4444] to-red-600 p-2.5 rounded-lg shadow-md shadow-red-500/20 group-hover:scale-110 transition-transform duration-300">
+                                <AlertCircle className="h-6 w-6 text-white" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="relative z-10">
+                            <div className="text-4xl font-bold text-slate-900 mb-2">
+                                {(stats.alerts?.paymentFailures || 0) + (stats.alerts?.cancelledBookings || 0)}
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                                    <ArrowUp className="h-3 w-3" />
+                                    <span>2</span>
+                                </div>
+                                <span className="text-xs text-slate-500">new today</span>
+                            </div>
+                            <div className="flex gap-1 text-xs">
+                                <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+                                    {stats.alerts?.paymentFailures || 0} Payments
+                                </span>
+                                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                                    {stats.alerts?.cancelledBookings || 0} Cancelled
+                                </span>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -276,33 +425,77 @@ export default function AdminDashboard() {
 
                 {/* Alerts & System Health */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-                        <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
-                        System Health & Alerts
-                    </h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                            <AlertTriangle className="h-5 w-5 text-[#EF4444]" />
+                            System Health & Alerts
+                        </h2>
+                        <Button variant="outline" size="sm" className="text-slate-600 hover:text-indigo-600">
+                            <Clock className="h-4 w-4 mr-2" />
+                            Refresh
+                        </Button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card className="backdrop-blur-sm bg-[rgba(239,68,68,0.03)] border-red-100 shadow-sm hover:shadow-red-900/5 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-bold text-[#991B1B]">Payment Failures</CardTitle>
-                                <div className="bg-red-50 p-2 rounded-full animate-pulse">
-                                    <AlertTriangle className="h-4 w-4 text-[#EF4444]" />
+                        <Card className="backdrop-blur-sm bg-gradient-to-br from-red-50/50 to-red-100/30 border-red-200 shadow-md hover:shadow-lg transition-all group">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3">
+                                <div>
+                                    <CardTitle className="text-sm font-bold text-[#991B1B] flex items-center gap-2">
+                                        <div className="bg-red-100 p-1.5 rounded-full">
+                                            <AlertTriangle className="h-4 w-4 text-[#EF4444]" />
+                                        </div>
+                                        Payment Failures
+                                    </CardTitle>
+                                    <p className="text-xs text-slate-500 mt-1">Last checked: 5 minutes ago</p>
                                 </div>
+                                {stats.alerts?.paymentFailures > 0 && (
+                                    <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                                        CRITICAL
+                                    </div>
+                                )}
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-slate-900">{stats.alerts?.paymentFailures || 0}</div>
-                                <p className="text-xs font-medium text-[#EF4444] mt-1">Action Required</p>
+                                <div className="text-3xl font-bold text-slate-900 mb-2">{stats.alerts?.paymentFailures || 0}</div>
+                                {stats.alerts?.paymentFailures > 0 ? (
+                                    <Link href="/admin/billing" className="text-xs font-semibold text-[#EF4444] hover:underline flex items-center gap-1">
+                                        Action Required →
+                                    </Link>
+                                ) : (
+                                    <p className="text-xs font-medium text-green-600 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        All payments processed successfully
+                                    </p>
+                                )}
                             </CardContent>
                         </Card>
-                        <Card className="backdrop-blur-sm bg-[rgba(245,158,11,0.03)] border-amber-100 shadow-sm hover:shadow-amber-900/5 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-bold text-[#92400E]">Cancelled Bookings</CardTitle>
-                                <div className="bg-amber-50 p-2 rounded-full">
-                                    <XCircle className="h-4 w-4 text-[#F59E0B]" />
+                        <Card className="backdrop-blur-sm bg-gradient-to-br from-amber-50/50 to-amber-100/30 border-amber-200 shadow-md hover:shadow-lg transition-all group">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3">
+                                <div>
+                                    <CardTitle className="text-sm font-bold text-[#92400E] flex items-center gap-2">
+                                        <div className="bg-amber-100 p-1.5 rounded-full">
+                                            <XCircle className="h-4 w-4 text-[#F59E0B]" />
+                                        </div>
+                                        Cancelled Bookings
+                                    </CardTitle>
+                                    <p className="text-xs text-slate-500 mt-1">Last checked: 5 minutes ago</p>
                                 </div>
+                                {stats.alerts?.cancelledBookings > 0 && (
+                                    <div className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                        WARNING
+                                    </div>
+                                )}
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-slate-900">{stats.alerts?.cancelledBookings || 0}</div>
-                                <p className="text-xs font-medium text-[#F59E0B] mt-1">Review cancellation reasons</p>
+                                <div className="text-3xl font-bold text-slate-900 mb-2">{stats.alerts?.cancelledBookings || 0}</div>
+                                {stats.alerts?.cancelledBookings > 0 ? (
+                                    <button className="text-xs font-semibold text-[#F59E0B] hover:underline flex items-center gap-1">
+                                        Review cancellation reasons →
+                                    </button>
+                                ) : (
+                                    <p className="text-xs font-medium text-green-600 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        No cancellations today
+                                    </p>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -324,66 +517,71 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl border-white/60 group">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="hover:shadow-xl transition-all cursor-pointer border-0 bg-gradient-to-br from-indigo-50/50 to-indigo-100/30 backdrop-blur-xl border-indigo-100 group">
                         <Link href="/admin/agents">
                             <CardHeader>
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-indigo-50 p-3 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                                        <Users className="h-6 w-6 text-[#4F46E5]" />
+                                    <div className="bg-indigo-100 p-3 rounded-lg group-hover:bg-indigo-200 transition-colors group-hover:scale-110 duration-300">
+                                        <Users className="h-7 w-7 text-[#4F46E5]" />
                                     </div>
-                                    <div>
-                                        <CardTitle className="text-slate-800">Agent Management</CardTitle>
+                                    <div className="flex-1">
+                                        <CardTitle className="text-slate-800 text-lg">Agent Management</CardTitle>
                                         <CardDescription>Manage agents and their access</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <Button className="w-full bg-[#4F46E5] hover:bg-[#4338ca] text-white">
+                                {/* Quick Stats */}
+                                <div className="flex gap-3 mb-4 text-sm">
+                                    <div className="bg-white/60 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                        <span className="text-slate-700 font-medium">{stats.agents.active} active</span>
+                                    </div>
+                                    <div className="bg-white/60 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                        <span className="text-slate-700 font-medium">2 pending reviews</span>
+                                    </div>
+                                </div>
+                                <Button className="w-full bg-[#4F46E5] hover:bg-[#4338ca] text-white shadow-md group-hover:shadow-lg transition-all">
+                                    <Users className="h-4 w-4 mr-2" />
                                     Manage Agents
                                 </Button>
                             </CardContent>
                         </Link>
                     </Card>
 
-                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(245,158,11,0.03)] backdrop-blur-xl border-white/60 group">
+                    <Card className="hover:shadow-xl transition-all cursor-pointer border-0 bg-gradient-to-br from-amber-50/50 to-amber-100/30 backdrop-blur-xl border-amber-100 group">
                         <Link href="/admin/billing">
                             <CardHeader>
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-amber-50 p-3 rounded-lg group-hover:bg-amber-100 transition-colors">
-                                        <RupeeIcon className="h-6 w-6 text-[#F59E0B]" />
+                                    <div className="bg-amber-100 p-3 rounded-lg group-hover:bg-amber-200 transition-colors group-hover:scale-110 duration-300">
+                                        <RupeeIcon className="h-7 w-7 text-[#F59E0B]" />
                                     </div>
-                                    <div>
-                                        <CardTitle className="text-slate-800">Billing & Subscriptions</CardTitle>
+                                    <div className="flex-1">
+                                        <CardTitle className="text-slate-800 text-lg">Billing & Subscriptions</CardTitle>
                                         <CardDescription>Manage plans and invoices</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <Button className="w-full bg-[#F59E0B] hover:bg-[#d97706] text-white">
+                                {/* Quick Stats */}
+                                <div className="flex gap-3 mb-4 text-sm">
+                                    <div className="bg-white/60 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                        <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                                        <span className="text-slate-700 font-medium">₹{Math.round(stats.totalRevenue / 1000)}k revenue</span>
+                                    </div>
+                                    <div className="bg-white/60 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                        <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+                                        <span className="text-slate-700 font-medium">{stats.alerts?.paymentFailures || 0} pending</span>
+                                    </div>
+                                </div>
+                                <Button className="w-full bg-[#F59E0B] hover:bg-[#d97706] text-white shadow-md group-hover:shadow-lg transition-all">
+                                    <RupeeIcon className="h-4 w-4 mr-2" />
                                     Manage Billing
                                 </Button>
                             </CardContent>
                         </Link>
-                    </Card>
-
-                    <Card className="hover:shadow-lg transition-all border-0 bg-[rgba(236,72,153,0.03)] backdrop-blur-xl border-white/60">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="bg-pink-50 p-3 rounded-lg">
-                                    <MapPin className="h-6 w-6 text-[#EC4899]" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-slate-800">Destinations</CardTitle>
-                                    <CardDescription>Manage destinations and locations</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <Button className="w-full border-pink-200 text-[#EC4899] hover:bg-pink-50" variant="outline" disabled>
-                                Coming Soon
-                            </Button>
-                        </CardContent>
                     </Card>
                 </div>
             </div >

@@ -28,11 +28,11 @@ api.interceptors.request.use((config) => {
 // Auth API
 export const authAPI = {
     login: async (email: string, password: string) => {
-        const formData = new FormData()
-        formData.append('username', email)
-        formData.append('password', password)
+        const params = new URLSearchParams()
+        params.append('username', email)
+        params.append('password', password)
 
-        const response = await api.post('/auth/login', formData, {
+        const response = await api.post('/auth/login', params, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         })
         return response.data
@@ -76,6 +76,17 @@ export const authAPI = {
         confirm_password: string
     }) => {
         const response = await api.post('/auth/reset-password', data)
+        return response.data
+    },
+
+    // Agent Login OTP Methods
+    sendLoginOTP: async (email: string, password: string) => {
+        const response = await api.post('/auth/send-login-otp', { email, password })
+        return response.data
+    },
+
+    verifyLoginOTP: async (email: string, otp: string) => {
+        const response = await api.post('/auth/verify-login-otp', { email, otp })
         return response.data
     },
 }

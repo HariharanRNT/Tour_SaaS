@@ -1,16 +1,20 @@
 """Authentication API routes"""
 from datetime import timedelta
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.models import User, UserRole, Customer, Agent
-from app.schemas import UserCreate, UserResponse, Token, UserLogin
+from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.exceptions import ConflictException, UnauthorizedException
 from app.api.deps import get_current_user, get_current_domain
 from app.config import settings
+from app.utils.crypto import decrypt_value
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -90,16 +94,19 @@ async def register(
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
     domain: str = Depends(get_current_domain)
 ):
-    """Login user"""
-    # Find user by email
+    """Unified login endpoint for all roles"""
     from sqlalchemy.orm import selectinload
-    # Basic profile loading is sufficient
+    from app.services.otp_service import OTPService
+    from app.services.email_service import EmailService
+    from app.utils.crypto import decrypt_value
+
+    # 1. Find user by email
     stmt = select(User).where(User.email == form_data.username).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
@@ -108,34 +115,313 @@ async def login(
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     
+    # 2. Basic authentication check
     if not user or not verify_password(form_data.password, user.password_hash):
         raise UnauthorizedException("Incorrect email or password")
     
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail="Account is inactive")
+
+    # 3. Handle Role-Based Logic
+    if user.role == UserRole.AGENT:
+        # Check rate limiting
+        if not await OTPService.check_login_rate_limit(user.email):
+            logger.warning(f"Agent login OTP rate limit exceeded for: {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="OTP request limit exceeded. Please try again after 1 hour."
+            )
         
-    # Domain Verification for Customers
+        # Generate and store OTP
+        otp = OTPService.generate_otp()
+        
+        # DIAGNOSTIC: Write to file to verify OTP generation
+        import os
+        try:
+            log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
+            with open(log_file, "a") as f:
+                from datetime import datetime
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Timestamp: {datetime.now()}\n")
+                f.write(f"Email: {user.email}\n")
+                f.write(f"OTP: {otp}\n")
+                f.write(f"{'='*60}\n")
+        except Exception as e:
+            # Silently fail if file write fails - don't crash the login
+            pass
+        
+        # Log OTP to console using stderr for guaranteed visibility
+        import sys
+        try:
+            sys.stderr.write(f"\n{'='*60}\n")
+            sys.stderr.write(f"AGENT LOGIN OTP GENERATED\n")
+            sys.stderr.write(f"Email: {user.email}\n")
+            sys.stderr.write(f"OTP CODE: {otp}\n")
+            sys.stderr.write(f"Valid for: 5 minutes\n")
+            sys.stderr.write(f"{'='*60}\n\n")
+            sys.stderr.flush()
+        except Exception as e:
+            # Silently fail if stderr write fails - don't crash the login
+            pass
+        
+        if not await OTPService.store_login_otp(user.email, otp):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate OTP. Please try again."
+            )
+        
+        # Send OTP email
+        agent_profile = user.agent_profile
+        agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+        
+        subject = "Your Login OTP for RNT Tour"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
+            <p>Hello {agent_name},</p>
+            <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+                {otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
+        </div>
+        """
+        
+        # Use agent's SMTP settings if available
+        smtp_config = None
+        if agent_profile and agent_profile.smtp_settings:
+            s = agent_profile.smtp_settings
+            smtp_config = {
+                "host": s.host,
+                "port": s.port,
+                "user": s.username,
+                "password": decrypt_value(s.password),
+                "from_email": s.from_email,
+                "from_name": s.from_name,
+                "encryption_type": s.encryption_type
+            }
+        
+        await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
+        
+        return LoginResponse(
+            require_otp=True,
+            message="OTP sent successfully to your registered email",
+            email=user.email,
+            expires_in=300
+        )
+
+    # 4. Handle Customer/Admin (Direct Login)
     if user.role == UserRole.CUSTOMER:
         customer_profile = user.customer_profile
         if customer_profile and customer_profile.agent_id:
-            # Fetch Agent profile directly using agent_id
-            # Note: customer.agent_id points to the User ID of the agent
-            # We need the Agent profile associated with that User ID
+            # Domain Verification (Existing logic)
             agent_query = await db.execute(select(Agent).where(Agent.user_id == customer_profile.agent_id))
             agent_profile = agent_query.scalar_one_or_none()
             
             if agent_profile:
                 agent_domain = agent_profile.domain
-                
-                # Check if domain matches
                 if agent_domain and agent_domain.lower() != domain:
-                    print(f"Login denied: Customer belongs to {agent_domain} but trying to login from {domain}")
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN, 
                         detail=f"Access denied. You must login from {agent_domain}"
                     )
     
     # Create access token
+    access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
+    
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user),
+        require_otp=False
+    )
+
+
+# Agent Login OTP Endpoints
+from app.schemas import SendLoginOTPRequest, VerifyLoginOTPRequest, SendLoginOTPResponse
+
+@router.post("/send-login-otp", response_model=SendLoginOTPResponse)
+async def send_login_otp(
+    data: SendLoginOTPRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Send OTP for agent login after verifying credentials"""
+    import sys
+    sys.stderr.write(f"\n{'='*60}\n")
+    sys.stderr.write(f"🚀 AGENT LOGIN OTP REQUEST\n")
+    sys.stderr.write(f"📧 Email: {data.email}\n")
+    sys.stderr.write(f"{'='*60}\n")
+    sys.stderr.flush()
+    
+    from sqlalchemy.orm import selectinload
+    from app.services.otp_service import OTPService
+    from app.services.email_service import EmailService
+    
+    # 1. Find user by email
+    stmt = select(User).where(User.email == data.email).options(
+        selectinload(User.admin_profile),
+        selectinload(User.agent_profile),
+        selectinload(User.customer_profile)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    
+    logger.warning(f"✅ Step 1: User lookup complete. Found: {user is not None}")
+    
+    # Generic error message to prevent user enumeration
+    if not user:
+        logger.warning(f"❌ User not found for email: {data.email}")
+        raise UnauthorizedException("Invalid email or password")
+    
+    # 2. Verify user is an agent
+    if user.role != UserRole.AGENT:
+        logger.warning(f"❌ User {data.email} is not an agent. Role: {user.role}")
+        raise UnauthorizedException("Invalid email or password")
+    
+    logger.warning(f"✅ Step 2: User is an agent")
+    
+    # 3. Verify password
+    if not verify_password(data.password, user.password_hash):
+        logger.warning(f"❌ Invalid password for {data.email}")
+        raise UnauthorizedException("Invalid email or password")
+    
+    logger.warning(f"✅ Step 3: Password verified")
+    
+    # 4. Check if user is active
+    if not user.is_active:
+        logger.warning(f"❌ User {data.email} is inactive")
+        raise HTTPException(status_code=400, detail="Account is inactive")
+    
+    logger.warning(f"✅ Step 4: User is active")
+    
+    # 5. Check rate limiting
+    if not await OTPService.check_login_rate_limit(data.email):
+        logger.warning(f"❌ Rate limit exceeded for {data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many OTP requests. Please try again in an hour."
+        )
+    
+    logger.warning(f"✅ Step 5: Rate limit check passed")
+    
+    # 6. Generate OTP
+    otp = OTPService.generate_otp()
+    
+    # DIAGNOSTIC: Write to file to verify this code is executing
+    import os
+    log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
+    with open(log_file, "a") as f:
+        from datetime import datetime
+        f.write(f"\n{'='*60}\n")
+        f.write(f"Timestamp: {datetime.now()}\n")
+        f.write(f"Email: {data.email}\n")
+        f.write(f"OTP: {otp}\n")
+        f.write(f"{'='*60}\n")
+    
+    # Log OTP to console for development/testing - using stderr for guaranteed visibility
+    import sys
+    sys.stderr.write(f"\n{'='*60}\n")
+    sys.stderr.write(f"🔐 AGENT LOGIN OTP GENERATED\n")
+    sys.stderr.write(f"📧 Email: {data.email}\n")
+    sys.stderr.write(f"🔢 OTP CODE: {otp}\n")
+    sys.stderr.write(f"⏰ Valid for: 5 minutes\n")
+    sys.stderr.write(f"{'='*60}\n\n")
+    sys.stderr.flush()
+    
+    # 7. Store OTP in Redis
+    if not await OTPService.store_login_otp(data.email, otp):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate OTP. Please try again."
+        )
+    
+    # 8. Send OTP via email
+    agent_profile = user.agent_profile
+    agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+    
+    subject = "Your Login OTP for RNT Tour"
+    body = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
+        <p>Hello {agent_name},</p>
+        <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+            {otp}
+        </div>
+        <p style="color: #64748b; font-size: 14px;">If you didn't request this login, please ignore this email and ensure your account is secure.</p>
+        <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
+    </div>
+    """
+    
+    # Use agent's SMTP settings if available
+    smtp_config = None
+    if agent_profile and agent_profile.smtp_settings:
+        s = agent_profile.smtp_settings
+        smtp_config = {
+            "host": s.host,
+            "port": s.port,
+            "user": s.username,
+            "password": decrypt_value(s.password),
+            "from_email": s.from_email,
+            "from_name": s.from_name,
+            "encryption_type": s.encryption_type
+        }
+    
+    await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
+    
+    return SendLoginOTPResponse(
+        message="OTP sent successfully to your registered email",
+        email=data.email,
+        expires_in=300  # 5 minutes
+    )
+
+
+@router.post("/verify-login-otp", response_model=Token)
+async def verify_login_otp(
+    data: VerifyLoginOTPRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify OTP and complete agent login"""
+    from sqlalchemy.orm import selectinload
+    from app.services.otp_service import OTPService
+    
+    # 1. Verify OTP from Redis
+    is_valid = await OTPService.verify_login_otp(data.email, data.otp)
+    
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP"
+        )
+    
+    # 2. Find user by email
+    stmt = select(User).where(User.email == data.email).options(
+        selectinload(User.admin_profile),
+        selectinload(User.agent_profile),
+        selectinload(User.customer_profile)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # 3. Verify user is an agent
+    if user.role != UserRole.AGENT:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # 4. Check if user is active
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Account is inactive")
+    
+    # 5. Delete OTP from Redis
+    await OTPService.delete_login_otp(data.email)
+    
+    # 6. Create access token
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
     
     return Token(
@@ -195,9 +481,10 @@ async def forgot_password(
     """Initiate password reset flow"""
     # 1. Check Rate Limit
     if not await OTPService.check_rate_limit(data.email):
+        logger.warning(f"Password reset OTP rate limit exceeded for: {data.email}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Please try again later."
+            detail="OTP request limit exceeded. Please try again after 1 hour."
         )
 
     # 2. Check if email exists in customer table (Requirement: check if exists in customer table)
@@ -216,7 +503,34 @@ async def forgot_password(
     
     # 3. Generate 6-digit OTP
     otp = OTPService.generate_otp()
-    print(f"DEBUG: OTP for {data.email}: {otp}")
+    
+    # DIAGNOSTIC: Write to file to verify OTP generation
+    import os
+    try:
+        log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
+        with open(log_file, "a") as f:
+            from datetime import datetime
+            f.write(f"\n{'='*60}\n")
+            f.write(f"Timestamp: {datetime.now()}\n")
+            f.write(f"Type: PASSWORD RESET\n")
+            f.write(f"Email: {data.email}\n")
+            f.write(f"OTP: {otp}\n")
+            f.write(f"{'='*60}\n")
+    except Exception as e:
+        pass  # Silently fail if file write fails
+    
+    # Log OTP to console using stderr for guaranteed visibility
+    import sys
+    try:
+        sys.stderr.write(f"\n{'='*60}\n")
+        sys.stderr.write(f"PASSWORD RESET OTP GENERATED\n")
+        sys.stderr.write(f"Email: {data.email}\n")
+        sys.stderr.write(f"OTP CODE: {otp}\n")
+        sys.stderr.write(f"Valid for: 5 minutes\n")
+        sys.stderr.write(f"{'='*60}\n\n")
+        sys.stderr.flush()
+    except Exception as e:
+        pass  # Silently fail if stderr write fails
     
     # 4. Store OTP in Redis
     if not await OTPService.store_otp(data.email, otp):

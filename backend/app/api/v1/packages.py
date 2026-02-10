@@ -41,8 +41,8 @@ async def get_package_durations(
         agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
         print(f"DEBUG DURATIONS: Filtering by Domain Agent: {domain}")
         query = query.where(Package.created_by == agent_subquery)
-        # Limit to Public packages for Guests/Non-Owners
-        query = query.where(Package.is_public == True)
+        # VISIBILITY UPDATE: Show ALL Published packages
+        # query = query.where(Package.is_public == True) <-- REMOVED
         
     # 2. Filter by Destination
     if destination:
@@ -81,8 +81,8 @@ async def get_package_dates(
     elif not current_user or (current_user and current_user.role != UserRole.ADMIN):
         agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
         query = query.where(Package.created_by == agent_subquery)
-        # Limit to Public packages for Guests/Non-Owners
-        query = query.where(Package.is_public == True)
+        # VISIBILITY UPDATE: Show ALL Published packages
+        # query = query.where(Package.is_public == True) <-- REMOVED
         
     # 2. Filter by Destination
     if destination:
@@ -106,24 +106,37 @@ async def get_package_dates(
 async def get_destination_suggestions(
     q: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
-    domain: str = Depends(get_current_domain)
+    domain: str = Depends(get_current_domain),
+    current_user = Depends(get_optional_current_user)
 ):
     """
     Get unique destination/country suggestions based on public packages of the current agent.
     """
-    # Find Agent by domain
-    agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
     
     # Query distinct destinations and countries
     query = select(Package.destination, Package.country).distinct().where(
-        Package.created_by == agent_subquery,
         Package.status == PackageStatus.PUBLISHED,
-        Package.is_public == True,
         or_(
             Package.destination.ilike(f"%{q}%"),
             Package.country.ilike(f"%{q}%")
         )
     )
+
+    # Resolve the Agent for the current Domain
+    stmt = select(Agent).where(Agent.domain == domain)
+    result = await db.execute(stmt)
+    domain_agent = result.scalar_one_or_none()
+    
+    if not domain_agent:
+        # If no agent found for domain, return empty or handle gracefully
+        return []
+
+    # 1. Tenant Isolation: Only show packages created by this Domain's Agent
+    query = query.where(Package.created_by == domain_agent.user_id)
+
+    # 2. Visibility Check: Show ALL Published packages (Requested by User)
+    # Previously we filtered by is_public for guests, but now we show all Status=Published
+    # query = query.where(Package.is_public == True) <-- REMOVED
     
     result = await db.execute(query)
     items = result.all()

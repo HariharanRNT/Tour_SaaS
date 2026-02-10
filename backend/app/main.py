@@ -46,9 +46,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 # CORS middleware - MUST be added before routes
 app.add_middleware(
     CORSMiddleware,
-    # Allow localhost and any .local domain on port 3000
+    # Allow localhost and any .local domain on port 3000 and 3001
     allow_origins=[
-        "http://localhost:3000", 
+        "http://localhost:3000",
+        "http://localhost:3001",
         "http://agent.local:3000",
         "http://rnt.local:3000",
         "http://rnt.local"

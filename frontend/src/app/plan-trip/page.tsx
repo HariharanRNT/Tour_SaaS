@@ -128,8 +128,12 @@ export default function PlanTripPage() {
         }
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            const headers: Record<string, string> = { 'X-Domain': domain }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+
             const res = await fetch(`http://localhost:8000/api/v1/packages/config/suggestions?q=${encodeURIComponent(q)}`, {
-                headers: { 'X-Domain': domain }
+                headers: headers
             })
             if (res.ok) {
                 const data = await res.json()

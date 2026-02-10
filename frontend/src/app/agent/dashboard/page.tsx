@@ -48,7 +48,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Bot, Send, User } from 'lucide-react'
+import { Send, User } from 'lucide-react'
 
 import {
     Carousel,
@@ -639,7 +639,13 @@ export default function AgentDashboard() {
                             </h1>
                         </div>
                         <div className="flex items-center gap-4">
-                            {/* Add desktop navigation here if needed, or keep it simple */}
+                            <Button
+                                onClick={handleAIItineraryClick}
+                                className="hidden md:flex bg-indigo-50 text-[#4F46E5] hover:bg-indigo-100 border border-indigo-100 shadow-sm rounded-full px-5 transition-all duration-300 gap-2 font-semibold"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                                AI Assistant
+                            </Button>
                         </div>
                     </div>
                 </header>
@@ -1170,6 +1176,10 @@ export default function AgentDashboard() {
                                 <Package className="mr-3 h-5 w-5 text-indigo-600" />
                                 <span>New Package</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleAIItineraryClick} className="py-3">
+                                <Sparkles className="mr-3 h-5 w-5 text-pink-600" />
+                                <span>AI Assistant</span>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleCustomerProfileClick} className="py-3">
                                 <Users className="mr-3 h-5 w-5 text-emerald-600" />
                                 <span>New Customer</span>
@@ -1212,7 +1222,7 @@ export default function AgentDashboard() {
                     <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
                         <div className="bg-[linear-gradient(135deg,#4F46E5_0%,#7C3AED_100%)] p-6 text-white flex items-center gap-4">
                             <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-                                <Bot className="h-8 w-8 text-white" />
+                                <Sparkles className="h-8 w-8 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold">AI Itinerary Assistant</h3>
@@ -1229,7 +1239,7 @@ export default function AgentDashboard() {
                                     <div key={idx} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                                         <div className={`${msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-slate-600'} rounded-full p-2 mt-1`}>
                                             {msg.role === 'assistant' ? (
-                                                <Bot className="h-4 w-4 text-white" />
+                                                <Sparkles className="h-4 w-4 text-white" />
                                             ) : (
                                                 <User className="h-4 w-4 text-white" />
                                             )}
@@ -1246,7 +1256,7 @@ export default function AgentDashboard() {
                                 {isLoading && (
                                     <div className="flex items-start gap-3">
                                         <div className="bg-indigo-600 rounded-full p-2 mt-1">
-                                            <Bot className="h-4 w-4 text-white animate-pulse" />
+                                            <Sparkles className="h-4 w-4 text-white animate-pulse" />
                                         </div>
                                         <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-2xl rounded-tl-none">
                                             <div className="flex gap-2">
@@ -1339,6 +1349,24 @@ export default function AgentDashboard() {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+                {/* Desktop Floating AI Button */}
+                <div className="fixed bottom-8 right-8 hidden md:block z-50">
+                    <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.5, y: 100 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 260,
+                            damping: 20,
+                            delay: 1
+                        }}
+                    >
+
+                    </motion.div>
+                </div>
             </div>
         </div>
     )

@@ -1,317 +1,55 @@
-📋 Page Header
-Title & Description:
-
-"Settings" title is clear but make it 30% larger and bolder
-Subtitle "Manage your agency preferences and integrations" is good
-Add breadcrumb navigation: Dashboard > Settings
-Consider adding tab navigation if you have multiple settings categories
-
-Save Changes Button:
-
-Good placement in top-right corner
-Make it more prominent - increase size
-Add icon: "💾 Save Changes" or "✓ Save Changes"
-Include keyboard shortcut hint: "Ctrl+S"
-Show disabled state when no changes made
-Add success toast notification after saving
-
-Better header design:
-← Back to Dashboard
-
-Settings                    [Cancel] [Save Changes ✓]
-Manage your agency preferences and integrations
-
-[General] [Email] [Payment] [Notifications] [API]
-─────────────────────────────────────────────────
-🎨 Section Cards Layout
-Overall Card Design:
-
-Cards are clean but too plain and similar
-Add subtle shadows for depth
-Use colored left borders to differentiate sections:
-
-General: Blue
-Email: Purple
-Payment: Green/Teal
-
-
-Add hover effect on cards (slight lift)
-Increase spacing between cards (currently too tight)
-
-🔧 General Section
-Section Header:
-
-Icon (⚙️) and title are good
-Make icon larger and more colorful
-Description text is helpful but too small - increase by 15%
-Add expand/collapse functionality for sections
-
-Default Currency Field:
-
-Label is clear but make it bolder
-Input field looks good
-Consider using a dropdown with currency symbols instead of text input:
-
-  ┌────────────────────────┐
-  │ 💱 INR (₹)        ▼   │
-  └────────────────────────┘
-
-Add currency symbol preview beside field
-Include popular currencies at top of dropdown
-
-Better currency selector:
-Default Currency *
-┌────────────────────────────────┐
-│ 🇮🇳 INR - Indian Rupee (₹)  ▼ │
-└────────────────────────────────┘
-
-Popular: USD ($) | EUR (€) | GBP (£) | INR (₹)
-📧 Email Configuration Section
-Section Header:
-
-"Email Configuration (SMTP)" is clear
-Make "Test Connection" button more prominent
-Add status indicator: "● Connected" / "● Not configured"
-Consider collapsible advanced settings
-
-Better header:
-┌──────────────────────────────────────────┐
-│ 📧 Email Configuration (SMTP)            │
-│ Set your own service to send automated   │
-│ confirmations.                           │
-│                                          │
-│ Status: ● Connected ✓  [Test Connection]│
-└──────────────────────────────────────────┘
-Form Layout Issues:
-SMTP Host & Port:
-
-Side-by-side layout is good for related fields
-Labels need to be bolder and more prominent
-Add help icons (?) with tooltips:
-
-SMTP Host: "Example: smtp.gmail.com"
-Port: "Common: 587 (TLS), 465 (SSL), 25"
-
-
-Add placeholder text in fields
-Port field should be narrower (it's a number field)
-
-Better layout:
-SMTP Host *                    Port *
-┌──────────────────────┐      ┌──────┐
-│ smtp.gmail.com    ⓘ  │      │ 587 ⓘ│
-└──────────────────────┘      └──────┘
-Encryption & Sender Name:
-
-Same side-by-side layout works
-"Encryption" should be a dropdown, not text input:
-
-  Encryption *
-  ┌────────────────┐
-  │ STARTTLS    ▼ │  
-  └────────────────┘
-  Options: STARTTLS | SSL/TLS | None
-
-Add info tooltip explaining encryption types
-"Sender Name" field is good - maybe add example: "(e.g., TourSaaS Support)"
-
-Username/Email & Password:
-
-Good layout but password field needs work
-Add show/hide password toggle (👁️ icon)
-"Leave empty to keep existing password" is helpful but too subtle
-Make helper text more prominent with icon:
-
-  ℹ️ Leave empty to keep existing password
-
-Consider "Change Password" checkbox to avoid accidental changes
-
-Better password field:
-Password
-┌────────────────────────────────┐
-│ ••••••••••            👁️ 🔄   │
-└────────────────────────────────┘
-🔒 Leave empty to keep current password
-[Change Password ☐]
-Sender Email Address:
-
-Field looks good
-Add email validation icon (✓ when valid)
-Consider making it auto-populate from Username field
-Add example: "noreply@youragency.com"
-
-💳 Payment Gateway Section
-Section Header:
-
-"Payment Gateway (Razorpay)" is clear
-Add gateway logo beside title for brand recognition
-Include status indicator: "● Active" / "● Inactive"
-Add "Change Gateway" button if multiple options available
-
-Better header:
-┌──────────────────────────────────────────┐
-│ 💳 Payment Gateway                       │
-│ [Razorpay Logo] Razorpay                │
-│ Configure your Razorpay account to       │
-│ accept payments directly.                │
-│                                          │
-│ Status: ● Active ✓      [Change Gateway]│
-└──────────────────────────────────────────┘
-Key ID Field:
-
-Label is clear but make it bolder
-Add copy button (📋) to easily copy the key
-Add mask/unmask toggle for security
-Current key is visible - consider masking by default
-
-Better Key ID field:
-Key ID *                           [📋 Copy]
-┌────────────────────────────────────────┐
-│ rzp_test_XXXXXXXXXXXXxxx        👁️   │
-└────────────────────────────────────────┘
-Key Secret Field:
-
-Should definitely be masked (showing "Enter new key secret" is good)
-Add show/hide toggle
-Add "Test Keys" / "Live Keys" toggle at top:
-
-  Mode: ( ) Test Keys  (●) Live Keys
-
-Include warning when using test keys
-Add validation to ensure correct format
-
-Better Key Secret field:
-Key Secret *                       [📋 Copy]
-┌────────────────────────────────────────┐
-│ ••••••••••••••••••••••        👁️ 🔄  │
-└────────────────────────────────────────┘
-🔒 Leave empty to keep current secret
-⚠️ Using Test Mode - Switch to Live for production
-🎯 Form Field Improvements
-General field enhancements:
-Labels:
-
-Make all labels bolder (font-weight: 600)
-Add asterisks (*) for required fields
-Use consistent label styling across all sections
-
-Input Fields:
-
-Increase height by 20% (add more padding)
-Add subtle background color (very light gray)
-Thicker border on focus (2px, blue color)
-Add smooth transitions for all states
-Rounded corners (6px)
-
-Better input design:
-Label *                          [Help ⓘ]
-┌─────────────────────────────────────┐
-│ [Icon] Input value here...          │
-└─────────────────────────────────────┘
-Helper text or validation message
-Validation & Feedback:
-
-Add inline validation (green ✓ or red ✗)
-Show helpful error messages:
-
-"Please enter a valid SMTP host"
-"Port must be between 1-65535"
-
-
-Real-time validation as user types
-Success messages when fields are correct
-
-🎨 Visual Hierarchy
-Add section dividers:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Use subtle horizontal lines between major sections
-Add section numbers: "1. General", "2. Email", "3. Payment"
-
-Color coding:
-
-Use subtle background tints for each section:
-
-General: Very light blue
-Email: Very light purple
-Payment: Very light green
-
-
-Add colored icons matching the tint
-
-✨ Additional Features
-Unsaved Changes Warning:
-┌────────────────────────────────────┐
-│ ⚠️ You have unsaved changes        │
-│ [Discard] [Save Changes]           │
-└────────────────────────────────────┘
-
-Show sticky warning banner when form is dirty
-Prevent navigation without saving
-Add "Are you sure?" dialog before discarding
-
-Test Functionality:
-
-"Test Connection" button should:
-
-Show loading state while testing
-Display success/error message prominently
-Include detailed error info if fails
-Add retry button if test fails
-
-
-
-Better test button:
-[🔄 Testing Connection...]  →  [✓ Connection Successful!]
-                            or  [✗ Connection Failed - Check credentials]
-Help & Documentation:
-
-Add "?" help icons with tooltips throughout
-Include "Need help?" link at bottom
-Add "View Documentation" button per section
-Provide example configurations for common providers
-
-Settings Templates:
-Quick Setup:
-[Gmail] [Outlook] [SendGrid] [Custom]
-
-Pre-fill fields based on popular email providers
-One-click setup for common configurations
-
-🔐 Security Enhancements
-Sensitive Data Handling:
-
-Mask API keys by default
-Add "Last updated" timestamp for credentials
-Show "Credentials saved securely" confirmation
-Add two-factor authentication for changing payment settings
-
-Audit Trail:
-Last modified: Feb 9, 2026 by admin@agency.com
-[View History]
-
-Show who and when settings were changed
-Add change history log for compliance
-
-📱 Responsive Design
-Mobile considerations:
-
-Stack side-by-side fields vertically on mobile
-Make touch targets larger (48px minimum)
-Use accordion/collapsible sections to save space
-Sticky save button at bottom on mobile
-
-✅ Quick Priority Fixes
-
-Add show/hide toggles to password/secret fields
-Make all labels bolder and more prominent
-Add copy buttons to API keys
-Include status indicators (Connected/Active)
-Add help tooltips with (?) icons
-Improve spacing between sections
-Make encryption field a dropdown
-Add unsaved changes warning
-Increase all input field heights
-Add success/error states with colors
-Include test mode toggle for payment
-Add section icons with colors
+Problems Identified:
+
+Return Journey card is taller than Onward Journey card
+Inconsistent content alignment between the two cards
+Check-in baggage details are only shown in Return card, making it taller
+Visual imbalance - cards should be the same height for symmetry
+
+Solutions to Fix Card Height Consistency:
+Option 1: Equalize Content (Recommended)
+Make both cards show the same information structure:
+ONWARD JOURNEY Card:
+┌─────────────────────────────────────────────────┐
+│ ● ONWARD JOURNEY                         ⭐ 4.6 │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  [IX]  AI Express        07:50 ──●──> 18:55    │
+│  IX-2975                  MAA    11h   NMI      │
+│  Boeing 737              Feb 28   1 Stop Feb 28 │
+│                                                  │
+│  ──────────────────────────────────────────────│
+│                                                  │
+│  Cabin-baggage: 7 Kg     🍽️ Meal      ✅ Web   │
+│  Check-in: [Not shown]    Included    Check-in  │
+│  Class: ECONOMY          ⚠️ Non-refundable      │
+│                                                  │
+│  ──────────────────────────────────────────────│
+│                                                  │
+│  ₹3,755.95                      [✓ Selected]    │
+│  PER PERSON + TAXES                             │
+│                                                  │
+│  [View Details ▼]                               │
+└─────────────────────────────────────────────────┘
+RETURN JOURNEY Card:
+┌─────────────────────────────────────────────────┐
+│ ● RETURN JOURNEY                  🚀 FASTEST 4.8│
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  [6E]  IndiGo           06:15 ──●──> 08:20     │
+│  6E-5107                 BOM    2h     MAA      │
+│  Boeing 737             Mar 2   Non-stop Mar 2  │
+│                                                  │
+│  ──────────────────────────────────────────────│
+│                                                  │
+│  Cabin-baggage: 7 Kg     🍽️ Meal      ✅ Web   │
+│  Check-in: 15 Kg (01     Included    Check-in  │
+│  Piece only)             ⚠️ Non-refundable      │
+│  Class: ECONOMY                                 │
+│                                                  │
+│  ──────────────────────────────────────────────│
+│                                                  │
+│  ₹3,688.85                      [✓ Selected]    │
+│  PER PERSON + TAXES                             │
+│                                                  │
+│  [View Details ▼]                               │
+└─────────────────────────────────────────────────┘

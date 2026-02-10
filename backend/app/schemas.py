@@ -490,3 +490,31 @@ class ResetPasswordRequest(BaseModel):
         if 'new_password' in info.data and v != info.data['new_password']:
             raise ValueError('Passwords do not match')
         return v
+
+
+# Agent Login OTP Schemas
+class SendLoginOTPRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class VerifyLoginOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+class SendLoginOTPResponse(BaseModel):
+    message: str
+    email: str
+    expires_in: int  # seconds
+
+
+class LoginResponse(BaseModel):
+    # For successful direct login (Customer/Admin)
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
+    user: Optional[UserResponse] = None
+    
+    # For Agent OTP flow
+    require_otp: bool = False
+    message: Optional[str] = None
+    email: Optional[str] = None
+    expires_in: Optional[int] = None
