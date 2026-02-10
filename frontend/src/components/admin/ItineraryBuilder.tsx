@@ -241,10 +241,201 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
     };
 
     useEffect(() => {
-        loadItinerary()
+        // Only load if we have a packageId AND haven't loaded yet
+        // OR if packageId changes (editing existing package)
+        if (packageId) {
+            loadItinerary()
+        }
+    }, []) // Empty dependency array - only run once on mount
+
+    // Separate effect to handle when packageId becomes available after saving
+    useEffect(() => {
+        if (packageId && Object.keys(activities).length === 0) {
+            // Only load if we don't have activities yet
+            loadItinerary()
+        }
     }, [packageId])
 
+    const saveAIActivitiesToDatabase = async (organized: Record<number, DayActivities>) => {
+        // Check if we've already saved these AI activities
+        const savedFlag = localStorage.getItem(`ai_activities_saved_${packageId}`)
+        if (savedFlag === 'true') {
+            console.log('[ItineraryBuilder] AI activities already saved, skipping duplicate save')
+            return
+        }
+
+        console.log('[ItineraryBuilder] Checking if activities already exist in database...')
+
+        try {
+            // First, check if there are already activities in the database
+            const checkResponse = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
+            if (checkResponse.ok) {
+                const packageData = await checkResponse.json()
+                const existingActivities = packageData.itinerary_by_day || []
+
+                // Count total existing activities
+                let existingCount = 0
+                existingActivities.forEach((day: any) => {
+                    const dayActivities = [
+                        ...(day.morning || []),
+                        ...(day.afternoon || []),
+                        ...(day.evening || []),
+                        ...(day.night || []),
+                        ...(day.half_day || []),
+                        ...(day.full_day || [])
+                    ]
+                    existingCount += dayActivities.length
+                })
+
+                if (existingCount > 0) {
+                    console.log(`[ItineraryBuilder] Found ${existingCount} existing activities, skipping save to prevent duplicates`)
+                    // Mark as saved to prevent future attempts
+                    localStorage.setItem(`ai_activities_saved_${packageId}`, 'true')
+                    return
+                }
+            }
+
+            console.log('[ItineraryBuilder] No existing activities found, proceeding with save...')
+            let savedCount = 0
+
+            // Iterate through each day
+            for (const [dayNumber, dayActivities] of Object.entries(organized)) {
+                // Iterate through each time slot
+                for (const [timeSlot, activities] of Object.entries(dayActivities)) {
+                    // Save each activity
+                    for (const activity of activities as Activity[]) {
+                        try {
+                            const body = {
+                                day_number: parseInt(dayNumber),
+                                title: activity.title,
+                                description: activity.description,
+                                image_url: activity.image_urls || [],
+                                time_slot: timeSlot,
+                                start_time: activity.start_time || '',
+                                end_time: activity.end_time || '',
+                                display_order: activity.display_order,
+                                activities: [],
+                                is_optional: false
+                            }
+
+                            const response = await fetch(
+                                `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`,
+                                {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(body)
+                                }
+                            )
+
+                            if (response.ok) {
+                                savedCount++
+                                console.log(`[ItineraryBuilder] Saved: Day ${dayNumber} - ${activity.title}`)
+                            } else {
+                                const error = await response.json()
+                                console.error(`[ItineraryBuilder] Failed to save activity:`, error)
+                            }
+                        } catch (error) {
+                            console.error(`[ItineraryBuilder] Error saving activity:`, error)
+                        }
+                    }
+                }
+            }
+
+            console.log(`[ItineraryBuilder] Successfully saved ${savedCount} activities to database`)
+
+            // Mark as saved to prevent duplicate saves
+            localStorage.setItem(`ai_activities_saved_${packageId}`, 'true')
+
+        } catch (error) {
+            console.error('[ItineraryBuilder] Error in bulk save:', error)
+        }
+    }
+
     const loadItinerary = async () => {
+        // First, check if there's AI-generated itinerary data
+        const aiItineraryData = localStorage.getItem('ai_itinerary_data')
+
+        console.log('[ItineraryBuilder] Checking for AI itinerary data:', aiItineraryData ? 'Found' : 'Not found')
+
+        if (aiItineraryData) {
+            // CRITICAL: Clear AI data IMMEDIATELY to prevent duplicate saves on re-mount
+            localStorage.removeItem('ai_itinerary_data')
+            console.log('[ItineraryBuilder] Cleared AI data to prevent duplicates')
+
+            try {
+                const aiItinerary = JSON.parse(aiItineraryData)
+
+                console.log('[ItineraryBuilder] Parsed AI itinerary:', aiItinerary)
+
+                // Convert AI itinerary format to ItineraryBuilder format
+                const organized: Record<number, DayActivities> = {}
+
+                aiItinerary.forEach((dayData: any) => {
+                    const dayNumber = dayData.day
+
+                    console.log(`[ItineraryBuilder] Processing day ${dayNumber}:`, dayData)
+
+                    // Initialize day structure
+                    organized[dayNumber] = {
+                        morning: [],
+                        afternoon: [],
+                        evening: [],
+                        night: [],
+                        half_day: [],
+                        full_day: []
+                    }
+
+                    // Convert AI activities to our format
+                    dayData.activities?.forEach((activity: any, index: number) => {
+                        const timeSlot = activity.timeSlot?.toLowerCase() || 'full_day'
+
+                        console.log(`[ItineraryBuilder] Activity ${index}: ${activity.title} (${timeSlot})`)
+
+                        const convertedActivity: Activity = {
+                            title: activity.title || '',
+                            description: activity.description || '',
+                            time_slot: timeSlot,
+                            start_time: activity.startTime || '',
+                            end_time: activity.endTime || '',
+                            display_order: index,
+                            image_urls: activity.imageUrls || []  // Use Unsplash images from AI
+                        }
+
+                        // Add to appropriate time slot
+                        if (organized[dayNumber][timeSlot as keyof DayActivities]) {
+                            (organized[dayNumber][timeSlot as keyof DayActivities] as Activity[]).push(convertedActivity)
+                        } else {
+                            // Default to full_day if time slot not recognized
+                            console.warn(`[ItineraryBuilder] Unknown time slot '${timeSlot}', defaulting to full_day`)
+                            organized[dayNumber].full_day.push(convertedActivity)
+                        }
+                    })
+                })
+
+                console.log('[ItineraryBuilder] Final organized activities:', organized)
+                setActivities(organized)
+
+                // Save all AI-generated activities to the database
+                await saveAIActivitiesToDatabase(organized)
+
+                // Clear the AI itinerary data after a short delay to ensure state update completes
+                setTimeout(() => {
+                    localStorage.removeItem('ai_itinerary_data')
+                    // Also clear the saved flag for next time
+                    localStorage.removeItem(`ai_activities_saved_${packageId}`)
+                    console.log('[ItineraryBuilder] Cleared AI itinerary data from localStorage')
+                }, 100)
+
+                toast.success('AI-generated itinerary loaded successfully!')
+                return
+            } catch (error) {
+                console.error('[ItineraryBuilder] Error loading AI itinerary:', error)
+                toast.error('Failed to load AI itinerary, loading from server...')
+            }
+        }
+
+        // Fall back to loading from API if no AI data or if AI data failed
+        console.log('[ItineraryBuilder] Loading itinerary from API for packageId:', packageId)
         try {
             const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
             const data = await response.json()

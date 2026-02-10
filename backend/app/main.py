@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings
+from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant
 import traceback
 import logging
 
@@ -88,6 +88,7 @@ app.include_router(agent_dashboard.router, prefix=f"{settings.API_V1_PREFIX}/age
 app.include_router(trip_planner.router, prefix=f"{settings.API_V1_PREFIX}/trip-planner", tags=["Trip Planner"])
 app.include_router(subscriptions.router, prefix=f"{settings.API_V1_PREFIX}/subscriptions", tags=["Subscriptions"])
 app.include_router(agent_settings.router, prefix=f"{settings.API_V1_PREFIX}/agent/settings", tags=["Agent - Settings"])
+app.include_router(ai_assistant.router, prefix=f"{settings.API_V1_PREFIX}", tags=["AI Assistant"])
 
 
 @app.get("/")

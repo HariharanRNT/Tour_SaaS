@@ -80,6 +80,58 @@ export default function CreatePackagePage() {
         }
     }, [editPackageId])
 
+    // Load AI-generated package data if coming from AI Assistant
+    useEffect(() => {
+        const fromAI = searchParams.get('from')
+        if (fromAI === 'ai') {
+            const aiPackageData = localStorage.getItem('ai_generated_package')
+            if (aiPackageData) {
+                try {
+                    const packageData = JSON.parse(aiPackageData)
+
+                    // Pre-fill form with AI data
+                    setFormData({
+                        title: packageData.packageTitle || '',
+                        destination: packageData.destination || '',
+                        country: packageData.country || '',
+                        duration_days: packageData.duration?.days || 7,
+                        duration_nights: packageData.duration?.nights || 6,
+                        category: packageData.category?.[0] || 'Adventure',
+                        price_per_person: packageData.pricePerPerson || 0,
+                        max_group_size: packageData.maxGroupSize || 20,
+                        description: packageData.packageOverview || '',
+                        is_public: true,
+                        feature_image_url: ''
+                    })
+
+                    // Store itinerary data for the itinerary builder
+                    if (packageData.itinerary) {
+                        localStorage.setItem('ai_itinerary_data', JSON.stringify(packageData.itinerary))
+                    }
+
+                    // Store highlights, inclusions, exclusions
+                    if (packageData.highlights) {
+                        localStorage.setItem('ai_highlights', JSON.stringify(packageData.highlights))
+                    }
+                    if (packageData.inclusions) {
+                        localStorage.setItem('ai_inclusions', JSON.stringify(packageData.inclusions))
+                    }
+                    if (packageData.exclusions) {
+                        localStorage.setItem('ai_exclusions', JSON.stringify(packageData.exclusions))
+                    }
+
+                    // Clear the AI package data after loading (but keep itinerary data for ItineraryBuilder)
+                    localStorage.removeItem('ai_generated_package')
+
+                    toast.success('AI-generated package loaded! Review and customize as needed.')
+                } catch (error) {
+                    console.error('Error loading AI package:', error)
+                    toast.error('Failed to load AI-generated package')
+                }
+            }
+        }
+    }, [searchParams])
+
     const loadPackageData = async (id: string) => {
         setLoading(true)
         try {

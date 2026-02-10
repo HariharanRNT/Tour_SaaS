@@ -192,13 +192,24 @@ const TiltCard = ({ children, className }: { children: React.ReactNode, classNam
 
 export default function AgentDashboard() {
     const router = useRouter()
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     const [agentName, setAgentName] = useState('')
     const [dateFilter, setDateFilter] = useState('ALL')
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
+
+    // AI Assistant State
     const [isAIOpen, setIsAIOpen] = useState(false)
     const [chatMessage, setChatMessage] = useState("")
+    const [chatHistory, setChatHistory] = useState<Array<{ role: string, content: string }>>([{
+        role: 'assistant',
+        content: "Hello! I'm your AI Travel Assistant. I can help you create amazing itineraries for your customers. Tell me about the package you'd like to create - destination, duration, budget, and any special preferences!"
+    }])
+    const [conversationId, setConversationId] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [generatedPackage, setGeneratedPackage] = useState<any>(null)
 
+    // Event handlers
     const handleTourPackageClick = () => {
         router.push('/agent/packages/new')
     }
@@ -209,6 +220,119 @@ export default function AgentDashboard() {
 
     const handleAIItineraryClick = () => {
         setIsAIOpen(true)
+        setGeneratedPackage(null)
+    }
+
+    // AI Chat functions
+    const sendMessage = async () => {
+        if (!chatMessage.trim() || isLoading) return
+
+        const userMessage = chatMessage.trim()
+        setChatMessage("")
+
+        // Add user message to chat
+        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }])
+        setIsLoading(true)
+
+        try {
+            const response = await fetch(`${API_URL}/api/v1/ai-assistant/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    message: userMessage,
+                    conversation_id: conversationId
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                // Check if the response contains JSON (package data)
+                const isJsonResponse = data.message.trim().startsWith('{') || data.message.trim().startsWith('```json')
+
+                if (isJsonResponse) {
+                    // Don't add JSON responses to chat history, show a friendly message instead
+                    setChatHistory(prev => [...prev, {
+                        role: 'assistant',
+                        content: "I've prepared a package based on your requirements! Click the 'Generate Complete Package' button below to see the full details and create it."
+                    }])
+                } else {
+                    // Normal text response
+                    setChatHistory(prev => [...prev, {
+                        role: 'assistant',
+                        content: data.message
+                    }])
+                }
+
+                setConversationId(data.conversation_id)
+            } else {
+                setChatHistory(prev => [...prev, {
+                    role: 'assistant',
+                    content: 'Sorry, I encountered an error. Please try again.'
+                }])
+            }
+        } catch (error) {
+            console.error('Error sending message:', error)
+            setChatHistory(prev => [...prev, {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error. Please try again.'
+            }])
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const generatePackage = async () => {
+        if (!conversationId || isLoading) return
+
+        setIsLoading(true)
+
+        try {
+            const response = await fetch(`${API_URL}/api/v1/ai-assistant/generate-package`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    conversation_id: conversationId
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.success && data.package) {
+                setGeneratedPackage(data.package)
+                setChatHistory(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Great! I've generated a complete package: "${data.package.packageTitle}". You can review it below and create it when ready!`
+                }])
+            } else {
+                setChatHistory(prev => [...prev, {
+                    role: 'assistant',
+                    content: 'Sorry, I couldn\'t generate the package. Please provide more details about your requirements.'
+                }])
+            }
+        } catch (error) {
+            console.error('Error generating package:', error)
+            setChatHistory(prev => [...prev, {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error while generating the package.'
+            }])
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const createPackageFromAI = () => {
+        if (!generatedPackage) return
+
+        // Store package data in localStorage and redirect
+        localStorage.setItem('ai_generated_package', JSON.stringify(generatedPackage))
+        router.push('/agent/packages/new?from=ai')
     }
 
     const [stats, setStats] = useState<DashboardStats>({
@@ -1092,27 +1216,85 @@ export default function AgentDashboard() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold">AI Itinerary Assistant</h3>
-                                <p className="text-white/70 text-sm font-medium">Your personal co-pilot for curated travel plans.</p>
+                                <DialogDescription className="text-white/70 text-sm font-medium">
+                                    Your personal co-pilot for curated travel plans.
+                                </DialogDescription>
                             </div>
                         </div>
 
-                        <div className="h-[450px] flex flex-col bg-slate-50/50">
+                        <div className="h-[500px] flex flex-col bg-slate-50/50">
                             <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                                {/* Message Bubble - AI */}
-                                <div className="flex items-start gap-3">
-                                    <div className="bg-indigo-600 rounded-full p-2 mt-1">
-                                        <Bot className="h-4 w-4 text-white" />
+                                {/* Chat History */}
+                                {chatHistory.map((msg, idx) => (
+                                    <div key={idx} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`${msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-slate-600'} rounded-full p-2 mt-1`}>
+                                            {msg.role === 'assistant' ? (
+                                                <Bot className="h-4 w-4 text-white" />
+                                            ) : (
+                                                <User className="h-4 w-4 text-white" />
+                                            )}
+                                        </div>
+                                        <div className={`${msg.role === 'assistant' ? 'bg-white border border-slate-100' : 'bg-indigo-600 text-white'} shadow-sm p-4 rounded-2xl ${msg.role === 'assistant' ? 'rounded-tl-none' : 'rounded-tr-none'} max-w-[80%]`}>
+                                            <p className={`${msg.role === 'assistant' ? 'text-slate-700' : 'text-white'} leading-relaxed whitespace-pre-wrap`}>
+                                                {msg.content}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-2xl rounded-tl-none max-w-[80%]">
-                                        <p className="text-slate-700 leading-relaxed">
-                                            Hello! I'm your AI Travel Assistant. I can help you create amazing itineraries for your customers. Where would you like to plan a trip today?
-                                        </p>
+                                ))}
+
+                                {/* Loading Indicator */}
+                                {isLoading && (
+                                    <div className="flex items-start gap-3">
+                                        <div className="bg-indigo-600 rounded-full p-2 mt-1">
+                                            <Bot className="h-4 w-4 text-white animate-pulse" />
+                                        </div>
+                                        <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-2xl rounded-tl-none">
+                                            <div className="flex gap-2">
+                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {/* Generated Package Preview */}
+                                {generatedPackage && (
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-4 mt-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-bold text-indigo-900 text-lg">{generatedPackage.packageTitle}</h4>
+                                            <Sparkles className="h-5 w-5 text-indigo-600" />
+                                        </div>
+                                        <p className="text-sm text-slate-600 mb-3">{generatedPackage.packageOverview}</p>
+                                        <div className="flex items-center gap-4 text-sm text-slate-700 mb-4">
+                                            <span className="font-semibold">📍 {generatedPackage.destination}, {generatedPackage.country}</span>
+                                            <span>🗓️ {generatedPackage.duration.days}D/{generatedPackage.duration.nights}N</span>
+                                            <span className="font-bold text-indigo-600">₹{generatedPackage.pricePerPerson.toLocaleString()}</span>
+                                        </div>
+                                        <Button
+                                            onClick={createPackageFromAI}
+                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg"
+                                        >
+                                            Create This Package
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Chat Input */}
                             <div className="p-4 bg-white border-t border-slate-100">
+                                {conversationId && !generatedPackage && chatHistory.length > 2 && (
+                                    <div className="mb-3">
+                                        <Button
+                                            onClick={generatePackage}
+                                            disabled={isLoading}
+                                            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-2.5 rounded-xl shadow-md"
+                                        >
+                                            <Sparkles className="h-4 w-4 mr-2" />
+                                            Generate Complete Package
+                                        </Button>
+                                    </div>
+                                )}
                                 <div className="relative">
                                     <Input
                                         placeholder="Tell me destination and duration (e.g. 5 days in Paris)..."
@@ -1120,22 +1302,38 @@ export default function AgentDashboard() {
                                         value={chatMessage}
                                         onChange={(e) => setChatMessage(e.target.value)}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                // Handle send logic
-                                                setChatMessage("")
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault()
+                                                sendMessage()
                                             }
                                         }}
+                                        disabled={isLoading}
                                     />
                                     <div className="absolute right-2 top-1.5 flex items-center gap-1">
-                                        <Button size="icon" className="h-9 w-9 bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md">
+                                        <Button
+                                            size="icon"
+                                            onClick={sendMessage}
+                                            disabled={isLoading || !chatMessage.trim()}
+                                            className="h-9 w-9 bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md disabled:opacity-50"
+                                        >
                                             <Send className="h-4 w-4 text-white" />
                                         </Button>
                                     </div>
                                 </div>
-                                <div className="mt-3 flex gap-2">
+                                <div className="mt-3 flex gap-2 flex-wrap">
                                     <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Suggestions:</span>
-                                    <button className="text-[10px] font-semibold text-indigo-600 hover:underline">7 days in Japan</button>
-                                    <button className="text-[10px] font-semibold text-indigo-600 hover:underline">Honeymoon in Maldives</button>
+                                    <button
+                                        onClick={() => setChatMessage("Create a 7-day cultural tour package for Japan with budget of ₹150,000")}
+                                        className="text-[10px] font-semibold text-indigo-600 hover:underline"
+                                    >
+                                        7 days in Japan
+                                    </button>
+                                    <button
+                                        onClick={() => setChatMessage("Create a 5-day honeymoon package for Maldives with luxury resorts")}
+                                        className="text-[10px] font-semibold text-indigo-600 hover:underline"
+                                    >
+                                        Honeymoon in Maldives
+                                    </button>
                                 </div>
                             </div>
                         </div>

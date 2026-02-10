@@ -125,12 +125,12 @@ async def get_popular_destinations(
 
         if master_match:
             response.append({
-                "id": str(master_match[0]),
-                "name": master_match[1],
-                "country": master_match[2],
-                "description": master_match[3] or destination_data["description"],
-                "image_url": master_match[4] or destination_data["image_url"],
-                "display_order": master_match[5],
+                "id": str(master_match[0]),  # id
+                "name": master_match[1],  # name
+                "country": country_name,  # Use country from package data
+                "description": master_match[2] or destination_data["description"],  # description
+                "image_url": master_match[3] or destination_data["image_url"],  # image_url
+                "display_order": master_match[4],  # display_order
                 "min_price": destination_data["min_price"],
                 "min_duration": destination_data["min_duration"],
                 "max_duration": destination_data["max_duration"],
