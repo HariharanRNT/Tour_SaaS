@@ -48,21 +48,54 @@ export default function Home() {
         <div>
             {/* Modernized Hero Section */}
             {/* Modernized Hero Section */}
-            <section className="relative bg-gradient-to-br from-blue-950 via-indigo-900 to-blue-900 text-white min-h-[90vh] flex flex-col justify-center overflow-hidden">
-                {/* Abstract Background pattern */}
-                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
+            <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden">
+                {/* Background Image with Overlay */}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed"
+                    style={{
+                        backgroundImage: 'url("https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop")'
+                    }}
+                >
+                    <div className="absolute inset-0 bg-black/50 mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-blue-950/90" />
+                </div>
+
+                {/* Animated Floating Icons */}
+                <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+                    <motion.div
+                        animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
+                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute top-1/4 left-10 md:left-32 opacity-80"
+                    >
+                        <Plane className="w-16 h-16 text-white/20 drop-shadow-lg" />
+                    </motion.div>
+                    <motion.div
+                        animate={{ y: [0, 20, 0], rotate: [0, -10, 0] }}
+                        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                        className="absolute top-1/3 right-10 md:right-32 opacity-80"
+                    >
+                        <MapPin className="w-12 h-12 text-white/30 drop-shadow-lg" />
+                    </motion.div>
+                    <motion.div
+                        animate={{ y: [0, -15, 0] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                        className="absolute bottom-1/3 left-1/4 opacity-60 hidden md:block"
+                    >
+                        <Globe className="w-10 h-10 text-blue-200/20 drop-shadow-lg" />
+                    </motion.div>
+                </div>
 
                 {/* AI Badge - Upper Right */}
                 <div className="absolute top-6 right-6 z-20 hidden md:block">
-                    <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-blue-100 hover:bg-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg animate-pulse">
-                        <Sparkles className="h-4 w-4 text-yellow-400" />
-                        <span className="font-semibold tracking-wide">AI-Powered Trip Planning</span>
+                    <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-xl animate-in fade-in slide-in-from-top-4 duration-1000">
+                        <Sparkles className="h-4 w-4 text-amber-300" />
+                        <span className="font-semibold tracking-wide shadow-black drop-shadow-md">AI-Powered Trip Planning</span>
                     </Badge>
                 </div>
 
                 <div className="container mx-auto px-4 relative z-10 py-20">
                     <div className="max-w-5xl mx-auto text-center">
-                        <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[1.1] drop-shadow-2xl">
+                        <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[1.1] text-white drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
                             Adventure Awaits—<br className="hidden md:block" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-indigo-200 to-white">
                                 Tailored Just for You
@@ -107,11 +140,11 @@ export default function Home() {
                                     border: "group-hover:border-indigo-400/50"
                                 },
                                 {
-                                    icon: <CheckCircle2 className="h-10 w-10 text-emerald-300" />,
+                                    icon: <CheckCircle2 className="h-10 w-10 text-cyan-300" />,
                                     title: "Instant Booking",
                                     desc: "Save your plan and book securely when ready",
-                                    gradient: "from-emerald-500/20 to-emerald-600/20",
-                                    border: "group-hover:border-emerald-400/50"
+                                    gradient: "from-cyan-500/20 to-cyan-600/20",
+                                    border: "group-hover:border-cyan-400/50"
                                 }
                             ].map((card, idx) => (
                                 <div key={idx} className={`group bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden ${card.border}`}>
@@ -164,22 +197,22 @@ export default function Home() {
                             },
                             {
                                 icon: <Users className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-purple-400 to-purple-600",
-                                shadow: "shadow-purple-200",
+                                bg: "bg-gradient-to-br from-indigo-400 to-indigo-600",
+                                shadow: "shadow-indigo-200",
                                 title: "Local Experts",
                                 desc: "Authentic experiences guided by seasoned locals who know the hidden gems."
                             },
                             {
                                 icon: <Clock className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-pink-400 to-pink-600",
-                                shadow: "shadow-pink-200",
+                                bg: "bg-gradient-to-br from-sky-400 to-sky-600",
+                                shadow: "shadow-sky-200",
                                 title: "Flexible Plans",
                                 desc: "Change dates, activities, or cancel with ease. Your plan adapts to you."
                             },
                             {
                                 icon: <Shield className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-emerald-400 to-emerald-600",
-                                shadow: "shadow-emerald-200",
+                                bg: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+                                shadow: "shadow-cyan-200",
                                 title: "Safe Payments",
                                 desc: "Seamless, secure payments via Razorpay with instant confirmation."
                             }

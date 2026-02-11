@@ -539,12 +539,12 @@ export default function AgentDashboard() {
             value: stats.totalPackages,
             subtext: `${stats.publishedPackages} Published, ${stats.draftPackages} Drafts`,
             icon: Package,
-            color: "text-purple-600",
-            bgColor: "bg-purple-50",
-            gradientFrom: "from-purple-500",
-            gradientTo: "to-violet-600",
-            bgGradient: "from-purple-500/5 to-violet-500/5",
-            shadowColor: "shadow-purple-500/20"
+            color: "text-sky-600",
+            bgColor: "bg-sky-50",
+            gradientFrom: "from-sky-500",
+            gradientTo: "to-cyan-600",
+            bgGradient: "from-sky-500/5 to-cyan-500/5",
+            shadowColor: "shadow-sky-500/20"
         },
         {
             title: "Total Bookings",
@@ -629,19 +629,19 @@ export default function AgentDashboard() {
                     <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                         <div className="flex items-center gap-3 group">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full"></div>
-                                <div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20 relative group-hover:scale-105 transition-transform duration-300">
+                                <div className="absolute inset-0 bg-blue-600 blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full"></div>
+                                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-lg shadow-blue-500/20 relative group-hover:scale-105 transition-transform duration-300">
                                     <LayoutDashboard className="h-6 w-6 text-white" />
                                 </div>
                             </div>
                             <h1 className="text-2xl font-jakarta font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
-                                Agent<span className="text-indigo-600">Portal</span>
+                                Agent<span className="text-blue-600">Portal</span>
                             </h1>
                         </div>
                         <div className="flex items-center gap-4">
                             <Button
                                 onClick={handleAIItineraryClick}
-                                className="hidden md:flex bg-indigo-50 text-[#4F46E5] hover:bg-indigo-100 border border-indigo-100 shadow-sm rounded-full px-5 transition-all duration-300 gap-2 font-semibold"
+                                className="hidden md:flex bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 shadow-sm rounded-full px-5 transition-all duration-300 gap-2 font-semibold"
                             >
                                 <Sparkles className="h-4 w-4" />
                                 AI Assistant
@@ -670,7 +670,7 @@ export default function AgentDashboard() {
                             <div>
                                 <h1 className="text-3xl font-jakarta font-bold flex items-center gap-2 tracking-tight">
                                     <span className="text-slate-800">Welcome back,</span>
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#4F46E5] via-[#7C3AED] to-[#EC4899] animate-gradient-x bg-[length:200%_auto]">
+                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 animate-gradient-x bg-[length:200%_auto]">
                                         {agentName}
                                     </span>
                                 </h1>
@@ -696,7 +696,7 @@ export default function AgentDashboard() {
                         <div className="flex items-center gap-3">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button className="bg-[linear-gradient(135deg,#667eea_0%,#764ba2_100%)] text-white border-0 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.05] transition-all duration-300 rounded-full px-6">
+                                    <Button className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.05] transition-all duration-300 rounded-full px-6">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Create New
                                         <ChevronDown className="ml-2 h-3 w-3 opacity-70" />

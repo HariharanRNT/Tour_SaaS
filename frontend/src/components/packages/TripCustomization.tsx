@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Plane, Hotel, Car } from 'lucide-react'
+import { Plane, Hotel, Car, CheckCircle2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface TripCustomizationProps {
     includeFlights: boolean
@@ -19,89 +19,102 @@ export function TripCustomization({
     onHotelsChange,
     onTransfersChange
 }: TripCustomizationProps) {
+    const CustomizationOption = ({
+        title,
+        description,
+        icon: Icon,
+        isSelected,
+        onChange,
+        colorClass,
+        bgClass,
+        comingSoon = false
+    }: any) => (
+        <div
+            onClick={() => onChange(!isSelected)}
+            className={cn(
+                "relative group flex items-start gap-4 p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden",
+                isSelected
+                    ? `border-${colorClass}-500 bg-${colorClass}-50/30 shadow-md`
+                    : "border-slate-100 hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 bg-white"
+            )}
+        >
+            <div className={cn(
+                "min-w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                isSelected ? `bg-${colorClass}-500 text-white shadow-lg shadow-${colorClass}-200` : `bg-${bgClass} text-${colorClass}-600 group-hover:scale-110`
+            )}>
+                <Icon className="w-6 h-6" />
+            </div>
+
+            <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className={cn(
+                        "font-bold text-lg",
+                        isSelected ? `text-${colorClass}-900` : "text-slate-900"
+                    )}>{title}</h3>
+                    {isSelected && (
+                        <CheckCircle2 className={cn("w-6 h-6 animate-in zoom-in spin-in-90 duration-300", `text-${colorClass}-500`)} />
+                    )}
+                </div>
+                <p className="text-sm text-slate-500 font-medium leading-relaxed">{description}</p>
+
+                {comingSoon && isSelected && (
+                    <div className={`mt-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-${colorClass}-100 text-${colorClass}-700 animate-in fade-in slide-in-from-top-1`}>
+                        ✨ Coming Soon
+                    </div>
+                )}
+            </div>
+
+            {/* Selection Ring Animation */}
+            <span className={cn(
+                "absolute inset-0 rounded-2xl border-2 pointer-events-none transition-all duration-500",
+                isSelected ? `border-${colorClass}-500 opacity-100 scale-100` : "border-transparent opacity-0 scale-95"
+            )} />
+        </div>
+    )
+
     return (
-        <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-                <CardTitle className="flex items-center text-2xl">
-                    <Plane className="mr-3 h-6 w-6" />
-                    Customize Your Trip
+        <Card className="max-w-3xl mx-auto border-0 shadow-none bg-transparent">
+            <CardHeader className="text-center pb-8">
+                <CardTitle className="text-3xl font-extrabold text-slate-900">
+                    Customize Your Experience
                 </CardTitle>
-                <CardDescription className="text-base">
-                    Select additional services to include in your itinerary
+                <CardDescription className="text-lg text-slate-500 max-w-lg mx-auto">
+                    Choose the services you need for a seamless journey.
+                    AI will tailor recommendations based on your selection.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Checkbox
-                        id="flights"
-                        checked={includeFlights}
-                        onCheckedChange={onFlightsChange}
-                        className="h-5 w-5"
-                    />
-                    <label
-                        htmlFor="flights"
-                        className="flex items-center text-lg font-medium cursor-pointer flex-1"
-                    >
-                        <Plane className="mr-3 h-5 w-5 text-blue-600" />
-                        Include Flights
-                    </label>
-                </div>
+            <CardContent className="grid gap-6">
+                <CustomizationOption
+                    title="Include Flights"
+                    description="Search and book best-value flights tailored to your dates. We compare hundreds of airlines instantly."
+                    icon={Plane}
+                    isSelected={includeFlights}
+                    onChange={onFlightsChange}
+                    colorClass="blue"
+                    bgClass="blue-50"
+                />
 
-                <div className="space-y-3">
-                    <div className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200">
-                        <Checkbox
-                            id="hotels"
-                            checked={includeHotels}
-                            onCheckedChange={onHotelsChange}
-                            className="h-5 w-5"
-                        />
-                        <label
-                            htmlFor="hotels"
-                            className="flex items-center text-lg font-medium cursor-pointer flex-1"
-                        >
-                            <Hotel className="mr-3 h-5 w-5 text-green-600" />
-                            Include Hotels
-                        </label>
-                    </div>
-                    {includeHotels && (
-                        <div className="ml-2 md:ml-12 mr-2 p-3 bg-green-50 rounded-md border border-green-100 text-sm animate-in fade-in slide-in-from-top-2">
-                            <p className="text-green-800 mb-2">
-                                Hotel recommendations will be included in your itinerary based on your destination and travel dates.
-                            </p>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800">
-                                Coming Soon
-                            </span>
-                        </div>
-                    )}
-                </div>
+                <CustomizationOption
+                    title="Include Hotels"
+                    description="Get AI-curated stay recommendations from 4-star comfort to 5-star luxury at the best rates."
+                    icon={Hotel}
+                    isSelected={includeHotels}
+                    onChange={onHotelsChange}
+                    colorClass="cyan"
+                    bgClass="cyan-50"
+                    comingSoon={true}
+                />
 
-                <div className="space-y-3">
-                    <div className="flex items-center space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200">
-                        <Checkbox
-                            id="transfers"
-                            checked={includeTransfers}
-                            onCheckedChange={onTransfersChange}
-                            className="h-5 w-5"
-                        />
-                        <label
-                            htmlFor="transfers"
-                            className="flex items-center text-lg font-medium cursor-pointer flex-1"
-                        >
-                            <Car className="mr-3 h-5 w-5 text-purple-600" />
-                            Include Transfers
-                        </label>
-                    </div>
-                    {includeTransfers && (
-                        <div className="ml-2 md:ml-12 mr-2 p-3 bg-purple-50 rounded-md border border-purple-100 text-sm animate-in fade-in slide-in-from-top-2">
-                            <p className="text-purple-800 mb-2">
-                                Airport and city transfers will be included in your itinerary for convenient transportation.
-                            </p>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-200 text-purple-800">
-                                Coming Soon
-                            </span>
-                        </div>
-                    )}
-                </div>
+                <CustomizationOption
+                    title="Include Transfers"
+                    description="Hassle-free airport pickups and local city transfers. Travel in comfort with verified drivers."
+                    icon={Car}
+                    isSelected={includeTransfers}
+                    onChange={onTransfersChange}
+                    colorClass="indigo"
+                    bgClass="indigo-50"
+                    comingSoon={true}
+                />
             </CardContent>
         </Card>
     )

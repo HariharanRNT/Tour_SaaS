@@ -1,5 +1,6 @@
 """Trip Planner API endpoints"""
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, text
@@ -14,6 +15,66 @@ from app.models import Package, PackageStatus, ItineraryItem, Agent
 from app.schemas import TripSessionUpdate
 
 router = APIRouter()
+
+
+@router.get("/user-drafts/latest")
+async def get_latest_user_draft(
+    exclude_session_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user)
+):
+    """Get the most recent active session for the logged-in user"""
+    if not current_user:
+        return None
+
+    # Base query
+    query_str = """
+        SELECT t.id, t.destination, t.duration_days, t.duration_nights, t.start_date,
+               t.travelers, t.preferences, t.matched_package_id, t.itinerary, t.status,
+               t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details
+        FROM trip_planning_sessions t
+        LEFT JOIN packages p ON t.matched_package_id = p.id
+        WHERE t.user_id = :user_id AND t.status = 'active' AND t.expires_at > NOW()
+    """
+    
+    params = {"user_id": current_user.id}
+    
+    if exclude_session_id:
+        query_str += " AND t.id != :exclude_id"
+        params["exclude_id"] = exclude_session_id
+        
+    query_str += " ORDER BY t.updated_at DESC LIMIT 1"
+    
+    result = await db.execute(text(query_str), params)
+    row = result.fetchone()
+    
+    if not row:
+        return None
+    
+    # Helper to safe parse JSON
+    def parse_json_field(field):
+        if isinstance(field, str):
+            try:
+                return json.loads(field)
+            except:
+                return field
+        return field
+        
+    return {
+        "session_id": str(row[0]),
+        "destination": row[1],
+        "duration_days": row[2],
+        "duration_nights": row[3],
+        "start_date": row[4].isoformat() if row[4] else None,
+        "travelers": parse_json_field(row[5]),
+        "preferences": parse_json_field(row[6]),
+        "matched_package_id": str(row[7]) if row[7] else None,
+        "itinerary": parse_json_field(row[8]),
+        "status": row[9],
+        "created_at": row[10].isoformat(),
+        "expires_at": row[11].isoformat(),
+        "flight_details": parse_json_field(row[14])
+    }
 
 
 @router.get("/popular-destinations")
@@ -423,8 +484,8 @@ async def create_trip_session(
         new_id = uuid.uuid4()
         query = text("""
             INSERT INTO trip_planning_sessions 
-            (id, destination, duration_days, duration_nights, start_date, travelers, preferences, matched_package_id, itinerary, status)
-            VALUES (:id, :dest, :days, :nights, :start, :travelers, :prefs, :pkg_id, :itin, :status)
+            (id, destination, duration_days, duration_nights, start_date, travelers, preferences, matched_package_id, itinerary, status, user_id)
+            VALUES (:id, :dest, :days, :nights, :start, :travelers, :prefs, :pkg_id, :itin, :status, :user_id)
             RETURNING id, created_at, expires_at
         """)
         
@@ -440,7 +501,8 @@ async def create_trip_session(
                 "prefs": json.dumps(preferences),
                 "pkg_id": matched_package_id,
                 "itin": json.dumps(initial_itinerary),
-                "status": "active"
+                "status": "active",
+                "user_id": current_user.id if current_user else None
             }
         )
         
@@ -551,7 +613,8 @@ async def get_trip_session(
 async def update_trip_session(
     session_id: UUID,
     payload: TripSessionUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user)
 ):
     """Update trip planning session itinerary"""
     try:
@@ -561,7 +624,8 @@ async def update_trip_session(
         
         query = text("""
             UPDATE trip_planning_sessions
-            SET itinerary = :itin, flight_details = :flight_details, updated_at = NOW()
+            SET itinerary = :itin, flight_details = :flight_details, updated_at = NOW(),
+                user_id = COALESCE(user_id, :user_id)
             WHERE id = :session_id AND status = 'active' AND expires_at > NOW()
             RETURNING id
         """)
@@ -569,7 +633,8 @@ async def update_trip_session(
         result = await db.execute(query, {
             "itin": json.dumps(itinerary), 
             "flight_details": json.dumps(flight_details),
-            "session_id": str(session_id)
+            "session_id": str(session_id),
+            "user_id": current_user.id if current_user else None
         })
         
         if result.rowcount == 0:
@@ -579,6 +644,47 @@ async def update_trip_session(
         
         return {"message": "Session updated successfully"}
         
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@router.delete("/session/{session_id}")
+async def delete_trip_session(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user)
+):
+    """Delete (cancel) a trip planning session"""
+    try:
+        # Check ownership if user is logged in
+        if current_user:
+            check_stmt = text("SELECT user_id FROM trip_planning_sessions WHERE id = :id")
+            check_result = await db.execute(check_stmt, {"id": str(session_id)})
+            owner_id = check_result.scalar()
+            
+            # Allow deletion if user owns it or if it has no owner (anonymous session)
+            # If it has an owner and it's not the current user, forbid (unless admin - simplistic check here)
+            if owner_id and str(owner_id) != str(current_user.id) and current_user.role != 'admin':
+                  raise HTTPException(status_code=403, detail="Not authorized to delete this session")
+
+        query = text("""
+            UPDATE trip_planning_sessions
+            SET status = 'cancelled', updated_at = NOW()
+            WHERE id = :session_id
+            RETURNING id
+        """)
+        
+        result = await db.execute(query, {"session_id": str(session_id)})
+        
+        if result.rowcount == 0:
+             raise HTTPException(status_code=404, detail="Session not found")
+        
+        await db.commit()
+        return {"message": "Session cancelled successfully"}
+        
+    except HTTPException:
+        raise
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")

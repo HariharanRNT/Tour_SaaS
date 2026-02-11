@@ -150,7 +150,7 @@ export default function AdminDashboard() {
                 <div className="container mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] p-3 rounded-xl shadow-lg shadow-indigo-500/20">
+                            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-xl shadow-lg shadow-blue-500/20">
                                 <LayoutDashboard className="h-6 w-6 text-white" />
                             </div>
                             <div>
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
                                     <ChevronRight className="h-3 w-3" />
                                     <span className="text-slate-700 font-medium">Dashboard</span>
                                 </div>
-                                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4F46E5] to-[#7C3AED]">Admin Dashboard</h1>
+                                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-sky-700">Admin Dashboard</h1>
                             </div>
                         </div>
 
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
                                     <p className="text-sm font-medium text-slate-700">Admin</p>
                                     <p className="text-xs text-slate-500">{adminEmail}</p>
                                 </div>
-                                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-full">
+                                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-full">
                                     <UserCircle className="h-6 w-6 text-white" />
                                 </div>
                             </div>
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
                 {/* Date Filter Controls */}
                 <div className="flex flex-wrap items-center gap-4 mb-8 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 backdrop-blur-md p-5 rounded-2xl border border-indigo-100 shadow-sm">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
-                        <Calendar className="h-5 w-5 text-[#4F46E5]" />
+                        <Calendar className="h-5 w-5 text-blue-600" />
                         <span className="text-sm font-bold text-slate-700">Showing data for:</span>
                     </div>
                     <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -263,10 +263,10 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
                     {/* Active Subscriptions */}
                     <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#4F46E5]/5 to-[#7C3AED]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
                             <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Active Plans</CardTitle>
-                            <div className="bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] p-2.5 rounded-lg shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
+                            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-lg shadow-md shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                                 <Star className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>
@@ -279,7 +279,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <span className="text-xs text-slate-500">vs last month</span>
                             </div>
-                            <Link href="/admin/billing" className="text-xs font-medium text-[#4F46E5] hover:underline">
+                            <Link href="/admin/billing" className="text-xs font-medium text-blue-600 hover:underline">
                                 View all plans →
                             </Link>
                         </CardContent>
@@ -367,11 +367,11 @@ export default function AdminDashboard() {
                     </Card>
 
                     {/* Revenue This Month - NEW */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <Card className="relative overflow-hidden border-0 bg-blue-50/10 backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-700/5 to-blue-800/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
                             <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Revenue (Month)</CardTitle>
-                            <div className="bg-gradient-to-br from-[#8B5CF6] to-purple-600 p-2.5 rounded-lg shadow-md shadow-purple-500/20 group-hover:scale-110 transition-transform duration-300">
+                            <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-2.5 rounded-lg shadow-md shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                                 <DollarSign className="h-6 w-6 text-white" />
                             </div>
                         </CardHeader>

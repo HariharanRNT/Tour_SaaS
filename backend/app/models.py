@@ -525,6 +525,7 @@ class TripPlanningSession(Base):
     __tablename__ = "trip_planning_sessions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     destination = Column(String, nullable=False)
     duration_days = Column(Integer, nullable=False)
     duration_nights = Column(Integer, nullable=False)

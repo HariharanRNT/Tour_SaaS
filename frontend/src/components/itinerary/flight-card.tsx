@@ -48,11 +48,19 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
         })
     }
 
+    const getDuration = (minutes: number) => {
+        const h = Math.floor(minutes / 60)
+        const m = minutes % 60
+        return `${h}h ${m}m`
+    }
+
     const depTime = formatTime(flight.departure_time)
     const arrTime = formatTime(flight.arrival_time)
 
+    // Parse duration string "2h 15m" to display if needed, or stick to string provided by backend
+    // Backend provides string like "2h 45m"
+
     // Airline logo placeholder (using text/code if no image)
-    // simplistic logo color generation based on code
     const getAirlineColor = (code: string) => {
         const colors: Record<string, string> = {
             '6E': 'bg-blue-600', // Indigo
@@ -68,80 +76,102 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
     return (
         <div
             className={`
-                group relative bg-white rounded-lg border transition-all cursor-pointer
+                group relative bg-white rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden
                 ${isSelected
-                    ? 'border-blue-600 ring-1 ring-blue-600 shadow-md'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                    ? 'border-blue-600 ring-2 ring-blue-600 shadow-xl scale-[1.02]'
+                    : 'border-slate-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1'
                 }
             `}
             onClick={() => onSelect(flight)}
         >
+            {/* Header / Badges */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
             {isBestValue && (
-                <div className="absolute -top-3 left-4 px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded-full shadow-sm">
-                    Best Value
+                <div className="absolute -top-px left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-b-lg shadow-sm z-10 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Best Value
                 </div>
             )}
 
-            <div className="p-4 flex flex-col md:flex-row gap-4 items-center">
-                {/* Airline Info */}
-                <div className="flex items-center gap-3 w-full md:w-1/4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs ${getAirlineColor(flight.airline_code)}`}>
-                        {flight.airline_code}
-                    </div>
-                    <div>
-                        <div className="font-semibold text-gray-900">{flight.airline}</div>
-                        <div className="text-xs text-gray-400">{flight.airline_code}-{flight.flight_number}</div>
-                    </div>
-                </div>
+            <div className="p-5 flex flex-col gap-6">
 
-                {/* Flight Route & Timing */}
-                <div className="flex-1 flex items-center justify-between w-full md:w-2/4 px-2 md:px-6">
-                    <div className="text-center">
-                        <div className="text-xl font-bold text-gray-900">{depTime}</div>
-                        <div className="text-xs text-gray-500">{flight.origin}</div>
-                    </div>
-
-                    <div className="flex-1 flex flex-col items-center px-4">
-                        <div className="text-xs text-gray-400 mb-1">{flight.duration}</div>
-                        <div className="w-full h-px bg-gray-300 relative flex items-center justify-center">
-                            <Plane className="h-3 w-3 text-gray-400 rotate-90 absolute bg-white px-0.5" />
+                {/* Top Row: Airline & Price */}
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md ${getAirlineColor(flight.airline_code)}`}>
+                            {flight.airline_code}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                            {flight.stops === 0 ? 'Non-stop' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
+                        <div>
+                            <div className="font-bold text-slate-900 text-lg leading-tight">{flight.airline}</div>
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mt-0.5">
+                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{flight.airline_code}-{flight.flight_number}</span>
+                                <span>•</span>
+                                <span>{formatDate(flight.departure_time)}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="text-center">
-                        <div className="text-xl font-bold text-gray-900">{arrTime}</div>
-                        <div className="text-xs text-gray-500">{flight.destination}</div>
-                    </div>
-                </div>
-
-                {/* Price & Action */}
-                <div className="w-full md:w-1/4 flex items-center justify-between md:flex-col md:items-end md:justify-center gap-2 pl-4 border-l-0 md:border-l border-dashed border-gray-200">
                     <div className="text-right">
-                        <div className="text-lg font-bold text-gray-900">₹{flight.price.toLocaleString('en-IN')}</div>
-                        <div className="text-xs text-gray-500">{flight.is_refundable ? 'Refundable' : 'Non-refundable'}</div>
+                        <div className="text-2xl font-extrabold text-slate-900">₹{flight.price.toLocaleString('en-IN')}</div>
+                        <div className={`text-[10px] font-bold uppercase tracking-wide ${flight.is_refundable ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {flight.is_refundable ? 'Refundable' : 'Non-refundable'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Timeline Visualization */}
+                <div className="flex items-center justify-between bg-slate-50/50 rounded-xl p-4 border border-slate-100">
+                    <div className="text-center min-w-[60px]">
+                        <div className="text-2xl font-bold text-slate-900">{depTime}</div>
+                        <div className="text-xs font-bold text-slate-500 uppercase">{flight.origin}</div>
+                    </div>
+
+                    <div className="flex-1 px-6 flex flex-col items-center">
+                        <div className="text-xs font-medium text-slate-400 mb-1.5">{flight.duration}</div>
+                        <div className="w-full relative flex items-center">
+                            <div className="h-[2px] w-full bg-slate-300 rounded-full"></div>
+                            {/* Start Dot */}
+                            <div className="absolute left-0 w-2 h-2 rounded-full bg-slate-400"></div>
+                            {/* Plane Icon */}
+                            <div className="absolute left-1/2 -translate-x-1/2 bg-white p-1 rounded-full border border-slate-200">
+                                <Plane className="h-3.5 w-3.5 text-blue-500 rotate-90" />
+                            </div>
+                            {/* End Dot */}
+                            <div className="absolute right-0 w-2 h-2 rounded-full bg-slate-400"></div>
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                            {flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
+                        </div>
+                    </div>
+
+                    <div className="text-center min-w-[60px]">
+                        <div className="text-2xl font-bold text-slate-900">{arrTime}</div>
+                        <div className="text-xs font-bold text-slate-500 uppercase">{flight.destination}</div>
+                    </div>
+                </div>
+
+                {/* Footer Grid: Amenities & Select Button */}
+                <div className="flex items-center justify-between pt-2">
+                    <div className="flex gap-3">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <span className="font-semibold text-slate-700">Check-in:</span> {flight.baggage}
+                        </div>
+                        {/* Demo Amenities (could be dynamic) */}
+                        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            Meals Included
+                        </div>
                     </div>
 
                     {isSelected ? (
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 px-3 py-1">
-                            <CheckCircle className="w-3 h-3 mr-1" /> Selected
+                        <Badge className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-1.5 text-xs font-bold shadow-sm transition-colors">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Selected
                         </Badge>
                     ) : (
-                        <Button size="sm" variant="outline" className="w-full md:w-auto text-blue-600 hover:bg-blue-50 border-blue-200">
-                            Select
+                        <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-semibold transition-all">
+                            Select Flight
                         </Button>
                     )}
                 </div>
-            </div>
-
-            {/* Footer with baggage info */}
-            <div className="px-4 py-2 bg-gray-50 text-xs text-gray-500 rounded-b-lg flex justify-between border-t border-gray-100">
-                <span>{formatDate(flight.departure_time)}</span>
-                <span className="flex items-center gap-1 font-medium text-xs">
-                    {flight.baggage}
-                </span>
             </div>
         </div>
     )

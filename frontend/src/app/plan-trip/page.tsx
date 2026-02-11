@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -230,47 +230,61 @@ export default function PlanTripPage() {
         { number: 4, title: 'Customize', description: 'Additional services' }
     ]
 
+    // Parallax Effect
+    const { scrollY } = useScroll()
+    const y1 = useTransform(scrollY, [0, 500], [0, 200])
+    const opacity = useTransform(scrollY, [0, 300], [1, 0])
+
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-            {/* Hero Section */}
-            <div className="relative bg-blue-900 text-white overflow-hidden shadow-2xl z-10 min-h-[350px] md:min-h-[450px] flex items-center justify-center text-center">
-                {/* Background Image Overlay */}
-                <div
-                    className="absolute inset-0 z-0 opacity-60 bg-cover bg-center"
-                    style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2021&q=80")' }}
-                />
+        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans">
+            {/* Parallax Hero Section */}
+            <div className="relative h-[60vh] md:h-[70vh] overflow-hidden flex items-center justify-center">
+                <motion.div
+                    style={{ y: y1, opacity }}
+                    className="absolute inset-0 z-0"
+                >
+                    <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2021&q=80")' }}
+                    />
+                    <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-blue-50" />
+                </motion.div>
 
-                {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-blue-900/30 mix-blend-multiply z-0" />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-transparent to-black/30 z-0" />
-
-                <div className="container mx-auto px-4 relative z-10 -mt-12">
-                    <div className="flex flex-col items-center max-w-4xl mx-auto">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="inline-flex items-center gap-2 mb-6 px-5 py-2 bg-white/10 backdrop-blur-xl rounded-full border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-pulse"
-                        >
-                            <Sparkles className="h-5 w-5 text-yellow-300 fill-yellow-300" />
-                            <span className="text-sm font-bold text-white tracking-widest uppercase">AI Trip Planner</span>
-                        </motion.div>
-
-                        <h1 className="text-4xl md:text-7xl font-black tracking-tight mb-6 leading-tight drop-shadow-2xl">
-                            Plan Your Perfect Trip<br className="hidden md:block" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-blue-200">
-                                in Minutes
+                <div className="container mx-auto px-4 relative z-10 text-center space-y-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                    >
+                        <div className="inline-flex items-center gap-2 mb-6 px-6 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white font-semibold tracking-wide uppercase text-sm shadow-xl">
+                            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                            AI-Powered Trip Planner
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight drop-shadow-2xl mb-6 tracking-tight">
+                            Your Dream Trip, <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-sky-200">
+                                Crafted in Seconds
                             </span>
                         </h1>
-
-                        <p className="text-xl md:text-2xl text-blue-100 font-medium leading-relaxed max-w-2xl drop-shadow-lg">
-                            Create your custom itinerary in seconds with our intelligent planner.
+                        <p className="text-xl text-blue-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-lg">
+                            Experience the future of travel planning. Tell us where, when, and how—we'll handle the rest.
                         </p>
+                    </motion.div>
+
+                    {/* Animated Floating Icons */}
+                    <div className="absolute top-1/2 left-10 md:left-20 animate-bounce duration-[3s]">
+                        <Plane className="w-12 h-12 text-white/20 rotate-12" />
+                    </div>
+                    <div className="absolute bottom-20 right-10 md:right-32 animate-bounce duration-[4s] delay-700">
+                        <MapPin className="w-10 h-10 text-white/20 -rotate-12" />
                     </div>
                 </div>
             </div>
+
             {/* Planning Form Container */}
-            <div className="container mx-auto px-4 -mt-12 relative z-20 pb-12">
-                <div className="max-w-4xl mx-auto space-y-8">
+            <div className="container mx-auto px-4 -mt-32 relative z-20 pb-24">
+                <div className="max-w-5xl mx-auto">
                     {/* Stepper Component */}
                     {/* Stepper Component - Connected Line Style */}
                     <div className="bg-white rounded-[2rem] shadow-2xl p-8 pb-12 relative overflow-hidden">
@@ -414,10 +428,10 @@ export default function PlanTripPage() {
                                         <Label className="text-sm font-semibold text-gray-700 ml-1">Trip Style</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {[
-                                                { id: 'Adventure', icon: Mountain, color: 'text-orange-500', bg: 'bg-orange-50', hover: 'hover:border-orange-200' },
+                                                { id: 'Adventure', icon: Mountain, color: 'text-indigo-500', bg: 'bg-indigo-50', hover: 'hover:border-indigo-200' },
                                                 { id: 'Relaxation', icon: Umbrella, color: 'text-cyan-500', bg: 'bg-cyan-50', hover: 'hover:border-cyan-200' },
-                                                { id: 'Cultural', icon: Building2, color: 'text-purple-500', bg: 'bg-purple-50', hover: 'hover:border-purple-200' },
-                                                { id: 'Nature', icon: Palmtree, color: 'text-green-500', bg: 'bg-green-50', hover: 'hover:border-green-200' },
+                                                { id: 'Cultural', icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', hover: 'hover:border-blue-200' },
+                                                { id: 'Nature', icon: Palmtree, color: 'text-sky-500', bg: 'bg-sky-50', hover: 'hover:border-sky-200' },
                                             ].map((type) => (
                                                 <div
                                                     key={type.id}
@@ -693,36 +707,36 @@ export default function PlanTripPage() {
                                             className={`
                                                 relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer group
                                                 ${includeHotels
-                                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10'
-                                                    : 'border-gray-100 bg-white hover:border-emerald-200 hover:shadow-md'
+                                                    ? 'border-cyan-500 bg-cyan-50 shadow-lg shadow-cyan-500/10'
+                                                    : 'border-gray-100 bg-white hover:border-cyan-200 hover:shadow-md'
                                                 }
                                             `}
                                         >
                                             <div className="p-5 flex items-start gap-4">
                                                 <div className={`
                                                     p-3 rounded-xl transition-colors
-                                                    ${includeHotels ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200'}
+                                                    ${includeHotels ? 'bg-cyan-500 text-white' : 'bg-cyan-100 text-cyan-600 group-hover:bg-cyan-200'}
                                                 `}>
                                                     <Hotel className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <div className="flex items-center gap-3">
-                                                            <h4 className={`font-bold text-lg ${includeHotels ? 'text-emerald-900' : 'text-gray-900'}`}>
+                                                            <h4 className={`font-bold text-lg ${includeHotels ? 'text-cyan-900' : 'text-gray-900'}`}>
                                                                 Hotels
                                                             </h4>
-                                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">
                                                                 Coming Soon
                                                             </span>
                                                         </div>
                                                         <div className={`
                                                             w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-                                                            ${includeHotels ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 bg-transparent'}
+                                                            ${includeHotels ? 'border-cyan-500 bg-cyan-500 text-white' : 'border-gray-300 bg-transparent'}
                                                         `}>
                                                             {includeHotels && <CheckCircle2 className="h-4 w-4" />}
                                                         </div>
                                                     </div>
-                                                    <p className={`text-sm ${includeHotels ? 'text-emerald-700' : 'text-gray-500'}`}>
+                                                    <p className={`text-sm ${includeHotels ? 'text-cyan-700' : 'text-gray-500'}`}>
                                                         Get recommendations for top-rated stays.
                                                     </p>
                                                 </div>
@@ -735,36 +749,36 @@ export default function PlanTripPage() {
                                             className={`
                                                 relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer group
                                                 ${includeTransfers
-                                                    ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-500/10'
-                                                    : 'border-gray-100 bg-white hover:border-orange-200 hover:shadow-md'
+                                                    ? 'border-indigo-500 bg-indigo-50 shadow-lg shadow-indigo-500/10'
+                                                    : 'border-gray-100 bg-white hover:border-indigo-200 hover:shadow-md'
                                                 }
                                             `}
                                         >
                                             <div className="p-5 flex items-start gap-4">
                                                 <div className={`
                                                     p-3 rounded-xl transition-colors
-                                                    ${includeTransfers ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600 group-hover:bg-orange-200'}
+                                                    ${includeTransfers ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200'}
                                                 `}>
                                                     <Car className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <div className="flex items-center gap-3">
-                                                            <h4 className={`font-bold text-lg ${includeTransfers ? 'text-orange-900' : 'text-gray-900'}`}>
+                                                            <h4 className={`font-bold text-lg ${includeTransfers ? 'text-indigo-900' : 'text-gray-900'}`}>
                                                                 Transfers
                                                             </h4>
-                                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
                                                                 Coming Soon
                                                             </span>
                                                         </div>
                                                         <div className={`
                                                             w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-                                                            ${includeTransfers ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300 bg-transparent'}
+                                                            ${includeTransfers ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-gray-300 bg-transparent'}
                                                         `}>
                                                             {includeTransfers && <CheckCircle2 className="h-4 w-4" />}
                                                         </div>
                                                     </div>
-                                                    <p className={`text-sm ${includeTransfers ? 'text-orange-700' : 'text-gray-500'}`}>
+                                                    <p className={`text-sm ${includeTransfers ? 'text-indigo-700' : 'text-gray-500'}`}>
                                                         Seamless airport and city transfers.
                                                     </p>
                                                 </div>

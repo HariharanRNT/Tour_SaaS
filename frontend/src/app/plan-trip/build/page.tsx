@@ -15,6 +15,16 @@ import { flightsAPI } from '@/lib/api'
 import { FlightCard, Flight } from '@/components/itinerary/flight-card'
 import { FlightFilters, FlightFilterState } from '@/components/itinerary/flight-filters'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { DayPlanner } from '@/components/itinerary/DayPlanner'
 
 interface Activity {
@@ -56,6 +66,10 @@ export default function BuildTripPage() {
     const [currentDay, setCurrentDay] = useState(1)
     const [saving, setSaving] = useState(false)
     const [success, setSuccess] = useState(false)
+
+    // Draft State
+    const [showResumeDialog, setShowResumeDialog] = useState(false)
+    const [draftSession, setDraftSession] = useState<any>(null)
 
     // Modular State
     const [flightSelected, setFlightSelected] = useState(false)
@@ -136,8 +150,86 @@ export default function BuildTripPage() {
     useEffect(() => {
         if (sessionId) {
             loadSession()
+            checkDrafts()
         }
     }, [sessionId])
+
+    const checkDrafts = async () => {
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            if (!token) return
+
+            let url = 'http://localhost:8000/api/v1/trip-planner/user-drafts/latest'
+            if (sessionId) {
+                url += `?exclude_session_id=${sessionId}`
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (response.ok) {
+                const draft = await response.json()
+                if (draft) {
+                    setDraftSession(draft)
+                    setShowResumeDialog(true)
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check drafts:', error)
+        }
+    }
+
+    const handleResumeDraft = async () => {
+        if (draftSession) {
+            // Delete the current session (which is likely a "new" started session)
+            // to avoid it becoming the "latest draft" when we switch to the old one.
+            if (sessionId) {
+                try {
+                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+                    if (token) {
+                        await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        })
+                    }
+                } catch (e) {
+                    console.error("Failed to delete abandoned session:", e)
+                }
+            }
+
+            router.push(`/plan-trip/build?session=${draftSession.session_id}`)
+            setShowResumeDialog(false)
+        }
+    }
+
+    const handleStartNew = async () => {
+        if (!draftSession) {
+            setShowResumeDialog(false)
+            return
+        }
+
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            if (token) {
+                await fetch(`http://localhost:8000/api/v1/trip-planner/session/${draftSession.session_id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+            }
+        } catch (e) {
+            console.error("Failed to clear draft", e)
+        } finally {
+            setShowResumeDialog(false)
+            setDraftSession(null)
+        }
+    }
 
     // Fetch flight prices when session loads
     useEffect(() => {
@@ -426,6 +518,22 @@ export default function BuildTripPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-32 font-sans">
+            <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Resume your previous trip?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            We found an unfinished itinerary for <span className="font-semibold text-blue-600">{draftSession?.destination}</span> from {draftSession?.created_at ? new Date(draftSession.created_at).toLocaleDateString() : 'recently'}.
+                            Would you like to continue where you left off?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowResumeDialog(false)}>Start New</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleResumeDraft} className="bg-blue-600 hover:bg-blue-700">Continue with Draft</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Hero Section */}
             <div className="relative h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
                 {/* Background Image & Overlay */}
@@ -534,25 +642,25 @@ export default function BuildTripPage() {
                     <div className="lg:col-span-8 xl:col-span-9 space-y-12">
 
                         {/* AI Summary Banner */}
-                        <div className="bg-gradient-to-br from-violet-50 via-fuchsia-50 to-white p-8 rounded-[2rem] shadow-sm border border-violet-100/50 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                        <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-white p-8 rounded-[2rem] shadow-sm border border-blue-100/50 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
                             <div className="flex flex-col md:flex-row gap-6 relative z-10">
                                 <div className="shrink-0 flex items-start">
-                                    <div className="p-4 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl text-white shadow-lg shadow-violet-500/30 ring-4 ring-white">
+                                    <div className="p-4 bg-gradient-to-br from-blue-600 to-sky-600 rounded-2xl text-white shadow-lg shadow-blue-500/30 ring-4 ring-white">
                                         <Sparkles className="h-8 w-8 animate-pulse" />
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-700 to-fuchsia-700">
+                                    <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-sky-700">
                                         Your Personalized AI Itinerary
                                     </h3>
                                     <p className="text-gray-700 leading-relaxed text-lg">
-                                        We've crafted this {session.duration_days}-day journey through <span className="font-semibold text-violet-700">{session.destination}</span> based on your love for <span className="font-semibold text-violet-700">{session.trip_type}</span> experiences.
+                                        We've crafted this {session.duration_days}-day journey through <span className="font-semibold text-blue-700">{session.destination}</span> based on your love for <span className="font-semibold text-blue-700">{session.trip_type}</span> experiences.
                                     </p>
                                     <div className="flex flex-wrap gap-3 pt-1">
-                                        <Badge variant="outline" className="bg-white/60 border-violet-200 text-violet-700 hover:bg-violet-50">✨ Perfectly Paced</Badge>
-                                        <Badge variant="outline" className="bg-white/60 border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-50">📍 Top Rated Spots</Badge>
-                                        <Badge variant="outline" className="bg-white/60 border-blue-200 text-blue-700 hover:bg-blue-50">💎 Local Gems</Badge>
+                                        <Badge variant="outline" className="bg-white/60 border-blue-200 text-blue-700 hover:bg-blue-50">✨ Perfectly Paced</Badge>
+                                        <Badge variant="outline" className="bg-white/60 border-sky-200 text-sky-700 hover:bg-sky-50">📍 Top Rated Spots</Badge>
+                                        <Badge variant="outline" className="bg-white/60 border-indigo-200 text-indigo-700 hover:bg-indigo-50">💎 Local Gems</Badge>
                                     </div>
                                 </div>
                             </div>
@@ -567,22 +675,18 @@ export default function BuildTripPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {[
-                                    { icon: <Plane className="h-8 w-8" />, label: "Flights", desc: "Best connections", color: "blue" },
-                                    { icon: <Hotel className="h-8 w-8" />, label: "Hotels", desc: "4★ & 5★ stays", color: "emerald" },
-                                    { icon: <Camera className="h-8 w-8" />, label: "Activities", desc: "Curated experiences", color: "amber" },
-                                    { icon: <Car className="h-8 w-8" />, label: "Transfers", desc: "Private cabs", color: "purple" }
+                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", color: "blue" },
+                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "4★ & 5★ stays", color: "cyan" },
+                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated experiences", color: "sky" },
+                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", color: "indigo" }
                                 ].map((item, i) => (
-                                    <Card key={i} className="border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white group cursor-pointer rounded-2xl overflow-hidden ring-1 ring-gray-100 hover:ring-2 hover:ring-blue-100">
-                                        <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                                            <div className={`p-4 rounded-full bg-${item.color}-50 text-${item.color}-600 group-hover:scale-110 transition-transform duration-300 group-hover:bg-${item.color}-100`}>
-                                                {item.icon}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-gray-900 text-lg mb-1">{item.label}</h3>
-                                                <p className="text-sm text-gray-500 font-medium">{item.desc}</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <div key={i} className="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:border-blue-100 transition-all duration-300">
+                                        <div className={`w-12 h-12 rounded-xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                                            {item.icon}
+                                        </div>
+                                        <h3 className="font-bold text-slate-900 text-lg">{item.label}</h3>
+                                        <p className="text-sm text-slate-500 font-medium">{item.desc}</p>
+                                    </div>
                                 ))}
                             </div>
                         </section>
@@ -591,27 +695,26 @@ export default function BuildTripPage() {
 
                         {/* Itinerary Tabs - Clean & Modern */}
                         <section>
-                            <div className="flex items-center justify-between mb-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <div className="flex items-center gap-3">
                                     <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                                     <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-600 gap-2">
+                                <Button variant="outline" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-600 gap-2 shadow-sm font-semibold">
                                     <Download className="h-4 w-4" /> Download PDF
                                 </Button>
                             </div>
 
                             <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
-                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto bg-transparent p-2 gap-3 scrollbar-hide h-auto">
+                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto bg-slate-50/50 p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-slate-100">
                                     {itinerary.map((day) => (
                                         <TabsTrigger
                                             key={day.day_number}
                                             value={day.day_number.toString()}
                                             className="
-                                                px-6 py-3 rounded-full border border-gray-200 bg-white min-w-[100px]
-                                                data-[state=active]:bg-gray-900 data-[state=active]:text-white data-[state=active]:border-gray-900 data-[state=active]:shadow-lg 
-                                                text-gray-600 font-semibold
-                                                hover:border-gray-300 transition-all duration-300
+                                                px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
+                                                data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md
+                                                text-slate-500 hover:text-slate-700 hover:bg-slate-100/50
                                             "
                                         >
                                             Day {day.day_number}

@@ -108,8 +108,9 @@ export interface Activity {
     duration_nights?: number
     category?: string
     destination?: string
-    rating: number
-    images: string[]
+    rating: number;
+    reviews_count?: number;
+    images: string[];
     location?: {
         latitude: number
         longitude: number

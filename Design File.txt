@@ -1,55 +1,318 @@
-Problems Identified:
+Current Issues
+Image cuts off awkwardly - The hero image gets cropped at the bottom in the scrolled view
+Close button placement - X button in top-right corner could be more prominent
+No visual hierarchy - Title and content blend together
+Long text block - The description is one huge paragraph that's hard to read
+Close Details button feels lonely - Only one action button at the bottom
+Missing important information - No pricing, duration, or key details visible
+No images beyond hero - Activity could benefit from gallery
+Generic white background - Lacks visual interest
+Enhanced UI Suggestions
+1. Hero Image Section
+Make it sticky/fixed:
 
-Return Journey card is taller than Onward Journey card
-Inconsistent content alignment between the two cards
-Check-in baggage details are only shown in Return card, making it taller
-Visual imbalance - cards should be the same height for symmetry
+Keep the hero image visible even when scrolling
+Add a gradient overlay at the bottom for better text contrast
+Include image counter if multiple images (e.g., "1 / 5")
+Add left/right arrows for image gallery navigation
+Title placement:
 
-Solutions to Fix Card Height Consistency:
-Option 1: Equalize Content (Recommended)
-Make both cards show the same information structure:
-ONWARD JOURNEY Card:
-┌─────────────────────────────────────────────────┐
-│ ● ONWARD JOURNEY                         ⭐ 4.6 │
-├─────────────────────────────────────────────────┤
-│                                                  │
-│  [IX]  AI Express        07:50 ──●──> 18:55    │
-│  IX-2975                  MAA    11h   NMI      │
-│  Boeing 737              Feb 28   1 Stop Feb 28 │
-│                                                  │
-│  ──────────────────────────────────────────────│
-│                                                  │
-│  Cabin-baggage: 7 Kg     🍽️ Meal      ✅ Web   │
-│  Check-in: [Not shown]    Included    Check-in  │
-│  Class: ECONOMY          ⚠️ Non-refundable      │
-│                                                  │
-│  ──────────────────────────────────────────────│
-│                                                  │
-│  ₹3,755.95                      [✓ Selected]    │
-│  PER PERSON + TAXES                             │
-│                                                  │
-│  [View Details ▼]                               │
-└─────────────────────────────────────────────────┘
-RETURN JOURNEY Card:
-┌─────────────────────────────────────────────────┐
-│ ● RETURN JOURNEY                  🚀 FASTEST 4.8│
-├─────────────────────────────────────────────────┤
-│                                                  │
-│  [6E]  IndiGo           06:15 ──●──> 08:20     │
-│  6E-5107                 BOM    2h     MAA      │
-│  Boeing 737             Mar 2   Non-stop Mar 2  │
-│                                                  │
-│  ──────────────────────────────────────────────│
-│                                                  │
-│  Cabin-baggage: 7 Kg     🍽️ Meal      ✅ Web   │
-│  Check-in: 15 Kg (01     Included    Check-in  │
-│  Piece only)             ⚠️ Non-refundable      │
-│  Class: ECONOMY                                 │
-│                                                  │
-│  ──────────────────────────────────────────────│
-│                                                  │
-│  ₹3,688.85                      [✓ Selected]    │
-│  PER PERSON + TAXES                             │
-│                                                  │
-│  [View Details ▼]                               │
-└─────────────────────────────────────────────────┘
+Move title overlay onto the image with better shadow/gradient
+Or create a dedicated title section below the image with clean separation
+2. Header Improvements
+Close button:
+
+Make it larger and more visible
+Add a circular background: white circle with shadow
+Position it absolutely over the image in top-right
+Add subtle hover effect
+Add quick actions:
+
+Share button (top-right)
+Favorite/Save button (heart icon)
+Download itinerary button
+3. Content Organization - Break Up the Text
+Current: One long paragraph Better: Organized sections
+
+Suggested structure:
+
+┌─────────────────────────────────────────────┐
+│  [Hero Image with Title Overlay]            │
+│  Bergen's University District: A Self-      │
+│  Guided Audio Tour                          │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  📍 Overview                                │
+│  Short 2-3 sentence description             │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  ⭐ Highlights                              │
+│  • See Bergen's University District         │
+│  • Viking kings royal estate               │
+│  • Meet His Majesty the Hedgehog           │
+│  • 75 minutes self-paced tour              │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  ℹ️ What's Included                         │
+│  ✅ Audio guide via VoiceMap app           │
+│  ✅ Offline GPS playback                   │
+│  ✅ Turn-by-turn directions                │
+│  ✅ Unlimited use before/after booking     │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  📱 How It Works                            │
+│  1. Book and receive ticket with code      │
+│  2. Install VoiceMap app                   │
+│  3. Enter your unique code                 │
+│  4. Follow GPS directions                  │
+│  5. Start when ready                       │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  🕐 Duration & Details                     │
+│  Duration: 75 minutes                       │
+│  Pace: Self-guided                         │
+│  Language: English                         │
+│  Audio: Professional narrator              │
+└─────────────────────────────────────────────┘
+4. Visual Design Enhancements
+Use cards/sections with icons:
+
+Each section gets a colored icon
+Light background for each card (alternating)
+Proper spacing between sections
+Icons help with quick scanning
+Color coding:
+
+Highlights: Blue background (
+#EFF6FF)
+Included items: Green tint (
+#F0FDF4)
+Instructions: Yellow tint (
+#FFFBEB)
+Duration: Purple tint (
+#F5F3FF)
+5. Key Information Summary Bar
+Add a sticky info bar below the hero:
+
+┌─────────────────────────────────────────────┐
+│  ⏱️ 75 min    👤 Solo    💰 ₹500    ⭐ 4.8  │
+└─────────────────────────────────────────────┘
+Or as individual badges:
+
+[⏱️ 75 minutes]  [🎧 Audio Tour]  [📱 App Required]  [⭐ 4.8 (124)]
+6. Better Content Structure
+Short, scannable paragraphs:
+
+Break the long text into 3-4 short paragraphs
+Use bold for key phrases
+Add bullet points for lists
+Include subheadings
+Example rewrite:
+
+About this activity
+
+Explore Bergen's Historic University District
+
+Discover Bergen's University District at your own pace with 
+this affordable self-guided walking tour. Perfect for travelers 
+who prefer to explore independently.
+
+What You'll Experience:
+- Historic royal estates built by Viking kings
+- Student community landmarks and traditions  
+- Stories from Silvia Maria, your audio tour guide
+- The legendary Hedgehog, Bergen's beloved mascot
+
+Flexible & Convenient:
+Complete the 75-minute tour at your own pace. Stop whenever 
+you want, linger at interesting spots, and maintain full 
+control over your schedule.
+
+How It Works:
+After booking, you'll receive a ticket with a unique code. 
+Simply download the VoiceMap app, enter your code, and 
+follow GPS directions to the starting point. The audio 
+automatically plays at each location with turn-by-turn 
+navigation.
+7. Image Gallery Addition
+Add a thumbnail gallery below the hero:
+
+┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐
+│ 📷 │ │ 📷 │ │ 📷 │ │ 📷 │ │+2  │
+└────┘ └────┘ └────┘ └────┘ └────┘
+Clicking opens full gallery view
+
+8. Action Buttons Improvement
+Current: Only "Close Details" button
+
+Better: Multiple action buttons
+
+┌─────────────────────────────────────────────┐
+│  [Add to Itinerary]  [Remove]  [View Map]   │
+│                                              │
+│  [Close Details]                             │
+└─────────────────────────────────────────────┘
+Or with primary/secondary styling:
+
+┌─────────────────────────────────────────────┐
+│  ┌──────────────────────┐  ┌──────────────┐│
+│  │ ✓ Added to Itinerary │  │ View on Map  ││
+│  └──────────────────────┘  └──────────────┘│
+│                                              │
+│  [Close Details] (text link)                 │
+└─────────────────────────────────────────────┘
+9. Pricing & Booking Integration
+Add pricing section if activity has cost:
+
+┌─────────────────────────────────────────────┐
+│  💰 Pricing                                  │
+│  ─────────────────────────────────────────  │
+│  Adult (13+)           ₹500 per person      │
+│  Child (5-12)          ₹300 per person      │
+│  Infant (0-4)          Free                 │
+│                                              │
+│  Your price: ₹500 (1 adult)                 │
+└─────────────────────────────────────────────┘
+10. Reviews & Ratings Section
+Add social proof:
+
+┌─────────────────────────────────────────────┐
+│  ⭐ Reviews (4.8 / 5)                       │
+│  Based on 124 reviews                       │
+│  ─────────────────────────────────────────  │
+│  "Excellent tour! Very informative..."      │
+│  - Sarah M. (2 days ago)                    │
+│                                              │
+│  [Read all reviews →]                       │
+└─────────────────────────────────────────────┘
+11. Modal Layout Options
+Option A: Sidebar Modal (Recommended)
+
+┌──────────────────┬────────────────────────┐
+│  Main content    │  Quick Info Sidebar    │
+│  (scrollable)    │  ├─ Price             │
+│                  │  ├─ Duration          │
+│                  │  ├─ Rating            │
+│                  │  ├─ Language          │
+│                  │  └─ [Add to Trip]     │
+└──────────────────┴────────────────────────┘
+Option B: Full Modal with Sticky Footer
+
+┌──────────────────────────────────────────┐
+│  [X] Hero Image                          │
+├──────────────────────────────────────────┤
+│  Content (scrollable)                     │
+│  • Sections                              │
+│  • Details                               │
+│  • Reviews                               │
+├──────────────────────────────────────────┤
+│  [Sticky Footer]                         │
+│  ₹500 per person  [Add to Itinerary]     │
+└──────────────────────────────────────────┘
+12. Responsive Behavior
+Desktop:
+
+Modal max-width: 900px
+Two-column layout for some sections
+Sidebar for quick info
+Mobile:
+
+Full-screen modal
+Single column
+Sticky header with close button
+Sticky footer with CTA
+13. Interactive Elements
+Add:
+
+Collapsible sections (FAQ, detailed description)
+"Read more" / "Read less" for long text
+Map preview with "View full map" button
+Related activities carousel at bottom
+"Questions about this activity?" contact section
+14. Visual Polish
+Typography:
+
+Larger hero title (32-40px)
+Clear section headers (20-24px)
+Body text (16px) with good line height (1.6)
+Use font weights to create hierarchy
+Spacing:
+
+Generous padding in modal (32-40px)
+Section spacing (24-32px between)
+Breathing room around text blocks
+Colors (Blue Theme):
+
+Section backgrounds: Light blue tints
+Icons: Blue (
+#3B82F6)
+Buttons: Blue gradient
+Borders: Light blue (
+#E0F2FE)
+Shadows:
+
+Modal: Large shadow for depth
+Sections: Subtle shadows on cards
+Images: Soft shadows
+15. Accessibility
+Keyboard navigation (Tab, Escape to close)
+Focus states on all interactive elements
+Proper heading hierarchy (h1, h2, h3)
+Alt text for images
+ARIA labels for icon buttons
+Sufficient color contrast
+16. Complete Enhanced Layout
+┌────────────────────────────────────────────────┐
+│ [X]  ❤️  📤                                    │ ← Header
+│                                                 │
+│ [━━━━━━━  Hero Image Gallery  ━━━━━━━]         │
+│  Bergen's University District Tour              │
+│  ⭐ 4.8 (124) • 75 min • Audio Tour            │
+│                                                 │
+│ ┌─────────────────────────────────────────┐   │
+│ │ ⏱️ 75 min  👤 Solo  💰 ₹500  📱 App    │   │ ← Quick Info
+│ └─────────────────────────────────────────┘   │
+│                                                 │
+│ 📖 Overview                                     │
+│ ─────────────────────────────────────────────  │
+│ Short engaging description (2-3 sentences)      │
+│                                                 │
+│ ⭐ Highlights                                   │
+│ ─────────────────────────────────────────────  │
+│ • Bullet point 1                               │
+│ • Bullet point 2                               │
+│ • Bullet point 3                               │
+│                                                 │
+│ ✅ What's Included                              │
+│ ─────────────────────────────────────────────  │
+│ Grid of included items with icons               │
+│                                                 │
+│ 📱 How It Works                                 │
+│ ─────────────────────────────────────────────  │
+│ Step-by-step instructions with numbers          │
+│                                                 │
+│ 💬 Reviews (4.8/5)                              │
+│ ─────────────────────────────────────────────  │
+│ Latest review preview + [Read all]              │
+│                                                 │
+│ 🗺️ Location & Map                              │
+│ ─────────────────────────────────────────────  │
+│ [Map preview] [View full map]                   │
+│                                                 │
+│ ❓ FAQs                                          │
+│ ─────────────────────────────────────────────  │
+│ Expandable Q&A section                          │
+│                                                 │
+│ ┌─────────────────────────────────────────┐   │
+│ │ [Added to Itinerary ✓]  [View on Map]   │   │ ← Actions
+│ └─────────────────────────────────────────┘   │
+│                                                 │
+│ [Close Details]                                 │
+└────────────────────────────────────────────────┘
+These improvements will make the activity details much more scannable, informative, and user-friendly while maintaining a clean, professional appearance with your blue theme.
+
