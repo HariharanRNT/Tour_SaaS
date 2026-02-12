@@ -425,7 +425,7 @@ export default function PlanTripPage() {
 
                                     {/* Trip Type Selector */}
                                     <div className="space-y-3">
-                                        <Label className="text-sm font-semibold text-gray-700 ml-1">Trip Style</Label>
+                                        <Label className="text-sm font-semibold text-gray-700 ml-1">Trip Style <span className="text-gray-400 font-normal ml-1">(Optional)</span></Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {[
                                                 { id: 'Adventure', icon: Mountain, color: 'text-indigo-500', bg: 'bg-indigo-50', hover: 'hover:border-indigo-200' },
@@ -502,7 +502,7 @@ export default function PlanTripPage() {
 
                                         <div className="relative group">
                                             <Hotel className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-10" />
-                                            <Select value={durationNights} onValueChange={setDurationNights}>
+                                            <Select value={durationNights} onValueChange={setDurationNights} disabled>
                                                 <SelectTrigger className="pl-12 pt-6 pb-2 h-14 w-full bg-white border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all shadow-sm text-left">
                                                     <div className="absolute left-12 top-2.5 text-xs text-gray-500 font-medium">Duration (Nights) <span className="text-red-500">*</span></div>
                                                     <SelectValue placeholder="Select nights" />

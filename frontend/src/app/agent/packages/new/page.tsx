@@ -65,11 +65,11 @@ export default function CreatePackagePage() {
         country: '',
         duration_days: 7,
         duration_nights: 6,
-        category: 'Adventure',
+        category: '',
         price_per_person: 0,
         max_group_size: 20,
         description: '',
-        is_public: true,
+        is_public: false,
         feature_image_url: ''
     })
 
@@ -248,7 +248,7 @@ export default function CreatePackagePage() {
     }
 
     const isBasicInfoValid = () => {
-        return formData.title && formData.destination && formData.country && formData.price_per_person > 0
+        return formData.title && formData.destination && formData.country && formData.category && formData.price_per_person > 0
     }
 
     // Helper for input validation styles

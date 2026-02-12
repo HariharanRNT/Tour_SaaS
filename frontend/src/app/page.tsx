@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle, Globe, Users, Clock, Star, Heart } from 'lucide-react'
+import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle, Globe, Users, Clock, Star, Heart, Luggage } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import PackageSearchChat from '@/components/ai/PackageSearchChat'
 
 interface Destination {
     id: string
@@ -46,7 +48,6 @@ export default function Home() {
 
     return (
         <div>
-            {/* Modernized Hero Section */}
             {/* Modernized Hero Section */}
             <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden">
                 {/* Background Image with Overlay */}
@@ -108,18 +109,30 @@ export default function Home() {
 
                         {/* CTA Section */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
+                            <Button variant="ghost" size="lg" className="h-16 px-8 text-xl   rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all font-bold">
+                                <PlayCircle className="h-6 w-6 mr-2" />
+                                See Sample Itinerary
+                            </Button>
+
                             <Link href="/plan-trip">
                                 <Button size="lg" className="h-16 px-12 text-xl rounded-full bg-white text-blue-950 hover:bg-blue-50 hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)] border-2 border-transparent hover:border-blue-100 group font-bold">
-                                    <Sparkles className="h-6 w-6 mr-2 text-indigo-600 animate-pulse" />
+                                    <Luggage className="h-6 w-6 mr-2 text-indigo-600" />
                                     Start Your Journey
                                     <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
 
-                            <Button variant="ghost" size="lg" className="h-16 px-8 text-lg rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all">
-                                <PlayCircle className="h-6 w-6 mr-2" />
-                                See Sample Itinerary
-                            </Button>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="lg" className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all group font-bold">
+                                        <Sparkles className="h-6 w-6 mr-2 text-yellow-300 animate-pulse" />
+                                        Plan with AI
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[700px] p-0 bg-transparent border-none shadow-none">
+                                    <PackageSearchChat />
+                                </DialogContent>
+                            </Dialog>
                         </div>
 
                         {/* Feature Cards - 3 Blue Cards */}
@@ -171,7 +184,7 @@ export default function Home() {
             </section>
 
             {/* Features Section */}
-            <section className="py-32 bg-gray-50 relative overflow-hidden">
+            <section className="pt-24 pb-12 bg-gray-50 relative overflow-hidden">
                 {/* Wave Separator - Top */}
                 <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0]">
                     <svg className="relative block w-[calc(100%+1.3px)] h-[50px] md:h-[100px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -237,7 +250,7 @@ export default function Home() {
             </section>
 
             {/* Popular Destinations */}
-            <section className="py-32 bg-white">
+            <section className="pt-12 pb-24 bg-white">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
                         <div className="text-left max-w-2xl">
@@ -261,10 +274,10 @@ export default function Home() {
                             <p className="text-gray-500 font-medium">Curating best spots...</p>
                         </div>
                     ) : destinations.length > 0 ? (
-                        <div className="grid md:grid-cols-3 gap-10">
+                        <div className="grid md:grid-cols-3 gap-6">
                             {destinations.map((dest, i) => (
                                 <Link key={dest.id} href={`/plan-trip?destination=${encodeURIComponent(dest.name)}`} className="group block h-full">
-                                    <div className="relative h-[600px] rounded-[2rem] overflow-hidden shadow-2xl shadow-gray-200 group-hover:shadow-blue-200 hover:-translate-y-3 transition-all duration-500 cursor-pointer">
+                                    <div className="relative h-[420px] rounded-[1.5rem] overflow-hidden shadow-xl shadow-gray-200 group-hover:shadow-blue-200 hover:-translate-y-2 transition-all duration-500 cursor-pointer">
                                         {/* Image with zoom effect */}
                                         <div className="absolute inset-0 bg-gray-200 overflow-hidden">
                                             {dest.image_url ? (
@@ -281,24 +294,24 @@ export default function Home() {
                                         </div>
 
                                         {/* Overlays */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-300"></div>
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-300"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-300"></div>
+                                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300"></div>
 
                                         {/* Top Badges */}
-                                        <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10">
-                                            <Badge className="bg-white/90 backdrop-blur-md text-gray-900 border-none px-3 py-1.5 font-bold shadow-lg">
+                                        <div className="absolute top-5 left-5 right-5 flex justify-between items-start z-10">
+                                            <Badge className="bg-white/90 backdrop-blur-md text-gray-900 border-none px-2.5 py-1 font-bold shadow-lg text-xs">
                                                 {i === 0 ? '🔥 Best Seller' : '⭐ Top Rated'}
                                             </Badge>
-                                            <button className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white hover:text-red-500 text-white transition-all duration-300 group/heart">
-                                                <Heart className="h-5 w-5 fill-transparent group-hover/heart:fill-red-500" />
+                                            <button className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white hover:text-red-500 text-white transition-all duration-300 group/heart">
+                                                <Heart className="h-4 w-4 fill-transparent group-hover/heart:fill-red-500" />
                                             </button>
                                         </div>
 
                                         {/* Content */}
-                                        <div className="absolute bottom-0 left-0 w-full p-8 text-white z-10">
+                                        <div className="absolute bottom-0 left-0 w-full p-6 text-white z-10">
                                             {/* Rating & Location */}
-                                            <div className="flex items-center gap-2 mb-3 text-blue-100 font-medium text-sm">
-                                                <div className="bg-yellow-400/20 backdrop-blur-sm border border-yellow-400/30 px-2 py-0.5 rounded flex items-center gap-1 text-yellow-300">
+                                            <div className="flex items-center gap-2 mb-2 text-blue-100 font-medium text-xs">
+                                                <div className="bg-yellow-400/20 backdrop-blur-sm border border-yellow-400/30 px-1.5 py-0.5 rounded flex items-center gap-1 text-yellow-300">
                                                     <Star className="h-3 w-3 fill-yellow-300" />
                                                     <span>4.8</span>
                                                 </div>
@@ -309,27 +322,27 @@ export default function Home() {
                                                 </div>
                                             </div>
 
-                                            <h3 className="text-4xl font-black mb-3 leading-tight tracking-tight shadow-black drop-shadow-lg">
+                                            <h3 className="text-2xl font-black mb-2 leading-tight tracking-tight shadow-black drop-shadow-md">
                                                 {dest.name}
                                             </h3>
 
-                                            <p className="text-gray-200 line-clamp-2 mb-6 font-medium opacity-90 text-sm leading-relaxed max-w-[90%]">
+                                            <p className="text-gray-200 line-clamp-2 mb-4 font-medium opacity-90 text-xs leading-relaxed max-w-[95%]">
                                                 {dest.description || `Discover the amazing experiences waiting for you in ${dest.name}.`}
                                             </p>
 
                                             {/* Price & Duration Row */}
-                                            <div className="flex items-center justify-between border-t border-white/20 pt-6 mt-4">
+                                            <div className="flex items-center justify-between border-t border-white/20 pt-4 mt-2">
                                                 <div>
-                                                    <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-1">Starting from</p>
+                                                    <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mb-0.5">Starting from</p>
                                                     <div className="flex items-baseline gap-1">
-                                                        <span className="text-2xl font-bold">₹{dest.min_price || 'N/A'}</span>
-                                                        <span className="text-sm text-gray-300 font-normal">/person</span>
+                                                        <span className="text-xl font-bold">₹{dest.min_price || 'N/A'}</span>
+                                                        <span className="text-xs text-gray-300 font-normal">/person</span>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-1">Duration</p>
-                                                    <div className="flex items-center gap-1.5 justify-end">
-                                                        <Clock className="h-4 w-4" />
+                                                    <p className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold mb-0.5">Duration</p>
+                                                    <div className="flex items-center gap-1 justify-end text-sm">
+                                                        <Clock className="h-3.5 w-3.5" />
                                                         <span className="font-bold">
                                                             {dest.min_duration === dest.max_duration
                                                                 ? `${dest.min_duration} Days`

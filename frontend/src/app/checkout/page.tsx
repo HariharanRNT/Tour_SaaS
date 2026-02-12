@@ -184,6 +184,21 @@ export default function CheckoutPage() {
                         type: 'CHILD'
                     })
                 }
+                const infants = data.travelers?.infants || 0
+                for (let i = 0; i < infants; i++) {
+                    initialTravelers.push({
+                        id: uuidv4(),
+                        title: 'Infant',
+                        first_name: '',
+                        last_name: '',
+                        date_of_birth: '',
+                        gender: 'MALE',
+                        passport_number: '',
+                        passport_expiry: '',
+                        nationality: 'IN',
+                        type: 'INFANT'
+                    })
+                }
                 setTravelers(initialTravelers)
 
                 // Calculate Total

@@ -377,46 +377,66 @@ async def create_trip_session(
             raise HTTPException(status_code=400, detail="Destination is required")
         
         # Check for matching package
-        matched_package_id = None
+        matched_package_id = data.get('package_id')
         initial_itinerary = []
         has_match = False
         match_score = 0.0
         
-        # Search for matching packages
-        stmt = select(Package).where(
-            and_(
-                Package.status == PackageStatus.PUBLISHED,
-                Package.is_public == True,
-                or_(
-                    func.lower(Package.destination).like(f"%{destination.lower()}%"),
-                    func.lower(Package.country).like(f"%{destination.lower()}%")
+        package = None
+        
+        # Initialize variables
+        category = preferences.get('category')
+
+        if matched_package_id:
+            # Fetch specific package
+            stmt = select(Package).where(Package.id == matched_package_id)
+            result = await db.execute(stmt)
+            package = result.scalar_one_or_none()
+            
+            if package:
+                # If we have a specific package, use its details to override/fill defaults if needed
+                if not destination:
+                    destination = package.destination
+                # We typically respect the user's requested duration, but if they picked a package, 
+                # they might expect that package's duration.
+                # However, the session should reflect what the user PLANNED. 
+                # Let's keep user inputs as primary for session, but link the package.
+                pass
+        else:
+            # Search for matching packages
+            stmt = select(Package).where(
+                and_(
+                    Package.status == PackageStatus.PUBLISHED,
+                    Package.is_public == True,
+                    or_(
+                        func.lower(Package.destination).like(f"%{destination.lower()}%"),
+                        func.lower(Package.country).like(f"%{destination.lower()}%")
+                    )
                 )
             )
-        )
-        
-        # Restrict packages for Agent's Customers
-        if current_user and current_user.agent_id:
-            stmt = stmt.where(Package.created_by == current_user.agent_id)
-        
-        # Add duration filter (±1 day tolerance)
-        if duration_days:
-            stmt = stmt.where(
-                Package.duration_days.between(duration_days - 1, duration_days + 1)
-            )
-        
-        # Add category filter if provided
-        category = preferences.get('category')
-        if category:
-            stmt = stmt.where(func.lower(Package.category) == category.lower())
-        
-        # Order by popularity and exact match
-        stmt = stmt.order_by(
-            Package.is_popular_destination.desc(),
-            Package.created_at.desc()
-        ).limit(1)
-        
-        result = await db.execute(stmt)
-        package = result.scalar_one_or_none()
+            
+            # Restrict packages for Agent's Customers
+            if current_user and current_user.agent_id:
+                stmt = stmt.where(Package.created_by == current_user.agent_id)
+            
+            # Add duration filter (±1 day tolerance)
+            if duration_days:
+                stmt = stmt.where(
+                    Package.duration_days.between(duration_days - 1, duration_days + 1)
+                )
+            
+            # Add category filter if provided
+            if category:
+                stmt = stmt.where(func.lower(Package.category) == category.lower())
+            
+            # Order by popularity and exact match
+            stmt = stmt.order_by(
+                Package.is_popular_destination.desc(),
+                Package.created_at.desc()
+            ).limit(1)
+            
+            result = await db.execute(stmt)
+            package = result.scalar_one_or_none()
         
         if package:
             has_match = True

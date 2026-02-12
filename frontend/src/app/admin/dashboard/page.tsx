@@ -88,6 +88,8 @@ export default function AdminDashboard() {
             paymentFailures: 0,
             cancelledBookings: 0
         },
+        monthlyTrends: [],
+        weeklyTrends: [],
         agentPerformance: []
     })
 
@@ -260,7 +262,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {/* Active Subscriptions */}
                     <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -285,31 +287,7 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* Total Bookings */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#F59E0B]/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
-                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Bookings</CardTitle>
-                            <div className="bg-gradient-to-br from-[#F59E0B] to-orange-500 p-2.5 rounded-lg shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <FileText className="h-6 w-6 text-white" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="text-4xl font-bold text-slate-900 mb-2">{stats.totalBookings}</div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                                    <ArrowUp className="h-3 w-3" />
-                                    <span>12%</span>
-                                </div>
-                                <span className="text-xs text-slate-500">vs last month</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1 text-xs">
-                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">15 Confirmed</span>
-                                <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">10 Pending</span>
-                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">5 Completed</span>
-                            </div>
-                        </CardContent>
-                    </Card>
+
 
                     {/* Total Agents */}
                     <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
@@ -366,60 +344,7 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
 
-                    {/* Revenue This Month - NEW */}
-                    <Card className="relative overflow-hidden border-0 bg-blue-50/10 backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-700/5 to-blue-800/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
-                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Revenue (Month)</CardTitle>
-                            <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-2.5 rounded-lg shadow-md shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <DollarSign className="h-6 w-6 text-white" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="text-4xl font-bold text-slate-900 mb-2">₹{Math.round(stats.totalRevenue / 1000)}k</div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                                    <ArrowUp className="h-3 w-3" />
-                                    <span>15%</span>
-                                </div>
-                                <span className="text-xs text-slate-500">vs last month</span>
-                            </div>
-                            <p className="text-xs text-slate-600">
-                                Total: ₹{stats.totalRevenue.toLocaleString()}
-                            </p>
-                        </CardContent>
-                    </Card>
 
-                    {/* Pending Actions - NEW */}
-                    <Card className="relative overflow-hidden border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#EF4444]/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
-                            <CardTitle className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Requires Attention</CardTitle>
-                            <div className="bg-gradient-to-br from-[#EF4444] to-red-600 p-2.5 rounded-lg shadow-md shadow-red-500/20 group-hover:scale-110 transition-transform duration-300">
-                                <AlertCircle className="h-6 w-6 text-white" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="relative z-10">
-                            <div className="text-4xl font-bold text-slate-900 mb-2">
-                                {(stats.alerts?.paymentFailures || 0) + (stats.alerts?.cancelledBookings || 0)}
-                            </div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="flex items-center gap-1 text-red-600 text-sm font-medium">
-                                    <ArrowUp className="h-3 w-3" />
-                                    <span>2</span>
-                                </div>
-                                <span className="text-xs text-slate-500">new today</span>
-                            </div>
-                            <div className="flex gap-1 text-xs">
-                                <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
-                                    {stats.alerts?.paymentFailures || 0} Payments
-                                </span>
-                                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
-                                    {stats.alerts?.cancelledBookings || 0} Cancelled
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
 
 
@@ -503,7 +428,10 @@ export default function AdminDashboard() {
 
                 {/* Charts and Activity */}
                 <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 mb-8">
-                    <RevenueChart />
+                    <RevenueChart
+                        data={stats.monthlyTrends || []}
+                        weeklyData={stats.weeklyTrends || []}
+                    />
                     <RecentActivityFeed packages={stats.packageAnalytics?.recent} />
                 </div>
 

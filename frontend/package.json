@@ -43,6 +43,7 @@
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.49.3",
+    "react-markdown": "^10.1.0",
     "react-phone-input-2": "^2.15.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.7.0",

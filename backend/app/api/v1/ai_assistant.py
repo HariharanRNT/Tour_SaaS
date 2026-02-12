@@ -20,7 +20,8 @@ from app.schemas.ai_assistant_schemas import (
     ChatMessage
 )
 from app.core.redis import get_redis
-from app.api.deps import get_current_agent
+from app.api.deps import get_current_agent, get_optional_current_user
+from typing import Optional
 
 router = APIRouter(prefix="/ai-assistant", tags=["AI Assistant"])
 
@@ -28,20 +29,22 @@ router = APIRouter(prefix="/ai-assistant", tags=["AI Assistant"])
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_ai(
     request: ChatRequest,
-    current_agent: User = Depends(get_current_agent),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Send a message to the AI Assistant and get a response
     """
     try:
-        agent_id = current_agent.id
+        # Use user ID or "guest"
+        user_id = current_user.id if current_user else "guest"
+        
         # Generate or use existing conversation ID
         conversation_id = request.conversation_id or str(uuid.uuid4())
         
         # Get conversation history from Redis
         redis = get_redis()
-        history_key = f"ai_conversation:{agent_id}:{conversation_id}"
+        history_key = f"ai_conversation:{user_id}:{conversation_id}"
         history_data = await redis.get(history_key)
         
         conversation_history = []
@@ -56,11 +59,19 @@ async def chat_with_ai(
         }
         conversation_history.append(user_message)
         
-        # Get AI response
-        ai_response = await gemini_service.chat(
-            message=request.message,
-            conversation_history=conversation_history[:-1]  # Exclude current message
-        )
+        # Get AI response based on mode
+        mode = getattr(request, "mode", "general") # Default to general if not present
+        
+        if mode == "package_search":
+            ai_response = await gemini_service.chat_package_search(
+                message=request.message,
+                conversation_history=conversation_history[:-1]
+            )
+        else:
+            ai_response = await gemini_service.chat(
+                message=request.message,
+                conversation_history=conversation_history[:-1]
+            )
         
         if not ai_response.get("success"):
             raise HTTPException(
@@ -72,7 +83,10 @@ async def chat_with_ai(
         assistant_message = {
             "role": "assistant",
             "content": ai_response["message"],
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            # Store tool data if any
+            "tool_used": ai_response.get("tool_used"),
+            "tool_result": ai_response.get("tool_result")
         }
         conversation_history.append(assistant_message)
         
@@ -86,7 +100,9 @@ async def chat_with_ai(
         return ChatResponse(
             success=True,
             message=ai_response["message"],
-            conversation_id=conversation_id
+            conversation_id=conversation_id,
+            tool_used=ai_response.get("tool_used"),
+            tool_result=ai_response.get("tool_result")
         )
         
     except HTTPException:
@@ -101,19 +117,19 @@ async def chat_with_ai(
 @router.post("/generate-package", response_model=PackageGenerationResponse)
 async def generate_package(
     request: PackageGenerationRequest,
-    current_agent: User = Depends(get_current_agent),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Generate a complete tour package from the conversation
     """
     try:
-        agent_id = current_agent.id
-        print(f"[AI Assistant] Generating package for agent {agent_id}, conversation {request.conversation_id}")
+        user_id = current_user.id if current_user else "guest"
+        print(f"[AI Assistant] Generating package for user {user_id}, conversation {request.conversation_id}")
         
         # Get conversation history from Redis
         redis = get_redis()
-        history_key = f"ai_conversation:{agent_id}:{request.conversation_id}"
+        history_key = f"ai_conversation:{user_id}:{request.conversation_id}"
         print(f"[AI Assistant] Looking for conversation at key: {history_key}")
         
         history_data = await redis.get(history_key)
@@ -173,15 +189,15 @@ async def generate_package(
 @router.get("/conversation/{conversation_id}", response_model=ConversationHistoryResponse)
 async def get_conversation_history(
     conversation_id: str,
-    current_agent: User = Depends(get_current_agent)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
     Get conversation history by ID
     """
     try:
-        agent_id = current_agent.id
+        user_id = current_user.id if current_user else "guest"
         redis = get_redis()
-        history_key = f"ai_conversation:{agent_id}:{conversation_id}"
+        history_key = f"ai_conversation:{user_id}:{conversation_id}"
         history_data = await redis.get(history_key)
         
         if not history_data:
@@ -221,15 +237,15 @@ async def get_conversation_history(
 @router.delete("/conversation/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
-    current_agent: User = Depends(get_current_agent)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
     Delete a conversation
     """
     try:
-        agent_id = current_agent.id
+        user_id = current_user.id if current_user else "guest"
         redis = get_redis()
-        history_key = f"ai_conversation:{agent_id}:{conversation_id}"
+        history_key = f"ai_conversation:{user_id}:{conversation_id}"
         deleted = await redis.delete(history_key)
         
         if not deleted:

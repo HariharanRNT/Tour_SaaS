@@ -17,6 +17,7 @@ class ChatRequest(BaseModel):
     """Request to send a chat message"""
     message: str = Field(..., min_length=1, max_length=2000, description="User's message")
     conversation_id: Optional[str] = Field(None, description="Conversation ID for context")
+    mode: Optional[str] = Field("general", description="Chat mode: 'general' or 'package_search'")
 
 
 class ChatResponse(BaseModel):
@@ -25,6 +26,8 @@ class ChatResponse(BaseModel):
     message: str
     conversation_id: str
     error: Optional[str] = None
+    tool_used: Optional[str] = None
+    tool_result: Optional[Any] = None
 
 
 class PackageGenerationRequest(BaseModel):

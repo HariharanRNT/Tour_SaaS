@@ -238,13 +238,103 @@ async def get_dashboard_stats(
             for row in expiry_rows
         ]
 
+        # 9. Monthly Trends (Last 6 Months)
+        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        
+        # Fetch bookings for last 6 months
+        booking_trend_stmt = select(Booking.created_at, Booking.total_amount).where(
+            Booking.created_at >= six_months_ago,
+            Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
+        )
+        result = await db.execute(booking_trend_stmt)
+        bookings_data = result.all()
+        
+        # Fetch subscriptions for last 6 months
+        sub_trend_stmt = select(Subscription.created_at).where(
+            Subscription.created_at >= six_months_ago,
+            Subscription.status == 'active' 
+        )
+        result = await db.execute(sub_trend_stmt)
+        subs_data = result.all()
+        
+        # Aggregate in Python
+        trends = {}
+        # Initialize last 6 months
+        for i in range(5, -1, -1):
+            date = datetime.utcnow() - timedelta(days=i*30)
+            key = date.strftime("%Y-%m")
+            trends[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
+
+        def get_month_key(dt):
+            return dt.strftime("%Y-%m")
+
+        for b in bookings_data:
+            key = get_month_key(b[0])
+            if key in trends:
+                trends[key]["revenue"] += float(b[1] or 0)
+        
+        for s in subs_data:
+            key = get_month_key(s[0])
+            if key in trends:
+                trends[key]["subscriptions"] += 1
+                
+        monthly_trends = list(trends.values())
+
+        # 10. Weekly Trends (Last 6 Weeks)
+        # We can reuse the 6-month data which covers 6 weeks entirely
+        # Just need to filter and aggregate correctly in Python
+        
+        six_weeks_ago = datetime.utcnow() - timedelta(weeks=6)
+        weekly_stats = {}
+        
+        # Initialize last 6 weeks
+        # Start from current week, go back 5 weeks
+        current_week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday()) # Start of this week (Monday)
+        
+        for i in range(5, -1, -1):
+            week_start = current_week_start - timedelta(weeks=i)
+            # Format: 'Nov 12' or 'Week 45'
+            # Let's use 'Week of Mon' -> 'Nov 12'
+            key = week_start.strftime("%Y-%W") # Internal key
+            label = week_start.strftime("%b %d") # Display label
+            weekly_stats[key] = {"name": label, "revenue": 0, "subscriptions": 0, "sort_date": week_start}
+
+        def get_week_key(dt):
+             # Python's %W starts Monday. 
+             # Adjust dt to start of its week to match our keys?
+             # simpler: dt.strftime("%Y-%W")
+             return dt.strftime("%Y-%W")
+
+        for b in bookings_data:
+            # Normalize to naive UTC for comparison if timezone aware
+            b_date = b[0].replace(tzinfo=None) if b[0] and b[0].tzinfo else b[0]
+            if b_date and b_date >= six_weeks_ago:
+                key = get_week_key(b_date)
+                if key in weekly_stats:
+                    weekly_stats[key]["revenue"] += float(b[1] or 0)
+        
+        for s in subs_data:
+            s_date = s[0].replace(tzinfo=None) if s[0] and s[0].tzinfo else s[0]
+            if s_date and s_date >= six_weeks_ago:
+                key = get_week_key(s_date)
+                if key in weekly_stats:
+                    weekly_stats[key]["subscriptions"] += 1
+        
+        # Sort by date just in case
+        weekly_trends = sorted(list(weekly_stats.values()), key=lambda x: x['sort_date'])
+        # Clean up sort_date
+        for w in weekly_trends:
+            del w['sort_date']
+
         return {
             "totalPackages": total_packages,
             "totalBookings": total_bookings,
             "totalRevenue": float(total_revenue) if total_revenue else 0,
-            "activeSubscriptions": active_subscriptions, # NEW
-            "subscriptionsNearingExpiry": subscriptions_nearing_expiry, # NEW
-            "expiryDetails": expiry_details, # NEW
+            "activeSubscriptions": active_subscriptions,
+            "subscriptionsNearingExpiry": subscriptions_nearing_expiry,
+            "expiryDetails": expiry_details,
+            "monthlyTrends": monthly_trends, 
+            "weeklyTrends": weekly_trends, # NEW
             "agents": {
                 "total": total_agents,
                 "active": active_agents,
