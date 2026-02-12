@@ -77,6 +77,60 @@ async def get_latest_user_draft(
     }
 
 
+@router.get("/user-sessions")
+async def get_user_trip_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user)
+):
+    """Get all active trip planning sessions for the current user"""
+    if not current_user:
+        return []
+
+    query_str = """
+        SELECT t.id, t.destination, t.duration_days, t.duration_nights, t.start_date,
+               t.travelers, t.preferences, t.matched_package_id, t.itinerary, t.status,
+               t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details
+        FROM trip_planning_sessions t
+        LEFT JOIN packages p ON t.matched_package_id = p.id
+        WHERE t.user_id = :user_id AND t.status = 'active' AND t.expires_at > NOW()
+        ORDER BY t.updated_at DESC
+    """
+    
+    result = await db.execute(text(query_str), {"user_id": current_user.id})
+    rows = result.fetchall()
+    
+    # Helper to safe parse JSON
+    def parse_json_field(field):
+        if isinstance(field, str):
+            try:
+                return json.loads(field)
+            except:
+                return field
+        return field
+        
+    sessions = []
+    for row in rows:
+        sessions.append({
+            "session_id": str(row[0]),
+            "destination": row[1],
+            "duration_days": row[2],
+            "duration_nights": row[3],
+            "start_date": row[4].isoformat() if row[4] else None,
+            "travelers": parse_json_field(row[5]),
+            "preferences": parse_json_field(row[6]),
+            "matched_package_id": str(row[7]) if row[7] else None,
+            "itinerary": parse_json_field(row[8]),
+            "status": row[9],
+            "created_at": row[10].isoformat(),
+            "expires_at": row[11].isoformat(),
+            "price_per_person": float(row[12]) if row[12] else 0,
+            "package_description": row[13] if row[13] else "",
+            "flight_details": parse_json_field(row[14])
+        })
+    
+    return sessions
+
+
 @router.get("/popular-destinations")
 async def get_popular_destinations(
     db: AsyncSession = Depends(get_db),

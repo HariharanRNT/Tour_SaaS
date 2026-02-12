@@ -43,6 +43,34 @@ export default function PlanTripPage() {
     const [availableDateRanges, setAvailableDateRanges] = useState<{ from: string, to: string }[]>([])
     const [suggestions, setSuggestions] = useState<{ label: string, value: string, type: string }[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [popularDestinations, setPopularDestinations] = useState<string[]>([])
+
+    useEffect(() => {
+        const fetchPopularDestinations = async () => {
+            try {
+                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                const res = await fetch('http://localhost:8000/api/v1/packages/config/destinations/popular', {
+                    headers: { 'X-Domain': domain }
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data && data.length > 0) {
+                        setPopularDestinations(data)
+                    } else {
+                        // Fallback defaults if no packages are marked as popular
+                        setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+                    }
+                } else {
+                    setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+                }
+            } catch (error) {
+                console.error("Failed to fetch popular destinations", error)
+                // Fallback on error too
+                setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+            }
+        }
+        fetchPopularDestinations()
+    }, [])
 
     // Handle pre-filled destination from Popular Destinations
     useEffect(() => {
@@ -406,21 +434,23 @@ export default function PlanTripPage() {
                                         </div>
 
                                         {/* Popular Chips */}
-                                        <div className="flex flex-wrap gap-2 pl-1">
-                                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-2 mt-1.5">Popular:</span>
-                                            {['Bali', 'Paris', 'Dubai', 'Singapore', 'London'].map((city) => (
-                                                <button
-                                                    key={city}
-                                                    onClick={() => {
-                                                        setDestination(city)
-                                                        fetchDurations(city)
-                                                    }}
-                                                    className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                                                >
-                                                    {city}
-                                                </button>
-                                            ))}
-                                        </div>
+                                        {popularDestinations.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 pl-1">
+                                                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-2 mt-1.5">Popular:</span>
+                                                {popularDestinations.map((city) => (
+                                                    <button
+                                                        key={city}
+                                                        onClick={() => {
+                                                            setDestination(city)
+                                                            fetchDurations(city)
+                                                        }}
+                                                        className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                                                    >
+                                                        {city}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Trip Type Selector */}

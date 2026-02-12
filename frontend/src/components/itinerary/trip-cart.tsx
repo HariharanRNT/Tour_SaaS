@@ -136,6 +136,7 @@ export function TripCart({
                         </div>
 
                         <Button
+                            id="checkout-trigger"
                             className="w-full h-16 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-500/25 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] border border-white/10"
                             onClick={onCheckout}
                             disabled={loading || disabled}

@@ -22,6 +22,7 @@ interface ServiceCardProps {
         rating?: number
     }
     onAction?: () => void
+    disabled?: boolean
 }
 
 export function ServiceCard({
@@ -31,7 +32,8 @@ export function ServiceCard({
     description,
     price,
     details,
-    onAction
+    onAction,
+    disabled = false
 }: ServiceCardProps) {
     const icons = {
         flight: Plane,
@@ -122,6 +124,7 @@ export function ServiceCard({
                                     variant="ghost"
                                     size="sm"
                                     onClick={onAction}
+                                    disabled={disabled}
                                     className={`
                                         font-medium text-sm hover:bg-white
                                         ${status === 'selected' ? 'text-green-700 hover:text-green-800' : 'text-blue-600 hover:text-blue-700'}

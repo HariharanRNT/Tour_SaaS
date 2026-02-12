@@ -62,10 +62,21 @@ async def chat_with_ai(
         # Get AI response based on mode
         mode = getattr(request, "mode", "general") # Default to general if not present
         
+        # Determine target admin ID for package filtering
+        target_admin_id = None
+        if current_user:
+            # For customers, use their assigned agent/admin
+            if current_user.role == "customer" and current_user.customer_profile:
+                target_admin_id = current_user.customer_profile.agent_id
+            # For admins/agents, use their own ID
+            elif current_user.role in ["admin", "agent"]:
+                target_admin_id = current_user.id
+        
         if mode == "package_search":
             ai_response = await gemini_service.chat_package_search(
                 message=request.message,
-                conversation_history=conversation_history[:-1]
+                conversation_history=conversation_history[:-1],
+                admin_id=str(target_admin_id) if target_admin_id else None
             )
         else:
             ai_response = await gemini_service.chat(

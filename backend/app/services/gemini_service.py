@@ -412,9 +412,19 @@ IMPORTANT BEHAVIOR:
 - When a user wants to "Book", "Proceed", "Configure" or "Select" a specific package, YOU MUST call `get_package_details` with the package_id. 
 - DO NOT say "I cannot book". Instead, say "Great! Let's get that set up for you" and call `get_package_details`. This will show the booking interface to the user.
 - If the user selects a package from the list verbally (e.g., "I choose the first one" or "The Kerala package"), call `get_package_details` for that package.
-- Never make up package details."""
+- Never make up package details.
 
-    async def chat_package_search(self, message: str, conversation_history: List[Dict] = None) -> Dict:
+RESPONSE FORMATTING RULES:
+1. When packages are found, start with a friendly introduction (e.g., "Here are some great options for you:").
+2. REQUIRED: Provide a brief summary of the top 3 packages in a Markdown list format:
+   * **Package Name**
+     * Duration: X Days
+     * Price: ₹X,XXX
+3. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
+4. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
+"""
+
+    async def chat_package_search(self, message: str, conversation_history: List[Dict] = None, admin_id: Optional[str] = None) -> Dict:
         """
         Chat with AI for package search using function calling (tools)
         """
@@ -504,7 +514,7 @@ IMPORTANT BEHAVIOR:
                 print(f"[GeminiService] Tool Call Detected: {name}({args})")
                 
                 # Execute tool
-                tool_result = await self._execute_tool(name, args)
+                tool_result = await self._execute_tool(name, args, admin_id)
                 print(f"[GeminiService] Tool Result: {str(tool_result)[:100]}...")
                 
                 # Handling the tool response turn
@@ -544,6 +554,12 @@ IMPORTANT BEHAVIOR:
                     final_text = "Here are the packages I found."
                     if final_response and final_response.text:
                          final_text = final_response.text
+                         
+                    # Clean up any XML tags (failsafe)
+                    import re
+                    final_text = re.sub(r'<package_card.*?>.*?</package_card>', '', final_text, flags=re.DOTALL)
+                    final_text = re.sub(r'<package_card.*?>', '', final_text)
+                    final_text = final_text.strip()
 
                     return {
                         "success": True,
@@ -601,7 +617,7 @@ IMPORTANT BEHAVIOR:
                 "message": "Currently I am not available, please try again." if is_quota_error else "I apologize, but I encountered an internal error. Please check the logs."
             }
 
-    async def _execute_tool(self, name: str, args: Dict) -> Any:
+    async def _execute_tool(self, name: str, args: Dict, admin_id: Optional[str] = None) -> Any:
         try:
             from app.database import AsyncSessionLocal
             from sqlalchemy import select, or_, and_
@@ -610,6 +626,10 @@ IMPORTANT BEHAVIOR:
             async with AsyncSessionLocal() as db:
                 if name == "search_packages":
                     query = select(Package).where(Package.status == PackageStatus.PUBLISHED)
+                    
+                    # Filter by Admin ID (if provided)
+                    if admin_id:
+                        query = query.where(Package.created_by == admin_id)
                     
                     if args.get("location"):
                         loc = args["location"]

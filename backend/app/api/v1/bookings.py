@@ -404,3 +404,43 @@ async def review_flight(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Flight review failed: {str(e)}")
+
+
+@router.get("/{booking_id}/invoice")
+async def download_invoice(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Download booking invoice as PDF"""
+    from fastapi.responses import Response
+    from app.services.invoice_service import InvoiceService
+    
+    # data fetching
+    query = select(Booking).where(Booking.id == booking_id).options(
+        selectinload(Booking.package),
+        selectinload(Booking.user),
+        selectinload(Booking.payments),
+        selectinload(Booking.agent)
+    )
+    result = await db.execute(query)
+    booking = result.scalar_one_or_none()
+    
+    if not booking:
+        raise NotFoundException("Booking not found")
+        
+    # Check authorization
+    if booking.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to view this invoice")
+        
+    # Generate PDF
+    pdf_bytes = InvoiceService.generate_booking_invoice_pdf(booking, booking.user)
+    
+    if not pdf_bytes:
+        raise HTTPException(status_code=500, detail="Failed to generate invoice")
+        
+    # Return PDF response
+    headers = {
+        'Content-Disposition': f'attachment; filename="Invoice_{booking.booking_reference}.pdf"'
+    }
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)

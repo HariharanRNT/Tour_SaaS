@@ -156,3 +156,170 @@ class InvoiceService:
             return None
             
         return buffer.getvalue()
+
+    @staticmethod
+    def generate_booking_invoice_pdf(booking, user) -> bytes:
+        """
+        Generates a PDF invoice for a booking.
+        Returns bytes of the PDF.
+        """
+        
+        # Data Preparation
+        package = booking.package
+        # Calculate base and tax (assuming inclusive for now, or split if needed)
+        # For this example, let's assume price is inclusive or just show total
+        total_amount = float(booking.total_amount)
+        base_price = total_amount / 1.18 # reverse calc GST
+        gst_amount = total_amount - base_price
+        
+        invoice_date = booking.created_at.strftime("%d-%b-%Y")
+        invoice_number = f"INV-BK-{str(booking.id)[:8].upper()}"
+        
+        # Get payment ID from relationships if available
+        payment_id = "N/A"
+        if booking.payments and len(booking.payments) > 0:
+             # Try to find a successful payment
+             successful_payments = [p for p in booking.payments if p.status == "succeeded" or p.status == "captured"]
+             if successful_payments:
+                 payment_id = successful_payments[0].razorpay_payment_id or successful_payments[0].id
+             else:
+                 payment_id = booking.payments[0].razorpay_payment_id or booking.payments[0].id
+        
+        
+        # Use local path for reliability
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(current_dir, "..", "static", "logo.png")
+        company_logo_url = os.path.abspath(logo_path) 
+        
+        if not os.path.exists(company_logo_url):
+            company_logo_url = "" 
+
+        # Helper to safely get agent details
+        agent = booking.agent
+        bill_from_name = "TourSaaS Travels"
+        bill_from_address = "123 Travel Road"
+        bill_from_city = "Chennai - 600001, India"
+        bill_from_gst = "N/A"
+        bill_from_email = "support@toursaas.com"
+
+        if agent:
+             bill_from_name = agent.agency_name or agent.company_legal_name or f"{agent.first_name} {agent.last_name}" or bill_from_name
+             bill_from_address = agent.business_address or bill_from_address
+             
+             city = agent.city or "Chennai"
+             state = agent.state or "Tamil Nadu"
+             country = agent.country or "India"
+             bill_from_city = f"{city} - {state}, {country}"
+             
+             bill_from_gst = agent.gst_no or bill_from_gst
+             bill_from_email = agent.email or bill_from_email
+
+        # HTML Template (Reused style, updated content)
+        html_template = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Helvetica, sans-serif; color: #333; }}
+                .header {{ display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }}
+                .logo {{ font-size: 24px; font-weight: bold; color: #2563eb; }}
+                .invoice-details {{ text-align: right; }}
+                .client-info {{ margin-bottom: 30px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-bottom: 30px; }}
+                th {{ background-color: #f8fafc; text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }}
+                td {{ padding: 12px; border-bottom: 1px solid #eee; }}
+                .total-row {{ font-weight: bold; }}
+                .footer {{ margin-top: 50px; text-align: center; color: #777; font-size: 10px; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">
+                   <img src="{company_logo_url}" alt="TourSaaS" style="height: 50px;" />
+                </div>
+                <div class="invoice-details">
+                    <h1>INVOICE</h1>
+                    <p><strong>Invoice #:</strong> {invoice_number}</p>
+                    <p><strong>Date:</strong> {invoice_date}</p>
+                    <p><strong>Booking Ref:</strong> {booking.booking_reference}</p>
+                </div>
+            </div>
+
+            <div class="client-info">
+                <table style="width: 100%; border: none; margin-bottom: 0;">
+                    <tr>
+                        <td style="border: none; vertical-align: top; width: 50%;">
+                            <h3>Bill From:</h3>
+                            <p>
+                                <strong>{bill_from_name}</strong><br>
+                                {bill_from_address}<br>
+                                {bill_from_city}<br>
+                                GSTIN: {bill_from_gst}<br>
+                                Email: {bill_from_email}
+                            </p>
+                        </td>
+                        <td style="border: none; vertical-align: top; width: 50%;">
+                             <h3>Bill To:</h3>
+                             <p><strong>{user.first_name} {user.last_name}</strong><br>{user.email}</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Details</th>
+                        <th style="text-align: right;">Amount (INR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>{package.title}</strong><br>
+                            <span style="font-size: 12px; color: #666;">
+                                {package.destination} | {package.duration_days}D/{package.duration_nights}N
+                            </span>
+                        </td>
+                        <td>
+                            Travel Date: {booking.travel_date}<br>
+                            Travelers: {booking.number_of_travelers}
+                        </td>
+                        <td style="text-align: right;">{base_price:.2f}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table style="width: 50%; margin-left: auto;">
+                <tr>
+                    <td style="border: none;">Subtotal</td>
+                    <td style="text-align: right; border: none;">{base_price:.2f}</td>
+                </tr>
+                <tr>
+                    <td style="border: none;">GST (18%)</td>
+                    <td style="text-align: right; border: none;">{gst_amount:.2f}</td>
+                </tr>
+                <tr class="total-row">
+                    <td style="border-top: 2px solid #333; font-size: 16px;">Total</td>
+                    <td style="text-align: right; border-top: 2px solid #333; font-size: 16px;">{total_amount:.2f}</td>
+                </tr>
+            </table>
+
+            <div class="footer">
+                <p>Thank you for choosing TourSaaS!</p>
+                <p>This is a computer generated invoice.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Convert to PDF
+        buffer = BytesIO()
+        pisa_status = pisa.CreatePDF(src=html_template, dest=buffer)
+        
+        if pisa_status.err:
+            logger.error(f"Booking Invoice PDF generation failed: {pisa_status.err}")
+            return None
+            
+        return buffer.getvalue()

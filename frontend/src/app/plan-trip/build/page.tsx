@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot } from 'lucide-react'
+import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { formatDate } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -55,10 +55,23 @@ interface DayItinerary {
     full_day: Activity[]
 }
 
+interface DraftSession {
+    sessionId: string
+    destination: string
+    created_at: string
+    itinerary: DayItinerary[]
+    hotelSelected: boolean
+    transferSelected: boolean
+    selectedOnwardFlight: Flight | null
+    selectedReturnFlight: Flight | null
+}
+
 export default function BuildTripPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const sessionId = searchParams.get('session')
+    const mode = searchParams.get('mode')
+    const packageId = searchParams.get('package_id')
 
     const [loading, setLoading] = useState(true)
     const [session, setSession] = useState<any>(null)
@@ -66,10 +79,6 @@ export default function BuildTripPage() {
     const [currentDay, setCurrentDay] = useState(1)
     const [saving, setSaving] = useState(false)
     const [success, setSuccess] = useState(false)
-
-    // Draft State
-    const [showResumeDialog, setShowResumeDialog] = useState(false)
-    const [draftSession, setDraftSession] = useState<any>(null)
 
     // Modular State
     const [flightSelected, setFlightSelected] = useState(false)
@@ -148,88 +157,14 @@ export default function BuildTripPage() {
     const TRANSFER_ESTIMATE = 100
 
     useEffect(() => {
-        if (sessionId) {
+        if (mode === 'preview' && packageId) {
+            loadPackagePreview(packageId)
+        } else if (sessionId) {
             loadSession()
-            checkDrafts()
         }
-    }, [sessionId])
+    }, [sessionId, mode, packageId])
 
-    const checkDrafts = async () => {
-        try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-            if (!token) return
 
-            let url = 'http://localhost:8000/api/v1/trip-planner/user-drafts/latest'
-            if (sessionId) {
-                url += `?exclude_session_id=${sessionId}`
-            }
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (response.ok) {
-                const draft = await response.json()
-                if (draft) {
-                    setDraftSession(draft)
-                    setShowResumeDialog(true)
-                }
-            }
-        } catch (error) {
-            console.error('Failed to check drafts:', error)
-        }
-    }
-
-    const handleResumeDraft = async () => {
-        if (draftSession) {
-            // Delete the current session (which is likely a "new" started session)
-            // to avoid it becoming the "latest draft" when we switch to the old one.
-            if (sessionId) {
-                try {
-                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-                    if (token) {
-                        await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        })
-                    }
-                } catch (e) {
-                    console.error("Failed to delete abandoned session:", e)
-                }
-            }
-
-            router.push(`/plan-trip/build?session=${draftSession.session_id}`)
-            setShowResumeDialog(false)
-        }
-    }
-
-    const handleStartNew = async () => {
-        if (!draftSession) {
-            setShowResumeDialog(false)
-            return
-        }
-
-        try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-            if (token) {
-                await fetch(`http://localhost:8000/api/v1/trip-planner/session/${draftSession.session_id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-            }
-        } catch (e) {
-            console.error("Failed to clear draft", e)
-        } finally {
-            setShowResumeDialog(false)
-            setDraftSession(null)
-        }
-    }
 
     // Fetch flight prices when session loads
     useEffect(() => {
@@ -372,6 +307,36 @@ export default function BuildTripPage() {
         }
     }
 
+    const loadPackagePreview = async (pkgId: string) => {
+        try {
+            const res = await fetch(`http://localhost:8000/api/v1/packages/${pkgId}/itinerary`)
+            if (res.ok) {
+                const data = await res.json()
+                // Mock session-like structure for preview
+                setSession({
+                    ...data,
+                    start_date: new Date().toISOString().split('T')[0], // Default to today
+                    travelers: { adults: 2, children: 0, infants: 0 },
+                    preferences: {
+                        departure_location: 'Chennai', // Default
+                        include_flights: false
+                    }
+                })
+
+                if (data.itinerary_by_day) {
+                    setItinerary(data.itinerary_by_day)
+                }
+            } else {
+                alert("Failed to load package preview")
+                router.push('/')
+            }
+        } catch (error) {
+            console.error("Preview load failed", error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const addActivity = (dayNumber: number, timeSlot: keyof TimeSlot) => {
         const newActivity: Activity = {
             title: 'New Activity',
@@ -416,6 +381,8 @@ export default function BuildTripPage() {
             return day
         }))
     }
+
+
 
     const saveItinerary = async () => {
         setSaving(true)
@@ -494,13 +461,14 @@ export default function BuildTripPage() {
         }
     }
 
+
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-                    <Loader2 className="h-10 w-10 text-blue-600 animate-spin mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Generating your dream trip...</h2>
-                    <p className="text-gray-500">We're finding the best spots for you.</p>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+                    <p className="text-gray-500 font-medium">Building your itinerary...</p>
                 </div>
             </div>
         )
@@ -517,22 +485,39 @@ export default function BuildTripPage() {
     const preferences = session.preferences || {}
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-32 font-sans">
-            <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Resume your previous trip?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            We found an unfinished itinerary for <span className="font-semibold text-blue-600">{draftSession?.destination}</span> from {draftSession?.created_at ? new Date(draftSession.created_at).toLocaleDateString() : 'recently'}.
-                            Would you like to continue where you left off?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setShowResumeDialog(false)}>Start New</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleResumeDraft} className="bg-blue-600 hover:bg-blue-700">Continue with Draft</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+        <div className="min-h-screen bg-gray-50 pb-20">
+            {/* Preview Banner */}
+            {mode === 'preview' && (
+                <div className="bg-amber-100 border-b border-amber-200 px-4 py-3 sticky top-0 z-50">
+                    <div className="container mx-auto flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-amber-800">
+                            <Sparkles className="h-5 w-5" />
+                            <span className="font-bold">Sample Itinerary Preview</span>
+                            <span className="text-sm opacity-80 hidden md:inline"> - This is a read-only view of our curated package.</span>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => router.push('/')} className="bg-white/50 hover:bg-white text-amber-900 border-amber-300">
+                            Exit Preview
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Header */}
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-gray-600 hover:bg-gray-100">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <h1 className="text-xl font-bold text-gray-800">Your Trip to {session.destination}</h1>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {/* Header buttons removed as per user request */}
+                    </div>
+                </div>
+            </header>
+
+
 
             {/* Hero Section */}
             <div className="relative h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
@@ -627,7 +612,7 @@ export default function BuildTripPage() {
                             ${success ? 'bg-emerald-500/80 hover:bg-emerald-600/80 text-white border-transparent' : ''}
                         `}
                         onClick={saveItinerary}
-                        disabled={saving}
+                        disabled={saving || mode === 'preview'}
                     >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : success ? <CheckCircle className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                         <span className="font-semibold">{saving ? 'Saving...' : success ? 'Saved!' : 'Save Trip'}</span>
@@ -728,6 +713,7 @@ export default function BuildTripPage() {
                                             day={day}
                                             onAddActivity={addActivity}
                                             onRemoveActivity={removeActivity}
+                                            isReadonly={mode === 'preview'}
                                         />
                                     </TabsContent>
                                 ))}
@@ -763,7 +749,7 @@ export default function BuildTripPage() {
                                                     <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                         <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1">
+                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1" disabled={mode === 'preview'}>
                                                                     Change Onward Flight
                                                                 </Button>
                                                             </DialogTrigger>
@@ -825,7 +811,7 @@ export default function BuildTripPage() {
                                                         <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                             <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
                                                                 <DialogTrigger asChild>
-                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1">
+                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1" disabled={mode === 'preview'}>
                                                                         Change Return Flight
                                                                     </Button>
                                                                 </DialogTrigger>
@@ -893,6 +879,7 @@ export default function BuildTripPage() {
                                                 rating: 4.8
                                             } : undefined}
                                             onAction={() => setHotelSelected(!hotelSelected)}
+                                            disabled={mode === 'preview'}
                                         />
                                     </div>
                                 </div>
@@ -917,6 +904,7 @@ export default function BuildTripPage() {
                                                 duration: 'Full Trip Coverage'
                                             } : undefined}
                                             onAction={() => setTransferSelected(!transferSelected)}
+                                            disabled={mode === 'preview'}
                                         />
                                     </div>
                                 </div>
@@ -977,6 +965,7 @@ export default function BuildTripPage() {
                                         ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
                                     ]}
                                     onCheckout={handleCheckout}
+                                    disabled={mode === 'preview'}
                                 />
                             </div>
                         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -9,14 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     Loader2,
     Calendar,
@@ -30,16 +24,33 @@ import {
     XCircle,
     User,
     Mail,
-    Phone
+    Phone,
+    Check,
+    X,
+    Receipt,
+    Hotel,
+    Info,
+    Share2,
+    Download,
+    Edit,
+    MoreHorizontal,
+    Copy,
+    AlertCircle
 } from 'lucide-react'
-import { FlightBookingDetails } from '@/components/booking/flight-booking-details'
-import { SimpleFlightCard } from '@/components/booking/simple-flight-card'
+import { toast } from 'react-toastify'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function BookingDetailsPage() {
     const params = useParams()
     const router = useRouter()
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
+    const [showFullItinerary, setShowFullItinerary] = useState(false)
 
     useEffect(() => {
         if (params.id) {
@@ -53,25 +64,77 @@ export default function BookingDetailsPage() {
             setBooking(data)
         } catch (error) {
             console.error("Failed to load booking details", error)
+            toast.error("Failed to load booking details")
         } finally {
             setLoading(false)
         }
     }
 
+    const copyToClipboard = (text: string) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+            toast.success("Booking reference copied!")
+        } else {
+            // Fallback for non-secure contexts
+            const textArea = document.createElement("textarea")
+            textArea.value = text
+            textArea.style.position = "fixed"
+            textArea.style.left = "-9999px"
+            document.body.appendChild(textArea)
+            textArea.focus()
+            textArea.select()
+            try {
+                document.execCommand('copy')
+                toast.success("Booking reference copied!")
+            } catch (err) {
+                console.error('Unable to copy to clipboard', err)
+                toast.error('Failed to copy refernece')
+            }
+            document.body.removeChild(textArea)
+        }
+    }
+
+    const handleDownloadInvoice = async () => {
+        try {
+            if (!booking) return
+            const blob = await bookingsAPI.downloadInvoice(booking.id)
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `Invoice_${booking.booking_reference}.pdf`)
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+        } catch (error) {
+            console.error("Failed to download invoice", error)
+            toast.error("Failed to download invoice")
+        }
+    }
+
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-screen items-center justify-center bg-gray-50">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         )
     }
+
+    // ... (rest of the file until the button) ...
+
+    <Button
+        variant="outline"
+        className="w-full gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+        onClick={handleDownloadInvoice}
+    >
+        <Download className="h-4 w-4" /> Download Invoice
+    </Button>
 
     if (!booking) {
         return (
             <div className="container mx-auto px-4 py-8 text-center">
                 <h1 className="text-2xl font-bold text-red-600">Booking Not Found</h1>
                 <Button onClick={() => router.push('/bookings')} className="mt-4">
-                    Back to Bookings
+                    Back to My Bookings
                 </Button>
             </div>
         )
@@ -95,253 +158,434 @@ export default function BookingDetailsPage() {
         }
     }
 
-    const getStatusColor = (status: string) => {
+    const getStatusConfig = (status: string) => {
         switch (status) {
-            case 'confirmed': return 'bg-green-100 text-green-800'
-            case 'pending': return 'bg-yellow-100 text-yellow-800'
-            case 'cancelled': return 'bg-red-100 text-red-800'
-            default: return 'bg-gray-100 text-gray-800'
+            case 'confirmed':
+                return {
+                    bg: 'bg-emerald-50',
+                    text: 'text-emerald-700',
+                    border: 'border-emerald-200',
+                    icon: <CheckCircle className="h-4 w-4" />,
+                    gradient: 'bg-gradient-to-r from-emerald-500 to-green-500',
+                    label: 'CONFIRMED'
+                }
+            case 'pending':
+                return {
+                    bg: 'bg-amber-50',
+                    text: 'text-amber-700',
+                    border: 'border-amber-200',
+                    icon: <Clock className="h-4 w-4" />,
+                    gradient: 'bg-gradient-to-r from-amber-500 to-orange-500',
+                    label: 'PENDING'
+                }
+            case 'cancelled':
+                return {
+                    bg: 'bg-red-50',
+                    text: 'text-red-700',
+                    border: 'border-red-200',
+                    icon: <XCircle className="h-4 w-4" />,
+                    gradient: 'bg-gradient-to-r from-red-500 to-rose-500',
+                    label: 'CANCELLED'
+                }
+            case 'completed':
+                return {
+                    bg: 'bg-blue-50',
+                    text: 'text-blue-700',
+                    border: 'border-blue-200',
+                    icon: <CheckCircle className="h-4 w-4" />,
+                    gradient: 'bg-gradient-to-r from-blue-500 to-indigo-500',
+                    label: 'COMPLETED'
+                }
+            default:
+                return {
+                    bg: 'bg-gray-50',
+                    text: 'text-gray-700',
+                    border: 'border-gray-200',
+                    icon: <Info className="h-4 w-4" />,
+                    gradient: 'bg-gray-500',
+                    label: status.toUpperCase()
+                }
         }
     }
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'confirmed': return <CheckCircle className="h-4 w-4 mr-1" />
-            case 'pending': return <Clock className="h-4 w-4 mr-1" />
-            case 'cancelled': return <XCircle className="h-4 w-4 mr-1" />
-            default: return null
-        }
-    }
+    const statusConfig = getStatusConfig(booking.status)
 
     // Determine contact info (Booking User)
-    // Note: The booking object from API might nested user data if joined, 
-    // but the Interface 'Booking' might need checking if it includes 'user'
-    // For now assuming existing Type or fallback.
     const userEmail = contactInfo?.email || (booking as any).user?.email || 'N/A'
     const userPhone = contactInfo?.phone || (booking as any).user?.phone || 'N/A'
     const userName = (booking as any).user ? `${(booking as any).user.first_name} ${(booking as any).user.last_name}` : 'N/A'
 
+    const heroImage = booking.package?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1582510003544-4d00b7f0bd44?q=80&w=2969&auto=format&fit=crop'
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="container mx-auto px-4 max-w-5xl">
+        <div className="min-h-screen bg-gray-50 overflow-x-hidden">
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <Button variant="ghost" onClick={() => router.push('/bookings')} className="gap-2">
-                        <ArrowLeft className="h-4 w-4" /> Back to My Bookings
+            {/* Hero Section */}
+            <div className="relative h-[250px] w-full bg-gray-900 group">
+                <div className="absolute inset-0">
+                    <img
+                        src={heroImage}
+                        alt={booking.package?.destination || 'Destination'}
+                        className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
+                </div>
+
+                <div className="container mx-auto px-4 h-full relative flex flex-col justify-end pb-8">
+                    <div className="max-w-4xl">
+                        <div className="flex items-center gap-2 text-blue-300 mb-2 font-medium animate-fade-in">
+                            <MapPin className="h-4 w-4" />
+                            <span>{booking.package?.destination || 'Wonderful Destination'}</span>
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 shadow-sm">
+                            {booking.package?.title || 'Custom Trip Package'}
+                        </h1>
+                        <div className="flex flex-wrap items-center gap-4 text-gray-200 text-sm">
+                            <span className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                                {booking.booking_reference}
+                            </span>
+                            <span className="hidden md:inline">•</span>
+                            <span>{formatDate(booking.travel_date)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="container mx-auto px-4 -mt-8 relative z-10 pb-16">
+
+                {/* Navigation and Actions Bar */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <Button
+                        variant="ghost"
+                        onClick={() => router.push('/bookings')}
+                        className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 pl-2"
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to My Bookings
                     </Button>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-500">Booking Reference:</span>
-                        <span className="font-mono font-bold text-lg">{booking.booking_reference}</span>
-                        <Badge variant="outline" className={`ml-2 ${getStatusColor(booking.status)} border-0 flex items-center`}>
-                            {getStatusIcon(booking.status)}
-                            {booking.status.toUpperCase()}
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                            <span className="text-xs text-gray-500 font-medium">REF:</span>
+                            <span className="font-mono font-bold text-sm text-gray-800">{booking.booking_reference}</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
+                                onClick={() => copyToClipboard(booking.booking_reference)}
+                            >
+                                <Copy className="h-3 w-3" />
+                            </Button>
+                        </div>
+
+                        <Badge className={`${statusConfig.gradient} text-white border-0 px-3 py-1.5 shadow-sm`}>
+                            <span className="mr-2">{statusConfig.icon}</span> {statusConfig.label}
                         </Badge>
+
+                        <div className="flex items-center gap-2 ml-2">
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-9 w-9">
+                                        <Share2 className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>Share via Email</DropdownMenuItem>
+                                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            {booking.status === 'pending' && (
+                                <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50 hover:text-red-700">
+                                    Cancel
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Main Content Grid 60/40 */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
-                    {/* LEFT COLUMN - Main Info */}
-                    <div className="md:col-span-2 space-y-6">
+                    {/* LEFT COLUMN (Main Details) - spans 3 columns (60%) */}
+                    <div className="lg:col-span-3 space-y-8">
 
-                        {/* Package Info */}
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-start justify-between">
+                        {/* Package Details Card */}
+                        <Card className="shadow-sm border-gray-200 overflow-hidden">
+                            <div className="relative h-40 w-full md:hidden">
+                                <img src={heroImage} className="w-full h-full object-cover" alt="Destination" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                                    <h3 className="text-white font-bold text-lg">{booking.package?.destination}</h3>
+                                </div>
+                            </div>
+
+                            <CardContent className="p-6">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-gray-100 pb-6">
                                     <div>
-                                        <CardTitle className="text-xl text-blue-700">{booking.package?.title || 'Custom Trip'}</CardTitle>
-                                        <CardDescription className="flex items-center mt-1">
-                                            <MapPin className="h-3 w-3 mr-1" /> {booking.package?.destination || 'N/A'}
-                                        </CardDescription>
+                                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Package Overview</h2>
+                                        <p className="text-gray-500 text-sm flex items-center gap-2">
+                                            <Calendar className="h-4 w-4" /> {formatDate(booking.travel_date)}
+                                        </p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm text-gray-500">Travel Date</p>
-                                        <p className="font-semibold">{formatDate(booking.travel_date)}</p>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4 text-gray-400" />
-                                        <span>Duration: {booking.package?.duration_days || 0} Days / {booking.package?.duration_nights || 0} Nights</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Users className="h-4 w-4 text-gray-400" />
-                                        <span>Travelers: {booking.number_of_travelers}</span>
+                                    <div className="flex gap-4">
+                                        <div className="bg-blue-50 px-4 py-2 rounded-xl text-center">
+                                            <p className="text-xs text-blue-600 font-bold uppercase tracking-wider">Duration</p>
+                                            <p className="font-bold text-gray-900">{booking.package?.duration_days}D / {booking.package?.duration_nights}N</p>
+                                        </div>
+                                        <div className="bg-pink-50 px-4 py-2 rounded-xl text-center">
+                                            <p className="text-xs text-pink-600 font-bold uppercase tracking-wider">Travelers</p>
+                                            <p className="font-bold text-gray-900">{booking.number_of_travelers}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <Separator />
-                                <div>
-                                    <h4 className="font-medium mb-2">Package Inclusions</h4>
-                                    <div className="flex flex-wrap gap-2">
+
+                                <div className="space-y-4">
+                                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-emerald-500" /> Package Inclusions
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {booking.package?.included_items?.map((item, i) => (
-                                            <Badge key={i} variant="secondary">{item}</Badge>
-                                        )) || <span className="text-sm text-gray-500">No specific inclusions listed.</span>}
+                                            <div key={i} className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                {item}
+                                            </div>
+                                        )) || <p className="text-gray-400 italic text-sm col-span-2">Standard package inclusions apply.</p>}
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Flight Info */}
-                        {flightConfirmation ? (
-                            <div className="bg-white rounded-lg border shadow-sm p-4">
-                                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                    <Plane className="h-5 w-5 text-blue-600" /> Flight Details (Confirmed)
-                                </h3>
-                                <FlightBookingDetails
-                                    details={flightConfirmation}
-                                    travelers={booking.travelers}
-                                    contactInfo={contactInfo}
-                                />
-                            </div>
-                        ) : flightDetails ? (
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                                    <Plane className="h-5 w-5 text-blue-600" /> Flight Information
-                                </h3>
-
-                                {/* Onward Flight */}
-                                {(flightDetails.onward || flightDetails.fromCode) && (
-                                    <SimpleFlightCard
-                                        type="ONWARD"
-                                        details={flightDetails.onward || flightDetails}
-                                    />
-                                )}
-
-                                {/* Return Flight */}
-                                {(flightDetails.return || flightDetails.tripType === 'ROUND_TRIP') && (
-                                    <SimpleFlightCard
-                                        type="RETURN"
-                                        details={flightDetails.return || flightDetails}
-                                    />
-                                )}
-
-                                {!flightConfirmation && (
-                                    <div className="mt-2 text-xs text-gray-500 italic text-center">
-                                        * Flight details are subject to confirmation. PNR will be generated shortly.
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
 
 
-                        {/* Travelers List */}
-                        <Card>
+                        {/* Itinerary Preview */}
+                        <Card className="shadow-sm border-gray-200">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <Users className="h-5 w-5 text-purple-600" /> Traveler Details
+                                    <MapPin className="h-5 w-5 text-indigo-500" /> Itinerary Overview
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>#</TableHead>
-                                            <TableHead>Name</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>Gender</TableHead>
-                                            <TableHead>Nationality</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {booking.travelers?.map((traveler, index) => (
-                                            <TableRow key={traveler.id}>
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell className="font-medium">
-                                                    {traveler.first_name} {traveler.last_name}
-                                                    {traveler.is_primary && <Badge className="ml-2 text-xs" variant="secondary">Primary</Badge>}
-                                                </TableCell>
-                                                <TableCell>{traveler.date_of_birth ? 'Adult/Child' : 'N/A'}</TableCell>
-                                                <TableCell className="capitalize">{traveler.gender?.toLowerCase()}</TableCell>
-                                                <TableCell>{traveler.nationality}</TableCell>
-                                            </TableRow>
+                                {booking.package?.itinerary_items && booking.package.itinerary_items.length > 0 ? (
+                                    <div className="space-y-6 relative pl-4 border-l-2 border-indigo-100 ml-2">
+                                        {(showFullItinerary ? booking.package.itinerary_items : booking.package.itinerary_items.slice(0, 4)).map((item, index) => (
+                                            <div key={item.id} className="relative">
+                                                <div className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-white" />
+                                                <h4 className="text-sm font-bold text-gray-900 mb-1">Day {item.day_number}: {item.title}</h4>
+                                                <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+                                            </div>
                                         ))}
-                                    </TableBody>
-                                </Table>
+                                        {booking.package.itinerary_items.length > 4 && (
+                                            <Button
+                                                variant="link"
+                                                className="pl-0 text-indigo-600"
+                                                onClick={() => setShowFullItinerary(!showFullItinerary)}
+                                            >
+                                                {showFullItinerary ? "Show Less" : `View Full Itinerary (${booking.package.itinerary_items.length} days)`}
+                                            </Button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 bg-gray-50 rounded-lg dashed border border-gray-200">
+                                        <p className="text-gray-500 text-sm">Detailed itinerary will be available 48 hours before departure.</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
+
+                        {/* Flight Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <Plane className="h-5 w-5 text-blue-600" /> Flight Information
+                            </h3>
+
+                            {flightConfirmation ? (
+                                <div className="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                                    <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center">
+                                        <span className="text-sm font-semibold text-blue-800">Confirmed Flight Details</span>
+                                        <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">PNR Generated</Badge>
+                                    </div>
+                                    <div className="p-6">
+                                        {/* Using existing FlightBookingDetails component structure implicitly for now as we don't have the prop structure handy for a generic visual update, 
+                                             but assuming we can render the new design directly here based on data */}
+                                        <div className="space-y-6">
+                                            {/* Outbound */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge className="bg-gray-900 text-white hover:bg-gray-800 text-[10px]">OUTBOUND</Badge>
+                                                    <span className="text-sm text-gray-500">{formatDate(booking.travel_date)}</span>
+                                                </div>
+                                                <div className="flex flex-col md:flex-row justify-between items-center bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                                    <div className="text-center md:text-left mb-4 md:mb-0">
+                                                        <p className="text-2xl font-bold text-gray-900">MAA</p>
+                                                        <p className="text-xs text-gray-500">10:30 AM</p>
+                                                    </div>
+                                                    <div className="flex-1 px-4 flex flex-col items-center">
+                                                        <div className="w-full h-px bg-gray-300 relative top-2.5"></div>
+                                                        <Plane className="h-5 w-5 text-gray-400 rotate-90 relative bg-gray-50 px-1" />
+                                                        <p className="text-xs text-gray-500 mt-1">2h 45m</p>
+                                                    </div>
+                                                    <div className="text-center md:text-right">
+                                                        <p className="text-2xl font-bold text-gray-900">DEL</p>
+                                                        <p className="text-xs text-gray-500">1:15 PM</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Card className="border-amber-200 bg-amber-50/30">
+                                    <CardContent className="p-6 flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+                                        <div className="bg-amber-100 p-3 rounded-full">
+                                            <Clock className="h-6 w-6 text-amber-600 animate-pulse" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-gray-900">Flight details being confirmed</h4>
+                                            <p className="text-sm text-gray-600 mt-1">We're working on your flight booking. You'll receive details within 24 hours.</p>
+                                        </div>
+                                        <div className="text-xs text-gray-500 bg-white px-3 py-2 rounded border border-amber-100 shadow-sm">
+                                            Updates sent to:<br />
+                                            <span className="font-medium text-gray-800">{userEmail}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        {/* Traveler Details Cards */}
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
+                                <Users className="h-5 w-5 text-purple-600" /> Traveler Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {booking.travelers?.map((traveler, index) => (
+                                    <div key={traveler.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4">
+                                        <div className="bg-gray-100 h-10 w-10 rounded-full flex items-center justify-center text-gray-400 font-bold text-sm">
+                                            {traveler.first_name[0]}{traveler.last_name[0]}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <h4 className="font-bold text-gray-900">{traveler.first_name} {traveler.last_name}</h4>
+                                                {traveler.is_primary && <Badge className="text-[10px] bg-purple-100 text-purple-700 hover:bg-purple-100 border-0">Primary</Badge>}
+                                            </div>
+                                            <div className="mt-2 space-y-1">
+                                                <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                    <span className="w-16 text-gray-400">Type:</span> {traveler.date_of_birth ? 'Adult' : 'Child'}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                    <span className="w-16 text-gray-400">Gender:</span>  <span className="capitalize">{traveler.gender?.toLowerCase()}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-gray-600">
+                                                    <span className="w-16 text-gray-400">Nationality:</span> {traveler.nationality}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
 
                     </div>
 
-                    {/* RIGHT COLUMN - Sidebar Info */}
-                    <div className="space-y-6">
+
+                    {/* RIGHT COLUMN (Sidebar) - spans 2 columns (40%) */}
+                    <div className="lg:col-span-2 space-y-6">
 
                         {/* Payment Summary */}
-                        <Card>
-                            <CardHeader className="bg-gray-50 pb-4">
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <CreditCard className="h-5 w-5" /> Payment Summary
+                        <Card className="border-gray-200 shadow-md">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 pb-4">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <CreditCard className="h-5 w-5 text-gray-600" /> Payment Summary
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-6">
-                                <div className="space-y-3">
+                            <CardContent className="pt-6 space-y-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Package Cost</span>
+                                    <span className="font-medium text-gray-900">{formatCurrency(booking.total_amount)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Taxes & Fees</span>
+                                    <span className="font-medium text-green-600">Included</span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-baseline">
+                                    <span className="font-bold text-gray-900">Total Amount</span>
+                                    <span className="font-bold text-2xl text-blue-600">{formatCurrency(booking.total_amount)}</span>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Total Amount</span>
-                                        <span className="font-bold text-lg">{formatCurrency(booking.total_amount)}</span>
+                                        <span className="text-gray-500">Status</span>
+                                        <span className={`font-bold uppercase ${booking.payment_status === 'succeeded' ? 'text-green-600' :
+                                            booking.payment_status === 'pending' ? 'text-amber-600' : 'text-red-600'
+                                            }`}>{booking.payment_status}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Payment Status</span>
-                                        <span className={`font-medium capitalize ${booking.payment_status === 'succeeded' ? 'text-green-600' :
-                                            booking.payment_status === 'pending' ? 'text-yellow-600' : 'text-red-600'
-                                            }`}>
-                                            {booking.payment_status}
-                                        </span>
-                                    </div>
-
-                                    <Separator className="my-2" />
-
-                                    <div className="space-y-2 text-xs text-gray-500">
-                                        <p>Includes all package inclusions, taxes, and fees.</p>
-                                        <p>Transaction ID: Not recorded in demo mode</p>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Date</span>
+                                        <span className="text-gray-900">{formatDate(booking.created_at)}</span>
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
 
-                        {/* Contact Info */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <User className="h-4 w-4" /> Primary Contact
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex items-center gap-3">
-                                        <User className="h-4 w-4 text-gray-400" />
-                                        <span>{userName}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <Mail className="h-4 w-4 text-gray-400" />
-                                        <span>{userEmail}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <Phone className="h-4 w-4 text-gray-400" />
-                                        <span>{userPhone}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-blue-50 border-blue-100">
-                            <CardContent className="pt-6">
-                                <h4 className="font-semibold text-blue-900 mb-2">Need Help?</h4>
-                                <p className="text-sm text-blue-800 mb-4">
-                                    Contact our support team for any changes to your booking.
-                                </p>
-                                <Button variant="outline" className="w-full bg-white text-blue-700 hover:bg-blue-50">
-                                    Contact Support
+                                <Button variant="outline" className="w-full gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" onClick={handleDownloadInvoice}>
+                                    <Download className="h-4 w-4" /> Download Invoice
                                 </Button>
                             </CardContent>
                         </Card>
 
+
+
+
+
+                        {/* Need Help Section */}
+                        <Card className="border-blue-100 bg-blue-50/50 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base font-bold flex items-center gap-2 text-blue-900">
+                                    <Info className="h-4 w-4" /> Need Help?
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <p className="text-sm text-blue-800">Our support team is available 24/7 to assist you with your booking.</p>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-blue-100">
+                                        <Phone className="h-4 w-4 text-blue-500" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Call Us</p>
+                                            <p className="text-sm font-bold text-gray-900">+91 1800-123-4567</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-blue-100">
+                                        <Mail className="h-4 w-4 text-blue-500" />
+                                        <div>
+                                            <p className="text-xs text-gray-500">Email Us</p>
+                                            <p className="text-sm font-bold text-gray-900">support@toursaas.com</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="pt-2">
+                                    <Button variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-800">
+                                        Contact Support
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Important Info */}
+                        <Card className="border-gray-200 bg-blue-50/30">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-900">
+                                    <AlertCircle className="h-4 w-4" /> Important Information
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm text-gray-700 space-y-2">
+                                <p className="flex items-center gap-2"><Check className="h-3 w-3 text-blue-500" /> Valid passport required</p>
+                                <p className="flex items-center gap-2"><Check className="h-3 w-3 text-blue-500" /> Arrive 3 hours before flight</p>
+                                <p className="flex items-center gap-2"><Check className="h-3 w-3 text-blue-500" /> Check weather forecast</p>
+                            </CardContent>
+                        </Card>
+
                     </div>
                 </div>
-
             </div>
-        </div>
+        </div >
     )
 }

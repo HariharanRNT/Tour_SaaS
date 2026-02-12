@@ -38,9 +38,10 @@ interface DayPlannerProps {
     day: DayItineraryData
     onAddActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day') => void
     onRemoveActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day', index: number) => void
+    isReadonly?: boolean
 }
 
-export function DayPlanner({ day, onAddActivity, onRemoveActivity }: DayPlannerProps) {
+export function DayPlanner({ day, onAddActivity, onRemoveActivity, isReadonly }: DayPlannerProps) {
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
     const getImages = (activity: Activity): string[] => {

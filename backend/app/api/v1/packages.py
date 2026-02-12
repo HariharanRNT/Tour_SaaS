@@ -102,6 +102,35 @@ async def get_package_dates(
     ]
 
 
+@router.get("/config/destinations/popular", response_model=List[str])
+async def get_popular_destinations(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user),
+    domain: str = Depends(get_current_domain)
+):
+    """
+    Get list of popular destinations based on packages marked as popular.
+    """
+    query = select(Package.destination).distinct().where(
+        Package.status == PackageStatus.PUBLISHED,
+        Package.is_popular_destination == True
+    )
+
+    # 1. Filter by Agent
+    if current_user and current_user.agent_id:
+        query = query.where(Package.created_by == current_user.agent_id)
+    elif not current_user or (current_user and current_user.role != UserRole.ADMIN):
+        agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
+        query = query.where(Package.created_by == agent_subquery)
+
+    result = await db.execute(query)
+    destinations = result.scalars().all()
+    
+    # If no popular destinations set, maybe fallback to just any published destinations?
+    # For now, let's return what we found. The frontend can handle empty list.
+    return destinations
+
+
 @router.get("/config/suggestions", response_model=List[dict])
 async def get_destination_suggestions(
     q: str = Query(..., min_length=1),
@@ -250,6 +279,63 @@ async def list_packages(
         page=page,
         page_size=page_size
     )
+
+
+
+@router.get("/cheapest", response_model=dict)
+async def get_cheapest_package(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_optional_current_user),
+    domain: str = Depends(get_current_domain)
+):
+    """
+    Get the lowest-priced published package for the current user's assigned agent 
+    (or the agent themselves).
+    """
+    try:
+        from sqlalchemy import asc
+        
+        stmt = select(Package).where(
+            Package.status == PackageStatus.PUBLISHED,
+            Package.is_public == True
+        )
+        
+        # Filter by Agent (Tenant Isolation)
+        if current_user and current_user.agent_id:
+            stmt = stmt.where(Package.created_by == current_user.agent_id)
+        elif domain and domain != 'localhost':
+            agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
+            stmt = stmt.where(Package.created_by == agent_subquery)
+            
+        # Order by price ascending
+        stmt = stmt.order_by(asc(Package.price_per_person))
+        stmt = stmt.limit(1)
+        
+        result = await db.execute(stmt)
+        package = result.scalars().first()
+        
+        if not package:
+             raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No packages found."
+            )
+            
+        return {
+            'id': str(package.id),
+            'title': package.title,
+            'destination': package.destination,
+            'price_per_person': float(package.price_per_person)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch cheapest package: {str(e)}"
+        )
 
 
 @router.get("/{package_id}", response_model=PackageResponse)

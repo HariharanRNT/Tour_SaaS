@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,8 +24,24 @@ interface Destination {
 }
 
 export default function Home() {
+    const router = useRouter()
     const [destinations, setDestinations] = useState<Destination[]>([])
     const [loading, setLoading] = useState(true)
+
+    const handleSampleItinerary = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/v1/packages/cheapest')
+            if (res.ok) {
+                const data = await res.json()
+                router.push(`/plan-trip/build?package_id=${data.id}&mode=preview`)
+            } else {
+                alert("No sample packages available at the moment.")
+            }
+        } catch (error) {
+            console.error("Failed to fetch sample itinerary", error)
+            alert("Unable to load sample itinerary.")
+        }
+    }
 
     useEffect(() => {
         const fetchDestinations = async () => {
@@ -109,7 +126,12 @@ export default function Home() {
 
                         {/* CTA Section */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
-                            <Button variant="ghost" size="lg" className="h-16 px-8 text-xl   rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all font-bold">
+                            <Button
+                                onClick={handleSampleItinerary}
+                                variant="ghost"
+                                size="lg"
+                                className="h-16 px-8 text-xl   rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all font-bold"
+                            >
                                 <PlayCircle className="h-6 w-6 mr-2" />
                                 See Sample Itinerary
                             </Button>

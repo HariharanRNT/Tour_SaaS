@@ -147,6 +147,13 @@ export const bookingsAPI = {
         const response = await api.put(`/bookings/${id}/cancel`)
         return response.data
     },
+
+    downloadInvoice: async (id: string) => {
+        const response = await api.get(`/bookings/${id}/invoice`, {
+            responseType: 'blob',
+        })
+        return response.data
+    },
 }
 
 // Payments API
@@ -246,5 +253,16 @@ export const bookingsCustomAPI = {
     }
 }
 
+// Trip Planner API
+export const tripPlannerAPI = {
+    getUserSessions: async () => {
+        const response = await api.get('/trip-planner/user-sessions')
+        return response.data
+    },
+    deleteSession: async (sessionId: string) => {
+        const response = await api.delete(`/trip-planner/session/${sessionId}`)
+        return response.data
+    }
+}
 
 export default api

@@ -727,7 +727,7 @@ export default function SubscriptionPage() {
                             const icon = getPlanIcon(plan.name);
 
                             return (
-                                <div key={plan.id} className="relative group p-4">
+                                <div key={plan.id} className="relative group p-2">
                                     {isPopular && (
                                         <div className="absolute -top-1 inset-x-0 flex justify-center z-30">
                                             <div className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[11px] font-bold px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/30 flex items-center gap-1.5 backdrop-blur-sm">
@@ -738,7 +738,7 @@ export default function SubscriptionPage() {
                                     )}
                                     <div
                                         className={`
-                                        relative rounded-2xl p-8 h-full flex flex-col transition-all duration-300 ease-out
+                                        relative rounded-2xl p-5 h-full flex flex-col transition-all duration-300 ease-out
                                         bg-white border-2
                                         ${isPopular
                                                 ? `border-indigo-500 shadow-xl scale-105 z-10 bg-gradient-to-b from-indigo-50/50 to-white`
@@ -748,13 +748,13 @@ export default function SubscriptionPage() {
                                         style={isPopular ? { boxShadow: '0 12px 32px rgba(99,102,241,0.15)' } : {}}
                                     >
                                         {/* Header Section */}
-                                        <div className="text-center mb-6">
-                                            <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
+                                        <div className="text-center mb-3">
+                                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
                                                 <span className="text-2xl">{icon}</span> {plan.name}
                                             </h3>
 
                                             <div className="flex flex-col items-center">
-                                                <div className={`text-4xl px-2 font-bold mb-2 bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
+                                                <div className={`text-3xl px-2 font-bold mb-2 bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}>
                                                     ₹{plan.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
 
@@ -773,7 +773,7 @@ export default function SubscriptionPage() {
                                         </div>
 
                                         {/* Features Section */}
-                                        <div className="flex-1 space-y-6">
+                                        <div className="flex-1 space-y-4">
                                             {/* Booking Limit Highlight */}
                                             <div className={`flex items-center justify-center gap-2 bg-gray-50/80 py-3 rounded-xl border border-gray-100`}>
                                                 <Zap className={`h-4 w-4 ${theme.text}`} />
@@ -782,7 +782,7 @@ export default function SubscriptionPage() {
                                                 </span>
                                             </div>
 
-                                            <div className="space-y-5">
+                                            <div className="space-y-4">
                                                 {plan.features.map((section, idx) => (
                                                     <div key={idx} className="last:mb-0">
                                                         {section.category !== 'USAGE LIMITS' && ( // Usage limits handled by highlight above usually
@@ -792,7 +792,7 @@ export default function SubscriptionPage() {
                                                                     {section.category === 'PRICING' && <CreditCard className="h-3 w-3" />}
                                                                     {section.category}
                                                                 </h4>
-                                                                <ul className="space-y-3">
+                                                                <ul className="space-y-2">
                                                                     {section.items.map((item, i) => (
                                                                         <li key={i} className="flex items-start group/item">
                                                                             <div className="mt-0.5 mr-3 flex-shrink-0">
@@ -800,7 +800,7 @@ export default function SubscriptionPage() {
                                                                                     <Check className="h-3 w-3 text-emerald-600" />
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="text-[15px] font-medium text-gray-600 leading-snug group-hover/item:text-gray-900 transition-colors">
+                                                                            <span className="text-sm font-medium text-gray-600 leading-snug group-hover/item:text-gray-900 transition-colors">
                                                                                 {item}
                                                                             </span>
                                                                         </li>
@@ -814,9 +814,9 @@ export default function SubscriptionPage() {
                                         </div>
 
                                         {/* Action Button */}
-                                        <div className="mt-8 pt-6 border-t border-gray-100">
+                                        <div className="mt-4 pt-4 border-t border-gray-100">
                                             <Button
-                                                className={`w-full font-bold h-12 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95 ${isPopular
+                                                className={`w-full font-bold h-10 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95 ${isPopular
                                                     ? `bg-gradient-to-r ${theme.gradient} text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5`
                                                     : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-100 hover:border-gray-200 shadow-none'
                                                     }`}
