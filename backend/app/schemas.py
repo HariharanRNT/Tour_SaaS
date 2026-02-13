@@ -440,6 +440,7 @@ class SubscriptionResponse(SubscriptionBase):
     user_id: UUID4
     current_bookings_usage: int
     plan: SubscriptionPlanResponse
+    created_at: datetime
     
     class Config:
         from_attributes = True

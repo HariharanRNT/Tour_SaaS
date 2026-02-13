@@ -248,7 +248,7 @@ export default function CreatePackagePage() {
     }
 
     const isBasicInfoValid = () => {
-        return formData.title && formData.destination && formData.country && formData.category && formData.price_per_person > 0
+        return formData.title && formData.destination && formData.country && formData.price_per_person > 0
     }
 
     // Helper for input validation styles
@@ -580,7 +580,7 @@ export default function CreatePackagePage() {
 
                                 {/* Category - Icon Grid */}
                                 <div className="space-y-3 md:col-span-2">
-                                    <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Category</Label>
+                                    <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Category <span className="text-gray-400 font-normal normal-case">(Optional)</span></Label>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         {CATEGORIES.map((cat) => {
                                             const Icon = cat.icon

@@ -89,9 +89,11 @@ export default function CheckoutPage() {
     }, [sameAsTraveler1, travelers])
 
     const handleTravelerChange = (index: number, field: keyof Traveler, value: string) => {
-        const newTravelers = [...travelers]
-        newTravelers[index] = { ...newTravelers[index], [field]: value }
-        setTravelers(newTravelers)
+        setTravelers(prev => {
+            const newTravelers = [...prev]
+            newTravelers[index] = { ...newTravelers[index], [field]: value }
+            return newTravelers
+        })
 
         // Auto-sync if checked
         if (sameAsTraveler1 && index === 0 && (field === 'first_name' || field === 'last_name')) {

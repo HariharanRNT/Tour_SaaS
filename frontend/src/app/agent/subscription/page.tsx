@@ -28,6 +28,7 @@ interface Plan {
     features: { category: string; items: string[] }[];
     booking_limit: number;
     user_limit: number;
+    duration_days?: number;
 }
 
 interface Subscription {
@@ -38,6 +39,7 @@ interface Subscription {
     end_date: string;
     current_bookings_usage: number;
     updated_at?: string;
+    created_at?: string;
     plan: Plan;
 }
 
@@ -57,6 +59,24 @@ export default function SubscriptionPage() {
     const [historyPage, setHistoryPage] = useState(1);
     const [historyDateFilter, setHistoryDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
     const ITEMS_PER_PAGE = 5;
+
+    const getBillingCycleDisplay = (plan: Plan) => {
+        if (plan.billing_cycle === 'monthly') return 'Monthly';
+        if (plan.billing_cycle === 'yearly') return 'Yearly';
+        if (plan.billing_cycle === 'lifetime') return 'Lifetime';
+        if (plan.duration_days === 1) return 'Daily';
+        if (plan.duration_days) return `${plan.duration_days} Days`;
+        return 'Custom';
+    };
+
+    const getBillingCycleShort = (plan: Plan) => {
+        if (plan.billing_cycle === 'monthly') return '/mo';
+        if (plan.billing_cycle === 'yearly') return '/yr';
+        if (plan.billing_cycle === 'lifetime') return '';
+        if (plan.duration_days === 1) return '/day';
+        if (plan.duration_days) return `/${plan.duration_days}d`;
+        return '';
+    };
 
     const getPlanTheme = (planName: string) => {
         const lower = planName.toLowerCase();
@@ -134,16 +154,24 @@ export default function SubscriptionPage() {
             const plansRes = await fetch('http://localhost:8000/api/v1/subscriptions/plans');
             if (plansRes.ok) {
                 const rawPlans = await plansRes.json();
-                const transformedPlans = rawPlans.map((p: any) => ({
-                    ...p,
-                    features: Array.isArray(p.features) && typeof p.features[0] === 'string'
-                        ? [
-                            { category: "USAGE LIMITS", items: [`${p.booking_limit === -1 ? 'Unlimited' : p.booking_limit} Bookings/mo`, `${p.user_limit || 1} User(s)`] },
-                            { category: "FEATURES", items: p.features },
-                            { category: "PRICING", items: ["Standard Commission"] }
-                        ]
-                        : p.features
-                }));
+                const transformedPlans = rawPlans.map((p: any) => {
+                    let period = '/mo';
+                    if (p.billing_cycle === 'yearly') period = '/yr';
+                    if (p.billing_cycle === 'lifetime') period = '';
+                    if (p.duration_days === 1) period = '/day';
+                    else if (p.duration_days) period = `/${p.duration_days}d`;
+
+                    return {
+                        ...p,
+                        features: Array.isArray(p.features) && typeof p.features[0] === 'string'
+                            ? [
+                                { category: "USAGE LIMITS", items: [`${p.booking_limit === -1 ? 'Unlimited' : p.booking_limit} Bookings${period}`, `${p.user_limit || 1} User(s)`] },
+                                { category: "FEATURES", items: p.features },
+                                { category: "PRICING", items: ["Standard Commission"] }
+                            ]
+                            : p.features
+                    };
+                });
                 setPlans(transformedPlans);
             }
 
@@ -367,10 +395,8 @@ export default function SubscriptionPage() {
                 <div className="mb-8">
                     {/* Breadcrumb */}
                     <nav className="flex items-center text-sm text-gray-500 mb-6">
-                        <Link href="/agent/dashboard" className="hover:text-gray-900 transition-colors flex items-center gap-1">
-                            Home
-                        </Link>
-                        <span className="mx-2">/</span>
+
+
                         <Link href="/agent/dashboard" className="hover:text-gray-900 transition-colors">
                             Dashboard
                         </Link>
@@ -418,10 +444,10 @@ export default function SubscriptionPage() {
                                         </div>
                                         <h3 className="text-3xl font-bold text-slate-900 mb-1">{activeSub.plan.name}</h3>
                                         <p className="text-slate-600 font-medium flex items-center gap-2">
-                                            {activeSub.plan.billing_cycle === 'monthly' ? 'Monthly' : 'Yearly'} Billing
+                                            {getBillingCycleDisplay(activeSub.plan)} Billing
                                             <span className="w-1 h-1 rounded-full bg-slate-400"></span>
                                             <span className="text-slate-900 font-bold">₹{activeSub.plan.price.toLocaleString()}</span>
-                                            <span className="text-slate-500">/{activeSub.plan.billing_cycle === 'monthly' ? 'mo' : 'yr'}</span>
+                                            <span className="text-slate-500">{getBillingCycleShort(activeSub.plan)}</span>
                                         </p>
                                     </div>
 
@@ -559,11 +585,11 @@ export default function SubscriptionPage() {
                                         <div>
                                             <Badge className="bg-purple-100 text-purple-700 mb-2">Upcoming</Badge>
                                             <h3 className="font-bold text-lg">{sub.plan.name}</h3>
-                                            <p className="text-sm text-gray-500">Purchased on {new Date(sub.start_date || new Date()).toLocaleDateString()}</p>
+                                            <p className="text-sm text-gray-500">Purchased on {new Date(sub.created_at || sub.start_date || new Date()).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="text-right mr-4">
-                                                <p className="font-medium text-sm">Valid for {sub.plan.billing_cycle}</p>
+                                                <p className="font-medium text-sm">Valid for {getBillingCycleDisplay(sub.plan)}</p>
                                                 <p className="text-xs text-gray-500">Auto-activates when current plan ends</p>
                                             </div>
                                             <Button
@@ -761,7 +787,7 @@ export default function SubscriptionPage() {
                                                 <div className="w-16 h-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent my-2"></div>
 
                                                 <span className="text-sm font-medium text-gray-500">
-                                                    /{plan.billing_cycle === 'monthly' ? 'monthly' : 'yearly'}
+                                                    {getBillingCycleShort(plan).replace('/', '')} billing
                                                 </span>
 
                                                 {plan.billing_cycle === 'yearly' && (
@@ -778,7 +804,7 @@ export default function SubscriptionPage() {
                                             <div className={`flex items-center justify-center gap-2 bg-gray-50/80 py-3 rounded-xl border border-gray-100`}>
                                                 <Zap className={`h-4 w-4 ${theme.text}`} />
                                                 <span className="font-semibold text-gray-900 text-sm">
-                                                    {plan.booking_limit === -1 ? 'Unlimited' : plan.booking_limit} Bookings/mo
+                                                    {plan.booking_limit === -1 ? 'Unlimited' : plan.booking_limit} Bookings{getBillingCycleShort(plan)}
                                                 </span>
                                             </div>
 
@@ -852,6 +878,7 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-gray-600"
                                         value={historyDateFilter.start}
+                                        max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, start: e.target.value }))}
                                     />
                                     <span className="text-gray-300">|</span>
@@ -860,6 +887,7 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-gray-600"
                                         value={historyDateFilter.end}
+                                        max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, end: e.target.value }))}
                                     />
                                     {(historyDateFilter.start || historyDateFilter.end) && (

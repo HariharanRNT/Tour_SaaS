@@ -214,8 +214,8 @@ async def get_dashboard_stats(
         result = await db.execute(sub_active_query)
         active_subscriptions = result.scalar() or 0
         
-        # Nearing Expiry (Active + Ends within 7 days)
-        expiry_threshold = datetime.utcnow().date() + timedelta(days=7)
+        # Nearing Expiry (Active + Ends within 3 days)
+        expiry_threshold = datetime.utcnow().date() + timedelta(days=3)
         # Fetch details instead of just count
         sub_expiry_stmt = select(
             Agent.first_name,
@@ -326,6 +326,55 @@ async def get_dashboard_stats(
         for w in weekly_trends:
             del w['sort_date']
 
+        # 11. Recent Agent Activities (Simulated from User table)
+        # Fetch recent users with role agent
+        activity_stmt = select(User, Agent).join(Agent, User.id == Agent.user_id).where(
+             User.role == UserRole.AGENT
+        ).order_by(User.updated_at.desc()).limit(10)
+        
+        result = await db.execute(activity_stmt)
+        recent_users = result.all()
+        
+        agent_activities = []
+        for u, a in recent_users:
+            # Determine activity type
+            # 1. Created recently (within last 24h/1h of created_at) or updated_at is None
+            # 2. Deactivated (is_active = False)
+            # 3. Updated (updated_at > created_at)
+            
+            activity_type = "UPDATED"
+            action_title = "Agent Updated"
+            icon_type = "edit"
+            display_time = u.updated_at or u.created_at
+            
+            # Simple heuristic
+            is_new = False
+            if not u.updated_at:
+                is_new = True
+            elif u.created_at:
+                # If updated very close to creation, count as creation
+                time_diff = (u.updated_at - u.created_at).total_seconds()
+                if time_diff < 60:
+                    is_new = True
+            
+            if is_new:
+                activity_type = "CREATED"
+                action_title = "Agent Created"
+                icon_type = "create"
+                display_time = u.created_at
+            elif not u.is_active:
+                activity_type = "DEACTIVATED"
+                action_title = "Agent Deactivated"
+                icon_type = "block"
+            
+            agent_activities.append({
+                "type": activity_type,
+                "title": action_title,
+                "description": f"{a.first_name} {a.last_name} ({a.agency_name or 'Independent'})",
+                "time": display_time.strftime("%Y-%m-%d %H:%M") if display_time else "",
+                "icon": icon_type
+            })
+
         return {
             "totalPackages": total_packages,
             "totalBookings": total_bookings,
@@ -334,7 +383,7 @@ async def get_dashboard_stats(
             "subscriptionsNearingExpiry": subscriptions_nearing_expiry,
             "expiryDetails": expiry_details,
             "monthlyTrends": monthly_trends, 
-            "weeklyTrends": weekly_trends, # NEW
+            "weeklyTrends": weekly_trends,
             "agents": {
                 "total": total_agents,
                 "active": active_agents,
@@ -350,7 +399,8 @@ async def get_dashboard_stats(
             },
             "packageAnalytics": {
                 "mostBooked": [],
-                "recent": recent_packages
+                "recent": recent_packages,
+                "agentActivities": agent_activities # NEW
             },
             "filter": {
                 "type": filter_type,

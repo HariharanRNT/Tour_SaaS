@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Edit, Trash, Check, User, FileText, ArrowLeft, TrendingUp, Users, DollarSign, Calendar, MoreVertical, Search, X, ArrowUpDown, Download, Copy, CheckCircle2, Star, Zap, Shield } from "lucide-react";
+import { Loader2, Plus, Edit, Trash, Check, User, FileText, ArrowLeft, TrendingUp, Users, DollarSign, Calendar, MoreVertical, Search, X, ArrowUpDown, Download, Copy, CheckCircle2, Star, Zap, Shield, Power } from "lucide-react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -194,9 +194,7 @@ export default function AdminBillingPage() {
         setIsCreateOpen(true);
     };
 
-    const handleDeletePlan = async (planId: string) => {
-        if (!confirm("Are you sure you want to delete this plan? This action cannot be undone.")) return;
-
+    const executeDeletePlan = async (planId: string) => {
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:8000/api/v1/subscriptions/plans/${planId}`, {
@@ -214,6 +212,82 @@ export default function AdminBillingPage() {
         } catch (e) {
             console.error(e);
             toast.error("Error deleting plan");
+        }
+    };
+
+    const handleDeletePlan = (planId: string) => {
+        const plan = plans.find(p => p.id === planId);
+
+        const DeleteToast = ({ closeToast }: { closeToast: () => void }) => (
+            <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                    <div className="bg-red-100 p-2 rounded-full text-red-600">
+                        <Trash className="h-4 w-4" />
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-gray-900">Delete Plan?</h4>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Are you sure you want to delete <span className="font-medium text-gray-900">{plan?.name}</span>?
+                            This action cannot be undone.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={closeToast}
+                        className="h-8 text-gray-500 hover:text-gray-900"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 bg-red-600 hover:bg-red-700"
+                        onClick={() => {
+                            executeDeletePlan(planId);
+                            closeToast();
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </div>
+        );
+
+        toast(({ closeToast }) => <DeleteToast closeToast={closeToast} />, {
+            position: "top-center",
+            autoClose: false,
+            closeOnClick: false,
+            draggable: false,
+            closeButton: false,
+            className: "p-0 min-w-[350px]"
+        });
+    };
+
+    const handleToggleStatus = async (plan: SubscriptionPlan) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8000/api/v1/subscriptions/plans/${plan.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ is_active: !plan.is_active })
+            });
+
+            if (res.ok) {
+                await fetchData();
+                toast.success(`Plan ${plan.is_active ? 'deactivated' : 'activated'} successfully`);
+            } else {
+                const err = await res.json();
+                toast.error(`Failed to update status: ${err.detail}`);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error updating plan status");
         }
     };
 
@@ -567,6 +641,10 @@ export default function AdminBillingPage() {
                                                     <DropdownMenuItem onClick={() => openEditModal(plan)}>
                                                         <Edit className="mr-2 h-4 w-4" />
                                                         Edit Plan
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleToggleStatus(plan)}>
+                                                        <Power className={`mr-2 h-4 w-4 ${plan.is_active ? 'text-orange-600' : 'text-green-600'}`} />
+                                                        {plan.is_active ? 'Deactivate' : 'Activate'}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem

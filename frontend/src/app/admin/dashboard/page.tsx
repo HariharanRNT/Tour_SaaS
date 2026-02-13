@@ -158,8 +158,8 @@ export default function AdminDashboard() {
                             <div>
                                 {/* Breadcrumb */}
                                 <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                                    <span className="hover:text-indigo-600 cursor-pointer">Home</span>
-                                    <ChevronRight className="h-3 w-3" />
+
+
                                     <span className="text-slate-700 font-medium">Dashboard</span>
                                 </div>
                                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-sky-700">Admin Dashboard</h1>
@@ -339,7 +339,7 @@ export default function AdminDashboard() {
                             <p className="text-xs font-medium text-[#EC4899] bg-pink-50 w-fit px-2 py-1 rounded-full truncate max-w-full">
                                 {stats.expiryDetails && stats.expiryDetails.length > 0
                                     ? `Next: ${stats.expiryDetails[0].name.split(' ')[0]}`
-                                    : "Agents expiring in 7d"}
+                                    : "Agents expiring in 3d"}
                             </p>
                         </CardContent>
                     </Card>
@@ -432,7 +432,7 @@ export default function AdminDashboard() {
                         data={stats.monthlyTrends || []}
                         weeklyData={stats.weeklyTrends || []}
                     />
-                    <RecentActivityFeed packages={stats.packageAnalytics?.recent} />
+                    <RecentActivityFeed activities={stats.packageAnalytics?.agentActivities} />
                 </div>
 
                 {/* Agent Performance & Package Analytics */}

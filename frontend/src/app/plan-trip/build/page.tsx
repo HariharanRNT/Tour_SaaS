@@ -100,6 +100,8 @@ export default function BuildTripPage() {
     // UI state for modals
     const [isOnwardModalOpen, setIsOnwardModalOpen] = useState(false)
     const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
+    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
+    const [showMobileFilters, setShowMobileFilters] = useState(false)
 
     // Flight Filters State
     const [filters, setFilters] = useState<FlightFilterState>({
@@ -520,7 +522,7 @@ export default function BuildTripPage() {
 
 
             {/* Hero Section */}
-            <div className="relative h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
+            <div className="relative h-[50vh] md:h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
                 {/* Background Image & Overlay */}
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[3s] group-hover:scale-105"
@@ -758,14 +760,24 @@ export default function BuildTripPage() {
                                                                     <DialogTitle>Select Onward Flight</DialogTitle>
                                                                 </DialogHeader>
                                                                 <div className="flex flex-1 overflow-hidden">
-                                                                    <div className="hidden md:block w-72 border-r bg-white p-6 overflow-y-auto">
+                                                                    <div className={`md:block w-72 border-r bg-white p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                         <div className="flex items-center justify-between mb-6">
                                                                             <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                            <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between mb-6 md:hidden">
+                                                                            <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                            <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
                                                                         </div>
                                                                         <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
+                                                                        <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                     </div>
-                                                                    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+                                                                        <div className="md:hidden mb-4">
+                                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
+                                                                                Filters
+                                                                            </Button>
+                                                                        </div>
                                                                         <div className="space-y-4">
                                                                             {filteredOnwardFlights.length === 0 ? (
                                                                                 <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
@@ -820,14 +832,23 @@ export default function BuildTripPage() {
                                                                         <DialogTitle>Select Return Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
-                                                                        <div className="hidden md:block w-72 border-r bg-white p-6 overflow-y-auto">
+                                                                        <div className={`md:block w-72 border-r bg-white p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                             <div className="flex items-center justify-between mb-6">
                                                                                 <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                                <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between mb-6 md:hidden">
                                                                                 <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
                                                                             </div>
                                                                             <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
+                                                                            <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                         </div>
-                                                                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                                                        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+                                                                            <div className="md:hidden mb-4">
+                                                                                <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
+                                                                                    Filters
+                                                                                </Button>
+                                                                            </div>
                                                                             <div className="space-y-4">
                                                                                 {filteredReturnFlights.map(f => (
                                                                                     <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
@@ -949,7 +970,7 @@ export default function BuildTripPage() {
                     </div>
 
                     {/* Right Column - Trip Cart (Sticky) */}
-                    <div className="lg:col-span-4 xl:col-span-3">
+                    <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
                         <div className="sticky top-8">
                             <div className="relative">
                                 {/* Decorative elements behind cart */}
@@ -973,6 +994,56 @@ export default function BuildTripPage() {
 
                 </div>
             </div>
+            {/* Mobile Sticky Footer */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 font-medium">Total Trip Cost</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-gray-900">
+                            ₹{(() => {
+                                const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
+                                const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
+                                const services = [
+                                    ...(selectedOnwardFlight ? [{ price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(selectedReturnFlight ? [{ price: selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                    ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                ]
+                                const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
+                                return (totalBasePrice + totalServicesPrice).toLocaleString()
+                            })()}
+                        </span>
+                        <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
+                    </div>
+                </div>
+                <Button onClick={handleCheckout} className="bg-blue-600 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-blue-500/20">
+                    Book Now
+                </Button>
+            </div>
+
+            {/* Mobile Cart Dialog */}
+            <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
+                <DialogContent className="max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl">
+                    <div className="p-4 border-b bg-gray-50 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <DialogTitle>Trip Summary</DialogTitle>
+                    </div>
+                    <div className="p-4 bg-gray-50/50 min-h-[50vh]">
+                        <TripCart
+                            basePrice={session.price_per_person || 18000}
+                            travelers={session.travelers}
+                            duration={{ days: session.duration_days, nights: session.duration_nights }}
+                            services={[
+                                ...(selectedOnwardFlight ? [{ name: 'Onward Flight', price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                ...(selectedReturnFlight ? [{ name: 'Return Flight', price: selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                            ]}
+                            onCheckout={handleCheckout}
+                            disabled={mode === 'preview'}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -140,7 +140,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                 {/* Gender Segmented Control */}
                 <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Gender</Label>
-                    <div className="flex bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                    <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 h-12 items-center">
                         {[
                             { val: 'MALE', label: 'Male' },
                             { val: 'FEMALE', label: 'Female' }
@@ -158,8 +158,9 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                                         else onChange(index, 'title', 'Miss')
                                     }
                                 }}
+                                type="button"
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2.5 rounded-lg transition-all",
+                                    "flex-1 flex items-center justify-center gap-2 text-sm font-semibold h-full rounded-lg transition-all",
                                     traveler.gender === g.val
                                         ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
                                         : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
@@ -178,7 +179,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     <div className="grid grid-cols-3 gap-2">
                         {/* Day */}
                         <Select value={d} onValueChange={(val) => handleDateChange('day', val)}>
-                            <SelectTrigger className="bg-slate-50 border-slate-200">
+                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
                                 <SelectValue placeholder="Day" />
                             </SelectTrigger>
                             <SelectContent>
@@ -190,7 +191,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
 
                         {/* Month */}
                         <Select value={m} onValueChange={(val) => handleDateChange('month', val)}>
-                            <SelectTrigger className="bg-slate-50 border-slate-200">
+                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
                                 <SelectValue placeholder="Month" />
                             </SelectTrigger>
                             <SelectContent>
@@ -202,7 +203,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
 
                         {/* Year */}
                         <Select value={y} onValueChange={(val) => handleDateChange('year', val)}>
-                            <SelectTrigger className="bg-slate-50 border-slate-200">
+                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
                                 <SelectValue placeholder="Year" />
                             </SelectTrigger>
                             <SelectContent>

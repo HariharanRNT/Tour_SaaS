@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Package, Users, FileText, CheckCircle2, Clock, MapPin } from 'lucide-react'
+import { UserPlus, UserCog, UserX, ShieldCheck, Building, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ActivityItemProps {
@@ -40,52 +40,72 @@ function ActivityItem({ icon, iconBg, iconColor, title, description, time, isLas
     )
 }
 
-export function RecentActivityFeed({ packages = [] }: { packages?: any[] }) {
-    // Combine real package events with some mock events for a rich feed
-    const packageActivities = packages.map(pkg => ({
-        icon: <Package className="h-4 w-4" />,
-        iconBg: "bg-blue-50",
-        iconColor: "text-blue-600",
-        title: "Package Created/Updated",
-        description: pkg.title,
-        time: pkg.date ? `${pkg.date.toUpperCase()}` : "RECENTLY"
-    }))
+export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) {
 
-    const mockActivities = [
-        {
-            icon: <CheckCircle2 className="h-4 w-4" />,
-            iconBg: "bg-green-50",
-            iconColor: "text-green-600",
-            title: "Booking Confirmed",
-            description: "Booking #BK-8291 for Bali Escape was confirmed",
-            time: "5 HOURS AGO"
-        },
-        {
-            icon: <Users className="h-4 w-4" />,
-            iconBg: "bg-purple-50",
-            iconColor: "text-purple-600",
-            title: "New Agent Registered",
-            description: "Siddharth Malhotra joined as a certified agent",
-            time: "1 DAY AGO"
-        },
-        {
-            icon: <FileText className="h-4 w-4" />,
-            iconBg: "bg-orange-50",
-            iconColor: "text-orange-600",
-            title: "Payment Received",
-            description: "₹45,000 received for Booking #BK-7721",
-            time: "1 DAY AGO"
+    const getIconDetails = (type: string) => {
+        switch (type) {
+            case 'CREATED':
+                return {
+                    icon: <UserPlus className="h-4 w-4" />,
+                    bg: "bg-green-50",
+                    color: "text-green-600",
+                    title: "🆕 Agent Created"
+                }
+            case 'UPDATED':
+                return {
+                    icon: <UserCog className="h-4 w-4" />,
+                    bg: "bg-blue-50",
+                    color: "text-blue-600",
+                    title: "✏️ Agent Updated"
+                }
+            case 'DEACTIVATED':
+                return {
+                    icon: <UserX className="h-4 w-4" />,
+                    bg: "bg-red-50",
+                    color: "text-red-600",
+                    title: "🚫 Agent Deactivated"
+                }
+            case 'ACCOUNT_CREATED':
+                return {
+                    icon: <Building className="h-4 w-4" />,
+                    bg: "bg-purple-50",
+                    color: "text-purple-600",
+                    title: "🏢 Account Created"
+                }
+            case 'PERMISSION_UPDATED':
+                return {
+                    icon: <ShieldCheck className="h-4 w-4" />,
+                    bg: "bg-amber-50",
+                    color: "text-amber-600",
+                    title: "🔐 Permission Updated"
+                }
+            default:
+                return {
+                    icon: <UserCog className="h-4 w-4" />,
+                    bg: "bg-gray-50",
+                    color: "text-gray-600",
+                    title: "Activity"
+                }
         }
-    ]
+    }
 
-    // Priority to real data, append mock for visual fullness
-    const displayActivities = [...packageActivities, ...mockActivities].slice(0, 5)
+    const displayActivities = activities.map(act => {
+        const details = getIconDetails(act.type);
+        return {
+            icon: details.icon,
+            iconBg: details.bg,
+            iconColor: details.color,
+            title: details.title, // Use mapped title or fallback to backend title if unique
+            description: act.description,
+            time: act.time || "JUST NOW"
+        }
+    })
 
     return (
         <Card className="col-span-3">
             <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest updates from across the platform</CardDescription>
+                <CardTitle>Agent & Account Activity</CardTitle>
+                <CardDescription>Recent high-level control actions</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="mt-2 text-left">
