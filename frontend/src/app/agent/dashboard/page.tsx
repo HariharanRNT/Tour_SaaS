@@ -3,25 +3,59 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { format } from 'date-fns'
 import {
     LayoutDashboard,
     Package,
     Users,
     Calendar,
     TrendingUp,
-    Plus,
+    Settings,
+    Bell,
+    ExternalLink,
     Clock,
+    Plus,
+    Filter,
+    ArrowUpRight,
+    ArrowDownRight,
+    Search,
+    ChevronDown,
+    MoreVertical,
+    CheckCircle,
+    XCircle,
+    Copy,
+    Share2,
+    Trash2,
+    Sparkles,
+    MessageSquare,
+    Send,
     LogOut,
+    Home,
     FileText,
+    ChevronRight,
+    ArrowLeft,
     Trophy,
     Star,
     TrendingDown,
     AlertTriangle,
-    Settings
+    MapPin,
+    Building2,
+    Briefcase,
+    Zap,
+    Download,
+    CreditCard,
+    AlertCircle,
+    ArrowRight,
+    Mail,
+    Phone,
+    User,
+    Menu,
+    X,
+    MoreHorizontal
 } from 'lucide-react'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
     Select,
     SelectContent,
@@ -30,8 +64,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from '@/components/ui/badge'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,8 +82,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Send, User } from 'lucide-react'
-
 import {
     Carousel,
     CarouselContent,
@@ -58,11 +90,7 @@ import {
     CarouselPrevious,
 } from "@/components/ui/carousel"
 
-
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
-import { Home, Zap, Menu } from 'lucide-react'
-
-import { ChevronDown, Sparkles } from 'lucide-react'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
 
 // Custom Rupee Icon Component
@@ -144,6 +172,10 @@ interface DashboardStats {
     activeBookings: number
     pendingBookings: number
     totalRevenue: number
+    recentBookings?: {
+        upcoming: any[]
+        completed: any[]
+    }
     highlights?: {
         mostPopular: any
         leastPopular: any
@@ -239,7 +271,8 @@ export default function AgentDashboard() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Domain': window.location.hostname
                 },
                 body: JSON.stringify({
                     message: userMessage,
@@ -343,6 +376,7 @@ export default function AgentDashboard() {
         activeBookings: 0,
         pendingBookings: 0,
         totalRevenue: 0,
+        recentBookings: { upcoming: [], completed: [] },
         highlights: { mostPopular: null, leastPopular: null },
         packageAnalytics: { mostBooked: [] }
     })
@@ -458,8 +492,11 @@ export default function AgentDashboard() {
             // Fetch Market Insights & Stats (New Endpoint logic handles aggregates)
             let backendStats: any = {}
             try {
-                const marketRes = await fetch(`http://localhost:8000/api/v1/agent-dashboard/stats?${query.toString()}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const marketRes = await fetch(`${API_URL}/api/v1/agent-dashboard/stats?${query.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Domain': window.location.hostname
+                    }
                 })
                 if (marketRes.ok) {
                     backendStats = await marketRes.json()
@@ -480,6 +517,7 @@ export default function AgentDashboard() {
                 activeBookings: backendStats.activeBookings || 0,
                 pendingBookings: backendStats.pendingBookings || 0,
                 totalRevenue: backendStats.totalRevenue || 0,
+                recentBookings: backendStats.recentBookings || { upcoming: [], completed: [] },
                 highlights: backendStats.highlights,
                 packageAnalytics: backendStats.packageAnalytics
             })
@@ -575,8 +613,6 @@ export default function AgentDashboard() {
 
             <motion.div style={{ y: springY2 }} className="fixed top-20 right-20 w-80 h-80 bg-yellow-100/10 rounded-full blur-[80px] pointer-events-none z-0 mix-blend-multiply" />
 
-            {/* Gradient Mesh Overlay */}
-            <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02] pointer-events-none z-0" />
 
             {/* Pull to Refresh Indicator */}
             <div
@@ -900,7 +936,7 @@ export default function AgentDashboard() {
                                                         <div className="space-y-2">
                                                             <div className="flex justify-between text-xs font-semibold text-emerald-800">
                                                                 <span>Performance</span>
-                                                                <span>11 bookings</span>
+                                                                <span>{stats.highlights.mostPopular.bookings} bookings</span>
                                                             </div>
                                                             <div className="h-2 w-full bg-emerald-100 rounded-full overflow-hidden">
                                                                 <div className="h-full bg-gradient-to-r from-emerald-500 to-green-400 w-[85%] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-shimmer relative">
@@ -913,11 +949,11 @@ export default function AgentDashboard() {
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div className="bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-100">
                                                             <p className="text-[10px] uppercase tracking-wide text-emerald-600 font-bold mb-0.5">Revenue</p>
-                                                            <p className="text-sm font-extrabold text-emerald-800">₹8,234</p>
+                                                            <p className="text-sm font-extrabold text-emerald-800">₹{stats.highlights.mostPopular.revenue?.toLocaleString()}</p>
                                                         </div>
                                                         <div className="bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-100">
                                                             <p className="text-[10px] uppercase tracking-wide text-emerald-600 font-bold mb-0.5">Conversion</p>
-                                                            <p className="text-sm font-extrabold text-emerald-800">45%</p>
+                                                            <p className="text-sm font-extrabold text-emerald-800">{stats.highlights.mostPopular.conversion}%</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -965,7 +1001,7 @@ export default function AgentDashboard() {
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-100">
                                                             <p className="text-[10px] uppercase tracking-wide text-blue-600 font-bold mb-0.5">Views</p>
-                                                            <p className="text-sm font-extrabold text-blue-800">124</p>
+                                                            <p className="text-sm font-extrabold text-blue-800">{stats.highlights.leastPopular.views}</p>
                                                         </div>
                                                         <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-100">
                                                             <p className="text-[10px] uppercase tracking-wide text-blue-600 font-bold mb-0.5">Sales</p>
@@ -1035,7 +1071,99 @@ export default function AgentDashboard() {
                 </div>
 
 
-                {/* Quick Actions */}
+                {/* Recent Bookings Section */}
+                <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                            <Clock className="h-5 w-5 text-[#F59E0B]" />
+                            Recent Bookings
+                        </h2>
+                        <Link href="/agent/bookings">
+                            <Button variant="ghost" size="sm" className="text-[#4F46E5] hover:bg-indigo-50 font-semibold gap-1">
+                                View All <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Upcoming */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">Upcoming</Badge>
+                            </div>
+                            <div className="space-y-3">
+                                {stats.recentBookings?.upcoming && stats.recentBookings.upcoming.length > 0 ? (
+                                    stats.recentBookings.upcoming.map((bk, i) => (
+                                        <Card key={i} className="hover:shadow-md transition-shadow border-slate-100 group overflow-hidden bg-white/50 backdrop-blur-sm">
+                                            <div className="p-4 flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                                    <Calendar className="h-6 w-6 text-slate-400" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start mb-0.5">
+                                                        <h4 className="font-bold text-slate-900 truncate text-sm">
+                                                            {bk.package?.title || 'Custom Tour'}
+                                                        </h4>
+                                                        <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                                                        <span className="flex items-center gap-1 opacity-80"><Users className="h-3 w-3" /> {bk.number_of_travelers}</span>
+                                                        <span className="flex items-center gap-1 opacity-80"><Clock className="h-3 w-3" /> {format(new Date(bk.travel_date), 'dd MMM')}</span>
+                                                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tighter ${bk.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                            {bk.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <div className="py-12 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs font-medium">
+                                        No upcoming bookings
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Completed/History */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">Completed / History</Badge>
+                            </div>
+                            <div className="space-y-3">
+                                {stats.recentBookings?.completed && stats.recentBookings.completed.length > 0 ? (
+                                    stats.recentBookings.completed.map((bk, i) => (
+                                        <Card key={i} className="hover:shadow-md transition-shadow border-slate-100 group overflow-hidden bg-white/50 backdrop-blur-sm opacity-80 hover:opacity-100">
+                                            <div className="p-4 flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                                    <FileText className="h-6 w-6 text-slate-300" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start mb-0.5">
+                                                        <h4 className="font-bold text-slate-700 truncate text-sm">
+                                                            {bk.package?.title || 'Tour Package'}
+                                                        </h4>
+                                                        <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                                                        <span className="flex items-center gap-1 opacity-80"><CheckCircle className="h-3 w-3" /> Done</span>
+                                                        <span className="flex items-center gap-1 opacity-80"><Clock className="h-3 w-3" /> {format(new Date(bk.travel_date), 'dd MMM')}</span>
+                                                        <span className="font-bold text-slate-900 ml-auto">₹{(bk.total_amount || 0).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <div className="py-12 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs font-medium">
+                                        No booking history
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => toggleSection('quickActions')}>
                         <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
@@ -1099,22 +1227,24 @@ export default function AgentDashboard() {
                                     </Card>
 
                                     <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(245,158,11,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
-                                        <CardHeader>
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-amber-50 p-3 rounded-lg">
-                                                    <FileText className="h-6 w-6 text-[#F59E0B]" />
+                                        <Link href="/agent/bookings">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-amber-50 p-3 rounded-lg group-hover:bg-amber-100 transition-colors">
+                                                        <FileText className="h-6 w-6 text-[#F59E0B]" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
+                                                        <CardDescription>Track booking status</CardDescription>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
-                                                    <CardDescription>Track booking status</CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Button className="w-full bg-white text-[#F59E0B] border border-amber-100 hover:bg-amber-50 shadow-sm text-sm font-semibold" disabled>
-                                                View Bookings (Soon)
-                                            </Button>
-                                        </CardContent>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button className="w-full bg-white text-[#F59E0B] border border-amber-100 hover:bg-amber-50 shadow-sm text-sm font-semibold">
+                                                    View Bookings
+                                                </Button>
+                                            </CardContent>
+                                        </Link>
                                     </Card>
 
                                     <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(236,72,153,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">

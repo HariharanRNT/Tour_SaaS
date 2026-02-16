@@ -232,6 +232,7 @@ class Package(Base):
     # Trip planner fields
     is_popular_destination = Column(Boolean, default=False)
     feature_image_url = Column(String, nullable=True)
+    view_count = Column(Integer, default=0)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

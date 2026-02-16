@@ -3,10 +3,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, asc
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
 from app.models import Package, Booking, User, UserRole
+from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 
 router = APIRouter()
@@ -35,9 +37,10 @@ async def get_agent_dashboard_stats(
             filter_start = now - timedelta(days=7)
         elif filter_type == '30D':
             filter_start = now - timedelta(days=30)
-        elif filter_type == 'CUSTOM' and start_date:
+        if filter_type == 'CUSTOM' and start_date:
             try:
                 filter_start = datetime.strptime(start_date, "%Y-%m-%d")
+                
                 if end_date:
                     filter_end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
             except ValueError:
@@ -136,57 +139,57 @@ async def get_agent_dashboard_stats(
         stmt = select(
             Package.id,
             Package.title,
-            func.count(Booking.id).label('count')
+            Package.view_count,
+            func.count(Booking.id).label('count'),
+            func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.id
         )
         # Apply filter to bookings
         stmt = apply_date_filter(stmt, Booking.created_at)
         
-        stmt = stmt.group_by(Package.id).order_by(desc('count')).limit(1)
+        stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(desc('count')).limit(1)
         
         result = await db.execute(stmt)
         most_popular_row = result.first()
         most_popular = None
         
         if most_popular_row:
-             pkg_id, pkg_title, pkg_count = most_popular_row
+             pkg_id, pkg_title, pkg_views, pkg_count, pkg_revenue = most_popular_row
              
-             # Metric: Agent Sales for this package (Simple sum)
-             # We rely on the filtered 'pkg_count' as the sales count for this period
-             agent_sales = pkg_count # Since query is filtered by agent_id and date already
+             # Conversion: (bookings / views) * 100
+             conversion = (pkg_count / pkg_views * 100) if pkg_views and pkg_views > 0 else 0
              
-             # Global Top Agent (Maybe too complex to filter dynamically? 
-             # Let's show "Review" or just keep local stats for now to be fast)
-             # keeping simple
              most_popular = {
                  "title": pkg_title,
                  "bookings": pkg_count,
-                 "top_agent": "N/A",
-                 "agent_sales": agent_sales
+                 "revenue": float(pkg_revenue) if pkg_revenue else 0,
+                 "views": pkg_views or 0,
+                 "conversion": round(conversion, 1)
              }
 
         # 2. My Lowest Traction
         stmt = select(
             Package.id,
             Package.title,
+            Package.view_count,
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.id
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
-        stmt = stmt.group_by(Package.id).order_by(asc('count')).limit(1)
+        stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(asc('count')).limit(1)
         
         result = await db.execute(stmt)
         least_popular_row = result.first()
         least_popular = None
         
         if least_popular_row:
-             pkg_id, pkg_title, pkg_count = least_popular_row
+             pkg_id, pkg_title, pkg_views, pkg_count = least_popular_row
              least_popular = {
                  "title": pkg_title,
                  "bookings": pkg_count,
-                 "top_agent": "N/A",
+                 "views": pkg_views or 0,
                  "agent_sales": pkg_count
              }
 
@@ -194,14 +197,40 @@ async def get_agent_dashboard_stats(
         stmt = select(
             Package.title,
             func.count(Booking.id).label('count')
-        ).outerjoin(Booking, Package.id == Booking.package_id).where(
+        ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.id
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
-        stmt = stmt.group_by(Package.id).order_by(desc('count')).limit(5)
+        stmt = stmt.group_by(Package.id, Package.title).order_by(desc('count')).limit(5)
         
         result = await db.execute(stmt)
         most_booked = [{"title": row[0], "bookings": row[1]} for row in result]
+
+        # 4. Recent Bookings (Upcoming and Completed)
+        upcoming_bookings_stmt = select(Booking).where(
+            Booking.agent_id == current_agent.id,
+            Booking.travel_date >= now.date(),
+            Booking.status.notin_(['cancelled', 'completed'])
+        ).order_by(asc(Booking.travel_date)).limit(5).options(
+            selectinload(Booking.travelers),
+            selectinload(Booking.package).selectinload(Package.images),
+            selectinload(Booking.package).selectinload(Package.itinerary_items),
+            selectinload(Booking.package).selectinload(Package.availability)
+        )
+        upcoming_res = await db.execute(upcoming_bookings_stmt)
+        upcoming_list = upcoming_res.scalars().all()
+
+        completed_bookings_stmt = select(Booking).where(
+            Booking.agent_id == current_agent.id,
+            (Booking.travel_date < now.date()) | (Booking.status.in_(['cancelled', 'completed']))
+        ).order_by(desc(Booking.travel_date)).limit(5).options(
+            selectinload(Booking.travelers),
+            selectinload(Booking.package).selectinload(Package.images),
+            selectinload(Booking.package).selectinload(Package.itinerary_items),
+            selectinload(Booking.package).selectinload(Package.availability)
+        )
+        completed_res = await db.execute(completed_bookings_stmt)
+        completed_list = completed_res.scalars().all()
 
         return {
             # New direct stats
@@ -212,6 +241,12 @@ async def get_agent_dashboard_stats(
             "activeBookings": active_bookings,
             "pendingBookings": pending_bookings,
             "totalRevenue": float(total_revenue) if total_revenue else 0,
+            
+            # Recent Bookings
+            "recentBookings": {
+                "upcoming": [BookingWithPackageResponse.model_validate(b) for b in upcoming_list],
+                "completed": [BookingWithPackageResponse.model_validate(b) for b in completed_list]
+            },
             
             # Existing complex stats
             "highlights": {

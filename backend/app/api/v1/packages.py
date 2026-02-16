@@ -355,6 +355,11 @@ async def get_package(
     if not package:
         raise NotFoundException("Package not found")
     
+    # Increment view count
+    package.view_count = (package.view_count or 0) + 1
+    await db.commit()
+    await db.refresh(package)
+    
     return PackageResponse.model_validate(package)
 
 

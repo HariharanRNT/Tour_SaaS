@@ -287,6 +287,7 @@ class BookingResponse(BaseModel):
 
 class BookingWithPackageResponse(BookingResponse):
     package: Optional[PackageResponse] = None
+    user: Optional[UserResponse] = None
     
     class Config:
         from_attributes = True

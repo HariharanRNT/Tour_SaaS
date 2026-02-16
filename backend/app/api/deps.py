@@ -88,14 +88,25 @@ async def get_current_admin(
 
 
 async def get_current_agent(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    current_domain: str = Depends(get_current_domain)
 ) -> User:
-    """Get current agent user"""
+    """Get current agent user and verify domain ownership"""
     if current_user.role != UserRole.AGENT:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
+    
+    # Strict multi-tenancy check
+    if current_user.domain and current_user.domain != current_domain:
+        # Only enforce if domain is set. In dev (localhost), current_domain might be 'localhost'
+        if current_domain not in ['localhost', 'rnt.local', '127.0.0.1']:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: This account belongs to {current_user.domain}, but you are on {current_domain}"
+            )
+            
     return current_user
 
 

@@ -69,6 +69,7 @@ export interface Booking {
     created_at: string
     travelers: Traveler[]
     package?: Package
+    user?: User
 }
 
 export interface Traveler {

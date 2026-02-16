@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus
+from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole
 from app.schemas import BookingCreate, BookingResponse, BookingWithPackageResponse
 from app.api.deps import get_current_user, get_current_admin
 from app.core.exceptions import NotFoundException, BadRequestException
@@ -161,8 +161,13 @@ async def create_booking(
 
             status=BookingStatus.PENDING,
             payment_status=PaymentStatus.PENDING,
-            # Assign booking to the agent who owns the customer, otherwise to the package creator
-            agent_id=current_user.agent_id if current_user.agent_id else package.created_by
+            # Assign booking to the agent:
+            # 1. If user is an agent, they are the agent for this booking
+            # 2. If user is a customer, use their associated agent (if any)
+            agent_id=(
+                current_user.id if current_user.role == UserRole.AGENT 
+                else current_user.agent_id
+            )
         )
         
         db.add(booking)

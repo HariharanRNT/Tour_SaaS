@@ -8,7 +8,7 @@ import { DestinationSearch } from '@/components/itinerary/DestinationSearch'
 import { TripComponentsSelector } from '@/components/itinerary/TripComponentsSelector'
 import { TravelDaysSelector } from '@/components/itinerary/TravelDaysSelector'
 import { ActivityBrowser } from '@/components/itinerary/ActivityBrowser'
-import { DayPlanner } from '@/components/itinerary/DayPlanner'
+import { DayPlanner, DayItineraryData, Activity as PlannerActivity } from '@/components/itinerary/DayPlanner'
 import { ItinerarySummary } from '@/components/itinerary/ItinerarySummary'
 import { TimeSlotSelector } from '@/components/itinerary/TimeSlotSelector'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
@@ -99,7 +99,9 @@ export default function ItineraryBuilderPage() {
     }
 
     // Handle time slot selection from DayPlanner
-    const handleSelectTimeSlot = (dayNumber: number, timeSlot: TimeSlot) => {
+    const handleSelectTimeSlot = (dayNumber: number, timeSlot: string) => {
+        // We accept string to match DayPlanner's broader type, but only process valid slots if needed
+        // For now, we just open the selector which handles specific slot selection
         setSelectedDayNumber(dayNumber)
         setShowTimeSlotSelector(true)
     }
@@ -122,8 +124,13 @@ export default function ItineraryBuilderPage() {
                         delete updatedActivities.evening
                     } else if (timeSlot === 'morning') {
                         updatedActivities.morning = selectedActivity!
+                        // If switching to morning, ensure full_day is removed if present?
+                        // The UI should probably handle this logic or here. 
+                        // For now keeping existing logic but maybe clearing full_day is safer.
+                        delete updatedActivities.full_day
                     } else if (timeSlot === 'evening') {
                         updatedActivities.evening = selectedActivity!
+                        delete updatedActivities.full_day
                     }
 
                     return { ...day, activities: updatedActivities }
@@ -139,12 +146,15 @@ export default function ItineraryBuilderPage() {
     }
 
     // Handle removing activity from day
-    const handleRemoveActivity = (dayNumber: number, timeSlot: TimeSlot) => {
+    const handleRemoveActivity = (dayNumber: number, timeSlot: string, index: number) => {
         setItineraryDays(prevDays =>
             prevDays.map(day => {
                 if (day.dayNumber === dayNumber) {
                     const updatedActivities = { ...day.activities }
-                    delete updatedActivities[timeSlot]
+                    // Only standard slots are key-indexed in our current state structure
+                    if (timeSlot === 'morning' || timeSlot === 'evening' || timeSlot === 'full_day') {
+                        delete updatedActivities[timeSlot]
+                    }
                     return { ...day, activities: updatedActivities }
                 }
                 return day
@@ -162,6 +172,32 @@ export default function ItineraryBuilderPage() {
         if (day.activities.evening) occupied.push('evening')
         if (day.activities.full_day) occupied.push('full_day')
         return occupied
+    }
+
+    // Helper to map ItineraryDay to DayItineraryData
+    const mapToPlannerData = (day: ItineraryDay): DayItineraryData => {
+        const mapActivity = (activity?: Activity): PlannerActivity[] => {
+            if (!activity) return []
+            return [{
+                id: activity.id,
+                title: activity.title,
+                description: activity.description,
+                image_url: activity.images && activity.images.length > 0 ? activity.images[0] : undefined,
+                duration: activity.duration,
+                price_per_person: activity.price_per_person,
+                currency: activity.currency,
+            }]
+        }
+
+        return {
+            day_number: day.dayNumber,
+            morning: mapActivity(day.activities.morning),
+            afternoon: [],
+            evening: mapActivity(day.activities.evening),
+            night: [],
+            half_day: [],
+            full_day: mapActivity(day.activities.full_day)
+        }
     }
 
     return (
@@ -303,7 +339,7 @@ export default function ItineraryBuilderPage() {
                             {itineraryDays.map(day => (
                                 <DayPlanner
                                     key={day.dayNumber}
-                                    day={day}
+                                    day={mapToPlannerData(day)}
                                     onAddActivity={handleSelectTimeSlot}
                                     onRemoveActivity={handleRemoveActivity}
                                 />

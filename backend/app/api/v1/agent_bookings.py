@@ -11,6 +11,9 @@ from app.database import get_db
 from app.models import Booking, User, BookingStatus, Package
 from app.api.deps import get_current_agent
 from app.schemas import BookingResponse, BookingWithPackageResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

@@ -142,6 +142,11 @@ export const bookingsAPI = {
         return response.data
     },
 
+    getAgentBookings: async () => {
+        const response = await api.get('/agent/bookings')
+        return response.data
+    },
+
     getById: async (id: string) => {
         const response = await api.get(`/bookings/${id}`)
         return response.data
