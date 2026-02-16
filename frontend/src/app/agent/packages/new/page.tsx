@@ -702,13 +702,64 @@ export default function CreatePackagePage() {
                                             </div>
 
                                             {useFeatureImage && (
-                                                <div className="ml-7 animate-in fade-in slide-in-from-top-2">
+                                                <div className="ml-7 animate-in fade-in slide-in-from-top-2 space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    try {
+                                                                        const formData = new FormData();
+                                                                        formData.append('file', file);
+
+                                                                        // Show loading toast
+                                                                        const toastId = toast.loading('Uploading image...');
+
+                                                                        const token = localStorage.getItem('token');
+                                                                        const response = await fetch('http://localhost:8000/api/v1/upload', {
+                                                                            method: 'POST',
+                                                                            headers: {
+                                                                                'Authorization': `Bearer ${token}`
+                                                                            },
+                                                                            body: formData
+                                                                        });
+
+                                                                        if (!response.ok) throw new Error('Upload failed');
+
+                                                                        const data = await response.json();
+                                                                        updateFormData('feature_image_url', data.url);
+                                                                        toast.update(toastId, { render: 'Image uploaded successfully', type: 'success', isLoading: false, autoClose: 3000 });
+                                                                    } catch (error) {
+                                                                        console.error('Upload error:', error);
+                                                                        toast.dismiss();
+                                                                        toast.error('Failed to upload image');
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                                        />
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 text-center">- OR -</div>
                                                     <Input
-                                                        placeholder="Image URL..."
+                                                        placeholder="Enter Image URL manually..."
                                                         value={formData.feature_image_url || ''}
                                                         onChange={(e) => updateFormData('feature_image_url', e.target.value)}
                                                         className="h-9 text-xs"
                                                     />
+                                                    {formData.feature_image_url && (
+                                                        <div className="mt-2 rounded-md overflow-hidden border border-gray-200">
+                                                            <img
+                                                                src={formData.feature_image_url}
+                                                                alt="Feature preview"
+                                                                className="w-full h-32 object-cover"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image+URL';
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

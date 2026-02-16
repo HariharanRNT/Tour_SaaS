@@ -538,49 +538,81 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
         }
     }
 
-    const simulateUpload = async (file: File) => {
+    const uploadImage = async (file: File): Promise<string> => {
         setIsUploading(true)
         setUploadProgress(10)
 
-        // Mock progress
-        const timer = setInterval(() => {
-            setUploadProgress(prev => {
-                if (prev >= 90) {
-                    clearInterval(timer)
-                    return 90
-                }
-                return prev + 15
-            })
-        }, 300)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            // Optional: Append folder if needed, e.g., 'itinerary-items'
+            // formData.append('folder', 'itinerary-items')
 
-        // Mock completion
-        return new Promise<string>((resolve) => {
+            const token = localStorage.getItem('token')
+
+            // Mock progress for better UX since fetch doesn't support progress events easily
+            const timer = setInterval(() => {
+                setUploadProgress(prev => {
+                    if (prev >= 90) return 90
+                    return prev + 10
+                })
+            }, 200)
+
+            const response = await fetch('http://localhost:8000/api/v1/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            })
+
+            clearInterval(timer)
+            setUploadProgress(100)
+
+            if (!response.ok) {
+                throw new Error('Upload failed')
+            }
+
+            const data = await response.json()
+            return data.url
+        } catch (error) {
+            console.error('Upload error:', error)
+            toast.error('Failed to upload image')
+            throw error
+        } finally {
             setTimeout(() => {
-                clearInterval(timer)
-                setUploadProgress(100)
-                setTimeout(() => {
-                    setIsUploading(false)
-                    setUploadProgress(0)
-                    // In a real app, this would be the URL from the server
-                    resolve(URL.createObjectURL(file))
-                }, 400)
-            }, 2000)
-        })
+                setIsUploading(false)
+                setUploadProgress(0)
+            }, 500)
+        }
     }
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (!files || files.length === 0) return
 
+        const newUrls: string[] = []
+
         for (let i = 0; i < files.length; i++) {
-            if (newActivity.image_urls.filter(url => url).length >= 5) {
+            if (newActivity.image_urls.filter(url => url).length + newUrls.length >= 5) {
                 alert("Maximum 5 images allowed")
                 break
             }
-            const url = await simulateUpload(files[i])
-            const currentUrls = [...newActivity.image_urls].filter(u => u)
-            setNewActivity({ ...newActivity, image_urls: [...currentUrls, url] })
+            try {
+                const url = await uploadImage(files[i])
+                newUrls.push(url)
+            } catch (error) {
+                // Already handled in uploadImage
+            }
         }
+
+        if (newUrls.length > 0) {
+            const currentUrls = [...newActivity.image_urls].filter(u => u)
+            setNewActivity({ ...newActivity, image_urls: [...currentUrls, ...newUrls] })
+        }
+
+        // Reset input value to allow selecting same file again
+        e.target.value = ''
     }
 
     const handleDrop = async (e: React.DragEvent) => {
@@ -590,14 +622,24 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
         const files = e.dataTransfer.files
         if (!files || files.length === 0) return
 
+        const newUrls: string[] = []
+
         for (let i = 0; i < files.length; i++) {
-            if (newActivity.image_urls.filter(url => url).length >= 5) {
+            if (newActivity.image_urls.filter(url => url).length + newUrls.length >= 5) {
                 alert("Maximum 5 images allowed")
                 break
             }
-            const url = await simulateUpload(files[i])
+            try {
+                const url = await uploadImage(files[i])
+                newUrls.push(url)
+            } catch (error) {
+                // Already handled in uploadImage
+            }
+        }
+
+        if (newUrls.length > 0) {
             const currentUrls = [...newActivity.image_urls].filter(u => u)
-            setNewActivity({ ...newActivity, image_urls: [...currentUrls, url] })
+            setNewActivity({ ...newActivity, image_urls: [...currentUrls, ...newUrls] })
         }
     }
 

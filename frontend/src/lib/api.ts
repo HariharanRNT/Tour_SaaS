@@ -18,8 +18,12 @@ api.interceptors.request.use((config) => {
 
     // Inject current domain for multi-tenancy
     if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname
-        config.headers['X-Domain'] = hostname
+        // ALLOW OVERRIDE FOR TESTING: Check localStorage first
+        const debugDomain = localStorage.getItem('debug_domain');
+        // If debug_domain exists, use it. Otherwise use real hostname.
+        const hostname = debugDomain || window.location.hostname;
+
+        config.headers['X-Domain'] = hostname;
     }
 
     return config

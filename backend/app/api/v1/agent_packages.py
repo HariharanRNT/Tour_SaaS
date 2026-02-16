@@ -256,7 +256,13 @@ async def toggle_agent_package_status(
         )
     
     try:
-        package.status = PackageStatus(new_status)
+        status_enum = PackageStatus(new_status)
+        package.status = status_enum
+        
+        # Auto-publish if status is set to PUBLISHED
+        if status_enum == PackageStatus.PUBLISHED:
+            package.is_public = True
+            
     except ValueError:
          raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
