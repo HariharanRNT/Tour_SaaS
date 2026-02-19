@@ -125,39 +125,36 @@ export default function AdminPackagesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b">
-                <div className="container mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => router.push('/admin/dashboard')}
-                                >
-                                    ← Back to Dashboard
-                                </Button>
-                            </div>
-                            <h1 className="text-3xl font-bold">Package Management</h1>
-                            <p className="text-gray-600 mt-1">Create and manage tour packages</p>
-                        </div>
-                        <Button onClick={() => router.push('/admin/packages/new')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Package
-                        </Button>
-                    </div>
-                </div>
-            </div>
+        <div className="p-4 md:p-6 lg:p-8">
+            <div className="max-w-[1440px] mx-auto space-y-6">
 
-            {/* Content */}
-            <div className="container mx-auto px-4 py-8">
-                <Card>
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/admin/dashboard')}
+                            className="mb-2 p-0 h-auto hover:bg-transparent text-blue-600 font-medium"
+                        >
+                            ← Back to Dashboard
+                        </Button>
+                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Package Management</h1>
+                        <p className="text-gray-500 mt-1">Create and manage tour packages</p>
+                    </div>
+
+                    <Button onClick={() => router.push('/admin/packages/new')} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Package
+                    </Button>
+                </div>
+
+                {/* Content */}
+                <Card className="border-gray-100 shadow-sm">
                     <CardHeader>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <CardTitle>All Packages</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-gray-900">All Packages</CardTitle>
                                 <CardDescription>
                                     {filteredPackages.length} package(s) found
                                 </CardDescription>
@@ -167,7 +164,7 @@ export default function AdminPackagesPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border rounded-md px-3 py-2"
+                                    className="border rounded-md px-3 py-2 text-sm bg-white border-gray-200"
                                 >
                                     <option value="all">All Status</option>
                                     <option value="draft">Draft</option>
@@ -181,7 +178,7 @@ export default function AdminPackagesPage() {
                                         placeholder="Search packages..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 w-64"
+                                        className="pl-10 w-64 border-gray-200"
                                     />
                                 </div>
                             </div>
@@ -198,7 +195,7 @@ export default function AdminPackagesPage() {
                                 <p className="text-gray-500">No packages found</p>
                                 <Button
                                     onClick={() => router.push('/admin/packages/new')}
-                                    className="mt-4"
+                                    className="mt-4 bg-blue-600 hover:bg-blue-700"
                                 >
                                     Create Your First Package
                                 </Button>
@@ -206,51 +203,54 @@ export default function AdminPackagesPage() {
                         ) : (
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Title</TableHead>
-                                        <TableHead>Destination</TableHead>
-                                        <TableHead>Duration</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="font-semibold text-gray-900">Title</TableHead>
+                                        <TableHead className="font-semibold text-gray-900">Destination</TableHead>
+                                        <TableHead className="font-semibold text-gray-900">Duration</TableHead>
+                                        <TableHead className="font-semibold text-gray-900">Price</TableHead>
+                                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-900">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredPackages.map((pkg) => (
-                                        <TableRow key={pkg.id}>
-                                            <TableCell className="font-medium">{pkg.title}</TableCell>
-                                            <TableCell>{pkg.destination}</TableCell>
-                                            <TableCell>{pkg.duration_days} days</TableCell>
-                                            <TableCell>₹{pkg.price_per_person}</TableCell>
+                                        <TableRow key={pkg.id} className="group transition-colors">
+                                            <TableCell className="font-medium text-gray-900">{pkg.title}</TableCell>
+                                            <TableCell className="text-gray-600">{pkg.destination}</TableCell>
+                                            <TableCell className="text-gray-600">{pkg.duration_days} days</TableCell>
+                                            <TableCell className="text-gray-900 font-semibold">₹{pkg.price_per_person}</TableCell>
                                             <TableCell>{getStatusBadge(pkg.status)}</TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm">
+                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
+                                                    <DropdownMenuContent align="end" className="w-40">
                                                         <DropdownMenuItem
                                                             onClick={() => router.push(`/admin/packages/${pkg.id}`)}
+                                                            className="cursor-pointer"
                                                         >
                                                             <Edit className="mr-2 h-4 w-4" />
                                                             View/Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={() => router.push(`/packages/${pkg.id}`)}
+                                                            className="cursor-pointer"
                                                         >
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             Preview
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={() => handleToggleStatus(pkg.id, pkg.status)}
+                                                            className="cursor-pointer"
                                                         >
                                                             {pkg.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={() => handleDelete(pkg.id)}
-                                                            className="text-red-600"
+                                                            className="text-red-600 focus:text-red-600 cursor-pointer"
                                                         >
                                                             <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
@@ -266,6 +266,6 @@ export default function AdminPackagesPage() {
                     </CardContent>
                 </Card>
             </div>
-        </div >
+        </div>
     )
 }

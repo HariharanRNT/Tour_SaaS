@@ -60,10 +60,31 @@ export default function PackageDetailPage() {
     const [packageData, setPackageData] = useState<PackageDetail | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
 
     useEffect(() => {
         loadPackageDetails()
+        loadAgentSettings()
     }, [packageId])
+
+    const loadAgentSettings = async () => {
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            const headers: Record<string, string> = {}
+            if (token) headers['Authorization'] = `Bearer ${token}`
+
+            const res = await fetch('http://localhost:8000/api/v1/agent/settings', { headers })
+            if (res.ok) {
+                const data = await res.json()
+                setGstSettings({
+                    inclusive: data.gst_inclusive,
+                    percentage: data.gst_percentage
+                })
+            }
+        } catch (err) {
+            console.error("Failed to fetch agent settings", err)
+        }
+    }
 
     const loadPackageDetails = async () => {
         setLoading(true)
@@ -132,8 +153,13 @@ export default function PackageDetailPage() {
                         </div>
                         <div className="text-right">
                             <p className="text-blue-100 text-sm">Starting from</p>
-                            <p className="text-4xl font-bold">₹{packageData.price_per_person}</p>
-                            <p className="text-blue-100 text-sm">per person</p>
+                            <p className="text-4xl font-bold">
+                                {packageData && gstSettings && !gstSettings.inclusive
+                                    ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                    : `₹${packageData?.price_per_person.toLocaleString()}`
+                                }
+                            </p>
+                            <p className="text-blue-100 text-sm">per person {gstSettings && !gstSettings.inclusive ? '(inc. GST)' : ''}</p>
                         </div>
                     </div>
 
@@ -260,9 +286,17 @@ export default function PackageDetailPage() {
                             <CardContent className="space-y-4">
                                 <div className="flex items-center justify-between py-3 border-b">
                                     <span className="text-gray-600">Price per person</span>
-                                    <span className="text-2xl font-bold text-blue-600">
-                                        ₹{packageData.price_per_person}
-                                    </span>
+                                    <div className="text-right">
+                                        <span className="text-2xl font-bold text-blue-600 block">
+                                            {packageData && gstSettings && !gstSettings.inclusive
+                                                ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                                : `₹${packageData?.price_per_person.toLocaleString()}`
+                                            }
+                                        </span>
+                                        {gstSettings && !gstSettings.inclusive && (
+                                            <span className="text-xs text-gray-400 block">+ GST ({gstSettings.percentage}%) included</span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2 text-sm text-gray-600">

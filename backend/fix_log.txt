@@ -1,0 +1,133 @@
+D:\Hariharan\G-Project\RNT_Tour\backend\fix_packages.py:31: DeprecationWarning: There is no current event loop
+  loop = asyncio.get_event_loop()
+2026-02-18 18:43:08,108 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-02-18 18:43:08,108 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:43:08,110 INFO sqlalchemy.engine.Engine select current_schema()
+2026-02-18 18:43:08,110 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:43:08,111 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-02-18 18:43:08,111 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:43:08,113 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 18:43:08,151 INFO sqlalchemy.engine.Engine SELECT agents.id, agents.user_id, agents.first_name, agents.last_name, agents.phone, agents.domain, agents.agency_name, agents.company_legal_name, agents.business_address, agents.city, agents.state, agents.country, agents.gst_no, agents.tax_id, agents.currency, agents.commission_type, agents.commission_value, agents.gst_inclusive, agents.gst_percentage, agents.smtp_host, agents.smtp_port, agents.smtp_user, agents.smtp_password, agents.smtp_from_email 
+FROM agents 
+WHERE agents.domain = $1::VARCHAR
+2026-02-18 18:43:08,151 INFO sqlalchemy.engine.Engine [generated in 0.00135s] ('localhost',)
+2026-02-18 18:43:08,160 INFO sqlalchemy.engine.Engine SELECT agent_smtp_settings.agent_id AS agent_smtp_settings_agent_id, agent_smtp_settings.id AS agent_smtp_settings_id, agent_smtp_settings.host AS agent_smtp_settings_host, agent_smtp_settings.port AS agent_smtp_settings_port, agent_smtp_settings.username AS agent_smtp_settings_username, agent_smtp_settings.password AS agent_smtp_settings_password, agent_smtp_settings.encryption_type AS agent_smtp_settings_encryption_type, agent_smtp_settings.from_email AS agent_smtp_settings_from_email, agent_smtp_settings.from_name AS agent_smtp_settings_from_name, agent_smtp_settings.created_at AS agent_smtp_settings_created_at, agent_smtp_settings.updated_at AS agent_smtp_settings_updated_at 
+FROM agent_smtp_settings 
+WHERE agent_smtp_settings.agent_id IN ($1::UUID)
+2026-02-18 18:43:08,160 INFO sqlalchemy.engine.Engine [generated in 0.00020s] (UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'),)
+2026-02-18 18:43:08,165 INFO sqlalchemy.engine.Engine SELECT agent_razorpay_settings.agent_id AS agent_razorpay_settings_agent_id, agent_razorpay_settings.id AS agent_razorpay_settings_id, agent_razorpay_settings.key_id AS agent_razorpay_settings_key_id, agent_razorpay_settings.key_secret AS agent_razorpay_settings_key_secret, agent_razorpay_settings.created_at AS agent_razorpay_settings_created_at, agent_razorpay_settings.updated_at AS agent_razorpay_settings_updated_at 
+FROM agent_razorpay_settings 
+WHERE agent_razorpay_settings.agent_id IN ($1::UUID)
+2026-02-18 18:43:08,165 INFO sqlalchemy.engine.Engine [generated in 0.00022s] (UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'),)
+Assigning packages to Agent: 0d63ef70-8ec9-47ba-806b-8310e98a38c7 (localhost)
+2026-02-18 18:43:08,170 INFO sqlalchemy.engine.Engine UPDATE packages SET created_by=$1::UUID, updated_at=now() WHERE packages.destination ILIKE $2::VARCHAR OR packages.destination ILIKE $3::VARCHAR RETURNING packages.id
+2026-02-18 18:43:08,170 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'), '%Chennai%', '%Mumbai%')
+2026-02-18 18:43:08,180 INFO sqlalchemy.engine.Engine ROLLBACK
+Traceback (most recent call last):
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 546, in _prepare_and_execute
+    self._rows = await prepared_stmt.fetch(*parameters)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\asyncpg\prepared_stmt.py", line 176, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\asyncpg\prepared_stmt.py", line 241, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\asyncpg\prepared_stmt.py", line 230, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg\protocol\protocol.pyx", line 207, in bind_execute
+asyncpg.exceptions.ForeignKeyViolationError: insert or update on table "packages" violates foreign key constraint "packages_created_by_fkey"
+DETAIL:  Key (created_by)=(0d63ef70-8ec9-47ba-806b-8310e98a38c7) is not present in table "users".
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 580, in execute
+    self._adapt_connection.await_(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 130, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 195, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 558, in _prepare_and_execute
+    self._handle_exception(error)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 509, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.IntegrityError: <class 'asyncpg.exceptions.ForeignKeyViolationError'>: insert or update on table "packages" violates foreign key constraint "packages_created_by_fkey"
+DETAIL:  Key (created_by)=(0d63ef70-8ec9-47ba-806b-8310e98a38c7) is not present in table "users".
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Hariharan\G-Project\RNT_Tour\backend\fix_packages.py", line 32, in <module>
+    loop.run_until_complete(main())
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "D:\Hariharan\G-Project\RNT_Tour\backend\fix_packages.py", line 26, in main
+    await db.execute(stmt)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 455, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 200, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2308, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\session.py", line 2190, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\bulk_persistence.py", line 1617, in orm_execute_statement
+    return super().orm_execute_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\orm\context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\sql\elements.py", line 517, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 2344, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 580, in execute
+    self._adapt_connection.await_(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 130, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 195, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 558, in _prepare_and_execute
+    self._handle_exception(error)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 509, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.ForeignKeyViolationError'>: insert or update on table "packages" violates foreign key constraint "packages_created_by_fkey"
+DETAIL:  Key (created_by)=(0d63ef70-8ec9-47ba-806b-8310e98a38c7) is not present in table "users".
+[SQL: UPDATE packages SET created_by=$1::UUID, updated_at=now() WHERE packages.destination ILIKE $2::VARCHAR OR packages.destination ILIKE $3::VARCHAR RETURNING packages.id]
+[parameters: (UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'), '%Chennai%', '%Mumbai%')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)

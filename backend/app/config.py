@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # Razorpay - Subscriptions (Agent B2B)
     RAZORPAY_SUBSCRIPTION_KEY_ID: str = "rzp_test_1234567890"
     RAZORPAY_SUBSCRIPTION_KEY_SECRET: str = "test_secret_key_1234567890"
+    RAZORPAY_WEBHOOK_SECRET: str = "webhook_secret_123456"
 
     # Razorpay - Bookings (Customer B2C)
     RAZORPAY_BOOKING_KEY_ID: str = "rzp_test_1234567890"

@@ -28,7 +28,24 @@ async def list_plans(
     """List all subscription plans"""
     result = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.is_active == True))
     plans = result.scalars().all()
-    return plans
+
+    # Calculate Most Popular Plan
+    from sqlalchemy import func
+    stmt = select(Subscription.plan_id, func.count(Subscription.id)).group_by(Subscription.plan_id).order_by(func.count(Subscription.id).desc()).limit(1)
+    popularity_result = await db.execute(stmt)
+    most_popular_plan = popularity_result.first()
+    
+    most_popular_plan_id = most_popular_plan[0] if most_popular_plan else None
+
+    # Convert to Pydantic models with is_popular flag
+    response_plans = []
+    for plan in plans:
+        plan_data = SubscriptionPlanResponse.model_validate(plan)
+        if most_popular_plan_id and plan.id == most_popular_plan_id:
+            plan_data.is_popular = True
+        response_plans.append(plan_data)
+        
+    return response_plans
 
 @router.get("/admin/plans", response_model=List[SubscriptionPlanResponse])
 async def list_admin_plans(
@@ -82,6 +99,43 @@ async def create_plan(
         plan_data['features'] = json.dumps(plan_data['features'])
         
     new_plan = SubscriptionPlan(**plan_data)
+    
+    # Sync with Razorpay
+    try:
+        from app.services.razorpay_service import RazorpayService
+        rzp = RazorpayService()
+        
+        period = "monthly"
+        interval = 1
+        if plan.billing_cycle == 'yearly':
+            period = "yearly"
+        elif plan.billing_cycle == 'quarterly':
+            period = "monthly"
+            interval = 3
+        elif plan.billing_cycle == 'daily':
+            period = "daily"
+            
+        rzp_plan_data = {
+            "period": period,
+            "interval": interval,
+            "item": {
+                "name": plan.name,
+                "amount": int(plan.price * 100),
+                "currency": plan.currency,
+                "description": f"{plan.billing_cycle} subscription for {plan.name}"
+            }
+        }
+        
+        # Only create if price > 0
+        if plan.price > 0:
+            plan_id_rzp = rzp.create_plan(rzp_plan_data)
+            new_plan.razorpay_plan_id = plan_id_rzp
+            
+    except Exception as e:
+        print(f"Warning: Failed to create Razorpay plan: {e}")
+        # We don't block creation, but we should log it. 
+        # In production this might be critical, but for now allow local creation.
+
     db.add(new_plan)
     await db.commit()
     await db.refresh(new_plan)
@@ -250,7 +304,7 @@ async def purchase_subscription(
     import razorpay
     from app.config import settings
     from app.models import Payment, PaymentStatus
-
+    
     # Verify plan
     result = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.id == plan_id))
     plan = result.scalar_one_or_none()
@@ -269,77 +323,83 @@ async def purchase_subscription(
     db.add(new_sub)
     await db.flush() # Get ID
 
-    # Create Razorpay Order
-    client = razorpay.Client(auth=(settings.RAZORPAY_SUBSCRIPTION_KEY_ID, settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET))
-    amount_in_paise = int(plan.price * 100)
+    # Create Razorpay Subscription (Auto-Renewal)
+    from app.services.razorpay_service import RazorpayService
+    rzp = RazorpayService()
     
-    order_data = {
-        "amount": amount_in_paise,
-        "currency": "INR",
-        "receipt": str(new_sub.id),
-        "notes": {
-            "subscription_id": str(new_sub.id),
-            "user_id": str(current_user.id),
-            "plan_id": str(plan.id)
-        }
-    }
-    
-    # Mock Mode Logic: Use mock if key explicitly indicates mock/test environment default
-    use_mock = "1234567890" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID or "mock" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID.lower()
-    
-    # Check if user wants to force mock via a query param or similar (optional, but good for testing)
-    # For now, we rely on the key.
-    
+    # 1. Ensure Plan exists on Razorpay
+    if not plan.razorpay_plan_id and plan.price > 0:
+        # Lazy create
+        try:
+           period = "monthly"
+           interval = 1
+           if plan.billing_cycle == 'yearly':
+               period = "yearly"
+           elif plan.billing_cycle == 'quarterly':
+               period = "monthly"
+               interval = 3
+           elif plan.billing_cycle == 'daily':
+               period = "daily"
+
+           rzp_plan_data = {
+                "period": period,
+                "interval": interval,
+                "item": {
+                    "name": plan.name,
+                    "amount": int(plan.price * 100),
+                    "currency": plan.currency,
+                    "description": f"{plan.billing_cycle} subscription for {plan.name}"
+                }
+           }
+           plan_id_rzp = rzp.create_plan(rzp_plan_data)
+           plan.razorpay_plan_id = plan_id_rzp
+           db.add(plan)
+           await db.commit()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to sync plan with Razorpay: {str(e)}")
+
+    # 2. Create Subscription
+    subscription_id_rzp = None
+    order_id = None
     key_id_to_return = settings.RAZORPAY_SUBSCRIPTION_KEY_ID
-    mock_key_id = "rzp_test_mock_123456" 
+    
+    # Mock Override
+    if "mock" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID or "1234567890" in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
+         print("Using Mock Subscription Flow")
+         import uuid
+         subscription_id_rzp = f"sub_mock_{uuid.uuid4().hex[:14]}"
+         key_id_to_return = "rzp_test_mock_123456"
+    else:
+         try:
+            # Create actual subscription
+            # Total count: 120 cycles (10 years)
+            subscription_id_rzp = rzp.create_subscription(
+                plan_id=plan.razorpay_plan_id,
+                total_count=120,
+                customer_notify=1,
+                notes={
+                    "user_id": str(current_user.id),
+                    "local_subscription_id": str(new_sub.id)
+                }
+            )
+         except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to create Razorpay subscription: {str(e)}")
 
-    try:
-        if use_mock:
-            print("Using Mock Mode due to default/mock key detection.")
-            raise Exception("Force Mock")
-            
-        print(f"Attempting Razorpay Order with Key: {settings.RAZORPAY_SUBSCRIPTION_KEY_ID[:8]}...")
-        order = client.order.create(data=order_data)
-        print(f"Razorpay Order Created: {order['id']}")
-        
-    except Exception as e:
-        print(f"Razorpay Order Creation Failed: {str(e)}")
-        
-        # If it wasn't a forced mock, this is a real error we should probably let the user know about
-        # causing a 500 or 400. But if we want to fallback to mock for development robustness:
-        if not use_mock and settings.APP_ENV == "production":
-            # In production, do not silent fallback. Raise error.
-            raise HTTPException(status_code=500, detail=f"Payment Gateway Error: {str(e)}")
-            
-        # In dev, fallback to mock with a warning log
-        print("Falling back to Mock Order due to error or mock configuration.")
-        import uuid
-        order = {
-            "id": f"order_mock_{uuid.uuid4().hex[:14]}",
-            "amount": amount_in_paise,
-            "currency": "INR",
-            "status": "created"
-        }
-        key_id_to_return = mock_key_id
-
-    # Create Payment Record
-    payment = Payment(
-        subscription_id=new_sub.id,
-        razorpay_order_id=order['id'],
-        amount=plan.price,
-        currency="INR",
-        status=PaymentStatus.PENDING
-    )
-    db.add(payment)
+    # 3. Update local subscription with Razorpay ID
+    new_sub.razorpay_subscription_id = subscription_id_rzp
+    db.add(new_sub)
     await db.commit()
+    
+    # Note: We don't create a Payment record here yet. Payment record is created when verify happens.
 
     from app.schemas import SubscriptionPurchaseResponse
     return SubscriptionPurchaseResponse(
-        order_id=order['id'],
-        amount=order['amount'],
-        currency=order['currency'],
+        order_id=None, 
+        amount=int(plan.price * 100), 
+        currency="INR",
         key_id=key_id_to_return,
-        subscription_id=new_sub.id
+        subscription_id=new_sub.id,
+        razorpay_subscription_id=subscription_id_rzp
     )
 
 @router.post("/verify", response_model=MessageResponse)
@@ -357,18 +417,51 @@ async def verify_subscription_payment(
     # Verify signature
     client = razorpay.Client(auth=(settings.RAZORPAY_SUBSCRIPTION_KEY_ID, settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET))
     
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Verifying payment: sub_id={verification_data.razorpay_subscription_id}, order_id={verification_data.razorpay_order_id}, payment_id={verification_data.razorpay_payment_id}")
+
     # 1. Signature Verification
     try:
         # Check if it's a mock order
-        if "order_mock_" in verification_data.razorpay_order_id:
-             # Skip Razorpay verification for mock orders
+        if "sub_mock_" in (verification_data.razorpay_subscription_id or "") or "order_mock_" in (verification_data.razorpay_order_id or ""):
+             # Skip Razorpay verification for mock
+             logger.info("Skipping verification for mock payment")
              pass
         elif "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
-            client.utility.verify_payment_signature({
-                'razorpay_order_id': verification_data.razorpay_order_id,
-                'razorpay_payment_id': verification_data.razorpay_payment_id,
-                'razorpay_signature': verification_data.razorpay_signature
-            })
+            # For Subscriptions: payment_id + | + subscription_id
+            if verification_data.razorpay_subscription_id:
+                import hmac
+                import hashlib
+                
+                secret = settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET
+                msg = f"{verification_data.razorpay_payment_id}|{verification_data.razorpay_subscription_id}"
+                
+                generated_signature = hmac.new(
+                    bytes(secret, 'utf-8'),
+                    bytes(msg, 'utf-8'),
+                    hashlib.sha256
+                ).hexdigest()
+                
+                if not hmac.compare_digest(generated_signature, verification_data.razorpay_signature):
+                     msg = f"Signature mismatch. Generated: {generated_signature}, Received: {verification_data.razorpay_signature}"
+                     logger.error(msg)
+                     print(f"DEBUG: {msg}")
+                     raise razorpay.errors.SignatureVerificationError("Invalid payment signature")
+                     
+            else:
+                 # Fallback to order verification (old flow)
+                 if not verification_data.razorpay_order_id:
+                      msg = "Missing order_id for manual verification fallback"
+                      logger.error(msg)
+                      print(f"DEBUG: {msg}")
+                      raise HTTPException(status_code=400, detail="Missing razorpay_order_id. Cannot verify payment.")
+
+                 client.utility.verify_payment_signature({
+                    'razorpay_order_id': verification_data.razorpay_order_id,
+                    'razorpay_payment_id': verification_data.razorpay_payment_id,
+                    'razorpay_signature': verification_data.razorpay_signature
+                })
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid payment signature")
 
@@ -387,7 +480,10 @@ async def verify_subscription_payment(
     plan = result.scalar_one()
 
     # 2. Secure Backend Verification (Fetch from Razorpay)
-    if "order_mock_" not in verification_data.razorpay_order_id and "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
+    # Only if not mock
+    is_mock = "sub_mock_" in (verification_data.razorpay_subscription_id or "") or "order_mock_" in (verification_data.razorpay_order_id or "")
+    
+    if not is_mock and "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
         try:
             # Fetch payment details from Razorpay
             fetched_payment = client.payment.fetch(verification_data.razorpay_payment_id)
@@ -412,21 +508,33 @@ async def verify_subscription_payment(
              print(f"Payment Verification Failed: {str(e)}")
              raise HTTPException(status_code=400, detail=f"Payment Verification Failed: {str(e)}")
 
-    # Update Payment Record
-    stmt = select(Payment).where(Payment.razorpay_order_id == verification_data.razorpay_order_id)
+    # 3. Create Payment Record (since purchase didn't create one for subscription flow)
+    # Check if payment already exists (idempotency)
+    stmt = select(Payment).where(Payment.razorpay_payment_id == verification_data.razorpay_payment_id)
     result = await db.execute(stmt)
-    payment = result.scalar_one_or_none()
+    existing_payment = result.scalar_one_or_none()
+    
+    if existing_payment:
+        # Already processed
+        pass
+    else:
+        # Create new payment record
+        payment = Payment(
+            subscription_id=sub.id,
+            razorpay_payment_id=verification_data.razorpay_payment_id,
+            razorpay_order_id=verification_data.razorpay_order_id, # Might be None for subscriptions
+            razorpay_signature=verification_data.razorpay_signature,
+            amount=plan.price,
+            currency="INR",
+            status=PaymentStatus.SUCCEEDED
+        )
+        db.add(payment)
 
-    if payment:
-        payment.status = PaymentStatus.SUCCEEDED
-        payment.razorpay_payment_id = verification_data.razorpay_payment_id
-        payment.razorpay_signature = verification_data.razorpay_signature
-
-    # Handle Activation via Service (Queuing vs Immediate)
+    # 4. Handle Activation
     from app.services.subscription_service import SubscriptionService
     await SubscriptionService.handle_purchase_activation(sub.user_id, sub, db)
 
-    # Create Invoice
+    # 5. Create Invoice
     new_invoice = Invoice(
         user_id=current_user.id,
         subscription_id=sub.id,

@@ -189,3 +189,10 @@ class PackageResponse(PackageBase):
             return cls._parse_json_list(v)
     except ImportError:
         pass
+
+
+class PaginatedPackageResponse(BaseModel):
+    items: List[PackageResponse]
+    total: int
+    page: int
+    limit: int

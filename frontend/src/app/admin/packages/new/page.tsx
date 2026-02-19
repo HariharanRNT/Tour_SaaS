@@ -91,8 +91,6 @@ export default function CreatePackagePage() {
     const handleSaveDraft = async () => {
         setSaving(true)
         try {
-            console.log('Saving package:', formData)
-
             const url = packageId
                 ? `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`
                 : 'http://localhost:8000/api/v1/admin-simple/packages-simple'
@@ -105,26 +103,19 @@ export default function CreatePackagePage() {
                 body: JSON.stringify(formData)
             })
 
-            console.log('Response status:', response.status)
-
             if (!response.ok) {
                 const errorData = await response.json()
-                console.error('Error response:', errorData)
                 alert(`Failed to save package: ${JSON.stringify(errorData)}`)
                 return
             }
 
             const data = await response.json()
-            console.log('Package saved:', data)
-
             if (!packageId) {
                 setPackageId(data.id)
             }
 
-            // alert(packageId ? 'Package updated successfully!' : 'Package saved as draft!')
-
-            // Move to itinerary tab
             setActiveTab('itinerary')
+            toast.success('Package saved successfully!')
         } catch (error) {
             console.error('Failed to save package:', error)
             alert(`Failed to save package: ${error}`)
@@ -143,9 +134,8 @@ export default function CreatePackagePage() {
             await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/status?new_status=PUBLISHED`, {
                 method: 'PATCH'
             })
-
-            // alert('Package published successfully!')
             router.push('/admin/packages')
+            toast.success('Package published successfully!')
         } catch (error) {
             console.error('Failed to publish:', error)
             alert('Failed to publish package')
@@ -156,57 +146,63 @@ export default function CreatePackagePage() {
         return formData.title && formData.destination && formData.price_per_person > 0
     }
 
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen">Loading...</div>
+    }
+
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b">
-                <div className="container mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
+        <div className="p-4 md:p-6 lg:p-8">
+            <div className="max-w-[1440px] mx-auto space-y-6">
+
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/admin/packages')}
+                            className="mb-2 p-0 h-auto hover:bg-transparent text-blue-600 font-medium"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Packages
+                        </Button>
+                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                            {packageId ? 'Edit Package' : 'Create New Package'}
+                        </h1>
+                        <p className="text-gray-500 mt-1">Fill in the details to create a tour package</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {packageId && (
                             <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push('/admin/packages')}
-                                className="mb-2"
-                            >
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Packages
-                            </Button>
-                            <h1 className="text-3xl font-bold">Create New Package</h1>
-                            <p className="text-gray-600 mt-1">Fill in the details to create a tour package</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {packageId && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => router.push(`/packages/${packageId}`)}
-                                >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    Preview
-                                </Button>
-                            )}
-                            <Button
-                                onClick={handleSaveDraft}
-                                disabled={!isBasicInfoValid() || saving}
                                 variant="outline"
+                                onClick={() => router.push(`/packages/${packageId}`)}
+                                className="border-gray-200"
                             >
-                                <Save className="mr-2 h-4 w-4" />
-                                {saving ? 'Saving...' : 'Save Draft'}
+                                <Eye className="mr-2 h-4 w-4" />
+                                Preview
                             </Button>
-                            {packageId && (
-                                <Button onClick={handlePublish}>
-                                    Publish Package
-                                </Button>
-                            )}
-                        </div>
+                        )}
+                        <Button
+                            onClick={handleSaveDraft}
+                            disabled={!isBasicInfoValid() || saving}
+                            variant="outline"
+                            className="border-gray-200"
+                        >
+                            <Save className="mr-2 h-4 w-4" />
+                            {saving ? 'Saving...' : 'Save Draft'}
+                        </Button>
+                        {packageId && (
+                            <Button onClick={handlePublish} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                                Publish Package
+                            </Button>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* Content */}
-            <div className="container mx-auto px-4 py-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full max-w-md grid-cols-2">
+                {/* Content */}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
                         <TabsTrigger value="basic">Basic Info</TabsTrigger>
                         <TabsTrigger value="itinerary" disabled={!packageId}>
                             Itinerary {!packageId && '(Save first)'}
@@ -214,10 +210,10 @@ export default function CreatePackagePage() {
                     </TabsList>
 
                     {/* Basic Info Tab */}
-                    <TabsContent value="basic" className="mt-6">
-                        <Card>
+                    <TabsContent value="basic" className="mt-0">
+                        <Card className="border-gray-100 shadow-sm">
                             <CardHeader>
-                                <CardTitle>Package Details</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-gray-900">Package Details</CardTitle>
                                 <CardDescription>
                                     Enter the basic information about your tour package
                                 </CardDescription>
@@ -234,6 +230,7 @@ export default function CreatePackagePage() {
                                             value={formData.title}
                                             onChange={(e) => updateFormData('title', e.target.value)}
                                             required
+                                            className="border-gray-200"
                                         />
                                     </div>
 
@@ -247,6 +244,7 @@ export default function CreatePackagePage() {
                                             value={formData.destination}
                                             onChange={(e) => updateFormData('destination', e.target.value)}
                                             required
+                                            className="border-gray-200"
                                         />
                                     </div>
 
@@ -259,6 +257,7 @@ export default function CreatePackagePage() {
                                             max="30"
                                             value={formData.duration_days}
                                             onChange={(e) => updateFormData('duration_days', parseInt(e.target.value))}
+                                            className="border-gray-200"
                                         />
                                     </div>
 
@@ -271,6 +270,7 @@ export default function CreatePackagePage() {
                                             max="30"
                                             value={formData.duration_nights}
                                             onChange={(e) => updateFormData('duration_nights', parseInt(e.target.value))}
+                                            className="border-gray-200"
                                         />
                                     </div>
 
@@ -280,7 +280,7 @@ export default function CreatePackagePage() {
                                             id="category"
                                             value={formData.category}
                                             onChange={(e) => updateFormData('category', e.target.value)}
-                                            className="w-full border rounded-md px-3 py-2"
+                                            className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-white"
                                         >
                                             <option value="Adventure">Adventure</option>
                                             <option value="Cultural">Cultural</option>
@@ -303,6 +303,7 @@ export default function CreatePackagePage() {
                                             value={formData.price_per_person}
                                             onChange={(e) => updateFormData('price_per_person', parseFloat(e.target.value))}
                                             required
+                                            className="border-gray-200"
                                         />
                                     </div>
 
@@ -315,6 +316,7 @@ export default function CreatePackagePage() {
                                             max="50"
                                             value={formData.max_group_size}
                                             onChange={(e) => updateFormData('max_group_size', parseInt(e.target.value))}
+                                            className="border-gray-200"
                                         />
                                     </div>
                                 </div>
@@ -327,19 +329,22 @@ export default function CreatePackagePage() {
                                         value={formData.description}
                                         onChange={(e) => updateFormData('description', e.target.value)}
                                         rows={6}
+                                        className="border-gray-200"
                                     />
                                 </div>
 
-                                <div className="flex justify-end gap-2">
+                                <div className="flex justify-end gap-2 pt-4 border-t border-gray-50">
                                     <Button
                                         variant="outline"
                                         onClick={() => router.push('/admin/packages')}
+                                        className="border-gray-200"
                                     >
                                         Cancel
                                     </Button>
                                     <Button
                                         onClick={handleSaveDraft}
                                         disabled={!isBasicInfoValid() || saving}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
                                     >
                                         {saving ? 'Saving...' : 'Save & Continue to Itinerary'}
                                     </Button>
@@ -349,16 +354,25 @@ export default function CreatePackagePage() {
                     </TabsContent>
 
                     {/* Itinerary Tab */}
-                    <TabsContent value="itinerary" className="mt-6">
+                    <TabsContent value="itinerary" className="mt-0">
                         {packageId ? (
                             <ItineraryBuilder
                                 packageId={packageId}
                                 durationDays={formData.duration_days}
                             />
                         ) : (
-                            <Card>
-                                <CardContent className="py-12 text-center">
-                                    <p className="text-gray-500">Save the package first to build the itinerary</p>
+                            <Card className="border-gray-100 shadow-sm">
+                                <CardContent className="py-24 text-center">
+                                    <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Save className="h-8 w-8 text-gray-300" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900">No Package Saved</h3>
+                                    <p className="text-gray-500 max-w-xs mx-auto mt-1">
+                                        Please save the basic package information first to start building your itinerary.
+                                    </p>
+                                    <Button onClick={() => setActiveTab('basic')} className="mt-6" variant="outline">
+                                        Go to Basic Info
+                                    </Button>
                                 </CardContent>
                             </Card>
                         )}

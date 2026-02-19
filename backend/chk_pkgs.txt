@@ -1,0 +1,210 @@
+D:\Hariharan\G-Project\RNT_Tour\backend\check_packages.py:35: DeprecationWarning: There is no current event loop
+  loop = asyncio.get_event_loop()
+2026-02-18 18:45:21,359 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-02-18 18:45:21,359 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:45:21,362 INFO sqlalchemy.engine.Engine select current_schema()
+2026-02-18 18:45:21,362 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:45:21,364 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-02-18 18:45:21,364 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-02-18 18:45:21,366 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 18:45:21,407 INFO sqlalchemy.engine.Engine SELECT agents.id, agents.user_id, agents.first_name, agents.last_name, agents.phone, agents.domain, agents.agency_name, agents.company_legal_name, agents.business_address, agents.city, agents.state, agents.country, agents.gst_no, agents.tax_id, agents.currency, agents.commission_type, agents.commission_value, agents.gst_inclusive, agents.gst_percentage, agents.smtp_host, agents.smtp_port, agents.smtp_user, agents.smtp_password, agents.smtp_from_email 
+FROM agents
+2026-02-18 18:45:21,407 INFO sqlalchemy.engine.Engine [generated in 0.00020s] ()
+2026-02-18 18:45:21,415 INFO sqlalchemy.engine.Engine SELECT agent_smtp_settings.agent_id AS agent_smtp_settings_agent_id, agent_smtp_settings.id AS agent_smtp_settings_id, agent_smtp_settings.host AS agent_smtp_settings_host, agent_smtp_settings.port AS agent_smtp_settings_port, agent_smtp_settings.username AS agent_smtp_settings_username, agent_smtp_settings.password AS agent_smtp_settings_password, agent_smtp_settings.encryption_type AS agent_smtp_settings_encryption_type, agent_smtp_settings.from_email AS agent_smtp_settings_from_email, agent_smtp_settings.from_name AS agent_smtp_settings_from_name, agent_smtp_settings.created_at AS agent_smtp_settings_created_at, agent_smtp_settings.updated_at AS agent_smtp_settings_updated_at 
+FROM agent_smtp_settings 
+WHERE agent_smtp_settings.agent_id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID, $7::UUID)
+2026-02-18 18:45:21,415 INFO sqlalchemy.engine.Engine [generated in 0.00037s] (UUID('74d17fbb-70cd-4550-9737-5f124e58442a'), UUID('2c8c7860-f104-4ebc-9b9d-c6909e04f88d'), UUID('95c94040-1bf7-4a99-b172-8b7509731d9e'), UUID('ba394453-984f-434c-b751-1f92e98f6ea3'), UUID('ab2a2e14-c312-4457-81ae-7acf2c5efe02'), UUID('62850105-2078-4d5b-83b4-0a38b984b508'), UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'))
+2026-02-18 18:45:21,420 INFO sqlalchemy.engine.Engine SELECT agent_razorpay_settings.agent_id AS agent_razorpay_settings_agent_id, agent_razorpay_settings.id AS agent_razorpay_settings_id, agent_razorpay_settings.key_id AS agent_razorpay_settings_key_id, agent_razorpay_settings.key_secret AS agent_razorpay_settings_key_secret, agent_razorpay_settings.created_at AS agent_razorpay_settings_created_at, agent_razorpay_settings.updated_at AS agent_razorpay_settings_updated_at 
+FROM agent_razorpay_settings 
+WHERE agent_razorpay_settings.agent_id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID, $7::UUID)
+2026-02-18 18:45:21,420 INFO sqlalchemy.engine.Engine [generated in 0.00020s] (UUID('74d17fbb-70cd-4550-9737-5f124e58442a'), UUID('2c8c7860-f104-4ebc-9b9d-c6909e04f88d'), UUID('95c94040-1bf7-4a99-b172-8b7509731d9e'), UUID('ba394453-984f-434c-b751-1f92e98f6ea3'), UUID('ab2a2e14-c312-4457-81ae-7acf2c5efe02'), UUID('62850105-2078-4d5b-83b4-0a38b984b508'), UUID('0d63ef70-8ec9-47ba-806b-8310e98a38c7'))
+Found 7 agents:
+Agent ID: 74d17fbb-70cd-4550-9737-5f124e58442a, Domain: haritravels.local
+Agent ID: 2c8c7860-f104-4ebc-9b9d-c6909e04f88d, Domain: agent.local
+Agent ID: 95c94040-1bf7-4a99-b172-8b7509731d9e, Domain: alex.local
+Agent ID: ba394453-984f-434c-b751-1f92e98f6ea3, Domain: reshthosh.local
+Agent ID: ab2a2e14-c312-4457-81ae-7acf2c5efe02, Domain: hello.local
+Agent ID: 62850105-2078-4d5b-83b4-0a38b984b508, Domain: rnt.local
+Agent ID: 0d63ef70-8ec9-47ba-806b-8310e98a38c7, Domain: localhost
+--------------------
+2026-02-18 18:45:21,423 INFO sqlalchemy.engine.Engine SELECT packages.id, packages.title, packages.slug, packages.description, packages.destination, packages.duration_days, packages.duration_nights, packages.category, packages.price_per_person, packages.max_group_size, packages.included_items, packages.excluded_items, packages.status, packages.created_by, packages.country, packages.is_public, packages.is_template, packages.template_destination, packages.template_max_days, packages.is_popular_destination, packages.feature_image_url, packages.view_count, packages.created_at, packages.updated_at 
+FROM packages
+2026-02-18 18:45:21,423 INFO sqlalchemy.engine.Engine [generated in 0.00015s] ()
+Found 22 packages:
+ID: 2726e6d2-14b6-487d-9754-cee089829c26
+  Destination: Namakal
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 7 days
+  Price: 16.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 1545251a-ebed-4d0a-85f2-0d1a1c58b63a
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 3 days
+  Price: 5000.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: fb29ef6c-cbdf-41e6-b984-1f14bbd5d5b2
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 4 days
+  Price: 97.00
+  Status: PackageStatus.DRAFT
+  Is Public: True
+--------------------
+ID: 34f0055c-2742-44f9-ad36-dbd46f90a626
+  Destination: Mumbai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 5 days
+  Price: 1500.00
+  Status: PackageStatus.DRAFT
+  Is Public: False
+--------------------
+ID: 0b52b01d-93a6-467a-bfcf-1f65f18be0be
+  Destination: Singapore
+  Created By: b89f19a5-ec46-44c6-bf27-abce1dd751f2 (Unknown)
+  Duration: 4 days
+  Price: 500.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: 0f71e5f4-3d54-4541-8e5e-e3f5534b3ed3
+  Destination: Tokyo
+  Created By: 22a59bb1-f76c-4060-ae19-aff04125dad9 (Unknown)
+  Duration: 3 days
+  Price: 100.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: a312552b-023c-45d3-9210-5763433e3722
+  Destination: Japan
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 3 days
+  Price: 1000.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: b212e3cf-36cb-4384-96e6-9390f523bb0e
+  Destination: Goa
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 3 days
+  Price: 1000.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 9a051de7-a4fa-4cda-bf5e-2e0b145a78e1
+  Destination: Bengaluru
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 4 days
+  Price: 28500.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: a89889a7-2819-486d-8b4c-cfa1877c52fd
+  Destination: Delhi
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 3 days
+  Price: 32500.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: 15e68b23-afd1-4ec1-b892-50631c843d8d
+  Destination: Kolkata
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 2 days
+  Price: 13500.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: 530e17b3-2182-45e1-bd47-95b9f3e279c3
+  Destination: Tokyo
+  Created By: 51a105eb-6231-43c1-b828-c10f024a2506 (Unknown)
+  Duration: 3 days
+  Price: 100.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 23c7cd0f-ecd9-45ea-8788-6aa6480794b2
+  Destination: Paris
+  Created By: 51a105eb-6231-43c1-b828-c10f024a2506 (Unknown)
+  Duration: 2 days
+  Price: 44.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 083924bb-e558-420d-80d5-3d39a5b20736
+  Destination: uj
+  Created By: bc3191a6-6e90-46ff-b040-2ef55ac8af81 (Unknown)
+  Duration: 7 days
+  Price: 5.00
+  Status: PackageStatus.DRAFT
+  Is Public: False
+--------------------
+ID: 703a8e2e-1dfd-4449-8882-7576875fd6a3
+  Destination: Mumbai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 3 days
+  Price: 18500.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: 746567ec-00fd-46d6-95f6-b70701194170
+  Destination: Salem
+  Created By: 51a105eb-6231-43c1-b828-c10f024a2506 (Unknown)
+  Duration: 4 days
+  Price: 8.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 736abe1b-880e-4b9e-ad7d-eea7132a4236
+  Destination: namakal
+  Created By: 51a105eb-6231-43c1-b828-c10f024a2506 (Unknown)
+  Duration: 7 days
+  Price: 16.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 268785be-9db7-4e5b-a976-15bff26b7a66
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 4 days
+  Price: 10.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: d495ac6c-1e5f-42f9-bbee-e148ef617b43
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 4 days
+  Price: 5000.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: False
+--------------------
+ID: 93fc36e7-abdb-469f-8083-b4daa3a18f16
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 2 days
+  Price: 8999.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: 7119a9c5-d94b-4af1-b40d-41c2c7ccf6f6
+  Destination: Mumbai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 4 days
+  Price: 19.99
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+ID: a8ad743b-b12b-4c60-a1e0-1b7088d0e170
+  Destination: Chennai
+  Created By: 3b68c82b-b554-4ae8-97f3-235595052784 (Unknown)
+  Duration: 3 days
+  Price: 15.00
+  Status: PackageStatus.PUBLISHED
+  Is Public: True
+--------------------
+2026-02-18 18:45:21,442 INFO sqlalchemy.engine.Engine ROLLBACK

@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models import User, UserRole, Agent, Customer
 from app.api.deps import get_current_admin
 from app.core.security import get_password_hash
-from app.schemas import UserCreate, UserResponse
+from app.schemas import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
 
@@ -166,3 +166,67 @@ async def delete_agent(
     # 4. Delete Agent (Bookings cascade automatically)
     await db.delete(agent)
     await db.commit()
+
+
+@router.put("/agents/{agent_id}", response_model=UserResponse)
+async def update_agent(
+    agent_id: UUID,
+    user_data: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """Update an agent's details"""
+    # 1. Fetch Agent with all profiles
+    from sqlalchemy.orm import selectinload
+    stmt = select(User).where(User.id == agent_id, User.role == UserRole.AGENT).options(
+        selectinload(User.admin_profile),
+        selectinload(User.agent_profile),
+        selectinload(User.customer_profile)
+    )
+    result = await db.execute(stmt)
+    agent_user = result.scalar_one_or_none()
+    
+    if not agent_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found"
+        )
+        
+    agent_profile = agent_user.agent_profile
+    if not agent_profile:
+        # Should not happen for valid agents, but good to handle
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent profile not found"
+        )
+
+    # 2. Update User Fields
+    if user_data.is_active is not None:
+        agent_user.is_active = user_data.is_active
+        
+    # 3. Update Agent Profile Fields
+    # Personal
+    if user_data.first_name is not None: agent_profile.first_name = user_data.first_name
+    if user_data.last_name is not None: agent_profile.last_name = user_data.last_name
+    if user_data.phone is not None: agent_profile.phone = user_data.phone
+    
+    # Agency
+    if user_data.agency_name is not None: agent_profile.agency_name = user_data.agency_name
+    if user_data.company_legal_name is not None: agent_profile.company_legal_name = user_data.company_legal_name
+    if user_data.domain is not None: agent_profile.domain = user_data.domain
+    if user_data.business_address is not None: agent_profile.business_address = user_data.business_address
+    if user_data.city is not None: agent_profile.city = user_data.city
+    if user_data.state is not None: agent_profile.state = user_data.state
+    if user_data.country is not None: agent_profile.country = user_data.country
+    
+    # Financial
+    if user_data.gst_no is not None: agent_profile.gst_no = user_data.gst_no
+    if user_data.tax_id is not None: agent_profile.tax_id = user_data.tax_id
+    if user_data.currency is not None: agent_profile.currency = user_data.currency
+    if user_data.commission_type is not None: agent_profile.commission_type = user_data.commission_type
+    if user_data.commission_value is not None: agent_profile.commission_value = user_data.commission_value
+
+    await db.commit()
+    await db.refresh(agent_user)
+    
+    return UserResponse.model_validate(agent_user)

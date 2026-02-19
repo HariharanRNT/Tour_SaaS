@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { toast } from 'react-toastify'
 import {
     LayoutDashboard,
     Package,
@@ -171,6 +172,7 @@ interface DashboardStats {
     totalBookings: number
     activeBookings: number
     pendingBookings: number
+    todayBookings: number
     totalRevenue: number
     recentBookings?: {
         upcoming: any[]
@@ -183,6 +185,7 @@ interface DashboardStats {
     packageAnalytics?: {
         mostBooked: any[]
     }
+    isPlanActive?: boolean
 }
 
 const TiltCard = ({ children, className }: { children: React.ReactNode, className?: string }) => {
@@ -230,6 +233,33 @@ export default function AgentDashboard() {
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
 
+    const [stats, setStats] = useState<DashboardStats>({
+        totalPackages: 0,
+        publishedPackages: 0,
+        draftPackages: 0,
+        totalBookings: 0,
+        activeBookings: 0,
+        pendingBookings: 0,
+        todayBookings: 0,
+        totalRevenue: 0,
+        recentBookings: { upcoming: [], completed: [] },
+        highlights: { mostPopular: null, leastPopular: null },
+        packageAnalytics: { mostBooked: [] },
+        isPlanActive: false // Default to false for safety
+    })
+    const [loading, setLoading] = useState(true)
+
+    // Helper to checking plan status
+    const isPlanActive = stats.isPlanActive;
+
+    const handleRestrictedAction = (action: () => void) => {
+        if (isPlanActive) {
+            action()
+        } else {
+            toast.error("Plan Not Available: Please purchase a subscription plan to access this feature.")
+        }
+    }
+
     // AI Assistant State
     const [isAIOpen, setIsAIOpen] = useState(false)
     const [chatMessage, setChatMessage] = useState("")
@@ -243,16 +273,18 @@ export default function AgentDashboard() {
 
     // Event handlers
     const handleTourPackageClick = () => {
-        router.push('/agent/packages/new')
+        handleRestrictedAction(() => router.push('/agent/packages/new'))
     }
 
     const handleCustomerProfileClick = () => {
-        router.push('/agent/customers')
+        handleRestrictedAction(() => router.push('/agent/customers'))
     }
 
     const handleAIItineraryClick = () => {
-        setIsAIOpen(true)
-        setGeneratedPackage(null)
+        handleRestrictedAction(() => {
+            setIsAIOpen(true)
+            setGeneratedPackage(null)
+        })
     }
 
     // AI Chat functions
@@ -368,19 +400,7 @@ export default function AgentDashboard() {
         router.push('/agent/packages/new?from=ai')
     }
 
-    const [stats, setStats] = useState<DashboardStats>({
-        totalPackages: 0,
-        publishedPackages: 0,
-        draftPackages: 0,
-        totalBookings: 0,
-        activeBookings: 0,
-        pendingBookings: 0,
-        totalRevenue: 0,
-        recentBookings: { upcoming: [], completed: [] },
-        highlights: { mostPopular: null, leastPopular: null },
-        packageAnalytics: { mostBooked: [] }
-    })
-    const [loading, setLoading] = useState(true)
+
 
     // Mobile Optimizations State
     // Parallax & Visual Effects Hooks
@@ -516,10 +536,12 @@ export default function AgentDashboard() {
                 totalBookings: backendStats.totalBookings || 0,
                 activeBookings: backendStats.activeBookings || 0,
                 pendingBookings: backendStats.pendingBookings || 0,
+                todayBookings: backendStats.todayBookings || 0,
                 totalRevenue: backendStats.totalRevenue || 0,
                 recentBookings: backendStats.recentBookings || { upcoming: [], completed: [] },
                 highlights: backendStats.highlights,
-                packageAnalytics: backendStats.packageAnalytics
+                packageAnalytics: backendStats.packageAnalytics,
+                isPlanActive: backendStats.isPlanActive ?? false
             })
 
         } catch (error) {
@@ -713,16 +735,20 @@ export default function AgentDashboard() {
                                 <div className="flex items-center gap-3 mt-1.5 text-sm font-medium">
                                     <span className="text-slate-500">Here's what's happening today:</span>
                                     <div className="hidden sm:flex items-center gap-2">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-[#F59E0B] border border-orange-100 shadow-sm text-xs font-semibold">
-                                            <span className="relative flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                                            </span>
-                                            3 new bookings
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-[#10B981] border border-green-100 shadow-sm text-xs font-semibold">
-                                            <TrendingUp className="h-3 w-3" />
-                                            15% vs last week
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
+                                                ? "bg-orange-50 text-[#F59E0B] border-orange-100"
+                                                : "bg-slate-50 text-slate-500 border-slate-100"
+                                            }`}>
+                                            {stats.todayBookings > 0 && (
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                                                </span>
+                                            )}
+                                            {stats.todayBookings > 0
+                                                ? `${stats.todayBookings} new booking${stats.todayBookings > 1 ? 's' : ''}`
+                                                : "No Booking today"
+                                            }
                                         </span>
                                     </div>
                                 </div>
@@ -1078,11 +1104,14 @@ export default function AgentDashboard() {
                             <Clock className="h-5 w-5 text-[#F59E0B]" />
                             Recent Bookings
                         </h2>
-                        <Link href="/agent/bookings">
-                            <Button variant="ghost" size="sm" className="text-[#4F46E5] hover:bg-indigo-50 font-semibold gap-1">
-                                View All <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#4F46E5] hover:bg-indigo-50 font-semibold gap-1"
+                            onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
+                        >
+                            View All <ChevronRight className="h-4 w-4" />
+                        </Button>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1183,76 +1212,82 @@ export default function AgentDashboard() {
                                 className="overflow-hidden"
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* existing cards */}
-                                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(79,70,229,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
-                                        <Link href="/agent/packages">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-indigo-50 p-3 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                                                        <Package className="h-6 w-6 text-[#4F46E5]" />
-                                                    </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg text-slate-800">Manage Packages</CardTitle>
-                                                        <CardDescription>View, edit, or create tours</CardDescription>
-                                                    </div>
+                                    {/* Manage Packages */}
+                                    <Card
+                                        onClick={() => handleRestrictedAction(() => router.push('/agent/packages'))}
+                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                    >
+                                        <CardHeader>
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                                    <Package className="h-6 w-6 text-blue-600" />
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Button className="w-full bg-white text-[#4F46E5] border border-indigo-100 hover:bg-indigo-50 shadow-sm text-sm font-semibold">
-                                                    Go to Packages
-                                                </Button>
-                                            </CardContent>
-                                        </Link>
+                                                <div>
+                                                    <CardTitle className="text-lg text-slate-800">Manage Packages</CardTitle>
+                                                    <CardDescription>View, edit, or create tours</CardDescription>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Button className="w-full bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm text-sm font-semibold">
+                                                Go to Packages
+                                            </Button>
+                                        </CardContent>
                                     </Card>
 
-                                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(16,185,129,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
-                                        <Link href="/agent/customers">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-emerald-50 p-3 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                                                        <Users className="h-6 w-6 text-[#10B981]" />
-                                                    </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg text-slate-800">Customers</CardTitle>
-                                                        <CardDescription>Manage client profiles</CardDescription>
-                                                    </div>
+                                    {/* Customers */}
+                                    <Card
+                                        onClick={() => handleRestrictedAction(() => router.push('/agent/customers'))}
+                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                    >
+                                        <CardHeader>
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-emerald-50 p-3 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                                                    <Users className="h-6 w-6 text-emerald-600" />
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Button className="w-full bg-white text-[#10B981] border border-emerald-100 hover:bg-emerald-50 shadow-sm text-sm font-semibold">
-                                                    View Customers
-                                                </Button>
-                                            </CardContent>
-                                        </Link>
+                                                <div>
+                                                    <CardTitle className="text-lg text-slate-800">Customers</CardTitle>
+                                                    <CardDescription>Manage client profiles</CardDescription>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Button className="w-full bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 shadow-sm text-sm font-semibold">
+                                                View Customers
+                                            </Button>
+                                        </CardContent>
                                     </Card>
 
-                                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(245,158,11,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
-                                        <Link href="/agent/bookings">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-amber-50 p-3 rounded-lg group-hover:bg-amber-100 transition-colors">
-                                                        <FileText className="h-6 w-6 text-[#F59E0B]" />
-                                                    </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
-                                                        <CardDescription>Track booking status</CardDescription>
-                                                    </div>
+                                    {/* My Bookings */}
+                                    <Card
+                                        onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
+                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                    >
+                                        <CardHeader>
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-orange-50 p-3 rounded-lg group-hover:bg-orange-100 transition-colors">
+                                                    <FileText className="h-6 w-6 text-orange-600" />
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Button className="w-full bg-white text-[#F59E0B] border border-amber-100 hover:bg-amber-50 shadow-sm text-sm font-semibold">
-                                                    View Bookings
-                                                </Button>
-                                            </CardContent>
-                                        </Link>
+                                                <div>
+                                                    <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
+                                                    <CardDescription>Track booking status</CardDescription>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Button className="w-full bg-white text-orange-600 border border-orange-200 hover:bg-orange-50 shadow-sm text-sm font-semibold">
+                                                View Bookings
+                                            </Button>
+                                        </CardContent>
                                     </Card>
 
+                                    {/* Subscription */}
                                     <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(236,72,153,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
                                         <Link href="/agent/subscription">
                                             <CardHeader>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-pink-50 p-3 rounded-lg group-hover:bg-pink-100 transition-colors">
-                                                        <Star className="h-6 w-6 text-[#EC4899]" />
+                                                    <div className="bg-purple-50 p-3 rounded-lg group-hover:bg-purple-100 transition-colors">
+                                                        <Star className="h-6 w-6 text-purple-600" />
                                                     </div>
                                                     <div>
                                                         <CardTitle className="text-lg text-slate-800">Subscription</CardTitle>
@@ -1261,19 +1296,20 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full bg-white text-[#EC4899] border border-pink-100 hover:bg-pink-50 shadow-sm text-sm font-semibold">
+                                                <Button className="w-full bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm text-sm font-semibold">
                                                     Manage Plan
                                                 </Button>
                                             </CardContent>
                                         </Link>
                                     </Card>
 
+                                    {/* Settings */}
                                     <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300">
                                         <Link href="/agent/settings">
                                             <CardHeader>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-gray-100 p-3 rounded-lg group-hover:bg-gray-200 transition-colors">
-                                                        <Settings className="h-6 w-6 text-gray-600" />
+                                                    <div className="bg-slate-100 p-3 rounded-lg group-hover:bg-slate-200 transition-colors">
+                                                        <Settings className="h-6 w-6 text-slate-600" />
                                                     </div>
                                                     <div>
                                                         <CardTitle className="text-lg text-slate-800">Settings</CardTitle>
@@ -1282,7 +1318,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full bg-white text-gray-700 border border-gray-100 hover:bg-gray-100/80 shadow-sm text-sm font-semibold">
+                                                <Button className="w-full bg-white text-slate-700 border border-slate-200 hover:bg-slate-100/80 shadow-sm text-sm font-semibold">
                                                     Configure Settings
                                                 </Button>
                                             </CardContent>
@@ -1302,23 +1338,15 @@ export default function AgentDashboard() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="mb-2 w-56">
-                            <DropdownMenuItem onClick={handleTourPackageClick} className="py-3">
-                                <Package className="mr-3 h-5 w-5 text-indigo-600" />
-                                <span>New Package</span>
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleAIItineraryClick} className="py-3">
                                 <Sparkles className="mr-3 h-5 w-5 text-pink-600" />
                                 <span>AI Assistant</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleCustomerProfileClick} className="py-3">
-                                <Users className="mr-3 h-5 w-5 text-emerald-600" />
-                                <span>New Customer</span>
-                            </DropdownMenuItem>
                         </DropdownMenuContent>
+
                     </DropdownMenu>
                 </div>
 
-                {/* Mobile Bottom Navigation */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-indigo-50 md:hidden z-50 pb-safe">
                     <div className="flex justify-around items-center h-16">
                         <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-indigo-600 relative">
@@ -1326,18 +1354,6 @@ export default function AgentDashboard() {
                             <span className="text-[10px] font-medium">Home</span>
                             <span className="absolute bottom-1 w-1 h-1 bg-indigo-600 rounded-full" />
                         </Button>
-                        <Link href="/agent/packages">
-                            <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-slate-500 hover:text-indigo-600 transition-colors">
-                                <Package className="h-5 w-5" />
-                                <span className="text-[10px] font-medium">Packages</span>
-                            </Button>
-                        </Link>
-                        <Link href="/agent/customers">
-                            <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-slate-500 hover:text-indigo-600 transition-colors">
-                                <Users className="h-5 w-5" />
-                                <span className="text-[10px] font-medium">Clients</span>
-                            </Button>
-                        </Link>
                         <Link href="/agent/settings">
                             <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-slate-500 hover:text-indigo-600 transition-colors">
                                 <Settings className="h-5 w-5" />
@@ -1346,6 +1362,7 @@ export default function AgentDashboard() {
                         </Link>
                     </div>
                 </div>
+
 
                 {/* AI Assistant Dialog */}
                 <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>

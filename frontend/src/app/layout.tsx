@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
     description: "Discover and book amazing tour packages worldwide",
 };
 
+import { Providers } from "@/components/Providers";
+
+// ...
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -21,16 +26,14 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${inter.className} ${jakarta.variable}`}>
-                <Navbar />
-                <main className="min-h-screen bg-gray-50">
-                    {children}
-                </main>
-                <footer className="border-t bg-white py-8">
-                    <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-                        © 2026 RNT TourSaaS. All rights reserved.
-                    </div>
-                </footer>
-                <ToastContainer position="top-right" autoClose={3000} />
+                <Providers>
+                    <Navbar />
+                    <main className="min-h-screen bg-gray-50">
+                        {children}
+                    </main>
+                    <Footer />
+                    <ToastContainer position="top-right" autoClose={3000} />
+                </Providers>
             </body>
         </html>
     );

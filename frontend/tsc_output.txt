@@ -1,0 +1,2 @@
+src/app/admin/packages/new/page.tsx(118,13): error TS2304: Cannot find name 'toast'.
+src/app/admin/packages/new/page.tsx(138,13): error TS2304: Cannot find name 'toast'.

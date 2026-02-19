@@ -13,7 +13,8 @@ from app.schemas.packages import (
     PackageResponse,
     ItineraryItemCreate,
     ItineraryItemUpdate,
-    ItineraryItemResponse
+    ItineraryItemResponse,
+    PaginatedPackageResponse
 )
 from app.schemas.packages import PackageImageResponse
 from app.api.deps import get_current_agent
@@ -26,36 +27,59 @@ import json
 router = APIRouter()
 
 
-@router.get("/packages", response_model=List[PackageResponse])
+@router.get("/packages", response_model=PaginatedPackageResponse)
 async def list_agent_packages(
     status_filter: Optional[str] = None,
     destination: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 100,
+    page: int = 1,
+    limit: int = 10,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
     db: AsyncSession = Depends(get_db),
     current_agent: User = Depends(get_current_agent)
 ):
-    """List packages owned by current agent"""
+    """List packages owned by current agent with pagination"""
+    # Calculate skip
+    skip = (page - 1) * limit
+    
+    # Base query
     stmt = select(Package).where(Package.created_by == current_agent.id)
     
-    if status_filter:
+    if status_filter and status_filter != 'all':
         stmt = stmt.where(Package.status == PackageStatus(status_filter))
     
-    if destination:
+    if destination and destination != 'all':
         stmt = stmt.where(Package.destination.ilike(f"%{destination}%"))
+        
+    # Get total count first
+    from sqlalchemy import func
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_result = await db.execute(count_stmt)
+    total = total_result.scalar() or 0
     
+    # Apply sorting
+    if sort_order == "desc":
+        order_column = getattr(Package, sort_by).desc()
+    else:
+        order_column = getattr(Package, sort_by).asc()
+        
     # Eager load relationships for list view too, or maybe just images
     from sqlalchemy.orm import selectinload
     stmt = stmt.options(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),
         selectinload(Package.availability)
-    ).offset(skip).limit(limit).order_by(Package.created_at.desc())
+    ).order_by(order_column).offset(skip).limit(limit)
     
     result = await db.execute(stmt)
     packages = result.scalars().all()
     
-    return packages
+    return PaginatedPackageResponse(
+        items=packages,
+        total=total,
+        page=page,
+        limit=limit
+    )
 
 
 @router.post("/packages", response_model=PackageResponse, status_code=status.HTTP_201_CREATED)
@@ -215,15 +239,40 @@ async def delete_agent_package(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Package not found"
         )
+
+    # Check for existing bookings
+    from app.models import Booking
+    stmt = select(Booking).where(Booking.package_id == package_id).limit(1)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete package with existing bookings. Please archive the package instead."
+        )
+
+    # Check for linked User Itineraries (Templates)
+    from app.models import UserItinerary
+    stmt = select(UserItinerary).where(UserItinerary.template_package_id == package_id).limit(1)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete package used as a template in user itineraries. Please archive the package instead."
+        )
         
     # Delete trip planning sessions that reference this package
+    # (These are loose references, so we just clear them or delete them depends on business logic. 
+    # Current logic deletes the session. It might be better to set matched_package_id to NULL, 
+    # but the existing code deletes the sessions. We will stick to existing logic or safer set NULL.)
+    # Existing logic: DELETE FROM trip_planning_sessions... 
+    # Let's keep existing logic to avoid changing behavior, assuming sessions are ephemeral.
     from sqlalchemy import text
     await db.execute(
         text("DELETE FROM trip_planning_sessions WHERE matched_package_id = :package_id"),
         {"package_id": str(package_id)}
     )
     
-    # Delete itinerary items
+    # Delete itinerary items (Cascade handles this usually, but explicit is fine)
     stmt = delete(ItineraryItem).where(ItineraryItem.package_id == package_id)
     await db.execute(stmt)
     

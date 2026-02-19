@@ -59,6 +59,10 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # Google Auth
+    google_id = Column(String, unique=True, index=True, nullable=True)
+    profile_picture_url = Column(String, nullable=True)
+
     # Proxy Properties
     @property
     def profile(self):
@@ -171,6 +175,8 @@ class Agent(Base):
     currency = Column(String, default="INR")
     commission_type = Column(String, default="percentage") # percentage, fixed
     commission_value = Column(Numeric(10, 2), default=0.0)
+    gst_inclusive = Column(Boolean, default=False)
+    gst_percentage = Column(Numeric(5, 2), default=18.00)
     
     # SMTP Settings (Encrypted/Stored)
     smtp_host = Column(String, nullable=True)
@@ -348,7 +354,7 @@ class Payment(Base):
     booking_id = Column(UUID(as_uuid=True), ForeignKey("bookings.id", ondelete="CASCADE"), nullable=True)
     subscription_id = Column(UUID(as_uuid=True), ForeignKey("subscriptions.id"), nullable=True)
     
-    razorpay_order_id = Column(String, unique=True, index=True)
+    razorpay_order_id = Column(String, unique=True, index=True, nullable=True)
     razorpay_payment_id = Column(String, unique=True, index=True, nullable=True)
     razorpay_signature = Column(String, nullable=True)
     
@@ -555,6 +561,7 @@ class SubscriptionPlan(Base):
     features = Column(Text, default="[]") # JSON list of features
     booking_limit = Column(Integer, nullable=False) # -1 for unlimited
     is_active = Column(Boolean, default=True)
+    razorpay_plan_id = Column(String, nullable=True) # External Plan ID from Razorpay
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -570,6 +577,11 @@ class Subscription(Base):
     end_date = Column(Date, nullable=False)
     current_bookings_usage = Column(Integer, default=0)
     auto_renew = Column(Boolean, default=True)
+    
+    # Razorpay Auto-Renewal Fields
+    razorpay_subscription_id = Column(String, unique=True, index=True, nullable=True)
+    razorpay_payment_id = Column(String, nullable=True) # Latest successful payment ID
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

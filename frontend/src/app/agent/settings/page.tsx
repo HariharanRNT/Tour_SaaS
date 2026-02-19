@@ -64,6 +64,11 @@ export default function AgentSettingsPage() {
         encryption_type: 'starttls'
     })
 
+    const [gstSettings, setGstSettings] = useState({
+        gst_inclusive: false,
+        gst_percentage: 18.00
+    })
+
     interface RazorpaySettings {
         key_id: string;
         key_secret?: string;
@@ -80,6 +85,7 @@ export default function AgentSettingsPage() {
 
         const currentSettings = {
             currency,
+            gstSettings,
             smtp: { ...smtp, password: '' }, // Exclude password from comparison
             razorpay: { ...razorpay, key_secret: '' } // Exclude key_secret from comparison
         };
@@ -87,12 +93,13 @@ export default function AgentSettingsPage() {
         // Create a copy of originalSettings, ensuring sensitive fields are empty for comparison
         const originalSettingsForComparison = {
             currency: originalSettings.currency,
+            gstSettings: originalSettings.gstSettings,
             smtp: { ...originalSettings.smtp, password: '' },
             razorpay: { ...originalSettings.razorpay, key_secret: '' }
         };
 
         return JSON.stringify(currentSettings) !== JSON.stringify(originalSettingsForComparison);
-    }, [currency, smtp, razorpay, originalSettings]);
+    }, [currency, gstSettings, smtp, razorpay, originalSettings]);
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -128,15 +135,22 @@ export default function AgentSettingsPage() {
                     key_secret: ''
                 } : razorpay;
 
-                // Currency
+                // Currency & GST
                 const initialCurrency = data.currency || 'INR';
+                const initialGstSettings = {
+                    gst_inclusive: data.gst_inclusive ?? false,
+                    gst_percentage: data.gst_percentage ?? 18.00
+                }
+
                 setCurrency(initialCurrency)
+                setGstSettings(initialGstSettings)
                 setSmtp(initialSmtp)
                 setRazorpay(initialRazorpay)
 
                 // Track original for unsaved changes warning
                 setOriginalSettings({
                     currency: initialCurrency,
+                    gstSettings: initialGstSettings,
                     smtp: initialSmtp,
                     razorpay: initialRazorpay
                 })
@@ -188,6 +202,21 @@ export default function AgentSettingsPage() {
         if (!res.ok) throw new Error('Failed to update Razorpay settings')
     }
 
+    const saveGeneral = async (token: string) => {
+        const res = await fetch('http://localhost:8000/api/v1/agent/settings/general', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                currency,
+                ...gstSettings
+            })
+        })
+        if (!res.ok) throw new Error('Failed to update General settings')
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setSubmitting(true)
@@ -198,6 +227,7 @@ export default function AgentSettingsPage() {
 
             // We could run these in parallel
             await Promise.all([
+                saveGeneral(token),
                 saveSmtp(token),
                 saveRazorpay(token)
             ])
@@ -267,6 +297,7 @@ export default function AgentSettingsPage() {
     const discardChanges = () => {
         if (!originalSettings) return;
         setCurrency(originalSettings.currency);
+        setGstSettings(originalSettings.gstSettings);
         setSmtp(originalSettings.smtp);
         setRazorpay(originalSettings.razorpay);
         toast.info("Changes discarded.");
@@ -447,6 +478,77 @@ export default function AgentSettingsPage() {
                                     <ShieldCheck className="h-3 w-3" />
                                     This currency will be used for all internal calculations and defaults.
                                 </p>
+                            </div>
+
+                            <Separator className="bg-slate-100" />
+
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-bold text-slate-900">Tax Configuration</h3>
+                                    <p className="text-sm text-slate-500">Manage how Goods and Services Tax (GST) is applied to your packages.</p>
+                                </div>
+                                <div className="grid gap-6 p-4 border border-slate-200 rounded-xl bg-slate-50/30">
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-slate-700">GST Mode</Label>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <label className={`flex p-3 w-full cursor-pointer rounded-lg border transition-all ${gstSettings.gst_inclusive ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="gst_mode"
+                                                        className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-100"
+                                                        checked={gstSettings.gst_inclusive}
+                                                        onChange={() => setGstSettings(prev => ({ ...prev, gst_inclusive: true }))}
+                                                    />
+                                                    <div>
+                                                        <span className="block text-sm font-bold text-slate-900">Inclusive GST</span>
+                                                        <span className="block text-xs text-slate-500 mt-1">Prices shown to customers already include GST.</span>
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            <label className={`flex p-3 w-full cursor-pointer rounded-lg border transition-all ${!gstSettings.gst_inclusive ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="gst_mode"
+                                                        className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-100"
+                                                        checked={!gstSettings.gst_inclusive}
+                                                        onChange={() => setGstSettings(prev => ({ ...prev, gst_inclusive: false }))}
+                                                    />
+                                                    <div>
+                                                        <span className="block text-sm font-bold text-slate-900">Exclusive GST</span>
+                                                        <span className="block text-xs text-slate-500 mt-1">GST is added on top of the base price during checkout.</span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {!gstSettings.gst_inclusive && (
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <Label htmlFor="gst_percentage" className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                GST Percentage (%) <span className="text-red-500">*</span>
+                                            </Label>
+                                            <div className="max-w-[200px] relative">
+                                                <Input
+                                                    id="gst_percentage"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="18.00"
+                                                    className="h-12 border-slate-200 bg-white hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-bold rounded-lg pr-8"
+                                                    value={gstSettings.gst_percentage}
+                                                    onChange={(e) => setGstSettings(prev => ({ ...prev, gst_percentage: parseFloat(e.target.value) || 0 }))}
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                                            </div>
+                                            <p className="text-xs font-medium text-slate-500">
+                                                Standard GST rate for travel services is usually 5% or 18% depending on the service type.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

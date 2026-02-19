@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole
+from app.models import Package, Booking, User, UserRole, Subscription
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 
@@ -133,6 +133,15 @@ async def get_agent_dashboard_stats(
         res = await db.execute(rev_query)
         total_revenue = res.scalar() or 0
 
+        # Today's Bookings (Real-time)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_query = select(func.count(Booking.id)).where(
+            Booking.agent_id == current_agent.id,
+            Booking.created_at >= today_start
+        )
+        res = await db.execute(today_query)
+        today_bookings = res.scalar() or 0
+
         # --- 2. Benchmark/Highlights (Filtered) ---
         
         # 1. My Top Performer (Agent's Most Booked Package in Period)
@@ -232,7 +241,33 @@ async def get_agent_dashboard_stats(
         completed_res = await db.execute(completed_bookings_stmt)
         completed_list = completed_res.scalars().all()
 
+        # Check Subscription Status
+        # Active if status is 'active' or 'trial' and not expired
+        # We can also check specific features from the plan if needed
+        is_plan_active = False
+        
+        # Fetch active or trial subscription first
+        sub_stmt = select(Subscription).where(
+            Subscription.user_id == current_agent.id,
+            Subscription.status.in_(['active', 'trial'])
+        ).order_by(desc(Subscription.end_date)).limit(1)
+        
+        sub_res = await db.execute(sub_stmt)
+        subscription = sub_res.scalar_one_or_none()
+        
+        if subscription:
+             # We found an active/trial plan
+             is_plan_active = True
+        else:
+             # Fallback check: maybe the latest is 'upcoming' but we want to know?
+             # Actually, if there is no active/trial, then they are restricted.
+             # So is_plan_active remains False.
+             pass
+
         return {
+            # Access Control
+            "isPlanActive": is_plan_active,
+
             # New direct stats
             "totalPackages": total_packages,
             "publishedPackages": published_packages,
@@ -240,6 +275,7 @@ async def get_agent_dashboard_stats(
             "totalBookings": total_bookings,
             "activeBookings": active_bookings,
             "pendingBookings": pending_bookings,
+            "todayBookings": today_bookings,
             "totalRevenue": float(total_revenue) if total_revenue else 0,
             
             # Recent Bookings

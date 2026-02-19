@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select, and_, desc, asc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Subscription, SubscriptionPlan, User
+from app.models import Subscription, SubscriptionPlan, User, Payment, PaymentStatus, Invoice
 from app.services.invoice_service import InvoiceService
 from app.services.email_service import EmailService
 
@@ -275,3 +275,74 @@ class SubscriptionService:
              await SubscriptionService.activate_subscription(target_sub, db)
              
         return target_sub
+
+    @staticmethod
+    async def handle_subscription_charged(payload: dict, db: AsyncSession):
+        """
+        Handle 'subscription.charged' webhook event.
+        Payload contains payment_id, subscription_id, etc.
+        """
+        rzp_sub_id = payload['subscription']['entity']['id']
+        payment_id = payload['payment']['entity']['id']
+        amount = payload['payment']['entity']['amount'] / 100 # In Rupees
+        
+        # Find Subscription
+        stmt = select(Subscription).where(Subscription.razorpay_subscription_id == rzp_sub_id).options(selectinload(Subscription.plan))
+        result = await db.execute(stmt)
+        sub = result.scalar_one_or_none()
+        
+        if not sub:
+            print(f"Webhook Error: Subscription {rzp_sub_id} not found")
+            return
+            
+        print(f"Processing renewal for subscription {sub.id}")
+        
+        # Check idempotency
+        stmt = select(Payment).where(Payment.razorpay_payment_id == payment_id)
+        existing = (await db.execute(stmt)).scalar_one_or_none()
+        if existing:
+            print(f"Payment {payment_id} already processed")
+            return
+
+        # Extend Validity
+        cycle = sub.plan.billing_cycle
+        if cycle == 'yearly':
+            days = 365
+        elif cycle == 'quarterly':
+            days = 90
+        elif cycle == 'monthly':
+            days = 30
+        else:
+            days = 30
+            
+        # If already active and not expired, extend from end_date
+        if sub.end_date > date.today():
+             sub.end_date = sub.end_date + timedelta(days=days)
+        else:
+             sub.end_date = date.today() + timedelta(days=days)
+             sub.status = 'active'
+             
+        # Create Payment
+        payment = Payment(
+            subscription_id=sub.id,
+            razorpay_payment_id=payment_id,
+            razorpay_subscription_id=rzp_sub_id,
+            amount=amount,
+            currency="INR",
+            status=PaymentStatus.SUCCEEDED
+        )
+        db.add(payment)
+        
+        # Create Invoice
+        invoice = Invoice(
+            user_id=sub.user_id,
+            subscription_id=sub.id,
+            amount=amount,
+            status='paid',
+            issue_date=date.today(),
+            due_date=date.today()
+        )
+        db.add(invoice)
+        
+        await db.commit()
+        print(f"Renewal processed for {sub.id}. New end date: {sub.end_date}")

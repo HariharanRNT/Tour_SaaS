@@ -605,15 +605,18 @@ async def create_trip_session(
 @router.get("/session/{session_id}")
 async def get_trip_session(
     session_id: UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
 ):
     """Get trip planning session"""
     query = text("""
         SELECT t.id, t.destination, t.duration_days, t.duration_nights, t.start_date,
                t.travelers, t.preferences, t.matched_package_id, t.itinerary, t.status,
-               t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details
+               t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details,
+               a.gst_inclusive, a.gst_percentage
         FROM trip_planning_sessions t
         LEFT JOIN packages p ON t.matched_package_id = p.id
+        LEFT JOIN agents a ON p.created_by = a.id
         WHERE t.id = :session_id AND t.status = 'active' AND t.expires_at > NOW()
     """)
     
@@ -637,6 +640,23 @@ async def get_trip_session(
     travelers = parse_json_field(row[5])
     preferences = parse_json_field(row[6])
     flight_details = parse_json_field(row[14])
+    
+    # GST Settings Logic
+    # 1. Default to Package Creator's settings (from join)
+    gst_inclusive = row[15]
+    gst_percentage = row[16]
+    
+    # 2. If accessed via a custom domain, prefer the Domain Agent's settings
+    # This ensures that when an agent sells a package (even a system package), 
+    # THEIR GST settings apply, not the package creator's.
+    if domain:
+        agent_stmt = select(Agent).where(Agent.domain == domain)
+        agent_res = await db.execute(agent_stmt)
+        agent = agent_res.scalar_one_or_none()
+        if agent:
+             # Override with Domain Agent's GST settings
+             gst_inclusive = agent.gst_inclusive
+             gst_percentage = agent.gst_percentage
 
     # Enrich itinerary with latest times from package items if available
     # This handles cases where the session was created before times were added to package
@@ -679,7 +699,9 @@ async def get_trip_session(
         "expires_at": row[11].isoformat(),
         "price_per_person": float(row[12]) if row[12] else 0,
         "package_description": row[13] if row[13] else "",
-        "flight_details": flight_details
+        "flight_details": flight_details,
+        "gst_inclusive": gst_inclusive,
+        "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0
     }
 
 

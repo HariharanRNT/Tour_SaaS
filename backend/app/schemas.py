@@ -33,9 +33,40 @@ class UserCreate(UserBase):
     commission_value: Optional[Decimal] = 0.0
 
 
+class UserUpdate(BaseModel):
+    # Personal
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    
+    # Agency
+    agency_name: Optional[str] = None
+    company_legal_name: Optional[str] = None
+    domain: Optional[str] = None
+    business_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    
+    # Financial
+    gst_no: Optional[str] = None
+    tax_id: Optional[str] = None
+    currency: Optional[str] = None
+    commission_type: Optional[str] = None
+    commission_value: Optional[Decimal] = None
+    
+    # Status
+    is_active: Optional[bool] = None
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class GoogleLoginRequest(BaseModel):
+    token: str
+    role: Optional[UserRole] = UserRole.CUSTOMER
 
 
 class UserResponse(UserBase):
@@ -71,6 +102,11 @@ class AgentSMTPSettingsBase(BaseModel):
     from_name: str
     encryption_type: str = "tls"
 
+class AgentGeneralSettingsUpdate(BaseModel):
+    currency: Optional[str] = "INR"
+    gst_inclusive: Optional[bool] = False
+    gst_percentage: Optional[Decimal] = Decimal("18.00")
+
 class AgentSMTPSettingsCreate(AgentSMTPSettingsBase):
     pass
 
@@ -105,6 +141,8 @@ class AgentRazorpaySettingsResponse(AgentRazorpaySettingsBase):
 
 class AgentSettingsResponse(BaseModel):
     currency: str = "INR"
+    gst_inclusive: bool = False
+    gst_percentage: Decimal = Decimal("18.00")
     smtp: Optional[AgentSMTPSettingsResponse] = None
     razorpay: Optional[AgentRazorpaySettingsResponse] = None
     
@@ -414,6 +452,7 @@ class SubscriptionPlanResponse(SubscriptionPlanBase):
     id: UUID4
     created_at: datetime
     updated_at: Optional[datetime] = None
+    is_popular: bool = False
     
     @field_validator('features', mode='before')
     @classmethod
@@ -459,17 +498,19 @@ class InvoiceResponse(BaseModel):
 
 
 class SubscriptionPurchaseResponse(BaseModel):
-    order_id: str
+    order_id: Optional[str] = None
     amount: int
     currency: str
     key_id: str
     subscription_id: UUID4
+    razorpay_subscription_id: Optional[str] = None
 
 class SubscriptionPaymentVerification(BaseModel):
     subscription_id: UUID4
-    razorpay_order_id: str
+    razorpay_order_id: Optional[str] = None
     razorpay_payment_id: str
     razorpay_signature: str
+    razorpay_subscription_id: Optional[str] = None
 
 
 # Password Reset Schemas

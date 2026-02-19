@@ -42,6 +42,11 @@ export const authAPI = {
         return response.data
     },
 
+    googleLogin: async (token: string, role: string = 'customer') => {
+        const response = await api.post('/auth/google-login', { token, role })
+        return response.data
+    },
+
     register: async (data: {
         email: string
         password: string

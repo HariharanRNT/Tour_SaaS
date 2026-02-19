@@ -103,6 +103,11 @@ export default function BuildTripPage() {
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
     const [showMobileFilters, setShowMobileFilters] = useState(false)
 
+    // GST Settings State
+    const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
+
+    // Removed standalone fetchSettings useEffect as data is now provided by session endpoint
+
     // Flight Filters State
     const [filters, setFilters] = useState<FlightFilterState>({
         refundType: 'all',
@@ -266,6 +271,9 @@ export default function BuildTripPage() {
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`
             }
+            if (typeof window !== 'undefined') {
+                headers['X-Domain'] = window.location.hostname
+            }
 
             const response = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
                 headers
@@ -273,6 +281,14 @@ export default function BuildTripPage() {
             if (response.ok) {
                 const data = await response.json()
                 setSession(data)
+
+                // Set GST Settings from session data
+                if (data.gst_percentage !== undefined) {
+                    setGstSettings({
+                        inclusive: data.gst_inclusive,
+                        percentage: data.gst_percentage
+                    })
+                }
 
                 // Initialize modular selection state based on preferences
                 const prefs = data.preferences || {}
@@ -987,6 +1003,7 @@ export default function BuildTripPage() {
                                     ]}
                                     onCheckout={handleCheckout}
                                     disabled={mode === 'preview'}
+                                    gstSettings={gstSettings || undefined}
                                 />
                             </div>
                         </div>
@@ -997,7 +1014,7 @@ export default function BuildTripPage() {
             {/* Mobile Sticky Footer */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 font-medium">Total Trip Cost</span>
+                    <span className="text-xs text-gray-500 font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
                     <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-gray-900">
                             ₹{(() => {
@@ -1010,7 +1027,14 @@ export default function BuildTripPage() {
                                     ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
                                 ]
                                 const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
-                                return (totalBasePrice + totalServicesPrice).toLocaleString()
+                                let subTotal = totalBasePrice + totalServicesPrice
+
+                                if (gstSettings && !gstSettings.inclusive) {
+                                    const gstAmount = (subTotal * gstSettings.percentage) / 100
+                                    subTotal += gstAmount
+                                }
+
+                                return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
                             })()}
                         </span>
                         <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
@@ -1040,6 +1064,7 @@ export default function BuildTripPage() {
                             ]}
                             onCheckout={handleCheckout}
                             disabled={mode === 'preview'}
+                            gstSettings={gstSettings || undefined}
                         />
                     </div>
                 </DialogContent>

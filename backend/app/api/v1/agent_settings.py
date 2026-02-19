@@ -8,7 +8,7 @@ from app.models import User, UserRole, Agent, AgentSMTPSettings, AgentRazorpaySe
 from app.schemas import (
     AgentSMTPSettingsCreate, AgentSMTPSettingsResponse,
     AgentRazorpaySettingsCreate, AgentRazorpaySettingsResponse,
-    AgentSettingsResponse
+    AgentSettingsResponse, AgentGeneralSettingsUpdate
 )
 from app.api.deps import get_current_user
 from app.utils.crypto import encrypt_value
@@ -57,6 +57,48 @@ async def get_agent_settings(
     
     return {
         "currency": agent.currency,
+        "gst_inclusive": agent.gst_inclusive,
+        "gst_percentage": agent.gst_percentage,
+        "smtp": smtp_settings,
+        "razorpay": rp_settings
+    }
+
+# --- General Settings Endpoints ---
+
+@router.put("/general", response_model=AgentSettingsResponse)
+async def update_general_settings(
+    settings_in: AgentGeneralSettingsUpdate,
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update general settings (Currency, GST).
+    """
+    if settings_in.currency is not None:
+        agent.currency = settings_in.currency
+    
+    if settings_in.gst_inclusive is not None:
+        agent.gst_inclusive = settings_in.gst_inclusive
+        
+    if settings_in.gst_percentage is not None:
+        agent.gst_percentage = settings_in.gst_percentage
+        
+    await db.commit()
+    await db.refresh(agent)
+    
+    # Reload other settings for full response
+    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent.id)
+    res_smtp = await db.execute(stmt_smtp)
+    smtp_settings = res_smtp.scalar_one_or_none()
+    
+    stmt_rp = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent.id)
+    res_rp = await db.execute(stmt_rp)
+    rp_settings = res_rp.scalar_one_or_none()
+    
+    return {
+        "currency": agent.currency,
+        "gst_inclusive": agent.gst_inclusive,
+        "gst_percentage": agent.gst_percentage,
         "smtp": smtp_settings,
         "razorpay": rp_settings
     }

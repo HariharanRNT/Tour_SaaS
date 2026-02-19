@@ -29,6 +29,7 @@ interface Plan {
     booking_limit: number;
     user_limit: number;
     duration_days?: number;
+    is_popular?: boolean;
 }
 
 interface Subscription {
@@ -250,13 +251,11 @@ export default function SubscriptionPage() {
     };
 
     const handlePurchase = async (plan: Plan) => {
-
-
         setProcessingId(plan.id);
         const token = localStorage.getItem('token');
 
         try {
-            // 1. Create Order
+            // 1. Create Order / Subscription
             const orderRes = await fetch('http://localhost:8000/api/v1/subscriptions/purchase?plan_id=' + plan.id, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -270,14 +269,14 @@ export default function SubscriptionPage() {
             const orderData = await orderRes.json();
 
             // --- MOCK MODE CHECK ---
-            if (orderData.key_id && orderData.key_id.includes('mock')) {
+            if ((orderData.key_id && orderData.key_id.includes('mock')) || (orderData.razorpay_subscription_id && orderData.razorpay_subscription_id.includes('mock'))) {
                 const isQueue = activeSub ? true : false;
                 const action = isQueue ? "QUEUE" : "ACTIVATE";
 
                 setConfirmDialog({
                     open: true,
                     title: "Test Mode Payment",
-                    description: `Simulate successful payment of ₹${plan.price}?\nThis will ${action} the plan.`,
+                    description: `Simulate successful payment of ₹${plan.price}?\nThis will ${action} the plan.\n(Auto-Renewal Enabled)`,
                     confirmText: "Simulate Payment",
                     action: async () => {
                         try {
@@ -291,7 +290,8 @@ export default function SubscriptionPage() {
                                     subscription_id: orderData.subscription_id,
                                     razorpay_order_id: orderData.order_id,
                                     razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(7),
-                                    razorpay_signature: "sig_mock_" + Math.random().toString(36).substring(7)
+                                    razorpay_signature: "sig_mock_" + Math.random().toString(36).substring(7),
+                                    razorpay_subscription_id: orderData.razorpay_subscription_id
                                 })
                             });
 
@@ -317,14 +317,14 @@ export default function SubscriptionPage() {
                 return;
             }
 
-            const options = {
+            const options: any = {
                 key: orderData.key_id,
                 amount: orderData.amount,
                 currency: orderData.currency,
                 name: "Tour SaaS Subscription",
                 description: `Subscription for ${plan.name}`,
-                order_id: orderData.order_id,
                 handler: async function (response: any) {
+                    console.log("Razorpay Response:", response);
                     try {
                         const verifyRes = await fetch('http://localhost:8000/api/v1/subscriptions/verify', {
                             method: 'POST',
@@ -336,7 +336,8 @@ export default function SubscriptionPage() {
                                 subscription_id: orderData.subscription_id,
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature
+                                razorpay_signature: response.razorpay_signature,
+                                razorpay_subscription_id: response.razorpay_subscription_id
                             })
                         });
 
@@ -344,7 +345,9 @@ export default function SubscriptionPage() {
                             const data = await verifyRes.json();
                             handleSuccess(plan, data.message);
                         } else {
-                            toast.error("We couldn't verify your payment. Please contact support if money was deducted.");
+                            const err = await verifyRes.json();
+                            console.error("Verification Error:", err);
+                            toast.error(err.detail || "We couldn't verify your payment. Please contact support if money was deducted.");
                         }
                     } catch (e) {
                         console.error(e);
@@ -361,6 +364,13 @@ export default function SubscriptionPage() {
                     }
                 }
             };
+
+            // Use subscription_id if available, otherwise order_id
+            if (orderData.razorpay_subscription_id) {
+                options.subscription_id = orderData.razorpay_subscription_id;
+            } else {
+                options.order_id = orderData.order_id;
+            }
 
             const rzp1 = new (window as any).Razorpay(options);
             rzp1.open();
@@ -748,7 +758,7 @@ export default function SubscriptionPage() {
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                         {plans.map(plan => {
                             const isCurrent = activeSub?.plan_id === plan.id;
-                            const isPopular = plan.name.toLowerCase().includes('pro');
+                            const isPopular = plan.is_popular;
                             const theme = getPlanTheme(plan.name);
                             const icon = getPlanIcon(plan.name);
 

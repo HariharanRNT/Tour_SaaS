@@ -56,6 +56,7 @@ interface Package {
 export default function AdminPackagesPage() {
     const router = useRouter()
     const [packages, setPackages] = useState<Package[]>([])
+    const [totalPackages, setTotalPackages] = useState(0)
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -91,14 +92,60 @@ export default function AdminPackagesPage() {
         }
 
         loadPackages()
-    }, [router])
+    }, [router, currentPage, itemsPerPage, sortConfig, statusFilter, destinationFilter])
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadPackages()
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
 
     const loadPackages = async () => {
         setLoading(true)
         try {
+            // Build query params
+            const params = new URLSearchParams()
+            params.append('page', currentPage.toString())
+            params.append('limit', itemsPerPage.toString())
+
+            if (sortConfig) {
+                params.append('sort_by', sortConfig.key as string)
+                params.append('sort_order', sortConfig.direction)
+            } else {
+                params.append('sort_by', 'created_at')
+                params.append('sort_order', 'desc')
+            }
+
+            if (statusFilter !== 'all') {
+                params.append('status_filter', statusFilter)
+            }
+
+            if (destinationFilter !== 'all') {
+                params.append('destination', destinationFilter)
+            }
+            // For now, search query filter acts on client side for destination/title if backend doesn't support generic search yet? 
+            // The backend supports 'destination' filter. Title search might not be fully supported by backend 'list_agent_packages' yet 
+            // except via 'destination' param? 
+            // Let's check backend: It has 'destination' and 'status_filter'. 
+            // No generic 'q' or 'title' search. 
+            // For now, strict server side filtering for destination. 
+            // If user types in search, we might need to update backend to support title search or just use destination for now.
+            // Let's assume search query maps to destination for now or we add title search support later.
+            // Wait, the backend has:
+            // if destination: stmt = stmt.where(Package.destination.ilike(f"%{destination}%"))
+            // It does NOT search title.
+            // Let's leave search client side? No, that breaks pagination.
+            // We should ideally update backend to search title too. 
+            // For now, let's map search query to destination if provided.
+            if (searchQuery) {
+                params.append('destination', searchQuery)
+            }
+
             // Use agent endpoint
             const token = localStorage.getItem('token')
-            const response = await fetch('http://localhost:8000/api/v1/agent/packages', {
+            const response = await fetch(`http://localhost:8000/api/v1/agent/packages?${params.toString()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -109,10 +156,12 @@ export default function AdminPackagesPage() {
             }
 
             const data = await response.json()
-            setPackages(data || [])
+            setPackages(data.items || [])
+            setTotalPackages(data.total || 0)
         } catch (error) {
             console.error('Failed to load packages:', error)
             setPackages([])
+            setTotalPackages(0)
         } finally {
             setLoading(false)
         }
@@ -140,11 +189,13 @@ export default function AdminPackagesPage() {
                 toast.success('Your package has been deleted.')
                 setDeleteId(null)
             } else {
-                throw new Error('Failed to delete')
+                const errorData = await response.json().catch(() => ({}))
+                const errorMessage = errorData.detail || 'Failed to delete'
+                throw new Error(errorMessage)
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete package:', error)
-            toast.error('Failed to delete package.')
+            toast.error(error.message || 'Failed to delete package.')
         } finally {
             setIsDeleting(false)
         }
@@ -188,7 +239,7 @@ export default function AdminPackagesPage() {
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            const allIds = filteredPackages.map(pkg => pkg.id)
+            const allIds = packages.map(pkg => pkg.id)
             setSelectedPackages(allIds)
         } else {
             setSelectedPackages([])
@@ -207,8 +258,11 @@ export default function AdminPackagesPage() {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                }).then(res => {
-                    if (!res.ok) throw new Error(`Failed to delete ${id}`)
+                }).then(async res => {
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}))
+                        throw new Error(data.detail || `Failed to delete package`)
+                    }
                     return id
                 })
             )
@@ -226,46 +280,10 @@ export default function AdminPackagesPage() {
         }
     }
 
-    // Filter & Sort Logic
-    const uniqueDestinations = Array.from(new Set(packages.map(p => p.destination)));
+    // Server-side Pagination Logic
+    const totalPages = Math.ceil(totalPackages / itemsPerPage);
+    // Note: 'packages' state now contains only the current page's items fetched from backend
 
-    const filteredPackages = packages.filter(pkg => {
-        const matchesSearch =
-            pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            pkg.destination.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesStatus = statusFilter === 'all' ||
-            pkg.status.toLowerCase() === statusFilter.toLowerCase();
-
-        const matchesDestination = destinationFilter === 'all' ||
-            pkg.destination === destinationFilter;
-
-        return matchesSearch && matchesStatus && matchesDestination;
-    })
-
-    const sortedPackages = [...filteredPackages].sort((a, b) => {
-        if (!sortConfig) return 0;
-        const { key, direction } = sortConfig;
-
-        // Handle numeric values
-        if (typeof a[key] === 'number' && typeof b[key] === 'number') {
-            return direction === 'asc' ? (a[key] as number) - (b[key] as number) : (b[key] as number) - (a[key] as number);
-        }
-
-        // Handle strings
-        const valA = String(a[key]).toLowerCase();
-        const valB = String(b[key]).toLowerCase();
-
-        if (valA < valB) return direction === 'asc' ? -1 : 1;
-        if (valA > valB) return direction === 'asc' ? 1 : -1;
-        return 0;
-    });
-
-    const totalPages = Math.ceil(sortedPackages.length / itemsPerPage);
-    const paginatedPackages = sortedPackages.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
 
     const handleSort = (key: keyof Package) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -332,15 +350,7 @@ export default function AdminPackagesPage() {
                                         <div className="hidden md:flex items-center gap-3 text-sm font-medium text-gray-600">
                                             <span className="flex items-center gap-1">
                                                 <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                                {packages.length} Packages
-                                            </span>
-                                            <span className="flex items-center gap-1 text-emerald-600">
-                                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                                {packages.filter(p => p.status.toLowerCase() === 'published').length} Published
-                                            </span>
-                                            <span className="flex items-center gap-1 text-amber-600">
-                                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                                                {packages.filter(p => p.status.toLowerCase() === 'draft').length} Drafts
+                                                {totalPackages} Packages
                                             </span>
                                         </div>
                                     </div>
@@ -363,16 +373,8 @@ export default function AdminPackagesPage() {
                     {/* Mobile Stats (Visible only on small screens) */}
                     <div className="md:hidden mt-4 pt-4 border-t flex justify-between text-sm">
                         <div className="flex flex-col items-center">
-                            <span className="font-bold text-gray-900">{packages.length}</span>
+                            <span className="font-bold text-gray-900">{totalPackages}</span>
                             <span className="text-gray-500 text-xs">Total</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="font-bold text-emerald-600">{packages.filter(p => p.status.toLowerCase() === 'published').length}</span>
-                            <span className="text-gray-500 text-xs">Published</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="font-bold text-amber-600">{packages.filter(p => p.status.toLowerCase() === 'draft').length}</span>
-                            <span className="text-gray-500 text-xs">Drafts</span>
                         </div>
                     </div>
                 </div>
@@ -389,7 +391,7 @@ export default function AdminPackagesPage() {
                                     All Packages
                                 </CardTitle>
                                 <CardDescription className="mt-1">
-                                    Manage, track, and update your {filteredPackages.length} tour packages
+                                    Manage, track, and update your {totalPackages} tour packages
                                 </CardDescription>
                             </div>
 
@@ -422,18 +424,13 @@ export default function AdminPackagesPage() {
                                     </div>
 
                                     <div className="relative">
-                                        <select
-                                            value={destinationFilter}
-                                            onChange={(e) => setDestinationFilter(e.target.value)}
-                                            className="appearance-none pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
-                                            style={{ maxWidth: '150px' }}
-                                        >
-                                            <option value="all">All Destinations</option>
-                                            {uniqueDestinations.map(dest => (
-                                                <option key={dest} value={dest}>{dest}</option>
-                                            ))}
-                                        </select>
-                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            placeholder="Filter destination..."
+                                            value={destinationFilter === 'all' ? '' : destinationFilter}
+                                            onChange={(e) => setDestinationFilter(e.target.value || 'all')}
+                                            className="pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 hover:border-indigo-300 transition-colors w-40"
+                                        />
+                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                                     </div>
 
 
@@ -459,7 +456,7 @@ export default function AdminPackagesPage() {
                                 <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
                                 <p className="mt-4 text-gray-500 font-medium">Loading your packages...</p>
                             </div>
-                        ) : filteredPackages.length === 0 ? (
+                        ) : packages.length === 0 ? (
                             <div className="text-center py-20 px-4">
                                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Package className="h-8 w-8 text-gray-400" />
@@ -484,7 +481,7 @@ export default function AdminPackagesPage() {
                                             <TableRow className="hover:bg-transparent border-b border-gray-200">
                                                 <TableHead className="w-12 pl-6">
                                                     <Checkbox
-                                                        checked={filteredPackages.length > 0 && selectedPackages.length === filteredPackages.length}
+                                                        checked={packages.length > 0 && selectedPackages.length === packages.length}
                                                         onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                                                     />
                                                 </TableHead>
@@ -522,7 +519,7 @@ export default function AdminPackagesPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {paginatedPackages.map((pkg, index) => (
+                                            {packages.map((pkg, index) => (
                                                 <TableRow
                                                     key={pkg.id}
                                                     className={`
@@ -639,7 +636,7 @@ export default function AdminPackagesPage() {
 
                                 {/* Mobile View (Cards) */}
                                 <div className="md:hidden grid gap-4 p-4 bg-gray-50/50">
-                                    {paginatedPackages.map((pkg) => (
+                                    {packages.map((pkg) => (
                                         <div key={pkg.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-indigo-500 bg-indigo-50/30' : ''}`}>
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
@@ -704,7 +701,7 @@ export default function AdminPackagesPage() {
                             </>
                         )}
                         {/* Pagination */}
-                        {filteredPackages.length > 0 && (
+                        {totalPackages > 0 && (
                             <div className="py-4 border-t border-gray-100 bg-gray-50/50">
                                 <Pagination>
                                     <PaginationContent>

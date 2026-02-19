@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,7 +17,7 @@ import {
     DialogFooter,
     DialogDescription
 } from '@/components/ui/dialog'
-import { ArrowLeft, MapPin, Calendar, Plus, Edit2, Trash2, X } from 'lucide-react'
+import { ArrowLeft, MapPin, Calendar, Plus, Edit2, Trash2 } from 'lucide-react'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { toast } from 'react-toastify'
 
@@ -124,7 +123,7 @@ export default function PackageDetailPage() {
             title: activity.title,
             description: activity.description,
             image_url: activity.image_url || '',
-            day_number: activity.day_number || 1, // These might need to be passed from parent if not in activity object
+            day_number: activity.day_number || 1,
             time_slot: activity.time_slot || 'morning',
             display_order: activity.display_order || 0
         })
@@ -200,7 +199,7 @@ export default function PackageDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="flex items-center justify-center h-screen">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading package details...</p>
@@ -211,7 +210,7 @@ export default function PackageDetailPage() {
 
     if (error || !packageData) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="flex items-center justify-center h-screen">
                 <Card className="max-w-md">
                     <CardContent className="pt-6">
                         <p className="text-red-600 text-center">{error || 'Package not found'}</p>
@@ -224,15 +223,14 @@ export default function PackageDetailPage() {
         )
     }
 
-    // Helper to render a time slot section
     const renderTimeSlot = (day: any, slot: string, label: string) => (
         <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-sm text-gray-600 capitalize">{label}</h4>
+                <h4 className="font-medium text-sm text-gray-600 uppercase tracking-wider">{label}</h4>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-xs text-blue-600 hover:text-blue-700"
+                    className="h-6 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     onClick={() => openAddDialog(day.day_number, slot)}
                 >
                     <Plus className="h-3 w-3 mr-1" /> Add Activity
@@ -241,128 +239,131 @@ export default function PackageDetailPage() {
 
             {day[slot] && day[slot].length > 0 ? (
                 day[slot].map((activity: any, idx: number) => (
-                    <div key={idx} className="ml-4 mb-2 p-3 bg-white border rounded-lg flex gap-3 group">
-                        <div className="w-24 h-24 flex-shrink-0">
+                    <div key={idx} className="ml-0 mb-3 p-3 bg-white border border-gray-100 rounded-lg flex gap-4 group hover:border-blue-100 transition-colors shadow-sm">
+                        <div className="w-20 h-20 flex-shrink-0">
                             <ActivityImageGallery
                                 images={activity.image_url ? [activity.image_url] : []}
                                 title={activity.title}
-                                className="w-full h-full"
+                                className="w-full h-full rounded-md object-cover"
                             />
                         </div>
                         <div className="flex-1">
                             <div className="flex justify-between items-start">
-                                <h5 className="font-medium">{activity.title}</h5>
+                                <h5 className="font-semibold text-gray-900">{activity.title}</h5>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6"
+                                        className="h-7 w-7 hover:bg-gray-100"
                                         onClick={() => openEditDialog({ ...activity, day_number: day.day_number, time_slot: slot })}
                                     >
-                                        <Edit2 className="h-3 w-3 text-gray-500" />
+                                        <Edit2 className="h-3.5 w-3.5 text-gray-500" />
                                     </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6"
+                                        className="h-7 w-7 hover:bg-red-50"
                                         onClick={() => handleDeleteClick(activity.id)}
                                     >
-                                        <Trash2 className="h-3 w-3 text-red-500" />
+                                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                     </Button>
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{activity.description}</p>
                         </div>
                     </div>
                 ))
             ) : (
-                <div className="ml-4 text-xs text-gray-400 italic">No activities planned</div>
+                <div className="text-xs text-gray-400 italic py-2">No activities planned</div>
             )}
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            {/* Header */}
-            <div className="bg-white border-b sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" onClick={() => router.push('/admin/packages')}>
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                            <div>
-                                <h1 className="text-2xl font-bold">{packageData.title}</h1>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {packageData.destination}</span>
-                                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {packageData.duration_days}D/{packageData.duration_nights}N</span>
-                                </div>
+        <div className="p-4 md:p-6 lg:p-8">
+            <div className="max-w-[1440px] mx-auto space-y-6">
+
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/admin/packages')} className="text-blue-600 hover:bg-blue-50">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{packageData.title}</h1>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {packageData.destination}</span>
+                                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {packageData.duration_days}D/{packageData.duration_nights}N</span>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            {packageData.status && (
-                                <Badge variant={packageData.status === 'published' ? 'default' : 'secondary'}>
-                                    {packageData.status}
-                                </Badge>
-                            )}
-                            <Button onClick={() => router.push(`/admin/packages/new?id=${packageId}`)} variant="outline" size="sm">
-                                Edit Details
-                            </Button>
-                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {packageData.status && (
+                            <Badge variant={packageData.status === 'PUBLISHED' ? 'default' : 'secondary'} className="px-3">
+                                {packageData.status}
+                            </Badge>
+                        )}
+                        <Button
+                            onClick={() => router.push(`/admin/packages/new?id=${packageId}`)}
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-200"
+                        >
+                            Edit Details
+                        </Button>
                     </div>
                 </div>
-            </div>
 
-            {/* Content */}
-            <div className="container mx-auto px-4 py-8">
+                {/* Content */}
                 <Tabs defaultValue="itinerary" className="w-full">
                     <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
                         <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                        <TabsTrigger value="itinerary">Itinerary Builder</TabsTrigger>
+                        <TabsTrigger value="itinerary">Itinerary Planner</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="basic">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card>
+                    <TabsContent value="basic" className="mt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <Card className="md:col-span-1 border-gray-100 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle>Package Details</CardTitle>
+                                    <CardTitle className="text-lg">Package Specs</CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                <CardContent className="space-y-5">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div>
-                                            <label className="text-sm font-medium text-gray-500">Category</label>
-                                            <p className="font-medium">{packageData.category}</p>
+                                            <Label className="text-xs text-gray-400 font-medium">CATEGORY</Label>
+                                            <p className="font-semibold text-gray-900 mt-0.5">{packageData.category}</p>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-medium text-gray-500">Price</label>
-                                            <p className="font-medium text-blue-600">₹{packageData.price_per_person}</p>
+                                            <Label className="text-xs text-gray-400 font-medium">PRICE</Label>
+                                            <p className="font-bold text-blue-600 text-lg">₹{packageData.price_per_person}</p>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-medium text-gray-500">Group Size</label>
-                                            <p className="font-medium">{packageData.max_group_size}</p>
+                                            <Label className="text-xs text-gray-400 font-medium">MAX GROUP SIZE</Label>
+                                            <p className="font-semibold text-gray-900 mt-0.5">{packageData.max_group_size} travelers</p>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="md:col-span-2 border-gray-100 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle>Description</CardTitle>
+                                    <CardTitle className="text-lg">Description</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-gray-700 whitespace-pre-wrap text-sm">{packageData.description}</p>
+                                    <p className="text-gray-600 whitespace-pre-wrap text-sm leading-relaxed">{packageData.description}</p>
                                 </CardContent>
                             </Card>
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="itinerary">
-                        <Card>
+                    <TabsContent value="itinerary" className="mt-0">
+                        <Card className="border-gray-100 shadow-sm">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
-                                    <CardTitle>Itinerary Planner</CardTitle>
-                                    <CardDescription>Manage day-wise activities</CardDescription>
+                                    <CardTitle>Daily Itinerary</CardTitle>
+                                    <CardDescription>Plan and manage activities day-by-day</CardDescription>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={loadPackageData}>
+                                <Button variant="outline" size="sm" onClick={loadPackageData} className="border-gray-200">
                                     Refresh
                                 </Button>
                             </CardHeader>
@@ -370,9 +371,9 @@ export default function PackageDetailPage() {
                                 {packageData.itinerary && packageData.itinerary.length > 0 ? (
                                     <div className="space-y-8">
                                         {packageData.itinerary.map((day: any) => (
-                                            <div key={day.day_number} className="border rounded-lg p-6 bg-gray-50/50">
-                                                <h3 className="text-lg font-bold mb-6 text-gray-800 border-b pb-2">Day {day.day_number}</h3>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                            <div key={day.day_number} className="border border-gray-100 rounded-xl p-6 bg-gray-50/30">
+                                                <h3 className="text-lg font-bold mb-6 text-gray-900 border-b border-gray-100 pb-3">Day {day.day_number}</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                                                     {renderTimeSlot(day, 'morning', '🌅 Morning')}
                                                     {renderTimeSlot(day, 'afternoon', '☀️ Afternoon')}
                                                     {renderTimeSlot(day, 'evening', '🌆 Evening')}
@@ -382,10 +383,12 @@ export default function PackageDetailPage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12">
-                                        <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-900">No Itinerary Generated</h3>
-                                        <p className="text-gray-500 mb-4">This package has no days assigned.</p>
+                                    <div className="text-center py-24">
+                                        <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Calendar className="h-10 w-10 text-gray-200" />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900">Itinerary Pending</h3>
+                                        <p className="text-gray-500 max-w-xs mx-auto mt-1">This package currently has no itinerary data available.</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -394,69 +397,66 @@ export default function PackageDetailPage() {
                 </Tabs>
             </div>
 
-            {/* Add/Edit Activity Dialog */}
+            {/* Dialogs */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>{isEditing ? 'Edit Activity' : 'Add Activity'}</DialogTitle>
+                        <DialogTitle>{isEditing ? 'Edit Activity' : 'Add New Activity'}</DialogTitle>
+                        <DialogDescription>
+                            Enter activity details for Day {formData.day_number} - {formData.time_slot}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="title">Title</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Activity Title</Label>
                             <Input
                                 id="title"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                placeholder="Activity title"
+                                placeholder="e.g., Visit Tokyo Tower"
                             />
                         </div>
-                        <div className="grid gap-2">
+                        <div className="space-y-2">
                             <Label htmlFor="description">Description (Optional)</Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Describe the activity..."
+                                placeholder="Briefly describe what happens..."
+                                rows={3}
                             />
                         </div>
-                        <div className="grid gap-2">
+                        <div className="space-y-2">
                             <Label htmlFor="image_url">Image URL (Optional)</Label>
                             <Input
                                 id="image_url"
                                 value={formData.image_url}
                                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                placeholder="https://..."
+                                placeholder="Paste image link here"
                             />
-                        </div>
-                        {/* Hidden context fields */}
-                        <div className="text-xs text-gray-500 mt-2">
-                            Day {formData.day_number} - {formData.time_slot}
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveActivity} disabled={saving}>
+                        <Button onClick={handleSaveActivity} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
                             {saving ? 'Saving...' : 'Save Activity'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Delete Activity?</DialogTitle>
+                        <DialogTitle>Confirm Delete</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this activity? This action cannot be undone.
+                            Are you sure you want to remove this activity? This cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>
-                            Cancel
-                        </Button>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
                         <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-                            {isDeleting ? 'Deleting...' : 'Delete'}
+                            {isDeleting ? 'Deleting...' : 'Delete Activity'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

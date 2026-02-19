@@ -19,6 +19,10 @@ interface TripCartProps {
     basePrice: number
     services?: { name: string; price: number }[]
     currency?: string
+    gstSettings?: {
+        inclusive: boolean
+        percentage: number
+    }
     onCheckout: () => void
     loading?: boolean
     disabled?: boolean
@@ -30,6 +34,7 @@ export function TripCart({
     basePrice,
     services = [],
     currency = 'INR',
+    gstSettings,
     onCheckout,
     loading = false,
     disabled = false
@@ -39,7 +44,16 @@ export function TripCart({
     // Calculate totals
     const totalBasePrice = basePrice * totalTravelers
     const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
-    const grandTotal = totalBasePrice + totalServicesPrice
+
+    // GST Calculation
+    let gstAmount = 0
+    let subTotal = totalBasePrice + totalServicesPrice
+    let grandTotal = subTotal
+
+    if (gstSettings && !gstSettings.inclusive) {
+        gstAmount = (subTotal * gstSettings.percentage) / 100
+        grandTotal = subTotal + gstAmount
+    }
 
     return (
         <Card className="sticky top-24 shadow-xl border-0 bg-white/95 backdrop-blur-xl overflow-hidden rounded-[1.5rem] transition-all duration-300 ring-1 ring-black/5">
@@ -112,11 +126,28 @@ export function TripCart({
                         </div>
                     )}
 
-                    <div className="flex justify-between items-center bg-green-50/50 p-3 rounded-xl border border-green-100">
-                        <span className="text-gray-600 font-medium text-sm">Taxes & Fees</span>
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 font-bold px-2.5 shadow-sm">
-                            INCLUDED
-                        </Badge>
+                    {/* GST Section (Exclusive) */}
+                    {gstSettings && !gstSettings.inclusive && (
+                        <div className="flex justify-between items-center text-sm group bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                            <span className="flex items-center gap-2 text-blue-800 font-medium">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                GST ({gstSettings.percentage}%)
+                            </span>
+                            <span className="font-bold text-blue-900">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-center bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                        <span className="text-gray-600 font-medium text-sm">
+                            {gstSettings && !gstSettings.inclusive ? "Subtotal" : "Taxes & Fees"}
+                        </span>
+                        {gstSettings && !gstSettings.inclusive ? (
+                            <span className="font-bold text-gray-900">₹{subTotal.toLocaleString()}</span>
+                        ) : (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 font-bold px-2.5 shadow-sm">
+                                INCLUDED
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
@@ -126,11 +157,16 @@ export function TripCart({
 
                     <div className="relative z-10 space-y-4">
                         <div className="flex justify-between items-end">
-                            <span className="text-gray-400 font-medium mb-1">Total Amount</span>
+                            <div className="flex flex-col">
+                                <span className="text-gray-400 font-medium mb-1">Total Amount</span>
+                                {gstSettings && gstSettings.inclusive && (
+                                    <span className="text-xs text-gray-500">(Includes GST)</span>
+                                )}
+                            </div>
                             <div className="text-right">
                                 <span className="text-sm text-gray-400 font-medium mr-1">INR</span>
                                 <span className="text-4xl font-extrabold tracking-tight">
-                                    ₹{grandTotal.toLocaleString()}
+                                    ₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </span>
                             </div>
                         </div>

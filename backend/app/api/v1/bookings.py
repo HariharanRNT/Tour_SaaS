@@ -143,7 +143,37 @@ async def create_booking(
             except:
                 pass
         
-        total_amount = (package_price + flight_price) * booking_data.number_of_travelers
+        subtotal = (package_price + flight_price) * booking_data.number_of_travelers
+        total_amount = subtotal
+        
+        # Apply GST Logic
+        # Fetch Agent Settings to determine GST application
+        # We determined agent_id above efficiently, but we need the actual Agent object settings
+        # The subscription logic above might have fetched subscription, but not the Agent profile specifically if it was a customer.
+        
+        real_agent_id = current_user.id if current_user.role == UserRole.AGENT else current_user.agent_id
+        
+        if real_agent_id:
+            from app.models import Agent
+            agent_stmt = select(Agent).where(Agent.user_id == real_agent_id)
+            agent_result = await db.execute(agent_stmt)
+            agent_obj = agent_result.scalar_one_or_none()
+            
+            if agent_obj:
+                gst_percentage = float(agent_obj.gst_percentage) if agent_obj.gst_percentage else 18.0
+                is_gst_inclusive = agent_obj.gst_inclusive if agent_obj.gst_inclusive is not None else False
+                
+                if not is_gst_inclusive:
+                    gst_amount = subtotal * (gst_percentage / 100)
+                    total_amount = subtotal + gst_amount
+                    
+                    # Store calculation details in special_requests or structured if needed?
+                    # For now just updating total_amount as that is what Payment uses.
+                    # Ideally we should store tax_amount separate column, but schema update is heavy.
+                    # We can append to special_requests metadata if needed for invoice?
+                    # Invoice generation logic likely needs this breakdown too.
+                    
+                    # Let's verify InvoiceService logic later. For now, fixing Payment.
         
         # Generate booking reference
         booking_reference = generate_booking_reference()

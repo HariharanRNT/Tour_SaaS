@@ -62,6 +62,8 @@ import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { Country, State, City } from 'country-state-city'
 import { ICountry, IState, ICity } from 'country-state-city'
+import { motion, AnimatePresence } from 'framer-motion'
+
 
 interface Agent {
     id: string
@@ -138,6 +140,28 @@ export default function AdminAgentsPage() {
     const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+
+    // Edit Agent State
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [editingAgent, setEditingAgent] = useState<Agent | null>(null)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [editForm, setEditForm] = useState({
+        first_name: '',
+        last_name: '',
+        phone: '',
+        agency_name: '',
+        company_legal_name: '',
+        business_address: '',
+        country: '',
+        state: '',
+        city: '',
+        gst_no: '',
+        tax_id: '',
+        domain: '',
+        currency: '',
+        commission_type: '',
+        commission_value: ''
+    })
 
     // Validation states
     const [emailValid, setEmailValid] = useState<boolean | null>(null)
@@ -236,7 +260,17 @@ export default function AdminAgentsPage() {
             const payload = {
                 ...newAgent,
                 country: Country.getCountryByCode(newAgent.country)?.name || newAgent.country,
-                state: State.getStateByCodeAndCountry(newAgent.state, newAgent.country)?.name || newAgent.state
+                state: State.getStateByCodeAndCountry(newAgent.state, newAgent.country)?.name || newAgent.state,
+                // Fix for 422: Convert empty strings to null or correct types
+                commission_value: newAgent.commission_value ? Number(newAgent.commission_value) : 0,
+                phone: newAgent.phone || null,
+                gst_no: newAgent.gst_no || null,
+                tax_id: newAgent.tax_id || null,
+                agency_name: newAgent.agency_name || null,
+                company_legal_name: newAgent.company_legal_name || null,
+                business_address: newAgent.business_address || null,
+                city: newAgent.city || null,
+                domain: newAgent.domain || null,
             }
             const response = await fetch('http://localhost:8000/api/v1/admin/agents', {
                 method: 'POST',
@@ -328,6 +362,85 @@ export default function AdminAgentsPage() {
             toast.error(error.message)
         } finally {
             setIsDeleting(false)
+        }
+    }
+
+    const handleEditClick = (agent: any) => {
+        setEditingAgent(agent)
+        setEditForm({
+            first_name: agent.first_name || '',
+            last_name: agent.last_name || '',
+            phone: agent.phone || '',
+            agency_name: agent.agency_name || '',
+            company_legal_name: agent.company_legal_name || '',
+            business_address: agent.business_address || '',
+            country: agent.country || 'IN',
+            state: agent.state || '',
+            city: agent.city || '',
+            gst_no: agent.gst_no || '',
+            tax_id: agent.tax_id || '',
+            domain: agent.domain || '',
+            currency: agent.currency || 'INR',
+            commission_type: agent.commission_type || 'percentage',
+            commission_value: agent.commission_value ? String(agent.commission_value) : '0'
+        })
+
+        // Load states for the country
+        const countryCode = agent.country || 'IN';
+        setCountryStates(State.getStatesOfCountry(countryCode));
+
+        // Load cities if state is present
+        if (agent.state) {
+            setStateCities(City.getCitiesOfState(countryCode, agent.state));
+        }
+
+        setIsEditOpen(true)
+    }
+
+    const handleUpdateAgent = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingAgent) return
+
+        setIsUpdating(true)
+        try {
+            const token = localStorage.getItem('token')
+            const payload = {
+                ...editForm,
+                country: Country.getCountryByCode(editForm.country)?.name || editForm.country,
+                state: State.getStateByCodeAndCountry(editForm.state, editForm.country)?.name || editForm.state,
+                commission_value: editForm.commission_value ? Number(editForm.commission_value) : 0,
+                phone: editForm.phone || null,
+                gst_no: editForm.gst_no || null,
+                tax_id: editForm.tax_id || null,
+                agency_name: editForm.agency_name || null,
+                company_legal_name: editForm.company_legal_name || null,
+                business_address: editForm.business_address || null,
+                city: editForm.city || null,
+                domain: editForm.domain || null,
+            }
+
+            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${editingAgent.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.detail || 'Failed to update agent')
+            }
+
+            await loadAgents()
+            setIsEditOpen(false)
+            toast.success('Agent updated successfully')
+        } catch (error: any) {
+            console.error('Failed to update agent:', error)
+            toast.error(error.message)
+        } finally {
+            setIsUpdating(false)
         }
     }
 
@@ -501,24 +614,33 @@ export default function AdminAgentsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b">
-                <div className="container mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push('/admin/dashboard')}
-                                className="mb-2"
-                            >
-                                ← Back to Dashboard
-                            </Button>
-                            <h1 className="text-3xl font-bold">Agent Management</h1>
-                            <p className="text-gray-600 mt-1">Manage travel agents and their access</p>
-                        </div>
+        <div className="p-8 md:p-10 lg:p-12 bg-[#F8FAFF] min-h-screen">
+            <div className="max-w-[1536px] mx-auto space-y-10">
 
+
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-indigo-100/50">
+                    <div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/admin/dashboard')}
+                            className="mb-4 p-0 h-auto hover:bg-transparent text-indigo-600 font-bold flex items-center gap-1 group"
+                        >
+                            <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Dashboard
+                        </Button>
+                        <motion.h1
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            className="text-[28px] font-bold text-[#0F172A] tracking-tight font-['Plus_Jakarta_Sans',sans-serif]"
+                        >
+                            Agent <span className="text-[#6366F1]">Management</span>
+                        </motion.h1>
+                        <p className="text-slate-500 mt-4 text-lg font-medium">Manage travel agents and their system permissions.</p>
+                    </div>
+
+
+                    <div className="flex items-center gap-2">
                         <Dialog open={isCreateOpen} onOpenChange={(open) => {
                             if (!open && formTouched) {
                                 if (confirm('You have unsaved changes. Are you sure you want to close?')) {
@@ -530,11 +652,18 @@ export default function AdminAgentsPage() {
                             }
                         }}>
                             <DialogTrigger asChild>
-                                <Button className="shadow-lg">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add New Agent
-                                </Button>
+                                <motion.div
+                                    whileHover={{ scale: 1.02, y: -2 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    <Button className="bg-gradient-to-br from-[#6366F1] to-[#4F46E5] hover:shadow-[0_8px_24px_rgba(99,102,241,0.45)] text-white font-bold shadow-[0_4px_16px_rgba(99,102,241,0.35)] rounded-[12px] h-[44px] px-[24px] transition-all duration-200">
+                                        <Plus className="mr-2 h-[16px] w-[16px]" />
+                                        <span className="text-[14px] font-bold">Add New Agent</span>
+                                    </Button>
+                                </motion.div>
+
                             </DialogTrigger>
+
                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle className="text-2xl">Add New Agent</DialogTitle>
@@ -543,134 +672,6 @@ export default function AdminAgentsPage() {
                                     </DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleCreateAgent} className="space-y-8">
-                                    {/* Personal Details - Always Expanded */}
-                                    <div className="space-y-4 p-6 bg-blue-50/50 rounded-lg border border-blue-100">
-                                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                                            <Shield className="h-5 w-5 text-blue-600" />
-                                            Personal Details
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="first_name" className="font-semibold">First Name *</Label>
-                                                <Input
-                                                    id="first_name"
-                                                    required
-                                                    placeholder="Enter first name"
-                                                    value={newAgent.first_name}
-                                                    onChange={e => {
-                                                        setNewAgent({ ...newAgent, first_name: e.target.value })
-                                                        setFormTouched(true)
-                                                    }}
-                                                    className="h-11"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="last_name" className="font-semibold">Last Name *</Label>
-                                                <Input
-                                                    id="last_name"
-                                                    required
-                                                    placeholder="Enter last name"
-                                                    value={newAgent.last_name}
-                                                    onChange={e => {
-                                                        setNewAgent({ ...newAgent, last_name: e.target.value })
-                                                        setFormTouched(true)
-                                                    }}
-                                                    className="h-11"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="email" className="font-semibold">Email *</Label>
-                                                <div className="relative">
-                                                    <Input
-                                                        id="email"
-                                                        type="email"
-                                                        required
-                                                        placeholder="agent@company.com"
-                                                        value={newAgent.email}
-                                                        onChange={e => {
-                                                            setNewAgent({ ...newAgent, email: e.target.value })
-                                                            setFormTouched(true)
-                                                        }}
-                                                        className="h-11 pr-10"
-                                                    />
-                                                    {emailValid !== null && (
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                            {emailValid ? (
-                                                                <Check className="h-5 w-5 text-green-500" />
-                                                            ) : (
-                                                                <X className="h-5 w-5 text-red-500" />
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="phone" className="font-semibold">Mobile Number (Optional)</Label>
-                                                <PhoneInput
-                                                    country={'in'}
-                                                    value={newAgent.phone}
-                                                    onChange={phone => {
-                                                        setNewAgent({ ...newAgent, phone })
-                                                        setFormTouched(true)
-                                                    }}
-                                                    inputProps={{
-                                                        name: 'phone',
-                                                        id: 'phone'
-                                                    }}
-                                                    containerClass="w-full !rounded-md"
-                                                    inputClass="!w-full !h-11 !text-sm !border-gray-200 !rounded-md"
-                                                    buttonClass="!border-gray-200 !rounded-l-md !bg-white"
-                                                    dropdownClass="!rounded-md !shadow-lg"
-                                                    enableSearch={true}
-                                                    searchPlaceholder="Search country..."
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="password" className="font-semibold">Password *</Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="password"
-                                                    type={showPassword ? "text" : "password"}
-                                                    required
-                                                    minLength={8}
-                                                    placeholder="Minimum 8 characters"
-                                                    value={newAgent.password}
-                                                    onChange={e => {
-                                                        setNewAgent({ ...newAgent, password: e.target.value })
-                                                        setFormTouched(true)
-                                                    }}
-                                                    className="h-11 pr-10"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                                >
-                                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                                </button>
-                                            </div>
-                                            {newAgent.password && (
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full transition-all ${getPasswordStrengthColor()}`}
-                                                                style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
-                                                    </div>
-                                                    <p className="text-xs text-gray-500">
-                                                        Use 8+ characters with a mix of letters, numbers & symbols
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
                                     {/* Collapsible Sections */}
                                     <Accordion type="multiple" defaultValue={[]} className="space-y-4">
                                         {/* Agency Details */}
@@ -678,15 +679,16 @@ export default function AdminAgentsPage() {
                                             <AccordionTrigger className="hover:no-underline py-4">
                                                 <h3 className="font-semibold text-lg flex items-center gap-2">
                                                     <Shield className="h-5 w-5 text-purple-600" />
-                                                    Agency Details (Optional)
+                                                    Agency Details
                                                 </h3>
                                             </AccordionTrigger>
-                                            <AccordionContent className="space-y-4 pb-4">
+                                            <AccordionContent className="space-y-4 pb-4 px-1">
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="agency_name" className="font-semibold">Agency Name</Label>
+                                                        <Label htmlFor="agency_name" className="font-semibold">Agency Name *</Label>
                                                         <Input
                                                             id="agency_name"
+                                                            required
                                                             placeholder="Your Travel Agency"
                                                             value={newAgent.agency_name}
                                                             onChange={e => {
@@ -697,9 +699,10 @@ export default function AdminAgentsPage() {
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="company_legal_name" className="font-semibold">Company Legal Name</Label>
+                                                        <Label htmlFor="company_legal_name" className="font-semibold">Company Legal Name *</Label>
                                                         <Input
                                                             id="company_legal_name"
+                                                            required
                                                             placeholder="Legal entity name"
                                                             value={newAgent.company_legal_name}
                                                             onChange={e => {
@@ -711,9 +714,10 @@ export default function AdminAgentsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="domain" className="font-semibold">Website / Domain Name</Label>
+                                                    <Label htmlFor="domain" className="font-semibold">Website / Domain Name *</Label>
                                                     <Input
                                                         id="domain"
+                                                        required
                                                         placeholder="example.com"
                                                         value={newAgent.domain}
                                                         onChange={e => {
@@ -724,9 +728,10 @@ export default function AdminAgentsPage() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="business_address" className="font-semibold">Business Address</Label>
+                                                    <Label htmlFor="business_address" className="font-semibold">Business Address *</Label>
                                                     <Input
                                                         id="business_address"
+                                                        required
                                                         placeholder="Street address, building, floor"
                                                         value={newAgent.business_address}
                                                         onChange={e => {
@@ -799,6 +804,138 @@ export default function AdminAgentsPage() {
                                             </AccordionContent>
                                         </AccordionItem>
 
+                                        {/* Personal Details */}
+                                        <AccordionItem value="personal" className="border rounded-lg px-6 bg-blue-50/50 border-blue-100">
+                                            <AccordionTrigger className="hover:no-underline py-4">
+                                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                                    <Shield className="h-5 w-5 text-blue-600" />
+                                                    Contact Details
+                                                </h3>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="space-y-4 pb-4 px-1">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="first_name" className="font-semibold">First Name *</Label>
+                                                        <Input
+                                                            id="first_name"
+                                                            required
+                                                            placeholder="Enter first name"
+                                                            value={newAgent.first_name}
+                                                            onChange={e => {
+                                                                setNewAgent({ ...newAgent, first_name: e.target.value })
+                                                                setFormTouched(true)
+                                                            }}
+                                                            className="h-11"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="last_name" className="font-semibold">Last Name *</Label>
+                                                        <Input
+                                                            id="last_name"
+                                                            required
+                                                            placeholder="Enter last name"
+                                                            value={newAgent.last_name}
+                                                            onChange={e => {
+                                                                setNewAgent({ ...newAgent, last_name: e.target.value })
+                                                                setFormTouched(true)
+                                                            }}
+                                                            className="h-11"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="email" className="font-semibold">Email *</Label>
+                                                        <div className="relative">
+                                                            <Input
+                                                                id="email"
+                                                                type="email"
+                                                                required
+                                                                placeholder="agent@company.com"
+                                                                value={newAgent.email}
+                                                                onChange={e => {
+                                                                    setNewAgent({ ...newAgent, email: e.target.value })
+                                                                    setFormTouched(true)
+                                                                }}
+                                                                className="h-11 pr-10"
+                                                            />
+                                                            {emailValid !== null && (
+                                                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                                    {emailValid ? (
+                                                                        <Check className="h-5 w-5 text-green-500" />
+                                                                    ) : (
+                                                                        <X className="h-5 w-5 text-red-500" />
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="phone" className="font-semibold">Mobile Number (Optional)</Label>
+                                                        <PhoneInput
+                                                            country={'in'}
+                                                            value={newAgent.phone}
+                                                            onChange={phone => {
+                                                                setNewAgent({ ...newAgent, phone })
+                                                                setFormTouched(true)
+                                                            }}
+                                                            inputProps={{
+                                                                name: 'phone',
+                                                                id: 'phone'
+                                                            }}
+                                                            containerClass="w-full !rounded-md"
+                                                            inputClass="!w-full !h-11 !text-sm !border-gray-200 !rounded-md"
+                                                            buttonClass="!border-gray-200 !rounded-l-md !bg-white"
+                                                            dropdownClass="!rounded-md !shadow-lg"
+                                                            enableSearch={true}
+                                                            searchPlaceholder="Search country..."
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="password" className="font-semibold">Password *</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            id="password"
+                                                            type={showPassword ? "text" : "password"}
+                                                            required
+                                                            minLength={8}
+                                                            placeholder="Minimum 8 characters"
+                                                            value={newAgent.password}
+                                                            onChange={e => {
+                                                                setNewAgent({ ...newAgent, password: e.target.value })
+                                                                setFormTouched(true)
+                                                            }}
+                                                            className="h-11 pr-10"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                        >
+                                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                        </button>
+                                                    </div>
+                                                    {newAgent.password && (
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full transition-all ${getPasswordStrengthColor()}`}
+                                                                        style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500">
+                                                                Use 8+ characters with a mix of letters, numbers & symbols
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+
                                         {/* Financial Details */}
                                         <AccordionItem value="financial" className="border rounded-lg px-6 bg-green-50/50 border-green-100">
                                             <AccordionTrigger className="hover:no-underline py-4">
@@ -807,13 +944,14 @@ export default function AdminAgentsPage() {
                                                     Financial Details (Optional)
                                                 </h3>
                                             </AccordionTrigger>
-                                            <AccordionContent className="space-y-4 pb-4">
+                                            <AccordionContent className="space-y-4 pb-4 px-1">
                                                 <div className="grid grid-cols-3 gap-4">
                                                     <div className="space-y-2">
                                                         <Label htmlFor="gst_no" className="font-semibold">GST No</Label>
                                                         <Input
                                                             id="gst_no"
                                                             placeholder="22AAAAA0000A1Z5"
+                                                            maxLength={15}
                                                             value={newAgent.gst_no}
                                                             onChange={e => {
                                                                 setNewAgent({ ...newAgent, gst_no: e.target.value })
@@ -843,37 +981,6 @@ export default function AdminAgentsPage() {
                                                             value={newAgent.tax_id}
                                                             onChange={e => {
                                                                 setNewAgent({ ...newAgent, tax_id: e.target.value })
-                                                                setFormTouched(true)
-                                                            }}
-                                                            className="h-11"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="commission_type" className="font-semibold">Commission Type</Label>
-                                                        <select
-                                                            id="commission_type"
-                                                            className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                                            value={newAgent.commission_type}
-                                                            onChange={e => {
-                                                                setNewAgent({ ...newAgent, commission_type: e.target.value })
-                                                                setFormTouched(true)
-                                                            }}
-                                                        >
-                                                            <option value="percentage">Percentage (%)</option>
-                                                            <option value="fixed">Fixed Amount</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="commission_value" className="font-semibold">Commission Value</Label>
-                                                        <Input
-                                                            id="commission_value"
-                                                            type="number"
-                                                            placeholder="0"
-                                                            value={newAgent.commission_value}
-                                                            onChange={e => {
-                                                                setNewAgent({ ...newAgent, commission_value: e.target.value })
                                                                 setFormTouched(true)
                                                             }}
                                                             className="h-11"
@@ -913,55 +1020,63 @@ export default function AdminAgentsPage() {
             <div className="container mx-auto px-4 py-8 space-y-6">
                 {/* Stats Dashboard */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium text-blue-900">Total Agents</CardTitle>
-                                <Users className="h-5 w-5 text-blue-600" />
+                    {/* Total Agents - Indigo */}
+                    <Card className="bg-white border-[1.5px] border-[#F1F5F9] rounded-[18px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] relative overflow-hidden">
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px]">TOTAL AGENTS</p>
+                                <div className="absolute top-[20px] right-[20px] w-[40px] h-[40px] rounded-[12px] flex items-center justify-center" style={{ backgroundColor: 'rgba(99,102,241,0.12)' }}>
+                                    <Users className="h-[20px] w-[20px] text-[#6366F1]" />
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-blue-900">{stats.total}</div>
-                            <p className="text-xs text-blue-700 mt-1">All registered agents</p>
+                            <div className="text-[40px] font-extrabold text-[#0F172A] tracking-[-1.5px] font-['Outfit',sans-serif] leading-none">{stats.total}</div>
+                            <p className="text-[12px] font-normal text-[#6366F1] mt-2">All registered agents</p>
+                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#6366F1]" />
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium text-green-900">Active Agents</CardTitle>
-                                <UserCheck className="h-5 w-5 text-green-600" />
+                    {/* Active Agents - Green */}
+                    <Card className="bg-white border-[1.5px] border-[#F1F5F9] rounded-[18px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] relative overflow-hidden">
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px]">ACTIVE AGENTS</p>
+                                <div className="absolute top-[20px] right-[20px] w-[40px] h-[40px] rounded-[12px] flex items-center justify-center" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                                    <UserCheck className="h-[20px] w-[20px] text-[#10B981]" />
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-green-900">{stats.active}</div>
-                            <p className="text-xs text-green-700 mt-1">{stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of total</p>
+                            <div className="text-[40px] font-extrabold text-[#0F172A] tracking-[-1.5px] font-['Outfit',sans-serif] leading-none">{stats.active}</div>
+                            <p className="text-[12px] font-normal text-[#10B981] mt-2">{stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of total</p>
+                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#10B981]" />
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium text-purple-900">New This Month</CardTitle>
-                                <UserPlus className="h-5 w-5 text-purple-600" />
+                    {/* New This Month - Purple */}
+                    <Card className="bg-white border-[1.5px] border-[#F1F5F9] rounded-[18px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] relative overflow-hidden">
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px]">NEW THIS MONTH</p>
+                                <div className="absolute top-[20px] right-[20px] w-[40px] h-[40px] rounded-[12px] flex items-center justify-center" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
+                                    <UserPlus className="h-[20px] w-[20px] text-[#8B5CF6]" />
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-purple-900">{stats.newThisMonth}</div>
-                            <p className="text-xs text-purple-700 mt-1">Joined in {new Date().toLocaleString('default', { month: 'long' })}</p>
+                            <div className="text-[40px] font-extrabold text-[#0F172A] tracking-[-1.5px] font-['Outfit',sans-serif] leading-none">{stats.newThisMonth}</div>
+                            <p className="text-[12px] font-normal text-[#8B5CF6] mt-2">Joined in {new Date().toLocaleString('default', { month: 'long' })}</p>
+                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#8B5CF6]" />
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium text-orange-900">Total Bookings</CardTitle>
-                                <TrendingUp className="h-5 w-5 text-orange-600" />
+                    {/* Total Bookings - Orange */}
+                    <Card className="bg-white border-[1.5px] border-[#F1F5F9] rounded-[18px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] relative overflow-hidden">
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px]">TOTAL BOOKINGS</p>
+                                <div className="absolute top-[20px] right-[20px] w-[40px] h-[40px] rounded-[12px] flex items-center justify-center" style={{ backgroundColor: 'rgba(249,115,22,0.12)' }}>
+                                    <TrendingUp className="h-[20px] w-[20px] text-[#F97316]" />
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-orange-900">{stats.totalBookings}</div>
-                            <p className="text-xs text-orange-700 mt-1">Across all agents</p>
+                            <div className="text-[40px] font-extrabold text-[#0F172A] tracking-[-1.5px] font-['Outfit',sans-serif] leading-none">{stats.totalBookings}</div>
+                            <p className="text-[12px] font-normal text-[#F97316] mt-2">Across all agents</p>
+                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#F97316]" />
                         </CardContent>
                     </Card>
                 </div>
@@ -1018,72 +1133,75 @@ export default function AdminAgentsPage() {
                 )}
 
                 {/* Main Table Card */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4">
+                <Card className="border-0 shadow-2xl shadow-indigo-100/50 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl">
+
+                    <CardHeader className="bg-white border-b border-slate-100 py-8 px-8">
+                        <div className="flex flex-col gap-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Agents</CardTitle>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        Showing {paginatedAgents.length} of {filteredAndSortedAgents.length} agent{filteredAndSortedAgents.length !== 1 ? 's' : ''}
-                                        {activeFilterCount > 0 && ` (${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active)`}
+                                    <CardTitle className="text-[20px] font-bold text-[#0F172A] font-['Plus_Jakarta_Sans',sans-serif]">Agent Directory</CardTitle>
+                                    <p className="text-[13px] font-normal text-[#64748B] mt-2">
+                                        Showing {paginatedAgents.length} active partnerships
+                                        {activeFilterCount > 0 && ` (${activeFilterCount} active filters)`}
                                     </p>
+                                    <div className="h-[1px] bg-[#F1F5F9] mt-4" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm">
-                                        <Download className="h-4 w-4 mr-2" />
-                                        Export
+                                <div className="flex items-center gap-3">
+                                    <Button variant="outline" size="lg" className="rounded-2xl border-slate-200 font-bold h-12 px-6 hover:bg-slate-50">
+                                        <Download className="h-5 w-5 mr-3 text-slate-400" />
+                                        Export List
                                     </Button>
                                 </div>
                             </div>
 
+
                             {/* Filters Row */}
                             <div className="flex items-center gap-3 flex-wrap">
-                                {/* Status Filter */}
-                                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                                    <SelectTrigger className="w-40">
-                                        <Filter className="h-4 w-4 mr-2" />
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Status</SelectItem>
-                                        <SelectItem value="active">Active Only</SelectItem>
-                                        <SelectItem value="inactive">Inactive Only</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                {/* Date Filter */}
-                                <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
-                                    <SelectTrigger className="w-40">
-                                        <Calendar className="h-4 w-4 mr-2" />
-                                        <SelectValue placeholder="Date" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Time</SelectItem>
-                                        <SelectItem value="week">This Week</SelectItem>
-                                        <SelectItem value="month">This Month</SelectItem>
-                                        <SelectItem value="year">This Year</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
                                 {/* Search */}
-                                <div className="relative flex-1 min-w-64">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <div className="relative flex-1 min-w-80 group">
+                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[16px] w-[16px] text-[#94A3B8] group-focus-within:text-[#6366F1] transition-colors" />
                                     <Input
-                                        placeholder="Search by name or email..."
-                                        className="pl-10 pr-10"
+                                        placeholder="Search agents by name or email..."
+                                        className="pl-12 pr-12 bg-[#F8FAFC] border-[1.5px] border-[#E2E8F0] focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.1)] rounded-[10px] h-[42px] font-medium"
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
                                     />
                                     {searchQuery && (
                                         <button
                                             onClick={() => setSearchQuery('')}
-                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
                                         >
-                                            <X className="h-4 w-4" />
+                                            <X className="h-5 w-5" />
                                         </button>
                                     )}
                                 </div>
+
+                                {/* Status Filter */}
+                                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                                    <SelectTrigger className="w-48 bg-[#F8FAFC] border-[1.5px] border-[#E2E8F0] rounded-[10px] h-[42px] font-medium text-[13px] text-slate-700">
+                                        <Filter className="h-4 w-4 mr-2 text-[#64748B]" />
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-[10px] border-[#F1F5F9] shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+                                        <SelectItem value="all">All Agents</SelectItem>
+                                        <SelectItem value="active">Active Members</SelectItem>
+                                        <SelectItem value="inactive">Inactive/Pending</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Date Filter */}
+                                <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
+                                    <SelectTrigger className="w-48 bg-[#F8FAFC] border-[1.5px] border-[#E2E8F0] rounded-[10px] h-[42px] font-medium text-[13px] text-slate-700">
+                                        <Calendar className="h-4 w-4 mr-2 text-[#64748B]" />
+                                        <SelectValue placeholder="Joined" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-[10px] border-[#F1F5F9] shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+                                        <SelectItem value="all">Anytime</SelectItem>
+                                        <SelectItem value="week">Past Week</SelectItem>
+                                        <SelectItem value="month">Past Month</SelectItem>
+                                        <SelectItem value="year">Past Year</SelectItem>
+                                    </SelectContent>
+                                </Select>
 
                                 {/* Clear Filters */}
                                 {activeFilterCount > 0 && (
@@ -1091,12 +1209,13 @@ export default function AdminAgentsPage() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={clearFilters}
-                                        className="text-blue-600 hover:text-blue-700"
+                                        className="text-indigo-600 hover:text-indigo-700 font-bold"
                                     >
-                                        <X className="h-4 w-4 mr-1" />
-                                        Clear filters
+                                        <X className="h-5 w-5 mr-2" />
+                                        Reset Filters
                                     </Button>
                                 )}
+
 
                                 {/* Items per page */}
                                 <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
@@ -1113,41 +1232,42 @@ export default function AdminAgentsPage() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
+                    <CardContent className="p-0">
+                        <div className="overflow-hidden">
                             <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-gray-50/50">
-                                        <TableHead className="w-12">
+                                <TableHeader className="sticky top-0 z-10">
+                                    <TableRow className="bg-[#F8FAFC] border-b-[2px] border-[#F1F5F9]">
+                                        <TableHead className="w-16 px-8 h-[48px]">
                                             <Checkbox
                                                 checked={selectedAgents.size === filteredAndSortedAgents.length && filteredAndSortedAgents.length > 0}
                                                 onCheckedChange={handleSelectAll}
                                                 aria-label="Select all"
+                                                className="rounded-[5px] h-[18px] w-[18px] border-[2px] border-[#E2E8F0] data-[state=checked]:bg-[#6366F1] data-[state=checked]:border-[#6366F1]"
                                             />
                                         </TableHead>
-                                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('name')}>
+                                        <TableHead className="cursor-pointer select-none px-[20px] h-[48px]" onClick={() => handleSort('name')}>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold">Name</span>
-                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'name' ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                <span className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1px]">Agent Profile</span>
+                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'name' ? 'text-indigo-600' : 'text-slate-300'}`} />
                                             </div>
                                         </TableHead>
-                                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('email')}>
+                                        <TableHead className="cursor-pointer select-none px-[20px] h-[48px]" onClick={() => handleSort('email')}>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold">Email</span>
-                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'email' ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                <span className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1px]">Contact Information</span>
+                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'email' ? 'text-indigo-600' : 'text-slate-300'}`} />
                                             </div>
                                         </TableHead>
-                                        <TableHead className="font-semibold">Phone</TableHead>
-                                        <TableHead className="font-semibold">Status</TableHead>
-                                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('created_at')}>
+                                        <TableHead className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1px] h-[48px] px-[20px]">Status</TableHead>
+                                        <TableHead className="cursor-pointer select-none h-[48px] px-[20px]" onClick={() => handleSort('created_at')}>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold">Created</span>
-                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'created_at' ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                <span className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1px]">Join Date</span>
+                                                <ArrowUpDown className={`h-4 w-4 ${sortColumn === 'created_at' ? 'text-indigo-600' : 'text-slate-300'}`} />
                                             </div>
                                         </TableHead>
-                                        <TableHead className="text-right font-semibold">Actions</TableHead>
+                                        <TableHead className="text-right px-8 h-[48px] font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1px]">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
+
                                 <TableBody>
                                     {loading ? (
                                         // Skeleton loader
@@ -1179,76 +1299,132 @@ export default function AdminAgentsPage() {
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        paginatedAgents.map((agent, index) => (
-                                            <TableRow
-                                                key={agent.id}
-                                                className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
-                                            >
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={selectedAgents.has(agent.id)}
-                                                        onCheckedChange={() => handleSelectAgent(agent.id)}
-                                                        aria-label={`Select ${agent.first_name} ${agent.last_name}`}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="font-semibold text-gray-900">
-                                                    {agent.first_name} {agent.last_name}
-                                                </TableCell>
-                                                <TableCell className="text-gray-600">{agent.email}</TableCell>
-                                                <TableCell className="text-gray-600">{agent.phone || '-'}</TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant={agent.is_active ? 'default' : 'secondary'}
-                                                        className={`font-medium ${agent.is_active ? 'bg-green-100 text-green-800 hover:bg-green-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-100'}`}
-                                                    >
-                                                        <span className={`mr-1 ${agent.is_active ? 'text-green-600' : 'text-gray-600'}`}>●</span>
-                                                        {agent.is_active ? 'Active' : 'Inactive'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-gray-600">
-                                                    {new Date(agent.created_at).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric'
-                                                    })}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                                <span className="sr-only">Open menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-48">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => toggleStatus(agent)}>
-                                                                {agent.is_active ? (
-                                                                    <>
-                                                                        <UserX className="mr-2 h-4 w-4 text-red-600" />
-                                                                        <span>Deactivate</span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <UserCheck className="mr-2 h-4 w-4 text-green-600" />
-                                                                        <span>Activate</span>
-                                                                    </>
-                                                                )}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleDeleteClick(agent)}
-                                                                className="text-red-600 focus:text-red-600"
+                                        paginatedAgents.map((agent, index) => {
+                                            // Dynamic avatar colors - 4 color rotation
+                                            const avatarColors = [
+                                                { bg: 'rgba(236,72,153,0.15)', text: '#EC4899' },  // Pink
+                                                { bg: 'rgba(99,102,241,0.15)', text: '#6366F1' },  // Indigo
+                                                { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },  // Green
+                                                { bg: 'rgba(249,115,22,0.15)', text: '#F97316' }   // Orange
+                                            ];
+                                            const colorIndex = index % 4;
+                                            const avatarColor = avatarColors[colorIndex];
+
+                                            return (
+                                                <TableRow
+                                                    key={agent.id}
+                                                    className="group transition-all duration-150 hover:bg-[rgba(99,102,241,0.03)] relative border-b border-[#F8FAFC] h-[72px] cursor-pointer hover:border-l-[3px] hover:border-l-[#6366F1]"
+                                                >
+                                                    <TableCell className="px-8 py-6">
+                                                        <Checkbox
+                                                            checked={selectedAgents.has(agent.id)}
+                                                            onCheckedChange={() => handleSelectAgent(agent.id)}
+                                                            aria-label={`Select ${agent.first_name} ${agent.last_name}`}
+                                                            className="rounded-[5px] h-[18px] w-[18px] border-[2px] border-[#E2E8F0] data-[state=checked]:bg-[#6366F1] data-[state=checked]:border-[#6366F1]"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-4 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div
+                                                                className="h-[44px] w-[44px] rounded-[12px] flex items-center justify-center font-bold text-[14px] uppercase"
+                                                                style={{ backgroundColor: avatarColor.bg, color: avatarColor.text }}
                                                             >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                <span>Delete</span>
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                                                {agent.first_name[0]}{agent.last_name[0]}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-[15px] text-[#0F172A]">{agent.first_name} {agent.last_name}</span>
+                                                                <span
+                                                                    className="text-[10px] font-bold uppercase tracking-[0.8px] mt-1 px-2 py-0.5 rounded-[4px] w-fit"
+                                                                    style={{ backgroundColor: 'rgba(99,102,241,0.1)', color: '#6366F1' }}
+                                                                >
+                                                                    PREMIUM AGENT
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="px-4 py-6">
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium text-[13px] text-[#374151]">{agent.email}</span>
+                                                            </div>
+                                                            <span className="text-[12px] font-normal text-[#94A3B8]">{agent.phone || 'No phone provided'}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-6">
+                                                        <Badge
+                                                            variant={agent.is_active ? 'default' : 'secondary'}
+                                                            className={`font-bold text-[11px] py-1 px-3 rounded-[20px] border-0 w-fit ${agent.is_active ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-slate-100 text-slate-500'}`}
+                                                        >
+                                                            {agent.is_active && <span className="mr-1.5 h-[6px] w-[6px] rounded-full inline-block bg-[#16A34A]"></span>}
+                                                            {agent.is_active ? 'Active' : 'Inactive'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="py-6">
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar className="h-[12px] w-[12px] text-[#94A3B8]" />
+                                                            <span className="font-medium text-[13px] text-[#475569]">
+                                                                {new Date(agent.created_at).toLocaleDateString('en-US', {
+                                                                    year: 'numeric',
+                                                                    month: 'short',
+                                                                    day: 'numeric'
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right px-8 py-6">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-10 w-10 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                                                onClick={() => toggleStatus(agent)}
+                                                            >
+                                                                {agent.is_active ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                                                            </Button>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="sm" className="h-10 w-10 rounded-xl hover:bg-slate-50">
+                                                                        <MoreVertical className="h-5 w-5" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-[220px] rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border-[#F1F5F9] p-2">
+                                                                    <DropdownMenuLabel className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
+                                                                    <DropdownMenuItem onClick={() => toggleStatus(agent)} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        {agent.is_active ? (
+                                                                            <>
+                                                                                <UserX className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                                <span>Deactivate Agent</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <UserCheck className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                                <span>Re-activate Access</span>
+                                                                            </>
+                                                                        )}
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleEditClick(agent)} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        <Check className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                        <span>Edit Agent Details</span>
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        <Shield className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                        <span>Modify Permissions</span>
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator className="my-1 bg-[#F1F5F9]" />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleDeleteClick(agent)}
+                                                                        className="px-[14px] py-[10px] font-medium text-[14px] text-[#EF4444] rounded-[8px] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-all duration-150 cursor-pointer"
+                                                                    >
+                                                                        <Trash2 className="mr-2.5 h-[16px] w-[16px]" />
+                                                                        <span>Permanent Delete</span>
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })
                                     )}
                                 </TableBody>
                             </Table>
@@ -1308,6 +1484,246 @@ export default function AdminAgentsPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Edit Agent Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl">Edit Agent Details</DialogTitle>
+                        <DialogDescription>
+                            Update agent profile, agency details, and financial information.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateAgent} className="space-y-8">
+                        {/* Collapsible Sections */}
+                        <Accordion type="multiple" defaultValue={['agency', 'personal']} className="space-y-4">
+                            {/* Agency Details */}
+                            <AccordionItem value="agency" className="border rounded-lg px-6 bg-purple-50/50 border-purple-100">
+                                <AccordionTrigger className="hover:no-underline py-4">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <Shield className="h-5 w-5 text-purple-600" />
+                                        Agency Details
+                                    </h3>
+                                </AccordionTrigger>
+                                <AccordionContent className="space-y-4 pb-4 px-1">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_agency_name" className="font-semibold">Agency Name</Label>
+                                            <Input
+                                                id="edit_agency_name"
+                                                value={editForm.agency_name}
+                                                onChange={e => setEditForm({ ...editForm, agency_name: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_company_legal_name" className="font-semibold">Company Legal Name</Label>
+                                            <Input
+                                                id="edit_company_legal_name"
+                                                value={editForm.company_legal_name}
+                                                onChange={e => setEditForm({ ...editForm, company_legal_name: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit_domain" className="font-semibold">Website / Domain Name</Label>
+                                        <Input
+                                            id="edit_domain"
+                                            value={editForm.domain}
+                                            onChange={e => setEditForm({ ...editForm, domain: e.target.value })}
+                                            className="h-11"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit_business_address" className="font-semibold">Business Address</Label>
+                                        <Input
+                                            id="edit_business_address"
+                                            value={editForm.business_address}
+                                            onChange={e => setEditForm({ ...editForm, business_address: e.target.value })}
+                                            className="h-11"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_country" className="font-semibold">Country</Label>
+                                            <select
+                                                id="edit_country"
+                                                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                value={editForm.country}
+                                                onChange={e => {
+                                                    const countryCode = e.target.value;
+                                                    setEditForm({ ...editForm, country: countryCode, state: '', city: '' });
+                                                    setCountryStates(State.getStatesOfCountry(countryCode));
+                                                    setStateCities([]);
+                                                }}
+                                            >
+                                                {allCountries.map(c => (
+                                                    <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_state" className="font-semibold">State</Label>
+                                            <select
+                                                id="edit_state"
+                                                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                value={editForm.state}
+                                                onChange={e => {
+                                                    const stateCode = e.target.value;
+                                                    setEditForm({ ...editForm, state: stateCode, city: '' });
+                                                    setStateCities(City.getCitiesOfState(editForm.country, stateCode));
+                                                }}
+                                            >
+                                                <option value="">Select State</option>
+                                                {countryStates.map(s => (
+                                                    <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_city" className="font-semibold">City</Label>
+                                            <select
+                                                id="edit_city"
+                                                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                value={editForm.city}
+                                                onChange={e => setEditForm({ ...editForm, city: e.target.value })}
+                                            >
+                                                <option value="">Select City</option>
+                                                {stateCities.map(c => (
+                                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Personal Details */}
+                            <AccordionItem value="personal" className="border rounded-lg px-6 bg-blue-50/50 border-blue-100">
+                                <AccordionTrigger className="hover:no-underline py-4">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <Shield className="h-5 w-5 text-blue-600" />
+                                        Contact Details
+                                    </h3>
+                                </AccordionTrigger>
+                                <AccordionContent className="space-y-4 pb-4 px-1">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_first_name" className="font-semibold">First Name</Label>
+                                            <Input
+                                                id="edit_first_name"
+                                                value={editForm.first_name}
+                                                onChange={e => setEditForm({ ...editForm, first_name: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_last_name" className="font-semibold">Last Name</Label>
+                                            <Input
+                                                id="edit_last_name"
+                                                value={editForm.last_name}
+                                                onChange={e => setEditForm({ ...editForm, last_name: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_phone" className="font-semibold">Mobile Number</Label>
+                                            <PhoneInput
+                                                country={'in'}
+                                                value={editForm.phone}
+                                                onChange={phone => setEditForm({ ...editForm, phone })}
+                                                inputProps={{
+                                                    name: 'phone',
+                                                    id: 'edit_phone'
+                                                }}
+                                                containerClass="w-full !rounded-md"
+                                                inputClass="!w-full !h-11 !text-sm !border-gray-200 !rounded-md"
+                                                buttonClass="!border-gray-200 !rounded-l-md !bg-white"
+                                                dropdownClass="!rounded-md !shadow-lg"
+                                                enableSearch={true}
+                                                searchPlaceholder="Search country..."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="font-semibold text-gray-400">Email (Cannot be changed)</Label>
+                                            <Input
+                                                disabled
+                                                value={editingAgent?.email || ''}
+                                                className="h-11 bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Financial Details */}
+                            <AccordionItem value="financial" className="border rounded-lg px-6 bg-green-50/50 border-green-100">
+                                <AccordionTrigger className="hover:no-underline py-4">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <Shield className="h-5 w-5 text-green-600" />
+                                        Financial Details
+                                    </h3>
+                                </AccordionTrigger>
+                                <AccordionContent className="space-y-4 pb-4 px-1">
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_gst_no" className="font-semibold">GST No</Label>
+                                            <Input
+                                                id="edit_gst_no"
+                                                maxLength={15}
+                                                value={editForm.gst_no}
+                                                onChange={e => setEditForm({ ...editForm, gst_no: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_currency" className="font-semibold">Currency</Label>
+                                            <Input
+                                                id="edit_currency"
+                                                value={editForm.currency}
+                                                onChange={e => setEditForm({ ...editForm, currency: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_tax_id" className="font-semibold">Tax ID</Label>
+                                            <Input
+                                                id="edit_tax_id"
+                                                value={editForm.tax_id}
+                                                onChange={e => setEditForm({ ...editForm, tax_id: e.target.value })}
+                                                className="h-11"
+                                            />
+                                        </div>
+                                    </div>
+
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        {/* Sticky Footer */}
+                        <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-4 bg-white border-t shadow-lg flex justify-end gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsEditOpen(false)}
+                                className="min-w-24"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isUpdating}
+                                className="min-w-32 bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                {isUpdating ? 'Updating...' : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={!!deleteAgent} onOpenChange={() => setDeleteAgent(null)}>

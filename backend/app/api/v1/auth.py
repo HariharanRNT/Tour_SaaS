@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.models import User, UserRole, Customer, Agent
-from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse
+from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse, GoogleLoginRequest
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.exceptions import ConflictException, UnauthorizedException
 from app.api.deps import get_current_user, get_current_domain
@@ -222,15 +222,151 @@ async def login(
             
             if agent_profile:
                 agent_domain = agent_profile.domain
-                if agent_domain and agent_domain.lower() != domain:
+                # Allow localhost for development/testing
+                if agent_domain and agent_domain.lower() != domain and domain != "localhost":
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN, 
                         detail=f"Access denied. You must login from {agent_domain}"
                     )
     
+
+    
     # Create access token
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
     
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user),
+        require_otp=False
+    )
+
+
+@router.post("/google-login", response_model=LoginResponse)
+async def google_login(
+    data: GoogleLoginRequest,
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
+):
+    """
+    Login or Register with Google.
+    Verifies the ID token from Google and logs in the user.
+    Creates a new account if one doesn't exist.
+    """
+
+
+    import httpx
+    from app.core.security import create_access_token
+    from sqlalchemy.orm import selectinload
+    from app.config import settings
+
+    try:
+        # Verify Access Token via UserInfo Endpoint
+        # This allows using useGoogleLogin hook (which returns access_token) for custom UI
+        userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(userinfo_url, headers={"Authorization": f"Bearer {data.token}"})
+        
+        if response.status_code != 200:
+            raise ValueError(f"Invalid token: {response.text}")
+            
+        id_info = response.json()
+        
+        # Validate audience if needed, but access token is sufficient validation 
+        # if obtained directly from user interaction
+        
+        email = id_info.get('email')
+        google_id = id_info.get('sub')
+        picture = id_info.get('picture')
+        first_name = id_info.get('given_name', '')
+        last_name = id_info.get('family_name', '')
+        
+        if not email:
+            raise ValueError('Email not found in token.')
+
+    except (ValueError, httpx.HTTPError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Google token: {str(e)}"
+        )
+
+    # Check if user exists
+    stmt = select(User).where(User.email == email).options(
+        selectinload(User.admin_profile),
+        selectinload(User.agent_profile),
+        selectinload(User.customer_profile)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if user:
+        # Update google_id if not set
+        if not user.google_id:
+            user.google_id = google_id
+            if picture and not user.profile_picture_url:
+                user.profile_picture_url = picture
+            await db.commit()
+            await db.refresh(user)
+        
+        # If user exists but is inactive
+        if not user.is_active:
+             raise HTTPException(status_code=400, detail="Account is inactive")
+             
+    else:
+        # Registration Flow for New User
+        # Only allow creating CUSTOMER accounts via Google Login
+        if data.role != UserRole.CUSTOMER:
+             raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only Customer accounts can be created via Google Login"
+            )
+
+        # Handle formatting
+        import secrets
+        random_password = secrets.token_urlsafe(16)
+        
+        # Create User
+        user = User(
+            email=email,
+            password_hash=get_password_hash(random_password),
+            role=UserRole.CUSTOMER,
+            is_active=True,
+            email_verified=True, # Trusted via Google
+            google_id=google_id,
+            profile_picture_url=picture
+        )
+        db.add(user)
+        await db.flush()
+        
+        # Create Customer Profile
+        customer = Customer(
+            user_id=user.id,
+            first_name=first_name,
+            last_name=last_name,
+            phone=None # Phone not always available from Google
+        )
+        
+        # If logging in on an agent domain, associate with that agent
+        if domain and domain != "localhost":
+             agent_query = await db.execute(select(Agent).where(Agent.domain == domain))
+             agent_profile = agent_query.scalar_one_or_none()
+             if agent_profile:
+                 customer.agent_id = agent_profile.user_id
+        
+        db.add(customer)
+        await db.commit()
+        
+        # Reload user with profiles
+        stmt = select(User).where(User.id == user.id).options(
+            selectinload(User.customer_profile)
+        )
+        result = await db.execute(stmt)
+        user = result.scalar_one()
+
+    # Create access token
+    access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
+
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",

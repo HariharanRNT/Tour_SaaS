@@ -40,6 +40,9 @@ export default function CheckoutPage() {
     const [travelers, setTravelers] = useState<Traveler[]>([])
     const [totalAmount, setTotalAmount] = useState(0)
 
+    // GST Settings State
+    const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
+
     // Mock Modal State
     const [showMockModal, setShowMockModal] = useState(false)
     const [currentOrder, setCurrentOrder] = useState<any>(null)
@@ -141,17 +144,37 @@ export default function CheckoutPage() {
     }
 
 
-    // Load Session
+
+    // Load Session & Settings
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (!sessionId) return;
 
         const fetchSession = async () => {
             try {
-                // Fetch trip plan session
-                const res = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`)
+                // Fetch trip plan session with X-Domain header to ensure correct agent context
+                const headers: Record<string, string> = {
+                    'Content-Type': 'application/json'
+                }
+
+                if (typeof window !== 'undefined') {
+                    headers['X-Domain'] = window.location.hostname
+                }
+
+                const res = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
+                    headers
+                })
                 if (!res.ok) throw new Error("Failed to load session")
                 const data = await res.json()
                 setSessionData(data)
+
+                // Set GST Settings from session data
+                if (data.gst_percentage !== undefined) {
+                    setGstSettings({
+                        inclusive: data.gst_inclusive,
+                        percentage: data.gst_percentage
+                    })
+                }
 
                 // Initialize Travelers
                 const initialTravelers: Traveler[] = []
@@ -207,6 +230,8 @@ export default function CheckoutPage() {
                 const count = adults + children
                 const basePrice = data.price_per_person || 18000
                 const flightPrice = data.flight_details?.price || 0
+
+                // Initial calculation (refreshed by effect below)
                 setTotalAmount((basePrice + flightPrice) * count)
 
             } catch (e) {
@@ -227,6 +252,25 @@ export default function CheckoutPage() {
         // Load states for default country (India)
         setCountryStates(State.getStatesOfCountry('IN'))
     }, [sessionId])
+
+    // Effect to recalculate total when GST settings or travelers change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (!sessionData) return
+
+        const count = travelers.length
+        const basePrice = sessionData.price_per_person || 18000
+        const flightPrice = sessionData.flight_details?.price || 0
+
+        let subTotal = (basePrice + flightPrice) * count
+
+        if (gstSettings && !gstSettings.inclusive) {
+            const gstAmount = (subTotal * gstSettings.percentage) / 100
+            setTotalAmount(subTotal + gstAmount)
+        } else {
+            setTotalAmount(subTotal)
+        }
+    }, [sessionData, travelers, gstSettings])
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {}
@@ -457,7 +501,7 @@ export default function CheckoutPage() {
                         <CheckCircle className="h-10 w-10 text-green-600" />
                     </div>
                     <h1 className="text-3xl font-bold mb-2 text-gray-900">Booking Confirmed!</h1>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Your trip is officially booked. We've sent the confirmation details to your email.</p>
+                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Your trip is officially booked. We&apos;ve sent the confirmation details to your email.</p>
 
                     {confirmation ? (
                         <div className="text-left mb-8">
@@ -483,7 +527,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-3 text-amber-800 text-sm mt-2">
                                     <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
-                                    <p>Flight confirmation details are pending. Please check "My Bookings" shortly for updates.</p>
+                                    <p>Flight confirmation details are pending. Please check &quot;My Bookings&quot; shortly for updates.</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -502,6 +546,8 @@ export default function CheckoutPage() {
 
     const basePrice = sessionData?.price_per_person || 18000
     const flightPrice = sessionData?.flight_details?.price || 0
+    const subTotal = (basePrice + flightPrice) * travelers.length
+    const gstAmount = (gstSettings && !gstSettings.inclusive) ? (subTotal * gstSettings.percentage) / 100 : 0
 
     // Progress Stepper Component
     const steps = [
@@ -555,7 +601,7 @@ export default function CheckoutPage() {
                         <div className="space-y-4">
                             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                                 <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg"><FileText className="h-5 w-5" /></span>
-                                Who's Traveling?
+                                Who&apos;s Traveling?
                             </h2>
                             {travelers.map((t, idx) => (
                                 <TravelerForm
@@ -789,14 +835,26 @@ export default function CheckoutPage() {
                                         </>
                                     )}
 
-                                    <div className="bg-slate-50 p-3 rounded-lg border border-dashed border-slate-200 text-xs text-slate-500 text-center">
-                                        Taxes & Fees Included
-                                    </div>
+                                    {gstSettings && !gstSettings.inclusive ? (
+                                        <div className="group bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 flex justify-between items-center text-sm">
+                                            <span className="flex items-center gap-2 text-blue-800 font-medium">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                GST ({gstSettings.percentage}%)
+                                            </span>
+                                            <span className="font-bold text-blue-900">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-slate-50 p-3 rounded-lg border border-dashed border-slate-200 text-xs text-slate-500 text-center">
+                                            Taxes & Fees Included
+                                        </div>
+                                    )}
 
                                     <div className="border-t border-slate-100 pt-4 flex justify-between items-end">
                                         <div>
-                                            <span className="text-slate-500 text-xs font-medium uppercase tracking-wider block mb-1">Total Amount</span>
-                                            <span className="text-3xl font-bold text-slate-900 leading-none">₹{totalAmount.toLocaleString()}</span>
+                                            <span className="text-slate-500 text-xs font-medium uppercase tracking-wider block mb-1">
+                                                {gstSettings && !gstSettings.inclusive ? "Total Amount" : "Total Amount"}
+                                            </span>
+                                            <span className="text-3xl font-bold text-slate-900 leading-none">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                         </div>
                                     </div>
 
