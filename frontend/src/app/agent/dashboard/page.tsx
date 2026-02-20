@@ -736,8 +736,8 @@ export default function AgentDashboard() {
                                     <span className="text-slate-500">Here's what's happening today:</span>
                                     <div className="hidden sm:flex items-center gap-2">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
-                                                ? "bg-orange-50 text-[#F59E0B] border-orange-100"
-                                                : "bg-slate-50 text-slate-500 border-slate-100"
+                                            ? "bg-orange-50 text-[#F59E0B] border-orange-100"
+                                            : "bg-slate-50 text-slate-500 border-slate-100"
                                             }`}>
                                             {stats.todayBookings > 0 && (
                                                 <span className="relative flex h-2 w-2">
@@ -944,7 +944,7 @@ export default function AgentDashboard() {
                                                 <div className="bg-gradient-to-br from-amber-300 to-yellow-500 p-1.5 rounded-full shadow-sm text-white">
                                                     <Trophy className="h-4 w-4" />
                                                 </div>
-                                                My Top Performer
+                                                Top Revenue Package
                                             </CardTitle>
                                             <CardDescription className="text-emerald-700/80 font-medium">Your #1 booked package</CardDescription>
                                         </CardHeader>
@@ -998,7 +998,7 @@ export default function AgentDashboard() {
                                                 <div className="bg-gradient-to-br from-slate-400 to-slate-600 p-1.5 rounded-full shadow-sm text-white">
                                                     <TrendingDown className="h-4 w-4" />
                                                 </div>
-                                                Lowest Traction
+                                                Low Revenue Package
                                             </CardTitle>
                                             <CardDescription className="text-blue-700/80 font-medium">Needs attention</CardDescription>
                                         </CardHeader>
@@ -1224,7 +1224,7 @@ export default function AgentDashboard() {
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-lg text-slate-800">Manage Packages</CardTitle>
-                                                    <CardDescription>View, edit, or create tours</CardDescription>
+                                                    <CardDescription>View, Edit, or Create Tours</CardDescription>
                                                 </div>
                                             </div>
                                         </CardHeader>
@@ -1247,7 +1247,7 @@ export default function AgentDashboard() {
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-lg text-slate-800">Customers</CardTitle>
-                                                    <CardDescription>Manage client profiles</CardDescription>
+                                                    <CardDescription>Manage Client Profiles</CardDescription>
                                                 </div>
                                             </div>
                                         </CardHeader>
@@ -1270,7 +1270,7 @@ export default function AgentDashboard() {
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
-                                                    <CardDescription>Track booking status</CardDescription>
+                                                    <CardDescription>Track Booking Status</CardDescription>
                                                 </div>
                                             </div>
                                         </CardHeader>
@@ -1291,7 +1291,7 @@ export default function AgentDashboard() {
                                                     </div>
                                                     <div>
                                                         <CardTitle className="text-lg text-slate-800">Subscription</CardTitle>
-                                                        <CardDescription>Manage plan & billing</CardDescription>
+                                                        <CardDescription>Manage Plan & Billing</CardDescription>
                                                     </div>
                                                 </div>
                                             </CardHeader>
@@ -1313,7 +1313,7 @@ export default function AgentDashboard() {
                                                     </div>
                                                     <div>
                                                         <CardTitle className="text-lg text-slate-800">Settings</CardTitle>
-                                                        <CardDescription>Configure preferences</CardDescription>
+                                                        <CardDescription>Configure Preferences</CardDescription>
                                                     </div>
                                                 </div>
                                             </CardHeader>

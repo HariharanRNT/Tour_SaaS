@@ -424,6 +424,7 @@ export default function AgentSettingsPage() {
                         <nav className="flex gap-8 overflow-x-auto pb-px scrollbar-hide">
                             {[
                                 { name: 'General', id: 'general-section' },
+                                { name: 'Theme', id: 'theme-link' },
                                 { name: 'Email', id: 'email-section' },
                                 { name: 'Payment', id: 'payment-section' },
                                 { name: 'Notifications', id: 'notifications-section' },
@@ -431,7 +432,13 @@ export default function AgentSettingsPage() {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => scrollToSection(tab.id)}
+                                    onClick={() => {
+                                        if (tab.id === 'theme-link') {
+                                            router.push('/agent/settings/theme');
+                                        } else {
+                                            scrollToSection(tab.id);
+                                        }
+                                    }}
                                     className="pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap px-1 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 active:text-blue-600 active:border-blue-600 focus:text-blue-600 focus:border-blue-600"
                                 >
                                     {tab.name}

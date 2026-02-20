@@ -10,6 +10,7 @@ import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCi
 import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
+import { useTheme } from '@/context/ThemeContext'
 
 interface Destination {
     id: string
@@ -25,8 +26,18 @@ interface Destination {
 
 export default function Home() {
     const router = useRouter()
+    const { theme, isLoading } = useTheme()
     const [destinations, setDestinations] = useState<Destination[]>([])
-    const [loading, setLoading] = useState(true)
+    const [destLoading, setDestLoading] = useState(true)
+
+    const IconMap: Record<string, any> = {
+        Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin
+    };
+
+    const getIcon = (name: string, fallback: any) => {
+        const Icon = IconMap[name];
+        return Icon ? <Icon className="h-10 w-10 text-current" /> : fallback;
+    };
 
     const handleSampleItinerary = async () => {
         try {
@@ -44,6 +55,8 @@ export default function Home() {
     }
 
     useEffect(() => {
+        if (isLoading) return; // Wait for theme to load first
+
         const fetchDestinations = async () => {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
@@ -57,25 +70,61 @@ export default function Home() {
             } catch (error) {
                 console.error("Failed to fetch popular destinations", error)
             } finally {
-                setLoading(false)
+                setDestLoading(false)
             }
         }
         fetchDestinations()
-    }, [])
+    }, [isLoading])
+
+    const heroBgStyle = (isLoading && theme.id === 'default')
+        ? { backgroundColor: '#111' } // Neutral dark background while loading first time
+        : theme.hero_background_type === 'gradient'
+            ? { background: theme.hero_gradient || 'linear-gradient(to bottom, #000, #1e3a8a)' }
+            : theme.hero_background_type === 'solid'
+                ? { backgroundColor: theme.hero_gradient || '#000' }
+                : { backgroundImage: `url("${theme.home_hero_image || (isLoading ? '' : 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop')}")` };
+
+    if (isLoading || destLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[80vh] w-full bg-white">
+                <div className="relative">
+                    <div className="h-16 w-16 rounded-full border-t-4 border-b-4 border-blue-500 animate-spin"></div>
+                    <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-t-4 border-b-4 border-blue-300 animate-spin opacity-50" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+                </div>
+                <p className="mt-6 text-gray-500 text-sm font-medium animate-pulse">Loading your experience...</p>
+            </div>
+        )
+    }
+
+    const getWcuIconBg = (idx: number, iconBgColor?: string) => {
+        const defaults = ['#3B82F6', '#8B5CF6', '#06B6D4', '#10B981'];
+        const baseColor = (iconBgColor || defaults[idx % defaults.length]).toUpperCase();
+
+        const presetGradients: Record<string, string[]> = {
+            '#3B82F6': ['#60A5FA', '#2563EB'], // Blue
+            '#8B5CF6': ['#A78BFA', '#7C3AED'], // Purple
+            '#06B6D4': ['#22D3EE', '#0891B2'], // Teal
+            '#10B981': ['#34D399', '#059669'], // Green
+            '#F97316': ['#FB923C', '#EA580C'], // Orange
+            '#F43F5E': ['#FB7185', '#E11D48'], // Rose
+        };
+
+        const colors = presetGradients[baseColor] || [baseColor, baseColor];
+        return `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
+    };
 
     return (
-        <div>
+        <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
             {/* Modernized Hero Section */}
-            <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden">
-                {/* Background Image with Overlay */}
+            <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden -mt-16">
+
+                {/* Background with Overlay */}
                 <div
-                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed"
-                    style={{
-                        backgroundImage: 'url("https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop")'
-                    }}
+                    className={`absolute inset-0 z-0 ${theme.hero_background_type === 'image' ? 'bg-cover bg-center bg-no-repeat bg-fixed' : ''}`}
+                    style={heroBgStyle}
                 >
-                    <div className="absolute inset-0 bg-black/50 mix-blend-multiply" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-blue-950/90" />
+                    <div className="absolute inset-0 bg-black mix-blend-multiply" style={{ opacity: "var(--hero-overlay-opacity, 0.6)" }} />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90" style={{ opacity: "var(--hero-overlay-opacity, 0.6)" }} />
                 </div>
 
                 {/* Animated Floating Icons */}
@@ -94,13 +143,6 @@ export default function Home() {
                     >
                         <MapPin className="w-12 h-12 text-white/30 drop-shadow-lg" />
                     </motion.div>
-                    <motion.div
-                        animate={{ y: [0, -15, 0] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                        className="absolute bottom-1/3 left-1/4 opacity-60 hidden md:block"
-                    >
-                        <Globe className="w-10 h-10 text-blue-200/20 drop-shadow-lg" />
-                    </motion.div>
                 </div>
 
                 {/* AI Badge - Upper Right */}
@@ -113,15 +155,25 @@ export default function Home() {
 
                 <div className="container mx-auto px-4 relative z-10 py-20">
                     <div className="max-w-5xl mx-auto text-center">
-                        <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[1.1] text-white drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-                            Adventure Awaits—<br className="hidden md:block" />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-indigo-200 to-white">
-                                Tailored Just for You
-                            </span>
+                        <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[1.1] text-white drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]" style={{ color: "var(--heading, white)" }}>
+                            {isLoading ? (
+                                <span className="h-20 w-3/4 bg-white/10 rounded-2xl animate-pulse mx-auto block" />
+                            ) : theme.home_hero_title ? (
+                                theme.home_hero_title
+                            ) : (
+                                <>
+                                    Adventure Awaits—<br className="hidden md:block" />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-indigo-200 to-white">
+                                        Tailored Just for You
+                                    </span>
+                                </>
+                            )}
                         </h1>
 
-                        <p className="text-xl md:text-3xl mb-12 text-blue-100/90 max-w-3xl mx-auto leading-relaxed font-light">
-                            Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.
+                        <p className="text-xl md:text-3xl mb-12 text-blue-100/90 max-w-3xl mx-auto leading-relaxed font-light" style={{ color: "var(--body-text, rgba(219, 234, 254, 0.9))" }}>
+                            {isLoading ? (
+                                <span className="h-8 w-1/2 bg-white/10 rounded-lg animate-pulse mx-auto inline-block" />
+                            ) : (theme.home_hero_subtitle || "Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.")}
                         </p>
 
                         {/* CTA Section */}
@@ -130,23 +182,24 @@ export default function Home() {
                                 onClick={handleSampleItinerary}
                                 variant="ghost"
                                 size="lg"
-                                className="h-16 px-8 text-xl   rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all font-bold"
+                                className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all font-bold"
+                                style={{ borderRadius: "var(--button-radius, 9999px)" }}
                             >
                                 <PlayCircle className="h-6 w-6 mr-2" />
-                                See Sample Itinerary
+                                {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (theme.hero_cta_secondary_text || "See Sample Itinerary")}
                             </Button>
 
                             <Link href="/plan-trip">
-                                <Button size="lg" className="h-16 px-12 text-xl rounded-full bg-white text-blue-950 hover:bg-blue-50 hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)] border-2 border-transparent hover:border-blue-100 group font-bold">
+                                <Button size="lg" className="h-16 px-12 text-xl rounded-full bg-white text-blue-950 hover:bg-blue-50 hover:scale-105 transition-all duration-300 shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)] border-2 border-transparent hover:border-blue-100 group font-bold" style={{ borderRadius: "var(--button-radius, 9999px)", backgroundColor: "var(--button-bg, white)", color: "var(--button-text, #020617)" }}>
                                     <Luggage className="h-6 w-6 mr-2 text-indigo-600" />
-                                    Start Your Journey
+                                    {isLoading ? <span className="h-6 w-32 bg-gray-200 rounded animate-pulse inline-block" /> : (theme.hero_cta_primary_text || "Start Your Journey")}
                                     <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
 
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="ghost" size="lg" className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all group font-bold">
+                                    <Button variant="ghost" size="lg" className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all group font-bold" style={{ borderRadius: "var(--button-radius, 9999px)" }}>
                                         <Sparkles className="h-6 w-6 mr-2 text-yellow-300 animate-pulse" />
                                         Plan with AI
                                     </Button>
@@ -157,119 +210,121 @@ export default function Home() {
                             </Dialog>
                         </div>
 
-                        {/* Feature Cards - 3 Blue Cards */}
-                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto transform translate-y-8">
-                            {[
-                                {
-                                    icon: <Sparkles className="h-10 w-10 text-blue-300" />,
-                                    title: "Smart Recommendations",
-                                    desc: "Tailored trips based on your unique preferences",
-                                    gradient: "from-blue-500/20 to-blue-600/20",
-                                    border: "group-hover:border-blue-400/50"
-                                },
-                                {
-                                    icon: <Sliders className="h-10 w-10 text-indigo-300" />,
-                                    title: "Customize Everything",
-                                    desc: "Full control to adjust dates, activities, and stays",
-                                    gradient: "from-indigo-500/20 to-indigo-600/20",
-                                    border: "group-hover:border-indigo-400/50"
-                                },
-                                {
-                                    icon: <CheckCircle2 className="h-10 w-10 text-cyan-300" />,
-                                    title: "Instant Booking",
-                                    desc: "Save your plan and book securely when ready",
-                                    gradient: "from-cyan-500/20 to-cyan-600/20",
-                                    border: "group-hover:border-cyan-400/50"
-                                }
-                            ].map((card, idx) => (
-                                <div key={idx} className={`group bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden ${card.border}`}>
-                                    {/* Inner Gradient */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                        {/* Feature Cards */}
+                        {theme.show_feature_cards !== false && (
+                            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto transform translate-y-8">
+                                {(theme.feature_cards && theme.feature_cards.length > 0 ? theme.feature_cards : [
+                                    {
+                                        icon: "Sparkles",
+                                        title: "Smart Recommendations",
+                                        description: "Tailored trips based on your unique preferences",
+                                        bg_color: "from-blue-500/20 to-blue-600/20"
+                                    },
+                                    {
+                                        icon: "Sliders",
+                                        title: "Customize Everything",
+                                        description: "Full control to adjust dates, activities, and stays",
+                                        bg_color: "from-indigo-500/20 to-indigo-600/20"
+                                    },
+                                    {
+                                        icon: "CheckCircle2",
+                                        title: "Instant Booking",
+                                        description: "Save your plan and book securely when ready",
+                                        bg_color: "from-cyan-500/20 to-cyan-600/20"
+                                    }
+                                ]).map((card, idx) => (
+                                    <div key={idx} className={`group bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden`} style={{ borderRadius: "var(--card-radius, 1.5rem)", backgroundColor: "var(--card-bg, rgba(255, 255, 255, 0.05))", boxShadow: "var(--card-shadow, none)" }}>
+                                        {/* Inner Gradient */}
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${card.bg_color || 'from-blue-500/20 to-blue-600/20'} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
 
-                                    <div className="relative z-10 flex flex-col items-center">
-                                        <div className="bg-white/10 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:bg-white/20 transition-all duration-300">
-                                            {card.icon}
+                                        <div className="relative z-10 flex flex-col items-center">
+                                            <div className="bg-white/10 w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:bg-white/20 transition-all duration-300" style={{ borderRadius: "var(--radius, 1rem)" }}>
+                                                {getIcon(card.icon, <Sparkles className="h-10 w-10 text-blue-300" />)}
+                                            </div>
+                                            <h3 className="font-bold text-2xl mb-3 text-white">{card.title}</h3>
+                                            <p className="text-blue-100/80 leading-relaxed mb-6">{card.description || card.desc}</p>
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                                                <span className="text-sm font-semibold text-blue-200 flex items-center gap-1">
+                                                    Learn more <ArrowRight className="w-4 h-4" />
+                                                </span>
+                                            </div>
                                         </div>
-                                        <h3 className="font-bold text-2xl mb-3 text-white">{card.title}</h3>
-                                        <p className="text-blue-100/80 leading-relaxed mb-6">{card.desc}</p>
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
-                                            <span className="text-sm font-semibold text-blue-200 flex items-center gap-1">
-                                                Learn more <ArrowRight className="w-4 h-4" />
-                                            </span>
-                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* Why Choose Us Section */}
+            {theme.show_wcu_section !== false && (
+                <section className="bg-gray-50 relative overflow-hidden" style={{ paddingTop: "var(--section-spacing, 4rem)", paddingBottom: "calc(var(--section-spacing, 4rem) / 2)" }}>
+                    {/* Wave Separator - Top */}
+                    <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0]">
+                        <svg className="relative block w-[calc(100%+1.3px)] h-[50px] md:h-[100px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-black opacity-90"></path>
+                        </svg>
+                    </div>
+
+                    <div className="container mx-auto px-4 relative z-10 pt-16">
+                        <div className="text-center mb-20">
+                            <Badge variant="outline" className="mb-4 border-blue-200 text-blue-600 bg-blue-50 px-4 py-1.5 uppercase tracking-widest text-xs font-bold">Why Choose Us</Badge>
+                            <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight mb-4">
+                                {theme.wcu_title || "Everything You Need"}<br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600" style={{ backgroundImage: "linear-gradient(to r, var(--primary, #2563eb), var(--secondary, #4f46e5))" }}>
+                                    {theme.wcu_accent_title || "For a Perfect Trip"}
+                                </span>
+                            </h2>
+                            <p className="text-gray-500 max-w-2xl mx-auto text-lg">We handle the details so you can focus on making memories.</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-4 gap-8">
+                            {(theme.wcu_cards && theme.wcu_cards.length > 0 ? theme.wcu_cards : [
+                                {
+                                    icon: "Globe",
+                                    bg: "bg-gradient-to-br from-blue-400 to-blue-600",
+                                    title: "Curated Destinations",
+                                    description: "Discover handpicked, verified experiences at the world’s top destinations."
+                                },
+                                {
+                                    icon: "Users",
+                                    bg: "bg-gradient-to-br from-indigo-400 to-indigo-600",
+                                    title: "Local Experts",
+                                    description: "Authentic experiences guided by seasoned locals who know the hidden gems."
+                                },
+                                {
+                                    icon: "Clock",
+                                    bg: "bg-gradient-to-br from-sky-400 to-sky-600",
+                                    title: "Flexible Plans",
+                                    description: "Change dates, activities, or cancel with ease. Your plan adapts to you."
+                                },
+                                {
+                                    icon: "Shield",
+                                    bg: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+                                    title: "Safe Payments",
+                                    description: "Seamless, secure payments via Razorpay with instant confirmation."
+                                }
+                            ]).map((feature, idx) => (
+                                <div key={idx} className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-gray-100 hover:shadow-2xl hover:shadow-gray-200 hover:-translate-y-2 transition-all duration-300 border border-gray-100 relative overflow-hidden" style={{ borderRadius: "var(--card-radius, 2rem)" }}>
+                                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500" style={{ background: getWcuIconBg(idx, feature.icon_bg_color) }}>
+                                        {getIcon(feature.icon, <Globe className="h-10 w-10 text-white" />)}
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-700 transition-colors">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-gray-500 leading-relaxed font-medium">
+                                        {feature.description || feature.desc}
+                                    </p>
+                                    <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                                        <div className="w-8 h-1 bg-gray-200 rounded-full group-hover:bg-blue-500 transition-colors duration-500" style={{ backgroundColor: "var(--primary, #2563eb)" }}></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </div>
-            </section>
-
-            {/* Features Section */}
-            <section className="pt-24 pb-12 bg-gray-50 relative overflow-hidden">
-                {/* Wave Separator - Top */}
-                <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0]">
-                    <svg className="relative block w-[calc(100%+1.3px)] h-[50px] md:h-[100px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                        <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-blue-900"></path>
-                    </svg>
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10 pt-16">
-                    <div className="text-center mb-20">
-                        <Badge variant="outline" className="mb-4 border-blue-200 text-blue-600 bg-blue-50 px-4 py-1.5 uppercase tracking-widest text-xs font-bold">Why Choose Us</Badge>
-                        <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight mb-4">Everything You Need<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">For a Perfect Trip</span></h2>
-                        <p className="text-gray-500 max-w-2xl mx-auto text-lg">We handle the details so you can focus on making memories.</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-4 gap-8">
-                        {[
-                            {
-                                icon: <Globe className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-blue-400 to-blue-600",
-                                shadow: "shadow-blue-200",
-                                title: "Curated Destinations",
-                                desc: "Discover handpicked, verified experiences at the world’s top destinations."
-                            },
-                            {
-                                icon: <Users className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-indigo-400 to-indigo-600",
-                                shadow: "shadow-indigo-200",
-                                title: "Local Experts",
-                                desc: "Authentic experiences guided by seasoned locals who know the hidden gems."
-                            },
-                            {
-                                icon: <Clock className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-sky-400 to-sky-600",
-                                shadow: "shadow-sky-200",
-                                title: "Flexible Plans",
-                                desc: "Change dates, activities, or cancel with ease. Your plan adapts to you."
-                            },
-                            {
-                                icon: <Shield className="h-10 w-10 text-white" />,
-                                bg: "bg-gradient-to-br from-cyan-400 to-cyan-600",
-                                shadow: "shadow-cyan-200",
-                                title: "Safe Payments",
-                                desc: "Seamless, secure payments via Razorpay with instant confirmation."
-                            }
-                        ].map((feature, idx) => (
-                            <div key={idx} className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-gray-100 hover:shadow-2xl hover:shadow-gray-200 hover:-translate-y-2 transition-all duration-300 border border-gray-100 relative overflow-hidden">
-                                <div className={`w-20 h-20 rounded-full ${feature.bg} flex items-center justify-center mb-8 shadow-lg ${feature.shadow} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500`}>
-                                    {feature.icon}
-                                </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-700 transition-colors">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-gray-500 leading-relaxed font-medium">
-                                    {feature.desc}
-                                </p>
-                                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
-                                    <div className="w-8 h-1 bg-gray-200 rounded-full group-hover:bg-blue-500 transition-colors duration-500"></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* Popular Destinations */}
             <section className="pt-12 pb-24 bg-white">
@@ -290,7 +345,7 @@ export default function Home() {
                         </Link>
                     </div>
 
-                    {loading ? (
+                    {destLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                             <div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-gray-500 font-medium">Curating best spots...</p>

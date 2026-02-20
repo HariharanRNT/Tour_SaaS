@@ -453,7 +453,7 @@ Response:
                 "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzgwNTc4NzE4LWYwMjAtNGU0OC1iYmUxLWExMDlmMWU3MDNhOSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
                 "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzUzNDc3YzlmLWQ5ZWItNDZlYy05ZWFiLTI2Y2VlOTBlYTI2NSIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0=",
                 "https://images.holibob.tech/eyJrZXkiOiJwcm9kdWN0SW1hZ2VzLzg1MTliOTg2LTI4ZjYtNDkxMC1hM2MwLWUwMTRkNjFiY2Q3YiIsImVkaXRzIjp7InJlc2l6ZSI6eyJmaXQiOiJjb3ZlciIsIndpZHRoIjoxOTIwLCJoZWlnaHQiOjEwODB9fX0="
-            ],
+            ],    
             "bookingLink": "https://amadeus.booking.holibob.tech/product/36681830-3587-43a0-a12a-8eb5b26baf81",
             "minimumDuration": ""
         },

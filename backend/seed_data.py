@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal
 from app.models import (
-    User, Package, PackageImage, ItineraryItem, PackageAvailability,
+    User, Agent, Customer, Package, PackageImage, ItineraryItem, PackageAvailability,
     Booking, Traveler, Payment,
     UserRole, PackageStatus, BookingStatus, PaymentStatus
 )
@@ -44,18 +44,37 @@ async def seed_data():
             user = User(
                 email=data["email"],
                 password_hash=get_password_hash("password123"),
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                phone=data["phone"],
                 role=data["role"],
                 email_verified=True,
                 is_active=True
             )
             session.add(user)
+            await session.flush() # Get user ID
+            
+            # Create profile
+            if data["role"] == UserRole.AGENT:
+                profile = Agent(
+                    user_id=user.id,
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    phone=data["phone"],
+                    agency_name=f"{data['first_name']}'s Travels",
+                    domain="agent1.local" if data["email"] == "agent1@toursaas.com" else None
+                )
+                session.add(profile)
+            elif data["role"] == UserRole.CUSTOMER:
+                profile = Customer(
+                    user_id=user.id,
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    phone=data["phone"]
+                )
+                session.add(profile)
+                
             users.append(user)
         
         await session.flush()
-        print(f"   Created {len(users)} users")
+        print(f"   Created {len(users)} users with profiles")
         
         # 2. Create 5 sample packages
         print("\n2. Creating packages...")

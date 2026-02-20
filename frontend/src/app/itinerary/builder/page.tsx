@@ -12,6 +12,7 @@ import { DayPlanner, DayItineraryData, Activity as PlannerActivity } from '@/com
 import { ItinerarySummary } from '@/components/itinerary/ItinerarySummary'
 import { TimeSlotSelector } from '@/components/itinerary/TimeSlotSelector'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
+import { useTheme } from '@/context/ThemeContext'
 
 interface LocationInfo {
     city: string
@@ -23,6 +24,7 @@ interface LocationInfo {
 }
 
 export default function ItineraryBuilderPage() {
+    const { theme } = useTheme()
     // Step management
     const [currentStep, setCurrentStep] = useState(1)
 
@@ -204,8 +206,8 @@ export default function ItineraryBuilderPage() {
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-4xl font-bold mb-2">Itinerary Builder</h1>
-                <p className="text-lg text-muted-foreground">
+                <h1 className="text-4xl font-bold mb-2" style={{ color: "var(--heading, #0f172a)" }}>Itinerary Builder</h1>
+                <p className="text-lg text-muted-foreground" style={{ color: "var(--body-text, #64748b)" }}>
                     Plan your perfect trip with activities tailored to your schedule
                 </p>
             </div>
@@ -221,10 +223,10 @@ export default function ItineraryBuilderPage() {
                     ].map((step, idx) => (
                         <div key={step.num} className="flex items-center">
                             <div className={`flex items-center gap-2 ${currentStep >= step.num ? 'text-primary' : 'text-muted-foreground'}`}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${currentStep >= step.num ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${currentStep >= step.num ? 'bg-primary text-primary-foreground' : 'bg-muted'}`} style={currentStep >= step.num ? { backgroundColor: "var(--primary, #2563eb)", color: "var(--foreground, #ffffff)" } : {}}>
                                     {step.num}
                                 </div>
-                                <span className="font-medium hidden sm:inline">{step.label}</span>
+                                <span className="font-medium hidden sm:inline" style={currentStep >= step.num ? { color: "var(--primary, #2563eb)" } : {}}>{step.label}</span>
                             </div>
                             {idx < 3 && (
                                 <div className={`w-12 h-0.5 mx-2 ${currentStep > step.num ? 'bg-primary' : 'bg-muted'}`} />
@@ -304,11 +306,11 @@ export default function ItineraryBuilderPage() {
                     <div className="grid lg:grid-cols-3 gap-6">
                         {/* Left: Activity Browser */}
                         <div className="lg:col-span-2 space-y-6">
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <h3 className="font-semibold text-blue-900 mb-1">
+                            <div className="bg-secondary/50 border border-border rounded-lg p-4">
+                                <h3 className="font-semibold text-primary mb-1">
                                     📍 {locationInfo?.city || destination}, {locationInfo?.country || ''}
                                 </h3>
-                                <p className="text-sm text-blue-700">
+                                <p className="text-sm text-muted-foreground">
                                     Browse activities below and add them to your daily schedule
                                 </p>
                             </div>

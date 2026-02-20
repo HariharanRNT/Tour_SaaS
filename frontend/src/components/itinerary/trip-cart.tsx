@@ -26,6 +26,11 @@ interface TripCartProps {
     onCheckout: () => void
     loading?: boolean
     disabled?: boolean
+    // Theme Props
+    sidebarBg?: string
+    priceColor?: string
+    ctaColor?: string
+    ctaTextColor?: string
 }
 
 export function TripCart({
@@ -37,7 +42,11 @@ export function TripCart({
     gstSettings,
     onCheckout,
     loading = false,
-    disabled = false
+    disabled = false,
+    sidebarBg,
+    priceColor,
+    ctaColor,
+    ctaTextColor
 }: TripCartProps) {
     const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
 
@@ -56,7 +65,10 @@ export function TripCart({
     }
 
     return (
-        <Card className="sticky top-24 shadow-xl border-0 bg-white/95 backdrop-blur-xl overflow-hidden rounded-[1.5rem] transition-all duration-300 ring-1 ring-black/5">
+        <Card
+            className="sticky top-24 shadow-xl border-0 bg-white/95 backdrop-blur-xl overflow-hidden rounded-[1.5rem] transition-all duration-300 ring-1 ring-black/5"
+            style={{ backgroundColor: sidebarBg || '' }}
+        >
             {/* Header */}
             <CardHeader className="bg-gradient-to-r from-gray-900 to-slate-800 pb-8 pt-8 border-b border-gray-100/10 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -104,7 +116,7 @@ export function TripCart({
                                 <Users className="h-4 w-4 text-gray-400" />
                                 <span className="text-sm">x {totalTravelers} Travelers</span>
                             </span>
-                            <span className="font-bold text-gray-900 text-lg">₹{totalBasePrice.toLocaleString()}</span>
+                            <span className="font-bold text-lg" style={{ color: priceColor || '#111827' }}>₹{totalBasePrice.toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -119,7 +131,7 @@ export function TripCart({
                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-blue-100"></span>
                                         {service.name}
                                     </span>
-                                    <span className="font-bold text-gray-900">₹{service.price.toLocaleString()}</span>
+                                    <span className="font-bold" style={{ color: priceColor || '#111827' }}>₹{service.price.toLocaleString()}</span>
                                 </div>
                             ))}
                             <Separator className="bg-dashed border-t border-gray-200 my-2" />
@@ -133,7 +145,7 @@ export function TripCart({
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                                 GST ({gstSettings.percentage}%)
                             </span>
-                            <span className="font-bold text-blue-900">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span className="font-bold" style={{ color: priceColor || '#1e3a8a' }}>₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
 
@@ -142,7 +154,7 @@ export function TripCart({
                             {gstSettings && !gstSettings.inclusive ? "Subtotal" : "Taxes & Fees"}
                         </span>
                         {gstSettings && !gstSettings.inclusive ? (
-                            <span className="font-bold text-gray-900">₹{subTotal.toLocaleString()}</span>
+                            <span className="font-bold" style={{ color: priceColor || '#111827' }}>₹{subTotal.toLocaleString()}</span>
                         ) : (
                             <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 font-bold px-2.5 shadow-sm">
                                 INCLUDED
@@ -165,7 +177,7 @@ export function TripCart({
                             </div>
                             <div className="text-right">
                                 <span className="text-sm text-gray-400 font-medium mr-1">INR</span>
-                                <span className="text-4xl font-extrabold tracking-tight">
+                                <span className="text-4xl font-extrabold tracking-tight" style={{ color: priceColor || 'white' }}>
                                     ₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </span>
                             </div>
@@ -174,6 +186,11 @@ export function TripCart({
                         <Button
                             id="checkout-trigger"
                             className="w-full h-16 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-500/25 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] border border-white/10"
+                            style={{
+                                backgroundColor: ctaColor || '',
+                                color: ctaTextColor || '',
+                                backgroundImage: ctaColor ? 'none' : ''
+                            }}
                             onClick={onCheckout}
                             disabled={loading || disabled}
                         >

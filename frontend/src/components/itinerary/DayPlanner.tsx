@@ -39,9 +39,29 @@ interface DayPlannerProps {
     onAddActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day') => void
     onRemoveActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day', index: number) => void
     isReadonly?: boolean
+    // Theme Props
+    morningColor?: string
+    afternoonColor?: string
+    eveningColor?: string
+    nightColor?: string
+    activeDayColor?: string
+    headingBorderColor?: string
+    dayBadgeColor?: string
 }
 
-export function DayPlanner({ day, onAddActivity, onRemoveActivity, isReadonly }: DayPlannerProps) {
+export function DayPlanner({
+    day,
+    onAddActivity,
+    onRemoveActivity,
+    isReadonly,
+    morningColor,
+    afternoonColor,
+    eveningColor,
+    nightColor,
+    activeDayColor,
+    headingBorderColor,
+    dayBadgeColor
+}: DayPlannerProps) {
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
     const getImages = (activity: Activity): string[] => {
@@ -60,10 +80,10 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity, isReadonly }:
 
         // Enhanced Color themes
         const themeMap = {
-            morning: { text: 'text-amber-700', bg: 'bg-gradient-to-br from-amber-50 to-orange-50', border: 'border-amber-200', iconBg: 'bg-amber-100', pill: 'bg-amber-100 text-amber-800' },
-            afternoon: { text: 'text-orange-700', bg: 'bg-gradient-to-br from-orange-50 to-red-50', border: 'border-orange-200', iconBg: 'bg-orange-100', pill: 'bg-orange-100 text-orange-800' },
-            evening: { text: 'text-indigo-700', bg: 'bg-gradient-to-br from-indigo-50 to-violet-50', border: 'border-indigo-200', iconBg: 'bg-indigo-100', pill: 'bg-indigo-100 text-indigo-800' },
-            night: { text: 'text-purple-700', bg: 'bg-gradient-to-br from-purple-50 to-slate-50', border: 'border-purple-200', iconBg: 'bg-purple-100', pill: 'bg-purple-100 text-purple-800' },
+            morning: { text: morningColor ? '' : 'text-amber-700', bg: 'bg-gradient-to-br from-amber-50 to-orange-50', border: 'border-amber-200', iconBg: 'bg-amber-100', pill: 'bg-amber-100 text-amber-800', customColor: morningColor },
+            afternoon: { text: afternoonColor ? '' : 'text-orange-700', bg: 'bg-gradient-to-br from-orange-50 to-red-50', border: 'border-orange-200', iconBg: 'bg-orange-100', pill: 'bg-orange-100 text-orange-800', customColor: afternoonColor },
+            evening: { text: eveningColor ? '' : 'text-indigo-700', bg: 'bg-gradient-to-br from-indigo-50 to-violet-50', border: 'border-indigo-200', iconBg: 'bg-indigo-100', pill: 'bg-indigo-100 text-indigo-800', customColor: eveningColor },
+            night: { text: nightColor ? '' : 'text-purple-700', bg: 'bg-gradient-to-br from-purple-50 to-slate-50', border: 'border-purple-200', iconBg: 'bg-purple-100', pill: 'bg-purple-100 text-purple-800', customColor: nightColor },
             half_day: { text: 'text-teal-700', bg: 'bg-gradient-to-br from-teal-50 to-emerald-50', border: 'border-teal-200', iconBg: 'bg-teal-100', pill: 'bg-teal-100 text-teal-800' },
             full_day: { text: 'text-blue-700', bg: 'bg-gradient-to-br from-blue-50 to-cyan-50', border: 'border-blue-200', iconBg: 'bg-blue-100', pill: 'bg-blue-100 text-blue-800' }
         }
@@ -78,16 +98,19 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity, isReadonly }:
                 )}
 
                 {/* Section Header Node (Large Icon) */}
-                <div className={cn(
-                    "absolute left-[10px] md:left-[14px] top-5 h-9 w-9 md:h-11 md:w-11 rounded-xl border-[3px] border-white shadow-md z-10 flex items-center justify-center transition-transform hover:scale-110",
-                    theme.bg, theme.text
-                )}>
+                <div
+                    className={cn(
+                        "absolute left-[10px] md:left-[14px] top-5 h-9 w-9 md:h-11 md:w-11 rounded-xl border-[3px] border-white shadow-md z-10 flex items-center justify-center transition-transform hover:scale-110",
+                        theme.bg, theme.text
+                    )}
+                    style={{ color: (theme as any).customColor || '', backgroundColor: (theme as any).customColor ? `${(theme as any).customColor}10` : '' }}
+                >
                     {icon}
                 </div>
 
                 {/* Section Header Text */}
                 <div className="flex items-baseline gap-3 mb-6 ml-2">
-                    <h4 className={cn("font-bold text-lg md:text-xl capitalize", theme.text)}>
+                    <h4 className={cn("font-bold text-lg md:text-xl capitalize", theme.text)} style={{ color: (theme as any).customColor || '' }}>
                         {label}
                     </h4>
                     <span className="text-gray-400 font-medium text-sm bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
@@ -204,7 +227,10 @@ export function DayPlanner({ day, onAddActivity, onRemoveActivity, isReadonly }:
             {/* Header */}
             <div className="bg-gradient-to-r from-slate-50 via-white to-blue-50/20 px-6 py-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-5">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex flex-col items-center justify-center font-bold shadow-lg shadow-blue-500/30 transform transition-transform hover:rotate-3 hover:scale-105">
+                    <div
+                        className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex flex-col items-center justify-center font-bold shadow-lg shadow-blue-500/30 transform transition-transform hover:rotate-3 hover:scale-105"
+                        style={{ backgroundColor: dayBadgeColor || '', backgroundImage: dayBadgeColor ? 'none' : '' }}
+                    >
                         <span className="text-xs font-medium opacity-80 uppercase tracking-widest">Day</span>
                         <span className="text-3xl leading-none">{day.day_number}</span>
                     </div>

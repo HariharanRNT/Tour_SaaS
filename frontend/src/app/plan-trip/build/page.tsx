@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTheme } from '@/context/ThemeContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
-import { formatDate } from '@/lib/utils'
+import { formatDate, cn } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
 import { flightsAPI } from '@/lib/api'
@@ -67,6 +68,7 @@ interface DraftSession {
 }
 
 export default function BuildTripPage() {
+    const { theme } = useTheme()
     const router = useRouter()
     const searchParams = useSearchParams()
     const sessionId = searchParams.get('session')
@@ -535,19 +537,17 @@ export default function BuildTripPage() {
                 </div>
             </header>
 
-
-
             {/* Hero Section */}
             <div className="relative h-[50vh] md:h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
                 {/* Background Image & Overlay */}
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[3s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${getValidImageUrl(session.destination_image || '/images/default-destination.jpg')}')`,
+                        backgroundImage: `url('${getValidImageUrl(theme.itin_hero_image || session.destination_image || '/images/default-destination.jpg')}')`,
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent z-10" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" style={{ opacity: theme.itin_hero_overlay_opacity ?? 1 }} />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent z-10" style={{ opacity: theme.itin_hero_overlay_opacity ?? 1 }} />
 
                 <div className="container mx-auto px-4 relative z-20">
                     <div className="max-w-4xl space-y-6">
@@ -557,20 +557,25 @@ export default function BuildTripPage() {
                                 <MapPin className="h-4 w-4 mr-1.5" />
                                 {session.trip_type}
                             </Badge>
-                            <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 px-4 py-1.5 text-sm font-bold shadow-lg shadow-orange-500/20">
-                                <Sparkles className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
-                                AI Optimized Itinerary
-                            </Badge>
+                            {(theme.itin_show_ai_badge ?? true) && (
+                                <Badge className="text-white border-0 px-4 py-1.5 text-sm font-bold shadow-lg" style={{ backgroundColor: theme.itin_ai_badge_color || '#fbbf24', backgroundImage: theme.itin_ai_badge_color ? 'none' : 'linear-gradient(to right, #fbbf24, #f97316)' }}>
+                                    <Sparkles className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
+                                    AI Optimized Itinerary
+                                </Badge>
+                            )}
                         </div>
 
                         {/* Title */}
                         <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.1] drop-shadow-2xl tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                            Trip to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">{session.destination}</span>
+                            Trip to <span className="text-transparent bg-clip-text" style={{ backgroundImage: theme.itin_destination_accent_color ? `linear-gradient(to right, ${theme.itin_destination_accent_color}, white)` : 'linear-gradient(to right, #bfdbfe, white)' }}>{session.destination}</span>
                         </h1>
 
                         {/* Trip Details Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                            <div className={cn(
+                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
+                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
+                            )}>
                                 <div className="flex items-center gap-3 text-white">
                                     <div className="p-2 bg-white/20 rounded-lg">
                                         <Calendar className="h-5 w-5 md:h-6 md:w-6" />
@@ -582,7 +587,10 @@ export default function BuildTripPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                            <div className={cn(
+                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
+                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
+                            )}>
                                 <div className="flex items-center gap-3 text-white">
                                     <div className="p-2 bg-white/20 rounded-lg">
                                         <Clock className="h-5 w-5 md:h-6 md:w-6" />
@@ -594,7 +602,10 @@ export default function BuildTripPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                            <div className={cn(
+                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
+                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
+                            )}>
                                 <div className="flex items-center gap-3 text-white">
                                     <div className="p-2 bg-white/20 rounded-lg">
                                         <Users className="h-5 w-5 md:h-6 md:w-6" />
@@ -606,7 +617,10 @@ export default function BuildTripPage() {
                                 </div>
                             </div>
 
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+                            <div className={cn(
+                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
+                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
+                            )}>
                                 <div className="flex items-center gap-3 text-white">
                                     <div className="p-2 bg-white/20 rounded-lg">
                                         <Wallet className="h-5 w-5 md:h-6 md:w-6" />
@@ -642,14 +656,15 @@ export default function BuildTripPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
                     {/* Left Column - Main Content */}
-                    <div className="lg:col-span-8 xl:col-span-9 space-y-12">
+                    {/* Left Column - Main Content */}
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-8">
 
                         {/* AI Summary Banner */}
                         <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-white p-8 rounded-[2rem] shadow-sm border border-blue-100/50 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
                             <div className="flex flex-col md:flex-row gap-6 relative z-10">
                                 <div className="shrink-0 flex items-start">
-                                    <div className="p-4 bg-gradient-to-br from-blue-600 to-sky-600 rounded-2xl text-white shadow-lg shadow-blue-500/30 ring-4 ring-white">
+                                    <div className="p-4 bg-gradient-to-br from-blue-600 to-sky-600 rounded-2xl text-white shadow-lg shadow-blue-500/30 ring-4 ring-white" style={{ backgroundColor: theme.itin_ai_badge_color || '', backgroundImage: theme.itin_ai_badge_color ? 'none' : '' }}>
                                         <Sparkles className="h-8 w-8 animate-pulse" />
                                     </div>
                                 </div>
@@ -672,7 +687,7 @@ export default function BuildTripPage() {
                         {/* Trip Overview Cards */}
                         <section>
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                <div className="h-8 w-1 rounded-full" style={{ backgroundColor: theme.itin_heading_border_color || theme.primary_color || '#3b82f6', backgroundImage: theme.itin_heading_border_color ? 'none' : 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
                                 <h2 className="text-2xl font-bold text-gray-900">Trip Overview</h2>
                             </div>
 
@@ -683,8 +698,15 @@ export default function BuildTripPage() {
                                     { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated experiences", color: "sky" },
                                     { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", color: "indigo" }
                                 ].map((item, i) => (
-                                    <div key={i} className="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:border-blue-100 transition-all duration-300">
-                                        <div className={`w-12 h-12 rounded-xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                                    <div key={i} className={cn(
+                                        "group rounded-2xl p-5 shadow-sm border transition-all duration-300 hover:shadow-lg",
+                                        theme.itin_overview_card_style === 'tinted' ? "bg-slate-50/50 border-slate-100" : "bg-white border-slate-100 hover:border-blue-100",
+                                        theme.itin_overview_card_border === 'shadow' ? "shadow-md" : theme.itin_overview_card_border === 'subtle' ? "border-slate-200" : ""
+                                    )}>
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform",
+                                            theme.itin_overview_icon_color ? "" : `bg-${item.color}-50 text-${item.color}-600`
+                                        )} style={{ color: theme.itin_overview_icon_color || '', backgroundColor: theme.itin_overview_icon_color ? `${theme.itin_overview_icon_color}10` : '' }}>
                                             {item.icon}
                                         </div>
                                         <h3 className="font-bold text-slate-900 text-lg">{item.label}</h3>
@@ -700,7 +722,7 @@ export default function BuildTripPage() {
                         <section>
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                    <div className="h-8 w-1 rounded-full" style={{ backgroundColor: theme.itin_heading_border_color || theme.primary_color || '#3b82f6', backgroundImage: theme.itin_heading_border_color ? 'none' : 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
                                     <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
                                 </div>
                                 <Button variant="outline" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-600 gap-2 shadow-sm font-semibold">
@@ -716,9 +738,12 @@ export default function BuildTripPage() {
                                             value={day.day_number.toString()}
                                             className="
                                                 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
-                                                data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md
+                                                data-[state=active]:bg-white data-[state=active]:shadow-md
                                                 text-slate-500 hover:text-slate-700 hover:bg-slate-100/50
                                             "
+                                            style={{
+                                                color: currentDay === day.day_number ? (theme.itin_active_day_color || theme.primary_color || '#1d4ed8') : ''
+                                            }}
                                         >
                                             Day {day.day_number}
                                         </TabsTrigger>
@@ -731,6 +756,13 @@ export default function BuildTripPage() {
                                             day={day}
                                             onAddActivity={addActivity}
                                             onRemoveActivity={removeActivity}
+                                            morningColor={theme.itin_morning_color}
+                                            afternoonColor={theme.itin_afternoon_color}
+                                            eveningColor={theme.itin_evening_color}
+                                            nightColor={theme.itin_night_color}
+                                            activeDayColor={theme.itin_active_day_color}
+                                            headingBorderColor={theme.itin_heading_border_color}
+                                            dayBadgeColor={theme.itin_day_badge_color}
                                             isReadonly={mode === 'preview'}
                                         />
                                     </TabsContent>
@@ -738,7 +770,9 @@ export default function BuildTripPage() {
                             </Tabs>
                         </section>
 
-                        <div className="border-t border-gray-100"></div>
+                        {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
+                            <div className="border-t border-gray-100"></div>
+                        )}
 
                         {/* FLIGHTS MODULE - Enhanced */}
                         {preferences.include_flights && (
@@ -892,96 +926,118 @@ export default function BuildTripPage() {
                         )}
 
 
-                        {/* Add-ons Section - Enhanced Cards */}
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* HOTELS & TRANSFERS MODULES */}
-                            {preferences.include_hotels && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
-                                            <Hotel className="h-6 w-6" />
+                        {(preferences.include_hotels || preferences.include_transfers) && (
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* HOTELS & TRANSFERS MODULES */}
+                                {preferences.include_hotels && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                                                <Hotel className="h-6 w-6" />
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
                                         </div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
-                                    </div>
 
-                                    <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
-                                        <ServiceCard
-                                            type="hotel"
-                                            status={hotelSelected ? 'selected' : 'pending'}
-                                            title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
-                                            description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
-                                            price={hotelSelected ? HOTEL_ESTIMATE : undefined}
-                                            details={hotelSelected ? {
-                                                date: 'Check-in: Day 1',
-                                                rating: 4.8
-                                            } : undefined}
-                                            onAction={() => setHotelSelected(!hotelSelected)}
-                                            disabled={mode === 'preview'}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {preferences.include_transfers && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
-                                            <Car className="h-6 w-6" />
+                                        <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
+                                            <ServiceCard
+                                                type="hotel"
+                                                status={hotelSelected ? 'selected' : 'pending'}
+                                                title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
+                                                description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
+                                                price={hotelSelected ? HOTEL_ESTIMATE : undefined}
+                                                details={hotelSelected ? {
+                                                    date: 'Check-in: Day 1',
+                                                    rating: 4.8
+                                                } : undefined}
+                                                onAction={() => setHotelSelected(!hotelSelected)}
+                                                disabled={mode === 'preview'}
+                                            />
                                         </div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
                                     </div>
-                                    <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
-                                        <ServiceCard
-                                            type="transfer"
-                                            status={transferSelected ? 'selected' : 'pending'}
-                                            title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
-                                            description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
-                                            price={transferSelected ? TRANSFER_ESTIMATE : undefined}
-                                            details={transferSelected ? {
-                                                duration: 'Full Trip Coverage'
-                                            } : undefined}
-                                            onAction={() => setTransferSelected(!transferSelected)}
-                                            disabled={mode === 'preview'}
-                                        />
+                                )}
+
+                                {preferences.include_transfers && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
+                                                <Car className="h-6 w-6" />
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
+                                        </div>
+                                        <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
+                                            <ServiceCard
+                                                type="transfer"
+                                                status={transferSelected ? 'selected' : 'pending'}
+                                                title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
+                                                description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
+                                                price={transferSelected ? TRANSFER_ESTIMATE : undefined}
+                                                details={transferSelected ? {
+                                                    duration: 'Full Trip Coverage'
+                                                } : undefined}
+                                                onAction={() => setTransferSelected(!transferSelected)}
+                                                disabled={mode === 'preview'}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </section>
+                                )}
+                            </section>
+                        )}
 
 
                         {/* Footer Confidence Boost - Redesigned */}
-                        <div className="mt-16 mb-8 pt-12 border-t border-gray-100">
-                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-10 text-center">Why book with RNT Tour?</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <div className="flex flex-col items-center text-center gap-4 group">
-                                    <div className="p-5 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-blue-200">
-                                        <ShieldCheck className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 text-lg mb-1">Verified & Secure</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">Curated packages & 100% secure payments via reliable gateways.</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-center text-center gap-4 group">
-                                    <div className="p-5 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-emerald-200">
-                                        <CheckCircle className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 text-lg mb-1">Flexible & Transparent</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">Customizable plans with absolutely no hidden fees.</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-center text-center gap-4 group">
-                                    <div className="p-5 bg-violet-50 text-violet-600 rounded-2xl group-hover:bg-violet-600 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-lg group-hover:shadow-violet-200">
-                                        <Headphones className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-gray-900 text-lg mb-1">24/7 Expert Support</h4>
-                                        <p className="text-sm text-gray-500 leading-relaxed">Instant confirmation & dedicated assistance throughout your trip.</p>
-                                    </div>
+                        {theme.itin_show_trust_section !== false && (
+                            <div className="pt-2" style={{ backgroundColor: theme.itin_trust_section_bg || 'transparent' }}>
+                                {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
+                                    <div className="border-t border-gray-100 mb-8"></div>
+                                )}
+                                <h3
+                                    className="text-xs font-bold uppercase tracking-widest mb-8 text-center"
+                                    style={{ color: theme.itin_trust_title_color || '#9ca3af' }}
+                                >
+                                    {theme.itin_trust_title || "Why book with RNT Tour?"}
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    {(theme.itin_trust_cards || [
+                                        { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "#3B82F6", bgColor: "#eff6ff" },
+                                        { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "#10B981", bgColor: "#ecfdf5" },
+                                        { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "#8B5CF6", bgColor: "#f5f3ff" }
+                                    ]).map((card, idx) => {
+                                        const IconComponent = idx === 0 ? ShieldCheck : idx === 1 ? CheckCircle : Headphones;
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className={cn(
+                                                    "flex flex-col items-center text-center gap-4 group p-6 rounded-2xl transition-all duration-500",
+                                                    theme.itin_trust_card_style === 'bordered' ? "border border-slate-200" :
+                                                        theme.itin_trust_card_style === 'shadowed' ? "shadow-md hover:shadow-xl bg-white" :
+                                                            theme.itin_trust_card_style === 'colored' ? "" : // Custom logic below
+                                                                ""
+                                                )}
+                                                style={theme.itin_trust_card_style === 'colored' ? { backgroundColor: card.bgColor || '#f8fafc' } : {}}
+                                            >
+                                                <div
+                                                    className={cn(
+                                                        "p-5 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg",
+                                                        theme.itin_trust_card_style === 'shadowed' ? "shadow-none" : ""
+                                                    )}
+                                                    style={{
+                                                        backgroundColor: card.bgColor || (idx === 0 ? '#eff6ff' : idx === 1 ? '#ecfdf5' : '#f5f3ff'),
+                                                        color: card.color || (idx === 0 ? '#3B82F6' : idx === 1 ? '#10B981' : '#8B5CF6')
+                                                    }}
+                                                >
+                                                    <IconComponent className="h-8 w-8" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900 text-lg mb-1">{card.title}</h4>
+                                                    <p className="text-sm text-gray-500 leading-relaxed">{card.desc}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                     </div>
 
@@ -1004,6 +1060,10 @@ export default function BuildTripPage() {
                                     onCheckout={handleCheckout}
                                     disabled={mode === 'preview'}
                                     gstSettings={gstSettings || undefined}
+                                    sidebarBg={theme.itin_sidebar_bg === 'brand' ? theme.primary_color : theme.itin_sidebar_bg === 'navy' ? '#0f172a' : ''}
+                                    priceColor={theme.itin_price_color}
+                                    ctaColor={theme.itin_cta_color}
+                                    ctaTextColor={theme.itin_cta_text_color} // Wait, I added ctaTextColor to TripCart but is it in AgentTheme?
                                 />
                             </div>
                         </div>

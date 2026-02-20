@@ -39,24 +39,18 @@ function getUserRole(): string | null {
 }
 
 
+import { useTheme } from '@/context/ThemeContext'
+import { Plane } from 'lucide-react'
+
+// ...
+
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter()
+    const { theme } = useTheme() // Get theme context
     const [userEmail, setUserEmail] = useState('')
     const userRole = getUserRole()
 
-
-    useEffect(() => {
-        const userStr = localStorage.getItem('user')
-        if (userStr) {
-            try {
-                const user = JSON.parse(userStr)
-                setUserEmail(user.email || 'user@toursaas.com')
-            } catch {
-                setUserEmail('user@toursaas.com')
-            }
-        }
-    }, [])
-
+    // ... (useEffect remains same) ...
 
     const handleLogout = () => {
         localStorage.removeItem('token')
@@ -66,6 +60,26 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         router.push(userRole === 'agent' ? '/login' : '/admin/login')
     }
 
+    // Determine branding based on role
+    const isAgent = userRole === 'agent'
+    const logoImage = isAgent ? theme.navbar_logo_image : null
+    const logoText = isAgent ? (theme.navbar_logo_text || 'TourSaaS') : 'TourSaaS'
+
+    // Fallback logo if no image
+    const LogoIcon = () => (
+        <div className="bg-blue-600 rounded-lg p-1.5 flex items-center justify-center">
+            {isAgent ? (
+                <Plane className="h-4 w-4 text-white" />
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white">
+                    <path d="M2 12h20" />
+                    <path d="M13 2v20" />
+                    <path d="M16 8l4 4-4 4" />
+                    <path d="M8 16l-4-4 4-4" />
+                </svg>
+            )}
+        </div>
+    )
 
     return (
         <header className="bg-[#F0FAFF] border-b border-gray-200 sticky top-0 z-40 h-16 px-6 flex items-center justify-between gap-4 shadow-sm backdrop-blur-md bg-opacity-80">
@@ -77,17 +91,43 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     </Button>
                 )}
 
+                {/* Brand Logo & Name */}
+                <div className="hidden md:flex items-center gap-2 mr-4 cursor-pointer" onClick={() => router.push('/')}>
+                    {logoImage ? (
+                        <img src={logoImage} alt="Logo" className="h-8 w-auto object-contain max-w-[150px]" />
+                    ) : (
+                        <LogoIcon />
+                    )}
+                    {!logoImage && (
+                        <span className="font-bold text-lg tracking-tight text-slate-900">
+                            {logoText}
+                        </span>
+                    )}
+                </div>
+
+                {/* Visit Website Button */}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex gap-2 text-slate-600 border-slate-200 hover:bg-white hover:text-blue-600"
+                    onClick={() => window.open('/', '_blank')}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Visit Website
+                </Button>
+
                 {/* Search Bar */}
-                <div className="relative max-w-md w-full hidden md:block group">
+                <div className="relative max-w-md w-full hidden lg:block group ml-4">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#0EA5E9] transition-colors" />
                     <Input
                         placeholder={userRole === 'agent' ? "Search..." : "Search bookings, agents, customers..."}
                         className="pl-11 bg-white border-transparent rounded-full shadow-sm group-hover:shadow-md focus:shadow-md focus:border-[#0EA5E9]/20 transition-all duration-300"
                     />
                 </div>
-
-
-
             </div>
 
             {/* Right Actions */}

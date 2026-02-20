@@ -15,9 +15,11 @@ import { MapPin, Calendar as CalendarIcon, Users, Sparkles, Loader2, Plane, Hote
 import { format } from 'date-fns'
 import { toast } from "react-toastify"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useTheme } from '@/context/ThemeContext'
 
 export default function PlanTripPage() {
     const router = useRouter()
+    const { theme } = useTheme()
     const searchParams = useSearchParams()
 
     const [currentStep, setCurrentStep] = useState(1)
@@ -264,16 +266,17 @@ export default function PlanTripPage() {
     const opacity = useTransform(scrollY, [0, 300], [1, 0])
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans">
+        <div className="min-h-screen font-sans" style={{ backgroundColor: "var(--background, #f8fafc)", "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
             {/* Parallax Hero Section */}
-            <div className="relative h-[60vh] md:h-[70vh] overflow-hidden flex items-center justify-center">
+            <div className="relative h-[60vh] md:h-[70vh] overflow-hidden flex items-center justify-center -mt-16">
+
                 <motion.div
                     style={{ y: y1, opacity }}
                     className="absolute inset-0 z-0"
                 >
                     <div
                         className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2021&q=80")' }}
+                        style={{ backgroundImage: `url("${theme.plan_trip_image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2021&q=80'}")` }}
                     />
                     <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-blue-50" />
@@ -290,13 +293,19 @@ export default function PlanTripPage() {
                             AI-Powered Trip Planner
                         </div>
                         <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight drop-shadow-2xl mb-6 tracking-tight">
-                            Your Dream Trip, <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-sky-200">
-                                Crafted in Seconds
-                            </span>
+                            {theme.plan_trip_title ? (
+                                theme.plan_trip_title
+                            ) : (
+                                <>
+                                    Your Dream Trip, <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-sky-200">
+                                        Crafted in Seconds
+                                    </span>
+                                </>
+                            )}
                         </h1>
                         <p className="text-xl text-blue-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-lg">
-                            Experience the future of travel planning. Tell us where, when, and how—we'll handle the rest.
+                            {theme.plan_trip_subtitle || "Experience the future of travel planning. Tell us where, when, and how—we'll handle the rest."}
                         </p>
                     </motion.div>
 
@@ -311,7 +320,7 @@ export default function PlanTripPage() {
             </div>
 
             {/* Planning Form Container */}
-            <div className="container mx-auto px-4 -mt-32 relative z-20 pb-24">
+            <div className="container mx-auto px-4 -mt-32 relative z-20" style={{ paddingBottom: "var(--section-spacing, 6rem)" }}>
                 <div className="max-w-5xl mx-auto">
                     {/* Stepper Component */}
                     {/* Stepper Component - Connected Line Style */}
@@ -323,8 +332,11 @@ export default function PlanTripPage() {
 
                             {/* Active Progress Line */}
                             <div
-                                className="absolute top-5 left-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500 ease-out"
-                                style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+                                className="absolute top-5 left-0 h-1 rounded-full transition-all duration-500 ease-out"
+                                style={{
+                                    width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                                    backgroundColor: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6'
+                                }}
                             ></div>
 
                             <div className="flex justify-between relative z-10">
@@ -342,15 +354,21 @@ export default function PlanTripPage() {
                                             className={`flex flex-col items-center group ${isInteractive ? 'cursor-pointer' : 'cursor-default'}`}
                                         >
                                             {/* Circle Indicator */}
-                                            <div className={`
-                                                w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-4 transition-all duration-300 bg-white
-                                                ${isActive
-                                                    ? 'border-blue-600 text-blue-600 scale-125 shadow-lg shadow-blue-200'
-                                                    : isCompleted
-                                                        ? 'border-blue-600 bg-blue-600 text-white'
-                                                        : 'border-gray-200 text-gray-400'
-                                                }
-                                            `}>
+                                            <div
+                                                className={`
+                                                    w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-4 transition-all duration-300 bg-white
+                                                    ${isActive ? 'scale-125 shadow-lg' : ''}
+                                                    ${!isActive && !isCompleted ? 'border-gray-200 text-gray-400' : ''}
+                                                `}
+                                                style={isActive ? {
+                                                    borderColor: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6',
+                                                    color: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6',
+                                                } : isCompleted ? {
+                                                    borderColor: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6',
+                                                    backgroundColor: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6',
+                                                    color: '#fff',
+                                                } : {}}
+                                            >
                                                 {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : step.number}
                                             </div>
 
@@ -359,7 +377,10 @@ export default function PlanTripPage() {
                                                 <div className={`text-sm font-bold transition-colors duration-300 ${isActive || isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
                                                     {step.title}
                                                 </div>
-                                                <div className={`text-xs font-medium transition-colors duration-300 mt-1 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                <div
+                                                    className="text-xs font-medium transition-colors duration-300 mt-1"
+                                                    style={isActive ? { color: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6' } : { color: '#9ca3af' }}
+                                                >
                                                     {isActive ? 'In Progress' : isCompleted ? 'Completed' : 'Upcoming'}
                                                 </div>
                                             </div>
@@ -380,8 +401,10 @@ export default function PlanTripPage() {
                             {currentStep === 1 && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="space-y-4">
-                                        <div className="relative group">
-                                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-20" />
+                                        <div className="relative group"
+                                            style={{ '--brand': theme.plan_trip_cta_color || theme.primary_color || '#3B82F6' } as React.CSSProperties}
+                                        >
+                                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[var(--brand)] transition-colors z-20" />
                                             <div className="relative">
                                                 <Input
                                                     id="destination"
@@ -392,8 +415,16 @@ export default function PlanTripPage() {
                                                         fetchSuggestions(e.target.value)
                                                         setShowSuggestions(true)
                                                     }}
-                                                    onFocus={() => setShowSuggestions(true)}
-                                                    className="pl-14 pt-6 pb-2 h-16 w-full bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl transition-all shadow-sm peer text-lg font-medium"
+                                                    onFocus={(e) => {
+                                                        setShowSuggestions(true);
+                                                        e.currentTarget.style.borderColor = theme.plan_trip_cta_color || theme.primary_color || '#3B82F6';
+                                                        e.currentTarget.style.boxShadow = `0 0 0 4px ${(theme.plan_trip_cta_color || theme.primary_color || '#3B82F6')}22`;
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        e.currentTarget.style.borderColor = '';
+                                                        e.currentTarget.style.boxShadow = '';
+                                                    }}
+                                                    className="pl-14 pt-6 pb-2 h-16 w-full bg-gray-50 border-gray-200 focus:bg-white rounded-2xl transition-all shadow-sm peer text-lg font-medium"
                                                     autoFocus
                                                 />
                                                 <Label
@@ -837,12 +868,15 @@ export default function PlanTripPage() {
                                     onClick={currentStep === 4 ? handleStartPlanning : handleContinue}
                                     disabled={loading}
                                     className={`
-                                        h-16 px-8 text-lg font-bold rounded-2xl transition-all duration-300 shadow-xl hover:-translate-y-1 hover:shadow-2xl w-full
+                                        h-16 px-8 text-lg font-bold rounded-2xl transition-all duration-300 shadow-xl hover:-translate-y-1 hover:shadow-2xl w-full text-white
                                         ${currentStep === 4
-                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/25 hover:shadow-blue-500/40'
-                                            : 'bg-gray-900 hover:bg-black text-white shadow-gray-900/10 hover:shadow-gray-900/20'
+                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25 hover:shadow-blue-500/40'
+                                            : ''
                                         }
                                     `}
+                                    style={currentStep !== 4
+                                        ? { backgroundColor: theme.plan_trip_cta_color || theme.primary_color || '#3B82F6' }
+                                        : undefined}
                                 >
                                     {loading ? (
                                         <>
@@ -851,10 +885,12 @@ export default function PlanTripPage() {
                                         </>
                                     ) : (
                                         <div className="w-full flex items-center justify-center">
-                                            {currentStep === 1 && "Continue to Step 2"}
-                                            {currentStep === 2 && "Add Travelers"}
-                                            {currentStep === 3 && "Customize Trip"}
-                                            {currentStep === 4 && "Generate My Plan"}
+                                            {currentStep === 4 ? 'Generate My Plan' : (
+                                                theme.plan_trip_cta_text ||
+                                                (currentStep === 1 ? 'Continue to Step 2'
+                                                    : currentStep === 2 ? 'Add Travelers'
+                                                        : 'Customize Trip')
+                                            )}
                                             {currentStep === 4 ? (
                                                 <Sparkles className="ml-2 h-5 w-5 fill-white/20 text-white animate-pulse" />
                                             ) : (
@@ -889,39 +925,35 @@ export default function PlanTripPage() {
                     </Card>
 
                     {/* Info Cards */}
-                    <div className="grid md:grid-cols-3 gap-8 mt-20">
-                        {/* Card 1 */}
-                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                                <span className="text-4xl filter drop-shadow-md">🎯</span>
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-600 transition-colors">Smart Matching</h3>
-                            <p className="text-gray-600 leading-relaxed font-medium">
-                                Our AI analyzes millions of data points to find the best activities that match your unique travel style.
-                            </p>
-                        </div>
-
-                        {/* Card 2 */}
-                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                                <span className="text-4xl filter drop-shadow-md">✏️</span>
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-purple-600 transition-colors">Full Customization</h3>
-                            <p className="text-gray-600 leading-relaxed font-medium">
-                                Easily add, remove, or modify any activity. It's your trip, we just help you plan it faster.
-                            </p>
-                        </div>
-
-                        {/* Card 3 */}
-                        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
-                                <span className="text-4xl filter drop-shadow-md">💾</span>
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-green-600 transition-colors">Save & Book</h3>
-                            <p className="text-gray-600 leading-relaxed font-medium">
-                                Save your plan for later or simple checkout when you're ready to make it a reality.
-                            </p>
-                        </div>
+                    {theme.plan_trip_info_section_heading && (
+                        <h2 className="text-center text-2xl font-bold text-gray-800 mt-20 mb-2">
+                            {theme.plan_trip_info_section_heading}
+                        </h2>
+                    )}
+                    <div className={`grid md:grid-cols-3 gap-8 ${theme.plan_trip_info_section_heading ? 'mt-6' : 'mt-20'}`}>
+                        {([
+                            { title: 'Smart Matching', desc: 'Our AI analyzes millions of data points to find the best activities that match your unique travel style.', emoji: '🎯', accent: '#DBEAFE' },
+                            { title: 'Full Customization', desc: "Easily add, remove, or modify any activity. It's your trip, we just help you plan it faster.", emoji: '✏️', accent: '#F3E8FF' },
+                            { title: 'Save & Book', desc: "Save your plan for later or simple checkout when you're ready to make it a reality.", emoji: '💾', accent: '#DCFCE7' },
+                        ] as const).map((def, i) => {
+                            const saved = theme.plan_trip_info_cards?.[i];
+                            const emoji = saved?.emoji || def.emoji;
+                            const title = saved?.title || def.title;
+                            const desc = saved?.desc || def.desc;
+                            const accent = saved?.accent || def.accent;
+                            return (
+                                <div key={i} className="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 group">
+                                    <div
+                                        className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner"
+                                        style={{ backgroundColor: accent }}
+                                    >
+                                        <span className="text-4xl filter drop-shadow-md">{emoji}</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-blue-600 transition-colors">{title}</h3>
+                                    <p className="text-gray-600 leading-relaxed font-medium">{desc}</p>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

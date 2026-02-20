@@ -25,3 +25,16 @@ export function getUserRole(): string | null {
     const payload = decodeToken(token)
     return payload?.role || null
 }
+export function isTokenExpired(token: string | null): boolean {
+    if (!token) return true
+    try {
+        const payload = decodeToken(token)
+        if (!payload || !payload.exp) return true
+
+        // Convert to milliseconds and compare with current time
+        const currentTime = Math.floor(Date.now() / 1000)
+        return payload.exp < currentTime
+    } catch (e) {
+        return true
+    }
+}

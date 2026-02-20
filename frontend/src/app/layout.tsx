@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { MainLayout } from "@/components/MainLayout";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -27,11 +26,9 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${inter.className} ${jakarta.variable}`}>
                 <Providers>
-                    <Navbar />
-                    <main className="min-h-screen bg-gray-50">
+                    <MainLayout>
                         {children}
-                    </main>
-                    <Footer />
+                    </MainLayout>
                     <ToastContainer position="top-right" autoClose={3000} />
                 </Providers>
             </body>

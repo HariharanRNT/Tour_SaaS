@@ -44,19 +44,21 @@ def decode_access_token(token: str) -> Optional[dict]:
 # FastAPI dependencies
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.database import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login", auto_error=False)
 
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(lambda: None)  # Will be overridden by actual dependency
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Dependency to get current authenticated user from JWT token
     """
-    from app.database import get_db
     from app.models import User
     
     credentials_exception = HTTPException(
@@ -73,14 +75,41 @@ async def get_current_user(
     if user_id is None:
         raise credentials_exception
     
-    # Get database session
-    db_gen = get_db()
-    db = next(db_gen)
+    # Async query
+    query = select(User).where(User.id == user_id)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+        
+    if user is None:
+        raise credentials_exception
+        
+    return user
+
+
+async def get_current_user_optional(
+    token: Optional[str] = Depends(optional_oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Optional dependency to get user if token is present.
+    Doesn't raise HTTPException if token is invalid or missing.
+    """
+    from app.models import User
     
+    if not token:
+        return None
+        
     try:
-        user = db.query(User).filter(User.id == user_id).first()
-        if user is None:
-            raise credentials_exception
-        return user
-    finally:
-        db_gen.close()
+        payload = decode_access_token(token)
+        if payload is None:
+            return None
+        
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+            
+        query = select(User).where(User.id == user_id)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+    except Exception:
+        return None

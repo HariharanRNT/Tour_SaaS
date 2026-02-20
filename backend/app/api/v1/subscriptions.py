@@ -421,21 +421,37 @@ async def verify_subscription_payment(
     logger = logging.getLogger(__name__)
     logger.info(f"Verifying payment: sub_id={verification_data.razorpay_subscription_id}, order_id={verification_data.razorpay_order_id}, payment_id={verification_data.razorpay_payment_id}")
 
+    # Fetch Subscription first to get stored Razorpay IDs
+    from sqlalchemy.orm import selectinload
+    stmt = select(Subscription).where(Subscription.id == verification_data.subscription_id).options(selectinload(Subscription.plan))
+    result = await db.execute(stmt)
+    sub = result.scalar_one_or_none()
+    
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    # Use stored subscription/order IDs if missing from request (improves robustness)
+    rzp_subscription_id = verification_data.razorpay_subscription_id or sub.razorpay_subscription_id
+    rzp_order_id = verification_data.razorpay_order_id # Orders aren't usually stored on the sub object itself yet
+
     # 1. Signature Verification
     try:
         # Check if it's a mock order
-        if "sub_mock_" in (verification_data.razorpay_subscription_id or "") or "order_mock_" in (verification_data.razorpay_order_id or ""):
+        if "sub_mock_" in (rzp_subscription_id or "") or "order_mock_" in (rzp_order_id or ""):
              # Skip Razorpay verification for mock
              logger.info("Skipping verification for mock payment")
              pass
         elif "1234567890" not in settings.RAZORPAY_SUBSCRIPTION_KEY_ID:
             # For Subscriptions: payment_id + | + subscription_id
-            if verification_data.razorpay_subscription_id:
+            if rzp_subscription_id:
                 import hmac
                 import hashlib
                 
                 secret = settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET
-                msg = f"{verification_data.razorpay_payment_id}|{verification_data.razorpay_subscription_id}"
+                msg = f"{verification_data.razorpay_payment_id}|{rzp_subscription_id}"
+                
+                print(f"DEBUG: Verifying Subscription Signature")
+                print(f"DEBUG: Message: {msg}")
                 
                 generated_signature = hmac.new(
                     bytes(secret, 'utf-8'),
@@ -444,35 +460,26 @@ async def verify_subscription_payment(
                 ).hexdigest()
                 
                 if not hmac.compare_digest(generated_signature, verification_data.razorpay_signature):
-                     msg = f"Signature mismatch. Generated: {generated_signature}, Received: {verification_data.razorpay_signature}"
-                     logger.error(msg)
-                     print(f"DEBUG: {msg}")
+                     msg_err = f"Subscription Signature mismatch. Generated: {generated_signature}, Received: {verification_data.razorpay_signature}"
+                     logger.error(msg_err)
+                     print(f"DEBUG: {msg_err}")
                      raise razorpay.errors.SignatureVerificationError("Invalid payment signature")
                      
             else:
-                 # Fallback to order verification (old flow)
-                 if not verification_data.razorpay_order_id:
-                      msg = "Missing order_id for manual verification fallback"
-                      logger.error(msg)
-                      print(f"DEBUG: {msg}")
-                      raise HTTPException(status_code=400, detail="Missing razorpay_order_id. Cannot verify payment.")
+                 # Fallback to order verification (standard payment flow)
+                 if not rzp_order_id:
+                      msg_err = "Missing both razorpay_subscription_id and razorpay_order_id. Cannot verify payment."
+                      logger.error(msg_err)
+                      print(f"DEBUG: {msg_err}")
+                      raise HTTPException(status_code=400, detail=msg_err)
 
                  client.utility.verify_payment_signature({
-                    'razorpay_order_id': verification_data.razorpay_order_id,
+                    'razorpay_order_id': rzp_order_id,
                     'razorpay_payment_id': verification_data.razorpay_payment_id,
                     'razorpay_signature': verification_data.razorpay_signature
                 })
     except razorpay.errors.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid payment signature")
-
-    # Get Subscription
-    from sqlalchemy.orm import selectinload
-    stmt = select(Subscription).where(Subscription.id == verification_data.subscription_id).options(selectinload(Subscription.plan))
-    result = await db.execute(stmt)
-    sub = result.scalar_one_or_none()
-    
-    if not sub:
-        raise HTTPException(status_code=404, detail="Subscription not found")
 
     # Get Plan for Amount Validation
     stmt = select(SubscriptionPlan).where(SubscriptionPlan.id == sub.plan_id)
@@ -489,8 +496,18 @@ async def verify_subscription_payment(
             fetched_payment = client.payment.fetch(verification_data.razorpay_payment_id)
             
             # A. Status Check
-            if fetched_payment['status'] != 'captured':
-                 raise HTTPException(status_code=400, detail=f"Payment status is {fetched_payment['status']}, expected 'captured'")
+            if fetched_payment['status'] == 'authorized':
+                # Manually capture the payment if it's only authorized
+                logger.info(f"Payment {verification_data.razorpay_payment_id} is authorized, capturing now...")
+                try:
+                    capture_amount = fetched_payment['amount']
+                    client.payment.capture(verification_data.razorpay_payment_id, capture_amount, {"currency": "INR"})
+                    logger.info(f"Payment {verification_data.razorpay_payment_id} captured successfully")
+                except Exception as e:
+                    logger.error(f"Failed to capture payment: {e}")
+                    raise HTTPException(status_code=400, detail=f"Failed to capture authorized payment: {str(e)}")
+            elif fetched_payment['status'] != 'captured':
+                 raise HTTPException(status_code=400, detail=f"Payment status is {fetched_payment['status']}, expected 'captured' or 'authorized'")
             
             # B. Amount Check
             expected_amount_paise = int(plan.price * 100)
