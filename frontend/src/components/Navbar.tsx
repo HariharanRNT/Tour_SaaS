@@ -87,9 +87,7 @@ export function Navbar() {
                     <Link
                         key={i}
                         href={link.href}
-                        className={`text-sm font-medium transition-colors hover:text-primary ${pathname === link.href ? 'text-primary' : 'text-muted-foreground'
-                            }`}
-                        style={{ color: pathname === link.href ? (theme.navbar_links_color || theme.primary_color) : undefined }}
+                        className={`text-sm font-medium transition-all px-4 py-2 rounded-full hover:bg-orange-100/50 ${pathname === link.href ? 'text-orange-800 bg-orange-100/30' : 'text-[#7C3A10] hover:text-orange-900'}`}
                         onClick={() => setIsOpen(false)}
                     >
                         {link.label}
@@ -137,7 +135,12 @@ export function Navbar() {
                             <span className="text-sm">{userName}</span>
                         </div>
                     )}
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLogout}
+                        className="rounded-full border-[#E8682A] text-[#E8682A] hover:bg-[#E8682A] hover:text-white transition-all px-6"
+                    >
                         <LogOut className="h-4 w-4 mr-2" />
                         Logout
                     </Button>
@@ -174,11 +177,11 @@ export function Navbar() {
     const navbarStyle = theme.navbar_style_preset || 'light'
 
     // Base styles for colors based on light/dark/transparent
-    const textClass = navbarStyle === 'dark' ? 'text-white' : (isTransparent ? 'text-white' : 'text-gray-900')
+    const textClass = navbarStyle === 'dark' ? 'text-white' : (isTransparent ? 'text-white' : 'text-[#7C3A10]')
     const bgClass = isTransparent
         ? 'bg-transparent'
-        : (navbarStyle === 'dark' ? 'bg-gray-900' : 'bg-white/80 backdrop-blur-md')
-    const borderClass = isTransparent ? 'border-transparent' : (theme.navbar_border_color ? '' : 'border-b')
+        : (navbarStyle === 'dark' ? 'bg-gray-900' : 'glass-navbar')
+    const borderClass = isTransparent ? 'border-transparent' : ''
 
     return (
         <nav
@@ -196,9 +199,9 @@ export function Navbar() {
                         {theme.navbar_logo_image ? (
                             <img src={theme.navbar_logo_image} alt="Logo" className="h-8 w-auto object-contain" />
                         ) : (
-                            <Plane className="h-6 w-6" style={{ color: theme.navbar_logo_color || theme.primary_color }} />
+                            <Plane className="h-6 w-6" style={{ color: '#C2440A' }} />
                         )}
-                        <span className={`text-xl font-bold ${textClass}`}>
+                        <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[#C2440A]'}`}>
                             {theme.navbar_logo_text || 'TourSaaS'}
                         </span>
                     </Link>

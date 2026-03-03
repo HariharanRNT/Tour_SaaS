@@ -27,6 +27,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { DayPlanner } from '@/components/itinerary/DayPlanner'
+import { BookingAuthModal } from '@/components/auth/BookingAuthModal'
 
 interface Activity {
     id?: string
@@ -67,11 +68,38 @@ interface DraftSession {
     selectedReturnFlight: Flight | null
 }
 
-export default function BuildTripPage() {
+export default function BuildTripPage({ slug }: { slug?: string }) {
     const { theme } = useTheme()
     const router = useRouter()
     const searchParams = useSearchParams()
-    const sessionId = searchParams.get('session')
+    const queryDate = searchParams.get('date')
+    const queryAdults = searchParams.get('adults')
+    const queryChildren = searchParams.get('children')
+    const queryInfants = searchParams.get('infants')
+
+    useEffect(() => {
+        // Enforce booking details if accessing a package itinerary
+        if (slug && (!queryDate || !queryAdults)) {
+            router.push('/plan-trip')
+        }
+    }, [slug, queryDate, queryAdults, router])
+
+    // Support legacy URLs but prefer the cookie/slug combination
+    const urlSessionId = searchParams.get('session')
+    const [sessionId, setSessionId] = useState<string | null>(urlSessionId)
+
+    useEffect(() => {
+        if (!urlSessionId && typeof window !== 'undefined') {
+            // Check for cookie if not in URL
+            const cookies = document.cookie.split(';');
+            const sessionCookie = cookies.find(c => c.trim().startsWith('tripSessionId='));
+            if (sessionCookie) {
+                const cookieVal = sessionCookie.split('=')[1];
+                setSessionId(cookieVal);
+            }
+        }
+    }, [urlSessionId]);
+
     const mode = searchParams.get('mode')
     const packageId = searchParams.get('package_id')
 
@@ -103,6 +131,7 @@ export default function BuildTripPage() {
     const [isOnwardModalOpen, setIsOnwardModalOpen] = useState(false)
     const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
     const [showMobileFilters, setShowMobileFilters] = useState(false)
 
     // GST Settings State
@@ -166,12 +195,14 @@ export default function BuildTripPage() {
     const TRANSFER_ESTIMATE = 100
 
     useEffect(() => {
-        if (mode === 'preview' && packageId) {
+        if (slug) {
+            loadPackagePreviewBySlug(slug)
+        } else if (mode === 'preview' && packageId) {
             loadPackagePreview(packageId)
         } else if (sessionId) {
             loadSession()
         }
-    }, [sessionId, mode, packageId])
+    }, [sessionId, mode, packageId, slug])
 
 
 
@@ -357,6 +388,39 @@ export default function BuildTripPage() {
         }
     }
 
+    const loadPackagePreviewBySlug = async (pkgSlug: string) => {
+        try {
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+            const res = await fetch(`http://127.0.0.1:8000/api/v1/packages/slug/${pkgSlug}/itinerary`, {
+                headers: { 'X-Domain': domain }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                // Mock session-like structure for preview
+                setSession({
+                    ...data,
+                    start_date: new Date().toISOString().split('T')[0], // Default to today
+                    travelers: { adults: 2, children: 0, infants: 0 },
+                    preferences: {
+                        departure_location: 'Chennai', // Default
+                        include_flights: false
+                    }
+                })
+
+                if (data.itinerary_by_day) {
+                    setItinerary(data.itinerary_by_day)
+                }
+            } else {
+                alert("Failed to load package preview")
+                router.push('/plan-trip')
+            }
+        } catch (error) {
+            console.error("Preview load failed", error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const addActivity = (dayNumber: number, timeSlot: keyof TimeSlot) => {
         const newActivity: Activity = {
             title: 'New Activity',
@@ -447,45 +511,99 @@ export default function BuildTripPage() {
                 } : null
             }
 
-            const response = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
+            let currentSessionId = sessionId;
+
+            if (!currentSessionId || currentSessionId === 'null') {
+                const createPayload = {
+                    destination: session.destination || session.title || slug || 'Trip',
+                    duration_days: session.duration_days || 5,
+                    duration_nights: session.duration_nights || 4,
+                    start_date: session.start_date || new Date().toISOString().split('T')[0],
+                    travelers: travelers,
+                    preferences: session.preferences || {},
+                    package_id: session.id || packageId
+                }
+
+                const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+                const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                if (token) headers['Authorization'] = `Bearer ${token}`
+
+                const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/trip-planner/create-session`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(createPayload)
+                })
+
+                if (createRes.ok) {
+                    const data = await createRes.json()
+                    currentSessionId = data.session_id
+                    setSessionId(currentSessionId)
+                    if (typeof window !== 'undefined') {
+                        document.cookie = `tripSessionId=${currentSessionId}; path=/; max-age=86400`
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('session', String(currentSessionId));
+                        window.history.replaceState({}, '', url.toString());
+                    }
+                } else {
+                    const errorData = await createRes.json().catch(() => ({}));
+                    console.error("Create session error detail:", errorData);
+                    throw new Error(errorData.detail || "Failed to create session")
+                }
+            }
+
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/trip-planner/session/${currentSessionId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(payload)
             })
 
             if (response.ok) {
                 setSuccess(true)
                 setTimeout(() => setSuccess(false), 2000)
+                return currentSessionId
             } else {
                 alert('Failed to save itinerary')
+                return null
             }
         } catch (error) {
             console.error('Failed to save itinerary:', error)
             alert('Failed to save itinerary')
+            return null
         } finally {
             setSaving(false)
         }
     }
 
     const handleCheckout = async () => {
-        // Save first
-        await saveItinerary()
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
-        const token = localStorage.getItem('token')
-        const checkoutUrl = `/checkout?sessionId=${sessionId}`
-
-        if (token) {
-            router.push(checkoutUrl)
-        } else {
-            router.push(`/login?next=${encodeURIComponent(checkoutUrl)}`)
+        if (!token) {
+            setIsAuthModalOpen(true)
+            return
         }
+
+        // Save first
+        const finalSessionId = await saveItinerary()
+        if (!finalSessionId) return
+
+        const checkoutUrl = `/checkout?sessionId=${finalSessionId}`
+        router.push(checkoutUrl)
+    }
+
+    const handleAuthSuccess = () => {
+        setIsAuthModalOpen(false)
+        handleCheckout()
     }
 
 
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
                     <p className="text-gray-500 font-medium">Building your itinerary...</p>
@@ -497,18 +615,24 @@ export default function BuildTripPage() {
     if (!session) return null
 
     const travelers = {
-        adults: session.travelers.adults || 1,
-        children: session.travelers.children || 0,
-        infants: session.travelers.infants || 0
+        adults: queryAdults ? parseInt(queryAdults, 10) : (session.travelers?.adults || 1),
+        children: queryChildren ? parseInt(queryChildren, 10) : (session.travelers?.children || 0),
+        infants: queryInfants ? parseInt(queryInfants, 10) : (session.travelers?.infants || 0)
+    }
+
+    // Override session start_date with query date if present
+    if (queryDate && session && !session.start_date_overridden) {
+        session.start_date = queryDate;
+        session.start_date_overridden = true; // prevent infinite loops if session updates
     }
 
     const preferences = session.preferences || {}
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen pb-20">
             {/* Preview Banner */}
             {mode === 'preview' && (
-                <div className="bg-amber-100 border-b border-amber-200 px-4 py-3 sticky top-0 z-50">
+                <div className="glass-panel border-b border-amber-200/50 px-4 py-3 sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-2 text-amber-800">
                             <Sparkles className="h-5 w-5" />
@@ -523,112 +647,111 @@ export default function BuildTripPage() {
             )}
 
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <header className="glass-navbar border-b border-orange-100/30 sticky top-0 z-[60] py-3 shadow-sm">
+                <div className="container mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-gray-600 hover:bg-gray-100">
-                            <ArrowLeft className="h-5 w-5" />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.back()}
+                            className="text-[#E8682A] hover:bg-orange-50 rounded-full h-10 w-10 transition-colors"
+                        >
+                            <ArrowLeft className="h-5 w-5 stroke-[2.5]" />
                         </Button>
-                        <h1 className="text-xl font-bold text-gray-800">Your Trip to {session.destination}</h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {/* Header buttons removed as per user request */}
+                        <div className="flex flex-col">
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#A0501E]/60 leading-none mb-1">Itinerary</span>
+                            <h1 className="text-xl font-bold text-[#3A1A08] leading-tight">
+                                Trip to {session.destination}
+                            </h1>
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* Hero Section */}
-            <div className="relative h-[50vh] md:h-[65vh] w-full bg-cover bg-center overflow-hidden flex items-end pb-24 group">
+            <div className="relative h-[450px] w-full bg-cover bg-center overflow-hidden flex items-center justify-center -mt-px group shadow-2xl">
                 {/* Background Image & Overlay */}
                 <div
-                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[3s] group-hover:scale-105"
+                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
                     style={{
                         backgroundImage: `url('${getValidImageUrl(theme.itin_hero_image || session.destination_image || '/images/default-destination.jpg')}')`,
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" style={{ opacity: theme.itin_hero_overlay_opacity ?? 1 }} />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent z-10" style={{ opacity: theme.itin_hero_overlay_opacity ?? 1 }} />
 
-                <div className="container mx-auto px-4 relative z-20">
-                    <div className="max-w-4xl space-y-6">
+                {/* Warm Peach-to-Orange Gradient Overlay */}
+                <div
+                    className="absolute inset-0 z-10 transition-opacity duration-700"
+                    style={{
+                        background: 'linear-gradient(to bottom, rgba(200,80,20,0.3) 0%, rgba(230,120,40,0.65) 100%)',
+                        opacity: 0.9
+                    }}
+                />
+
+                {/* Noise texture overlay */}
+                <div className="absolute inset-0 z-15 opacity-[0.04] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}></div>
+
+                <div className="container mx-auto px-4 relative z-20 text-center">
+                    <div className="max-w-4xl mx-auto space-y-6">
                         {/* Badges */}
-                        <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                            <Badge className="bg-white/20 hover:bg-white/30 text-white border-white/40 backdrop-blur-md px-4 py-1.5 text-sm font-semibold tracking-wide shadow-sm">
-                                <MapPin className="h-4 w-4 mr-1.5" />
-                                {session.trip_type}
-                            </Badge>
+                        <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
+                            <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/30 shadow-sm">
+                                <MapPin className="h-3.5 w-3.5 text-orange-200" />
+                                <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.trip_type}</span>
+                            </div>
+
                             {(theme.itin_show_ai_badge ?? true) && (
-                                <Badge className="text-white border-0 px-4 py-1.5 text-sm font-bold shadow-lg" style={{ backgroundColor: theme.itin_ai_badge_color || '#fbbf24', backgroundImage: theme.itin_ai_badge_color ? 'none' : 'linear-gradient(to right, #fbbf24, #f97316)' }}>
-                                    <Sparkles className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
-                                    AI Optimized Itinerary
+                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_rgba(232,104,42,0.5)] bg-gradient-to-r from-[#E8682A] to-[#F4A261] rounded-full">
+                                    <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></span>
+                                    <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+                                    AI Optimized Itinerary ✨
                                 </Badge>
                             )}
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.1] drop-shadow-2xl tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                            Trip to <span className="text-transparent bg-clip-text" style={{ backgroundImage: theme.itin_destination_accent_color ? `linear-gradient(to right, ${theme.itin_destination_accent_color}, white)` : 'linear-gradient(to right, #bfdbfe, white)' }}>{session.destination}</span>
+                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] font-display drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                            Trip to <span className="text-[#FFECD2] italic font-serif bg-clip-text drop-shadow-sm">{session.destination}</span>
                         </h1>
 
-                        {/* Trip Details Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                            <div className={cn(
-                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
-                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
-                            )}>
-                                <div className="flex items-center gap-3 text-white">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Calendar className="h-5 w-5 md:h-6 md:w-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Dates</p>
-                                        <p className="font-semibold text-sm md:text-base whitespace-nowrap">{formatDate(session.start_date)}</p>
-                                    </div>
+                        {/* Trip Details Grid - Info Chips */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                    <Calendar className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Dates</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap">{formatDate(session.start_date)}</p>
                                 </div>
                             </div>
 
-                            <div className={cn(
-                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
-                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
-                            )}>
-                                <div className="flex items-center gap-3 text-white">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Clock className="h-5 w-5 md:h-6 md:w-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Duration</p>
-                                        <p className="font-semibold text-sm md:text-base">{session.duration_days} Days / {session.duration_nights} Nights</p>
-                                    </div>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                    <Clock className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap">{session.duration_days} Days / {session.duration_nights} N</p>
                                 </div>
                             </div>
 
-                            <div className={cn(
-                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
-                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
-                            )}>
-                                <div className="flex items-center gap-3 text-white">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Users className="h-5 w-5 md:h-6 md:w-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Travelers</p>
-                                        <p className="font-semibold text-sm md:text-base">{travelers.adults + travelers.children + travelers.infants} Travelers</p>
-                                    </div>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                    <Users className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Travelers</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap">{travelers.adults + travelers.children + travelers.infants} People</p>
                                 </div>
                             </div>
 
-                            <div className={cn(
-                                "backdrop-blur-md rounded-2xl p-4 border transition-colors",
-                                theme.itin_info_card_style === 'tinted' ? "bg-white/20 border-white/20" : "bg-white/10 border-white/10 hover:bg-white/15"
-                            )}>
-                                <div className="flex items-center gap-3 text-white">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Wallet className="h-5 w-5 md:h-6 md:w-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Budget</p>
-                                        <p className="font-semibold text-sm md:text-base">{session.budget} Tier</p>
-                                    </div>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                    <Wallet className="h-4 w-4 text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Budget</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap uppercase tracking-tighter">{session.budget} Tier</p>
                                 </div>
                             </div>
                         </div>
@@ -640,14 +763,14 @@ export default function BuildTripPage() {
                     <Button
                         id="save-btn"
                         className={`
-                            bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 shadow-xl
-                            ${success ? 'bg-emerald-500/80 hover:bg-emerald-600/80 text-white border-transparent' : ''}
+                            rounded-full px-6 h-11 border border-white/40 text-white font-bold transition-all shadow-xl backdrop-blur-md
+                            ${success ? 'bg-emerald-500/80 border-transparent' : 'bg-white/10 hover:bg-[#E8682A] hover:border-[#E8682A]'}
                         `}
                         onClick={saveItinerary}
                         disabled={saving || mode === 'preview'}
                     >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : success ? <CheckCircle className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        <span className="font-semibold">{saving ? 'Saving...' : success ? 'Saved!' : 'Save Trip'}</span>
+                        <span>{saving ? 'Saving...' : success ? 'Saved!' : 'Save Trip'}</span>
                     </Button>
                 </div>
             </div>
@@ -660,25 +783,31 @@ export default function BuildTripPage() {
                     <div className="lg:col-span-8 xl:col-span-9 space-y-8">
 
                         {/* AI Summary Banner */}
-                        <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-white p-8 rounded-[2rem] shadow-sm border border-blue-100/50 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
-                            <div className="flex flex-col md:flex-row gap-6 relative z-10">
-                                <div className="shrink-0 flex items-start">
-                                    <div className="p-4 bg-gradient-to-br from-blue-600 to-sky-600 rounded-2xl text-white shadow-lg shadow-blue-500/30 ring-4 ring-white" style={{ backgroundColor: theme.itin_ai_badge_color || '', backgroundImage: theme.itin_ai_badge_color ? 'none' : '' }}>
-                                        <Sparkles className="h-8 w-8 animate-pulse" />
+                        <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(200,80,20,0.1)] border border-orange-100/50 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                            <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
+                                <div className="shrink-0">
+                                    <div className="p-5 bg-gradient-to-br from-[#E8682A] to-[#F4A261] rounded-[2rem] text-white shadow-[0_12px_30px_rgba(232,104,42,0.4)] ring-4 ring-white/50">
+                                        <Sparkles className="h-9 w-9 animate-pulse" />
                                     </div>
                                 </div>
-                                <div className="space-y-3">
-                                    <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-sky-700">
+                                <div className="space-y-4">
+                                    <h3 className="text-3xl font-bold text-[#C2440A] font-display">
                                         Your Personalized AI Itinerary
                                     </h3>
-                                    <p className="text-gray-700 leading-relaxed text-lg">
-                                        We've crafted this {session.duration_days}-day journey through <span className="font-semibold text-blue-700">{session.destination}</span> based on your love for <span className="font-semibold text-blue-700">{session.trip_type}</span> experiences.
+                                    <p className="text-[#6B3010] leading-relaxed text-lg max-w-2xl">
+                                        We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[#E8682A]">{session.destination}</span> based on your love for <span className="font-bold text-[#E8682A]">{session.trip_type}</span> experiences.
                                     </p>
-                                    <div className="flex flex-wrap gap-3 pt-1">
-                                        <Badge variant="outline" className="bg-white/60 border-blue-200 text-blue-700 hover:bg-blue-50">✨ Perfectly Paced</Badge>
-                                        <Badge variant="outline" className="bg-white/60 border-sky-200 text-sky-700 hover:bg-sky-50">📍 Top Rated Spots</Badge>
-                                        <Badge variant="outline" className="bg-white/60 border-indigo-200 text-indigo-700 hover:bg-indigo-50">💎 Local Gems</Badge>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
+                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
+                                            <span>✨ Perfectly Paced</span>
+                                        </div>
+                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
+                                            <span>📍 Top Rated Spots</span>
+                                        </div>
+                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
+                                            <span>💎 Local Gems</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -686,31 +815,29 @@ export default function BuildTripPage() {
 
                         {/* Trip Overview Cards */}
                         <section>
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="h-8 w-1 rounded-full" style={{ backgroundColor: theme.itin_heading_border_color || theme.primary_color || '#3b82f6', backgroundImage: theme.itin_heading_border_color ? 'none' : 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
-                                <h2 className="text-2xl font-bold text-gray-900">Trip Overview</h2>
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="h-10 w-1.5 rounded-full bg-[#E8682A]" />
+                                <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {[
-                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", color: "blue" },
-                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "4★ & 5★ stays", color: "cyan" },
-                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated experiences", color: "sky" },
-                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", color: "indigo" }
+                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", color: "orange" },
+                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", color: "orange" },
+                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", color: "orange" },
+                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", color: "orange" }
                                 ].map((item, i) => (
-                                    <div key={i} className={cn(
-                                        "group rounded-2xl p-5 shadow-sm border transition-all duration-300 hover:shadow-lg",
-                                        theme.itin_overview_card_style === 'tinted' ? "bg-slate-50/50 border-slate-100" : "bg-white border-slate-100 hover:border-blue-100",
-                                        theme.itin_overview_card_border === 'shadow' ? "shadow-md" : theme.itin_overview_card_border === 'subtle' ? "border-slate-200" : ""
-                                    )}>
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform",
-                                            theme.itin_overview_icon_color ? "" : `bg-${item.color}-50 text-${item.color}-600`
-                                        )} style={{ color: theme.itin_overview_icon_color || '', backgroundColor: theme.itin_overview_icon_color ? `${theme.itin_overview_icon_color}10` : '' }}>
-                                            {item.icon}
+                                    <div key={i} className="group relative bg-white/50 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden">
+                                        {/* Hover glow */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#E8682A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                        <div className="relative z-10">
+                                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E8682A] to-[#F4A261] flex items-center justify-center mb-5 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                                                {item.icon}
+                                            </div>
+                                            <h3 className="font-bold text-[#3A1A08] text-xl mb-1">{item.label}</h3>
+                                            <p className="text-sm text-[#A0501E] font-medium opacity-70">{item.desc}</p>
                                         </div>
-                                        <h3 className="font-bold text-slate-900 text-lg">{item.label}</h3>
-                                        <p className="text-sm text-slate-500 font-medium">{item.desc}</p>
                                     </div>
                                 ))}
                             </div>
@@ -725,13 +852,13 @@ export default function BuildTripPage() {
                                     <div className="h-8 w-1 rounded-full" style={{ backgroundColor: theme.itin_heading_border_color || theme.primary_color || '#3b82f6', backgroundImage: theme.itin_heading_border_color ? 'none' : 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
                                     <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-600 gap-2 shadow-sm font-semibold">
+                                <Button variant="outline" className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold">
                                     <Download className="h-4 w-4" /> Download PDF
                                 </Button>
                             </div>
 
                             <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
-                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto bg-slate-50/50 p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-slate-100">
+                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto glass-panel p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-white/20">
                                     {itinerary.map((day) => (
                                         <TabsTrigger
                                             key={day.day_number}
@@ -801,16 +928,16 @@ export default function BuildTripPage() {
                                                     <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                         <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1" disabled={mode === 'preview'}>
+                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-white/20 w-full mb-1" disabled={mode === 'preview'}>
                                                                     Change Onward Flight
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl">
-                                                                <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
+                                                            <DialogContent className="glass-panel max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border-0">
+                                                                <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/10">
                                                                     <DialogTitle>Select Onward Flight</DialogTitle>
                                                                 </DialogHeader>
                                                                 <div className="flex flex-1 overflow-hidden">
-                                                                    <div className={`md:block w-72 border-r bg-white p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                    <div className={`md:block w-72 border-r border-white/20 bg-white/10 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                         <div className="flex items-center justify-between mb-6">
                                                                             <h3 className="font-bold text-gray-900">Filters</h3>
                                                                             <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
@@ -822,7 +949,7 @@ export default function BuildTripPage() {
                                                                         <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                         <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                     </div>
-                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent">
                                                                         <div className="md:hidden mb-4">
                                                                             <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
                                                                                 Filters
@@ -830,7 +957,7 @@ export default function BuildTripPage() {
                                                                         </div>
                                                                         <div className="space-y-4">
                                                                             {filteredOnwardFlights.length === 0 ? (
-                                                                                <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                                                                <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
                                                                                     <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
                                                                                     <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
                                                                                 </div>
@@ -848,7 +975,7 @@ export default function BuildTripPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-gray-200 shadow-none bg-gray-50">
+                                            <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none">
                                                 <div className="flex flex-col items-center gap-3 text-gray-400">
                                                     {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
                                                     <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
@@ -873,16 +1000,16 @@ export default function BuildTripPage() {
                                                         <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                             <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
                                                                 <DialogTrigger asChild>
-                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full mb-1" disabled={mode === 'preview'}>
+                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-white/20 w-full mb-1" disabled={mode === 'preview'}>
                                                                         Change Return Flight
                                                                     </Button>
                                                                 </DialogTrigger>
-                                                                <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl">
-                                                                    <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
+                                                                <DialogContent className="glass-panel max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border-0">
+                                                                    <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/10">
                                                                         <DialogTitle>Select Return Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
-                                                                        <div className={`md:block w-72 border-r bg-white p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                        <div className={`md:block w-72 border-r border-white/20 bg-white/10 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                             <div className="flex items-center justify-between mb-6">
                                                                                 <h3 className="font-bold text-gray-900">Filters</h3>
                                                                                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
@@ -893,7 +1020,7 @@ export default function BuildTripPage() {
                                                                             <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                             <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                         </div>
-                                                                        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
+                                                                        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent">
                                                                             <div className="md:hidden mb-4">
                                                                                 <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
                                                                                     Filters
@@ -912,7 +1039,7 @@ export default function BuildTripPage() {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-gray-200 shadow-none bg-gray-50">
+                                                <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none glass-panel">
                                                     <div className="flex flex-col items-center gap-3 text-gray-400">
                                                         {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
                                                         <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
@@ -986,51 +1113,36 @@ export default function BuildTripPage() {
 
                         {/* Footer Confidence Boost - Redesigned */}
                         {theme.itin_show_trust_section !== false && (
-                            <div className="pt-2" style={{ backgroundColor: theme.itin_trust_section_bg || 'transparent' }}>
-                                {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
-                                    <div className="border-t border-gray-100 mb-8"></div>
-                                )}
-                                <h3
-                                    className="text-xs font-bold uppercase tracking-widest mb-8 text-center"
-                                    style={{ color: theme.itin_trust_title_color || '#9ca3af' }}
-                                >
-                                    {theme.itin_trust_title || "Why book with RNT Tour?"}
-                                </h3>
+                            <div className="pt-16 pb-8" style={{ backgroundColor: theme.itin_trust_section_bg || 'transparent' }}>
+                                <div className="text-center mb-12">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A0501E]/60 mb-2">
+                                        Peace of Mind
+                                    </h3>
+                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">
+                                        {theme.itin_trust_title || "Why book with RNT Tour?"}
+                                    </h2>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     {(theme.itin_trust_cards || [
-                                        { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "#3B82F6", bgColor: "#eff6ff" },
-                                        { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "#10B981", bgColor: "#ecfdf5" },
-                                        { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "#8B5CF6", bgColor: "#f5f3ff" }
+                                        { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" },
+                                        { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" },
+                                        { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" }
                                     ]).map((card, idx) => {
                                         const IconComponent = idx === 0 ? ShieldCheck : idx === 1 ? CheckCircle : Headphones;
 
                                         return (
                                             <div
                                                 key={idx}
-                                                className={cn(
-                                                    "flex flex-col items-center text-center gap-4 group p-6 rounded-2xl transition-all duration-500",
-                                                    theme.itin_trust_card_style === 'bordered' ? "border border-slate-200" :
-                                                        theme.itin_trust_card_style === 'shadowed' ? "shadow-md hover:shadow-xl bg-white" :
-                                                            theme.itin_trust_card_style === 'colored' ? "" : // Custom logic below
-                                                                ""
-                                                )}
-                                                style={theme.itin_trust_card_style === 'colored' ? { backgroundColor: card.bgColor || '#f8fafc' } : {}}
+                                                className="flex flex-col items-center text-center gap-6 group p-8 rounded-[2rem] transition-all duration-500 bg-white/40 backdrop-blur-sm border border-orange-100/30 hover:shadow-xl hover:-translate-y-1"
                                             >
                                                 <div
-                                                    className={cn(
-                                                        "p-5 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg",
-                                                        theme.itin_trust_card_style === 'shadowed' ? "shadow-none" : ""
-                                                    )}
-                                                    style={{
-                                                        backgroundColor: card.bgColor || (idx === 0 ? '#eff6ff' : idx === 1 ? '#ecfdf5' : '#f5f3ff'),
-                                                        color: card.color || (idx === 0 ? '#3B82F6' : idx === 1 ? '#10B981' : '#8B5CF6')
-                                                    }}
+                                                    className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[#E8682A] to-[#F4A261] text-white"
                                                 >
                                                     <IconComponent className="h-8 w-8" />
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-gray-900 text-lg mb-1">{card.title}</h4>
-                                                    <p className="text-sm text-gray-500 leading-relaxed">{card.desc}</p>
+                                                    <h4 className="font-bold text-[#3A1A08] text-xl mb-2 font-display">{card.title}</h4>
+                                                    <p className="text-sm text-[#6B3010]/70 leading-relaxed">{card.desc}</p>
                                                 </div>
                                             </div>
                                         );
@@ -1049,7 +1161,7 @@ export default function BuildTripPage() {
                                 <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
                                 <TripCart
                                     basePrice={session.price_per_person || 18000}
-                                    travelers={session.travelers}
+                                    travelers={travelers}
                                     duration={{ days: session.duration_days, nights: session.duration_nights }}
                                     services={[
                                         ...(selectedOnwardFlight ? [{ name: 'Onward Flight', price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
@@ -1107,14 +1219,14 @@ export default function BuildTripPage() {
 
             {/* Mobile Cart Dialog */}
             <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl">
-                    <div className="p-4 border-b bg-gray-50 flex justify-between items-center sticky top-0 bg-white z-10">
+                <DialogContent className="glass-panel max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl border-0">
+                    <div className="p-4 border-b border-white/20 bg-white/10 flex justify-between items-center sticky top-0 z-10">
                         <DialogTitle>Trip Summary</DialogTitle>
                     </div>
-                    <div className="p-4 bg-gray-50/50 min-h-[50vh]">
+                    <div className="p-4 bg-transparent min-h-[50vh]">
                         <TripCart
                             basePrice={session.price_per_person || 18000}
-                            travelers={session.travelers}
+                            travelers={travelers}
                             duration={{ days: session.duration_days, nights: session.duration_nights }}
                             services={[
                                 ...(selectedOnwardFlight ? [{ name: 'Onward Flight', price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
@@ -1129,6 +1241,12 @@ export default function BuildTripPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <BookingAuthModal
+                isOpen={isAuthModalOpen}
+                onClose={() => setIsAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
+            />
         </div>
     )
 }

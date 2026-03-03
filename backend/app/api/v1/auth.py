@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.models import User, UserRole, Customer, Agent
-from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse, GoogleLoginRequest
+from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse, GoogleLoginRequest, AgentRegistration
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.exceptions import ConflictException, UnauthorizedException
 from app.api.deps import get_current_user, get_current_domain
@@ -94,6 +94,62 @@ async def register(
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
+@router.post("/register/agent", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_agent(
+    agent_data: AgentRegistration,
+    db: AsyncSession = Depends(get_db)
+):
+    """Register a new agent (self-registration)"""
+    from app.models import ApprovalStatus
+    
+    # Check if user already exists
+    result = await db.execute(select(User).where(User.email == agent_data.email))
+    if result.scalar_one_or_none():
+        raise ConflictException("Email already registered")
+    
+    # Create User (Auth)
+    user = User(
+        email=agent_data.email,
+        password_hash=get_password_hash(agent_data.password),
+        role=UserRole.AGENT,
+        is_active=False, # Inactive until approved
+        approval_status=ApprovalStatus.PENDING,
+        email_verified=False
+    )
+    db.add(user)
+    await db.flush()
+    
+    # Create Agent Profile
+    agent = Agent(
+        user_id=user.id,
+        first_name=agent_data.first_name,
+        last_name=agent_data.last_name,
+        phone=agent_data.phone,
+        agency_name=agent_data.agency_name,
+        company_legal_name=agent_data.company_legal_name,
+        domain=agent_data.domain,
+        business_address=agent_data.business_address,
+        country=agent_data.country,
+        state=agent_data.state,
+        city=agent_data.city
+    )
+    db.add(agent)
+    
+    await db.commit()
+    
+    # Reload with profiles
+    from sqlalchemy.orm import selectinload
+    stmt = select(User).where(User.id == user.id).options(
+        selectinload(User.admin_profile),
+        selectinload(User.agent_profile),
+        selectinload(User.customer_profile)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one()
+    
+    return UserResponse.model_validate(user)
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -110,7 +166,8 @@ async def login(
     stmt = select(User).where(User.email == form_data.username).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
-        selectinload(User.customer_profile)
+        selectinload(User.customer_profile),
+        selectinload(User.subscription)
     )
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
@@ -120,6 +177,11 @@ async def login(
         raise UnauthorizedException("Incorrect email or password")
     
     if not user.is_active:
+        from app.models import ApprovalStatus
+        if user.role == UserRole.AGENT and user.approval_status == ApprovalStatus.PENDING:
+             raise HTTPException(status_code=400, detail="Your registration request is pending admin approval.")
+        elif user.role == UserRole.AGENT and user.approval_status == ApprovalStatus.REJECTED:
+             raise HTTPException(status_code=400, detail="Your registration request was rejected. Please contact support.")
         raise HTTPException(status_code=400, detail="Account is inactive")
 
     # 3. Handle Role-Based Logic
@@ -538,7 +600,8 @@ async def verify_login_otp(
     stmt = select(User).where(User.email == data.email).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
-        selectinload(User.customer_profile)
+        selectinload(User.customer_profile),
+        selectinload(User.subscription)
     )
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()

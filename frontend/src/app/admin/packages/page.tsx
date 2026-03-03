@@ -150,7 +150,7 @@ export default function AdminPackagesPage() {
                 </div>
 
                 {/* Content */}
-                <Card className="border-gray-100 shadow-sm">
+                <Card className="border-gray-100 shadow-sm glass-panel">
                     <CardHeader>
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
@@ -164,7 +164,7 @@ export default function AdminPackagesPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border rounded-md px-3 py-2 text-sm bg-white border-gray-200"
+                                    className="border rounded-md px-3 py-2 text-sm glass-input border-gray-200"
                                 >
                                     <option value="all">All Status</option>
                                     <option value="draft">Draft</option>

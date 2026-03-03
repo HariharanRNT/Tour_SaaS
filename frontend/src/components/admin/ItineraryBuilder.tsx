@@ -8,7 +8,7 @@ import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, Clock, BarChart3, ListChecks, Utensils, Car, Map, MoreVertical, Copy as CopyIcon, RotateCcw, Target, FileText, Image as ImageIcon, Bold, Italic, List, Smile, Zap, ArrowRight, Upload, Link, X, Settings, CheckCircle2, ChevronDown } from 'lucide-react'
+import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, Clock, BarChart3, ListChecks, Utensils, Car, Map, MapPin, MoreVertical, Copy as CopyIcon, RotateCcw, Target, FileText, Image as ImageIcon, Bold, Italic, List, Smile, Zap, ArrowRight, Upload, Link, X, Settings, CheckCircle2, ChevronDown } from 'lucide-react'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { getValidImageUrl } from '@/lib/utils/image'
@@ -22,7 +22,9 @@ import {
     DragOverlay,
     defaultDropAnimationSideEffects,
     DragStartEvent,
-    DragEndEvent
+    DragEndEvent,
+    useDroppable,
+    Active
 } from '@dnd-kit/core'
 import {
     arrayMove,
@@ -42,6 +44,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Copy, Import, MoreVertical as MoreIcon } from "lucide-react"
 import { AnimatePresence, motion } from 'framer-motion'
+import { ActivityLibrary } from './ActivityLibrary'
+import { Activity as ActivityMaster } from '@/types/activities'
 
 type ActivityType = Activity;
 
@@ -69,6 +73,8 @@ interface DayActivities {
 interface ItineraryBuilderProps {
     packageId: string
     durationDays: number
+    packageMode?: string
+    destinations?: { city: string; country: string; days: number }[]
 }
 
 const timeSlotConfig = {
@@ -167,7 +173,30 @@ const calculateDurationMinutes = (start?: string, end?: string) => {
     return endTotal - startTotal;
 };
 
-export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderProps) {
+function DroppableTimeSlot({ id, children }: { id: string, children: React.ReactNode }) {
+    const { setNodeRef, isOver } = useDroppable({
+        id: id,
+        data: {
+            type: 'time-slot',
+            day: id.split('-')[0],
+            slot: id.split('-')[1]
+        }
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={cn(
+                "transition-all duration-300 rounded-[20px]",
+                isOver ? "ring-2 ring-indigo-500 bg-indigo-50/50 shadow-inner scale-[1.01]" : ""
+            )}
+        >
+            {children}
+        </div>
+    );
+}
+
+export function ItineraryBuilder({ packageId, durationDays, packageMode = 'single', destinations = [] }: ItineraryBuilderProps) {
     const [currentDay, setCurrentDay] = useState(1)
     const [activities, setActivities] = useState<Record<number, DayActivities>>({})
     const [showAddForm, setShowAddForm] = useState(false)
@@ -188,6 +217,7 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [isSuggestedLunch, setIsSuggestedLunch] = useState(false)
+    const [activeDragItem, setActiveDragItem] = useState<Active | null>(null)
 
     // Keyboard Shortcuts
     useEffect(() => {
@@ -676,8 +706,86 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
         })
     )
 
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveDragItem(event.active)
+    }
+
     const handleDragEnd = async (event: DragEndEvent) => {
+        setActiveDragItem(null)
         const { active, over } = event
+        if (!over) return
+
+        // Handle dropping from Library to Itinerary
+        if (active.data.current?.type === 'library-activity') {
+            const activityMaster = active.data.current.activity as ActivityMaster
+
+            let targetDayStr: string | undefined
+            let targetSlotStr: string | undefined
+
+            // Check if hovered over a droppable zone (which has id "day-slot")
+            if ((over.id as string).includes('-') && (over.id as string).split('-')[0].length <= 3) {
+                const parts = (over.id as string).split('-')
+                targetDayStr = parts[0]
+                targetSlotStr = parts[1]
+            } else {
+                // Check if hovering over another SortableActivityItem. Walk the activities list to find which day/slot it belongs to.
+                Object.keys(activities).forEach(dayKey => {
+                    const day = parseInt(dayKey)
+                    const dayData = activities[day]
+                    Object.keys(dayData).forEach(slotKey => {
+                        const slot = slotKey as keyof DayActivities
+                        const items = dayData[slot]
+                        if (items.some((item) => item.id === over.id)) {
+                            targetDayStr = day.toString()
+                            targetSlotStr = slot
+                        }
+                    })
+                })
+            }
+
+            if (targetDayStr && targetSlotStr) {
+                const day = parseInt(targetDayStr)
+                const slot = targetSlotStr as keyof DayActivities
+
+                const image_urls = activityMaster.images && activityMaster.images.length > 0
+                    ? activityMaster.images.sort((a, b) => a.display_order - b.display_order).map(img => img.image_url)
+                    : [];
+
+                // Add to itinerary
+                const newItineraryActivity: Activity = {
+                    title: activityMaster.name,
+                    description: activityMaster.description || '',
+                    time_slot: slot,
+                    start_time: '', // User can set later
+                    end_time: '',
+                    display_order: getMaxDisplayOrder(day, slot),
+                    image_urls: image_urls
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            day_number: day,
+                            ...newItineraryActivity,
+                            image_url: newItineraryActivity.image_urls,
+                            activities: [],
+                            is_optional: false
+                        })
+                    })
+
+                    if (response.ok) {
+                        toast.success(`Added ${activityMaster.name} to Day ${day}`)
+                        loadItinerary()
+                    }
+                } catch (error) {
+                    console.error('Failed to add activity from library:', error)
+                    toast.error('Failed to add activity')
+                }
+                return
+            }
+        }
 
         if (active.id !== over?.id) {
             // Find which day and slot these items belong to
@@ -815,313 +923,305 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
         setShowAddForm(true)
     }
 
+    const renderDayTab = (day: number) => {
+        const dayActivities = activities[day] || {}
+        const activityCount = Object.values(dayActivities).reduce((acc: number, curr: any) => acc + (curr?.length || 0), 0)
+        const hasActivities = activityCount > 0
+        const isActive = currentDay === day
+
+        return (
+            <button
+                key={day}
+                onClick={() => setCurrentDay(day)}
+                className={cn(
+                    "relative flex flex-col items-start min-w-[120px] transition-all duration-300 group flex-shrink-0"
+                )}
+                style={isActive ? {
+                    background: 'linear-gradient(135deg, #7c5cfc, #5535dd)',
+                    border: 'none',
+                    boxShadow: '0 6px 24px rgba(108,71,255,0.45)',
+                    color: 'white',
+                    borderRadius: '16px',
+                    padding: '12px 20px',
+                } : {
+                    background: 'rgba(255, 255, 255, 0.28)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    borderRadius: '16px',
+                    padding: '12px 20px',
+                    color: 'rgba(30, 20, 60, 0.75)',
+                }}
+            >
+                {isActive && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#22c55e]" style={{ boxShadow: '0 0 6px #22c55e' }} />
+                )}
+                <div className="flex items-center justify-between w-full mb-2">
+                    <span className={cn("text-sm", isActive ? "font-bold text-white" : "font-semibold")} style={!isActive ? { color: 'rgba(30, 20, 60, 0.75)' } : {}}>Day {day}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className={cn("text-xs font-semibold", isActive ? "text-white/80" : "text-slate-500")} style={!isActive ? { color: 'rgba(30, 20, 60, 0.60)' } : {}}>
+                        {activityCount} activities
+                    </span>
+                </div>
+
+                {/* Context Menu Action */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className={cn(
+                                    "p-1 rounded-md transition-colors",
+                                    isActive ? "bg-white/20 text-white hover:bg-white/30" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                )}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <MoreVertical className="w-3 h-3" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <div className="p-1">
+                                <DropdownMenuItem onClick={() => alert("Duplicate day coming soon")} className="gap-2 cursor-pointer">
+                                    <CopyIcon className="w-4 h-4" />
+                                    <span>Duplicate Day</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => alert("Copy to another day coming soon")} className="gap-2 cursor-pointer">
+                                    <ListChecks className="w-4 h-4" />
+                                    <span>Copy to Day...</span>
+                                </DropdownMenuItem>
+                            </div>
+                            <DropdownMenuSeparator />
+                            <div className="p-1">
+                                <DropdownMenuItem onClick={() => alert("Clear all activities coming soon")} className="gap-2 cursor-pointer text-orange-600 focus:text-orange-700">
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Clear Day</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => alert("Delete day coming soon")} className="gap-2 cursor-pointer text-red-600 focus:text-red-700">
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Delete Day</span>
+                                </DropdownMenuItem>
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </button>
+        )
+    }
+
+    const getDayCity = (day: number) => {
+        if (packageMode !== 'multi' || !destinations.length) return ''
+        let currentDayCounter = 1
+        for (const dest of destinations) {
+            const destDays = parseInt(dest.days as any) || 1
+            if (day >= currentDayCounter && day < currentDayCounter + destDays) {
+                return dest.city
+            }
+            currentDayCounter += destDays
+        }
+        return ''
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Day-wise Itinerary</CardTitle>
-                <CardDescription>
-                    Build your package itinerary with activities organized by time slots
-                </CardDescription>
-            </CardHeader>
-            {/* Itinerary Overview Stats */}
-            <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
-                <div className="flex flex-wrap items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-                            <BarChart3 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500 font-medium leading-none mb-1">Total Activities</p>
-                            <p className="text-lg font-bold text-gray-900 leading-none">
-                                {Object.values(activities).reduce((acc: number, day: DayActivities) =>
-                                    acc + Object.values(day).reduce((dAcc: number, slot: Activity[]) => dAcc + slot.length, 0)
-                                    , 0)}
-                            </p>
-                        </div>
+        <div className="h-[calc(100vh-180px)] min-h-[700px] flex flex-col">
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="flex-1 flex overflow-hidden rounded-3xl bg-white/30 backdrop-blur-xl border border-white/50 shadow-xl">
+
+                    {/* COLUMN 1: Activity Library */}
+                    <div className="w-1/3 min-w-[320px] max-w-[400px] border-r border-white/40">
+                        <ActivityLibrary currentCity={getDayCity(currentDay) || 'All Cities'} />
                     </div>
 
-                    <div className="h-10 w-px bg-gray-200 hidden sm:block" />
+                    {/* COLUMN 2: Itinerary Builder */}
+                    <div className="flex-1 flex flex-col overflow-hidden bg-white/20">
+                        <div className="px-6 py-5 border-b border-white/40 bg-white/40 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Day-wise Itinerary</h2>
+                                <p className="text-xs text-slate-500 font-medium">Build your journey by dragging activities into time slots</p>
+                            </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-sm">
-                            <Utensils className="w-4 h-4 text-orange-500" />
-                            <span className="font-semibold text-gray-700">
-                                {Object.values(activities).reduce((acc: number, day: DayActivities) =>
-                                    acc + (day.morning.filter((a: Activity) => a.title.toLowerCase().includes('breakfast')).length || 0) +
-                                    (day.afternoon.filter((a: Activity) => a.title.toLowerCase().includes('lunch')).length || 0) +
-                                    (day.evening.filter((a: Activity) => a.title.toLowerCase().includes('dinner')).length || 0)
-                                    , 0)}
-                            </span>
-                            <span className="text-gray-500">Meals</span>
+                            {/* Itinerary Overview Stats (Simplified for center panel) */}
+                            <div className="hidden lg:flex items-center gap-4">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/50 border border-indigo-100 rounded-full text-[11px] font-bold text-indigo-700">
+                                    <BarChart3 className="w-3.5 h-3.5" />
+                                    {Object.values(activities).reduce((acc, day) => acc + Object.values(day).reduce((dAcc, slot) => dAcc + slot.length, 0), 0)} Activities
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-sm">
-                            <Map className="w-4 h-4 text-blue-500" />
-                            <span className="font-semibold text-gray-700">
-                                {Object.values(activities).reduce((acc: number, day: DayActivities) =>
-                                    acc + Object.values(day).reduce((dAcc: number, slot: Activity[]) =>
-                                        dAcc + slot.filter((a: Activity) => a.title.toLowerCase().includes('tour') || a.title.toLowerCase().includes('visit')).length
-                                        , 0)
-                                    , 0)}
-                            </span>
-                            <span className="text-gray-500">Tours</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-sm">
-                            <Car className="w-4 h-4 text-emerald-500" />
-                            <span className="font-semibold text-gray-700">
-                                {Object.values(activities).reduce((acc: number, day: DayActivities) =>
-                                    acc + Object.values(day).reduce((dAcc: number, slot: Activity[]) =>
-                                        dAcc + slot.filter((a: Activity) => a.title.toLowerCase().includes('transfer') || a.title.toLowerCase().includes('pick')).length
-                                        , 0)
-                                    , 0)}
-                            </span>
-                            <span className="text-gray-500">Transfers</span>
+
+                        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200">
+                            <Tabs value={`day-${currentDay}`} onValueChange={(v) => setCurrentDay(parseInt(v.split('-')[1]))}>
+                                <div className="mb-8">
+                                    <div className="flex items-center gap-3 overflow-x-auto pb-4 pt-2 px-1 scrollbar-hide">
+                                        {packageMode === 'multi' && destinations.length > 0 ? (
+                                            (() => {
+                                                let currentDayCounter = 1;
+                                                return destinations.map((dest, destIndex) => {
+                                                    const destDaysCount = parseInt(dest.days as any) || 1;
+                                                    const legDays = Array.from({ length: destDaysCount }, (_, i) => currentDayCounter + i);
+                                                    currentDayCounter += destDaysCount;
+                                                    const validLegDays = legDays.filter(d => d <= durationDays);
+                                                    if (validLegDays.length === 0) return null;
+                                                    return (
+                                                        <div key={`dest-${destIndex}`} className="flex items-center gap-2 mr-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl border border-white/60 flex-shrink-0 shadow-sm">
+                                                            <div className="flex flex-col items-center justify-center min-w-[110px] h-[80px] px-3 bg-indigo-600/5 backdrop-blur-sm border border-indigo-100 rounded-xl whitespace-nowrap shadow-sm space-y-1">
+                                                                <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center">
+                                                                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                                                                </div>
+                                                                <span className="text-[11px] font-black text-slate-800 truncate max-w-[100px]" title={dest.city}>{dest.city || 'Unnamed'}</span>
+                                                                <span className="text-[9px] text-indigo-700 font-bold bg-indigo-50 px-2 rounded-full border border-indigo-100">{destDaysCount} Days</span>
+                                                            </div>
+                                                            {validLegDays.map((day) => renderDayTab(day))}
+                                                        </div>
+                                                    );
+                                                });
+                                            })()
+                                        ) : (
+                                            days.map((day) => renderDayTab(day))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {days.map((day) => {
+                                    const dayActivities = getDayActivities(day)
+                                    return (
+                                        <TabsContent key={day} value={`day-${day}`} className="m-0 focus-visible:outline-none">
+                                            {/* City/Destination Label for the day */}
+                                            {packageMode === 'multi' && (
+                                                <div className="mb-6 flex items-center gap-2 px-4 py-2 bg-indigo-50/50 border border-indigo-100 rounded-xl w-fit">
+                                                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                                                    <span className="text-xs font-bold text-indigo-700">Currently in {getDayCity(day) || 'Unknown Destination'}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-6">
+                                                {Object.entries(timeSlotConfig).map(([slot, config]) => {
+                                                    const slotActivities = dayActivities[slot as keyof DayActivities]
+                                                    const Icon = config.icon
+                                                    const totalCapacityHours = slot === 'full_day' ? 12 : slot === 'morning' ? 4 : slot === 'half_day' ? 6 : 4
+                                                    const estimatedHoursUsed = slotActivities.length * 2
+                                                    const progressPercentage = Math.min((estimatedHoursUsed / totalCapacityHours) * 100, 100)
+
+                                                    return (
+                                                        <DroppableTimeSlot key={slot} id={`${day}-${slot}`}>
+                                                            <div className="space-y-3">
+                                                                {/* Drop-enabled Time Slot Header */}
+                                                                <div className="shadow-sm transition-all duration-300 hover:bg-white/40 rounded-[16px]" style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.45)', padding: '14px 20px' }}>
+
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="flex justify-center items-center" style={{ background: 'rgba(255,255,255,0.35)', borderRadius: '10px', padding: '8px' }}>
+                                                                                <Icon className={`h-[18px] w-[18px] ${config.color}`} />
+                                                                            </div>
+                                                                            <div>
+                                                                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                                                                                    {config.label}
+                                                                                    <span className="text-xs font-medium text-slate-400 bg-white/60 px-2 py-0.5 rounded-full border border-white/60">
+                                                                                        {totalCapacityHours} hours
+                                                                                    </span>
+                                                                                </h3>
+                                                                                {slotActivities.length > 0 && (
+                                                                                    <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                                                                                        {estimatedHoursUsed} / {totalCapacityHours} hours used
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => handleOpenAddForm(slot)}
+                                                                                className="h-8 gap-1.5 bg-white/40 border-white/60 hover:bg-white/60 text-indigo-600 font-bold rounded-full text-[11px]"
+                                                                            >
+                                                                                <Plus className="w-3 h-3" />
+                                                                                Add Manual
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Glowing Progress Bar */}
+                                                                    {slotActivities.length > 0 && (
+                                                                        <div className="w-full mt-3 overflow-hidden bg-slate-100 rounded-full h-1">
+                                                                            <div
+                                                                                className="transition-all duration-700 shadow-sm h-full"
+                                                                                style={{ width: `${progressPercentage}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)', borderRadius: '100px' }}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className={cn("space-y-3 mt-3")}>
+                                                                        <SortableContext
+                                                                            id={`${day}-${slot}`}
+                                                                            items={slotActivities.map(a => a.id || 'temp').filter(id => id !== 'temp') as string[]}
+                                                                            strategy={verticalListSortingStrategy}
+                                                                        >
+                                                                            {slotActivities && slotActivities.length > 0 ? (
+                                                                                <div className="space-y-3">
+                                                                                    {slotActivities.map((activity, idx) => (
+                                                                                        <SortableActivityItem
+                                                                                            key={activity.id || idx}
+                                                                                            activity={activity}
+                                                                                            config={config}
+                                                                                            idx={idx}
+                                                                                            onDelete={handleDeleteActivity}
+                                                                                            onEdit={handleEditActivity}
+                                                                                        />
+                                                                                    ))}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div
+                                                                                    id={`${day}-${slot}`}
+                                                                                    className="py-10 border border-dashed border-white/80 rounded-2xl flex flex-col items-center justify-center text-slate-400 bg-white/10 backdrop-blur-sm hover:bg-white/30 hover:border-indigo-300 transition-all duration-300 group/drop"
+                                                                                >
+                                                                                    <div className="w-10 h-10 rounded-full bg-white/60 shadow-sm flex items-center justify-center mb-2 group-hover/drop:scale-110 transition-transform backdrop-blur-sm">
+                                                                                        <Icon className={cn("h-4 w-4 opacity-50", config.color)} />
+                                                                                    </div>
+                                                                                    <p className="text-xs font-bold text-slate-500">No {config.label} activities</p>
+                                                                                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">Drop Activity Here</p>
+                                                                                </div>
+                                                                            )}
+                                                                        </SortableContext>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </DroppableTimeSlot>
+                                                    )
+                                                })}
+                                            </div>
+                                        </TabsContent>
+                                    )
+                                })}
+                            </Tabs>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <CardContent className="p-6">
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <Tabs value={`day-${currentDay}`} onValueChange={(v) => setCurrentDay(parseInt(v.split('-')[1]))}>
-                        <div className="mb-6">
-                            <div className="flex items-center gap-3 overflow-x-auto pb-4 pt-2 px-1 scrollbar-hide">
-                                {days.map((day) => {
-                                    const dayActivities = activities[day] || {}
-                                    const activityCount = Object.values(dayActivities).reduce((acc: number, curr: any) => acc + (curr?.length || 0), 0)
-                                    const hasActivities = activityCount > 0
-                                    const isActive = currentDay === day
-
-                                    return (
-                                        <button
-                                            key={day}
-                                            onClick={() => setCurrentDay(day)}
-                                            className={cn(
-                                                "relative flex flex-col items-start min-w-[120px] p-4 rounded-2xl border transition-all duration-300 group",
-                                                isActive
-                                                    ? "bg-gradient-to-br from-indigo-500 to-blue-600 border-transparent text-white shadow-lg shadow-indigo-200 scale-105"
-                                                    : "bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:shadow-md"
-                                            )}
-                                        >
-                                            <div className="flex items-center justify-between w-full mb-2">
-                                                <span className={cn("text-sm font-bold", isActive ? "text-white" : "text-gray-900")}>Day {day}</span>
-                                                <div className={cn(
-                                                    "w-2.5 h-2.5 rounded-full ring-2 ring-white/20",
-                                                    hasActivities ? (isActive ? "bg-emerald-400" : "bg-emerald-500") : "bg-gray-200"
-                                                )} />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={cn("text-xs", isActive ? "text-indigo-100" : "text-gray-400")}>
-                                                    {activityCount} activities
-                                                </span>
-                                            </div>
-
-                                            {/* Context Menu Action */}
-                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <button
-                                                            className={cn(
-                                                                "p-1 rounded-md transition-colors",
-                                                                isActive ? "bg-white/20 text-white hover:bg-white/30" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                                            )}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <MoreVertical className="w-3 h-3" />
-                                                        </button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-48">
-                                                        <div className="p-1">
-                                                            <DropdownMenuItem onClick={() => alert("Duplicate day coming soon")} className="gap-2 cursor-pointer">
-                                                                <CopyIcon className="w-4 h-4" />
-                                                                <span>Duplicate Day</span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => alert("Copy to another day coming soon")} className="gap-2 cursor-pointer">
-                                                                <ListChecks className="w-4 h-4" />
-                                                                <span>Copy to Day...</span>
-                                                            </DropdownMenuItem>
-                                                        </div>
-                                                        <DropdownMenuSeparator />
-                                                        <div className="p-1">
-                                                            <DropdownMenuItem onClick={() => alert("Clear all activities coming soon")} className="gap-2 cursor-pointer text-orange-600 focus:text-orange-700">
-                                                                <RotateCcw className="w-4 h-4" />
-                                                                <span>Clear Day</span>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => alert("Delete day coming soon")} className="gap-2 cursor-pointer text-red-600 focus:text-red-700">
-                                                                <Trash2 className="w-4 h-4" />
-                                                                <span>Delete Day</span>
-                                                            </DropdownMenuItem>
-                                                        </div>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </button>
-                                    )
-                                })}
-
-                                <button className="flex flex-col items-center justify-center min-w-[60px] h-[70px] rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all font-medium text-xs gap-1"
-                                    onClick={() => alert("Please increase duration in Basic Info to add days.")}
-                                >
-                                    <Plus className="w-5 h-5" />
-                                    Add
-                                </button>
+                <DragOverlay>
+                    {activeDragItem && activeDragItem.data.current?.type === 'library-activity' ? (
+                        <div className="bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-2xl border-2 border-indigo-500 scale-105 pointer-events-none w-[320px]">
+                            <div className="flex gap-3 items-center">
+                                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 border border-indigo-200">
+                                    <span className="text-xl">✨</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-slate-800 line-clamp-1">{activeDragItem.data.current.activity.name}</h4>
+                                    <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{activeDragItem.data.current.activity.category}</p>
+                                </div>
                             </div>
                         </div>
-                        <TabsList className="hidden">
-                            {days.map((day) => (
-                                <TabsTrigger key={day} value={`day-${day}`}>Day {day}</TabsTrigger>
-                            ))}
-                        </TabsList>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
 
-                        {days.map((day) => {
-                            const dayActivities = getDayActivities(day)
-
-                            return (
-                                <TabsContent key={day} value={`day-${day}`} className="mt-6 space-y-6">
-                                    {Object.entries(timeSlotConfig).map(([slot, config]) => {
-                                        const slotActivities = dayActivities[slot as keyof DayActivities]
-                                        const Icon = config.icon
-
-                                        // Calculate duration metadata (mocking capacity for now as per design)
-                                        // In a real app, this would be computed from start/end times if available
-                                        const totalCapacityHours = slot === 'full_day' ? 12 : slot === 'morning' ? 4 : slot === 'half_day' ? 6 : 4
-                                        const activitiesCount = slotActivities.length
-                                        const estimatedHoursUsed = activitiesCount * 2 // Mock: assuming 2 hours per activity
-                                        const progressPercentage = Math.min((estimatedHoursUsed / totalCapacityHours) * 100, 100)
-                                        const isOverCapacity = estimatedHoursUsed > totalCapacityHours
-
-                                        return (
-                                            <div key={slot} className="space-y-3">
-                                                {/* Enhanced Time Slot Header */}
-                                                <div className={cn(
-                                                    "border rounded-xl p-4 transition-all duration-300",
-                                                    slotActivities.length > 0 ? "bg-white border-gray-200 shadow-sm" : `${config.bgColor} border-transparent bg-opacity-50`
-                                                )}>
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={cn("p-2 rounded-lg", config.bgColor)}>
-                                                                <Icon className={`h-5 w-5 ${config.color}`} />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className={cn("font-bold text-gray-900 flex items-center gap-2")}>
-                                                                    {config.label}
-                                                                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                                                        {totalCapacityHours} hours
-                                                                    </span>
-                                                                </h3>
-                                                                {slotActivities.length > 0 && (
-                                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                                        {estimatedHoursUsed} / {totalCapacityHours} hours used
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="h-8 gap-1.5 border-dashed border-gray-300 text-gray-600 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50"
-                                                                >
-                                                                    <Plus className="h-4 w-4" />
-                                                                    Add Activity
-                                                                    <ChevronDown className="h-3 w-3 opacity-50 ml-0.5" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-56">
-                                                                <DropdownMenuLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider">Add to {config.label}</DropdownMenuLabel>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleOpenAddForm(slot)}
-                                                                    className="cursor-pointer gap-2"
-                                                                >
-                                                                    <div className="p-1 rounded bg-indigo-50 text-indigo-600">
-                                                                        <Plus className="h-4 w-4" />
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-medium">Create New Activity</span>
-                                                                        <span className="text-xs text-gray-500">Starts form from scratch</span>
-                                                                    </div>
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem className="cursor-pointer gap-2" disabled>
-                                                                    <div className="p-1 rounded bg-orange-50 text-orange-600">
-                                                                        <Copy className="h-4 w-4" />
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-medium">Choose from Template</span>
-                                                                        <span className="text-xs text-gray-500">Use pre-made activity</span>
-                                                                    </div>
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem className="cursor-pointer gap-2" disabled>
-                                                                    <div className="p-1 rounded bg-emerald-50 text-emerald-600">
-                                                                        <Import className="h-4 w-4" />
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-medium">Import from Library</span>
-                                                                        <span className="text-xs text-gray-500">Pick from your defaults</span>
-                                                                    </div>
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    {slotActivities.length > 0 && (
-                                                        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-4 overflow-hidden">
-                                                            <div
-                                                                className={cn("h-full rounded-full transition-all duration-500", config.color.replace('text-', 'bg-'))}
-                                                                style={{ width: `${progressPercentage}%` }}
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                    <div className={cn("space-y-3", slotActivities.length > 0 ? "pl-2" : "")}>
-                                                        <SortableContext
-                                                            id={`${day}-${slot}`}
-                                                            items={slotActivities.map(a => a.id || 'temp').filter(id => id !== 'temp') as string[]}
-                                                            strategy={verticalListSortingStrategy}
-                                                        >
-                                                            {slotActivities && slotActivities.length > 0 ? (
-                                                                <div className="space-y-3">
-                                                                    {slotActivities.map((activity, idx) => (
-                                                                        <SortableActivityItem
-                                                                            key={activity.id || idx}
-                                                                            activity={activity}
-                                                                            config={config}
-                                                                            idx={idx}
-                                                                            onDelete={handleDeleteActivity}
-                                                                            onEdit={handleEditActivity}
-                                                                        />
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="py-8 border-2 border-dashed border-gray-100 rounded-xl flex flex-col items-center justify-center text-gray-400 group/drop bg-gray-50/30 hover:bg-indigo-50/30 hover:border-indigo-100 transition-all duration-300">
-                                                                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 group-hover/drop:scale-110 transition-transform">
-                                                                        <Icon className={cn("h-5 w-5 opacity-40", config.color)} />
-                                                                    </div>
-                                                                    <p className="text-xs font-medium">No {config.label} activities</p>
-                                                                    <p className="text-[10px] opacity-60">Drop here or click Add Activity</p>
-                                                                </div>
-                                                            )}
-                                                        </SortableContext>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </TabsContent>
-                            )
-                        })}
-                    </Tabs>
-                </DndContext >
-
-                {/* Redesigned Add Activity Modal */}
-                <AnimatePresence>
-                    {showAddForm && (
+            {/* Redesigned Add Activity Modal */}
+            <AnimatePresence>
+                {
+                    showAddForm && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1644,10 +1744,10 @@ export function ItineraryBuilder({ packageId, durationDays }: ItineraryBuilderPr
                                 </Card>
                             </motion.div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
-                <ToastContainer />
-            </CardContent>
-        </Card>
+                    )
+                }
+            </AnimatePresence >
+            <ToastContainer />
+        </div>
     );
 }

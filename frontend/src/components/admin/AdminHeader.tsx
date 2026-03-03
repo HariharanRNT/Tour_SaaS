@@ -48,9 +48,21 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter()
     const { theme } = useTheme() // Get theme context
     const [userEmail, setUserEmail] = useState('')
+    const [userData, setUserData] = useState<{ first_name?: string; last_name?: string } | null>(null)
     const userRole = getUserRole()
 
-    // ... (useEffect remains same) ...
+    useEffect(() => {
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+            try {
+                const parsed = JSON.parse(userStr)
+                setUserData(parsed)
+                setUserEmail(parsed.email || '')
+            } catch (e) {
+                console.error("Failed to parse user data", e)
+            }
+        }
+    }, [])
 
     const handleLogout = () => {
         localStorage.removeItem('token')
@@ -82,7 +94,15 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     )
 
     return (
-        <header className="bg-[#F0FAFF] border-b border-gray-200 sticky top-0 z-40 h-16 px-6 flex items-center justify-between gap-4 shadow-sm backdrop-blur-md bg-opacity-80">
+        <header
+            className="w-full h-[70px] px-6 flex items-center justify-between gap-4 shadow-sm transition-all duration-300"
+            style={{
+                background: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255,255,255,0.20)',
+            }}
+        >
 
             <div className="flex items-center gap-4 flex-1">
                 {onMenuClick && (
@@ -105,29 +125,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     )}
                 </div>
 
-                {/* Visit Website Button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="hidden sm:flex gap-2 text-slate-600 border-slate-200 hover:bg-white hover:text-blue-600"
-                    onClick={() => window.open('/', '_blank')}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    Visit Website
-                </Button>
-
-                {/* Search Bar */}
-                <div className="relative max-w-md w-full hidden lg:block group ml-4">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#0EA5E9] transition-colors" />
-                    <Input
-                        placeholder={userRole === 'agent' ? "Search..." : "Search bookings, agents, customers..."}
-                        className="pl-11 bg-white border-transparent rounded-full shadow-sm group-hover:shadow-md focus:shadow-md focus:border-[#0EA5E9]/20 transition-all duration-300"
-                    />
-                </div>
             </div>
 
             {/* Right Actions */}
@@ -144,8 +141,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="pl-1.5 pr-3 py-1.5 gap-3 rounded-xl hover:bg-white shadow-sm hover:shadow transition-all duration-300 border border-transparent hover:border-blue-100 h-11">
-                            <div className="bg-gradient-to-br from-[#0EA5E9] to-[#6366F1] w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-                                {userRole === 'agent' ? 'A' : 'AD'}
+                            <div className="bg-[#6c47ff] w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-purple-500/20">
+                                {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || (userRole === 'agent' ? 'A' : 'AD'))).toUpperCase()}
                             </div>
                             <div className="hidden sm:flex flex-col items-start gap-0.5">
                                 <span className="text-sm font-bold text-gray-800 leading-tight">

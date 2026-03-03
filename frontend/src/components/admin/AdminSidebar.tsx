@@ -19,7 +19,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Plane,
-    Package
+    Package,
+    Briefcase
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -39,12 +40,13 @@ function getUserRole(): string | null {
 
 interface SidebarProps {
     className?: string
+    onCollapsedChange?: (collapsed: boolean) => void
 }
 
-export function AdminSidebar({ className }: SidebarProps) {
+export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = useState(false)
-    const [userData, setUserData] = useState<{ first_name?: string; email?: string; role?: string } | null>(null)
+    const [userData, setUserData] = useState<{ first_name?: string; last_name?: string; email?: string; role?: string } | null>(null)
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -59,16 +61,12 @@ export function AdminSidebar({ className }: SidebarProps) {
 
     const userRole = userData?.role?.toLowerCase() || (pathname?.startsWith('/agent') ? 'agent' : 'admin')
 
-
     const toggleSidebar = () => {
-        setCollapsed(!collapsed)
-    }
-
-    const startNewPlan = () => {
-        // Functionality for "Start New Plan" if needed globally, 
-        // or just a visual element as per design file (though design file mentions it for user dashboard, 
-        // useful to have a primary action here too if relevant, otherwise skip).
-        // For Admin, maybe "Create Booking" or "Add Agent"
+        const newCollapsed = !collapsed
+        setCollapsed(newCollapsed)
+        if (onCollapsedChange) {
+            onCollapsedChange(newCollapsed)
+        }
     }
 
     const menuItems = [
@@ -80,7 +78,7 @@ export function AdminSidebar({ className }: SidebarProps) {
                 // Agent Specific Items
                 ...(userRole === 'agent' ? [
                     { icon: Package, label: 'Manage Packages', href: '/agent/packages' },
-                    { icon: Users, label: 'Customers', href: '/agent/customers' },
+                    { icon: Map, label: 'Activity Master', href: '/agent/activities' },
                     { icon: Calendar, label: 'My Bookings', href: '/agent/bookings' },
                 ] : []),
 
@@ -94,7 +92,6 @@ export function AdminSidebar({ className }: SidebarProps) {
                 // More Admin Specific Items
                 ...(userRole !== 'agent' ? [
                     { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
-                    { icon: Activity, label: 'System Health', href: '/admin/system-health' },
                 ] : []),
 
                 { icon: Settings, label: 'Settings', href: userRole === 'agent' ? '/agent/settings' : '/admin/settings' },
@@ -102,61 +99,74 @@ export function AdminSidebar({ className }: SidebarProps) {
         }
     ]
 
-
-
-
     return (
         <aside
             className={cn(
-                "bg-[#111827] border-r border-white/5 h-screen sticky top-0 flex flex-col transition-all duration-300 z-50 shadow-2xl",
-                collapsed ? "w-20" : "w-64",
+                "h-screen flex flex-col transition-all duration-300 z-50 border-r",
+                "fixed top-0 left-0 overflow-y-auto",
+                collapsed ? "w-[70px]" : "w-[260px]",
                 className
             )}
+            style={{
+                background: 'rgba(55, 45, 100, 0.50)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderRightColor: 'rgba(255,255,255,0.12)',
+            }}
         >
-            {/* Logo Section */}
-            <div className="h-20 flex items-center justify-between px-6 border-b border-white/5 bg-black/20 backdrop-blur-sm">
+            {/* Subtle inner glow on right edge */}
+            <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-purple-300/40 to-transparent" />
 
+            {/* Logo Section */}
+            <div className="h-20 flex items-center justify-between px-5 border-b border-white/30">
                 {!collapsed && (
-                    <Link href="/admin/dashboard" className="flex items-center gap-3">
-                        <div className="bg-[#6366F1] p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-                            <Plane className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="font-black text-xl text-white tracking-tight uppercase">TourSaaS</span>
-                    </Link>
+                    <div className="flex-1 flex flex-col min-w-0 pr-2">
+                        <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.10)' }}>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#6c47ff' }}>
+                                <Briefcase className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <span className="font-bold text-white tracking-tight leading-tight block truncate text-[15px]">
+                                    {userRole === 'agent' ? 'Agent Portal' : 'Admin Portal'}
+                                </span>
+                                <span className="text-[10px] uppercase tracking-wider text-slate-300 font-medium block truncate">
+                                    Tour Operations
+                                </span>
+                            </div>
+                        </Link>
+                    </div>
                 )}
 
                 {collapsed && (
                     <div className="w-full flex justify-center">
-                        <div className="bg-[#6366F1] p-2 rounded-xl">
-                            <Plane className="h-5 w-5 text-white" />
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-purple-500 blur-lg opacity-30 group-hover:opacity-50 transition-opacity rounded-xl" />
+                            <div className="bg-gradient-to-br from-violet-600 to-purple-700 p-2.5 rounded-xl relative group-hover:scale-105 transition-transform duration-300">
+                                <Plane className="h-5 w-5 text-white" />
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Toggle Button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleSidebar}
-                    className={cn(
-                        "h-8 w-8 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300",
-                        collapsed && "mx-auto"
-                    )}
-                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                    {collapsed ? (
-                        <ChevronRight className="h-5 w-5" />
-                    ) : (
-                        <ChevronLeft className="h-5 w-5" />
-                    )}
-                </Button>
+                {!collapsed && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleSidebar}
+                        className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+                        title="Collapse sidebar"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
 
             {/* Navigation Items */}
-            <div className="flex-1 overflow-y-auto py-6">
-                <nav className="space-y-2 px-4">
+            <div className="flex-1 overflow-y-auto py-5">
+                <nav className="space-y-1 px-3">
                     {menuItems.map((group, groupIndex) => (
-                        <div key={groupIndex} className="space-y-1">
+                        <div key={groupIndex} className="space-y-0.5">
                             {group.items.map((item) => {
                                 const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
                                 return (
@@ -164,65 +174,108 @@ export function AdminSidebar({ className }: SidebarProps) {
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
-                                            "flex items-center px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 relative group mb-1",
+                                            "flex items-center text-[14px] transition-all duration-200 relative group gap-[10px]",
                                             isActive
-                                                ? "bg-[#6366F1] text-white shadow-lg shadow-indigo-500/30 scale-[1.02]"
-                                                : "text-slate-400 hover:bg-white/5 hover:text-white",
-                                            collapsed && "justify-center px-0"
+                                                ? "text-white"
+                                                : "hover:bg-white/10 hover:text-white",
+                                            collapsed ? "justify-center p-3 rounded-xl mx-3 my-1" : "px-[16px] py-[10px] rounded-[10px] mx-3 my-1"
                                         )}
+                                        style={isActive ? {
+                                            color: '#ffffff',
+                                            background: 'linear-gradient(135deg, #7c5cfc, #6c47ff)',
+                                            borderLeft: collapsed ? 'none' : '3px solid rgba(255,255,255,0.80)',
+                                            fontWeight: 600,
+                                            boxShadow: '0 4px 16px rgba(108,71,255,0.35)',
+                                        } : {
+                                            color: 'rgba(255, 255, 255, 0.70)',
+                                            fontWeight: 500,
+                                        }}
                                         title={collapsed ? item.label : undefined}
                                     >
-
-                                        {isActive && !collapsed && (
-                                            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-white rounded-full" />
-                                        )}
-
+                                        {/* Icon */}
                                         <item.icon className={cn(
-                                            "h-5 w-5 transition-transform duration-300 group-hover:scale-110",
-                                            isActive ? "text-white" : "text-slate-500 group-hover:text-white",
-                                            !collapsed && "mr-3"
-                                        )} />
+                                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
+                                            isActive
+                                                ? "text-white drop-shadow-sm"
+                                                : "group-hover:text-white group-hover:scale-110"
+                                        )}
+                                            style={!isActive ? { color: 'rgba(255,255,255,0.70)' } : {}}
+                                        />
 
+                                        {/* Label */}
                                         {!collapsed && <span>{item.label}</span>}
+
+                                        {/* Hover glow bubble for inactive */}
+                                        {!isActive && (
+                                            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/10 pointer-events-none" />
+                                        )}
                                     </Link>
                                 )
                             })}
                         </div>
                     ))}
                 </nav>
+
+                {/* Expand button when collapsed — shown in nav area */}
+                {collapsed && (
+                    <div className="mt-4 flex justify-center">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={toggleSidebar}
+                            className="h-8 w-8 hover:bg-white/10 rounded-full"
+                            style={{ color: 'rgba(255,255,255,0.60)' }}
+                            title="Expand sidebar"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
             </div>
 
-
             {/* Bottom Actions */}
-            <div className="p-4 border-t border-gray-100 space-y-1">
+            <div className="p-3 border-t border-white/30 space-y-1">
                 <Link
                     href="/admin/help"
                     className={cn(
-                        "flex items-center px-4 py-3 rounded-xl text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-all duration-300 mx-2",
-                        collapsed && "justify-center px-0 mx-2"
+                        "flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 group hover:bg-white/10",
+                        collapsed && "justify-center px-0"
                     )}
+                    style={{ color: 'rgba(255,255,255,0.50)', fontSize: '13px' }}
                     title="Help & Support"
                 >
-                    <HelpCircle className={cn("h-5 w-5 text-white/60", !collapsed && "mr-3")} />
+                    <HelpCircle className={cn("h-4 w-4 transition-colors group-hover:text-white", !collapsed && "mr-2")} style={{ color: 'rgba(255,255,255,0.50)' }} />
                     {!collapsed && <span>Help & Support</span>}
                 </Link>
 
-
-                {/* Admin Profile - Simplified for sidebar */}
+                {/* User Avatar & Name */}
                 {!collapsed ? (
-                    <div className="flex items-center gap-3 px-3 py-3 mt-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm mx-2 shadow-inner shadow-white/5">
-                        <div className="bg-white/20 p-2 rounded-xl border border-white/20">
-                            <User className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-3 px-3 py-3 mt-1 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-sm hover:bg-white/20 transition-colors">
+                        {/* Avatar circle with solid purple branding */}
+                        <div className="h-8 w-8 rounded-xl bg-[#6c47ff] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-purple-500/20 flex-shrink-0">
+                            {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || 'A')).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-white truncate">
+                            <p className="text-sm font-bold text-white/90 truncate">
                                 {userData?.first_name || (userRole === 'agent' ? 'Agent' : 'Admin')}
                             </p>
-                            <p className="text-xs text-white/50 truncate">
+                            <p className="text-xs text-white/60 truncate">
                                 {userData?.email || (userRole === 'agent' ? 'agent@toursaas.com' : 'admin@toursaas.com')}
                             </p>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/40 hover:text-red-300 hover:bg-white/10 rounded-lg" onClick={() => {
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white/60 hover:text-white hover:bg-white/20 rounded-lg flex-shrink-0 transition-colors" onClick={() => {
+                            localStorage.removeItem('token')
+                            localStorage.removeItem('user')
+                            localStorage.removeItem('isAdmin')
+                            localStorage.removeItem('adminEmail')
+                            window.location.href = userRole === 'agent' ? '/login' : '/admin/login'
+                        }}>
+                            <LogOut className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex justify-center mt-1">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-white/60 hover:text-white hover:bg-white/20 rounded-xl transition-colors" onClick={() => {
                             localStorage.removeItem('token')
                             localStorage.removeItem('user')
                             localStorage.removeItem('isAdmin')
@@ -232,21 +285,7 @@ export function AdminSidebar({ className }: SidebarProps) {
                             <LogOut className="h-4 w-4" />
                         </Button>
                     </div>
-
-                ) : (
-                    <div className="flex justify-center mt-2">
-                        <Button variant="ghost" size="icon" className="h-10 w-10 text-white/40 hover:text-red-300 hover:bg-white/10 rounded-xl" onClick={() => {
-                            localStorage.removeItem('token')
-                            localStorage.removeItem('user')
-                            localStorage.removeItem('isAdmin')
-                            localStorage.removeItem('adminEmail')
-                            window.location.href = userRole === 'agent' ? '/login' : '/admin/login'
-                        }}>
-                            <LogOut className="h-5 w-5" />
-                        </Button>
-                    </div>
                 )}
-
             </div>
         </aside>
     )

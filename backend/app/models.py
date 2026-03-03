@@ -20,6 +20,12 @@ class UserRole(str, enum.Enum):
     CUSTOMER = "customer"
 
 
+class ApprovalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class PackageStatus(str, enum.Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -53,9 +59,10 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role = Column(SQLEnum(UserRole), default=UserRole.CUSTOMER, nullable=False)
+    role = Column(SQLEnum(UserRole, native_enum=False), default=UserRole.CUSTOMER, nullable=False)
     email_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    approval_status = Column(SQLEnum(ApprovalStatus, native_enum=False), default=ApprovalStatus.APPROVED, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -125,7 +132,36 @@ class User(Base):
     def commission_value(self):
         return getattr(self.profile, 'commission_value', None) if self.profile else None
     
+    @property
+    def subscription_status(self):
+        if not self.subscription:
+            return None
+        return self.subscription.status
+
+    @property
+    def subscription_end_date(self):
+        if not self.subscription:
+            return None
+        return self.subscription.end_date
+
+    @property
+    def has_active_subscription(self):
+        if not self.subscription or self.subscription.status != 'active':
+            return False
+        
+        from datetime import date
+        return self.subscription.end_date >= date.today()
+    
     # Relationships
+    subscription = relationship(
+        "Subscription", 
+        primaryjoin="and_(User.id==Subscription.user_id, Subscription.status=='active')",
+        back_populates="user", 
+        uselist=False, 
+        cascade="all, delete-orphan", 
+        order_by="desc(Subscription.end_date), desc(Subscription.created_at)", 
+        lazy="selectin"
+    )
     bookings = relationship("Booking", back_populates="user", foreign_keys="Booking.user_id", cascade="all, delete-orphan")
     created_packages = relationship("Package", back_populates="creator")
     
@@ -135,7 +171,6 @@ class User(Base):
     customer_profile = relationship("Customer", back_populates="user", uselist=False, cascade="all, delete-orphan", foreign_keys="Customer.user_id", lazy="selectin")
     
     # Subscription & Billing Relationships
-    subscription = relationship("Subscription", back_populates="user", uselist=False, cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
@@ -175,6 +210,7 @@ class Agent(Base):
     currency = Column(String, default="INR")
     commission_type = Column(String, default="percentage") # percentage, fixed
     commission_value = Column(Numeric(10, 2), default=0.0)
+    gst_applicable = Column(Boolean, default=False)
     gst_inclusive = Column(Boolean, default=False)
     gst_percentage = Column(Numeric(5, 2), default=18.00)
     
@@ -219,7 +255,8 @@ class Package(Base):
     destination = Column(String, nullable=False, index=True)
     duration_days = Column(Integer, nullable=False)
     duration_nights = Column(Integer, nullable=False)
-    category = Column(String, index=True)
+    trip_style = Column(String, index=True)
+    category = Column(String, index=True, nullable=True) # e.g., Adventure, Honeymoon, etc.
     price_per_person = Column(Numeric(10, 2), nullable=False)
     max_group_size = Column(Integer, default=20)
     included_items = Column(Text, default="[]")  # JSON string
@@ -230,6 +267,10 @@ class Package(Base):
     # Enhanced Fields
     country = Column(String, index=True, nullable=True) # Making nullable first for migration, will validate in API
     is_public = Column(Boolean, default=True, index=True)
+    # Multi-Destination and Type Fields
+    package_mode = Column(String, default="single") # single, multi
+    destinations = Column(Text, default="[]") # JSON string for multi-dest legs
+    activities = Column(Text, default="[]") # JSON string for activity tags
     
     # Template fields
     is_template = Column(Boolean, default=False)
@@ -244,11 +285,22 @@ class Package(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # GST Configuration (per-package; NULL = use agent-level defaults from Settings)
+    gst_applicable = Column(Boolean, default=None, nullable=True)
+    gst_percentage = Column(Numeric(5, 2), default=None, nullable=True)
+    gst_mode = Column(String(20), default=None, nullable=True)  # 'inclusive' or 'exclusive'
+    
+    # SEO Fields
+    meta_title = Column(String, nullable=True)
+    meta_description = Column(String, nullable=True)
+    meta_keywords = Column(String, nullable=True)
+
+    
     # Relationships
     creator = relationship("User", back_populates="created_packages", foreign_keys=[created_by])
     images = relationship("PackageImage", back_populates="package", cascade="all, delete-orphan")
     itinerary_items = relationship("ItineraryItem", back_populates="package", cascade="all, delete-orphan", order_by="ItineraryItem.day_number")
-    availability = relationship("PackageAvailability", back_populates="package", cascade="all, delete-orphan")
+    availability = relationship("PackageAvailability", back_populates="package", cascade="all, delete-orphan", lazy="selectin")
     bookings = relationship("Booking", back_populates="package")
 
 
@@ -491,6 +543,48 @@ class UserItineraryActivity(Base):
     
     def __repr__(self):
         return f"<UserItineraryActivity(id={self.id}, day={self.day_number}, slot={self.time_slot})>"
+
+
+class Activity(Base):
+    """
+    Reusable activity template for the Activity Master
+    """
+    __tablename__ = "activities"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    destination_city = Column(String, nullable=False, index=True)
+    category = Column(String, nullable=False, index=True)
+    duration_hours = Column(Float, nullable=False)
+    time_slot_preference = Column(String, nullable=False) # morning, afternoon, evening, full_day
+    description = Column(Text, nullable=True)
+    price_per_person = Column(Numeric(10, 2), nullable=True)
+    
+    # Optional agent ownership - if null, it's a platform-wide generic activity
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    agent = relationship("User", foreign_keys=[agent_id])
+    images = relationship("ActivityImage", back_populates="activity", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Activity(id={self.id}, name={self.name}, city={self.destination_city})>"
+
+
+class ActivityImage(Base):
+    __tablename__ = "activity_images"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    activity_id = Column(UUID(as_uuid=True), ForeignKey("activities.id", ondelete="CASCADE"), nullable=False)
+    image_url = Column(String, nullable=False)
+    display_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    activity = relationship("Activity", back_populates="images")
 
 
 # Booking Customization Models (Package System)

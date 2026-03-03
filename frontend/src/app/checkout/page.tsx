@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check } from 'lucide-react'
@@ -27,7 +27,7 @@ declare global {
     }
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const sessionId = searchParams.get('sessionId')
@@ -472,7 +472,7 @@ export default function CheckoutPage() {
 
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-transparent">
             <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
             <p className="text-gray-500 font-medium animate-pulse">Preparing your checkout experience...</p>
         </div>
@@ -495,8 +495,8 @@ export default function CheckoutPage() {
         }
 
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4">
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-blue-100 max-w-2xl w-full text-center">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4">
+                <div className="glass-panel p-8 rounded-2xl shadow-xl max-w-2xl w-full text-center">
                     <div className="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                         <CheckCircle className="h-10 w-10 text-green-600" />
                     </div>
@@ -513,7 +513,7 @@ export default function CheckoutPage() {
                         </div>
                     ) : (
                         <Card className="w-full mb-8 border-gray-100 shadow-sm text-left">
-                            <CardHeader className="bg-gray-50/50 pb-4">
+                            <CardHeader className="glass-panel border-b border-white/20 pb-4">
                                 <CardTitle className="text-lg">Booking Summary</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4 pt-4">
@@ -559,15 +559,24 @@ export default function CheckoutPage() {
     const currentStepIdx = steps.findIndex(s => s.id === (step === 'PROCESSING' ? 'PAYMENT' : step))
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-20 overflow-x-hidden">
-            {/* Header / Stepper Section */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h1 className="text-xl font-bold text-slate-800">Checkout</h1>
+        <div className="min-h-screen bg-transparent font-sans pb-20 overflow-x-hidden relative">
+            {/* Ambient Deep Mesh Background */}
+            <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[#FF6B2B] via-[#FFAC82] to-[#FFF3EC]" />
+            {/* Ambient Orbs */}
+            <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[#FF6B2B]/40 to-[#FF9A5C]/40 blur-[120px] pointer-events-none z-[-1]" />
+            <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#FF9A5C]/30 to-[#FFD4B0]/40 blur-[100px] pointer-events-none z-[-1]" />
 
-                        {/* Stepper */}
-                        <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+            {/* Subtle Noise Texture */}
+            <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
+
+            {/* Header / Stepper Section */}
+            <div className="pt-6 relative z-50">
+                <div className="container mx-auto px-4 lg:max-w-6xl">
+                    <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_rgba(255,107,43,0.15)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
+                        <h1 className="text-xl font-bold text-[#3A1A08] drop-shadow-sm font-display tracking-wide">Checkout</h1>
+
+                        {/* Glowing Glass Stepper */}
+                        <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 md:pb-0 hide-scrollbar scroll-smooth">
                             {steps.map((s, idx) => {
                                 const isCompleted = idx < currentStepIdx
                                 const isCurrent = idx === currentStepIdx
@@ -575,14 +584,19 @@ export default function CheckoutPage() {
 
                                 return (
                                     <div key={s.id} className="flex items-center">
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${isCurrent ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' :
-                                            isCompleted ? 'bg-green-100 text-green-700' : 'text-slate-400'
+                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden backdrop-blur-md border ${isCurrent ? 'bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-[0_0_16px_rgba(255,107,43,0.4)]' :
+                                            isCompleted ? 'bg-white/40 border-white/50 text-green-700 shadow-sm' : 'bg-white/20 border-white/30 text-[#8B5030]'
                                             }`}>
-                                            {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                                            <span className={`text-sm font-medium whitespace-nowrap ${isCurrent ? '' : ''}`}>{s.label}</span>
+                                            {/* Pulse Ring for Current Step */}
+                                            {isCurrent && <div className="absolute inset-0 border-[2px] border-white/30 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-50" />}
+
+                                            {isCompleted ? <div className="bg-green-100 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-green-600" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-orange-400'}`} />}
+                                            <span className={`text-sm font-bold whitespace-nowrap ${isCurrent ? 'drop-shadow-sm' : 'opacity-80'}`}>{s.label}</span>
                                         </div>
                                         {idx < steps.length - 1 && (
-                                            <div className={`h-0.5 w-6 mx-2 hidden md:block ${isCompleted ? 'bg-green-500' : 'bg-slate-200'}`}></div>
+                                            <div className="mx-1.5 md:mx-3 h-1 w-6 md:w-10 rounded-full bg-black/5 overflow-hidden relative shadow-inner">
+                                                <div className={`absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[#FF6B2B] to-orange-300 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                                            </div>
                                         )}
                                     </div>
                                 )
@@ -592,79 +606,80 @@ export default function CheckoutPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto max-w-6xl px-4 py-8">
+            <div className="container mx-auto max-w-6xl px-4 pt-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Left Column: Forms */}
-                    <div className="lg:col-span-8 space-y-8">
+                    <div className="lg:col-span-8 space-y-8 relative z-10">
 
                         {/* Travelers Section */}
                         <div className="space-y-4">
-                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg"><FileText className="h-5 w-5" /></span>
+                            <h2 className="text-xl font-bold text-[#3A1A08] flex items-center gap-2 px-1 font-display">
+                                <span className="bg-white/40 backdrop-blur-md border border-white/50 text-[#FF6B2B] p-2 rounded-xl shadow-sm"><FileText className="h-5 w-5" /></span>
                                 Who&apos;s Traveling?
                             </h2>
                             {travelers.map((t, idx) => (
-                                <TravelerForm
-                                    key={t.id}
-                                    traveler={t}
-                                    index={idx}
-                                    onChange={handleTravelerChange}
-                                    errors={errors}
-                                />
+                                <div key={t.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" style={{ animationDelay: `${idx * 150}ms` }}>
+                                    <TravelerForm
+                                        traveler={t}
+                                        index={idx}
+                                        onChange={handleTravelerChange}
+                                        errors={errors}
+                                    />
+                                </div>
                             ))}
                         </div>
 
                         {/* Contact Section */}
-                        <Card className="rounded-xl border-slate-100 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <span className="bg-purple-100 text-purple-600 p-1.5 rounded-lg"><CreditCard className="h-5 w-5" /></span>
+                        <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] overflow-hidden bg-white/15 backdrop-blur-xl">
+                            <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-orange-100/30 to-white/10 pointer-events-none" />
+                                <CardTitle className="text-lg flex items-center gap-2 relative z-10 text-[#3A1A08] font-display">
+                                    <span className="bg-[#FF6B2B]/10 text-[#FF6B2B] p-2 rounded-xl border border-[#FF6B2B]/20"><CreditCard className="h-5 w-5" /></span>
                                     Contact Information
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-6 pt-6 bg-white">
-                                <div className="flex items-center space-x-2 mb-4">
-                                    <Checkbox
-                                        id="sameAsTraveler"
-                                        checked={sameAsTraveler1}
-                                        onCheckedChange={(checked) => {
-                                            setSameAsTraveler1(checked === true)
-                                            if (checked === true && travelers.length > 0) {
-                                                // Example: If we had a contact name, we'd fil it.
-                                                // For now, let's just trigger a toast or visual cue since we don't have overlapping fields
+                            <CardContent className="space-y-6 pt-6 relative">
+                                <div className="flex items-center space-x-3 mb-4 bg-white/30 p-3 rounded-xl border border-white/40 w-max shadow-sm">
+                                    <div
+                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${sameAsTraveler1 ? 'bg-[#FF6B2B] shadow-[0_0_10px_rgba(255,107,43,0.4)]' : 'bg-black/10 border border-white/20'}`}
+                                        onClick={() => {
+                                            setSameAsTraveler1(!sameAsTraveler1)
+                                            if (!sameAsTraveler1 && travelers.length > 0) {
                                                 toast.info("Autofill enabled: Using Traveler 1 as primary contact reference")
                                             }
                                         }}
-                                    />
+                                    >
+                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${sameAsTraveler1 ? 'translate-x-4' : ''}`} />
+                                    </div>
                                     <label
-                                        htmlFor="sameAsTraveler"
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        className="text-sm font-bold text-[#5C2500] cursor-pointer"
+                                        onClick={() => setSameAsTraveler1(!sameAsTraveler1)}
                                     >
                                         Use Traveler 1 details for contact
                                     </label>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 relative z-10">
                                         <div className="relative group">
                                             <PhoneInput
                                                 country={'in'}
                                                 value={contactPhone}
                                                 onChange={phone => setContactPhone(phone)}
                                                 inputProps={{ name: 'phone', required: true, autoFocus: false }}
-                                                containerClass="w-full !rounded-lg peer transition-all"
+                                                containerClass="w-full !rounded-[14px] peer transition-all"
                                                 inputClass={
-                                                    `!w-full !h-12 !text-sm !border-slate-200 !rounded-lg focus:!border-blue-500 focus:!ring-2 focus:!ring-blue-500/10 transition-all font-medium pt-1 ${errors.phone ? '!border-red-500' : ''}`
+                                                    `!w-full !h-14 !text-sm !border-white/40 !bg-white/25 !backdrop-blur-sm !text-[#5C2500] !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 transition-all font-bold pt-1 ${errors.phone ? '!border-red-500' : ''}`
                                                 }
-                                                buttonClass="!border-slate-200 !rounded-l-lg !bg-slate-50 hover:!bg-slate-100 transition-colors"
-                                                dropdownClass="!rounded-lg !shadow-xl !border-slate-100"
+                                                buttonClass="!border-white/30 !rounded-l-[14px] !bg-white/20 hover:!bg-white/40 transition-colors"
+                                                dropdownClass="!rounded-2xl !bg-white/95 !backdrop-blur-md !shadow-xl !border-white/50"
                                             />
                                             {/* Fake Label for Phone */}
-                                            <span className="absolute left-12 -top-2 bg-white px-1 text-xs text-blue-600 font-medium z-10 hidden group-focus-within:block transition-all">
+                                            <span className="absolute left-[54px] top-1 text-[10px] text-[#A0501E] font-bold z-10 transition-all uppercase tracking-widest px-1">
                                                 Mobile Number
                                             </span>
                                         </div>
-                                        {errors.phone && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.phone}</p>}
+                                        {errors.phone && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.phone}</p>}
                                     </div>
                                     <div className="space-y-1">
                                         <FloatingLabelInput
@@ -674,6 +689,7 @@ export default function CheckoutPage() {
                                             value={contactEmail}
                                             onChange={(e: any) => setContactEmail(e.target.value)}
                                             error={errors.email}
+                                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                                         />
                                     </div>
                                 </div>
@@ -685,15 +701,16 @@ export default function CheckoutPage() {
                                         value={contactAddress}
                                         onChange={(e: any) => setContactAddress(e.target.value)}
                                         error={errors.address}
+                                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-slate-500 font-semibold uppercase tracking-wider z-10">Country</label>
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">Country</label>
                                             <select
-                                                className="flex h-12 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 font-medium transition-shadow hover:bg-slate-50/50"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm"
                                                 value={contactCountry}
                                                 onChange={(e) => {
                                                     const code = e.target.value
@@ -706,21 +723,21 @@ export default function CheckoutPage() {
                                                 }}
                                             >
                                                 {allCountries.map(c => (
-                                                    <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                                                    <option key={c.isoCode} value={c.isoCode} className="text-[#3A1A08] font-bold">{c.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
-                                        {errors.country && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.country}</p>}
+                                        {errors.country && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.country}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-slate-500 font-semibold uppercase tracking-wider z-10">State</label>
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">State</label>
                                             <select
-                                                className="flex h-12 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 font-medium transition-shadow disabled:bg-slate-50 disabled:text-gray-400"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 value={contactState}
                                                 onChange={(e) => {
                                                     const stateCode = e.target.value
@@ -731,37 +748,37 @@ export default function CheckoutPage() {
                                                 }}
                                                 disabled={!contactCountry}
                                             >
-                                                <option value="">Select State</option>
+                                                <option value="" className="text-slate-400">Select State</option>
                                                 {countryStates.map(s => (
-                                                    <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                                                    <option key={s.isoCode} value={s.isoCode} className="text-[#3A1A08] font-bold">{s.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
-                                        {errors.state && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.state}</p>}
+                                        {errors.state && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.state}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-slate-500 font-semibold uppercase tracking-wider z-10">City</label>
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">City</label>
                                             <select
-                                                className="flex h-12 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 font-medium transition-shadow disabled:bg-slate-50 disabled:text-gray-400"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 value={contactCity}
                                                 onChange={(e) => setContactCity(e.target.value)}
                                                 disabled={!contactState}
                                             >
-                                                <option value="">Select City</option>
+                                                <option value="" className="text-slate-400">Select City</option>
                                                 {stateCities.map(c => (
-                                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                                    <option key={c.name} value={c.name} className="text-[#3A1A08] font-bold">{c.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
-                                        {errors.city && <p className="text-xs font-medium text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.city}</p>}
+                                        {errors.city && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.city}</p>}
                                     </div>
                                 </div>
                             </CardContent>
@@ -775,34 +792,34 @@ export default function CheckoutPage() {
                             {sessionData?.destination && (
                                 <div className="mb-6">
                                     <div
-                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-500/25 overflow-hidden cursor-pointer group"
+                                        className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white rounded-[24px] shadow-[0_8px_32px_rgba(255,107,43,0.25)] overflow-hidden cursor-pointer group"
                                         onClick={() => setIsPackageDetailsOpen(!isPackageDetailsOpen)}
                                     >
-                                        <div className="p-4 flex items-center justify-between">
+                                        <div className="p-5 flex items-center justify-between">
                                             <div>
-                                                <h3 className="text-xs font-medium text-blue-100 uppercase tracking-wide">Trip Details</h3>
-                                                <div className="text-xl font-bold mt-0.5 flex items-center gap-2">
+                                                <h3 className="text-[10px] font-bold text-white/80 uppercase tracking-widest drop-shadow-sm">Trip Details</h3>
+                                                <div className="text-2xl font-bold mt-1.5 flex items-center gap-2 font-display drop-shadow-md">
                                                     {sessionData?.destination || "Your Trip"}
                                                 </div>
                                             </div>
-                                            <div className="bg-white/10 p-2 rounded-lg group-hover:bg-white/20 transition-colors">
+                                            <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-[14px] group-hover:bg-white/30 transition-all shadow-inner">
                                                 {isPackageDetailsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                                             </div>
                                         </div>
 
                                         {isPackageDetailsOpen && (
-                                            <div className="bg-white/5 border-t border-white/10 p-4 space-y-3 animate-in slide-in-from-top-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-blue-100">Duration</span>
-                                                    <span className="font-semibold">{sessionData?.duration_days} Days</span>
+                                            <div className="bg-black/10 backdrop-blur-md border-t border-white/20 p-5 space-y-4 animate-in slide-in-from-top-2">
+                                                <div className="flex justify-between text-sm items-center">
+                                                    <span className="text-white/80 font-medium">Duration</span>
+                                                    <span className="font-bold bg-white/20 px-3 py-1 rounded-full text-white shadow-sm">{sessionData?.duration_days} Days</span>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-blue-100">Travelers</span>
-                                                    <span className="font-semibold">{travelers.length} Pax</span>
+                                                <div className="flex justify-between text-sm items-center">
+                                                    <span className="text-white/80 font-medium">Travelers</span>
+                                                    <span className="font-bold bg-white/20 px-3 py-1 rounded-full text-white shadow-sm">{travelers.length} Pax</span>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-blue-100">Start Date</span>
-                                                    <span className="font-semibold">{sessionData?.start_date}</span>
+                                                <div className="flex justify-between text-sm items-center">
+                                                    <span className="text-white/80 font-medium">Start Date</span>
+                                                    <span className="font-bold bg-white/20 px-3 py-1 rounded-full text-white shadow-sm">{sessionData?.start_date}</span>
                                                 </div>
                                             </div>
                                         )}
@@ -810,87 +827,96 @@ export default function CheckoutPage() {
                                 </div>
                             )}
 
-                            <Card className="rounded-xl border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
-                                    <CardTitle className="text-lg">Order Summary</CardTitle>
+                            <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] overflow-hidden bg-white/15 backdrop-blur-xl">
+                                <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B2B]/10 to-transparent pointer-events-none" />
+                                    <CardTitle className="text-lg text-[#3A1A08] font-display relative z-10">Order Summary</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-6">
                                     <div className="flex justify-between items-center group">
-                                        <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Base Package</span>
-                                        <span className="font-semibold text-slate-800">₹{(basePrice * travelers.length).toLocaleString()}</span>
+                                        <span className="text-[#5C2500]/80 group-hover:text-[#5C2500] font-bold transition-colors">Base Package</span>
+                                        <span className="font-bold text-[#3A1A08]">₹{(basePrice * travelers.length).toLocaleString()}</span>
                                     </div>
-                                    <div className="text-xs text-slate-400 -mt-3 flex justify-between">
-                                        <span>₹{basePrice.toLocaleString()} x {travelers.length}</span>
+                                    <div className="text-xs text-[#A0501E] font-semibold -mt-3 flex justify-between">
+                                        <span>₹{basePrice.toLocaleString()} × {travelers.length}</span>
                                     </div>
 
                                     {flightPrice > 0 && (
                                         <>
-                                            <div className="flex justify-between items-center group text-blue-700">
-                                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Flights</span>
-                                                <span className="font-semibold">₹{(flightPrice * travelers.length).toLocaleString()}</span>
+                                            <div className="flex justify-between items-center group text-[#8B5030] font-bold mt-2">
+                                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B] shadow-[0_0_8px_rgba(255,107,43,0.8)]"></span> Flights</span>
+                                                <span>₹{(flightPrice * travelers.length).toLocaleString()}</span>
                                             </div>
-                                            <div className="text-xs text-blue-400 -mt-3 flex justify-between">
-                                                <span>₹{flightPrice.toLocaleString()} x {travelers.length}</span>
+                                            <div className="text-xs text-[#A0501E] font-semibold -mt-3 flex justify-between">
+                                                <span>₹{flightPrice.toLocaleString()} × {travelers.length}</span>
                                             </div>
                                         </>
                                     )}
 
                                     {gstSettings && !gstSettings.inclusive ? (
-                                        <div className="group bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 flex justify-between items-center text-sm">
-                                            <span className="flex items-center gap-2 text-blue-800 font-medium">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                        <div className="group bg-orange-100/40 p-3 rounded-[14px] border border-white/50 flex justify-between items-center text-sm shadow-sm backdrop-blur-sm mt-2">
+                                            <span className="flex items-center gap-2 text-[#8B5030] font-bold">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B] shadow-[0_0_6px_rgba(255,107,43,0.6)]"></span>
                                                 GST ({gstSettings.percentage}%)
                                             </span>
-                                            <span className="font-bold text-blue-900">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                            <span className="font-extrabold text-[#5C2500]">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                         </div>
                                     ) : (
-                                        <div className="bg-slate-50 p-3 rounded-lg border border-dashed border-slate-200 text-xs text-slate-500 text-center">
+                                        <div className="glass-panel p-3 rounded-[14px] border border-dashed border-white/30 text-xs font-bold text-[#A0501E] text-center mt-2 bg-white/10 backdrop-blur-sm">
                                             Taxes & Fees Included
                                         </div>
                                     )}
 
-                                    <div className="border-t border-slate-100 pt-4 flex justify-between items-end">
-                                        <div>
-                                            <span className="text-slate-500 text-xs font-medium uppercase tracking-wider block mb-1">
+                                    <div className="border-t border-white/20 pt-5 flex justify-between items-end">
+                                        <div className="w-full">
+                                            <span className="text-[#A0501E] text-[10px] font-bold uppercase tracking-widest block mb-1">
                                                 {gstSettings && !gstSettings.inclusive ? "Total Amount" : "Total Amount"}
                                             </span>
-                                            <span className="text-3xl font-bold text-slate-900 leading-none">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                            <div className="flex justify-between items-baseline w-full">
+                                                <span className="text-4xl font-black text-[#5C2500] leading-none drop-shadow-sm font-display tracking-tight">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                <span className="text-xs font-bold text-[#8B5030]">INR</span>
+                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Trust Badges */}
-                                    <div className="flex items-center gap-4 py-2">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                                            <ShieldCheck className="h-3 w-3" /> 100% Secure
+                                    <div className="flex items-center gap-3 py-3 mt-2">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-800 bg-green-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-green-200 shadow-sm relative overflow-hidden group">
+                                            <div className="absolute inset-0 bg-green-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <ShieldCheck className="h-3.5 w-3.5 text-green-600 relative z-10" /> <span className="relative z-10">100% Secure</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
-                                            <RotateCcw className="h-3 w-3" /> Free Cancellable*
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-900 bg-blue-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-blue-200 shadow-sm relative overflow-hidden group">
+                                            <div className="absolute inset-0 bg-blue-200/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <RotateCcw className="h-3.5 w-3.5 text-blue-600 relative z-10" /> <span className="relative z-10">Free Cancellable*</span>
                                         </div>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="bg-slate-50 p-4 border-t border-slate-100">
+                                <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative">
                                     <Button
-                                        className="w-full h-14 text-lg font-bold shadow-xl shadow-blue-600/20 bg-blue-600 hover:bg-blue-700 transition-all hover:scale-[1.01] active:scale-[0.99] rounded-xl flex items-center justify-between px-6"
+                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_rgba(255,107,43,0.3)] bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:shadow-[0_16px_40px_rgba(255,107,43,0.5)] hover:from-[#FF7A42] hover:to-[#FFAC78] text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-between px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
                                         onClick={handlePayment}
                                         disabled={step === 'PROCESSING'}
                                     >
+                                        {/* Shine sweep effect */}
+                                        <div className="absolute right-[-100%] top-0 bottom-0 w-[50%] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 group-hover:animate-[shine_1.5s_ease-out_infinite]" />
+
                                         {step === 'PROCESSING' ? (
-                                            <div className="flex items-center justify-center w-full gap-2">
-                                                <Loader2 className="animate-spin h-5 w-5" /> Processing...
+                                            <div className="flex items-center justify-center w-full gap-2 relative z-10">
+                                                <Loader2 className="animate-spin h-6 w-6" /> Processing...
                                             </div>
                                         ) : (
                                             <>
-                                                <div className="flex items-center gap-2">
-                                                    <Lock className="h-5 w-5 opacity-80" />
-                                                    <span>Pay ₹{totalAmount.toLocaleString()}</span>
+                                                <div className="flex items-center gap-3 relative z-10">
+                                                    <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
+                                                    <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
                                                 </div>
-                                                <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-lg">Instant Confirmation</span>
+                                                <span className="text-[10px] font-bold bg-white/20 backdrop-blur-md px-2.5 py-1.5 rounded-full uppercase tracking-widest relative z-10 shadow-inner border border-white/10">Proceed</span>
                                             </>
                                         )}
                                     </Button>
-                                    <div className="text-xs text-center text-slate-400 mt-3 w-full flex items-center justify-center gap-1">
-                                        <CheckCircle className="h-3 w-3" /> Secure Payment via Razorpay
+                                    <div className="text-[10px] font-bold text-center text-[#8B5030] mt-4 w-full flex items-center justify-center gap-1.5">
+                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 drop-shadow-sm" /> Secure Payment via Razorpay
                                     </div>
                                 </CardFooter>
                             </Card>
@@ -914,5 +940,13 @@ export default function CheckoutPage() {
                 />
             )}
         </div>
+    )
+}
+
+export default function CheckoutPage() {
+    return (
+        <Suspense fallback={<div className="flex flex-col items-center justify-center min-h-screen bg-transparent"><Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" /><p className="text-gray-500 font-medium animate-pulse">Loading checkout...</p></div>}>
+            <CheckoutContent />
+        </Suspense>
     )
 }

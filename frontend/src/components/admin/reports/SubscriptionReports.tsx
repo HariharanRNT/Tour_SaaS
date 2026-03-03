@@ -84,7 +84,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                     { label: 'PAUSED', value: summary?.paused || 0, sub: 'On hold', icon: Pause, color: '#94A3B8', bg: '#F1F5F9', border: '#94A3B8' },
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' }
                 ].map((item, index) => (
-                    <Card key={index} className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
+                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
                                 <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[1.2px]">{item.label}</p>
@@ -107,7 +107,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Month-wise Trends */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-start justify-between pb-2">
                         <div>
                             <CardTitle className="text-[#0F172A] text-[17px] font-bold">Month-wise Subscription Trends</CardTitle>
@@ -168,7 +168,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                 </Card>
 
                 {/* Renewal vs Cancellation */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader>
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Renewal vs Cancellation</CardTitle>
                     </CardHeader>
@@ -250,7 +250,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 <h3 className="text-[20px] font-bold text-[#0F172A]">{planAnalytics?.most_purchased?.plan_name || 'N/A'}</h3>
                             </div>
 
-                            <div className="flex justify-between items-center bg-white/60 rounded-lg p-3 mb-4 border border-[#10B981]/10">
+                            <div className="flex justify-between items-center glass-input rounded-lg p-3 mb-4 border border-[#10B981]/10">
                                 <div className="text-center">
                                     <p className="text-[16px] font-bold text-[#0F172A]">{planAnalytics?.most_purchased?.subscription_count || 0}</p>
                                     <p className="text-[11px] text-[#64748B] font-medium">Subscribers</p>
@@ -300,7 +300,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                 </div>
 
                 {/* Plan Revenue Summary Table - 2/3 width */}
-                <Card className="lg:col-span-2 bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="lg:col-span-2 glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#F1F5F9]">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Plan Revenue Summary</CardTitle>
                         <Button variant="ghost" className="text-[#6366F1] text-[13px] font-semibold hover:bg-[#EEF2FF] hover:text-[#4F46E5] h-8 px-3">

@@ -1,5 +1,6 @@
 """Trip Planner API endpoints"""
 
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,8 @@ from app.database import get_db
 from app.api.deps import get_optional_current_user, get_current_domain
 from app.models import Package, PackageStatus, ItineraryItem, Agent
 from app.schemas import TripSessionUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -413,25 +416,43 @@ async def create_trip_session(
 ):
     """Create a trip planning session"""
     try:
-        # Extract data
+        # Extract data with better defaults and safety
         destination = data.get('destination', '').strip()
-        duration_days = int(data.get('duration_days', 7))
-        duration_nights = int(data.get('duration_nights', duration_days - 1))
+        matched_package_id = data.get('package_id')
+        
+        duration_days_val = data.get('duration_days')
+        try:
+            duration_days = int(duration_days_val) if duration_days_val is not None else 7
+        except (ValueError, TypeError):
+            duration_days = 7
+            
+        duration_nights_val = data.get('duration_nights')
+        try:
+            duration_nights = int(duration_nights_val) if duration_nights_val is not None else (duration_days - 1)
+        except (ValueError, TypeError):
+            duration_nights = duration_days - 1
+            
         start_date_str = data.get('start_date')
-        travelers = data.get('travelers', {"adults": 2, "children": 0, "infants": 0})
-        preferences = data.get('preferences', {})
+        travelers = data.get('travelers') or {"adults": 2, "children": 0, "infants": 0}
+        preferences = data.get('preferences') or {}
         
         # Parse start_date if provided
         start_date = None
         if start_date_str:
             from datetime import datetime
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            try:
+                # Try simple date first
+                start_date = datetime.strptime(start_date_str.split('T')[0], '%Y-%m-%d').date()
+            except Exception as de:
+                logger.warning(f"Failed to parse start_date {start_date_str}: {de}")
         
-        if not destination:
+        if not destination and not matched_package_id:
             raise HTTPException(status_code=400, detail="Destination is required")
         
         # Check for matching package
-        matched_package_id = data.get('package_id')
+        if not matched_package_id or matched_package_id == '':
+            matched_package_id = None
+            
         initial_itinerary = []
         has_match = False
         match_score = 0.0
@@ -451,11 +472,10 @@ async def create_trip_session(
                 # If we have a specific package, use its details to override/fill defaults if needed
                 if not destination:
                     destination = package.destination
-                # We typically respect the user's requested duration, but if they picked a package, 
-                # they might expect that package's duration.
-                # However, the session should reflect what the user PLANNED. 
-                # Let's keep user inputs as primary for session, but link the package.
-                pass
+                
+                # If destination is still missing after package lookup, then error out
+                if not destination:
+                    raise HTTPException(status_code=400, detail="Destination could not be determined from package")
         else:
             # Search for matching packages
             stmt = select(Package).where(
@@ -554,6 +574,10 @@ async def create_trip_session(
             
             initial_itinerary = list(itinerary_by_day.values())
         
+        # Final destination check
+        if not destination:
+            raise HTTPException(status_code=400, detail="Destination is required and could not be determined")
+
         # Create session
         new_id = uuid.uuid4()
         query = text("""
@@ -598,6 +622,7 @@ async def create_trip_session(
         }
         
     except Exception as e:
+        logger.exception("Error in create_trip_session")
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 

@@ -114,6 +114,27 @@ async def get_package_with_itinerary(
             detail=str(e)
         )
 
+@router.get("/slug/{slug}/itinerary", response_model=PackageWithItineraryResponse)
+async def get_package_with_itinerary_by_slug(
+    slug: str,
+    db: Session = Depends(get_db)
+):
+    """Get package with day-wise time-slotted itinerary by slug"""
+    service = PackageService(db)
+    
+    try:
+        result = await service.get_package_with_itinerary_by_slug(slug)
+        return {
+            **result['package'].__dict__,
+            'itinerary_by_day': result['itinerary_by_day']
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
 
 @router.post("/{package_id}/itinerary-items", response_model=PackageItineraryItemResponse)
 async def add_itinerary_item(

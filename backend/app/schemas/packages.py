@@ -1,7 +1,7 @@
 """Package schemas for API requests and responses"""
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
@@ -20,7 +20,8 @@ class PackageBase(BaseModel):
     destination: str
     duration_days: int
     duration_nights: int
-    category: Optional[str] = None
+    trip_style: Optional[str] = None
+    category: Optional[str] = "Adventure"
     price_per_person: float
     max_group_size: int = 20
     description: Optional[str] = None
@@ -29,6 +30,13 @@ class PackageBase(BaseModel):
     included_items: List[str] = []
     excluded_items: List[str] = []
     feature_image_url: Optional[str] = None
+    package_mode: str = "single"
+    destinations: List[Dict[str, Any]] = []
+    activities: List[str] = []
+    # GST Configuration (None = use agent-level defaults)
+    gst_applicable: Optional[bool] = None
+    gst_percentage: Optional[float] = None
+    gst_mode: Optional[str] = None  # 'inclusive' or 'exclusive'
 
 
 class PackageCreate(PackageBase):
@@ -41,7 +49,7 @@ class PackageUpdate(BaseModel):
     destination: Optional[str] = None
     duration_days: Optional[int] = None
     duration_nights: Optional[int] = None
-    category: Optional[str] = None
+    trip_style: Optional[str] = None
     price_per_person: Optional[float] = None
     max_group_size: Optional[int] = None
     description: Optional[str] = None
@@ -50,6 +58,13 @@ class PackageUpdate(BaseModel):
     included_items: Optional[List[str]] = None
     excluded_items: Optional[List[str]] = None
     feature_image_url: Optional[str] = None
+    package_mode: Optional[str] = None
+    destinations: Optional[List[Dict[str, Any]]] = None
+    activities: Optional[List[str]] = None
+    # GST Configuration
+    gst_applicable: Optional[bool] = None
+    gst_percentage: Optional[float] = None
+    gst_mode: Optional[str] = None
 
 
 class PackageResponse(PackageBase):
@@ -184,7 +199,7 @@ class PackageResponse(PackageBase):
 
     try:
         from pydantic import validator
-        @validator('included_items', 'excluded_items', pre=True, check_fields=False)
+        @validator('included_items', 'excluded_items', 'destinations', 'activities', pre=True, check_fields=False)
         def validate_json_lists(cls, v):
             return cls._parse_json_list(v)
     except ImportError:

@@ -60,17 +60,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
     }
 
     return (
-        <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm space-y-6 hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
-            {/* Top accent bar */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-20"></div>
-
-            <h3 className="font-bold text-slate-800 text-lg flex items-center justify-between border-b border-slate-50 pb-4">
+        <div className="bg-white/15 backdrop-blur-xl p-6 rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] space-y-6 hover:shadow-[0_12px_40px_rgba(255,107,43,0.12)] transition-shadow duration-300 relative overflow-hidden">
+            <h3 className="font-bold text-[#3A1A08] font-display text-xl flex items-center justify-between border-b border-white/20 pb-4">
                 <span className="flex items-center gap-3">
-                    <span className="bg-blue-50 text-blue-600 p-2 rounded-full ring-1 ring-blue-100">
+                    <span className="bg-[#FF6B2B]/10 text-[#FF6B2B] p-2 rounded-xl border border-[#FF6B2B]/20">
                         <User className="h-5 w-5" />
                     </span>
                     Traveler {index + 1}
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full ml-1">
+                    <span className="text-[10px] font-bold text-[#FF6B2B] uppercase tracking-wider bg-white/20 border border-[#FF6B2B]/20 px-2.5 py-1 rounded-full ml-2 shadow-inner">
                         {traveler.type}
                     </span>
                 </span>
@@ -81,10 +78,10 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                 <div className="md:col-span-2">
                     <div className="relative group">
                         <Select value={traveler.title} onValueChange={(val) => onChange(index, 'title', val)}>
-                            <SelectTrigger className="w-full h-12 bg-white border-slate-200 px-3 pt-4 pb-1 text-sm shadow-sm transition-all outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 text-left">
+                            <SelectTrigger className="w-full h-14 bg-white/25 border-white/40 rounded-[14px] px-3 pt-5 pb-1 text-sm shadow-sm transition-all outline-none focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 text-[#5C2500] font-bold backdrop-blur-sm">
                                 <SelectValue placeholder=" " />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {[
                                     { val: 'Mr', types: ['ADULT'] },
                                     { val: 'Mrs', types: ['ADULT'] },
@@ -102,14 +99,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                                         key={opt.val}
                                         value={opt.val}
                                         disabled={!opt.types.includes(traveler.type)}
-                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : ''}
+                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : 'font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10'}
                                     >
                                         {opt.val}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                        <label className="absolute left-3 top-1 z-10 origin-[0] -translate-y-0 scale-75 transform text-xs text-slate-500 duration-150 pointer-events-none">
+                        <label className="absolute left-3 top-2 z-10 origin-[0] -translate-y-0 scale-75 transform text-[10px] font-bold tracking-widest uppercase text-[#A0501E] duration-150 pointer-events-none">
                             Title
                         </label>
                     </div>
@@ -123,6 +120,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                         value={traveler.first_name}
                         onChange={(e: any) => onChange(index, 'first_name', e.target.value)}
                         error={errors[`first_name_${index}`]}
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                     />
                 </div>
                 <div className="md:col-span-5">
@@ -131,6 +129,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                         label="Last Name"
                         value={traveler.last_name}
                         onChange={(e: any) => onChange(index, 'last_name', e.target.value)}
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                     />
                 </div>
             </div>
@@ -138,9 +137,9 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
             {/* Row 2: DOB & Gender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Gender Segmented Control */}
-                <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Gender</Label>
-                    <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 h-12 items-center">
+                <div className="space-y-1.5 relative z-10">
+                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm">Gender</Label>
+                    <div className="flex bg-white/20 p-1 rounded-[16px] border border-white/40 h-14 items-center shadow-inner backdrop-blur-sm">
                         {[
                             { val: 'MALE', label: 'Male' },
                             { val: 'FEMALE', label: 'Female' }
@@ -160,55 +159,55 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                                 }}
                                 type="button"
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 text-sm font-semibold h-full rounded-lg transition-all",
+                                    "flex-1 flex items-center justify-center gap-2 text-sm font-bold h-full rounded-[12px] transition-all",
                                     traveler.gender === g.val
-                                        ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
-                                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                        ? "bg-[#FF6B2B] text-white shadow-[0_4px_16px_rgba(255,107,43,0.4)] ring-1 ring-[#FF6B2B]"
+                                        : "text-[#8B5030] hover:text-[#5C2500] hover:bg-white/40"
                                 )}
                             >
                                 {g.label}
-                                {traveler.gender === g.val && <Check className="h-3.5 w-3.5" />}
+                                {traveler.gender === g.val && <Check className="h-4 w-4" />}
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Date Selection Dropdowns */}
-                <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide ml-1">Date of Birth</Label>
+                <div className="space-y-1.5 relative z-10">
+                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm">Date of Birth</Label>
                     <div className="grid grid-cols-3 gap-2">
                         {/* Day */}
                         <Select value={d} onValueChange={(val) => handleDateChange('day', val)}>
-                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
-                                <SelectValue placeholder="Day" />
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                                <SelectValue placeholder="DD" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {days.map(day => (
-                                    <SelectItem key={day} value={day}>{day}</SelectItem>
+                                    <SelectItem key={day} value={day} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{day}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
                         {/* Month */}
                         <Select value={m} onValueChange={(val) => handleDateChange('month', val)}>
-                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
-                                <SelectValue placeholder="Month" />
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                                <SelectValue placeholder="MMM" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {months.map(mon => (
-                                    <SelectItem key={mon.value} value={mon.value}>{mon.label}</SelectItem>
+                                    <SelectItem key={mon.value} value={mon.value} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{mon.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
                         {/* Year */}
                         <Select value={y} onValueChange={(val) => handleDateChange('year', val)}>
-                            <SelectTrigger className="bg-white border-slate-200 h-12 focus:ring-blue-500/10 focus:border-blue-500">
-                                <SelectValue placeholder="Year" />
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                                <SelectValue placeholder="YYYY" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50 h-[300px]">
                                 {years.map(yr => (
-                                    <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+                                    <SelectItem key={yr} value={yr} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{yr}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -224,6 +223,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     value={traveler.nationality}
                     onChange={(e: any) => onChange(index, 'nationality', e.target.value.toUpperCase())}
                     maxLength={2}
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                 />
 
                 <FloatingLabelInput
@@ -231,6 +231,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     label="Passport Number (Optional for Domestic)"
                     value={traveler.passport_number}
                     onChange={(e: any) => onChange(index, 'passport_number', e.target.value.toUpperCase())}
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
                 />
             </div>
         </div>

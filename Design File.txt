@@ -1,29 +1,135 @@
-The Core Idea
-Instead of saving to the database before preview, pass the current unsaved theme state directly to the preview page without touching the database at all.
+ Page Background
 
-🏗️ Ways to Implement This
-1 — SessionStorage (Simplest & Best)
-On the settings page (before opening preview tab):
-javascriptconst handleLivePreview = () => {
-  // Store current unsaved theme in sessionStorage
-  sessionStorage.setItem('preview_theme', JSON.stringify(localTheme))
-  
-  // Open preview tab immediately - no async needed
-  window.open(`${siteUrl}?preview=true`, '_blank')
-}
-On the customer page:
-javascript// In your ThemeContext or page component
-const isPreview = searchParams.get('preview') === 'true'
+Rich diagonal gradient mesh: #FF6B2B → #FFAC82 → #FFE8D6 → #FFF3EC
+Add 2–3 large blurred ambient orbs — deep orange and soft coral — floating behind all content
+Add a very subtle noise texture overlay (3–5% opacity) for depth and premium feel
 
-if (isPreview) {
-  const previewTheme = sessionStorage.getItem('preview_theme')
-  if (previewTheme) {
-    return JSON.parse(previewTheme) // use this instead of API data
-  }
-}
-Why this works:
 
-No database call needed
-No async = no popup blocker issue
-SessionStorage is shared across tabs in the same browser session
-Zero delay — opens instantly
+🧭 Navbar & Progress Bar
+Navbar:
+
+Floating pill detached from edges, frosted glass rgba(255,255,255,0.18) with backdrop-filter: blur(20px)
+Thin white border rgba(255,255,255,0.35) all around
+Logout → ghost pill with orange border glow on hover
+
+Progress Steps (Guest Details → Payment → Confirmation):
+
+Replace plain text steps with glowing glass step pills
+Active step → solid orange fill + pulsing outer ring animation
+Completed step → green checkmark ✓ inside glass circle
+Inactive step → muted frosted glass circle
+Connecting line → gradient #FF6B2B → rgba(255,255,255,0.2) filling left to right as steps complete
+
+
+📋 "Who's Traveling?" Section
+Section Header:
+
+Icon + title in a frosted glass header strip — rgba(255,255,255,0.2) with blur, rounded top corners
+Title in warm dark brown, icon in orange
+
+Traveler Card:
+
+Full glassmorphic card — rgba(255,255,255,0.18) fill, backdrop-filter: blur(24px), border: 1px solid rgba(255,255,255,0.35)
+border-radius: 24px — softer corners
+Traveler 1 label → large, warm brown, serif font
+ADULT badge → frosted orange pill rgba(255,107,43,0.2) with orange border
+
+Form Fields:
+
+All inputs → glassmorphic style — rgba(255,255,255,0.25) background, border: 1px solid rgba(255,255,255,0.4), border-radius: 14px
+On focus → orange glow border box-shadow: 0 0 0 3px rgba(255,107,43,0.25)
+Placeholder text → warm peach rgba(180,80,30,0.45)
+Labels → float above on focus (floating label animation)
+Title dropdown (Mr) → styled as glass pill selector with chevron
+
+Gender Toggle:
+
+Replace plain Male/Female buttons with segmented glass toggle — selected side fills solid orange, unselected is frosted glass
+Add tiny gender icons alongside text
+
+Date of Birth:
+
+Replace 3 separate dropdowns (Day/Month/Year) with a single custom date picker styled in glass — cleaner and more modern
+Or keep 3 dropdowns but style them as matching glass pills in a row
+
+
+📞 Contact Information Section
+Section Card:
+
+Same glassmorphic card style as Traveler card — consistent visual language
+Credit card icon in orange gradient
+
+"Use Traveler 1 details" checkbox:
+
+Replace plain checkbox with a custom glass toggle switch — orange when active, frosted when off
+Label text in warm brown
+
+Phone Input:
+
+Flag + country code → frosted glass pill on left side of input
+Main input field → glass style matching other fields
+Both joined as one seamless input row
+
+Email, Billing Address fields:
+
+All glass styled, consistent 14px border-radius
+Billing Address → taller textarea variant with same glass treatment
+
+Country/State/City dropdowns:
+
+Style as glass select pills in a 3-column row with orange chevron icons
+On open → dropdown panel is also frosted glass with blurred background
+
+
+🧾 Order Summary Card (Right Panel)
+Trip Details Header:
+
+Replace the plain blue/purple block with an orange-to-coral gradient glass header — linear-gradient(135deg, #FF6B2B, #FF9A5C) with backdrop-filter
+Chennai title → large serif white text with subtle text-shadow
+Chevron ▼ → white, rotates on expand
+
+Order Summary Body:
+
+Full glassmorphic card — same rgba(255,255,255,0.2) + blur treatment
+Section title ORDER SUMMARY → uppercase, letter-spaced, orange
+
+Line Items:
+
+Base Package and ₹18,500 → clean row with a thin frosted divider between items
+₹18,500 × 1 → small muted peach text below
+GST row → amber/warm yellow tint pill rgba(255,180,50,0.15) with left orange dot indicator
+
+Total Amount:
+
+₹21,830 → very large (36px+), bold, deep orange — this is the hero number
+Thin frosted separator line above it
+
+Trust Badges (100% Secure, Free Cancellable):
+
+Style as frosted glass mini pills with colored left dot — green for secure, blue for cancellable
+Add a soft glow behind the secure badge
+
+Pay Button:
+
+Full width, border-radius: 50px pill shape
+Gradient: #FF6B2B → #FF9A5C with a shine sweep animation on hover
+Lock icon 🔒 in white on left
+Pay ₹21,830 bold white text + Instant Confirmation in smaller semi-transparent white
+Glow: box-shadow: 0 12px 32px rgba(255,107,43,0.5)
+On hover → button lifts slightly translateY(-2px) and glow intensifies
+
+
+✨ Microinteractions
+
+Form fields → smooth label float on focus
+Traveler card → subtle lift on hover translateY(-4px)
+Page load → sections stagger fade-up one by one (150ms delay each)
+Pay button → ripple effect on click before proceeding
+Step progress → fills with animation as each step completes
+
+
+📐 Layout Tweaks
+
+Increase left/right content max-width padding — currently feels cramped
+Add more vertical breathing room between Traveler card and Contact card (32px gap)
+Right panel → make it sticky so Order Summary stays visible while user scrolls the long form

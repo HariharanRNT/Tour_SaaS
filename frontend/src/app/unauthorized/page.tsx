@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button"
 
 export default function UnauthorizedPage() {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4">
+            <div className="glass-panel p-8 rounded-lg shadow-md max-w-md w-full text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-600 mb-6">
                     <Lock className="h-8 w-8" />
                 </div>

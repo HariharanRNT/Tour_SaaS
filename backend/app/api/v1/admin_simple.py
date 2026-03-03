@@ -68,11 +68,20 @@ async def get_dashboard_stats(
         
         # 3. Total Revenue (Confirmed + Completed)
         # Assuming BookingStatus has CONFIRMED and COMPLETED
-        rev_stmt = select(func.sum(Booking.total_amount)).where(
-            Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
-        )
-        rev_stmt = apply_date_filter(rev_stmt, Booking.created_at)
+        # rev_stmt = select(func.sum(Booking.total_amount)).where(
+        #     Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
+        # )
+        # rev_stmt = apply_date_filter(rev_stmt, Booking.created_at)
         
+        # result = await db.execute(rev_stmt)
+        # total_revenue = result.scalar() or 0
+
+        rev_stmt = select(func.sum(Payment.amount)).where(
+            Payment.status == PaymentStatus.SUCCEEDED,  # ← your DB shows "SUCCEEDED" not "SUCCESS"
+                    Payment.subscription_id != None
+        )
+        rev_stmt = apply_date_filter(rev_stmt, Payment.created_at)
+
         result = await db.execute(rev_stmt)
         total_revenue = result.scalar() or 0
         
@@ -242,9 +251,16 @@ async def get_dashboard_stats(
         six_months_ago = datetime.utcnow() - timedelta(days=180)
         
         # Fetch bookings for last 6 months
-        booking_trend_stmt = select(Booking.created_at, Booking.total_amount).where(
-            Booking.created_at >= six_months_ago,
-            Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
+        # booking_trend_stmt = select(Booking.created_at, Booking.total_amount).where(
+        #     Booking.created_at >= six_months_ago,
+        #     Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
+        # )
+
+        # Fetch subscription payments for last 6 months
+        booking_trend_stmt = select(Payment.created_at, Payment.amount).where(
+            Payment.created_at >= six_months_ago,
+            Payment.status == PaymentStatus.SUCCEEDED,
+            Payment.subscription_id != None  # Only subscription payments
         )
         result = await db.execute(booking_trend_stmt)
         bookings_data = result.all()

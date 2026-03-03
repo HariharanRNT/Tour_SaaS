@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
+import { toast } from 'react-toastify'
 
 interface PackageFormData {
     title: string
@@ -363,7 +364,7 @@ export default function CreatePackagePage() {
                         ) : (
                             <Card className="border-gray-100 shadow-sm">
                                 <CardContent className="py-24 text-center">
-                                    <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="bg-transparent w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <Save className="h-8 w-8 text-gray-300" />
                                     </div>
                                     <h3 className="text-lg font-medium text-gray-900">No Package Saved</h3>

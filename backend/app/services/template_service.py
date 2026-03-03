@@ -1,10 +1,10 @@
 """Template Service for managing default package templates"""
 
 from typing import List, Optional
-from datetime import date, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
 import uuid
+import json
 
 from app.models import (
     Package, ItineraryItem, UserItinerary, UserItineraryActivity,
@@ -15,7 +15,7 @@ from app.models import (
 class TemplateService:
     """Service for managing package templates"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
     
     async def create_template(
@@ -47,8 +47,8 @@ class TemplateService:
         )
         
         self.db.add(template)
-        self.db.commit()
-        self.db.refresh(template)
+        await self.db.commit()
+        await self.db.refresh(template)
         
         return template
     
@@ -65,10 +65,12 @@ class TemplateService:
         """Add an activity to a specific day and time slot in template"""
         
         # Validate template exists
-        template = self.db.query(Package).filter(
+        stmt = select(Package).where(
             Package.id == template_id,
             Package.is_template == True
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        template = result.scalar_one_or_none()
         
         if not template:
             raise ValueError(f"Template {template_id} not found")
@@ -83,7 +85,6 @@ class TemplateService:
             raise ValueError(f"Time slot must be one of: {', '.join(valid_slots)}")
         
         # Create itinerary item
-        import json
         itinerary_item = ItineraryItem(
             package_id=template_id,
             day_number=day_number,
@@ -95,8 +96,8 @@ class TemplateService:
         )
         
         self.db.add(itinerary_item)
-        self.db.commit()
-        self.db.refresh(itinerary_item)
+        await self.db.commit()
+        await self.db.refresh(itinerary_item)
         
         return itinerary_item
     
@@ -106,19 +107,23 @@ class TemplateService:
     ) -> Optional[Package]:
         """Find active template for a destination"""
         
-        return self.db.query(Package).filter(
+        stmt = select(Package).where(
             Package.is_template == True,
             Package.template_destination == destination,
             Package.status == PackageStatus.PUBLISHED
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_all_templates(self) -> List[Package]:
         """Get all published templates"""
         
-        return self.db.query(Package).filter(
+        stmt = select(Package).where(
             Package.is_template == True,
             Package.status == PackageStatus.PUBLISHED
-        ).all()
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def get_template_activities(
         self,
@@ -127,17 +132,20 @@ class TemplateService:
     ) -> List[ItineraryItem]:
         """Get all activities for a template, optionally limited by days"""
         
-        query = self.db.query(ItineraryItem).filter(
+        stmt = select(ItineraryItem).where(
             ItineraryItem.package_id == template_id
         )
         
         if max_days:
-            query = query.filter(ItineraryItem.day_number <= max_days)
+            stmt = stmt.where(ItineraryItem.day_number <= max_days)
         
-        return query.order_by(
+        stmt = stmt.order_by(
             ItineraryItem.day_number,
             ItineraryItem.display_order
-        ).all()
+        )
+        
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def update_template_activity(
         self,
@@ -146,9 +154,11 @@ class TemplateService:
     ) -> ItineraryItem:
         """Update a template activity"""
         
-        activity = self.db.query(ItineraryItem).filter(
+        stmt = select(ItineraryItem).where(
             ItineraryItem.id == activity_id
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        activity = result.scalar_one_or_none()
         
         if not activity:
             raise ValueError(f"Activity {activity_id} not found")
@@ -157,8 +167,8 @@ class TemplateService:
             if hasattr(activity, key):
                 setattr(activity, key, value)
         
-        self.db.commit()
-        self.db.refresh(activity)
+        await self.db.commit()
+        await self.db.refresh(activity)
         
         return activity
     
@@ -168,14 +178,16 @@ class TemplateService:
     ) -> bool:
         """Delete a template activity"""
         
-        activity = self.db.query(ItineraryItem).filter(
+        stmt = select(ItineraryItem).where(
             ItineraryItem.id == activity_id
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        activity = result.scalar_one_or_none()
         
         if not activity:
             return False
         
-        self.db.delete(activity)
-        self.db.commit()
+        await self.db.delete(activity)
+        await self.db.commit()
         
         return True

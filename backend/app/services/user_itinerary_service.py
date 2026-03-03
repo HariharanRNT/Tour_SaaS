@@ -2,8 +2,8 @@
 
 from typing import List, Optional, Dict, Any
 from datetime import date, timedelta
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_, func
 import uuid
 import json
 
@@ -16,7 +16,7 @@ from app.services.template_service import TemplateService
 class UserItineraryService:
     """Service for managing user itineraries created from templates"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.template_service = TemplateService(db)
     
@@ -58,7 +58,7 @@ class UserItineraryService:
         )
         
         self.db.add(user_itinerary)
-        self.db.flush()  # Get the ID without committing
+        await self.db.flush()  # Get the ID without committing
         
         # Copy template activities to user itinerary
         template_activities = await self.template_service.get_template_activities(
@@ -79,8 +79,8 @@ class UserItineraryService:
             )
             self.db.add(user_activity)
         
-        self.db.commit()
-        self.db.refresh(user_itinerary)
+        await self.db.commit()
+        await self.db.refresh(user_itinerary)
         
         return user_itinerary
     
@@ -91,14 +91,15 @@ class UserItineraryService:
     ) -> Optional[UserItinerary]:
         """Get a user itinerary by ID, optionally filtered by user"""
         
-        query = self.db.query(UserItinerary).filter(
+        stmt = select(UserItinerary).where(
             UserItinerary.id == itinerary_id
         )
         
         if user_id:
-            query = query.filter(UserItinerary.user_id == user_id)
+            stmt = stmt.where(UserItinerary.user_id == user_id)
         
-        return query.first()
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_user_itineraries(
         self,
@@ -107,14 +108,17 @@ class UserItineraryService:
     ) -> List[UserItinerary]:
         """Get all itineraries for a user"""
         
-        query = self.db.query(UserItinerary).filter(
+        stmt = select(UserItinerary).where(
             UserItinerary.user_id == user_id
         )
         
         if status:
-            query = query.filter(UserItinerary.status == status)
+            stmt = stmt.where(UserItinerary.status == status)
         
-        return query.order_by(UserItinerary.created_at.desc()).all()
+        stmt = stmt.order_by(UserItinerary.created_at.desc())
+        
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def get_itinerary_activities(
         self,
@@ -125,12 +129,15 @@ class UserItineraryService:
         Returns: {day_number: {time_slot: [activities]}}
         """
         
-        activities = self.db.query(UserItineraryActivity).filter(
+        stmt = select(UserItineraryActivity).where(
             UserItineraryActivity.user_itinerary_id == itinerary_id
         ).order_by(
             UserItineraryActivity.day_number,
             UserItineraryActivity.display_order
-        ).all()
+        )
+        
+        result = await self.db.execute(stmt)
+        activities = result.scalars().all()
         
         # Organize by day and time slot
         organized = {}
@@ -181,8 +188,8 @@ class UserItineraryService:
         )
         
         self.db.add(user_activity)
-        self.db.commit()
-        self.db.refresh(user_activity)
+        await self.db.commit()
+        await self.db.refresh(user_activity)
         
         return user_activity
     
@@ -193,23 +200,24 @@ class UserItineraryService:
     ) -> bool:
         """Remove an activity from user's itinerary"""
         
-        query = self.db.query(UserItineraryActivity).filter(
+        stmt = select(UserItineraryActivity).where(
             UserItineraryActivity.id == activity_id
         )
         
         # Optionally verify user ownership
         if user_id:
-            query = query.join(UserItinerary).filter(
+            stmt = stmt.join(UserItinerary).where(
                 UserItinerary.user_id == user_id
             )
         
-        activity = query.first()
+        result = await self.db.execute(stmt)
+        activity = result.scalar_one_or_none()
         
         if not activity:
             return False
         
-        self.db.delete(activity)
-        self.db.commit()
+        await self.db.delete(activity)
+        await self.db.commit()
         
         return True
     
@@ -225,8 +233,8 @@ class UserItineraryService:
             raise ValueError(f"Itinerary {itinerary_id} not found")
         
         itinerary.status = status
-        self.db.commit()
-        self.db.refresh(itinerary)
+        await self.db.commit()
+        await self.db.refresh(itinerary)
         
         return itinerary
     
@@ -236,10 +244,13 @@ class UserItineraryService:
     ) -> float:
         """Calculate total cost of all activities in itinerary"""
         
-        activities = self.db.query(UserItineraryActivity).filter(
+        stmt = select(UserItineraryActivity).where(
             UserItineraryActivity.user_itinerary_id == itinerary_id,
             UserItineraryActivity.activity_price.isnot(None)
-        ).all()
+        )
+        
+        result = await self.db.execute(stmt)
+        activities = result.scalars().all()
         
         total = sum(float(activity.activity_price or 0) for activity in activities)
         return total

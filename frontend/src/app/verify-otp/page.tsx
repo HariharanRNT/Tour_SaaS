@@ -103,7 +103,7 @@ function OTPVerificationForm() {
                         value={otp}
                         onChange={handleOtpChange}
                         placeholder="000000"
-                        className="h-16 text-center text-3xl font-bold tracking-[0.5em] border-gray-200 bg-gray-50/50 focus:bg-white rounded-xl max-w-[240px]"
+                        className="glass-input h-16 text-center text-3xl font-bold tracking-[0.5em] border-white/20 bg-none focus:bg-white/20 rounded-xl max-w-[240px]"
                         maxLength={6}
                         required
                         autoFocus
@@ -153,7 +153,7 @@ function OTPVerificationForm() {
 
 export default function VerifyOTPPage() {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
                 <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-100/30 blur-3xl" />

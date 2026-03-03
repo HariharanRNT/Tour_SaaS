@@ -116,15 +116,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
             const isPreview = searchParams?.get('preview') === 'true';
 
-            // 1. Priority One: Try sessionStorage for instant preview (if in preview mode)
+            // 1. Priority One: Try localStorage for instant preview (if in preview mode)
             if (isPreview) {
                 try {
-                    const previewData = sessionStorage.getItem('preview_theme');
+                    const previewData = localStorage.getItem('preview_theme') || sessionStorage.getItem('preview_theme');
                     if (previewData) {
                         fetchedTheme = JSON.parse(previewData);
                     }
                 } catch (e) {
-                    console.error("Error parsing preview theme from sessionStorage", e);
+                    console.error("Error parsing preview theme from storage", e);
                 }
             }
 
@@ -205,6 +205,25 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             applyTheme(theme);
         }
         fetchTheme();
+
+        // ─── Real-time Preview Sync ──────────────────────────────────────────
+        const handleStorageChange = (e: StorageEvent) => {
+            const searchParams = new URLSearchParams(window.location.search);
+            const isPreview = searchParams.get('preview') === 'true';
+
+            if (isPreview && e.key === 'preview_theme' && e.newValue) {
+                try {
+                    const newTheme = JSON.parse(e.newValue);
+                    setTheme(newTheme);
+                    applyTheme(newTheme);
+                } catch (err) {
+                    console.error("Failed to sync theme from storage event", err);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, [pathname]); // Refetch on route change to catch login/logout or domain change simulation
 
     const updateTheme = (updates: Partial<AgentTheme>) => {

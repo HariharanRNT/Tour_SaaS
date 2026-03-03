@@ -72,7 +72,7 @@ export default function PackageDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-transparent flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading package details...</p>
@@ -83,7 +83,7 @@ export default function PackageDetailPage() {
 
     if (error || !packageData) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-transparent flex items-center justify-center">
                 <Card className="max-w-md">
                     <CardContent className="pt-6">
                         <p className="text-red-600 text-center">{error || 'Package not found'}</p>
@@ -97,7 +97,7 @@ export default function PackageDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-transparent pb-20">
             {/* Header */}
             <div className="bg-white border-b sticky top-0 z-10">
                 <div className="container mx-auto px-4 py-4">

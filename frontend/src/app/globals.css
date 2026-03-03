@@ -4,13 +4,14 @@
 
 @layer base {
   html {
-    font-size: 90%;
+    zoom: 90%;
   }
 
   :root {
-    --background: 0 0% 100%;
+    /* Background and card are transparent so the body gradient shows through */
+    --background: transparent;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: transparent;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -51,15 +52,41 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
 
+  /* Mesh Gradient Background from Design File */
+  html,
   body {
-    @apply bg-background text-foreground;
+    background-color: #F4A261;
+    background-image: 
+      radial-gradient(at 0% 0%, #FFD4A8 0, transparent 50%), 
+      radial-gradient(at 100% 100%, #FFECD2 0, transparent 50%),
+      radial-gradient(at 50% 50%, #F4A261 0, transparent 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    @apply text-foreground;
+    font-family: var(--font-dm-sans), sans-serif;
+  }
+
+  .noise-overlay {
+    position: relative;
+  }
+
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 1;
+    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    filter: contrast(150%) brightness(100%);
   }
 }
 
@@ -70,8 +97,232 @@
 
   .scrollbar-hide {
     -ms-overflow-style: none;
-    /* IE and Edge */
     scrollbar-width: none;
-    /* Firefox */
+  }
+
+  /* New Glassmorphism Utilities from Design Brief */
+  
+  /* Navbar Glass */
+  .glass-navbar {
+    background: rgba(255, 237, 213, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(240, 128, 64, 0.2);
+  }
+
+  /* Hero Search Bar Glass */
+  .glass-search {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 999px;
+  }
+
+  /* Trip Style Card Glass */
+  .glass-trip-card {
+    background: rgba(255, 245, 235, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 200, 150, 0.4);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .glass-trip-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(232, 104, 42, 0.25);
+    border-color: rgba(232, 104, 42, 0.5);
+  }
+
+  /* Destination Card Gradient Overlay */
+  .destination-overlay {
+    background: linear-gradient(to top, rgba(180, 70, 10, 0.75) 0%, transparent 60%);
+  }
+
+  /* Deep Mesh Gradient Background */
+  .mesh-bg {
+    background: linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 30%, #FFD4B0 70%, #FFF0E6 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Filter Sidebar Glass */
+  .glass-filter-panel {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-left: 3px solid rgba(255, 107, 43, 0.6);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+
+  /* Package Cards grid items */
+  .glass-pkg-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    transition: all 0.4s ease;
+  }
+  .glass-pkg-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(255, 107, 43, 0.3);
+  }
+
+  /* New Glass Utilities */
+  .glass-floating-nav {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    box-shadow: 0 4px 30px rgba(255, 107, 43, 0.2);
+  }
+
+  .glass-hero-bar {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+  }
+
+  /* Typography Helpers */
+  .font-display {
+    font-family: var(--font-fraunces), serif;
+  }
+
+  .font-body {
+    font-family: var(--font-dm-sans), sans-serif;
+  }
+
+  /* Shimmer effect for editorial accent */
+  .shimmer-text {
+    background: linear-gradient(
+      to right,
+      #FFE8D6 20%,
+      #FFFFFF 40%,
+      #FFFFFF 60%,
+      #FFE8D6 80%
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    text-fill-color: transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+  }
+
+  /* Custom Checkbox Style */
+  .custom-checkbox {
+    @apply w-5 h-5 border-2 border-orange-200 rounded-md appearance-none cursor-pointer transition-all;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+  }
+
+  .custom-checkbox:checked {
+    @apply border-[#E8682A] bg-[#E8682A];
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 80%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* Slider Theming */
+  .slider-track {
+    background: linear-gradient(90deg, #FF9A5C 0%, #FF6B2B 100%);
+    @apply h-1.5 rounded-full;
+  }
+
+  .slider-range {
+    @apply h-full rounded-full bg-transparent;
+  }
+
+  .glass-form-input {
+    @apply bg-white/40 border-white/50 focus:border-[#FF6B2B] shadow-[0_2px_10px_rgba(0,0,0,0.02)] focus:shadow-[0_4px_20px_rgba(255,107,43,0.15)] text-[#5C2500] font-medium transition-all duration-300 rounded-xl backdrop-blur-md;
+  }
+
+  .slider-thumb {
+    @apply w-5 h-5 bg-white border-2 border-[#FF6B2B] rounded-full shadow-[0_0_10px_rgba(255,107,43,0.5)] cursor-pointer hover:scale-110 transition-transform;
+  }
+
+  /* Pulse Animation */
+  .pulse-subtle {
+    animation: pulse-orange 2s infinite;
+  }
+
+  @keyframes pulse-orange {
+    0% {
+      box-shadow: 0 0 0 0 rgba(232, 104, 42, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(232, 104, 42, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(232, 104, 42, 0);
+    }
+  }
+
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  /* Slide In Animation */
+  .slide-in-left {
+    animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes slideInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Stagger Fade-In utilities */
+  .stagger-delay-1 { animation-delay: 100ms; }
+  .stagger-delay-2 { animation-delay: 200ms; }
+  .stagger-delay-3 { animation-delay: 300ms; }
+  .stagger-delay-4 { animation-delay: 400ms; }
+  .stagger-delay-5 { animation-delay: 500ms; }
+  
+  .stagger-fade-in {
+    opacity: 0;
+    animation: fadeInLift 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fadeInLift {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Custom thin scrollbar for filter sidebar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 43, 0.4);
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 43, 0.6);
   }
 }

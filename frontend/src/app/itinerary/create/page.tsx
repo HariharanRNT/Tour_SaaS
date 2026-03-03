@@ -226,7 +226,7 @@ export default function CreateItineraryPage() {
                                                         <span className="font-semibold">{slot.time_slot}</span>
                                                     </div>
                                                     {slot.activity ? (
-                                                        <div className="bg-gray-50 rounded-lg p-4">
+                                                        <div className="glass-panel p-4">
                                                             <h4 className="font-semibold">{slot.activity.title}</h4>
                                                             <p className="text-sm text-muted-foreground mt-1">
                                                                 {slot.activity.description}

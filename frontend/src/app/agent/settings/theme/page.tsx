@@ -107,7 +107,7 @@ function getIcon(name: string | undefined, fallback: React.ReactNode) {
 // ─── Coming Soon Placeholder ─────────────────────────────────────────────────
 function ComingSoon({ pageName }: { pageName: string }) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/5">
             <div className="h-16 w-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mb-6">
                 <Rocket className="h-8 w-8 text-slate-400" />
             </div>
@@ -123,6 +123,7 @@ export default function ThemeSettingsPage() {
     const { theme, updateTheme, refreshTheme } = useTheme();
     const [localTheme, setLocalTheme] = useState<AgentTheme | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const previewWindowRef = useRef<Window | null>(null);
     const [activePage, setActivePage] = useState("homepage");
     const [activeHomeTab, setActiveHomeTab] = useState("global");
     const [activeItineraryTab, setActiveItineraryTab] = useState("hero");
@@ -280,11 +281,17 @@ export default function ThemeSettingsPage() {
     const handlePreview = () => {
         if (!localTheme) return;
 
-        // Store current unsaved theme in sessionStorage for instant preview
-        sessionStorage.setItem('preview_theme', JSON.stringify(localTheme));
+        // Store current unsaved theme in localStorage for real-time sync
+        localStorage.setItem('preview_theme', JSON.stringify(localTheme));
+        localStorage.setItem('preview_timestamp', Date.now().toString());
 
-        // Open preview tab immediately - no async needed, avoids popup blockers
-        window.open("/?preview=true", "_blank");
+        // Open or focus the preview tab
+        if (!previewWindowRef.current || previewWindowRef.current.closed) {
+            previewWindowRef.current = window.open("/?preview=true", "_blank");
+        } else {
+            // Tab already open — just focus it, storage event will update it in the other tab
+            previewWindowRef.current.focus();
+        }
     };
 
     const handleReset = async () => {
@@ -303,8 +310,10 @@ export default function ThemeSettingsPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Also clear any unsaved preview from sessionStorage
+            // Also clear any unsaved preview from sessionStorage/localStorage
             sessionStorage.removeItem('preview_theme');
+            localStorage.removeItem('preview_theme');
+            localStorage.removeItem('preview_timestamp');
 
             await refreshTheme();
             toast.success("Draft discarded and reset to live");
@@ -391,7 +400,7 @@ export default function ThemeSettingsPage() {
                         </button>
                     )}
                 </div>
-                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-slate-50/50">
+                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-white/5">
                     <Button
                         variant={!value ? "default" : "outline"}
                         size="sm"
@@ -479,7 +488,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Branding Section ── */}
                     <TabsContent value="branding" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Rocket className="h-5 w-5 text-blue-500" /> Agency Branding
                                 </CardTitle>
@@ -540,7 +549,7 @@ export default function ThemeSettingsPage() {
 
                                         <div className="space-y-2">
                                             <Label className="font-bold">Logo Color (Plane Icon)</Label>
-                                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border">
+                                            <div className="flex items-center gap-3 p-4 bg-transparent rounded-2xl border">
                                                 <div
                                                     className="w-10 h-10 rounded-xl shadow-inner border-2 border-white"
                                                     style={{ backgroundColor: localTheme.navbar_logo_color || localTheme.primary_color }}
@@ -576,7 +585,7 @@ export default function ThemeSettingsPage() {
                                         </div>
 
                                         {localTheme.navbar_logo_image && (
-                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 flex items-center justify-center min-h-[100px]">
+                                            <div className="p-4 bg-transparent rounded-2xl border border-dashed border-slate-300 flex items-center justify-center min-h-[100px]">
                                                 <img
                                                     src={localTheme.navbar_logo_image}
                                                     alt="Preview"
@@ -594,7 +603,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Navigation Section ── */}
                     <TabsContent value="nav" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Palette className="h-5 w-5 text-indigo-500" /> Header Style & Behavior
                                 </CardTitle>
@@ -639,7 +648,7 @@ export default function ThemeSettingsPage() {
                                                     onClick={() => handleChange("navbar_style_preset", p.id)}
                                                     className={`p-4 rounded-2xl border-2 transition-all text-left group ${localTheme.navbar_style_preset === p.id
                                                         ? 'border-blue-600 bg-blue-50/30'
-                                                        : 'border-slate-100 bg-slate-50 hover:border-slate-200'
+                                                        : 'border-slate-100 bg-transparent hover:border-slate-200'
                                                         }`}
                                                 >
                                                     <div className={`w-full h-8 rounded-lg mb-2 shadow-inner p-1 ${p.colors}`}>
@@ -654,7 +663,7 @@ export default function ThemeSettingsPage() {
                                 ) : (
                                     <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
                                         <Label className="font-bold text-sm">Background Color Override</Label>
-                                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border">
+                                        <div className="flex items-center gap-3 p-3 bg-transparent rounded-xl border">
                                             <div
                                                 className="w-10 h-10 rounded-lg border shadow-sm"
                                                 style={{ backgroundColor: localTheme.navbar_bg_color || '#ffffff' }}
@@ -685,7 +694,7 @@ export default function ThemeSettingsPage() {
                                 <div className="grid md:grid-cols-2 gap-8">
                                     {/* Link & Border Controls */}
                                     <div className="space-y-6">
-                                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border">
+                                        <div className="flex items-center justify-between p-4 bg-transparent rounded-2xl border">
                                             <div>
                                                 <Label className="font-bold">Sticky Header</Label>
                                                 <p className="text-[10px] text-slate-400">Header stays fixed at top when scrolling</p>
@@ -696,7 +705,7 @@ export default function ThemeSettingsPage() {
                                             />
                                         </div>
 
-                                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border">
+                                        <div className="flex items-center justify-between p-4 bg-transparent rounded-2xl border">
                                             <div>
                                                 <Label className="font-bold">Transparent on Hero</Label>
                                                 <p className="text-[10px] text-slate-400">Makes header see-through over the home banner</p>
@@ -712,7 +721,7 @@ export default function ThemeSettingsPage() {
                                     <div className="space-y-6">
                                         <div className="space-y-3">
                                             <Label className="font-bold">Sign Up Button Style</Label>
-                                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border">
+                                            <div className="flex items-center gap-3 p-4 bg-transparent rounded-2xl border">
                                                 <div
                                                     className="w-12 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
                                                     style={{ backgroundColor: localTheme.navbar_signup_bg_color || localTheme.primary_color }}
@@ -765,7 +774,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Hero Section ── */}
                     <TabsContent value="hero" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <ImageIcon className="h-5 w-5 text-indigo-500" />
                                     Hero Section Configuration
@@ -798,7 +807,7 @@ export default function ThemeSettingsPage() {
                                         <div className="space-y-3 pt-2">
                                             <Label className="font-bold text-sm">Section Visibility</Label>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div className="flex items-center space-x-3 p-3 border rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-center space-x-3 p-3 border rounded-xl bg-white/5 hover:bg-transparent transition-colors">
                                                     <Checkbox
                                                         id="show_feature_cards"
                                                         checked={localTheme.show_feature_cards !== false}
@@ -806,7 +815,7 @@ export default function ThemeSettingsPage() {
                                                     />
                                                     <Label htmlFor="show_feature_cards" className="font-bold text-sm cursor-pointer">Feature Cards</Label>
                                                 </div>
-                                                <div className="flex items-center space-x-3 p-3 border rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-center space-x-3 p-3 border rounded-xl bg-white/5 hover:bg-transparent transition-colors">
                                                     <Checkbox
                                                         id="show_wcu_section"
                                                         checked={localTheme.show_wcu_section !== false}
@@ -819,7 +828,7 @@ export default function ThemeSettingsPage() {
                                     </div>
 
                                     {/* Right: Background */}
-                                    <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300">
+                                    <div className="space-y-6 bg-transparent p-6 rounded-2xl border border-dashed border-slate-300">
                                         <div className="space-y-4">
                                             <Label className="font-bold flex items-center gap-2">
                                                 <Layout className="h-4 w-4" /> Visual Background
@@ -905,7 +914,7 @@ export default function ThemeSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {[0, 1, 2].map((i) => (
                                 <Card key={i} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
-                                    <CardHeader className="bg-slate-50/50 border-b py-4">
+                                    <CardHeader className="bg-white/5 border-b py-4">
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="text-base font-bold">Feature {i + 1}</CardTitle>
                                             <div className="bg-white p-2 rounded-lg border shadow-sm group-hover:scale-110 transition-transform">
@@ -945,7 +954,7 @@ export default function ThemeSettingsPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Brand Colors */}
                             <Card className="border-slate-200 shadow-sm overflow-hidden">
-                                <CardHeader className="bg-slate-50/50 border-b pb-4">
+                                <CardHeader className="bg-white/5 border-b pb-4">
                                     <CardTitle className="text-lg flex items-center gap-2">
                                         <Palette className="h-5 w-5 text-blue-500" /> Brand Colors
                                     </CardTitle>
@@ -963,7 +972,7 @@ export default function ThemeSettingsPage() {
 
                             {/* Layout & Spacing */}
                             <Card className="border-slate-200 shadow-sm overflow-hidden">
-                                <CardHeader className="bg-slate-50/50 border-b pb-4">
+                                <CardHeader className="bg-white/5 border-b pb-4">
                                     <CardTitle className="text-lg flex items-center gap-2">
                                         <Layout className="h-5 w-5 text-purple-500" /> Layout & Spacing
                                     </CardTitle>
@@ -1028,7 +1037,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Why Choose Us ── */}
                     <TabsContent value="wcu" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Layout className="h-5 w-5 text-emerald-500" /> Section Headings
                                 </CardTitle>
@@ -1049,7 +1058,7 @@ export default function ThemeSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {[0, 1, 2, 3].map((i) => (
                                 <Card key={i} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
-                                    <CardHeader className="bg-slate-50/50 border-b py-4">
+                                    <CardHeader className="bg-white/5 border-b py-4">
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="text-base font-bold">Trust Point {i + 1}</CardTitle>
                                             <div className="bg-white p-2 rounded-lg border shadow-sm group-hover:scale-110 transition-transform">
@@ -1110,7 +1119,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Hero & Banner ── */}
                     <TabsContent value="hero" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <ImageIcon className="h-5 w-5 text-indigo-500" /> Plan Trip Hero
                                 </CardTitle>
@@ -1128,7 +1137,7 @@ export default function ThemeSettingsPage() {
                                             <Input value={localTheme.plan_trip_subtitle || ""} onChange={(e) => handleChange("plan_trip_subtitle", e.target.value)} placeholder="AI-powered itinerary in minutes" className="h-10" />
                                         </div>
                                     </div>
-                                    <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-300">
+                                    <div className="space-y-4 bg-transparent p-5 rounded-2xl border border-dashed border-slate-300">
                                         <div className="space-y-2">
                                             <Label className="font-bold">Background Image URL</Label>
                                             <Input value={localTheme.plan_trip_image || ""} onChange={(e) => handleChange("plan_trip_image", e.target.value)} placeholder="https://images.unsplash.com/..." className="h-10 bg-white" />
@@ -1170,7 +1179,7 @@ export default function ThemeSettingsPage() {
                         </div>
 
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Layout className="h-5 w-5 text-sky-500" /> Continue Button
                                 </CardTitle>
@@ -1221,7 +1230,7 @@ export default function ThemeSettingsPage() {
                                     {/* Live Button Preview */}
                                     <div className="space-y-3">
                                         <Label className="font-bold text-slate-500">Live Preview</Label>
-                                        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-6 flex items-center justify-center min-h-[100px]">
+                                        <div className="bg-transparent rounded-2xl border border-dashed border-slate-300 p-6 flex items-center justify-center min-h-[100px]">
                                             <button
                                                 type="button"
                                                 disabled
@@ -1252,7 +1261,7 @@ export default function ThemeSettingsPage() {
                                             <RotateCcw className="h-3 w-3" /> Reset to Brand
                                         </button>
                                     </div>
-                                    <div className="flex flex-wrap gap-3 p-4 bg-slate-50 rounded-2xl border">
+                                    <div className="flex flex-wrap gap-3 p-4 bg-transparent rounded-2xl border">
                                         {[
                                             { label: 'Brand Blue', hex: '#3B82F6' },
                                             { label: 'Ocean Teal', hex: '#0EA5E9' },
@@ -1381,7 +1390,7 @@ export default function ThemeSettingsPage() {
                                             {/* Emoji Picker */}
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-bold text-slate-500 uppercase">Emoji Icon</Label>
-                                                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-xl border">
+                                                <div className="flex flex-wrap gap-2 p-3 bg-transparent rounded-xl border">
                                                     {EMOJI_OPTIONS.map((em) => (
                                                         <button
                                                             key={em}
@@ -1473,7 +1482,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Hero & Banner ── */}
                     <TabsContent value="hero" className="space-y-6">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <ImageIcon className="h-5 w-5 text-indigo-500" /> Hero Section
                                 </CardTitle>
@@ -1481,7 +1490,7 @@ export default function ThemeSettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-6 pt-6">
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-300">
+                                    <div className="space-y-4 bg-transparent p-5 rounded-2xl border border-dashed border-slate-300">
                                         <div className="space-y-2">
                                             <Label className="font-bold">Background Image URL</Label>
                                             <Input
@@ -1540,7 +1549,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Day Timeline ── */}
                     <TabsContent value="timeline" className="space-y-6">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Clock className="h-5 w-5 text-orange-500" /> Journey Timeline
                                 </CardTitle>
@@ -1602,7 +1611,7 @@ export default function ThemeSettingsPage() {
                                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
                                         <ColorInput label="AI Badge Color" id="itin_ai_badge" value={localTheme.itin_ai_badge_color} onChange={(v) => handleChange("itin_ai_badge_color", v)} />
                                         <ColorInput label="Overall Tag Color" id="itin_tag_color" value={localTheme.itin_tag_color} onChange={(v) => handleChange("itin_tag_color", v)} />
-                                        <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-xl border">
+                                        <div className="flex items-center gap-2 p-4 bg-transparent rounded-xl border">
                                             <Checkbox
                                                 id="show_ai_badge"
                                                 checked={localTheme.itin_show_ai_badge ?? true}
@@ -1619,7 +1628,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Overview Cards ── */}
                     <TabsContent value="cards" className="space-y-6">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Layout className="h-5 w-5 text-blue-500" /> Trip Overview Cards
                                 </CardTitle>
@@ -1679,7 +1688,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Sidebar & Pricing ── */}
                     <TabsContent value="sidebar" className="space-y-6">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5 text-emerald-500" /> Sidebar & Pricing
                                 </CardTitle>
@@ -1709,7 +1718,7 @@ export default function ThemeSettingsPage() {
                                             value={localTheme.itin_price_color}
                                             onChange={(v) => handleChange("itin_price_color", v)}
                                         />
-                                        <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-xl border">
+                                        <div className="flex items-center gap-2 p-4 bg-transparent rounded-xl border">
                                             <Checkbox
                                                 id="show_trust_badges"
                                                 checked={localTheme.itin_show_trust_badges ?? true}
@@ -1718,7 +1727,7 @@ export default function ThemeSettingsPage() {
                                             <Label htmlFor="show_trust_badges" className="text-sm font-bold cursor-pointer">Show Trust Badges (SSL/Instant)</Label>
                                         </div>
                                     </div>
-                                    <div className="space-y-6 bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300">
+                                    <div className="space-y-6 bg-transparent p-6 rounded-2xl border border-dashed border-slate-300">
                                         <div className="space-y-2">
                                             <Label className="font-bold">CTA Button Label</Label>
                                             <Input
@@ -1751,7 +1760,7 @@ export default function ThemeSettingsPage() {
                     {/* ── Trust & Confidence ── */}
                     <TabsContent value="trust" className="space-y-6">
                         <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b pb-4">
+                            <CardHeader className="bg-white/5 border-b pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <ShieldCheck className="h-5 w-5 text-blue-500" /> Trust & Confidence Section
                                 </CardTitle>
@@ -1760,7 +1769,7 @@ export default function ThemeSettingsPage() {
                             <CardContent className="space-y-8 pt-6">
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
-                                        <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-xl border">
+                                        <div className="flex items-center gap-2 p-4 bg-transparent rounded-xl border">
                                             <Checkbox
                                                 id="itin_show_trust_section"
                                                 checked={localTheme.itin_show_trust_section ?? true}
@@ -1824,7 +1833,7 @@ export default function ThemeSettingsPage() {
                                             { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "#10B981", bgColor: "#ecfdf5" },
                                             { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "#8B5CF6", bgColor: "#f5f3ff" }
                                         ]).map((card, idx) => (
-                                            <div key={idx} className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <div key={idx} className="p-6 bg-transparent rounded-2xl border border-slate-200">
                                                 <div className="grid md:grid-cols-2 gap-4">
                                                     <div className="space-y-4">
                                                         <div className="space-y-2">
@@ -1908,7 +1917,7 @@ export default function ThemeSettingsPage() {
                     </TabsContent>
                 </Tabs>
             )}
-            Riverside
+            {/* Riverside */}
             {/* ══ MY BOOKINGS ═════════════════════════════════════════════════ */}
             {activePage === "bookings" && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">

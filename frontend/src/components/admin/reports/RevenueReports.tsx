@@ -127,7 +127,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                     { label: 'PENDING', value: pendingTotal, sub: 'Awaiting', icon: Clock, color: '#F59E0B', bg: '#FEF3C7' },
                     { label: 'FAILED', value: failedTotal, sub: 'Transactions', icon: XCircle, color: '#EF4444', bg: '#FEE2E2' }
                 ].map((item, index) => (
-                    <Card key={index} className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
+                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
                                 <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[1.2px]">{item.label}</p>
@@ -150,7 +150,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Monthly Revenue Bar Chart */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Monthly Revenue</CardTitle>
                         <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#64748B] border-[#E2E8F0]">
@@ -190,7 +190,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                 </Card>
 
                 {/* Revenue Growth Line Chart */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader>
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Revenue Growth Trend</CardTitle>
                     </CardHeader>
@@ -242,7 +242,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
             {/* Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Agent-wise Revenue */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="border-b border-[#F1F5F9] pb-4">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Agent-wise Revenue</CardTitle>
                     </CardHeader>
@@ -276,7 +276,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                 </Card>
 
                 {/* Plan-wise Revenue */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="border-b border-[#F1F5F9] pb-4">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Plan-wise Revenue</CardTitle>
                     </CardHeader>

@@ -2,7 +2,8 @@
 
 from typing import List, Optional, Dict, Any
 from datetime import date
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import uuid
 
 from app.models import Booking, BookingCustomization, Package, ItineraryItem
@@ -12,7 +13,7 @@ from app.services.package_service import PackageService
 class BookingService:
     """Service for managing bookings with itinerary customizations"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.package_service = PackageService(db)
     
@@ -26,23 +27,11 @@ class BookingService:
     ) -> Booking:
         """
         Create a booking with optional itinerary customizations
-        
-        Customizations format:
-        [
-            {
-                "day_number": 1,
-                "time_slot": "morning",
-                "activity_title": "Custom Activity",
-                "is_removed": False,
-                "is_custom": True,
-                "original_item_id": "uuid" (if modifying existing)
-            }
-        ]
         """
         # Get package
-        package = self.db.query(Package).filter(
-            Package.id == package_id
-        ).first()
+        stmt = select(Package).where(Package.id == package_id)
+        result = await self.db.execute(stmt)
+        package = result.scalar_one_or_none()
         
         if not package:
             raise ValueError(f"Package {package_id} not found")
@@ -50,7 +39,7 @@ class BookingService:
         # Calculate total amount
         total_amount = package.price_per_person * number_of_travelers
         
-        # Create booking (simplified - actual implementation would be more complex)
+        # Create booking
         booking = Booking(
             package_id=package_id,
             user_id=user_id,
@@ -61,7 +50,7 @@ class BookingService:
         )
         
         self.db.add(booking)
-        self.db.flush()  # Get booking ID
+        await self.db.flush()  # Get booking ID
         
         # Store customizations if provided
         if customizations:
@@ -80,8 +69,8 @@ class BookingService:
                 )
                 self.db.add(customization)
         
-        self.db.commit()
-        self.db.refresh(booking)
+        await self.db.commit()
+        await self.db.refresh(booking)
         
         return booking
     
@@ -91,20 +80,22 @@ class BookingService:
     ) -> Dict[str, Any]:
         """Get booking with all customizations"""
         
-        booking = self.db.query(Booking).filter(
-            Booking.id == booking_id
-        ).first()
+        stmt = select(Booking).where(Booking.id == booking_id)
+        result = await self.db.execute(stmt)
+        booking = result.scalar_one_or_none()
         
         if not booking:
             raise ValueError(f"Booking {booking_id} not found")
         
         # Get customizations
-        customizations = self.db.query(BookingCustomization).filter(
+        stmt = select(BookingCustomization).where(
             BookingCustomization.booking_id == booking_id
         ).order_by(
             BookingCustomization.day_number,
             BookingCustomization.display_order
-        ).all()
+        )
+        result = await self.db.execute(stmt)
+        customizations = result.scalars().all()
         
         # Get original package itinerary
         package_data = await self.package_service.get_package_with_itinerary(

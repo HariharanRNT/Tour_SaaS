@@ -124,7 +124,7 @@ function ResetPasswordForm() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-12 pl-10 pr-10 border-gray-200 bg-gray-50/50 focus:bg-white rounded-xl"
+                        className="glass-input h-12 pl-10 pr-10 border-white/20 bg-none focus:bg-white/20 rounded-xl"
                         required
                     />
                     <button
@@ -168,7 +168,7 @@ function ResetPasswordForm() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         className={cn(
-                            "h-12 pl-10 border-gray-200 bg-gray-50/50 focus:bg-white rounded-xl",
+                            "glass-input h-12 pl-10 border-white/20 bg-none focus:bg-white/20 rounded-xl",
                             confirmPassword && newPassword !== confirmPassword && "border-red-300 bg-red-50/10"
                         )}
                         required
@@ -197,7 +197,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
                 <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-100/30 blur-3xl" />

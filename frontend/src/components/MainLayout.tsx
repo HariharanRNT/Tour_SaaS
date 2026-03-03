@@ -24,7 +24,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <PreviewBanner />
             </Suspense>
 
-            <main className={`flex-1 ${!isDashboardOrAuth ? 'pt-16' : ''}`}>
+            <main className={`flex-1 bg-transparent ${!isDashboardOrAuth ? 'pt-16' : ''}`}>
                 {children}
             </main>
 

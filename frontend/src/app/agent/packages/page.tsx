@@ -306,17 +306,17 @@ export default function AdminPackagesPage() {
         const styles: Record<string, string> = {
             published: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/30',
             draft: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/30',
-            archived: 'bg-slate-50 text-slate-700 border-slate-200 ring-slate-500/30',
+            archived: 'bg-transparent text-slate-700 border-slate-200 ring-slate-500/30',
         }
 
         const dots: Record<string, string> = {
             published: 'bg-emerald-500',
             draft: 'bg-amber-500',
-            archived: 'bg-slate-500',
+            archived: 'bg-transparent0',
         }
 
         return (
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ring-4 ring-opacity-20 ${styles[lowerStatus] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ring-4 ring-opacity-20 ${styles[lowerStatus] || 'bg-transparent text-gray-700 border-gray-200'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${dots[lowerStatus] || 'bg-gray-400'}`}></span>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </div>
@@ -324,9 +324,9 @@ export default function AdminPackagesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen">
             {/* Header */}
-            <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
+            <div className="glass-navbar sticky top-0 z-30 shadow-sm">
                 <div className="container mx-auto px-6 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
@@ -362,7 +362,8 @@ export default function AdminPackagesPage() {
                         <div className="flex items-center gap-3">
                             <Button
                                 onClick={() => router.push('/agent/packages/new')}
-                                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                                className="text-white px-6 transition-all hover:-translate-y-0.5 border-none"
+                                style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', boxShadow: '0 6px 20px rgba(108,71,255,0.40)' }}
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create New Package
@@ -382,8 +383,8 @@ export default function AdminPackagesPage() {
 
             {/* Content */}
             <div className="container mx-auto px-4 py-8">
-                <Card className="border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-                    <CardHeader className="border-b bg-gray-50/50 pb-4">
+                <Card className="glass-panel shadow-xl overflow-hidden rounded-[20px]">
+                    <CardHeader className="border-b border-white/30 pb-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -399,12 +400,12 @@ export default function AdminPackagesPage() {
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* Search */}
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                                     <Input
                                         placeholder="Search packages..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 w-48 sm:w-64 rounded-full border-gray-200 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                        className="glass-input pl-10 w-48 sm:w-64 rounded-full text-gray-800 placeholder-gray-500"
                                     />
                                 </div>
 
@@ -414,13 +415,13 @@ export default function AdminPackagesPage() {
                                         <select
                                             value={statusFilter}
                                             onChange={(e) => setStatusFilter(e.target.value)}
-                                            className="appearance-none pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
+                                            className="glass-input appearance-none pl-4 pr-8 py-2 text-sm rounded-full cursor-pointer text-gray-800"
                                         >
                                             <option value="all">All Status</option>
                                             <option value="draft">Draft</option>
                                             <option value="published">Published</option>
                                         </select>
-                                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
                                     </div>
 
                                     <div className="relative">
@@ -428,9 +429,9 @@ export default function AdminPackagesPage() {
                                             placeholder="Filter destination..."
                                             value={destinationFilter === 'all' ? '' : destinationFilter}
                                             onChange={(e) => setDestinationFilter(e.target.value || 'all')}
-                                            className="pl-4 pr-8 py-2 border border-gray-200 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 hover:border-indigo-300 transition-colors w-40"
+                                            className="glass-input pl-4 pr-8 py-2 text-sm w-40 rounded-full text-gray-800 placeholder-gray-500"
                                         />
-                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
                                     </div>
 
 
@@ -477,8 +478,8 @@ export default function AdminPackagesPage() {
                                 {/* Desktop View */}
                                 <div className="hidden md:block overflow-x-auto">
                                     <Table>
-                                        <TableHeader className="bg-gray-50/80">
-                                            <TableRow className="hover:bg-transparent border-b border-gray-200">
+                                        <TableHeader className="bg-white/30">
+                                            <TableRow className="hover:bg-transparent border-b border-white/30">
                                                 <TableHead className="w-12 pl-6">
                                                     <Checkbox
                                                         checked={packages.length > 0 && selectedPackages.length === packages.length}
@@ -523,10 +524,10 @@ export default function AdminPackagesPage() {
                                                 <TableRow
                                                     key={pkg.id}
                                                     className={`
-                                                        group transition-all duration-200 hover:bg-indigo-50/30 hover:shadow-sm border-b border-gray-100
-                                                        ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}
-                                                        ${selectedPackages.includes(pkg.id) ? 'bg-indigo-50/50' : ''}
+                                                        group transition-all duration-200 hover:shadow-sm hover:border-white/40
+                                                        ${selectedPackages.includes(pkg.id) ? 'bg-[rgba(255,255,255,0.15)]' : 'bg-transparent'} hover:bg-[rgba(255,255,255,0.15)]
                                                     `}
+                                                    style={{ borderBottom: '1px solid rgba(255,255,255,0.30)' }}
                                                 >
                                                     <TableCell className="pl-6">
                                                         <Checkbox
@@ -593,7 +594,7 @@ export default function AdminPackagesPage() {
                                                                         <span className="font-medium">Edit Package</span>
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem
-                                                                        className="rounded-lg focus:bg-gray-50 py-2.5 px-3 cursor-pointer"
+                                                                        className="rounded-lg focus:bg-transparent py-2.5 px-3 cursor-pointer"
                                                                         onClick={() => window.open(`/packages/${pkg.id}`, '_blank')}
                                                                     >
                                                                         <Eye className="mr-2 h-4 w-4 text-gray-500" />
@@ -635,9 +636,9 @@ export default function AdminPackagesPage() {
                                 </div>
 
                                 {/* Mobile View (Cards) */}
-                                <div className="md:hidden grid gap-4 p-4 bg-gray-50/50">
+                                <div className="md:hidden grid gap-4 p-4">
                                     {packages.map((pkg) => (
-                                        <div key={pkg.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-indigo-500 bg-indigo-50/30' : ''}`}>
+                                        <div key={pkg.id} className={`glass-card rounded-2xl p-4 transition-all duration-300 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-violet-500' : ''}`}>
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
                                                     <Checkbox
@@ -702,7 +703,7 @@ export default function AdminPackagesPage() {
                         )}
                         {/* Pagination */}
                         {totalPackages > 0 && (
-                            <div className="py-4 border-t border-gray-100 bg-gray-50/50">
+                            <div className="py-4 border-t border-white/30 bg-transparent">
                                 <Pagination>
                                     <PaginationContent>
                                         <PaginationItem>
@@ -736,8 +737,8 @@ export default function AdminPackagesPage() {
 
                     {/* Floating Bulk Action Bar */}
                     {selectedPackages.length > 0 && (
-                        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 px-6 py-3 rounded-full shadow-2xl border border-gray-200 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
-                            <span className="font-medium text-sm border-r border-gray-200 pr-4">
+                        <div className="glass-panel text-gray-900 rounded-full px-6 py-3 fixed bottom-6 left-1/2 transform -translate-x-1/2 shadow-2xl flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+                            <span className="font-medium text-sm border-r border-white/40 pr-4">
                                 {selectedPackages.length} selected
                             </span>
                             <div className="flex items-center gap-2">

@@ -232,9 +232,9 @@ export default function AgentBookingsPage() {
     )
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-20">
+        <div className="min-h-screen pb-20">
             {/* Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+            <header className="glass-navbar sticky top-0 z-30 shadow-sm mb-6">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/agent/dashboard">
@@ -247,7 +247,7 @@ export default function AgentBookingsPage() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="hidden md:flex bg-white border-slate-200 shadow-sm hover:bg-slate-50 font-bold">
+                                <Button variant="outline" size="sm" className="hidden md:flex bg-white border-slate-200 shadow-sm hover:bg-transparent font-bold">
                                     <FileDown className="h-4 w-4 mr-2" />
                                     Export Bookings
                                 </Button>
@@ -272,20 +272,20 @@ export default function AgentBookingsPage() {
             <div className="container mx-auto px-4 py-8 max-w-5xl">
 
                 {/* Search & Filter Bar */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8 space-y-4">
+                <div className="glass-panel p-6 rounded-2xl shadow-sm mb-8 space-y-4">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="relative flex-1 max-w-xl">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                             <Input
                                 placeholder="Search by booking reference, destination, or traveler names..."
-                                className="pl-12 h-12 bg-slate-50 border-slate-100 focus-visible:ring-indigo-500 rounded-xl text-base"
+                                className="glass-input pl-12 h-12 rounded-xl text-base"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                            <div className="flex items-center gap-2 bg-white/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/50">
                                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">Travel Period:</span>
                                 <div className="flex items-center gap-2">
                                     <div className="flex flex-col">
@@ -332,16 +332,16 @@ export default function AgentBookingsPage() {
 
                 {/* Tabs */}
                 <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto inline-flex">
+                    <TabsList className="bg-white/20 backdrop-blur-md p-1 rounded-full border border-white/30 shadow-sm w-full md:w-auto inline-flex">
                         <TabsTrigger
                             value="upcoming"
-                            className="flex-1 md:flex-none px-6 rounded-lg data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none transition-all"
+                            className="flex-1 md:flex-none px-6 rounded-full data-[state=active]:bg-white/60 data-[state=active]:text-violet-800 data-[state=active]:shadow-sm data-[state=active]:font-bold transition-all"
                         >
                             Upcoming
                         </TabsTrigger>
                         <TabsTrigger
                             value="completed"
-                            className="flex-1 md:flex-none px-6 rounded-lg data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none transition-all"
+                            className="flex-1 md:flex-none px-6 rounded-full data-[state=active]:bg-white/60 data-[state=active]:text-violet-800 data-[state=active]:shadow-sm data-[state=active]:font-bold transition-all"
                         >
                             Completed
                         </TabsTrigger>
@@ -353,10 +353,10 @@ export default function AgentBookingsPage() {
                                 <div className="space-y-12">
                                     {groupedBookings.map(([date, bookingsInGroup]) => (
                                         <div key={date} className="space-y-6">
-                                            <div className="sticky top-[64px] z-20 py-3 bg-[#F8FAFC]/95 backdrop-blur-md">
+                                            <div className="sticky top-[64px] z-20 py-3 backdrop-blur-sm">
                                                 <div className="flex items-center gap-4">
                                                     <div className="h-px flex-1 bg-slate-200" />
-                                                    <div className="bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-2">
+                                                    <div className="bg-white/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/60 shadow-sm flex items-center gap-2">
                                                         <Calendar className="h-4 w-4 text-indigo-600" />
                                                         <span className="text-sm font-bold text-slate-800">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
@@ -426,7 +426,7 @@ export default function AgentBookingsPage() {
         const travelerName = primaryTraveler ? `${primaryTraveler.first_name} ${primaryTraveler.last_name}` : 'Guest';
 
         return (
-            <Card className="overflow-hidden border-slate-200 hover:border-indigo-200 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 group bg-white rounded-2xl ring-1 ring-slate-900/5">
+            <Card className="glass-panel overflow-hidden border-white/50 hover:border-violet-200/50 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-purple-500/5 group rounded-2xl ring-1 ring-white/50">
                 <div className="flex flex-col md:flex-row min-h-[160px]">
                     {/* Left: Enhanced Thumbnail */}
                     <div className="w-full md:w-56 bg-slate-100 relative shrink-0 overflow-hidden">
@@ -539,7 +539,7 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <Button
                                     size="sm"
-                                    className="hidden sm:flex h-11 px-6 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-lg shadow-slate-200 transition-all gap-2"
+                                    className="hidden sm:flex h-11 px-6 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold rounded-full shadow-lg shadow-purple-400/30 transition-all gap-2"
                                     onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }}
                                 >
                                     Details <ChevronRight className="h-4 w-4" />
@@ -559,7 +559,7 @@ export default function AgentBookingsPage() {
 
         return (
             <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0 border-none shadow-2xl rounded-3xl bg-slate-50">
+                <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0 border-none shadow-2xl rounded-3xl bg-transparent">
                     {/* Header Section: Reduced height, more purposeful actions */}
                     <div className="bg-indigo-600 px-6 py-4 sm:px-8 sm:py-6 text-white relative shrink-0">
                         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -599,7 +599,7 @@ export default function AgentBookingsPage() {
                                 <Button variant="ghost" size="icon" className="h-9 w-9 text-indigo-100 hover:bg-white/10 hover:text-white rounded-xl">
                                     <Share2 className="h-4 w-4" />
                                 </Button>
-                                <Button className="bg-white hover:bg-slate-50 text-indigo-600 font-black text-xs h-9 px-4 rounded-xl shadow-lg shadow-indigo-900/20 gap-2">
+                                <Button className="bg-white hover:bg-transparent text-indigo-600 font-black text-xs h-9 px-4 rounded-xl shadow-lg shadow-indigo-900/20 gap-2">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Download Voucher
                                 </Button>
@@ -621,7 +621,7 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-slate-900">Booking Contact</h3>
                                     </div>
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-slate-100">
                                             <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
                                                 <AvatarFallback className="bg-indigo-600 text-white font-bold text-xs">
                                                     {booking.user?.first_name?.[0]}
@@ -633,14 +633,14 @@ export default function AgentBookingsPage() {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <a href={`mailto:${booking.user?.email}`} className="flex flex-col p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all group overflow-hidden">
+                                            <a href={`mailto:${booking.user?.email}`} className="flex flex-col p-4 bg-white/5 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all group overflow-hidden">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-indigo-600">Email Address</p>
                                                 <div className="flex items-center gap-2 font-bold text-slate-900 truncate">
                                                     <Mail className="h-3 w-3 text-slate-400 shrink-0 group-hover:text-indigo-500" />
                                                     <span className="truncate text-sm">{booking.user?.email}</span>
                                                 </div>
                                             </a>
-                                            <a href={`tel:${booking.user?.phone}`} className="flex flex-col p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all group">
+                                            <a href={`tel:${booking.user?.phone}`} className="flex flex-col p-4 bg-white/5 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all group">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-emerald-600">Phone Number</p>
                                                 <div className="flex items-center gap-2 font-bold text-slate-900">
                                                     <Phone className="h-3 w-3 text-slate-400 shrink-0 group-hover:text-emerald-500" />
@@ -660,21 +660,21 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-slate-900">Tour Logistics</h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-slate-100">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Meeting Point</p>
                                             <p className="font-bold text-slate-900 text-sm mt-2">{booking.package?.destination || 'Primary Hub'}</p>
                                         </div>
-                                        <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-slate-100">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Check-in Time</p>
                                             <p className="font-bold text-slate-900 text-sm mt-2">09:00 AM</p>
                                         </div>
-                                        <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-slate-100">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Tour Category</p>
                                             <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 font-bold uppercase py-0.5 mt-1.5 text-[9px]">
                                                 {booking.package?.category || 'Standard'}
                                             </Badge>
                                         </div>
-                                        <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-slate-100">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Duration Info</p>
                                             <p className="font-bold text-slate-900 text-sm mt-2">{booking.package?.duration_days}D / {booking.package?.duration_nights || (booking.package?.duration_days ?? 0) - 1}N</p>
                                         </div>
@@ -697,7 +697,7 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {booking.travelers?.map((traveler, index) => (
-                                        <div key={traveler.id} className="group bg-slate-50/50 rounded-2xl p-5 border border-slate-100 hover:border-indigo-200 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                                        <div key={traveler.id} className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-indigo-200 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
                                             <div className="flex items-start gap-4">
                                                 <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-400 shrink-0 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                                     {String(index + 1).padStart(2, '0')}
@@ -758,14 +758,14 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-slate-900">Cancellation Policy</h3>
                                     </div>
                                     <ul className="space-y-3">
-                                        <li className="flex items-start gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                        <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
                                             <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                             <div>
                                                 <p className="text-xs font-black text-slate-900 mb-0.5 uppercase tracking-tighter">Full Refund</p>
                                                 <p className="text-[11px] font-bold text-slate-500 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
                                             </div>
                                         </li>
-                                        <li className="flex items-start gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                        <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
                                             <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                             <div>
                                                 <p className="text-xs font-black text-slate-900 mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
@@ -794,7 +794,7 @@ export default function AgentBookingsPage() {
                                                         return (
                                                             <div className="space-y-8">
                                                                 {parsed.contact_info && (
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-transparent p-6 rounded-3xl border border-slate-100 shadow-inner">
                                                                         <div className="col-span-full mb-2">
                                                                             <p className="text-[10px] uppercase font-black text-indigo-600 tracking-widest flex items-center gap-2">
                                                                                 <MapPin className="h-3 w-3" /> Address & Location Data
@@ -852,7 +852,7 @@ export default function AgentBookingsPage() {
                                                             </div>
                                                         );
                                                     } catch (e) {
-                                                        return <p className="italic bg-slate-50 p-6 rounded-3xl border border-slate-100">"{booking.special_requests}"</p>;
+                                                        return <p className="italic bg-transparent p-6 rounded-3xl border border-slate-100">"{booking.special_requests}"</p>;
                                                     }
                                                 })()}
                                             </div>
@@ -936,7 +936,7 @@ export default function AgentBookingsPage() {
                             <Button
                                 variant="outline"
                                 onClick={onClose}
-                                className="w-full sm:w-auto px-10 h-12 font-black border-slate-200 text-slate-500 rounded-2xl hover:bg-slate-50 hover:text-slate-900 transition-all uppercase text-[11px] tracking-widest"
+                                className="w-full sm:w-auto px-10 h-12 font-black border-slate-200 text-slate-500 rounded-2xl hover:bg-transparent hover:text-slate-900 transition-all uppercase text-[11px] tracking-widest"
                             >
                                 Close View
                             </Button>
@@ -945,7 +945,7 @@ export default function AgentBookingsPage() {
                                 <Button variant="ghost" className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest">
                                     <Trash2 className="h-4 w-4 mr-2" /> Cancel Booking
                                 </Button>
-                                <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-slate-50 rounded-2xl text-[11px] uppercase tracking-widest">
+                                <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
                                     <Edit className="h-4 w-4 mr-2" /> Modify Trip
                                 </Button>
                                 <Button className="h-12 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 transition-all text-[11px] uppercase tracking-widest gap-2">

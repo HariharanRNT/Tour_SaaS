@@ -18,9 +18,12 @@ class SubscriptionService:
         stmt = select(Subscription).where(
             Subscription.user_id == user_id,
             Subscription.status == 'active'
+        ).order_by(
+            desc(Subscription.end_date), 
+            desc(Subscription.created_at)
         ).options(selectinload(Subscription.plan))
         result = await db.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     @staticmethod
     async def get_upcoming_subscriptions(user_id: UUID, db: AsyncSession) -> list[Subscription]:
@@ -44,24 +47,43 @@ class SubscriptionService:
         4. If upcoming found -> Activate it.
         5. Return the potentially NEW active sub.
         """
-        current_sub = await SubscriptionService.get_active_subscription(user_id, db)
+        # Fetch ALL currently active subscriptions to clean up overlapping/expired ones
+        stmt = select(Subscription).where(
+            Subscription.user_id == user_id,
+            Subscription.status == 'active'
+        ).options(selectinload(Subscription.plan)).order_by(desc(Subscription.end_date))
         
-        if current_sub:
+        result = await db.execute(stmt)
+        active_subs = result.scalars().all()
+        
+        best_active = None
+        
+        for sub in active_subs:
             # Check validity
-            is_expired_date = current_sub.end_date < date.today()
+            is_expired_date = sub.end_date < date.today()
             
             # Check limit (if not unlimited)
             is_limit_reached = False
-            if current_sub.plan.booking_limit != -1:
-                is_limit_reached = current_sub.current_bookings_usage >= current_sub.plan.booking_limit
+            if sub.plan.booking_limit != -1:
+                is_limit_reached = sub.current_bookings_usage >= sub.plan.booking_limit
             
             if is_expired_date or is_limit_reached:
-                print(f"[SubscriptionService] Expiring active sub {current_sub.id}. Reason: Date={is_expired_date}, Limit={is_limit_reached}")
-                current_sub.status = 'completed'
-                await db.commit() # Commit closure of old plan
-                current_sub = None # No longer active
+                print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Date={is_expired_date}, Limit={is_limit_reached}")
+                sub.status = 'completed'
+            elif best_active is None:
+                # This is the "best" valid active sub (latest end_date due to our sort)
+                best_active = sub
             else:
-                return current_sub # Still valid
+                # We already have a "best" active sub, but this one is also valid and active.
+                # This shouldn't happen normally, but we keep it active or queue it?
+                # For now, if it's valid and active, we leave it, but best_active is what we return.
+                pass
+
+        if len(active_subs) > 0:
+            await db.commit()
+
+        if best_active:
+            return best_active
 
         # If we are here, we have NO active subscription (or we just finished one)
         # Try to activate queued plan

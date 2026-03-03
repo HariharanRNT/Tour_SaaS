@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -72,6 +72,7 @@ interface Agent {
     last_name: string
     phone?: string
     is_active: boolean
+    approval_status: 'pending' | 'approved' | 'rejected'
     created_at: string
 }
 
@@ -80,7 +81,7 @@ export default function AdminAgentsPage() {
     const [agents, setAgents] = useState<Agent[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all')
     const [showPassword, setShowPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
 
@@ -166,56 +167,16 @@ export default function AdminAgentsPage() {
     // Validation states
     const [emailValid, setEmailValid] = useState<boolean | null>(null)
 
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        const userStr = localStorage.getItem('user')
-
-        if (!token || !userStr) {
-            router.push('/admin/login')
-            return
-        }
-
-        try {
-            const user = JSON.parse(userStr)
-            if (user.role !== 'admin') {
-                router.push('/login')
-                return
-            }
-        } catch (e) {
-            router.push('/admin/login')
-            return
-        }
-
-        loadAgents()
-    }, [router])
-
-    // Password strength calculator
-    useEffect(() => {
-        const password = newAgent.password
-        let strength = 0
-        if (password.length >= 8) strength++
-        if (password.length >= 12) strength++
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
-        if (/\d/.test(password)) strength++
-        if (/[^a-zA-Z0-9]/.test(password)) strength++
-        setPasswordStrength(strength)
-    }, [newAgent.password])
-
-    // Email validation
-    useEffect(() => {
-        if (newAgent.email.length === 0) {
-            setEmailValid(null)
-            return
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        setEmailValid(emailRegex.test(newAgent.email))
-    }, [newAgent.email])
-
-    const loadAgents = async () => {
+    const loadAgents = useCallback(async (status: string = statusFilter) => {
         setLoading(true)
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch('http://localhost:8000/api/v1/admin/agents', {
+            const url = new URL('http://localhost:8000/api/v1/admin/agents')
+            if (status !== 'all') {
+                url.searchParams.append('status', status)
+            }
+
+            const response = await fetch(url.toString(), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -249,6 +210,91 @@ export default function AdminAgentsPage() {
             console.error('Failed to load agents:', error)
         } finally {
             setLoading(false)
+        }
+    }, [statusFilter, setLoading, setAgents, setStats, router])
+
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        const userStr = localStorage.getItem('user')
+
+        if (!token || !userStr) {
+            router.push('/admin/login')
+            return
+        }
+
+        try {
+            const user = JSON.parse(userStr)
+            if (user.role !== 'admin') {
+                router.push('/login')
+                return
+            }
+        } catch (e) {
+            router.push('/admin/login')
+            return
+        }
+
+        loadAgents()
+    }, [router, loadAgents])
+
+    // Password strength calculator
+    useEffect(() => {
+        const password = newAgent.password
+        let strength = 0
+        if (password.length >= 8) strength++
+        if (password.length >= 12) strength++
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
+        if (/\d/.test(password)) strength++
+        if (/[^a-zA-Z0-9]/.test(password)) strength++
+        setPasswordStrength(strength)
+    }, [newAgent.password])
+
+    // Email validation
+    useEffect(() => {
+        if (newAgent.email.length === 0) {
+            setEmailValid(null)
+            return
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        setEmailValid(emailRegex.test(newAgent.email))
+    }, [newAgent.email])
+
+    const handleApprove = async (id: string) => {
+        try {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${id}/approve`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (!response.ok) throw new Error('Failed to approve agent')
+
+            toast.success('Agent approved successfully')
+            loadAgents()
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const handleReject = async (id: string, reason: string = "") => {
+        try {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${id}/reject`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason })
+            })
+
+            if (!response.ok) throw new Error('Failed to reject agent')
+
+            toast.success('Agent rejected')
+            loadAgents()
+        } catch (error: any) {
+            toast.error(error.message)
         }
     }
 
@@ -805,7 +851,7 @@ export default function AdminAgentsPage() {
                                         </AccordionItem>
 
                                         {/* Personal Details */}
-                                        <AccordionItem value="personal" className="border rounded-lg px-6 bg-blue-50/50 border-blue-100">
+                                        <AccordionItem value="personal" className="border rounded-lg px-6 glass-card border-blue-100">
                                             <AccordionTrigger className="hover:no-underline py-4">
                                                 <h3 className="font-semibold text-lg flex items-center gap-2">
                                                     <Shield className="h-5 w-5 text-blue-600" />
@@ -1133,9 +1179,9 @@ export default function AdminAgentsPage() {
                 )}
 
                 {/* Main Table Card */}
-                <Card className="border-0 shadow-2xl shadow-indigo-100/50 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl">
+                <Card className="border-0 shadow-2xl shadow-indigo-100/50 overflow-hidden rounded-3xl glass-panel">
 
-                    <CardHeader className="bg-white border-b border-slate-100 py-8 px-8">
+                    <CardHeader className="glass-navbar border-b border-slate-100 py-8 px-8 sticky top-0 z-10 shadow-sm">
                         <div className="flex flex-col gap-6">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -1147,7 +1193,7 @@ export default function AdminAgentsPage() {
                                     <div className="h-[1px] bg-[#F1F5F9] mt-4" />
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Button variant="outline" size="lg" className="rounded-2xl border-slate-200 font-bold h-12 px-6 hover:bg-slate-50">
+                                    <Button variant="outline" size="lg" className="rounded-2xl border-slate-200 font-bold h-12 px-6 hover:bg-transparent">
                                         <Download className="h-5 w-5 mr-3 text-slate-400" />
                                         Export List
                                     </Button>
@@ -1185,7 +1231,8 @@ export default function AdminAgentsPage() {
                                     <SelectContent className="rounded-[10px] border-[#F1F5F9] shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
                                         <SelectItem value="all">All Agents</SelectItem>
                                         <SelectItem value="active">Active Members</SelectItem>
-                                        <SelectItem value="inactive">Inactive/Pending</SelectItem>
+                                        <SelectItem value="inactive">Inactive Members</SelectItem>
+                                        <SelectItem value="pending">Pending Approval</SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -1352,11 +1399,16 @@ export default function AdminAgentsPage() {
                                                     </TableCell>
                                                     <TableCell className="py-6">
                                                         <Badge
-                                                            variant={agent.is_active ? 'default' : 'secondary'}
-                                                            className={`font-bold text-[11px] py-1 px-3 rounded-[20px] border-0 w-fit ${agent.is_active ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-slate-100 text-slate-500'}`}
+                                                            variant={agent.approval_status === 'pending' ? 'outline' : agent.is_active ? 'default' : 'secondary'}
+                                                            className={`font-bold text-[11px] py-1 px-3 rounded-[20px] border-0 w-fit ${agent.approval_status === 'pending'
+                                                                ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                                                : agent.is_active
+                                                                    ? 'bg-[#DCFCE7] text-[#16A34A]'
+                                                                    : 'bg-slate-100 text-slate-500'
+                                                                }`}
                                                         >
-                                                            {agent.is_active && <span className="mr-1.5 h-[6px] w-[6px] rounded-full inline-block bg-[#16A34A]"></span>}
-                                                            {agent.is_active ? 'Active' : 'Inactive'}
+                                                            {agent.is_active && agent.approval_status !== 'pending' && <span className="mr-1.5 h-[6px] w-[6px] rounded-full inline-block bg-[#16A34A]"></span>}
+                                                            {agent.approval_status === 'pending' ? 'Pending Approval' : agent.is_active ? 'Active' : 'Inactive'}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell className="py-6">
@@ -1373,24 +1425,67 @@ export default function AdminAgentsPage() {
                                                     </TableCell>
                                                     <TableCell className="text-right px-8 py-6">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-10 w-10 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                                                                onClick={() => toggleStatus(agent)}
-                                                            >
-                                                                {agent.is_active ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
-                                                            </Button>
+                                                            {agent.approval_status === 'pending' ? (
+                                                                <div className="flex gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-9 w-9 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                                                        title="Approve"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleApprove(agent.id);
+                                                                        }}
+                                                                    >
+                                                                        <Check className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-9 w-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                                                        title="Reject"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleReject(agent.id);
+                                                                        }}
+                                                                    >
+                                                                        <X className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            ) : (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-10 w-10 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleStatus(agent);
+                                                                    }}
+                                                                >
+                                                                    {agent.is_active ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                                                                </Button>
+                                                            )}
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="sm" className="h-10 w-10 rounded-xl hover:bg-slate-50">
+                                                                    <Button variant="ghost" size="sm" className="h-10 w-10 rounded-xl hover:bg-transparent">
                                                                         <MoreVertical className="h-5 w-5" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-[220px] rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border-[#F1F5F9] p-2">
                                                                     <DropdownMenuLabel className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
-                                                                    <DropdownMenuItem onClick={() => toggleStatus(agent)} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
-                                                                        {agent.is_active ? (
+                                                                    <DropdownMenuItem onClick={() => {
+                                                                        if (agent.approval_status === 'pending') {
+                                                                            handleApprove(agent.id);
+                                                                        } else {
+                                                                            toggleStatus(agent);
+                                                                        }
+                                                                    }} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        {agent.approval_status === 'pending' ? (
+                                                                            <>
+                                                                                <Check className="mr-2.5 h-[16px] w-[16px] text-green-600" />
+                                                                                <span>Approve Registration</span>
+                                                                            </>
+                                                                        ) : agent.is_active ? (
                                                                             <>
                                                                                 <UserX className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
                                                                                 <span>Deactivate Agent</span>
@@ -1402,6 +1497,12 @@ export default function AdminAgentsPage() {
                                                                             </>
                                                                         )}
                                                                     </DropdownMenuItem>
+                                                                    {agent.approval_status === 'pending' && (
+                                                                        <DropdownMenuItem onClick={() => handleReject(agent.id)} className="px-[14px] py-[10px] font-medium text-[14px] text-red-600 rounded-[8px] hover:bg-red-50 hover:text-red-700 transition-all duration-150 cursor-pointer">
+                                                                            <X className="mr-2.5 h-[16px] w-[16px]" />
+                                                                            <span>Reject Registration</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
                                                                     <DropdownMenuItem onClick={() => handleEditClick(agent)} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
                                                                         <Check className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
                                                                         <span>Edit Agent Details</span>
@@ -1652,7 +1753,7 @@ export default function AdminAgentsPage() {
                                             <Input
                                                 disabled
                                                 value={editingAgent?.email || ''}
-                                                className="h-11 bg-gray-50"
+                                                className="h-11 bg-transparent"
                                             />
                                         </div>
                                     </div>

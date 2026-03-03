@@ -1,13 +1,14 @@
 """API endpoints for template management (Admin)"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 from uuid import UUID
 
 from app.database import get_db
-from app.core.security import get_current_user
-from app.models import User, UserRole
+from app.api.deps import get_current_user
+from app.models import User, UserRole, Package
 from app.services.template_service import TemplateService
 from app.schemas.templates import (
     TemplateCreate, TemplateResponse, TemplateDetailResponse,
@@ -18,7 +19,7 @@ from app.schemas.templates import (
 router = APIRouter(prefix="/admin/templates", tags=["Admin - Templates"])
 
 
-def require_admin(current_user: User = Depends(get_current_user)):
+async def require_admin(current_user: User = Depends(get_current_user)):
     """Dependency to ensure user is admin"""
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
@@ -31,7 +32,7 @@ def require_admin(current_user: User = Depends(get_current_user)):
 @router.post("", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
     template_data: TemplateCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Create a new package template"""
@@ -55,7 +56,7 @@ async def create_template(
 
 @router.get("", response_model=List[TemplateResponse])
 async def list_templates(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Get all templates"""
@@ -67,16 +68,18 @@ async def list_templates(
 @router.get("/{template_id}", response_model=TemplateDetailResponse)
 async def get_template(
     template_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Get template details with all activities"""
     service = TemplateService(db)
     
-    template = db.query(Package).filter(
+    stmt = select(Package).where(
         Package.id == template_id,
         Package.is_template == True
-    ).first()
+    )
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
     
     if not template:
         raise HTTPException(
@@ -97,7 +100,7 @@ async def get_template(
 async def add_activity_to_template(
     template_id: UUID,
     activity_data: TemplateActivityCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Add an activity to a template day"""
@@ -125,7 +128,7 @@ async def add_activity_to_template(
 async def update_template_activity(
     activity_id: UUID,
     activity_data: TemplateActivityUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Update a template activity"""
@@ -146,7 +149,7 @@ async def update_template_activity(
 @router.delete("/activities/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template_activity(
     activity_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
     """Delete a template activity"""

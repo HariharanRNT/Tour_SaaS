@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
                 }} />
             </div>
 
-            <Card className={`w-full max-w-md shadow-2xl border border-gray-100 rounded-2xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700 ${formShake ? 'animate-shake' : ''}`}>
+            <Card className={`glass-panel w-full max-w-md shadow-2xl border border-gray-100 rounded-2xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700 ${formShake ? 'animate-shake' : ''}`}>
                 <CardHeader className="space-y-3 pb-6">
                     <div className="flex items-center justify-center mb-2">
                         <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-full shadow-lg animate-pulse-slow">
@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 onFocus={() => setEmailFocused(true)}
                                 onBlur={() => setEmailFocused(false)}
-                                className={`pl-10 pr-10 h-14 bg-gray-50 border-2 rounded-lg transition-all duration-200 ${emailFocused ? 'border-blue-500 shadow-md' : 'border-gray-200'
+                                className={`pl-10 pr-10 h-14 bg-transparent border-2 rounded-lg transition-all duration-200 ${emailFocused ? 'border-blue-500 shadow-md' : 'border-gray-200'
                                     } ${emailValid === false ? 'border-red-500' : ''} ${emailValid === true ? 'border-green-500' : ''}`}
                                 placeholder="Email address"
                                 required
@@ -151,8 +151,8 @@ export default function AdminLoginPage() {
                             <label
                                 htmlFor="email"
                                 className={`absolute left-10 transition-all duration-200 pointer-events-none ${emailFocused || email
-                                        ? '-top-2.5 text-xs bg-white px-1 text-blue-600 font-medium'
-                                        : 'top-1/2 -translate-y-1/2 text-gray-500'
+                                    ? '-top-2.5 text-xs bg-white px-1 text-blue-600 font-medium'
+                                    : 'top-1/2 -translate-y-1/2 text-gray-500'
                                     }`}
                             >
                                 {emailFocused || email ? 'Email' : ''}
@@ -169,7 +169,7 @@ export default function AdminLoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 onFocus={() => setPasswordFocused(true)}
                                 onBlur={() => setPasswordFocused(false)}
-                                className={`pl-10 pr-10 h-14 bg-gray-50 border-2 rounded-lg transition-all duration-200 ${passwordFocused ? 'border-blue-500 shadow-md' : 'border-gray-200'
+                                className={`pl-10 pr-10 h-14 bg-transparent border-2 rounded-lg transition-all duration-200 ${passwordFocused ? 'border-blue-500 shadow-md' : 'border-gray-200'
                                     }`}
                                 placeholder="Password"
                                 required
@@ -185,8 +185,8 @@ export default function AdminLoginPage() {
                             <label
                                 htmlFor="password"
                                 className={`absolute left-10 transition-all duration-200 pointer-events-none ${passwordFocused || password
-                                        ? '-top-2.5 text-xs bg-white px-1 text-blue-600 font-medium'
-                                        : 'top-1/2 -translate-y-1/2 text-gray-500'
+                                    ? '-top-2.5 text-xs bg-white px-1 text-blue-600 font-medium'
+                                    : 'top-1/2 -translate-y-1/2 text-gray-500'
                                     }`}
                             >
                                 {passwordFocused || password ? 'Password' : ''}
@@ -209,7 +209,7 @@ export default function AdminLoginPage() {
                         </Button>
 
                         {/* Enhanced Demo Credentials Card */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 space-y-3 mt-6">
+                        <div className="glass-card border border-blue-200 rounded-xl p-4 space-y-3 mt-6">
                             <div className="flex items-center gap-2 text-blue-700 font-semibold">
                                 <Lightbulb className="h-5 w-5" />
                                 <span>Demo Credentials</span>
@@ -217,7 +217,7 @@ export default function AdminLoginPage() {
                             <div className="h-px bg-blue-200" />
 
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-blue-100">
+                                <div className="flex items-center justify-between glass-input rounded-lg p-3 border border-blue-100">
                                     <div className="flex items-center gap-2 flex-1">
                                         <Mail className="h-4 w-4 text-blue-600" />
                                         <span className="text-sm font-mono text-gray-700">admin@globaltours.com</span>
@@ -232,7 +232,7 @@ export default function AdminLoginPage() {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-blue-100">
+                                <div className="flex items-center justify-between glass-input rounded-lg p-3 border border-blue-100">
                                     <div className="flex items-center gap-2 flex-1">
                                         <Key className="h-4 w-4 text-blue-600" />
                                         <span className="text-sm font-mono text-gray-700">adminpassword123</span>

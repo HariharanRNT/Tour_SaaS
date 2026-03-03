@@ -93,6 +93,7 @@ import {
 
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
+import AIAssistantCard from '@/components/agent/AIAssistantCard'
 
 // Custom Rupee Icon Component
 const RupeeIcon = ({ className }: { className?: string }) => (
@@ -229,6 +230,7 @@ export default function AgentDashboard() {
     const router = useRouter()
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     const [agentName, setAgentName] = useState('')
+    const [agentLastName, setAgentLastName] = useState('')
     const [dateFilter, setDateFilter] = useState('ALL')
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
@@ -276,9 +278,6 @@ export default function AgentDashboard() {
         handleRestrictedAction(() => router.push('/agent/packages/new'))
     }
 
-    const handleCustomerProfileClick = () => {
-        handleRestrictedAction(() => router.push('/agent/customers'))
-    }
 
     const handleAIItineraryClick = () => {
         handleRestrictedAction(() => {
@@ -288,11 +287,14 @@ export default function AgentDashboard() {
     }
 
     // AI Chat functions
-    const sendMessage = async () => {
-        if (!chatMessage.trim() || isLoading) return
+    const sendMessage = async (manualMessage?: string) => {
+        const messageToSend = manualMessage || chatMessage
+        if (!messageToSend.trim() || isLoading) return
 
-        const userMessage = chatMessage.trim()
-        setChatMessage("")
+        const userMessage = messageToSend.trim()
+        if (!manualMessage) {
+            setChatMessage("")
+        }
 
         // Add user message to chat
         setChatHistory(prev => [...prev, { role: 'user', content: userMessage }])
@@ -322,7 +324,7 @@ export default function AgentDashboard() {
                     // Don't add JSON responses to chat history, show a friendly message instead
                     setChatHistory(prev => [...prev, {
                         role: 'assistant',
-                        content: "I've prepared a package based on your requirements! Click the 'Generate Complete Package' button below to see the full details and create it."
+                        content: "I've prepared a package based on your requirements! Link: http://rnt.local:8000/api/v1/ai-assistant/itinerary/" + data.conversation_id
                     }])
                 } else {
                     // Normal text response
@@ -477,6 +479,7 @@ export default function AgentDashboard() {
                 return
             }
             setAgentName(user.first_name || 'Agent')
+            setAgentLastName(user.last_name || '')
         } catch (e) {
             router.push('/login')
             return
@@ -560,10 +563,13 @@ export default function AgentDashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading dashboard...</p>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center bg-white/50 backdrop-blur-xl rounded-3xl p-10 shadow-xl border border-white/60">
+                    <div className="relative w-14 h-14 mx-auto mb-5">
+                        <div className="absolute inset-0 rounded-full bg-violet-200 blur-lg animate-pulse" />
+                        <div className="animate-spin rounded-full h-14 w-14 border-2 border-transparent border-t-violet-600 border-r-purple-500 relative" />
+                    </div>
+                    <p className="text-slate-600 font-semibold text-sm tracking-wide">Loading dashboard…</p>
                 </div>
             </div>
         )
@@ -622,7 +628,7 @@ export default function AgentDashboard() {
 
     return (
         <div
-            className="min-h-screen bg-[#F8FAFC] relative overflow-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900"
+            className="min-h-screen relative overflow-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -683,7 +689,15 @@ export default function AgentDashboard() {
 
             <div className="relative z-10">
                 {/* Navbar (Agent Specific) */}
-                <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/50 shadow-sm supports-[backdrop-filter]:bg-white/60">
+                <header
+                    className="sticky top-0 z-40 shadow-sm"
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.12)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.20)',
+                    }}
+                >
                     <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                         <div className="flex items-center gap-3 group">
                             <div className="relative">
@@ -697,13 +711,7 @@ export default function AgentDashboard() {
                             </h1>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button
-                                onClick={handleAIItineraryClick}
-                                className="hidden md:flex bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 shadow-sm rounded-full px-5 transition-all duration-300 gap-2 font-semibold"
-                            >
-                                <Sparkles className="h-4 w-4" />
-                                AI Assistant
-                            </Button>
+                            {/* AI Assistant is now a floating card at bottom-right */}
                         </div>
                     </div>
                 </header>
@@ -711,17 +719,22 @@ export default function AgentDashboard() {
                 {/* Dashboard Content */}
                 <div className="container mx-auto px-6 py-8 space-y-10">
                     {/* Welcome Section */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    {/* Welcome Glass Card */}
+                    <div
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-7 py-6 rounded-2xl border border-white/45"
+                        style={{
+                            background: 'rgba(255,255,255,0.15)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                        }}
+                    >
                         <div className="flex items-center gap-5">
                             <div className="relative group">
                                 <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full group-hover:bg-indigo-500/30 transition-all duration-300"></div>
                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-50 animate-pulse"></div>
-                                <Avatar className="h-16 w-16 border-2 border-white shadow-lg relative ring-4 ring-indigo-50/50 group-hover:scale-105 transition-transform duration-300">
-                                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${agentName}`} alt={agentName} />
-                                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xl">
-                                        {agentName.charAt(0)}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <div className="h-16 w-16 rounded-full border-2 border-white shadow-lg relative ring-4 ring-indigo-50/50 group-hover:scale-105 transition-transform duration-300 bg-[#6c47ff] flex items-center justify-center text-white font-bold text-xl">
+                                    {(agentName[0] || '').toUpperCase()}{(agentLastName[0] || '').toUpperCase()}
+                                </div>
                                 <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-400 border-[3px] border-white rounded-full shadow-md animate-bounce" title="Online" />
                             </div>
 
@@ -737,7 +750,7 @@ export default function AgentDashboard() {
                                     <div className="hidden sm:flex items-center gap-2">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
                                             ? "bg-orange-50 text-[#F59E0B] border-orange-100"
-                                            : "bg-slate-50 text-slate-500 border-slate-100"
+                                            : "bg-transparent text-slate-500 border-slate-100"
                                             }`}>
                                             {stats.todayBookings > 0 && (
                                                 <span className="relative flex h-2 w-2">
@@ -758,7 +771,7 @@ export default function AgentDashboard() {
                         <div className="flex items-center gap-3">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button className="bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.05] transition-all duration-300 rounded-full px-6">
+                                    <Button className="bg-gradient-to-r from-violet-600 to-purple-700 text-white border-0 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Create New
                                         <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
@@ -776,6 +789,15 @@ export default function AgentDashboard() {
                                         Tour Package
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
+                                        onClick={() => router.push('/agent/activities')}
+                                        className="focus:bg-amber-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                    >
+                                        <div className="bg-amber-100 p-1.5 rounded-md mr-3 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                            <MapPin className="h-4 w-4" />
+                                        </div>
+                                        Activity Master
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
                                         onClick={handleAIItineraryClick}
                                         className="focus:bg-pink-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
                                     >
@@ -783,16 +805,6 @@ export default function AgentDashboard() {
                                             <Sparkles className="h-4 w-4" />
                                         </div>
                                         AI Itinerary
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator className="bg-slate-100 my-1" />
-                                    <DropdownMenuItem
-                                        onClick={handleCustomerProfileClick}
-                                        className="focus:bg-emerald-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
-                                    >
-                                        <div className="bg-emerald-100 p-1.5 rounded-md mr-3 text-[#10B981] group-hover:bg-[#10B981] group-hover:text-white transition-colors">
-                                            <Users className="h-4 w-4" />
-                                        </div>
-                                        Customer Profile
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -819,13 +831,20 @@ export default function AgentDashboard() {
             <div className="container mx-auto px-4 py-8">
 
                 {/* Date Filter Controls */}
-                <div className="flex flex-wrap items-center gap-4 mb-8 bg-[rgba(79,70,229,0.03)] backdrop-blur-md p-4 rounded-2xl border border-white/60 shadow-sm">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-indigo-50">
-                        <Calendar className="h-4 w-4 text-[#4F46E5]" />
+                <div
+                    className="flex flex-wrap items-center gap-4 mb-8 p-3 rounded-full border border-white/50 shadow-sm"
+                    style={{
+                        background: 'rgba(255,255,255,0.30)',
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                    }}
+                >
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/60 bg-white/30">
+                        <Calendar className="h-4 w-4 text-violet-600" />
                         <span className="text-sm font-semibold text-slate-700">Date Range</span>
                     </div>
                     <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-[180px] bg-white border-indigo-50 focus:ring-[#4F46E5]/20 text-slate-700">
+                        <SelectTrigger className="w-[160px] bg-white/40 border-white/50 backdrop-blur-sm rounded-full text-slate-700 focus:ring-violet-400/20">
                             <SelectValue placeholder="Select period" />
                         </SelectTrigger>
                         <SelectContent>
@@ -841,7 +860,7 @@ export default function AgentDashboard() {
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-5">
                             <Input
                                 type="date"
-                                className="w-auto bg-white/50 border-slate-200"
+                                className="w-auto bg-white/50 border-white/50 rounded-full"
                                 value={customStart}
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomStart(e.target.value)}
@@ -849,12 +868,12 @@ export default function AgentDashboard() {
                             <span className="text-slate-400 font-medium">-</span>
                             <Input
                                 type="date"
-                                className="w-auto bg-white/50 border-slate-200"
+                                className="w-auto bg-white/50 border-white/50 rounded-full"
                                 value={customEnd}
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomEnd(e.target.value)}
                             />
-                            <Button onClick={applyCustomFilter} size="sm" className="bg-slate-900 text-white hover:bg-slate-800 shadow-md">
+                            <Button onClick={applyCustomFilter} size="sm" className="bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-full shadow-md hover:-translate-y-0.5 transition-all">
                                 Apply
                             </Button>
                         </div>
@@ -870,7 +889,7 @@ export default function AgentDashboard() {
                             <CarouselContent>
                                 {statCards.map((card, index) => (
                                     <CarouselItem key={index} className="basis-10/12 pl-4">
-                                        <Card className="relative overflow-hidden border-0 bg-white/60 backdrop-blur-xl shadow-sm h-full rounded-2xl">
+                                        <Card className="relative overflow-hidden rounded-[20px] h-full" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                                             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`} />
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                                                 <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
@@ -893,7 +912,7 @@ export default function AgentDashboard() {
                     <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                         {statCards.map((card, index) => (
                             <TiltCard key={index} className="h-full">
-                                <Card className="relative overflow-hidden border-0 bg-white/60 backdrop-blur-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 group h-full rounded-2xl ring-1 ring-slate-900/5">
+                                <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                                     <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                                         <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
@@ -915,8 +934,13 @@ export default function AgentDashboard() {
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => toggleSection('highlights')}>
                         <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-                            <TrendingUp className="h-5 w-5 text-[#4F46E5]" />
+                            <TrendingUp className="h-5 w-5 text-violet-600" />
                             Performance Highlights
+                            {/* Animated live pulse dot */}
+                            <span className="relative flex h-2 w-2 ml-1">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600" />
+                            </span>
                         </h2>
                         <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${collapsedSections.highlights ? 'rotate-180' : ''}`} />
                     </div>
@@ -932,7 +956,7 @@ export default function AgentDashboard() {
                             >
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     {/* Top Performer Card */}
-                                    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#10B981]/5 to-[#34D399]/10 backdrop-blur-xl shadow-lg shadow-emerald-500/5 hover:shadow-emerald-500/10 hover:scale-[1.02] transition-all duration-300 group">
+                                    <Card className="relative overflow-hidden group hover:scale-[1.02] transition-all duration-300" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                         <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
                                             <span className="flex h-3 w-3 relative">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -951,7 +975,7 @@ export default function AgentDashboard() {
                                         <CardContent>
                                             {stats.highlights?.mostPopular ? (
                                                 <div className="space-y-4">
-                                                    <div className="bg-white/60 p-3 rounded-xl border border-emerald-100 shadow-sm">
+                                                    <div className="p-3 shadow-sm" style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.40)' }}>
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg overflow-hidden border border-emerald-200 shadow-inner">
                                                                 🇯🇵
@@ -992,7 +1016,7 @@ export default function AgentDashboard() {
                                     </Card>
 
                                     {/* Lowest Traction Card */}
-                                    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#3B82F6]/5 to-[#60A5FA]/10 backdrop-blur-xl shadow-lg shadow-blue-500/5 hover:shadow-blue-500/10 hover:scale-[1.02] transition-all duration-300">
+                                    <Card className="relative overflow-hidden hover:scale-[1.02] transition-all duration-300" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                         <CardHeader className="pb-2">
                                             <CardTitle className="text-lg font-bold flex items-center gap-2 text-blue-950">
                                                 <div className="bg-gradient-to-br from-slate-400 to-slate-600 p-1.5 rounded-full shadow-sm text-white">
@@ -1005,7 +1029,7 @@ export default function AgentDashboard() {
                                         <CardContent>
                                             {stats.highlights?.leastPopular ? (
                                                 <div className="space-y-4">
-                                                    <div className="bg-white/60 p-3 rounded-xl border border-blue-100 shadow-sm">
+                                                    <div className="p-3 shadow-sm" style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.40)' }}>
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600 border border-blue-200 shadow-inner">
                                                                 📉
@@ -1046,8 +1070,7 @@ export default function AgentDashboard() {
                                     </Card>
 
                                     {/* Popular Packages List */}
-                                    {/* Popular Packages List */}
-                                    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#8B5CF6]/5 to-[#A78BFA]/10 backdrop-blur-xl shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10 hover:scale-[1.02] transition-all duration-300">
+                                    <Card className="relative overflow-hidden hover:scale-[1.02] transition-all duration-300" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                         <div className="absolute top-0 right-0 p-4 opacity-30">
                                             <Sparkles className="h-12 w-12 text-purple-200 rotate-12" />
                                         </div>
@@ -1064,7 +1087,7 @@ export default function AgentDashboard() {
                                             {(stats.packageAnalytics?.mostBooked?.length || 0) > 0 ? (
                                                 <ul className="space-y-3">
                                                     {stats.packageAnalytics?.mostBooked.map((pkg: any, index: number) => (
-                                                        <li key={index} className="group flex items-center justify-between p-2.5 rounded-xl bg-white/60 border border-purple-100 hover:bg-white hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 cursor-default">
+                                                        <li key={index} className="group flex items-center justify-between p-2.5 transition-all duration-200 cursor-default" style={{ background: 'rgba(255,255,255,0.25)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.40)' }}>
                                                             <div className="flex items-center gap-3 overflow-hidden">
                                                                 <span className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                                                                     index === 1 ? 'bg-slate-200 text-slate-700 border border-slate-300' :
@@ -1099,15 +1122,18 @@ export default function AgentDashboard() {
 
                 {/* Recent Bookings Section */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-                            <Clock className="h-5 w-5 text-[#F59E0B]" />
+                    {/* Section header with glass icon badge */}
+                    <div className="flex items-center justify-between mb-5">
+                        <h2 className="text-xl font-bold flex items-center gap-3 text-slate-800">
+                            <div className="p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 shadow-sm">
+                                <Clock className="h-4 w-4 text-amber-600" />
+                            </div>
                             Recent Bookings
                         </h2>
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="text-[#4F46E5] hover:bg-indigo-50 font-semibold gap-1"
+                            className="text-violet-600 hover:bg-white/30 hover:backdrop-blur-sm font-semibold gap-1 rounded-full px-4 border border-white/40"
                             onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
                         >
                             View All <ChevronRight className="h-4 w-4" />
@@ -1118,12 +1144,12 @@ export default function AgentDashboard() {
                         {/* Upcoming */}
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">Upcoming</Badge>
+                                <span style={{ background: 'rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '100px', padding: '5px 14px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#c2410c' }}>UPCOMING</span>
                             </div>
                             <div className="space-y-3">
                                 {stats.recentBookings?.upcoming && stats.recentBookings.upcoming.length > 0 ? (
                                     stats.recentBookings.upcoming.map((bk, i) => (
-                                        <Card key={i} className="hover:shadow-md transition-shadow border-slate-100 group overflow-hidden bg-white/50 backdrop-blur-sm">
+                                        <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
                                                     <Calendar className="h-6 w-6 text-slate-400" />
@@ -1148,7 +1174,7 @@ export default function AgentDashboard() {
                                         </Card>
                                     ))
                                 ) : (
-                                    <div className="py-12 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs font-medium">
+                                    <div className="py-12 rounded-2xl text-center text-slate-500 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.40)', borderRadius: '16px' }}>
                                         No upcoming bookings
                                     </div>
                                 )}
@@ -1158,12 +1184,12 @@ export default function AgentDashboard() {
                         {/* Completed/History */}
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider">Completed / History</Badge>
+                                <span style={{ background: 'rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '100px', padding: '5px 14px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#475569' }}>COMPLETED / HISTORY</span>
                             </div>
                             <div className="space-y-3">
                                 {stats.recentBookings?.completed && stats.recentBookings.completed.length > 0 ? (
                                     stats.recentBookings.completed.map((bk, i) => (
-                                        <Card key={i} className="hover:shadow-md transition-shadow border-slate-100 group overflow-hidden bg-white/50 backdrop-blur-sm opacity-80 hover:opacity-100">
+                                        <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden opacity-80 hover:opacity-100" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
                                                     <FileText className="h-6 w-6 text-slate-300" />
@@ -1185,7 +1211,7 @@ export default function AgentDashboard() {
                                         </Card>
                                     ))
                                 ) : (
-                                    <div className="py-12 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs font-medium">
+                                    <div className="py-12 text-center text-slate-500 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: '16px' }}>
                                         No booking history
                                     </div>
                                 )}
@@ -1194,9 +1220,12 @@ export default function AgentDashboard() {
                     </div>
                 </div>
                 <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => toggleSection('quickActions')}>
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-                            <LayoutDashboard className="h-5 w-5 text-[#4F46E5]" />
+                    {/* Section header with glass icon badge */}
+                    <div className="flex items-center justify-between mb-5 cursor-pointer" onClick={() => toggleSection('quickActions')}>
+                        <h2 className="text-xl font-bold flex items-center gap-3 text-slate-800">
+                            <div className="p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 shadow-sm">
+                                <LayoutDashboard className="h-4 w-4 text-violet-600" />
+                            </div>
                             Quick Actions
                         </h2>
                         <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${collapsedSections.quickActions ? 'rotate-180' : ''}`} />
@@ -1215,11 +1244,12 @@ export default function AgentDashboard() {
                                     {/* Manage Packages */}
                                     <Card
                                         onClick={() => handleRestrictedAction(() => router.push('/agent/packages'))}
-                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                        className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
                                     >
                                         <CardHeader>
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                                <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
                                                     <Package className="h-6 w-6 text-blue-600" />
                                                 </div>
                                                 <div>
@@ -1229,43 +1259,22 @@ export default function AgentDashboard() {
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button className="w-full bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 shadow-sm text-sm font-semibold">
+                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
                                                 Go to Packages
                                             </Button>
                                         </CardContent>
                                     </Card>
 
-                                    {/* Customers */}
-                                    <Card
-                                        onClick={() => handleRestrictedAction(() => router.push('/agent/customers'))}
-                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
-                                    >
-                                        <CardHeader>
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-emerald-50 p-3 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                                                    <Users className="h-6 w-6 text-emerald-600" />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className="text-lg text-slate-800">Customers</CardTitle>
-                                                    <CardDescription>Manage Client Profiles</CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Button className="w-full bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 shadow-sm text-sm font-semibold">
-                                                View Customers
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
 
                                     {/* My Bookings */}
                                     <Card
                                         onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
-                                        className={`hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                        className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
                                     >
                                         <CardHeader>
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-orange-50 p-3 rounded-lg group-hover:bg-orange-100 transition-colors">
+                                                <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
                                                     <FileText className="h-6 w-6 text-orange-600" />
                                                 </div>
                                                 <div>
@@ -1275,18 +1284,19 @@ export default function AgentDashboard() {
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button className="w-full bg-white text-orange-600 border border-orange-200 hover:bg-orange-50 shadow-sm text-sm font-semibold">
+                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
                                                 View Bookings
                                             </Button>
                                         </CardContent>
                                     </Card>
 
                                     {/* Subscription */}
-                                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-[rgba(236,72,153,0.03)] backdrop-blur-xl group hover:scale-[1.02] duration-300">
+                                    <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
+                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
                                         <Link href="/agent/subscription">
                                             <CardHeader>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-purple-50 p-3 rounded-lg group-hover:bg-purple-100 transition-colors">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
                                                         <Star className="h-6 w-6 text-purple-600" />
                                                     </div>
                                                     <div>
@@ -1296,7 +1306,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm text-sm font-semibold">
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
                                                     Manage Plan
                                                 </Button>
                                             </CardContent>
@@ -1304,11 +1314,12 @@ export default function AgentDashboard() {
                                     </Card>
 
                                     {/* Settings */}
-                                    <Card className="hover:shadow-lg transition-all cursor-pointer border-0 bg-white/60 backdrop-blur-xl group hover:scale-[1.02] duration-300">
+                                    <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
+                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
                                         <Link href="/agent/settings">
                                             <CardHeader>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-slate-100 p-3 rounded-lg group-hover:bg-slate-200 transition-colors">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
                                                         <Settings className="h-6 w-6 text-slate-600" />
                                                     </div>
                                                     <div>
@@ -1318,7 +1329,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full bg-white text-slate-700 border border-slate-200 hover:bg-slate-100/80 shadow-sm text-sm font-semibold">
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
                                                     Configure Settings
                                                 </Button>
                                             </CardContent>
@@ -1338,9 +1349,9 @@ export default function AgentDashboard() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="mb-2 w-56">
-                            <DropdownMenuItem onClick={handleAIItineraryClick} className="py-3">
+                            <DropdownMenuItem onClick={() => { }} className="py-3">
                                 <Sparkles className="mr-3 h-5 w-5 text-pink-600" />
-                                <span>AI Assistant</span>
+                                <span>Quick Actions</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
 
@@ -1364,138 +1375,13 @@ export default function AgentDashboard() {
                 </div>
 
 
-                {/* AI Assistant Dialog */}
-                <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
-                    <DialogContent className="max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
-                        <div className="bg-[linear-gradient(135deg,#4F46E5_0%,#7C3AED_100%)] p-6 text-white flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-                                <Sparkles className="h-8 w-8 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold">AI Itinerary Assistant</h3>
-                                <DialogDescription className="text-white/70 text-sm font-medium">
-                                    Your personal co-pilot for curated travel plans.
-                                </DialogDescription>
-                            </div>
-                        </div>
-
-                        <div className="h-[500px] flex flex-col bg-slate-50/50">
-                            <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                                {/* Chat History */}
-                                {chatHistory.map((msg, idx) => (
-                                    <div key={idx} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                        <div className={`${msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-slate-600'} rounded-full p-2 mt-1`}>
-                                            {msg.role === 'assistant' ? (
-                                                <Sparkles className="h-4 w-4 text-white" />
-                                            ) : (
-                                                <User className="h-4 w-4 text-white" />
-                                            )}
-                                        </div>
-                                        <div className={`${msg.role === 'assistant' ? 'bg-white border border-slate-100' : 'bg-indigo-600 text-white'} shadow-sm p-4 rounded-2xl ${msg.role === 'assistant' ? 'rounded-tl-none' : 'rounded-tr-none'} max-w-[80%]`}>
-                                            <p className={`${msg.role === 'assistant' ? 'text-slate-700' : 'text-white'} leading-relaxed whitespace-pre-wrap`}>
-                                                {msg.content}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Loading Indicator */}
-                                {isLoading && (
-                                    <div className="flex items-start gap-3">
-                                        <div className="bg-indigo-600 rounded-full p-2 mt-1">
-                                            <Sparkles className="h-4 w-4 text-white animate-pulse" />
-                                        </div>
-                                        <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-2xl rounded-tl-none">
-                                            <div className="flex gap-2">
-                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Generated Package Preview */}
-                                {generatedPackage && (
-                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-4 mt-4">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h4 className="font-bold text-indigo-900 text-lg">{generatedPackage.packageTitle}</h4>
-                                            <Sparkles className="h-5 w-5 text-indigo-600" />
-                                        </div>
-                                        <p className="text-sm text-slate-600 mb-3">{generatedPackage.packageOverview}</p>
-                                        <div className="flex items-center gap-4 text-sm text-slate-700 mb-4">
-                                            <span className="font-semibold">📍 {generatedPackage.destination}, {generatedPackage.country}</span>
-                                            <span>🗓️ {generatedPackage.duration.days}D/{generatedPackage.duration.nights}N</span>
-                                            <span className="font-bold text-indigo-600">₹{generatedPackage.pricePerPerson.toLocaleString()}</span>
-                                        </div>
-                                        <Button
-                                            onClick={createPackageFromAI}
-                                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg"
-                                        >
-                                            Create This Package
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Chat Input */}
-                            <div className="p-4 bg-white border-t border-slate-100">
-                                {conversationId && !generatedPackage && chatHistory.length > 2 && (
-                                    <div className="mb-3">
-                                        <Button
-                                            onClick={generatePackage}
-                                            disabled={isLoading}
-                                            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-2.5 rounded-xl shadow-md"
-                                        >
-                                            <Sparkles className="h-4 w-4 mr-2" />
-                                            Generate Complete Package
-                                        </Button>
-                                    </div>
-                                )}
-                                <div className="relative">
-                                    <Input
-                                        placeholder="Tell me destination and duration (e.g. 5 days in Paris)..."
-                                        className="pr-20 py-6 rounded-2xl border-slate-200 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50/50"
-                                        value={chatMessage}
-                                        onChange={(e) => setChatMessage(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault()
-                                                sendMessage()
-                                            }
-                                        }}
-                                        disabled={isLoading}
-                                    />
-                                    <div className="absolute right-2 top-1.5 flex items-center gap-1">
-                                        <Button
-                                            size="icon"
-                                            onClick={sendMessage}
-                                            disabled={isLoading || !chatMessage.trim()}
-                                            className="h-9 w-9 bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md disabled:opacity-50"
-                                        >
-                                            <Send className="h-4 w-4 text-white" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="mt-3 flex gap-2 flex-wrap">
-                                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Suggestions:</span>
-                                    <button
-                                        onClick={() => setChatMessage("Create a 7-day cultural tour package for Japan with budget of ₹150,000")}
-                                        className="text-[10px] font-semibold text-indigo-600 hover:underline"
-                                    >
-                                        7 days in Japan
-                                    </button>
-                                    <button
-                                        onClick={() => setChatMessage("Create a 5-day honeymoon package for Maldives with luxury resorts")}
-                                        className="text-[10px] font-semibold text-indigo-600 hover:underline"
-                                    >
-                                        Honeymoon in Maldives
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                {/* New AI Assistant Floating Card */}
+                <AIAssistantCard
+                    chatHistory={chatHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))}
+                    isLoading={isLoading}
+                    onSendMessage={sendMessage}
+                    suggestions={["Japan 7 Days", "Maldives Honeymoon"]}
+                />
 
                 {/* Desktop Floating AI Button */}
                 <div className="fixed bottom-8 right-8 hidden md:block z-50">

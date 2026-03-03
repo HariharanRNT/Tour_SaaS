@@ -44,6 +44,13 @@ export default function AgentSettingsPage() {
     // Separate state for different sections to match API structure
     const [currency, setCurrency] = useState('INR')
 
+    // Default GST settings for new packages
+    const [gstDefaults, setGstDefaults] = useState({
+        gst_applicable: false,
+        gst_inclusive: false,
+        gst_percentage: 18.00
+    })
+
     interface SmtpSettings {
         host: string;
         port: number;
@@ -64,10 +71,6 @@ export default function AgentSettingsPage() {
         encryption_type: 'starttls'
     })
 
-    const [gstSettings, setGstSettings] = useState({
-        gst_inclusive: false,
-        gst_percentage: 18.00
-    })
 
     interface RazorpaySettings {
         key_id: string;
@@ -85,21 +88,20 @@ export default function AgentSettingsPage() {
 
         const currentSettings = {
             currency,
-            gstSettings,
-            smtp: { ...smtp, password: '' }, // Exclude password from comparison
-            razorpay: { ...razorpay, key_secret: '' } // Exclude key_secret from comparison
+            gstDefaults,
+            smtp: { ...smtp, password: '' },
+            razorpay: { ...razorpay, key_secret: '' }
         };
 
-        // Create a copy of originalSettings, ensuring sensitive fields are empty for comparison
         const originalSettingsForComparison = {
             currency: originalSettings.currency,
-            gstSettings: originalSettings.gstSettings,
+            gstDefaults: originalSettings.gstDefaults,
             smtp: { ...originalSettings.smtp, password: '' },
             razorpay: { ...originalSettings.razorpay, key_secret: '' }
         };
 
         return JSON.stringify(currentSettings) !== JSON.stringify(originalSettingsForComparison);
-    }, [currency, gstSettings, smtp, razorpay, originalSettings]);
+    }, [currency, gstDefaults, smtp, razorpay, originalSettings]);
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -135,22 +137,23 @@ export default function AgentSettingsPage() {
                     key_secret: ''
                 } : razorpay;
 
-                // Currency & GST
+                // Currency & GST Defaults
                 const initialCurrency = data.currency || 'INR';
-                const initialGstSettings = {
+                const initialGstDefaults = {
+                    gst_applicable: data.gst_applicable ?? false,
                     gst_inclusive: data.gst_inclusive ?? false,
                     gst_percentage: data.gst_percentage ?? 18.00
                 }
 
                 setCurrency(initialCurrency)
-                setGstSettings(initialGstSettings)
+                setGstDefaults(initialGstDefaults)
                 setSmtp(initialSmtp)
                 setRazorpay(initialRazorpay)
 
                 // Track original for unsaved changes warning
                 setOriginalSettings({
                     currency: initialCurrency,
-                    gstSettings: initialGstSettings,
+                    gstDefaults: initialGstDefaults,
                     smtp: initialSmtp,
                     razorpay: initialRazorpay
                 })
@@ -209,10 +212,7 @@ export default function AgentSettingsPage() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                currency,
-                ...gstSettings
-            })
+            body: JSON.stringify({ currency, ...gstDefaults })
         })
         if (!res.ok) throw new Error('Failed to update General settings')
     }
@@ -297,7 +297,7 @@ export default function AgentSettingsPage() {
     const discardChanges = () => {
         if (!originalSettings) return;
         setCurrency(originalSettings.currency);
-        setGstSettings(originalSettings.gstSettings);
+        setGstDefaults(originalSettings.gstDefaults);
         setSmtp(originalSettings.smtp);
         setRazorpay(originalSettings.razorpay);
         toast.info("Changes discarded.");
@@ -319,7 +319,7 @@ export default function AgentSettingsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
                     <p className="text-sm font-medium text-gray-500 animate-pulse">Loading settings...</p>
@@ -329,7 +329,7 @@ export default function AgentSettingsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
+        <div className="min-h-screen">
             {/* Unsaved Changes Banner */}
             {isDirty && (
                 <div className="sticky top-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-3 shadow-sm animate-in slide-in-from-top duration-300">
@@ -391,7 +391,7 @@ export default function AgentSettingsPage() {
                             <div className="flex items-center gap-3 shrink-0">
                                 <Button
                                     variant="outline"
-                                    className="font-semibold px-6 border-slate-200 hover:bg-slate-50 text-slate-700"
+                                    className="font-semibold px-6 border-slate-200 hover:bg-transparent text-slate-700"
                                     onClick={() => router.push('/agent/dashboard')}
                                 >
                                     Cancel
@@ -399,7 +399,7 @@ export default function AgentSettingsPage() {
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={submitting || !isDirty}
-                                    className="min-w-[160px] bg-blue-600 hover:bg-blue-700 text-white shadow-md font-bold text-base transition-all active:scale-95"
+                                    className="min-w-[160px] bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white shadow-lg shadow-purple-400/30 font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
                                     title="Ctrl + S to save"
                                 >
                                     {submitting ? (
@@ -419,38 +419,36 @@ export default function AgentSettingsPage() {
                         </div>
                     </div>
 
-                    {/* Tabs Navigation */}
-                    <div className="border-b border-slate-200">
-                        <nav className="flex gap-8 overflow-x-auto pb-px scrollbar-hide">
-                            {[
-                                { name: 'General', id: 'general-section' },
-                                { name: 'Theme', id: 'theme-link' },
-                                { name: 'Email', id: 'email-section' },
-                                { name: 'Payment', id: 'payment-section' },
-                                { name: 'Notifications', id: 'notifications-section' },
-                                { name: 'API', id: 'api-section' }
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => {
-                                        if (tab.id === 'theme-link') {
-                                            router.push('/agent/settings/theme');
-                                        } else {
-                                            scrollToSection(tab.id);
-                                        }
-                                    }}
-                                    className="pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap px-1 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 active:text-blue-600 active:border-blue-600 focus:text-blue-600 focus:border-blue-600"
-                                >
-                                    {tab.name}
-                                </button>
-                            ))}
-                        </nav>
+                    {/* Glass Pill Tab Navigation */}
+                    <div className="glass-navbar rounded-full p-1.5 flex gap-1 overflow-x-auto scrollbar-hide shadow-sm">
+                        {[
+                            { name: 'General', id: 'general-section' },
+                            { name: 'Theme', id: 'theme-link' },
+                            { name: 'Email', id: 'email-section' },
+                            { name: 'Payment', id: 'payment-section' },
+                            { name: 'Notifications', id: 'notifications-section' },
+                            { name: 'API', id: 'api-section' }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    if (tab.id === 'theme-link') {
+                                        router.push('/agent/settings/theme');
+                                    } else {
+                                        scrollToSection(tab.id);
+                                    }
+                                }}
+                                className="px-5 py-2 text-sm font-bold rounded-full whitespace-nowrap transition-all text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                            >
+                                {tab.name}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 <div className="grid gap-8 pb-12">
                     {/* General Settings */}
-                    <Card id="general-section" className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow duration-300 bg-white overflow-hidden scroll-mt-24">
+                    <Card id="general-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="pb-4">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-blue-50 rounded-xl text-blue-600 border border-blue-100">
@@ -471,7 +469,7 @@ export default function AgentSettingsPage() {
                                     <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
                                 </Label>
                                 <Select value={currency} onValueChange={setCurrency}>
-                                    <SelectTrigger className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium text-slate-900 rounded-lg">
+                                    <SelectTrigger className="glass-input h-12 font-medium text-slate-900 rounded-lg">
                                         <SelectValue placeholder="Select Currency" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -489,79 +487,41 @@ export default function AgentSettingsPage() {
 
                             <Separator className="bg-slate-100" />
 
+                            {/* GST Configuration */}
                             <div className="space-y-4">
                                 <div className="space-y-1">
-                                    <h3 className="text-lg font-bold text-slate-900">Tax Configuration</h3>
-                                    <p className="text-sm text-slate-500">Manage how Goods and Services Tax (GST) is applied to your packages.</p>
+                                    <h3 className="text-lg font-bold text-slate-900">GST Configuration</h3>
+                                    <p className="text-sm text-slate-500">Set default GST applicability for new packages. Mode and percentage are configured per package.</p>
                                 </div>
-                                <div className="grid gap-6 p-4 border border-slate-200 rounded-xl bg-slate-50/30">
-                                    <div className="space-y-3">
-                                        <Label className="text-sm font-bold text-slate-700">GST Mode</Label>
-                                        <div className="flex flex-col sm:flex-row gap-4">
-                                            <label className={`flex p-3 w-full cursor-pointer rounded-lg border transition-all ${gstSettings.gst_inclusive ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                                                <div className="flex items-start gap-3">
-                                                    <input
-                                                        type="radio"
-                                                        name="gst_mode"
-                                                        className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-100"
-                                                        checked={gstSettings.gst_inclusive}
-                                                        onChange={() => setGstSettings(prev => ({ ...prev, gst_inclusive: true }))}
-                                                    />
-                                                    <div>
-                                                        <span className="block text-sm font-bold text-slate-900">Inclusive GST</span>
-                                                        <span className="block text-xs text-slate-500 mt-1">Prices shown to customers already include GST.</span>
-                                                    </div>
-                                                </div>
-                                            </label>
 
-                                            <label className={`flex p-3 w-full cursor-pointer rounded-lg border transition-all ${!gstSettings.gst_inclusive ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                                                <div className="flex items-start gap-3">
-                                                    <input
-                                                        type="radio"
-                                                        name="gst_mode"
-                                                        className="mt-1 h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-100"
-                                                        checked={!gstSettings.gst_inclusive}
-                                                        onChange={() => setGstSettings(prev => ({ ...prev, gst_inclusive: false }))}
-                                                    />
-                                                    <div>
-                                                        <span className="block text-sm font-bold text-slate-900">Exclusive GST</span>
-                                                        <span className="block text-xs text-slate-500 mt-1">GST is added on top of the base price during checkout.</span>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    {!gstSettings.gst_inclusive && (
-                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <Label htmlFor="gst_percentage" className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                                                GST Percentage (%) <span className="text-red-500">*</span>
-                                            </Label>
-                                            <div className="max-w-[200px] relative">
-                                                <Input
-                                                    id="gst_percentage"
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    placeholder="18.00"
-                                                    className="h-12 border-slate-200 bg-white hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-bold rounded-lg pr-8"
-                                                    value={gstSettings.gst_percentage}
-                                                    onChange={(e) => setGstSettings(prev => ({ ...prev, gst_percentage: parseFloat(e.target.value) || 0 }))}
-                                                />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
-                                            </div>
-                                            <p className="text-xs font-medium text-slate-500">
-                                                Standard GST rate for travel services is usually 5% or 18% depending on the service type.
-                                            </p>
-                                        </div>
-                                    )}
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setGstDefaults(prev => ({ ...prev, gst_applicable: true }))}
+                                        className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${gstDefaults.gst_applicable
+                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                                            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                                            }`}
+                                    >
+                                        ✅ Applicable
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setGstDefaults(prev => ({ ...prev, gst_applicable: false }))}
+                                        className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${!gstDefaults.gst_applicable
+                                            ? 'border-red-400 bg-red-50 text-red-600 shadow-sm'
+                                            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                                            }`}
+                                    >
+                                        ❌ Not Applicable
+                                    </button>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* SMTP Settings */}
-                    <Card id="email-section" className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow duration-300 bg-white overflow-hidden scroll-mt-24">
+                    <Card id="email-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-purple-50 rounded-xl text-purple-600 border border-purple-100">
@@ -575,7 +535,7 @@ export default function AgentSettingsPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-2 shrink-0">
-                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${smtp.host ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-200'
+                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${smtp.host ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-transparent text-slate-500 border-slate-200'
                                     }`}>
                                     <div className={`h-1.5 w-1.5 rounded-full ${smtp.host ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-400'}`} />
                                     {smtp.host ? 'Connected' : 'Not Configured'}
@@ -583,7 +543,7 @@ export default function AgentSettingsPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="font-bold border-slate-200 hover:bg-slate-50 text-slate-700 h-9 px-4 rounded-lg shadow-sm"
+                                    className="font-bold border-slate-200 hover:bg-transparent text-slate-700 h-9 px-4 rounded-lg shadow-sm"
                                     onClick={testSmtpConnection}
                                     disabled={testingSmtp || !smtp.host}
                                 >
@@ -609,7 +569,7 @@ export default function AgentSettingsPage() {
                                     <Input
                                         id="smtp_host"
                                         placeholder="e.g., smtp.gmail.com"
-                                        className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg"
+                                        className="glass-input h-12 font-medium rounded-lg"
                                         value={smtp.host}
                                         onChange={(e) => handleSmtpChange('host', e.target.value)}
                                     />
@@ -626,7 +586,7 @@ export default function AgentSettingsPage() {
                                         id="smtp_port"
                                         placeholder="587"
                                         type="number"
-                                        className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-bold rounded-lg"
+                                        className="glass-input h-12 font-bold rounded-lg"
                                         value={smtp.port}
                                         onChange={(e) => handleSmtpChange('port', parseInt(e.target.value))}
                                     />
@@ -643,7 +603,7 @@ export default function AgentSettingsPage() {
                                         value={smtp.encryption_type}
                                         onValueChange={(val) => handleSmtpChange('encryption_type', val)}
                                     >
-                                        <SelectTrigger className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg">
+                                        <SelectTrigger className="glass-input h-12 font-medium rounded-lg">
                                             <SelectValue placeholder="Select encryption" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -660,7 +620,7 @@ export default function AgentSettingsPage() {
                                     <Input
                                         id="from_name"
                                         placeholder="e.g., Support Team"
-                                        className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg"
+                                        className="glass-input h-12 font-medium rounded-lg"
                                         value={smtp.from_name}
                                         onChange={(e) => handleSmtpChange('from_name', e.target.value)}
                                     />
@@ -679,7 +639,7 @@ export default function AgentSettingsPage() {
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                                         <Input
                                             id="smtp_user"
-                                            className="h-12 pl-11 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg transition-all"
+                                            className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
                                             value={smtp.username}
                                             onChange={(e) => handleSmtpChange('username', e.target.value)}
                                         />
@@ -695,7 +655,7 @@ export default function AgentSettingsPage() {
                                             id="smtp_pass"
                                             type={showSmtpPassword ? "text" : "password"}
                                             placeholder={smtp.password ? "••••••••" : "Enter account password"}
-                                            className="h-12 pl-11 pr-11 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg transition-all placeholder:text-slate-300 placeholder:italic"
+                                            className="glass-input h-12 pl-11 pr-11 font-medium rounded-lg transition-all placeholder:text-slate-300 placeholder:italic"
                                             value={smtp.password}
                                             onChange={(e) => handleSmtpChange('password', e.target.value)}
                                         />
@@ -720,7 +680,7 @@ export default function AgentSettingsPage() {
                                 </Label>
                                 <Input
                                     id="from_email"
-                                    className="h-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg"
+                                    className="glass-input h-12 font-medium rounded-lg"
                                     value={smtp.from_email}
                                     onChange={(e) => handleSmtpChange('from_email', e.target.value)}
                                     placeholder="noreply@youragency.com"
@@ -731,7 +691,7 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* Razorpay Settings */}
-                    <Card id="payment-section" className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow duration-300 bg-white overflow-hidden scroll-mt-24">
+                    <Card id="payment-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-100">
@@ -747,12 +707,12 @@ export default function AgentSettingsPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-2 shrink-0">
-                                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${razorpay.key_id ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_2px_10px_rgba(16,185,129,0.05)]' : 'bg-slate-50 text-slate-500 border-slate-200'
+                                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${razorpay.key_id ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_2px_10px_rgba(16,185,129,0.05)]' : 'bg-transparent text-slate-500 border-slate-200'
                                     }`}>
                                     <div className={`h-1.5 w-1.5 rounded-full ${razorpay.key_id ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-400'}`} />
                                     {razorpay.key_id ? 'Active Gateway' : 'Inactive'}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-50 pr-2 pl-3 py-1 rounded-lg border border-slate-100">
+                                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-transparent pr-2 pl-3 py-1 rounded-lg border border-slate-100">
                                     Mode:
                                     <span className={razorpay.key_id?.startsWith('rzp_test') ? 'text-amber-600' : 'text-blue-600'}>
                                         {razorpay.key_id?.startsWith('rzp_test') ? 'TEST MODE' : 'LIVE MODE'}
@@ -785,7 +745,7 @@ export default function AgentSettingsPage() {
                                         <Input
                                             id="key_id"
                                             placeholder="rzp_test_..."
-                                            className="h-12 pl-12 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg transition-all"
+                                            className="glass-input h-12 pl-12 font-medium rounded-lg transition-all"
                                             value={razorpay.key_id}
                                             onChange={(e) => handleRazorpayChange('key_id', e.target.value)}
                                         />
@@ -826,7 +786,7 @@ export default function AgentSettingsPage() {
                                             id="key_secret"
                                             type={showRazorpaySecret ? "text" : "password"}
                                             placeholder={razorpay.key_secret ? "••••••••" : "Enter new account secret code"}
-                                            className="h-12 pl-12 pr-11 border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-blue-100 font-medium rounded-lg transition-all placeholder:text-slate-300 italic"
+                                            className="glass-input h-12 pl-12 pr-11 font-medium rounded-lg transition-all placeholder:text-slate-300 italic"
                                             value={razorpay.key_secret}
                                             onChange={(e) => handleRazorpayChange('key_secret', e.target.value)}
                                         />

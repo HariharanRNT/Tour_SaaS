@@ -57,6 +57,7 @@ async def get_agent_settings(
     
     return {
         "currency": agent.currency,
+        "gst_applicable": agent.gst_applicable,
         "gst_inclusive": agent.gst_inclusive,
         "gst_percentage": agent.gst_percentage,
         "smtp": smtp_settings,
@@ -76,6 +77,9 @@ async def update_general_settings(
     """
     if settings_in.currency is not None:
         agent.currency = settings_in.currency
+    
+    if settings_in.gst_applicable is not None:
+        agent.gst_applicable = settings_in.gst_applicable
     
     if settings_in.gst_inclusive is not None:
         agent.gst_inclusive = settings_in.gst_inclusive
@@ -97,6 +101,7 @@ async def update_general_settings(
     
     return {
         "currency": agent.currency,
+        "gst_applicable": agent.gst_applicable,
         "gst_inclusive": agent.gst_inclusive,
         "gst_percentage": agent.gst_percentage,
         "smtp": smtp_settings,

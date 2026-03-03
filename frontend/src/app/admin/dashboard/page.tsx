@@ -80,7 +80,7 @@ export default function AdminDashboard() {
             transition={{ type: "spring", stiffness: 300 }}
             className="flex-1"
         >
-            <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-white group h-full">
+            <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 glass-card group h-full">
                 {/* Accent Border at Top */}
                 <div className={`absolute top-0 left-0 right-0 h-1.5 ${accentColor}`} />
 
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 
 
     return (
-        <div className="p-8 md:p-10 lg:p-12 bg-[#F8FAFF] min-h-screen">
+        <div className="p-8 md:p-10 lg:p-12 glass-panel min-h-screen">
             <div className="max-w-[1536px] mx-auto space-y-10">
 
                 {/* Page Header & Filter */}
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Revenue Chart - Takes 2 columns */}
                     <div className="lg:col-span-2">
-                        <Card className="h-full border-0 shadow-2xl shadow-indigo-100/50 overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl">
+                        <Card className="h-full border-0 shadow-2xl shadow-indigo-100/50 overflow-hidden rounded-3xl glass-panel">
                             <CardHeader className="bg-white border-b border-slate-50 py-8 px-8 flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-[900] text-slate-800">Revenue Analytics</CardTitle>

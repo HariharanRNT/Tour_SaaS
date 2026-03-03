@@ -279,4 +279,42 @@ export const tripPlannerAPI = {
     }
 }
 
+// Activities API
+export const activitiesAPI = {
+    getAll: async (params?: { city?: string; category?: string }) => {
+        const response = await api.get('/activities', { params })
+        return response.data
+    },
+
+    getDestinations: async () => {
+        const response = await api.get('/activities/destinations')
+        return response.data
+    },
+
+    create: async (data: any) => {
+        const response = await api.post('/activities', data)
+        return response.data
+    },
+
+    getById: async (id: string) => {
+        const response = await api.get(`/activities/${id}`)
+        return response.data
+    },
+
+    update: async (id: string, data: any) => {
+        const response = await api.put(`/activities/${id}`, data)
+        return response.data
+    },
+
+    delete: async (id: string) => {
+        const response = await api.delete(`/activities/${id}`)
+        return response.data
+    },
+
+    deleteDestination: async (city: string) => {
+        const response = await api.delete(`/activities/destination/${city}`)
+        return response.data
+    }
+}
+
 export default api

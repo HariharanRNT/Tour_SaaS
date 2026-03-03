@@ -19,9 +19,9 @@ export default function ReportsPage() {
     })
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans">
+        <div className="min-h-screen bg-transparent font-sans">
             {/* Header */}
-            <div className="bg-white border-b border-[#F1F5F9]">
+            <div className="glass-navbar border-b border-[#F1F5F9]">
                 <div className="container mx-auto px-10 py-8">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                         <div>
@@ -43,7 +43,7 @@ export default function ReportsPage() {
             <div className="container mx-auto px-10 py-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                     {/* Tab Navigation */}
-                    <TabsList className="bg-white border-[1.5px] border-[#F1F5F9] rounded-[12px] p-[5px] h-auto inline-flex shadow-sm">
+                    <TabsList className="glass-card border-[1.5px] border-[#F1F5F9] rounded-[12px] p-[5px] h-auto inline-flex shadow-sm">
                         <TabsTrigger
                             value="subscriptions"
                             className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#6366F1] data-[state=active]:to-[#8B5CF6] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(99,102,241,0.25)] text-[#64748B] font-medium text-[13px] px-6 py-2.5 rounded-[9px] transition-all gap-2"

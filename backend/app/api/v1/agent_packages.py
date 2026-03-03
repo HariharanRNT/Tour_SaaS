@@ -109,7 +109,7 @@ async def create_agent_package(
             destination=package_data.destination,
             duration_days=package_data.duration_days,
             duration_nights=package_data.duration_nights,
-            category=package_data.category,
+            trip_style=package_data.trip_style,
             price_per_person=package_data.price_per_person,
             max_group_size=package_data.max_group_size,
             description=package_data.description,
@@ -120,7 +120,10 @@ async def create_agent_package(
             status=PackageStatus.DRAFT,
             is_template=False,
             created_by=current_agent.id,  # Assign to current agent
-            feature_image_url=package_data.feature_image_url
+            feature_image_url=package_data.feature_image_url,
+            package_mode=package_data.package_mode,
+            destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
+            activities=json.dumps(package_data.activities) if package_data.activities else "[]"
         )
         
         db.add(new_package)
@@ -199,10 +202,13 @@ async def update_agent_package(
     
     # Update fields
     update_data = package_data.dict(exclude_unset=True)
+    json_fields = ['included_items', 'excluded_items', 'destinations', 'activities']
+    
     for field, value in update_data.items():
-        if field in ['included_items', 'excluded_items'] and isinstance(value, list):
-            value = json.dumps(value)
-        setattr(package, field, value)
+        if field in json_fields and value is not None:
+            setattr(package, field, json.dumps(value))
+        else:
+            setattr(package, field, value)
     
     await db.commit()
     

@@ -115,7 +115,7 @@ export default function MultiStepPackageSearch() {
     const totalPassengers = searchData.adults + searchData.children + searchData.infants
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-transparent">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
                 <div className="container mx-auto px-4">
@@ -125,7 +125,7 @@ export default function MultiStepPackageSearch() {
             </div>
 
             {/* Progress Bar */}
-            <div className="bg-white border-b">
+            <div className="glass-navbar border-b border-white/20">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between max-w-3xl mx-auto">
                         {[1, 2, 3, 4].map((step) => (
@@ -153,14 +153,14 @@ export default function MultiStepPackageSearch() {
             {/* Content */}
             <div className="container mx-auto px-4 py-12">
                 {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
-                        <p className="text-red-800">{error}</p>
+                    <div className="glass-panel border-red-200/50 rounded-lg p-4 mb-6 max-w-2xl mx-auto block">
+                        <p className="text-red-600 font-medium">{error}</p>
                     </div>
                 )}
 
                 {/* Step 1: Destination */}
                 {currentStep === 1 && (
-                    <Card className="max-w-2xl mx-auto">
+                    <Card className="glass-panel max-w-2xl mx-auto border-white/20">
                         <CardHeader>
                             <CardTitle className="text-2xl">Where do you want to go?</CardTitle>
                             <CardDescription className="text-base">

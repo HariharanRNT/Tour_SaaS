@@ -113,7 +113,7 @@ export default function BookingDetailsPage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         )
@@ -123,7 +123,7 @@ export default function BookingDetailsPage() {
 
     <Button
         variant="outline"
-        className="w-full gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+        className="w-full gap-2 border-white/20 text-gray-700 hover:bg-white/20 hover:text-gray-900"
         onClick={handleDownloadInvoice}
     >
         <Download className="h-4 w-4" /> Download Invoice
@@ -198,11 +198,11 @@ export default function BookingDetailsPage() {
                 }
             default:
                 return {
-                    bg: 'bg-gray-50',
+                    bg: 'bg-white/5',
                     text: 'text-gray-700',
                     border: 'border-gray-200',
                     icon: <Info className="h-4 w-4" />,
-                    gradient: 'bg-gray-500',
+                    gradient: 'bg-transparent0',
                     label: status.toUpperCase()
                 }
         }
@@ -218,7 +218,7 @@ export default function BookingDetailsPage() {
     const heroImage = booking.package?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1582510003544-4d00b7f0bd44?q=80&w=2969&auto=format&fit=crop'
 
     return (
-        <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+        <div className="min-h-screen overflow-x-hidden">
 
             {/* Hero Section */}
             <div className="relative h-[250px] w-full bg-gray-900 group">
@@ -254,23 +254,23 @@ export default function BookingDetailsPage() {
             <div className="container mx-auto px-4 -mt-8 relative z-10 pb-16">
 
                 {/* Navigation and Actions Bar */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div className="glass-panel flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 p-4 rounded-xl shadow-sm border border-white/20">
                     <Button
                         variant="ghost"
                         onClick={() => router.push('/bookings')}
-                        className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 pl-2"
+                        className="text-gray-600 hover:text-blue-600 hover:bg-white/20 pl-2"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" /> Back to My Bookings
                     </Button>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-lg border border-white/20">
                             <span className="text-xs text-gray-500 font-medium">REF:</span>
                             <span className="font-mono font-bold text-sm text-gray-800">{booking.booking_reference}</span>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 ml-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
+                                className="h-6 w-6 ml-1 hover:bg-white/30 rounded text-gray-400 hover:text-gray-600"
                                 onClick={() => copyToClipboard(booking.booking_reference)}
                             >
                                 <Copy className="h-3 w-3" />
@@ -310,7 +310,7 @@ export default function BookingDetailsPage() {
                     <div className="lg:col-span-3 space-y-8">
 
                         {/* Package Details Card */}
-                        <Card className="shadow-sm border-gray-200 overflow-hidden">
+                        <Card className="glass-panel shadow-sm border-0 overflow-hidden">
                             <div className="relative h-40 w-full md:hidden">
                                 <img src={heroImage} className="w-full h-full object-cover" alt="Destination" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
@@ -344,7 +344,7 @@ export default function BookingDetailsPage() {
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {booking.package?.included_items?.map((item, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg">
+                                            <div key={i} className="flex items-center gap-2 text-sm text-gray-600 bg-white/20 p-2 rounded-lg">
                                                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                                 {item}
                                             </div>
@@ -357,7 +357,7 @@ export default function BookingDetailsPage() {
 
 
                         {/* Itinerary Preview */}
-                        <Card className="shadow-sm border-gray-200">
+                        <Card className="glass-panel shadow-sm border-0">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <MapPin className="h-5 w-5 text-indigo-500" /> Itinerary Overview
@@ -384,7 +384,7 @@ export default function BookingDetailsPage() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 bg-gray-50 rounded-lg dashed border border-gray-200">
+                                    <div className="text-center py-6 bg-white/20 rounded-lg dashed border border-white/20">
                                         <p className="text-gray-500 text-sm">Detailed itinerary will be available 48 hours before departure.</p>
                                     </div>
                                 )}
@@ -398,10 +398,10 @@ export default function BookingDetailsPage() {
                             </h3>
 
                             {flightConfirmation ? (
-                                <div className="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
-                                    <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center">
+                                <div className="glass-panel rounded-xl border border-blue-100/50 shadow-sm overflow-hidden">
+                                    <div className="bg-blue-50/20 px-6 py-3 border-b border-blue-100/30 flex justify-between items-center">
                                         <span className="text-sm font-semibold text-blue-800">Confirmed Flight Details</span>
-                                        <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">PNR Generated</Badge>
+                                        <Badge variant="secondary" className="bg-green-100/50 text-green-700 hover:bg-green-100/50">PNR Generated</Badge>
                                     </div>
                                     <div className="p-6">
                                         {/* Using existing FlightBookingDetails component structure implicitly for now as we don't have the prop structure handy for a generic visual update, 
@@ -413,14 +413,14 @@ export default function BookingDetailsPage() {
                                                     <Badge className="bg-gray-900 text-white hover:bg-gray-800 text-[10px]">OUTBOUND</Badge>
                                                     <span className="text-sm text-gray-500">{formatDate(booking.travel_date)}</span>
                                                 </div>
-                                                <div className="flex flex-col md:flex-row justify-between items-center bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                                <div className="flex flex-col md:flex-row justify-between items-center bg-white/20 rounded-lg p-4 border border-white/20">
                                                     <div className="text-center md:text-left mb-4 md:mb-0">
                                                         <p className="text-2xl font-bold text-gray-900">MAA</p>
                                                         <p className="text-xs text-gray-500">10:30 AM</p>
                                                     </div>
                                                     <div className="flex-1 px-4 flex flex-col items-center">
                                                         <div className="w-full h-px bg-gray-300 relative top-2.5"></div>
-                                                        <Plane className="h-5 w-5 text-gray-400 rotate-90 relative bg-gray-50 px-1" />
+                                                        <Plane className="h-5 w-5 text-gray-400 rotate-90 relative bg-white/20 px-1" />
                                                         <p className="text-xs text-gray-500 mt-1">2h 45m</p>
                                                     </div>
                                                     <div className="text-center md:text-right">
@@ -458,8 +458,8 @@ export default function BookingDetailsPage() {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {booking.travelers?.map((traveler, index) => (
-                                    <div key={traveler.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4">
-                                        <div className="bg-gray-100 h-10 w-10 rounded-full flex items-center justify-center text-gray-400 font-bold text-sm">
+                                    <div key={traveler.id} className="glass-panel p-4 rounded-xl border-0 shadow-sm flex items-start gap-4">
+                                        <div className="bg-white/30 h-10 w-10 rounded-full flex items-center justify-center text-gray-700 font-bold text-sm">
                                             {traveler.first_name[0]}{traveler.last_name[0]}
                                         </div>
                                         <div className="flex-1">
@@ -492,8 +492,8 @@ export default function BookingDetailsPage() {
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* Payment Summary */}
-                        <Card className="border-gray-200 shadow-md">
-                            <CardHeader className="bg-gray-50 border-b border-gray-100 pb-4">
+                        <Card className="glass-panel shadow-md border-0">
+                            <CardHeader className="bg-white/10 border-b border-white/10 pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <CreditCard className="h-5 w-5 text-gray-600" /> Payment Summary
                                 </CardTitle>
@@ -513,7 +513,7 @@ export default function BookingDetailsPage() {
                                     <span className="font-bold text-2xl text-blue-600">{formatCurrency(booking.total_amount)}</span>
                                 </div>
 
-                                <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
+                                <div className="bg-white/20 rounded-lg p-3 space-y-2 text-xs">
                                     <div className="flex justify-between">
                                         <span className="text-gray-500">Status</span>
                                         <span className={`font-bold uppercase ${booking.payment_status === 'succeeded' ? 'text-green-600' :
@@ -526,7 +526,7 @@ export default function BookingDetailsPage() {
                                     </div>
                                 </div>
 
-                                <Button variant="outline" className="w-full gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900" onClick={handleDownloadInvoice}>
+                                <Button variant="outline" className="glass-button w-full gap-2 border-white/20 text-gray-700 hover:bg-white/20 hover:text-gray-900" onClick={handleDownloadInvoice}>
                                     <Download className="h-4 w-4" /> Download Invoice
                                 </Button>
                             </CardContent>
@@ -537,7 +537,7 @@ export default function BookingDetailsPage() {
 
 
                         {/* Need Help Section */}
-                        <Card className="border-blue-100 bg-blue-50/50 shadow-sm">
+                        <Card className="glass-panel border-0 shadow-sm">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-base font-bold flex items-center gap-2 text-blue-900">
                                     <Info className="h-4 w-4" /> Need Help?
@@ -546,14 +546,14 @@ export default function BookingDetailsPage() {
                             <CardContent className="space-y-4">
                                 <p className="text-sm text-blue-800">Our support team is available 24/7 to assist you with your booking.</p>
                                 <div className="space-y-2">
-                                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-blue-100">
+                                    <div className="flex items-center gap-3 bg-white/30 p-2 rounded-lg border border-white/20">
                                         <Phone className="h-4 w-4 text-blue-500" />
                                         <div>
                                             <p className="text-xs text-gray-500">Call Us</p>
                                             <p className="text-sm font-bold text-gray-900">+91 1800-123-4567</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-blue-100">
+                                    <div className="flex items-center gap-3 bg-white/30 p-2 rounded-lg border border-white/20">
                                         <Mail className="h-4 w-4 text-blue-500" />
                                         <div>
                                             <p className="text-xs text-gray-500">Email Us</p>
@@ -570,7 +570,7 @@ export default function BookingDetailsPage() {
                         </Card>
 
                         {/* Important Info */}
-                        <Card className="border-gray-200 bg-blue-50/30">
+                        <Card className="glass-panel border-0">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-900">
                                     <AlertCircle className="h-4 w-4" /> Important Information

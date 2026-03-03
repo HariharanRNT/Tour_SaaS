@@ -57,7 +57,7 @@ export default function SavedTripsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+            <div className="min-h-screen flex flex-col items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
                 <p className="text-gray-500 font-medium tracking-tight">Loading your adventures...</p>
             </div>
@@ -65,7 +65,7 @@ export default function SavedTripsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50/[0.5] pb-24">
+        <div className="min-h-screen pb-24">
             {/* Header Section with Pattern */}
             <div className="bg-white border-b border-gray-100 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -106,7 +106,7 @@ export default function SavedTripsPage() {
                             <div className="h-6 w-px bg-gray-200 hidden md:block" />
                             <div className="flex gap-2 w-full md:w-auto">
                                 <Select defaultValue="recent">
-                                    <SelectTrigger className="w-[160px] border-0 bg-gray-50 focus:ring-0 rounded-xl font-medium">
+                                    <SelectTrigger className="w-[160px] border-white/20 bg-white/10 focus:ring-0 rounded-xl font-medium">
                                         <SelectValue placeholder="Sort by" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -136,7 +136,7 @@ export default function SavedTripsPage() {
                                 Start planning your dream vacation and save it here for later access.
                             </p>
                             <Link href="/plan-trip">
-                                <Button size="lg" className="bg-white hover:bg-gray-50 text-blue-600 border px-8 py-6 h-auto text-lg rounded-xl font-bold shadow-sm transition-all hover:shadow-md">
+                                <Button size="lg" className="glass-panel hover:bg-white/10 text-blue-600 border px-8 py-6 h-auto text-lg rounded-xl font-bold shadow-sm transition-all hover:shadow-md">
                                     <Sparkles className="h-5 w-5 mr-2" />
                                     Start Your First Plan
                                 </Button>
@@ -148,8 +148,7 @@ export default function SavedTripsPage() {
                         {filteredSessions.map((session) => (
                             <Link href={`/plan-trip/build?session=${session.session_id}`} key={session.session_id} className="group block">
                                 <Card className="border-0 bg-white shadow-md hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] overflow-hidden group-hover:-translate-y-1 h-full flex flex-col relative">
-                                    {/* Hero Image Section */}
-                                    <div className="h-48 bg-gray-200 relative overflow-hidden">
+                                    <div className="h-48 glass-panel relative overflow-hidden border-0 rounded-b-none">
                                         {/* Placeholder Image - In a real app, this would be dynamic */}
                                         <img
                                             src={`https://placehold.co/600x400/e2e8f0/64748b?text=${session.destination.split(',')[0]}`}
@@ -180,7 +179,7 @@ export default function SavedTripsPage() {
                                     <CardContent className="p-5 pt-6 flex-1 flex flex-col">
                                         <div className="flex flex-col gap-4 mb-6">
                                             <div className="flex items-center gap-3 text-gray-700">
-                                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                                                     <Calendar className="h-4 w-4 text-blue-600" />
                                                 </div>
                                                 <div>
@@ -190,7 +189,7 @@ export default function SavedTripsPage() {
                                             </div>
 
                                             <div className="flex items-center gap-3 text-gray-700">
-                                                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                                                     <Clock className="h-4 w-4 text-orange-600" />
                                                 </div>
                                                 <div>
@@ -200,7 +199,7 @@ export default function SavedTripsPage() {
                                             </div>
 
                                             <div className="flex items-center gap-3 text-gray-700">
-                                                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                                                     <Users className="h-4 w-4 text-purple-600" />
                                                 </div>
                                                 <div>

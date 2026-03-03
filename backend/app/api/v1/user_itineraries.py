@@ -1,12 +1,12 @@
 """API endpoints for user itinerary management"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
 
 from app.database import get_db
-from app.core.security import get_current_user
+from app.api.deps import get_current_user
 from app.models import User
 from app.services.user_itinerary_service import UserItineraryService
 from app.schemas.templates import (
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/user-itineraries", tags=["User Itineraries"])
 @router.post("", response_model=UserItineraryDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_itinerary_from_template(
     itinerary_data: UserItineraryCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -65,7 +65,7 @@ async def create_itinerary_from_template(
 @router.get("", response_model=List[UserItineraryResponse])
 async def get_my_itineraries(
     status: str = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get all itineraries for the current user"""
@@ -77,7 +77,7 @@ async def get_my_itineraries(
 @router.get("/{itinerary_id}", response_model=UserItineraryDetailResponse)
 async def get_itinerary(
     itinerary_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get a specific itinerary with all activities"""
@@ -113,7 +113,7 @@ async def get_itinerary(
 async def add_custom_activity(
     itinerary_id: UUID,
     activity_data: UserActivityCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Add a custom activity to the itinerary"""
@@ -146,7 +146,7 @@ async def add_custom_activity(
 async def remove_activity(
     itinerary_id: UUID,
     activity_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Remove an activity from the itinerary"""
@@ -174,7 +174,7 @@ async def remove_activity(
 async def update_itinerary_status(
     itinerary_id: UUID,
     status_data: ItineraryStatusUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Update itinerary status"""

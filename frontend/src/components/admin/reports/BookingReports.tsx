@@ -89,7 +89,7 @@ export default function BookingReports({ dateRange }: BookingReportsProps) {
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' },
                     { label: 'CONVERSION', value: `${conversion?.conversion_rate || 0}%`, sub: 'Success rate', icon: TrendingUp, color: '#8B5CF6', bg: '#F3E8FF', border: '#8B5CF6' }
                 ].map((item, index) => (
-                    <Card key={index} className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
+                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
                                 <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[1.2px]">{item.label}</p>
@@ -112,7 +112,7 @@ export default function BookingReports({ dateRange }: BookingReportsProps) {
             {/* Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Agent-wise Bookings */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="border-b border-[#F1F5F9] pb-4">
                         <div className="flex items-center justify-between mb-4">
                             <CardTitle className="text-[#0F172A] text-[17px] font-bold flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function BookingReports({ dateRange }: BookingReportsProps) {
                 </Card>
 
                 {/* Package-wise Bookings */}
-                <Card className="bg-white border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
+                <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="border-b border-[#F1F5F9] pb-4">
                         <div className="flex items-center justify-between mb-4">
                             <CardTitle className="text-[#0F172A] text-[17px] font-bold flex items-center gap-2">

@@ -12,6 +12,7 @@ from app.schemas import (
     PackageCreate, PackageUpdate, PackageResponse,
     PackageListResponse, MessageResponse
 )
+import json
 from app.api.deps import get_current_admin, get_optional_current_user, get_current_domain
 from app.core.exceptions import NotFoundException
 
@@ -200,10 +201,17 @@ async def get_destination_suggestions(
 async def list_packages(
     destination: Optional[str] = None,
     country: Optional[str] = None,
-    category: Optional[str] = None,
+    trip_style: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     search: Optional[str] = None,
+    package_mode: Optional[str] = None,
+    duration_min: Optional[int] = None,
+    duration_max: Optional[int] = None,
+    activities: Optional[List[str]] = Query(None),
+    trip_styles: Optional[List[str]] = Query(None),
+    countries: Optional[List[str]] = Query(None),
+    sort: Optional[str] = None,
     status: PackageStatus = PackageStatus.PUBLISHED,
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
@@ -234,25 +242,104 @@ async def list_packages(
         # Limit to Public packages for Guests/Non-Owners
         query = query.where(Package.is_public == True)
     
-    # Apply filters
+    # Apply simple filters
     if destination:
         query = query.where(Package.destination.ilike(f"%{destination}%"))
     if country:
         query = query.where(Package.country.ilike(f"%{country}%"))
-    if category:
-        query = query.where(Package.category == category)
+    if trip_style:
+        query = query.where(Package.trip_style == trip_style)
     if min_price:
         query = query.where(Package.price_per_person >= min_price)
     if max_price:
         query = query.where(Package.price_per_person <= max_price)
+    if package_mode:
+        query = query.where(Package.package_mode == package_mode)
+    
+    # Duration Filter: Search against duration_days
+    # If using total_days or duration_days calculation could vary, duration_days is the base
+    if duration_min is not None:
+        query = query.where(Package.duration_days >= duration_min)
+    if duration_max is not None:
+        query = query.where(Package.duration_days <= duration_max)
+
+    # Array Filters
+    if activities and len(activities) > 0:
+        # Assuming activities is a JSON string of a list
+        # E.g., '["Beach", "Mountain"]'
+        # SQLAlchemy sqlite JSON contains is tricky, ilike is safer across DBs for text representation
+        # or use specialized JSON functions depending on the database.
+        # Fallback to ilike for SQLite/generic fallback:
+        activity_conditions = [Package.activities.ilike(f'%"{activity}"%') for activity in activities]
+        query = query.where(or_(*activity_conditions))
+        
+    if trip_styles and len(trip_styles) > 0:
+        query = query.where(Package.trip_style.in_(trip_styles))
+
+    if countries and len(countries) > 0:
+        country_conditions = [Package.country.ilike(f"%{c}%") for c in countries]
+        # Also check within destinations JSON
+        country_conditions.extend([Package.destinations.ilike(f'%"{c}"%') for c in countries])
+        query = query.where(or_(*country_conditions))
+
+    # Complex Search
     if search:
-        query = query.where(
-            or_(
-                Package.title.ilike(f"%{search}%"),
-                Package.description.ilike(f"%{search}%"),
-                Package.destination.ilike(f"%{search}%"),
-                Package.country.ilike(f"%{search}%")
+        search_term = f"%{search}%"
+        # Check for European search alias
+        european_countries = [
+            "France", "Italy", "Spain", "Germany", "Portugal",
+            "Greece", "Netherlands", "Switzerland", "Austria",
+            "Belgium", "Czech Republic", "Hungary", "Croatia",
+            "Sweden", "Norway", "Denmark", "Poland", "Turkey"
+        ]
+        
+        is_european_search = "europe" in search.lower()
+        
+        if is_european_search:
+            # Create OR conditions for European countries
+            eu_conditions = []
+            for eu_c in european_countries:
+                eu_conditions.append(Package.country.ilike(f"%{eu_c}%"))
+                eu_conditions.append(Package.destinations.ilike(f'%"{eu_c}"%'))
+            # Combine with standard title search
+            query = query.where(
+                or_(
+                    Package.title.ilike(search_term),
+                    *eu_conditions
+                )
             )
+        else:
+            query = query.where(
+                or_(
+                    Package.title.ilike(search_term),
+                    Package.description.ilike(search_term),
+                    Package.destination.ilike(search_term),
+                    Package.country.ilike(search_term),
+                    # Search within the JSON arrays/text fields
+                    Package.destinations.ilike(search_term),
+                    Package.trip_style.ilike(search_term),
+                    Package.activities.ilike(search_term)
+                )
+            )
+            
+    # Apply Sorting
+    from sqlalchemy import case, cast, Integer, desc, asc
+    if sort == "price_asc":
+        query = query.order_by(asc(Package.price_per_person))
+    elif sort == "price_desc":
+        query = query.order_by(desc(Package.price_per_person))
+    elif sort == "duration_asc":
+        query = query.order_by(asc(Package.duration_days))
+    elif sort == "duration_desc":
+        query = query.order_by(desc(Package.duration_days))
+    elif sort == "newest":
+        query = query.order_by(desc(Package.created_at))
+    else: # Recommended (default)
+        # Recommended sort logic: 
+        # score = (is_popular_destination * 2) + (view_count / 10) + recency (simplified to just view_count and popularity for now)
+        query = query.order_by(
+            desc(Package.is_popular_destination),
+            desc(Package.view_count)
         )
     
     # Get total count
@@ -338,6 +425,31 @@ async def get_cheapest_package(
         )
 
 
+@router.get("/slug/{slug}", response_model=PackageResponse)
+async def get_package_by_slug(
+    slug: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get package by slug"""
+    query = select(Package).where(Package.slug == slug).options(
+        selectinload(Package.images),
+        selectinload(Package.itinerary_items),
+        selectinload(Package.availability)
+    )
+    result = await db.execute(query)
+    package = result.scalar_one_or_none()
+    
+    if not package:
+        raise NotFoundException("Package not found")
+    
+    # Increment view count
+    package.view_count = (package.view_count or 0) + 1
+    await db.commit()
+    await db.refresh(package)
+    
+    return PackageResponse.model_validate(package)
+
+
 @router.get("/{package_id}", response_model=PackageResponse)
 async def get_package(
     package_id: UUID,
@@ -391,9 +503,11 @@ async def create_package(
         category=package_data.category,
         price_per_person=package_data.price_per_person,
         max_group_size=package_data.max_group_size,
-        included_items=package_data.included_items,
-        excluded_items=package_data.excluded_items,
+        included_items=json.dumps(package_data.included_items or []),
+        excluded_items=json.dumps(package_data.excluded_items or []),
         country=package_data.country,
+        destinations=json.dumps(package_data.destinations or []),
+        activities=json.dumps(package_data.activities or []),
         is_public=package_data.is_public,
         created_by=current_user.id,
         status=PackageStatus.DRAFT
@@ -440,8 +554,13 @@ async def update_package(
     
     # Update fields
     update_data = package_data.model_dump(exclude_unset=True)
+    json_fields = ['included_items', 'excluded_items', 'destinations', 'activities']
+    
     for field, value in update_data.items():
-        setattr(package, field, value)
+        if field in json_fields and value is not None:
+            setattr(package, field, json.dumps(value))
+        else:
+            setattr(package, field, value)
     
     await db.commit()
     await db.refresh(package)

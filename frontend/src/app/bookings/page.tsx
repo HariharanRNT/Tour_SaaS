@@ -141,7 +141,7 @@ export default function BookingsPage() {
 
 
     return (
-        <div className="min-h-screen bg-gray-50/50 py-12">
+        <div className="min-h-screen bg-transparent py-12">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="flex justify-between items-end mb-8">
                     <div>
@@ -278,7 +278,7 @@ export default function BookingsPage() {
 
                                                 <Button
                                                     variant="outline"
-                                                    className="flex-1 sm:flex-none gap-2 hover:bg-gray-50 border-gray-200 text-gray-700"
+                                                    className="flex-1 sm:flex-none gap-2 hover:bg-white/10 border-white/20 text-gray-700 glass-panel"
                                                     onClick={(e) => downloadInvoice(booking, e)}
                                                 >
                                                     <Download className="h-4 w-4" /> Invoice

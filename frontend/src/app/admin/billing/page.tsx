@@ -258,7 +258,7 @@ export default function AdminBillingPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col gap-4 justify-center items-center h-screen bg-slate-50">
+            <div className="flex flex-col gap-4 justify-center items-center h-screen bg-transparent">
                 <Loader2 className="animate-spin h-12 w-12 text-indigo-600" />
                 <p className="font-bold text-indigo-900 text-xl">Loading...</p>
             </div>
@@ -266,8 +266,8 @@ export default function AdminBillingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20">
-            <div className="bg-white border-b border-slate-100 py-8 px-8 sticky top-0 z-10 shadow-sm">
+        <div className="min-h-screen bg-transparent pb-20">
+            <div className="glass-navbar border-b border-slate-100 py-8 px-8 sticky top-0 z-10 shadow-sm">
                 <div className="max-w-[1600px] mx-auto">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="space-y-1">
@@ -304,7 +304,7 @@ export default function AdminBillingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[14px]">
                     {/* Total Subscriptions */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden bg-white relative transition-all duration-300 min-h-[140px]">
+                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
                             <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
                                     <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Total Subs</p>
@@ -323,7 +323,7 @@ export default function AdminBillingPage() {
 
                     {/* Active Subscriptions */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden bg-white relative transition-all duration-300 min-h-[140px]">
+                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
                             <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
                                     <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Active Subs</p>
@@ -346,7 +346,7 @@ export default function AdminBillingPage() {
 
                     {/* MRR */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden bg-white relative transition-all duration-300 min-h-[140px]">
+                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
                             <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
                                     <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Monthly Rev</p>
@@ -365,7 +365,7 @@ export default function AdminBillingPage() {
 
                     {/* Popular */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden bg-white relative transition-all duration-300 min-h-[140px]">
+                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
                             <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
                                     <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Most Popular</p>
@@ -387,7 +387,7 @@ export default function AdminBillingPage() {
                 {/* Main Content Area */}
                 <div className="space-y-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                        <div className="bg-white border-[1.5px] border-[#F1F5F9] p-[6px] rounded-[12px] w-fit shadow-sm">
+                        <div className="glass-card border-[1.5px] border-[#F1F5F9] p-[6px] rounded-[12px] w-fit shadow-sm">
                             <TabsList className="bg-transparent h-10 gap-1">
                                 {['plans', 'subscriptions', 'finance'].map((tab) => (
                                     <TabsTrigger
@@ -465,7 +465,7 @@ export default function AdminBillingPage() {
                                                     className="relative h-full min-h-[380px]"
                                                 >
                                                     <Card className={cn(
-                                                        "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 bg-white overflow-visible relative",
+                                                        "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-visible relative",
                                                         isMostPopular && "border-[2px] border-[#F97316] bg-[rgba(249,115,22,0.02)]"
                                                     )}>
                                                         {isMostPopular && (
@@ -502,13 +502,13 @@ export default function AdminBillingPage() {
                                                                         </Button>
                                                                     </DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl min-w-[180px]">
-                                                                        <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-slate-50">
+                                                                        <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
                                                                             <Edit className="h-4 w-4 mr-3" /> Edit Plan
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-slate-50">
+                                                                        <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
                                                                             <Power className="h-4 w-4 mr-3" /> {plan.is_active ? 'Deactivate' : 'Activate'}
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuSeparator className="my-2 bg-slate-50" />
+                                                                        <DropdownMenuSeparator className="my-2 bg-transparent" />
                                                                         <DropdownMenuItem
                                                                             onClick={() => handleDeletePlan(plan.id, plan.name)}
                                                                             className="rounded-xl font-bold py-3 px-4 text-red-500 focus:bg-red-50 focus:text-red-600"
@@ -590,7 +590,7 @@ export default function AdminBillingPage() {
                         </TabsContent>
 
                         <TabsContent value="subscriptions">
-                            <Card className="border-1.5 border-slate-100 shadow-sm rounded-[24px] overflow-hidden bg-white">
+                            <Card className="border-1.5 border-slate-100 shadow-sm rounded-[24px] overflow-hidden glass-panel">
                                 <CardHeader className="p-8 border-b border-slate-50">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                         <div>
@@ -617,7 +617,7 @@ export default function AdminBillingPage() {
                                     <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
-                                                <TableRow className="bg-slate-50/50 hover:bg-slate-50 transition-colors h-12 border-b border-slate-100">
+                                                <TableRow className="bg-white/5 hover:bg-transparent transition-colors h-12 border-b border-slate-100">
                                                     <TableHead className="pl-8 text-slate-400 font-bold uppercase text-[10px] tracking-wider">Agent</TableHead>
                                                     <TableHead className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Plan</TableHead>
                                                     <TableHead className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Status</TableHead>
@@ -631,7 +631,7 @@ export default function AdminBillingPage() {
                                                 {subscriptions
                                                     .filter(sub => sub.status === 'active')
                                                     .map((sub, i) => (
-                                                        <TableRow key={sub.id} className="border-b border-slate-50 hover:bg-slate-50/50 group transition-all h-20">
+                                                        <TableRow key={sub.id} className="border-b border-slate-50 hover:bg-white/5 group transition-all h-20">
                                                             <TableCell className="pl-8">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className={cn(
@@ -691,7 +691,7 @@ export default function AdminBillingPage() {
 
                         <TabsContent value="finance">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <Card className="lg:col-span-2 border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] overflow-hidden bg-white p-8">
+                                <Card className="lg:col-span-2 border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] overflow-hidden glass-panel p-8">
                                     <div className="text-[20px] font-bold text-[#0F172A] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
                                         {plans.map((plan, idx) => {
@@ -704,7 +704,7 @@ export default function AdminBillingPage() {
                                                 <div key={plan.id} className="flex items-center gap-4">
                                                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                                                     <div className="w-32 text-[13px] font-medium text-[#64748B] truncate font-['Plus_Jakarta_Sans',sans-serif]">{plan.name}</div>
-                                                    <div className="flex-1 h-2 bg-slate-50 rounded-full overflow-hidden">
+                                                    <div className="flex-1 h-2 bg-transparent rounded-full overflow-hidden">
                                                         <motion.div
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${Math.min(100, (revenue / (stats.mrr * 12 || 1)) * 100)}%` }}
@@ -725,7 +725,7 @@ export default function AdminBillingPage() {
                                         { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected', color: 'text-indigo-500' },
                                         { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-500' }
                                     ].map((item, i) => (
-                                        <Card key={i} className="border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] bg-white p-6 transition-all hover:translate-y-[-2px]">
+                                        <Card key={i} className="border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] glass-card p-6 transition-all hover:translate-y-[-2px]">
                                             <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px] mb-4">{item.label}</div>
                                             <div className="text-[24px] font-extrabold text-[#0F172A] font-['Outfit'] mb-1 tracking-[-0.5px]">{item.value}</div>
                                             <div className={cn("text-[12px] font-semibold", item.color)}>{item.sub}</div>
@@ -739,7 +739,7 @@ export default function AdminBillingPage() {
 
                 {/* Modal for Creating/Editing Plans */}
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogContent className="max-w-[560px] rounded-[20px] border-0 shadow-[0_24px_64px_rgba(0,0,0,0.18),0_8px_24px_rgba(0,0,0,0.10)] p-0 overflow-hidden bg-white">
+                    <DialogContent className="max-w-[560px] rounded-[20px] border-0 shadow-[0_24px_64px_rgba(0,0,0,0.18),0_8px_24px_rgba(0,0,0,0.10)] p-0 overflow-hidden glass-card">
                         <div className="bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#6D28D9] px-[28px] pt-[28px] pb-[32px] text-white relative min-h-[110px]">
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4 opacity-10">

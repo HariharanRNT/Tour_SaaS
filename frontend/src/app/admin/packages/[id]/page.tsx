@@ -211,7 +211,7 @@ export default function PackageDetailPage() {
     if (error || !packageData) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <Card className="max-w-md">
+                <Card className="max-w-md glass-card">
                     <CardContent className="pt-6">
                         <p className="text-red-600 text-center">{error || 'Package not found'}</p>
                         <Button onClick={() => router.push('/admin/packages')} className="mt-4 w-full">
@@ -239,7 +239,7 @@ export default function PackageDetailPage() {
 
             {day[slot] && day[slot].length > 0 ? (
                 day[slot].map((activity: any, idx: number) => (
-                    <div key={idx} className="ml-0 mb-3 p-3 bg-white border border-gray-100 rounded-lg flex gap-4 group hover:border-blue-100 transition-colors shadow-sm">
+                    <div key={idx} className="ml-0 mb-3 p-3 glass-card border border-gray-100 rounded-lg flex gap-4 group hover:border-blue-100 transition-colors shadow-sm">
                         <div className="w-20 h-20 flex-shrink-0">
                             <ActivityImageGallery
                                 images={activity.image_url ? [activity.image_url] : []}
@@ -324,7 +324,7 @@ export default function PackageDetailPage() {
 
                     <TabsContent value="basic" className="mt-0">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="md:col-span-1 border-gray-100 shadow-sm">
+                            <Card className="md:col-span-1 border-gray-100 shadow-sm glass-card">
                                 <CardHeader>
                                     <CardTitle className="text-lg">Package Specs</CardTitle>
                                 </CardHeader>
@@ -345,7 +345,7 @@ export default function PackageDetailPage() {
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card className="md:col-span-2 border-gray-100 shadow-sm">
+                            <Card className="md:col-span-2 border-gray-100 shadow-sm glass-card">
                                 <CardHeader>
                                     <CardTitle className="text-lg">Description</CardTitle>
                                 </CardHeader>
@@ -357,7 +357,7 @@ export default function PackageDetailPage() {
                     </TabsContent>
 
                     <TabsContent value="itinerary" className="mt-0">
-                        <Card className="border-gray-100 shadow-sm">
+                        <Card className="border-gray-100 shadow-sm glass-panel">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle>Daily Itinerary</CardTitle>
@@ -371,7 +371,7 @@ export default function PackageDetailPage() {
                                 {packageData.itinerary && packageData.itinerary.length > 0 ? (
                                     <div className="space-y-8">
                                         {packageData.itinerary.map((day: any) => (
-                                            <div key={day.day_number} className="border border-gray-100 rounded-xl p-6 bg-gray-50/30">
+                                            <div key={day.day_number} className="border border-gray-100 rounded-xl p-6 glass-card">
                                                 <h3 className="text-lg font-bold mb-6 text-gray-900 border-b border-gray-100 pb-3">Day {day.day_number}</h3>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                                                     {renderTimeSlot(day, 'morning', '🌅 Morning')}
@@ -384,7 +384,7 @@ export default function PackageDetailPage() {
                                     </div>
                                 ) : (
                                     <div className="text-center py-24">
-                                        <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <div className="bg-transparent w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Calendar className="h-10 w-10 text-gray-200" />
                                         </div>
                                         <h3 className="text-lg font-medium text-gray-900">Itinerary Pending</h3>

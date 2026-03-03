@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Script from 'next/script';
@@ -55,6 +55,9 @@ export default function SubscriptionPage() {
     const [activatingId, setActivatingId] = useState<string | null>(null);
     const [successPlan, setSuccessPlan] = useState<Plan | null>(null);
     const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
+    // Live countdown display for plans expiring within 24 hours
+    const [countdownText, setCountdownText] = useState<string>('');
+    const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
     // History Table State
     const [historyPage, setHistoryPage] = useState(1);
@@ -139,11 +142,49 @@ export default function SubscriptionPage() {
 
     useEffect(() => {
         loadData();
-        // Check if Razorpay is already loaded (navigated from another page)
         if (typeof window !== 'undefined' && 'Razorpay' in window) {
             setIsRazorpayLoaded(true);
         }
+        // Cleanup countdown interval on unmount
+        return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
     }, []);
+
+    // Live countdown: updates every second when plan expires within 24h
+    useEffect(() => {
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        if (!activeSub) return;
+
+        const updateCountdown = () => {
+            const msLeft = new Date(activeSub.end_date).getTime() - Date.now();
+            if (msLeft <= 0) {
+                setCountdownText('Expired');
+                clearInterval(countdownRef.current!);
+                // Trigger a reload to pick up the new state after expiry
+                loadData();
+                return;
+            }
+            const hoursLeft = Math.floor(msLeft / (1000 * 3600));
+            const minsLeft = Math.floor((msLeft % (1000 * 3600)) / 60000);
+            if (hoursLeft >= 1) {
+                setCountdownText(`${hoursLeft} hr${hoursLeft > 1 ? 's' : ''} left`);
+            } else if (minsLeft >= 1) {
+                setCountdownText(`${minsLeft} min left`);
+            } else {
+                setCountdownText('Expiring soon');
+            }
+        };
+
+        const msToExpiry = new Date(activeSub.end_date).getTime() - Date.now();
+        if (msToExpiry < 24 * 3600 * 1000) {
+            // Less than 24h: start live countdown
+            updateCountdown();
+            countdownRef.current = setInterval(updateCountdown, 30000); // update every 30s
+        } else {
+            setCountdownText('');
+        }
+
+        return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
+    }, [activeSub]);
 
     const loadData = async () => {
         setLoading(true);
@@ -151,7 +192,30 @@ export default function SubscriptionPage() {
             const token = localStorage.getItem('token');
             const headers = { 'Authorization': `Bearer ${token}` };
 
-            // Fetch Plans
+            // Step 1: Check & auto-fix expiry BEFORE fetching subscriptions
+            try {
+                const expiryRes = await fetch('http://localhost:8000/api/v1/subscriptions/check-expiry', {
+                    method: 'POST',
+                    headers
+                });
+                if (expiryRes.ok) {
+                    const expiry = await expiryRes.json();
+                    if (expiry.was_expired && expiry.auto_activated_plan) {
+                        // Queued plan was automatically promoted
+                        toast.success(
+                            `Your ${expiry.expired_plan_name} plan expired. ${expiry.auto_activated_plan} has been activated automatically.`,
+                            { autoClose: 6000 }
+                        );
+                    } else if (expiry.was_expired) {
+                        toast.error(
+                            `Your ${expiry.expired_plan_name} plan has expired. Please purchase a new plan to continue.`,
+                            { autoClose: 6000 }
+                        );
+                    }
+                }
+            } catch { /* non-blocking — proceed to fetch subs even if this fails */ }
+
+            // Step 2: Fetch Plans
             const plansRes = await fetch('http://localhost:8000/api/v1/subscriptions/plans');
             if (plansRes.ok) {
                 const rawPlans = await plansRes.json();
@@ -176,15 +240,20 @@ export default function SubscriptionPage() {
                 setPlans(transformedPlans);
             }
 
-            // Fetch Subscriptions
+            // Step 3: Fetch Subscriptions (AFTER expiry fix, so state is correct)
             const subRes = await fetch('http://localhost:8000/api/v1/subscriptions/my-subscription', { headers });
             if (subRes.ok) {
                 const subs: Subscription[] = await subRes.json();
 
-                // Categorize
-                const active = subs.find(s => s.status === 'active');
+                // Client-side expiry guard: if a sub has status='active' but its
+                // end_date is in the past, treat it as 'expired' (belt-and-suspenders over the backend check)
+                const now = new Date();
+                const active = subs.find(s =>
+                    s.status === 'active' && new Date(s.end_date) > now
+                );
                 const upcoming = subs.filter(s => s.status === 'upcoming');
-                const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status));
+                const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
+                    || (s.status === 'active' && new Date(s.end_date) <= now));
                 const paused = subs.filter(s => s.status === 'on_hold');
 
                 setActiveSub(active || null);
@@ -225,7 +294,15 @@ export default function SubscriptionPage() {
                                 ? `Welcome back! You've successfully resumed your ${updatedSub.plan.name} plan.`
                                 : `Success! Your ${updatedSub.plan.name} plan is now active.`
                         );
-                        loadData();
+                        // Update local user data and redirect
+                        const userStr = localStorage.getItem('user');
+                        if (userStr) {
+                            const user = JSON.parse(userStr);
+                            user.has_active_subscription = true;
+                            user.subscription_status = 'active';
+                            localStorage.setItem('user', JSON.stringify(user));
+                        }
+                        router.push('/agent/dashboard');
                     } else {
                         const err = await res.json();
                         toast.error(err.detail || "We couldn't activate your plan. Please try again.");
@@ -247,7 +324,19 @@ export default function SubscriptionPage() {
         } else {
             toast.success(`Purchase successful! You have subscribed to ${plan.name}.`);
         }
-        loadData();
+
+        // Update local user data and redirect
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            user.has_active_subscription = true;
+            user.subscription_status = 'active';
+            localStorage.setItem('user', JSON.stringify(user));
+        }
+
+        setTimeout(() => {
+            router.push('/agent/dashboard');
+        }, 1500);
     };
 
     const handlePurchase = async (plan: Plan) => {
@@ -381,19 +470,27 @@ export default function SubscriptionPage() {
         }
     };
 
-    const getDaysRemaining = (endDate: string) => {
+    const getDaysRemaining = (endDate: string): number => {
         if (!endDate) return 0;
-        const end = new Date(endDate);
-        const now = new Date();
-        const diff = end.getTime() - now.getTime();
+        const diff = new Date(endDate).getTime() - Date.now();
         const days = Math.ceil(diff / (1000 * 3600 * 24));
         return days > 0 ? days : 0;
+    };
+
+    // Returns formatted time remaining: days, hours, minutes, or countdown
+    const getExpiryLabel = (endDate: string): { text: string; isUrgent: boolean } => {
+        const msLeft = new Date(endDate).getTime() - Date.now();
+        if (msLeft <= 0) return { text: 'Expired', isUrgent: true };
+        const daysLeft = Math.floor(msLeft / (1000 * 3600 * 24));
+        if (daysLeft >= 1) return { text: `${daysLeft} day${daysLeft > 1 ? 's' : ''} left`, isUrgent: daysLeft < 7 };
+        // < 1 day: use live countdown
+        return { text: countdownText || 'Less than a day', isUrgent: true };
     };
 
     if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#FAFBFC] to-[#F8F9FA]">
+        <div className="min-h-screen">
             <Script
                 id="razorpay-checkout-js"
                 src="https://checkout.razorpay.com/v1/checkout.js"
@@ -436,7 +533,7 @@ export default function SubscriptionPage() {
                             <h2 className="text-lg font-bold text-gray-900">Current Subscription</h2>
                         </div>
 
-                        <Card className="border-0 shadow-[0_8px_24px_rgba(79,70,229,0.1)] bg-gradient-to-br from-[#EEF2FF] to-[#E0E7FF] overflow-hidden relative">
+                        <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-lg border border-white/50 overflow-hidden relative rounded-3xl">
                             {/* Decorative background element */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -463,7 +560,7 @@ export default function SubscriptionPage() {
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button className="bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200 shadow-sm font-semibold group">
+                                            <Button className="bg-white/60 backdrop-blur-sm text-violet-700 hover:bg-white/80 border border-white/70 shadow-sm font-semibold group rounded-full">
                                                 Manage Plan
                                                 <ChevronDown className="ml-2 h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
                                             </Button>
@@ -489,8 +586,11 @@ export default function SubscriptionPage() {
                                         <div className="text-lg font-bold text-indigo-950">
                                             {new Date(activeSub.end_date).toLocaleDateString()}
                                         </div>
-                                        <div className={`text-xs font-semibold mt-1 ${getDaysRemaining(activeSub.end_date) < 7 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                            {getDaysRemaining(activeSub.end_date)} days left
+                                        <div className={`text-xs font-semibold mt-1 flex items-center gap-1 ${getExpiryLabel(activeSub.end_date).isUrgent ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            {getExpiryLabel(activeSub.end_date).isUrgent && getDaysRemaining(activeSub.end_date) < 1 && (
+                                                <Clock className="h-3 w-3 animate-pulse" />
+                                            )}
+                                            {getExpiryLabel(activeSub.end_date).text}
                                         </div>
                                     </div>
 
@@ -503,7 +603,9 @@ export default function SubscriptionPage() {
                                             ₹{activeSub.plan.price.toLocaleString()}
                                         </div>
                                         <div className="text-xs font-semibold mt-1 text-indigo-600">
-                                            Due in {getDaysRemaining(activeSub.end_date)} days
+                                            {getDaysRemaining(activeSub.end_date) > 0
+                                                ? `Due in ${getDaysRemaining(activeSub.end_date)} day${getDaysRemaining(activeSub.end_date) > 1 ? 's' : ''}`
+                                                : 'Due today'}
                                         </div>
                                     </div>
 
@@ -565,19 +667,24 @@ export default function SubscriptionPage() {
                         </Card>
                     </div>
                 ) : (
-                    <div className="mb-12 p-8 bg-yellow-50/50 backdrop-blur-sm border border-yellow-200 rounded-2xl text-center shadow-sm">
-                        <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="mb-12 p-8 bg-red-50/50 backdrop-blur-sm border border-red-200 rounded-2xl text-center shadow-sm">
+                        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <AlertTriangle className="h-8 w-8" />
                         </div>
-                        <h3 className="text-xl font-bold text-yellow-900 mb-2">No Active Subscription</h3>
-                        <p className="text-yellow-700/80 mb-6 max-w-md mx-auto">
-                            Your account is currently inactive. Review the plans below and subscribe to start managing bookings efficiently.
+                        <h3 className="text-xl font-bold text-red-900 mb-2">
+                            {historySubs.length > 0 ? 'Your Plan Has Expired' : 'No Active Subscription'}
+                        </h3>
+                        <p className="text-red-700/80 mb-6 max-w-md mx-auto">
+                            {historySubs.length > 0
+                                ? 'Your plan has expired. Please purchase a new plan to continue using the agent portal.'
+                                : 'Your account does not have an active subscription. Choose a plan below to get started.'
+                            }
                         </p>
                         <Button
                             onClick={() => document.getElementById('available-plans')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-full px-8 shadow-lg shadow-yellow-600/20"
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-8 shadow-lg shadow-red-600/20"
                         >
-                            View Plans
+                            {historySubs.length > 0 ? 'Buy New Plan' : 'View Plans'}
                         </Button>
                     </div>
                 )}
@@ -775,10 +882,10 @@ export default function SubscriptionPage() {
                                     <div
                                         className={`
                                         relative rounded-2xl p-5 h-full flex flex-col transition-all duration-300 ease-out
-                                        bg-white border-2
+                                        bg-white/50 backdrop-blur-md border border-white/60
                                         ${isPopular
-                                                ? `border-indigo-500 shadow-xl scale-105 z-10 bg-gradient-to-b from-indigo-50/50 to-white`
-                                                : `border-gray-200 hover:border-indigo-400 hover:shadow-2xl hover:-translate-y-2`
+                                                ? `border-violet-400/60 shadow-xl scale-105 z-10`
+                                                : `hover:border-violet-300/50 hover:shadow-2xl hover:-translate-y-2`
                                             }
                                     `}
                                         style={isPopular ? { boxShadow: '0 12px 32px rgba(99,102,241,0.15)' } : {}}
@@ -811,7 +918,7 @@ export default function SubscriptionPage() {
                                         {/* Features Section */}
                                         <div className="flex-1 space-y-4">
                                             {/* Booking Limit Highlight */}
-                                            <div className={`flex items-center justify-center gap-2 bg-gray-50/80 py-3 rounded-xl border border-gray-100`}>
+                                            <div className={`flex items-center justify-center gap-2 bg-white/10 py-3 rounded-xl border border-gray-100`}>
                                                 <Zap className={`h-4 w-4 ${theme.text}`} />
                                                 <span className="font-semibold text-gray-900 text-sm">
                                                     {plan.booking_limit === -1 ? 'Unlimited' : plan.booking_limit} Bookings{getBillingCycleShort(plan)}
@@ -854,7 +961,7 @@ export default function SubscriptionPage() {
                                             <Button
                                                 className={`w-full font-bold h-10 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95 ${isPopular
                                                     ? `bg-gradient-to-r ${theme.gradient} text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5`
-                                                    : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-100 hover:border-gray-200 shadow-none'
+                                                    : 'bg-white hover:bg-transparent text-gray-900 border-2 border-gray-100 hover:border-gray-200 shadow-none'
                                                     }`}
                                                 onClick={() => handlePurchase(plan)}
                                                 disabled={processingId === plan.id}
@@ -917,7 +1024,7 @@ export default function SubscriptionPage() {
                         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-medium">
+                                    <thead className="bg-transparent border-b border-gray-100 text-gray-500 font-medium">
                                         <tr>
                                             <th className="px-6 py-4">PLAN NAME</th>
                                             <th className="px-6 py-4">STATUS</th>
@@ -929,7 +1036,7 @@ export default function SubscriptionPage() {
                                         {paginatedHistory.map((sub, i) => {
                                             const theme = getPlanTheme(sub.plan.name);
                                             return (
-                                                <tr key={sub.id} className={`hover:bg-gray-50/50 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}`}>
+                                                <tr key={sub.id} className={`hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-white/5'}`}>
                                                     <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2">
                                                         <div className={`p-1 rounded-full ${theme.bg}`}>
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
@@ -943,7 +1050,7 @@ export default function SubscriptionPage() {
                                                                 sub.status === 'expired' ? 'bg-gray-100 text-gray-600' :
                                                                     'bg-red-50 text-red-600'}
                                                         `}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${sub.status === 'completed' ? 'bg-green-500' : sub.status === 'expired' ? 'bg-gray-500' : 'bg-red-500'}`} />
+                                                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${sub.status === 'completed' ? 'bg-green-500' : sub.status === 'expired' ? 'bg-transparent0' : 'bg-red-500'}`} />
                                                             {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
                                                         </Badge>
                                                     </td>
@@ -971,7 +1078,7 @@ export default function SubscriptionPage() {
 
                             {/* Pagination */}
                             {totalHistoryPages > 1 && (
-                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white/5">
                                     <div className="text-xs text-gray-500">
                                         Page {historyPage} of {totalHistoryPages}
                                     </div>

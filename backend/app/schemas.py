@@ -4,7 +4,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Union
 from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator
-from app.models import UserRole, PackageStatus, BookingStatus, PaymentStatus
+from app.models import UserRole, PackageStatus, BookingStatus, PaymentStatus, ApprovalStatus
 
 
 # User Schemas
@@ -31,6 +31,7 @@ class UserCreate(UserBase):
     currency: Optional[str] = "INR"
     commission_type: Optional[str] = "percentage"
     commission_value: Optional[Decimal] = 0.0
+    approval_status: Optional[ApprovalStatus] = ApprovalStatus.APPROVED
 
 
 class UserUpdate(BaseModel):
@@ -59,6 +60,34 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class AgentRegistration(BaseModel):
+    # Agency Details
+    agency_name: str
+    company_legal_name: str
+    domain: str
+    business_address: str
+    country: str
+    state: str
+    city: str
+    
+    # Contact Details
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str
+    
+    # Credentials
+    password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
+
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if 'password' in info.data and v != info.data['password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -84,8 +113,15 @@ class UserResponse(UserBase):
     gst_no: Optional[str] = None
     commission_type: Optional[str] = None
     commission_value: Optional[Decimal] = None
+    approval_status: ApprovalStatus
     email_verified: bool
     is_active: bool
+    
+    # Subscription Fields
+    has_active_subscription: bool = False
+    subscription_status: Optional[str] = None
+    subscription_end_date: Optional[date] = None
+    
     created_at: datetime
     
     class Config:
@@ -104,6 +140,7 @@ class AgentSMTPSettingsBase(BaseModel):
 
 class AgentGeneralSettingsUpdate(BaseModel):
     currency: Optional[str] = "INR"
+    gst_applicable: Optional[bool] = False
     gst_inclusive: Optional[bool] = False
     gst_percentage: Optional[Decimal] = Decimal("18.00")
 
@@ -141,6 +178,7 @@ class AgentRazorpaySettingsResponse(AgentRazorpaySettingsBase):
 
 class AgentSettingsResponse(BaseModel):
     currency: str = "INR"
+    gst_applicable: bool = False
     gst_inclusive: bool = False
     gst_percentage: Decimal = Decimal("18.00")
     smtp: Optional[AgentSMTPSettingsResponse] = None
@@ -217,11 +255,17 @@ class PackageBase(BaseModel):
     country: Optional[str] = None
     duration_days: int
     duration_nights: int
-    category: str
+    trip_style: Optional[str] = None
     price_per_person: Decimal
     max_group_size: int = 20
     included_items: List[str] = []
     excluded_items: List[str] = []
+    package_mode: str = "single"
+    destinations: List[dict] = []
+    activities: List[str] = []
+    is_popular_destination: bool = False
+    feature_image_url: Optional[str] = None
+    view_count: int = 0
 
 
 class PackageCreate(PackageBase):
@@ -238,13 +282,19 @@ class PackageUpdate(BaseModel):
     country: Optional[str] = None
     duration_days: Optional[int] = None
     duration_nights: Optional[int] = None
-    category: Optional[str] = None
+    trip_style: Optional[str] = None
     price_per_person: Optional[Decimal] = None
     max_group_size: Optional[int] = None
     included_items: Optional[List[str]] = None
     excluded_items: Optional[List[str]] = None
+    package_mode: Optional[str] = None
+    destinations: Optional[List[dict]] = None
+    activities: Optional[List[str]] = None
     status: Optional[PackageStatus] = None
     is_public: Optional[bool] = None
+    is_popular_destination: Optional[bool] = None
+    feature_image_url: Optional[str] = None
+    view_count: Optional[int] = None
 
 
 class PackageResponse(PackageBase):
@@ -257,7 +307,7 @@ class PackageResponse(PackageBase):
     itinerary_items: List[ItineraryItemResponse] = []
     availability: List[PackageAvailabilityResponse] = []
     
-    @field_validator('included_items', 'excluded_items', mode='before')
+    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', mode='before')
     @classmethod
     def parse_json_list(cls, v):
         if isinstance(v, str):

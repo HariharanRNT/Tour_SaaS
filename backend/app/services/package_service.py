@@ -1,9 +1,10 @@
 """Package Service for managing tour packages with time-slotted itineraries"""
 
 from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
 import uuid
+import json
 
 from app.models import Package, ItineraryItem, PackageStatus
 
@@ -11,7 +12,7 @@ from app.models import Package, ItineraryItem, PackageStatus
 class PackageService:
     """Service for managing packages with enhanced itinerary support"""
     
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
     
     async def get_package_with_itinerary(
@@ -22,8 +23,6 @@ class PackageService:
         Get package with itinerary organized by day and time slot
         Returns package data with nested itinerary structure
         """
-        from sqlalchemy import select
-        import json
         
         # Get package using async query
         stmt = select(Package).where(Package.id == package_id)
@@ -112,6 +111,25 @@ class PackageService:
             'package': package,
             'itinerary_by_day': itinerary_list
         }
+
+    async def get_package_with_itinerary_by_slug(
+        self,
+        slug: str
+    ) -> Dict[str, Any]:
+        """
+        Get package with itinerary organized by day and time slot by slug
+        """
+        
+        # Get package using async query
+        stmt = select(Package).where(Package.slug == slug)
+        result = await self.db.execute(stmt)
+        package = result.scalar_one_or_none()
+        
+        if not package:
+            raise ValueError(f"Package with slug {slug} not found")
+        
+        # We can just reuse get_package_with_itinerary logic now that we have the package_id
+        return await self.get_package_with_itinerary(package.id)
     
     async def get_packages_by_destination(
         self,
@@ -121,12 +139,13 @@ class PackageService:
     ) -> List[Package]:
         """Get all published packages for a destination"""
         
-        # TODO: Add is_template filter after running migrations
-        return self.db.query(Package).filter(
+        stmt = select(Package).where(
             Package.destination.ilike(f"%{destination}%"),
-            # Package.is_template == False,  # Disabled until migration is run
             Package.status == PackageStatus.PUBLISHED
-        ).offset(offset).limit(limit).all()
+        ).offset(offset).limit(limit)
+        
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def add_itinerary_item_with_timeslot(
         self,
@@ -141,9 +160,9 @@ class PackageService:
         """Add an itinerary item with time slot to a package"""
         
         # Validate package exists
-        package = self.db.query(Package).filter(
-            Package.id == package_id
-        ).first()
+        stmt = select(Package).where(Package.id == package_id)
+        result = await self.db.execute(stmt)
+        package = result.scalar_one_or_none()
         
         if not package:
             raise ValueError(f"Package {package_id} not found")
@@ -154,7 +173,6 @@ class PackageService:
             raise ValueError(f"Time slot must be one of: {', '.join(valid_slots)}")
         
         # Create itinerary item
-        import json
         item = ItineraryItem(
             package_id=package_id,
             day_number=day_number,
@@ -166,8 +184,8 @@ class PackageService:
         )
         
         self.db.add(item)
-        self.db.commit()
-        self.db.refresh(item)
+        await self.db.commit()
+        await self.db.refresh(item)
         
         return item
     
@@ -178,19 +196,22 @@ class PackageService:
     ) -> ItineraryItem:
         """Update an itinerary item"""
         
-        item = self.db.query(ItineraryItem).filter(
-            ItineraryItem.id == item_id
-        ).first()
+        stmt = select(ItineraryItem).where(ItineraryItem.id == item_id)
+        result = await self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         
         if not item:
             raise ValueError(f"Itinerary item {item_id} not found")
         
         for key, value in kwargs.items():
             if hasattr(item, key):
-                setattr(item, key, value)
+                if key == 'activities' and value is not None:
+                     setattr(item, key, json.dumps(value))
+                else:
+                     setattr(item, key, value)
         
-        self.db.commit()
-        self.db.refresh(item)
+        await self.db.commit()
+        await self.db.refresh(item)
         
         return item
     
@@ -200,14 +221,14 @@ class PackageService:
     ) -> bool:
         """Delete an itinerary item"""
         
-        item = self.db.query(ItineraryItem).filter(
-            ItineraryItem.id == item_id
-        ).first()
+        stmt = select(ItineraryItem).where(ItineraryItem.id == item_id)
+        result = await self.db.execute(stmt)
+        item = result.scalar_one_or_none()
         
         if not item:
             return False
         
-        self.db.delete(item)
-        self.db.commit()
+        await self.db.delete(item)
+        await self.db.commit()
         
         return True

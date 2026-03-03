@@ -1,6 +1,7 @@
 """Admin API endpoints for agent management"""
 
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -18,12 +19,27 @@ router = APIRouter()
 async def list_agents(
     skip: int = 0,
     limit: int = 100,
+    status: Optional[str] = "all",
     db: AsyncSession = Depends(get_db),
     current_admin: User = Depends(get_current_admin)
 ):
-    """List all agents"""
+    """List all agents with optional status filter"""
     from sqlalchemy.orm import selectinload
+    from app.models import ApprovalStatus
+    
     stmt = select(User).join(Agent).where(User.role == UserRole.AGENT)
+    
+    if status == "pending":
+        stmt = stmt.where(User.approval_status == ApprovalStatus.PENDING)
+    elif status == "approved":
+        stmt = stmt.where(User.approval_status == ApprovalStatus.APPROVED)
+    elif status == "rejected":
+        stmt = stmt.where(User.approval_status == ApprovalStatus.REJECTED)
+    elif status == "active":
+        stmt = stmt.where(User.is_active == True)
+    elif status == "inactive":
+        stmt = stmt.where(User.is_active == False)
+
     stmt = stmt.offset(skip).limit(limit).order_by(User.created_at.desc()).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
@@ -125,6 +141,68 @@ async def toggle_agent_status(
     agent.is_active = is_active
     await db.commit()
     await db.refresh(agent)
+    
+    return UserResponse.model_validate(agent)
+
+
+@router.patch("/agents/{agent_id}/approve", response_model=UserResponse)
+async def approve_agent(
+    agent_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """Approve a self-registered agent"""
+    from app.models import ApprovalStatus
+    from sqlalchemy.orm import selectinload
+    
+    stmt = select(User).where(User.id == agent_id, User.role == UserRole.AGENT).options(
+        selectinload(User.agent_profile)
+    )
+    result = await db.execute(stmt)
+    agent = result.scalar_one_or_none()
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    agent.approval_status = ApprovalStatus.APPROVED
+    agent.is_active = True
+    agent.email_verified = True # Trusted after admin approval
+    
+    await db.commit()
+    await db.refresh(agent)
+    
+    # TODO: Send approval email
+    
+    return UserResponse.model_validate(agent)
+
+
+@router.patch("/agents/{agent_id}/reject", response_model=UserResponse)
+async def reject_agent(
+    agent_id: UUID,
+    reason: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """Reject a self-registered agent"""
+    from app.models import ApprovalStatus
+    from sqlalchemy.orm import selectinload
+    
+    stmt = select(User).where(User.id == agent_id, User.role == UserRole.AGENT).options(
+        selectinload(User.agent_profile)
+    )
+    result = await db.execute(stmt)
+    agent = result.scalar_one_or_none()
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    agent.approval_status = ApprovalStatus.REJECTED
+    agent.is_active = False
+    
+    await db.commit()
+    await db.refresh(agent)
+    
+    # TODO: Send rejection email
     
     return UserResponse.model_validate(agent)
 

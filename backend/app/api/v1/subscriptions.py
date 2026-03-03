@@ -202,6 +202,56 @@ async def get_my_subscription(
     return subscriptions
 
 
+@router.post("/check-expiry")
+async def check_subscription_expiry(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Called on every subscription page load.
+    1. Checks if current active plan is expired.
+    2. If expired → marks it complete, auto-activates next queued plan.
+    3. Returns new state so frontend can show correct UI without a full reload.
+    """
+    from app.services.subscription_service import SubscriptionService
+    from sqlalchemy.orm import selectinload
+
+    # Capture current active plan name BEFORE expiry check (for the toast message)
+    current_stmt = select(Subscription).where(
+        Subscription.user_id == current_user.id,
+        Subscription.status == 'active'
+    ).options(selectinload(Subscription.plan))
+    current_active_before = (await db.execute(current_stmt)).scalar_one_or_none()
+    expired_plan_name = None
+    was_expired = False
+
+    if current_active_before:
+        from datetime import date
+        if current_active_before.end_date < date.today():
+            expired_plan_name = current_active_before.plan.name
+            was_expired = True
+
+    # Run auto-activate logic (marks expired → completed, activates next queued)
+    new_active = await SubscriptionService.check_and_auto_activate(current_user.id, db)
+
+    auto_activated_plan = None
+    if was_expired and new_active:
+        auto_activated_plan = new_active.plan.name
+
+    return {
+        "was_expired": was_expired,
+        "expired_plan_name": expired_plan_name,
+        "auto_activated_plan": auto_activated_plan,
+        "has_active_plan": new_active is not None,
+        "new_active_sub": {
+            "id": str(new_active.id),
+            "plan_name": new_active.plan.name,
+            "end_date": str(new_active.end_date),
+            "status": new_active.status,
+        } if new_active else None
+    }
+
+
 @router.post("/{subscription_id}/activate", response_model=SubscriptionResponse)
 async def manual_activate_plan(
     subscription_id: UUID,

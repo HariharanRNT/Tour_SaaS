@@ -1,11 +1,11 @@
 """API endpoints for bookings with customizations"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from app.database import get_db
-from app.core.security import get_current_user
+from app.api.deps import get_current_user
 from app.models import User
 from app.services.booking_service import BookingService
 from app.schemas.package_schemas import (
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/bookings-custom", tags=["Bookings - With Customizati
 @router.post("", response_model=BookingWithCustomizationsResponse)
 async def create_booking_with_customizations(
     booking_data: BookingWithCustomizationsCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -63,7 +63,7 @@ async def create_booking_with_customizations(
 @router.get("/{booking_id}", response_model=BookingWithCustomizationsResponse)
 async def get_booking_with_customizations(
     booking_id: UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get booking with all customizations and final itinerary"""

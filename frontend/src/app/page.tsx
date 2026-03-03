@@ -10,6 +10,7 @@ import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCi
 import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
+import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
 import { useTheme } from '@/context/ThemeContext'
 
 interface Destination {
@@ -197,17 +198,19 @@ export default function Home() {
                                 </Button>
                             </Link>
 
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="lg" className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all group font-bold" style={{ borderRadius: "var(--button-radius, 9999px)" }}>
-                                        <Sparkles className="h-6 w-6 mr-2 text-yellow-300 animate-pulse" />
-                                        Plan with AI
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px] p-0 bg-transparent border-none shadow-none">
-                                    <PackageSearchChat />
-                                </DialogContent>
-                            </Dialog>
+                            <Button
+                                variant="ghost"
+                                size="lg"
+                                className="h-16 px-8 text-xl rounded-full text-blue-100 hover:text-white hover:bg-white/10 border border-white/10 hover:border-white/30 backdrop-blur-sm transition-all group font-bold"
+                                style={{ borderRadius: "var(--button-radius, 9999px)" }}
+                                onClick={() => {
+                                    const chatFab = document.querySelector('button[aria-label="Open AI Chat"]') as HTMLButtonElement;
+                                    if (chatFab) chatFab.click();
+                                }}
+                            >
+                                <Sparkles className="h-6 w-6 mr-2 text-yellow-300 animate-pulse" />
+                                {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : "Plan with AI"}
+                            </Button>
                         </div>
 
                         {/* Feature Cards */}
@@ -233,7 +236,7 @@ export default function Home() {
                                         bg_color: "from-cyan-500/20 to-cyan-600/20"
                                     }
                                 ]).map((card, idx) => (
-                                    <div key={idx} className={`group bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden`} style={{ borderRadius: "var(--card-radius, 1.5rem)", backgroundColor: "var(--card-bg, rgba(255, 255, 255, 0.05))", boxShadow: "var(--card-shadow, none)" }}>
+                                    <div key={idx} className={`group glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl hover:shadow-blue-900/40 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden`} style={{ borderRadius: "var(--card-radius, 1.5rem)", backgroundColor: "var(--card-bg, rgba(255, 255, 255, 0.05))", boxShadow: "var(--card-shadow, none)" }}>
                                         {/* Inner Gradient */}
                                         <div className={`absolute inset-0 bg-gradient-to-br ${card.bg_color || 'from-blue-500/20 to-blue-600/20'} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
 
@@ -259,7 +262,7 @@ export default function Home() {
 
             {/* Why Choose Us Section */}
             {theme.show_wcu_section !== false && (
-                <section className="bg-gray-50 relative overflow-hidden" style={{ paddingTop: "var(--section-spacing, 4rem)", paddingBottom: "calc(var(--section-spacing, 4rem) / 2)" }}>
+                <section className="bg-transparent relative overflow-hidden" style={{ paddingTop: "var(--section-spacing, 4rem)", paddingBottom: "calc(var(--section-spacing, 4rem) / 2)" }}>
                     {/* Wave Separator - Top */}
                     <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0]">
                         <svg className="relative block w-[calc(100%+1.3px)] h-[50px] md:h-[100px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -306,7 +309,7 @@ export default function Home() {
                                     description: "Seamless, secure payments via Razorpay with instant confirmation."
                                 }
                             ]).map((feature, idx) => (
-                                <div key={idx} className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-gray-100 hover:shadow-2xl hover:shadow-gray-200 hover:-translate-y-2 transition-all duration-300 border border-gray-100 relative overflow-hidden" style={{ borderRadius: "var(--card-radius, 2rem)" }}>
+                                <div key={idx} className="group glass-panel bg-white/60 backdrop-blur-md rounded-[2rem] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/50 relative overflow-hidden" style={{ borderRadius: "var(--card-radius, 2rem)" }}>
                                     <div className="w-20 h-20 rounded-full flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500" style={{ background: getWcuIconBg(idx, feature.icon_bg_color) }}>
                                         {getIcon(feature.icon, <Globe className="h-10 w-10 text-white" />)}
                                     </div>
@@ -327,7 +330,7 @@ export default function Home() {
             )}
 
             {/* Popular Destinations */}
-            <section className="pt-12 pb-24 bg-white">
+            <section className="pt-12 pb-24 bg-transparent">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
                         <div className="text-left max-w-2xl">
@@ -441,8 +444,8 @@ export default function Home() {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
-                            <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300 shadow-sm">
+                        <div className="text-center py-20 glass-panel rounded-[3rem] border border-white/20">
+                            <div className="bg-white/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500 shadow-sm">
                                 <Plane className="h-10 w-10" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">No Destinations Found</h3>
@@ -458,6 +461,7 @@ export default function Home() {
                     )}
                 </div>
             </section>
+            <CustomerAIChatCard />
         </div>
     )
 }
