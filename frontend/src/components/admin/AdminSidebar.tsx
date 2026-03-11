@@ -102,8 +102,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     return (
         <aside
             className={cn(
-                "h-screen flex flex-col transition-all duration-300 z-50 border-r",
-                "fixed top-0 left-0 overflow-y-auto",
+                "flex flex-col z-[100] border-r",
+                "fixed top-0 bottom-0 left-0",
                 collapsed ? "w-[70px]" : "w-[260px]",
                 className
             )}
@@ -118,7 +118,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
             <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-purple-300/40 to-transparent" />
 
             {/* Logo Section */}
-            <div className="h-20 flex items-center justify-between px-5 border-b border-white/30">
+            <div className="h-20 flex px-5 items-center justify-between border-b border-white/30 shrink-0">
                 {!collapsed && (
                     <div className="flex-1 flex flex-col min-w-0 pr-2">
                         <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.10)' }}>
@@ -162,13 +162,13 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 )}
             </div>
 
-            {/* Navigation Items */}
+            {/* Navigation Items (Middle Section) */}
             <div className="flex-1 overflow-y-auto py-5">
                 <nav className="space-y-1 px-3">
                     {menuItems.map((group, groupIndex) => (
                         <div key={groupIndex} className="space-y-0.5">
                             {group.items.map((item) => {
-                                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+                                const isActive = pathname === item.href
                                 return (
                                     <Link
                                         key={item.href}
@@ -182,10 +182,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         )}
                                         style={isActive ? {
                                             color: '#ffffff',
-                                            background: 'linear-gradient(135deg, #7c5cfc, #6c47ff)',
+                                            background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)',
                                             borderLeft: collapsed ? 'none' : '3px solid rgba(255,255,255,0.80)',
                                             fontWeight: 600,
-                                            boxShadow: '0 4px 16px rgba(108,71,255,0.35)',
+                                            boxShadow: '0 4px 16px rgba(255,107,43,0.35)',
                                         } : {
                                             color: 'rgba(255, 255, 255, 0.70)',
                                             fontWeight: 500,
@@ -193,13 +193,20 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         title={collapsed ? item.label : undefined}
                                     >
                                         {/* Icon */}
-                                        <item.icon className={cn(
-                                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                                            isActive
-                                                ? "text-white drop-shadow-sm"
-                                                : "group-hover:text-white group-hover:scale-110"
-                                        )}
-                                            style={!isActive ? { color: 'rgba(255,255,255,0.70)' } : {}}
+                                        <item.icon
+                                            className={cn(
+                                                "h-5 w-5 transition-all duration-300 flex-shrink-0",
+                                                isActive
+                                                    ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] scale-110"
+                                                    : "group-hover:text-white group-hover:scale-110"
+                                            )}
+                                            style={isActive ? {
+                                                fill: 'rgba(255, 255, 255, 0.2)', // Subtle fill for active outline icons
+                                                strokeWidth: 2.5 // Thicker for active state
+                                            } : {
+                                                color: 'rgba(255,255,255,0.60)',
+                                                strokeWidth: 2 // Standard outline for inactive
+                                            }}
                                         />
 
                                         {/* Label */}
@@ -233,8 +240,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 )}
             </div>
 
-            {/* Bottom Actions */}
-            <div className="p-3 border-t border-white/30 space-y-1">
+            {/* Bottom Actions (Footer Section) */}
+            <div className="p-3 border-t border-white/30 space-y-1 shrink-0 mt-auto">
                 <Link
                     href="/admin/help"
                     className={cn(

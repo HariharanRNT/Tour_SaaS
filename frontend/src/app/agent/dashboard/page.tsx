@@ -94,6 +94,7 @@ import {
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
+import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
 
 // Custom Rupee Icon Component
 const RupeeIcon = ({ className }: { className?: string }) => (
@@ -562,17 +563,7 @@ export default function AgentDashboard() {
     }
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center bg-white/50 backdrop-blur-xl rounded-3xl p-10 shadow-xl border border-white/60">
-                    <div className="relative w-14 h-14 mx-auto mb-5">
-                        <div className="absolute inset-0 rounded-full bg-violet-200 blur-lg animate-pulse" />
-                        <div className="animate-spin rounded-full h-14 w-14 border-2 border-transparent border-t-violet-600 border-r-purple-500 relative" />
-                    </div>
-                    <p className="text-slate-600 font-semibold text-sm tracking-wide">Loading dashboard…</p>
-                </div>
-            </div>
-        )
+        return <DashboardSkeleton />
     }
 
     const statCards = [
@@ -689,32 +680,6 @@ export default function AgentDashboard() {
 
             <div className="relative z-10">
                 {/* Navbar (Agent Specific) */}
-                <header
-                    className="sticky top-0 z-40 shadow-sm"
-                    style={{
-                        background: 'rgba(255, 255, 255, 0.12)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.20)',
-                    }}
-                >
-                    <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                        <div className="flex items-center gap-3 group">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-blue-600 blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full"></div>
-                                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-lg shadow-blue-500/20 relative group-hover:scale-105 transition-transform duration-300">
-                                    <LayoutDashboard className="h-6 w-6 text-white" />
-                                </div>
-                            </div>
-                            <h1 className="text-2xl font-jakarta font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
-                                Agent<span className="text-blue-600">Portal</span>
-                            </h1>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            {/* AI Assistant is now a floating card at bottom-right */}
-                        </div>
-                    </div>
-                </header>
 
                 {/* Dashboard Content */}
                 <div className="container mx-auto px-6 py-8 space-y-10">
@@ -777,31 +742,41 @@ export default function AgentDashboard() {
                                         <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-white/80 backdrop-blur-xl border-white/50 shadow-xl rounded-xl p-2 z-[100]">
-                                    <DropdownMenuLabel className="text-xs font-bold text-slate-500 uppercase tracking-widest px-2 py-1.5">Create New</DropdownMenuLabel>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-56 p-2 z-[100] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.2)] animate-in fade-in slide-in-from-top-4 duration-300 rounded-[20px]"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.18)',
+                                        backdropFilter: 'blur(24px)',
+                                        WebkitBackdropFilter: 'blur(24px)'
+                                    }}
+                                >
+                                    <DropdownMenuLabel className="text-xs font-bold text-[#FF6B2B] uppercase tracking-widest px-3 py-2">
+                                        Create New
+                                    </DropdownMenuLabel>
                                     <DropdownMenuItem
                                         onClick={handleTourPackageClick}
-                                        className="focus:bg-indigo-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-indigo-100 p-1.5 rounded-md mr-3 text-[#4F46E5] group-hover:bg-[#4F46E5] group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
                                             <Package className="h-4 w-4" />
                                         </div>
                                         Tour Package
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => router.push('/agent/activities')}
-                                        className="focus:bg-amber-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-amber-100 p-1.5 rounded-md mr-3 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
                                             <MapPin className="h-4 w-4" />
                                         </div>
                                         Activity Master
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleAIItineraryClick}
-                                        className="focus:bg-pink-50 text-slate-700 font-medium rounded-lg cursor-pointer py-2.5"
+                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-pink-100 p-1.5 rounded-md mr-3 text-[#EC4899] group-hover:bg-[#EC4899] group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
                                             <Sparkles className="h-4 w-4" />
                                         </div>
                                         AI Itinerary

@@ -24,8 +24,9 @@ class PackageService:
         Returns package data with nested itinerary structure
         """
         
-        # Get package using async query
-        stmt = select(Package).where(Package.id == package_id)
+        # Get package using async query with destination metadata
+        from sqlalchemy.orm import selectinload
+        stmt = select(Package).options(selectinload(Package.dest_metadata)).where(Package.id == package_id)
         result = await self.db.execute(stmt)
         package = result.scalar_one_or_none()
         
@@ -109,6 +110,8 @@ class PackageService:
         
         return {
             'package': package,
+            'feature_image_url': package.feature_image_url,
+            'destination_image_url': package.destination_image_url,
             'itinerary_by_day': itinerary_list
         }
 

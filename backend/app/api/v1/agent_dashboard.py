@@ -225,6 +225,7 @@ async def get_agent_dashboard_stats(
             selectinload(Booking.package).selectinload(Package.images),
             selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.package).selectinload(Package.availability),
+            selectinload(Booking.package).selectinload(Package.dest_metadata),
             selectinload(Booking.user).selectinload(User.subscription)
         )
         upcoming_res = await db.execute(upcoming_bookings_stmt)
@@ -238,6 +239,7 @@ async def get_agent_dashboard_stats(
             selectinload(Booking.package).selectinload(Package.images),
             selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.package).selectinload(Package.availability),
+            selectinload(Booking.package).selectinload(Package.dest_metadata),
             selectinload(Booking.user).selectinload(User.subscription)
         )
         completed_res = await db.execute(completed_bookings_stmt)

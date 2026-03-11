@@ -57,7 +57,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
     ]
 
     return (
-        <div className="space-y-6 p-4 bg-white rounded-lg border border-gray-100">
+        <div className="space-y-6 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-sm">
             {/* Refund Type */}
             <div className="space-y-3">
                 <h4 className="font-medium text-sm text-gray-900">Refund Type</h4>
@@ -70,7 +70,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                             value="all"
                             checked={filters.refundType === 'all'}
                             onChange={() => updateFilter('refundType', 'all')}
-                            className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 border-white/30 bg-white/10 text-[#F97316] focus:ring-[#F97316] focus:ring-offset-0"
                         />
                         <Label htmlFor="rt-all" className="font-normal text-sm cursor-pointer">All Flights</Label>
                     </div>
@@ -82,7 +82,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                             value="refundable"
                             checked={filters.refundType === 'refundable'}
                             onChange={() => updateFilter('refundType', 'refundable')}
-                            className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 border-white/30 bg-white/10 text-[#F97316] focus:ring-[#F97316] focus:ring-offset-0"
                         />
                         <Label htmlFor="rt-ref" className="font-normal text-sm cursor-pointer">Refundable Only</Label>
                     </div>
@@ -94,7 +94,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                             value="non_refundable"
                             checked={filters.refundType === 'non_refundable'}
                             onChange={() => updateFilter('refundType', 'non_refundable')}
-                            className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 border-white/30 bg-white/10 text-[#F97316] focus:ring-[#F97316] focus:ring-offset-0"
                         />
                         <Label htmlFor="rt-non" className="font-normal text-sm cursor-pointer">Non-Refundable Only</Label>
                     </div>
@@ -111,6 +111,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                                 id={`stop-${stop}`}
                                 checked={filters.stops.includes(stop)}
                                 onCheckedChange={() => toggleStop(stop)}
+                                className="border-white/30 data-[state=checked]:bg-[#F97316] data-[state=checked]:border-[#F97316] shadow-sm"
                             />
                             <Label htmlFor={`stop-${stop}`} className="font-normal text-sm cursor-pointer">
                                 {stop === 0 ? 'Non-stop (Direct)' : stop === 1 ? '1 Stop' : '2+ Stops'}
@@ -129,10 +130,10 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                             key={opt.id}
                             onClick={() => toggleTime(opt.id)}
                             className={cn(
-                                "flex flex-col items-center justify-center p-2 rounded-md border text-sm transition-all",
+                                "flex flex-col items-center justify-center p-3 rounded-xl border text-sm transition-all duration-300",
                                 filters.timeRanges.includes(opt.id)
-                                    ? "border-blue-500 bg-blue-50 text-blue-700 font-medium shadow-sm transition-all"
-                                    : "border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50"
+                                    ? "border-[#F97316] bg-[#F97316] text-white font-black shadow-[0_4px_12px_rgba(249,115,22,0.4)] scale-105"
+                                    : "border-white/20 bg-white/15 hover:bg-white/25 text-slate-700 hover:border-white/40"
                             )}
                         >
                             <opt.icon className="h-4 w-4 mb-1" />
@@ -156,6 +157,7 @@ export function FlightFilters({ filters, onChange, availableAirlines }: FlightFi
                                     id={`al-${airline}`}
                                     checked={filters.airlines.includes(airline)}
                                     onCheckedChange={() => toggleAirline(airline)}
+                                    className="border-white/30 data-[state=checked]:bg-[#F97316] data-[state=checked]:border-[#F97316] shadow-sm"
                                 />
                                 <Label htmlFor={`al-${airline}`} className="font-normal text-sm cursor-pointer">
                                     {airline}

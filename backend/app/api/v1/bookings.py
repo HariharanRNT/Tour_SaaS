@@ -35,6 +35,7 @@ async def list_user_bookings(
             selectinload(Booking.package).selectinload(Package.images),
             selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.package).selectinload(Package.availability),
+            selectinload(Booking.package).selectinload(Package.dest_metadata),
             selectinload(Booking.travelers)
         )
         result = await db.execute(query)
@@ -58,6 +59,7 @@ async def get_booking(
         selectinload(Booking.package).selectinload(Package.images),
         selectinload(Booking.package).selectinload(Package.itinerary_items),
         selectinload(Booking.package).selectinload(Package.availability),
+        selectinload(Booking.package).selectinload(Package.dest_metadata),
         selectinload(Booking.travelers)
     )
     result = await db.execute(query)
@@ -275,7 +277,9 @@ async def list_all_bookings(
 ):
     """List all bookings (Admin only)"""
     query = select(Booking).order_by(Booking.created_at.desc()).options(
-        selectinload(Booking.package),
+        selectinload(Booking.package).options(
+            selectinload(Package.dest_metadata)
+        ),
         selectinload(Booking.travelers)
     )
     result = await db.execute(query)

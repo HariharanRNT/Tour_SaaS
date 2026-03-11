@@ -50,12 +50,16 @@ export default function CustomerAIChatCard() {
     const [isLoading, setIsLoading] = useState(false)
     const scrollRef = useRef<HTMLDivElement>(null)
     const cardRef = useRef<HTMLDivElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
     const router = useRouter()
 
     // Click outside listener
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+            if (
+                cardRef.current && !cardRef.current.contains(event.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false)
             }
         }
@@ -200,183 +204,182 @@ export default function CustomerAIChatCard() {
     const suggestions = ["Japan 7 Days", "Maldives"]
 
     return (
-        <div className="fixed bottom-6 right-6 z-[1000] font-sans">
-            <AnimatePresence>
-                {!isOpen ? (
-                    <motion.button
-                        key="fab"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setIsOpen(true)}
-                        aria-label="Open AI Chat"
-                        className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative group overflow-hidden"
+        <div className="font-sans">
+            {/* The Chatbot GIF Button - Fixed permanently */}
+            <div className="fixed z-[1050]" style={{ bottom: '24px', right: '24px' }}>
+                <button
+                    ref={buttonRef}
+                    onClick={() => setIsOpen(prev => !prev)}
+                    aria-label={isOpen ? "Close AI Chat" : "Open AI Chat"}
+                    className="cursor-pointer border-0 bg-transparent p-0 flex items-center justify-center outline-none group"
+                >
+                    <img
+                        src="/images/Chatbot-1.gif"
+                        alt="Chat with us"
+                        width={120}
+                        height={120}
                         style={{
-                            background: 'rgba(255, 179, 138, 0.4)',
-                            backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                            boxShadow: '0 8px 32px rgba(255, 122, 69, 0.35)'
+                            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
+                            mixBlendMode: 'multiply'
                         }}
-                    >
-                        {/* Pulse effect */}
+                        className="group-hover:-translate-y-1 transition-transform duration-200 ease-in-out"
+                    />
+                </button>
+            </div>
+
+            {/* Chat Card Panel */}
+            <div className="fixed z-[1000] pointer-events-none flex flex-col items-end" style={{ bottom: '90px', right: '24px' }}>
+                <AnimatePresence>
+                    {isOpen && (
                         <motion.div
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.1, 0.3] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="absolute inset-0 bg-[#FF7A45] rounded-full"
-                        />
-                        <Sparkles className="w-6 h-6 text-[#FF7A45] relative z-10" />
-                    </motion.button>
-                ) : (
-                    <motion.div
-                        key="card"
-                        ref={cardRef}
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="w-[340px] h-[520px] max-h-[80vh] flex flex-col rounded-[20px] overflow-hidden relative shadow-2xl"
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.12)',
-                            backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255, 255, 255, 0.25)',
-                            boxShadow: '0 10px 40px rgba(255, 122, 69, 0.25)'
-                        }}
-                    >
-                        {/* Radial Glow Background */}
-                        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF7A45] opacity-10 blur-[80px] pointer-events-none" />
-                        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#FFB38A] opacity-10 blur-[80px] pointer-events-none" />
+                            key="card"
+                            ref={cardRef}
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="w-[340px] h-[520px] max-h-[80vh] flex flex-col rounded-[20px] overflow-hidden relative shadow-2xl pointer-events-auto"
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.12)',
+                                backdropFilter: 'blur(20px)',
+                                border: '1px solid rgba(255, 255, 255, 0.25)',
+                                boxShadow: '0 10px 40px rgba(255, 122, 69, 0.25)'
+                            }}
+                        >
+                            {/* Radial Glow Background */}
+                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF7A45] opacity-10 blur-[80px] pointer-events-none" />
+                            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#FFB38A] opacity-10 blur-[80px] pointer-events-none" />
 
-                        {/* Header */}
-                        <div className="h-12 flex items-center justify-between px-4 shrink-0 border-b border-white/20 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                            <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] flex items-center justify-center shadow-sm">
-                                    <Sparkles className="w-3.5 h-3.5 text-white" />
-                                </div>
-                                <span className="font-bold text-sm text-slate-900 drop-shadow-sm">AI Assistant</span>
-                            </div>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    setIsOpen(false)
-                                }}
-                                className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
-                                aria-label="Close Chat"
-                            >
-                                <X className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
-                            </button>
-                        </div>
-
-                        {/* Chat Messages Area */}
-                        <ScrollArea className="flex-1 p-4 relative z-10">
-                            <div className="flex flex-col gap-4">
-                                {messages.map((msg, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        <div
-                                            className={cn(
-                                                "max-w-[85%] p-3 rounded-[16px] text-sm shadow-sm",
-                                                msg.role === 'user'
-                                                    ? "bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white rounded-tr-none shadow-[#FF7A45]/20"
-                                                    : "bg-white/40 backdrop-blur-md border border-white/30 text-slate-800 rounded-tl-none"
-                                            )}
-                                        >
-                                            <div className="prose prose-sm max-w-none">
-                                                <ReactMarkdown>
-                                                    {msg.content}
-                                                </ReactMarkdown>
-                                            </div>
-
-                                            {/* Specialized Tool Rendering (Ported from PackageSearchChat) */}
-                                            {(msg.tool_used === 'search_packages' || msg.tool_used === 'search_package') && msg.tool_result && Array.isArray(msg.tool_result) && (
-                                                <div className="mt-3 grid grid-cols-1 gap-3">
-                                                    {msg.tool_result.map((pkg: PackageSearchResult) => (
-                                                        <Card key={pkg.id} className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
-                                                            <div className="h-24 relative">
-                                                                <img
-                                                                    src={`https://source.unsplash.com/400x300/?${pkg.destination},travel`}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                                <div className="absolute inset-0 bg-black/20" />
-                                                                <div className="absolute bottom-2 left-2 text-white">
-                                                                    <p className="text-[10px] font-bold uppercase tracking-wider">{pkg.destination}</p>
-                                                                    <p className="font-bold text-xs truncate w-[200px]">{pkg.title}</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="p-3 flex items-center justify-between">
-                                                                <div>
-                                                                    <p className="text-[10px] text-slate-500">Starting from</p>
-                                                                    <p className="font-bold text-sm text-[#FF7A45]">₹{pkg.price.toLocaleString()}</p>
-                                                                </div>
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => handleSelectPackage(pkg)}
-                                                                    className="bg-[#FF7A45] hover:bg-[#EA580C] text-white h-8 px-4 rounded-lg text-xs font-bold transition-all"
-                                                                >
-                                                                    View Trip
-                                                                </Button>
-                                                            </div>
-                                                        </Card>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                            {/* Header */}
+                            <div className="h-12 flex items-center justify-between px-4 shrink-0 border-b border-white/20 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] flex items-center justify-center shadow-sm">
+                                        <Sparkles className="w-3.5 h-3.5 text-white" />
                                     </div>
-                                ))}
-                                {isLoading && (
-                                    <div className="flex justify-start">
-                                        <div className="bg-white/40 backdrop-blur-md border border-white/30 p-3 rounded-[16px] rounded-tl-none flex gap-1 items-center">
-                                            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
-                                            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
-                                            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
-                                        </div>
-                                    </div>
-                                )}
-                                <div ref={scrollRef} />
-                            </div>
-                        </ScrollArea>
-
-                        {/* Suggestions and Input Area */}
-                        <div className="p-4 pt-0 shrink-0 relative z-20">
-                            {/* Suggested Chips */}
-                            {!isLoading && messages.length === 1 && (
-                                <div className="flex gap-2 mb-3">
-                                    {suggestions.map(s => (
-                                        <button
-                                            key={s}
-                                            onClick={() => handleSend(s)}
-                                            className="px-3 py-1.5 rounded-full border border-[#FF7A45]/30 text-[#FF7A45] text-[11px] font-bold hover:bg-[#FF7A45] hover:text-white transition-all backdrop-blur-sm"
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
+                                    <span className="font-bold text-sm text-slate-900 drop-shadow-sm">AI Assistant</span>
                                 </div>
-                            )}
-
-                            {/* Pill Input */}
-                            <div className="relative group">
-                                <Input
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    placeholder="Tell me your destination..."
-                                    className="w-full bg-white/40 backdrop-blur-md border-white/30 focus:border-[#FF7A45]/50 focus:ring-4 focus:ring-[#FF7A45]/10 pr-12 rounded-full h-11 text-sm shadow-inner transition-all placeholder:text-slate-400"
-                                />
                                 <button
-                                    onClick={() => handleSend()}
-                                    disabled={isLoading || !input.trim()}
-                                    className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsOpen(false)
+                                    }}
+                                    className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
+                                    aria-label="Close Chat"
                                 >
-                                    <Send className="w-3.5 h-3.5" />
+                                    <X className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
                                 </button>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
+                            {/* Chat Messages Area */}
+                            <ScrollArea className="flex-1 p-4 relative z-10">
+                                <div className="flex flex-col gap-4">
+                                    {messages.map((msg, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                        >
+                                            <div
+                                                className={cn(
+                                                    "max-w-[85%] p-3 rounded-[16px] text-sm shadow-sm",
+                                                    msg.role === 'user'
+                                                        ? "bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white rounded-tr-none shadow-[#FF7A45]/20"
+                                                        : "bg-white/40 backdrop-blur-md border border-white/30 text-slate-800 rounded-tl-none"
+                                                )}
+                                            >
+                                                <div className="prose prose-sm max-w-none">
+                                                    <ReactMarkdown>
+                                                        {msg.content}
+                                                    </ReactMarkdown>
+                                                </div>
+
+                                                {/* Specialized Tool Rendering (Ported from PackageSearchChat) */}
+                                                {(msg.tool_used === 'search_packages' || msg.tool_used === 'search_package') && msg.tool_result && Array.isArray(msg.tool_result) && (
+                                                    <div className="mt-3 grid grid-cols-1 gap-3">
+                                                        {msg.tool_result.map((pkg: PackageSearchResult) => (
+                                                            <Card key={pkg.id} className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
+                                                                <div className="h-24 relative">
+                                                                    <img
+                                                                        src={`https://source.unsplash.com/400x300/?${pkg.destination},travel`}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                    <div className="absolute inset-0 bg-black/20" />
+                                                                    <div className="absolute bottom-2 left-2 text-white">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider">{pkg.destination}</p>
+                                                                        <p className="font-bold text-xs truncate w-[200px]">{pkg.title}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="p-3 flex items-center justify-between">
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-500">Starting from</p>
+                                                                        <p className="font-bold text-sm text-[#FF7A45]">₹{pkg.price.toLocaleString()}</p>
+                                                                    </div>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleSelectPackage(pkg)}
+                                                                        className="bg-[#FF7A45] hover:bg-[#EA580C] text-white h-8 px-4 rounded-lg text-xs font-bold transition-all"
+                                                                    >
+                                                                        View Trip
+                                                                    </Button>
+                                                                </div>
+                                                            </Card>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isLoading && (
+                                        <div className="flex justify-start">
+                                            <div className="bg-white/40 backdrop-blur-md border border-white/30 p-3 rounded-[16px] rounded-tl-none flex gap-1 items-center">
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div ref={scrollRef} />
+                                </div>
+                            </ScrollArea>
+
+                            {/* Suggestions and Input Area */}
+                            <div className="p-4 pt-0 shrink-0 relative z-20">
+                                {/* Suggested Chips */}
+                                {!isLoading && messages.length === 1 && (
+                                    <div className="flex gap-2 mb-3">
+                                        {suggestions.map(s => (
+                                            <button
+                                                key={s}
+                                                onClick={() => handleSend(s)}
+                                                className="px-3 py-1.5 rounded-full border border-[#FF7A45]/30 text-[#FF7A45] text-[11px] font-bold hover:bg-[#FF7A45] hover:text-white transition-all backdrop-blur-sm"
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Pill Input */}
+                                <div className="relative group">
+                                    <Input
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                        placeholder="Tell me your destination..."
+                                        className="w-full bg-white/40 backdrop-blur-md border-white/30 focus:border-[#FF7A45]/50 focus:ring-4 focus:ring-[#FF7A45]/10 pr-12 rounded-full h-11 text-sm shadow-inner transition-all placeholder:text-slate-400"
+                                    />
+                                    <button
+                                        onClick={() => handleSend()}
+                                        disabled={isLoading || !input.trim()}
+                                        className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm"
+                                    >
+                                        <Send className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
             {/* Trip Config Modal (Ported logic) */}
             <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>

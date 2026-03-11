@@ -179,7 +179,7 @@ export function DayPlanner({
                             >
                                 <div className="flex flex-col md:flex-row h-full">
                                     {/* Image Section */}
-                                    <div className="relative w-full md:w-56 h-48 md:h-52 shrink-0 overflow-hidden bg-gray-100 rounded-3xl m-2 md:m-4">
+                                    <div className="relative w-full md:w-36 h-32 md:h-32 shrink-0 overflow-hidden bg-gray-100 rounded-2xl m-2 md:m-2">
                                         {images.length > 0 ? (
                                             <>
                                                 <Image
@@ -208,7 +208,7 @@ export function DayPlanner({
                                     </div>
 
                                     {/* Details */}
-                                    <div className="flex-1 p-6 md:py-8 md:pr-10 md:pl-4 flex flex-col">
+                                    <div className="flex-1 p-3 md:py-3 md:pr-6 md:pl-2 flex flex-col">
                                         <div className="flex justify-between items-start gap-4">
                                             <div className="space-y-2">
                                                 {/* Category Tag */}
@@ -216,7 +216,7 @@ export function DayPlanner({
                                                     ✨ Top Experience
                                                 </div>
 
-                                                <h5 className="font-display text-2xl md:text-3xl text-[#3A1A08] leading-tight group-hover/card:text-[#E8682A] transition-colors">
+                                                <h5 className="font-display text-lg md:text-xl text-[#3A1A08] leading-tight group-hover/card:text-[#E8682A] transition-colors">
                                                     {activity.title}
                                                 </h5>
                                                 {(activity.start_time || activity.end_time) && (
@@ -228,8 +228,8 @@ export function DayPlanner({
                                             </div>
                                         </div>
 
-                                        <p className="text-[#A0501E] mt-4 line-clamp-2 text-sm leading-relaxed font-light opacity-80 mb-auto">
-                                            {activity.description.replace(/<[^>]*>/g, '').substring(0, 140)}...
+                                        <p className="text-[#A0501E] mt-1 line-clamp-2 text-[11px] leading-relaxed font-light opacity-80 mb-auto">
+                                            {activity.description.replace(/<[^>]*>/g, '').substring(0, 100)}...
                                         </p>
 
                                         <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-orange-100/30">
@@ -247,9 +247,9 @@ export function DayPlanner({
                                                 )}
                                             </div>
 
-                                            <div className="flex items-center gap-2 bg-[#E8682A]/10 border border-[#E8682A]/30 px-4 py-1.5 rounded-full text-[10px] font-bold text-[#E8682A] uppercase tracking-widest transition-all group/btn hover:bg-[#E8682A] hover:text-white">
-                                                <span>View details</span>
-                                                <ChevronRight className="h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
+                                            <div className="flex items-center gap-1.5 bg-[#E8682A]/10 border border-[#E8682A]/30 px-2.5 py-1 rounded-full text-[8px] font-bold text-[#E8682A] uppercase tracking-widest transition-all group/btn hover:bg-[#E8682A] hover:text-white">
+                                                <span>Details</span>
+                                                <ChevronRight className="h-2 w-2 transition-transform group-hover/btn:translate-x-1" />
                                             </div>
                                         </div>
                                     </div>
@@ -392,11 +392,11 @@ export function DayPlanner({
 
                 {/* details Modal */}
                 <Dialog open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
-                    <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh] rounded-[2rem] border-0 [&>button]:hidden">
+                    <DialogContent className="max-w-[640px] p-0 overflow-hidden flex flex-col max-h-[85vh] rounded-[2rem] border border-white/40 [&>button]:hidden shadow-2xl bg-white/40 backdrop-blur-3xl">
                         {selectedActivity && (
-                            <div className="flex flex-col h-full overflow-y-auto">
+                            <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
                                 {/* Image Gallery */}
-                                <div className="relative w-full bg-black/5 aspect-[16/10] md:aspect-video shrink-0">
+                                <div className="relative w-full bg-black/5 h-[280px] shrink-0">
                                     {(() => {
                                         const images = getImages(selectedActivity);
                                         return images.length > 0 ? (
@@ -412,19 +412,19 @@ export function DayPlanner({
                                                                     className="object-cover"
                                                                     unoptimized
                                                                 />
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-[#3A1A08]/80 via-transparent to-transparent opacity-90 pointer-events-none" />
                                                             </div>
                                                         </CarouselItem>
                                                     ))}
                                                 </CarouselContent>
                                                 {images.length > 1 && (
                                                     <>
-                                                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 text-white text-[10px] font-bold">
-                                                            <ImageIcon className="h-3 w-3" />
+                                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/60 backdrop-blur-xl px-4 py-2 rounded-full border border-white/20 text-white text-xs font-bold shadow-lg">
+                                                            <ImageIcon className="h-3.5 w-3.5" />
                                                             <span>{current} / {images.length}</span>
                                                         </div>
-                                                        <CarouselPrevious className="left-4 z-40 bg-white/20 border-white/40 text-white hover:bg-white/40 backdrop-blur-sm" />
-                                                        <CarouselNext className="right-4 z-40 bg-white/20 border-white/40 text-white hover:bg-white/40 backdrop-blur-sm" />
+                                                        <CarouselPrevious className="left-6 z-40 h-12 w-12 bg-white/20 border-white/30 text-white hover:bg-white/40 backdrop-blur-md transition-all border-none shadow-lg" />
+                                                        <CarouselNext className="right-6 z-40 h-12 w-12 bg-white/20 border-white/30 text-white hover:bg-white/40 backdrop-blur-md transition-all border-none shadow-lg" />
                                                     </>
                                                 )}
                                             </Carousel>
@@ -437,7 +437,7 @@ export function DayPlanner({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="absolute top-4 right-4 bg-black/20 text-white hover:bg-black/40 rounded-full z-50 backdrop-blur-sm"
+                                        className="absolute top-6 right-6 bg-white/20 text-white hover:bg-white/40 rounded-full z-50 backdrop-blur-md h-10 w-10 border-none transition-all shadow-lg"
                                         onClick={() => setSelectedActivity(null)}
                                     >
                                         <X className="h-5 w-5" />
@@ -463,19 +463,26 @@ export function DayPlanner({
                                 </div>
 
                                 {/* Content */}
-                                <div className="p-8 md:p-10 space-y-8 bg-white">
-                                    <div className="space-y-4">
-                                        <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
+                                <div className="p-8 md:p-10 space-y-6 bg-[#FFF5EE]/30 backdrop-blur-xl flex-1">
+                                    <div className="space-y-6">
+                                        <h3 className="font-bold text-2xl text-[#3A1A08] flex items-center gap-3">
+                                            <div className="h-8 w-1.5 bg-[#FF7A45] rounded-full"></div>
                                             About this activity
-                                            <div className="h-px bg-gray-100 flex-1 ml-4"></div>
                                         </h3>
-                                        <p className="text-gray-600 leading-relaxed text-lg whitespace-pre-wrap">
+                                        <div className="text-[#5D4037] leading-relaxed text-lg whitespace-pre-wrap">
                                             {selectedActivity.description}
-                                        </p>
+                                        </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-4">
-                                        <Button onClick={() => setSelectedActivity(null)} size="lg" className="rounded-xl px-8">
+                                    <div className="mt-8 pt-8 border-t border-[#FF7A45]/10 flex justify-end">
+                                        <Button
+                                            onClick={() => setSelectedActivity(null)}
+                                            size="lg"
+                                            className="rounded-xl px-10 h-12 text-lg font-bold text-white transition-all hover:scale-[1.05] shadow-lg shadow-[#FF7A45]/30 hover:shadow-[#FF7A45]/50 border-none"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                            }}
+                                        >
                                             Close Details
                                         </Button>
                                     </div>

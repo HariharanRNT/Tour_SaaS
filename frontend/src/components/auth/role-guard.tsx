@@ -1,25 +1,7 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-
-// Simple check, real app should improve decoding
-function getUserRole(): string | null {
-    if (typeof window === 'undefined') return null
-    try {
-        const token = localStorage.getItem('token')
-        if (!token) return null
-        const base64Url = token.split('.')[1]
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        }).join(''))
-        return JSON.parse(jsonPayload).role
-    } catch {
-        return null
-    }
-}
+import { useAuth } from '@/context/AuthContext'
 
 interface RoleGuardProps {
     children: React.ReactNode
@@ -30,47 +12,35 @@ interface RoleGuardProps {
 export function RoleGuard({ children, allowedRoles, publicRoutes = [] }: RoleGuardProps) {
     const router = useRouter()
     const pathname = usePathname()
-    const [authorized, setAuthorized] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const { user, loading } = useAuth()
 
     useEffect(() => {
-        const checkAuth = () => {
-            // Bypass check for public routes
-            if (publicRoutes.includes(pathname)) {
-                setAuthorized(true)
-                setLoading(false)
-                return
-            }
+        if (loading) return
 
-            const role = getUserRole()
-            console.log('[RoleGuard] Path:', pathname)
-            console.log('[RoleGuard] Decoded Role:', role)
-            console.log('[RoleGuard] Allowed Roles:', allowedRoles)
-
-            if (!role) {
-                console.warn('[RoleGuard] No role found in token. Redirecting to login.')
-                // Not logged in -> Redirect to login
-                if (pathname.includes('/admin')) {
-                    router.push('/admin/login')
-                } else {
-                    router.push('/login')
-                }
-                return
-            }
-
-            if (!allowedRoles.includes(role)) {
-                console.warn(`[RoleGuard] Role mismatch! User has '${role}' but needs one of:`, allowedRoles)
-                // Logged in but wrong role -> Unauthorized
-                router.push('/unauthorized')
-                return
-            }
-
-            setAuthorized(true)
-            setLoading(false)
+        // Bypass check for public routes
+        if (publicRoutes.includes(pathname)) {
+            return
         }
 
-        checkAuth()
-    }, [allowedRoles, router, pathname, publicRoutes])
+        if (!user) {
+            console.warn('[RoleGuard] No user found. Redirecting to login.')
+            if (pathname.includes('/admin')) {
+                router.push('/admin/login')
+            } else {
+                router.push('/login')
+            }
+            return
+        }
+
+        const role = user.role?.toUpperCase()
+        const upperAllowedRoles = allowedRoles.map(r => r.toUpperCase())
+
+        if (!upperAllowedRoles.includes(role)) {
+            console.warn(`[RoleGuard] Role mismatch! User has '${role}' but needs one of:`, upperAllowedRoles)
+            router.push('/unauthorized')
+            return
+        }
+    }, [user, loading, allowedRoles, router, pathname, publicRoutes])
 
     if (loading) {
         return (
@@ -80,7 +50,12 @@ export function RoleGuard({ children, allowedRoles, publicRoutes = [] }: RoleGua
         )
     }
 
-    if (!authorized) return null
+    // Direct check for render
+    const role = user?.role?.toUpperCase()
+    const upperAllowedRoles = allowedRoles.map(r => r.toUpperCase())
+    const isAuthorized = publicRoutes.includes(pathname) || (role && upperAllowedRoles.includes(role))
+
+    if (!isAuthorized) return null
 
     return <>{children}</>
 }

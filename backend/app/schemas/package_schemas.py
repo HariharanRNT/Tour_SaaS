@@ -42,10 +42,40 @@ class PackageWithItineraryResponse(BaseModel):
     country: Optional[str] = None
     price_per_person: Decimal
     description: str
+    feature_image_url: Optional[str] = None
+    destination_image_url: Optional[str] = None
+    gst_applicable: Optional[bool] = None
+    gst_percentage: Optional[Decimal] = None
+    gst_mode: Optional[str] = None
+    # Flight Configuration
+    flights_enabled: bool = False
+    flight_origin_cities: List[str] = []
+    flight_cabin_class: str = "ECONOMY"
+    flight_price_included: bool = False
+    flight_baggage_note: Optional[str] = None
     itinerary_by_day: List[PackageDayItinerary]
     
     class Config:
         from_attributes = True
+
+    @classmethod
+    def _parse_json_list(cls, v):
+        if isinstance(v, str):
+            import json
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except json.JSONDecodeError:
+                return []
+        return v if v is not None else []
+
+    try:
+        from pydantic import validator
+        @validator('flight_origin_cities', pre=True, check_fields=False)
+        def validate_json_lists(cls, v):
+            return cls._parse_json_list(v)
+    except ImportError:
+        pass
 
 
 # Booking Customization Schemas
@@ -84,6 +114,10 @@ class BookingWithCustomizationsCreate(BaseModel):
     travel_date: date
     number_of_travelers: int = Field(..., ge=1)
     customizations: Optional[List[BookingCustomizationCreate]] = []
+    # Flight Selection
+    flight_origin: Optional[str] = None
+    flight_fare: Optional[Decimal] = None
+    flight_details: Optional[Dict[str, Any]] = None
 
 
 class BookingWithCustomizationsResponse(BaseModel):
@@ -93,6 +127,10 @@ class BookingWithCustomizationsResponse(BaseModel):
     number_of_travelers: int
     total_amount: Decimal
     customizations: List[BookingCustomizationResponse] = []
+    # Flight Selection
+    flight_origin: Optional[str] = None
+    flight_fare: Optional[Decimal] = None
+    flight_details: Optional[Dict[str, Any]] = None
     final_itinerary: List[PackageDayItinerary] = []
     
     class Config:

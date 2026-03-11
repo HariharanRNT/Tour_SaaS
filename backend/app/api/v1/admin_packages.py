@@ -61,6 +61,7 @@ async def create_package(
     """Create a new package"""
     import logging
     import uuid
+    import json
     logger = logging.getLogger(__name__)
     
     try:
@@ -82,7 +83,13 @@ async def create_package(
             max_group_size=package_data.max_group_size,
             description=package_data.description,
             status=PackageStatus.DRAFT,
-            is_template=False
+            is_template=False,
+            # Flight Configuration
+            flights_enabled=package_data.flights_enabled,
+            flight_origin_cities=json.dumps(package_data.flight_origin_cities) if package_data.flight_origin_cities else "[]",
+            flight_cabin_class=package_data.flight_cabin_class,
+            flight_price_included=package_data.flight_price_included,
+            flight_baggage_note=package_data.flight_baggage_note
         )
         
         logger.info(f"Package object created: {new_package}")
@@ -159,9 +166,15 @@ async def update_package(
         )
     
     # Update fields
+    import json
     update_data = package_data.dict(exclude_unset=True)
+    json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
+    
     for field, value in update_data.items():
-        setattr(package, field, value)
+        if field in json_fields and value is not None:
+            setattr(package, field, json.dumps(value))
+        else:
+            setattr(package, field, value)
     
     await db.commit()
     await db.refresh(package)

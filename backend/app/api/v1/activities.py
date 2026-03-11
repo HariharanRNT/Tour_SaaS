@@ -4,8 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, update, delete, func
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import Activity, ActivityImage, User, UserRole
-from app.schemas.activities import ActivityCreate, ActivityResponse, ActivityUpdate, DestinationSummary
+from app.models import Activity, ActivityImage, User, UserRole, Destination, Package, PackageStatus
+from app.schemas.activities import (
+    ActivityCreate, ActivityResponse, ActivityUpdate, 
+    DestinationSummary, PaginatedDestinationResponse,
+    DestinationCreate, DestinationUpdate
+)
 from app.api.deps import get_current_active_user
 
 router = APIRouter()
@@ -72,16 +76,19 @@ async def create_activity(
     return result.scalar_one()
 
 
-@router.get("/destinations", response_model=List[DestinationSummary])
+@router.get("/destinations", response_model=PaginatedDestinationResponse)
 async def get_destinations(
+    page: int = Query(1, ge=1),
+    limit: int = Query(8, ge=1),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get all unique destinations and their activity counts.
+    Get all unique destinations and their activity counts with pagination.
     """
-    stmt = (
-        select(Activity.destination_city, func.count(Activity.id).label("activity_count"))
+    # Base cities from activities
+    base_cities_stmt = (
+        select(Activity.destination_city)
         .where(
             or_(
                 Activity.agent_id == None,
@@ -89,13 +96,237 @@ async def get_destinations(
             )
         )
         .group_by(Activity.destination_city)
+    )
+    
+    # Get total count
+    count_stmt = select(func.count()).select_from(base_cities_stmt.subquery())
+    count_result = await db.execute(count_stmt)
+    total_count = count_result.scalar() or 0
+    
+    # Get paginated results with metadata and package counts
+    stmt = (
+        select(
+            Activity.destination_city, 
+            func.count(Activity.id).label("activity_count"),
+            Destination.country,
+            Destination.description,
+            Destination.image_url,
+            Destination.is_popular,
+            Destination.is_active,
+            Destination.display_order
+        )
+        .outerjoin(Destination, Activity.destination_city == Destination.name)
+        .where(
+            or_(
+                Activity.agent_id == None,
+                Activity.agent_id == current_user.id
+            )
+        )
+        .group_by(
+            Activity.destination_city, 
+            Destination.id, # Include ID for uniqueness if name is not enough
+            Destination.country, 
+            Destination.description, 
+            Destination.image_url, 
+            Destination.is_popular, 
+            Destination.is_active, 
+            Destination.display_order
+        )
         .order_by(Activity.destination_city)
+        .offset((page - 1) * limit)
+        .limit(limit)
     )
     
     result = await db.execute(stmt)
     rows = result.all()
     
-    return [DestinationSummary(city=row.destination_city, activity_count=row.activity_count) for row in rows]
+    # Get package counts for these cities
+    cities = [row.destination_city for row in rows]
+    pkg_count_stmt = (
+        select(Package.destination, func.count(Package.id).label("pkg_count"))
+        .where(Package.destination.in_(cities))
+        .group_by(Package.destination)
+    )
+    pkg_result = await db.execute(pkg_count_stmt)
+    pkg_counts = {row.destination: row.pkg_count for row in pkg_result.all()}
+    
+    destinations = []
+    for row in rows:
+        destinations.append(DestinationSummary(
+            name=row.destination_city, # Mapping city to name
+            country=row.country or "",
+            description=row.description,
+            image_url=row.image_url,
+            is_popular=row.is_popular if row.is_popular is not None else True,
+            is_active=row.is_active if row.is_active is not None else True,
+            display_order=row.display_order or 999,
+            activity_count=row.activity_count,
+            package_count=pkg_counts.get(row.destination_city, 0)
+        ))
+    
+    return PaginatedDestinationResponse(
+        destinations=destinations,
+        total_count=total_count,
+        page=page,
+        limit=limit
+    )
+
+
+@router.post("/destinations/metadata", response_model=DestinationSummary)
+async def update_destination_metadata(
+    metadata: DestinationCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Create or update destination metadata (image, description, etc.)
+    """
+    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.AGENT:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Check if exists
+    stmt = select(Destination).where(Destination.name == metadata.name)
+    result = await db.execute(stmt)
+    db_dest = result.scalar_one_or_none()
+    
+    if db_dest:
+        # Update
+        for key, value in metadata.model_dump().items():
+            setattr(db_dest, key, value)
+        
+        await db.commit()
+        await db.refresh(db_dest)
+        
+        # Get counts for return
+        act_count_stmt = select(func.count()).where(Activity.destination_city == db_dest.name)
+        act_count_res = await db.execute(act_count_stmt)
+        act_count = act_count_res.scalar() or 0
+        
+        pkg_count_stmt = select(func.count()).where(Package.destination == db_dest.name)
+        pkg_count_res = await db.execute(pkg_count_stmt)
+        pkg_count = pkg_count_res.scalar() or 0
+        
+        return DestinationSummary(
+            name=db_dest.name,
+            country=db_dest.country,
+            description=db_dest.description,
+            image_url=db_dest.image_url,
+            is_popular=db_dest.is_popular,
+            is_active=db_dest.is_active,
+            display_order=db_dest.display_order,
+            activity_count=act_count,
+            package_count=pkg_count
+        )
+    else:
+        # Create
+        db_dest = Destination(**metadata.model_dump())
+        db.add(db_dest)
+    
+    await db.commit()
+    await db.refresh(db_dest)
+    
+    # Get counts for return
+    act_count_stmt = select(func.count()).where(Activity.destination_city == db_dest.name)
+    act_count_res = await db.execute(act_count_stmt)
+    act_count = act_count_res.scalar() or 0
+    
+    pkg_count_stmt = select(func.count()).where(Package.destination == db_dest.name)
+    pkg_count_res = await db.execute(pkg_count_stmt)
+    pkg_count = pkg_count_res.scalar() or 0
+    
+    return DestinationSummary(
+        name=db_dest.name,
+        country=db_dest.country,
+        description=db_dest.description,
+        image_url=db_dest.image_url,
+        is_popular=db_dest.is_popular,
+        is_active=db_dest.is_active,
+        display_order=db_dest.display_order,
+        activity_count=act_count,
+        package_count=pkg_count
+    )
+
+
+@router.put("/destination/{old_name}", response_model=DestinationSummary)
+async def update_destination(
+    old_name: str,
+    metadata: DestinationUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Update destination metadata and handle renaming across the system.
+    """
+    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.AGENT:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Check if exists
+    stmt = select(Destination).where(Destination.name == old_name)
+    result = await db.execute(stmt)
+    db_dest = result.scalar_one_or_none()
+    
+    if not db_dest:
+        # Check if the city exists in activities or packages
+        # If it doesn't exist anywhere, then it's a 404
+        act_stmt = select(Activity).where(Activity.destination_city == old_name).limit(1)
+        pkg_stmt = select(Package.id).where(Package.destination == old_name).limit(1)
+        
+        act_res = await db.execute(act_stmt)
+        pkg_res = await db.execute(pkg_stmt)
+        
+        if not act_res.scalar_one_or_none() and not pkg_res.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail=f"Destination '{old_name}' not found in activities or metadata")
+            
+        # Create the metadata record
+        db_dest = Destination(name=old_name, country=metadata.country or "Unknown")
+        db.add(db_dest)
+
+    new_name = metadata.name
+    
+    # If name is being changed, we need to update references
+    if new_name and new_name != old_name:
+        # Check if new name already exists elsewhere
+        check_stmt = select(Destination).where(Destination.name == new_name)
+        check_result = await db.execute(check_stmt)
+        if check_result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail=f"Destination '{new_name}' already exists")
+
+        # Update activities
+        act_update_stmt = update(Activity).where(Activity.destination_city == old_name).values(destination_city=new_name)
+        await db.execute(act_update_stmt)
+
+        # Update packages
+        pkg_update_stmt = update(Package).where(Package.destination == old_name).values(destination=new_name)
+        await db.execute(pkg_update_stmt)
+
+    # Update Destination metadata
+    update_data = metadata.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_dest, key, value)
+    
+    await db.commit()
+    await db.refresh(db_dest)
+    
+    # Get counts for return
+    act_count_stmt = select(func.count()).where(Activity.destination_city == db_dest.name)
+    act_count_res = await db.execute(act_count_stmt)
+    act_count = act_count_res.scalar() or 0
+    
+    pkg_count_stmt = select(func.count()).where(Package.destination == db_dest.name)
+    pkg_count_res = await db.execute(pkg_count_stmt)
+    pkg_count = pkg_count_res.scalar() or 0
+    
+    return DestinationSummary(
+        name=db_dest.name,
+        country=db_dest.country,
+        description=db_dest.description,
+        image_url=db_dest.image_url,
+        is_popular=db_dest.is_popular,
+        is_active=db_dest.is_active,
+        display_order=db_dest.display_order,
+        activity_count=act_count,
+        package_count=pkg_count
+    )
 
 
 @router.get("/{activity_id}", response_model=ActivityResponse)

@@ -79,7 +79,10 @@ async def search_packages_by_destination(
                 'destination': p.destination,
                 'duration_days': p.duration_days,
                 'price_per_person': float(p.price_per_person),
-                'description': p.description
+                'description': p.description,
+                'flights_enabled': p.flights_enabled,
+                'flight_origin_cities': p.flight_origin_cities,
+                'flight_cabin_class': p.flight_cabin_class
             })
         
         return response
@@ -106,6 +109,8 @@ async def get_package_with_itinerary(
         result = await service.get_package_with_itinerary(package_id)
         return {
             **result['package'].__dict__,
+            'feature_image_url': result.get('feature_image_url'),
+            'destination_image_url': result.get('destination_image_url'),
             'itinerary_by_day': result['itinerary_by_day']
         }
     except ValueError as e:
@@ -126,6 +131,8 @@ async def get_package_with_itinerary_by_slug(
         result = await service.get_package_with_itinerary_by_slug(slug)
         return {
             **result['package'].__dict__,
+            'feature_image_url': result.get('feature_image_url'),
+            'destination_image_url': result.get('destination_image_url'),
             'itinerary_by_day': result['itinerary_by_day']
         }
     except ValueError as e:

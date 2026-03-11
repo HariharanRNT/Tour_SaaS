@@ -60,36 +60,30 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
     // Parse duration string "2h 15m" to display if needed, or stick to string provided by backend
     // Backend provides string like "2h 45m"
 
-    // Airline logo placeholder (using text/code if no image)
-    const getAirlineColor = (code: string) => {
-        const colors: Record<string, string> = {
-            '6E': 'bg-blue-600', // Indigo
-            'AI': 'bg-orange-600', // Air India
-            'UK': 'bg-purple-700', // Vistara
-            'SG': 'bg-red-600', // SpiceJet
-            'IX': 'bg-red-500', // AI Express
-            'QP': 'bg-purple-500', // Akasa
-        }
-        return colors[code] || 'bg-blue-500'
+    // Airline logo placeholder
+    const getAirlineBadgeStyle = () => {
+        return "w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md bg-white/25 backdrop-blur-[8px] border border-white/40 ring-1 ring-white/10"
     }
 
     return (
         <div
             className={`
-                group relative bg-white rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden
+                group relative bg-white/15 backdrop-blur-[12px] -webkit-backdrop-blur-[12px] rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden
                 ${isSelected
-                    ? 'border-blue-600 ring-2 ring-blue-600 shadow-xl scale-[1.02]'
-                    : 'border-slate-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1'
+                    ? 'border-[#F97316]/85 ring-0 shadow-[0_0_12px_rgba(249,115,22,0.2)] scale-[1.02]'
+                    : 'border-white/35 hover:border-[#F97316]/50 hover:shadow-lg hover:-translate-y-1'
                 }
             `}
+            style={{
+                borderWidth: isSelected ? '2px' : '1px',
+                background: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: '16px'
+            }}
             onClick={() => onSelect(flight)}
         >
-            {/* Header / Badges */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-
             {isBestValue && (
-                <div className="absolute -top-px left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-b-lg shadow-sm z-10 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> Best Value
+                <div className="absolute -top-3 left-6 px-4 py-1.5 bg-gradient-to-r from-[#F97316] to-[#FB923C] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-[0_4px_12px_rgba(249,115,22,0.4)] z-20 flex items-center gap-1.5 border border-white/20">
+                    <CheckCircle className="w-3.5 h-3.5" /> Best Value
                 </div>
             )}
 
@@ -98,13 +92,13 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                 {/* Top Row: Airline & Price */}
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md ${getAirlineColor(flight.airline_code)}`}>
+                        <div className={getAirlineBadgeStyle()}>
                             {flight.airline_code}
                         </div>
                         <div>
-                            <div className="font-bold text-slate-900 text-lg leading-tight">{flight.airline}</div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mt-0.5">
-                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{flight.airline_code}-{flight.flight_number}</span>
+                            <div className="font-black text-slate-900 text-lg leading-tight">{flight.airline}</div>
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mt-0.5">
+                                <span className="bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded text-slate-700 ring-1 ring-white/10">{flight.airline_code}-{flight.flight_number}</span>
                                 <span>•</span>
                                 <span>{formatDate(flight.departure_time)}</span>
                             </div>
@@ -120,26 +114,26 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                 </div>
 
                 {/* Timeline Visualization */}
-                <div className="flex items-center justify-between bg-slate-50/50 rounded-xl p-4 border border-slate-100">
+                <div className="flex items-center justify-between bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                     <div className="text-center min-w-[60px]">
                         <div className="text-2xl font-bold text-slate-900">{depTime}</div>
                         <div className="text-xs font-bold text-slate-500 uppercase">{flight.origin}</div>
                     </div>
 
                     <div className="flex-1 px-6 flex flex-col items-center">
-                        <div className="text-xs font-medium text-slate-400 mb-1.5">{flight.duration}</div>
+                        <div className="text-xs font-medium text-slate-400 mb-2">{flight.duration}</div>
                         <div className="w-full relative flex items-center">
-                            <div className="h-[2px] w-full bg-slate-300 rounded-full"></div>
+                            <div className="h-[3px] w-full bg-gradient-to-r from-[#F97316] via-[#FB923C] to-[#F97316] rounded-full opacity-60"></div>
                             {/* Start Dot */}
-                            <div className="absolute left-0 w-2 h-2 rounded-full bg-slate-400"></div>
+                            <div className="absolute left-0 w-2.5 h-2.5 rounded-full bg-[#F97316] shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
                             {/* Plane Icon */}
-                            <div className="absolute left-1/2 -translate-x-1/2 bg-white p-1 rounded-full border border-slate-200">
-                                <Plane className="h-3.5 w-3.5 text-blue-500 rotate-90" />
+                            <div className="absolute left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-1.5 rounded-full border border-white/40 shadow-sm z-10">
+                                <Plane className="h-3.5 w-3.5 text-[#F97316] rotate-90" />
                             </div>
                             {/* End Dot */}
-                            <div className="absolute right-0 w-2 h-2 rounded-full bg-slate-400"></div>
+                            <div className="absolute right-0 w-2.5 h-2.5 rounded-full bg-[#F97316] shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
                         </div>
-                        <div className="text-[10px] font-semibold text-slate-500 mt-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                        <div className="text-[10px] font-black text-[#F97316] mt-2 px-3 py-0.5 bg-white/30 backdrop-blur-md border border-white/40 rounded-full shadow-sm">
                             {flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
                         </div>
                     </div>
@@ -150,29 +144,39 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                     </div>
                 </div>
 
-                {/* Footer Grid: Amenities & Select Button */}
-                <div className="flex items-center justify-between pt-2">
-                    <div className="flex gap-3">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                            <span className="font-semibold text-slate-700">Check-in:</span> {flight.baggage}
+                {/* Two-Row Footer Layout */}
+                <div className="flex flex-col gap-4 mt-auto">
+                    {/* Row 1: Amenity Pills */}
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-800 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span className="opacity-70">🧳</span> {flight.baggage.split(',')[0]}
                         </div>
-                        {/* Demo Amenities (could be dynamic) */}
-                        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                            Meals Included
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-800 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span className="opacity-70">📦</span> {flight.raw_data?.class || 'Economy'}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-800 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span className="opacity-70">🍽️</span> Meals
                         </div>
                     </div>
 
-                    {isSelected ? (
-                        <Badge className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-1.5 text-xs font-bold shadow-sm transition-colors">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Selected
-                        </Badge>
-                    ) : (
-                        <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-semibold transition-all">
-                            Select Flight
-                        </Button>
-                    )}
+                    {/* Row 2: Action Button */}
+                    <div className="flex justify-end pr-1">
+                        {isSelected ? (
+                            <Badge className="bg-gradient-to-r from-[#F97316] to-[#FB923C] text-white hover:opacity-90 px-6 py-2.5 text-xs font-black shadow-[0_4px_12px_rgba(249,115,22,0.3)] transition-all border-0 rounded-full flex items-center gap-1.5">
+                                <CheckCircle className="w-3.5 h-3.5" /> Selected
+                            </Badge>
+                        ) : (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-[#F97316] border-[#F97316]/40 bg-white/20 hover:bg-[#F97316] hover:text-white hover:border-[#F97316] font-black transition-all rounded-full px-8 h-10 shadow-sm"
+                            >
+                                Select Flight
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

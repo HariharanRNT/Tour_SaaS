@@ -17,7 +17,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         pathname === '/register'
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-full">
             {!isDashboardOrAuth && <Navbar />}
 
             <Suspense fallback={null}>

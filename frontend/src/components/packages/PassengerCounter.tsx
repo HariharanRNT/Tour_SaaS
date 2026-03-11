@@ -9,6 +9,7 @@ interface PassengerCounterProps {
     min: number
     max: number
     compact?: boolean
+    className?: string
     onChange: (value: number) => void
 }
 
@@ -20,6 +21,7 @@ export function PassengerCounter({
     min,
     max,
     compact = false,
+    className = "",
     onChange
 }: PassengerCounterProps) {
     const handleDecrement = () => {
@@ -35,44 +37,33 @@ export function PassengerCounter({
     }
 
     return (
-        <div className={`flex items-center justify-between bg-orange-50/50 rounded-2xl border border-orange-100/50 transition-all hover:bg-orange-50 ${compact ? 'py-1.5 px-4 h-[48px]' : 'py-3 px-4'}`}>
-            <div className={`flex ${compact ? 'flex-row items-center gap-2' : 'flex-col'}`}>
-                <div className="flex items-center gap-2">
-                    <p className={`font-bold text-[#3A1A08] ${compact ? 'text-[13px]' : ''}`}>{label}</p>
-                    {badge && (
-                        <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
-                            {badge}
-                        </span>
-                    )}
-                </div>
+        <div className={`flex items-center justify-between rounded-2xl p-4 shadow-sm border border-slate-100/50 ${compact ? 'h-[64px]' : ''} ${className}`}>
+            <div className="flex flex-col">
+                <p className="font-bold text-[#4A5568] text-sm uppercase tracking-tight">{label}</p>
                 {sublabel && (
-                    <p className={`font-bold text-[#A0501E] uppercase tracking-wider opacity-70 ${compact ? 'text-[11px] normal-case' : 'text-[11px]'}`}>
+                    <p className="text-[11px] text-[#A0AEC0] font-medium">
                         {sublabel}
                     </p>
                 )}
             </div>
-            <div className={`flex items-center ${compact ? 'gap-3' : 'gap-4'}`}>
-                <Button
+            <div className="flex items-center gap-4">
+                <button
                     type="button"
-                    variant="outline"
-                    size="icon"
-                    className={`${compact ? 'h-7 w-7' : 'h-9 w-9'} rounded-full border-orange-200 text-orange-600 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all disabled:opacity-30`}
+                    className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-30"
                     onClick={handleDecrement}
                     disabled={value <= min}
                 >
-                    <Minus className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                </Button>
-                <span className={`${compact ? 'w-5 text-md' : 'w-6 text-lg'} text-center font-bold text-[#3A1A08]`}>{value}</span>
-                <Button
+                    <Minus className="h-4 w-4" />
+                </button>
+                <span className="w-6 text-center font-bold text-[#2D3748] text-lg">{value}</span>
+                <button
                     type="button"
-                    variant="outline"
-                    size="icon"
-                    className={`${compact ? 'h-7 w-7' : 'h-9 w-9'} rounded-full border-orange-200 text-orange-600 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all disabled:opacity-30`}
+                    className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-30"
                     onClick={handleIncrement}
                     disabled={value >= max}
                 >
-                    <Plus className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                </Button>
+                    <Plus className="h-4 w-4" />
+                </button>
             </div>
         </div>
     )

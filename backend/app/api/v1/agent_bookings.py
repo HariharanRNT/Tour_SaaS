@@ -39,7 +39,8 @@ async def list_agent_bookings(
         selectinload(Booking.package).options(
             selectinload(Package.images),
             selectinload(Package.itinerary_items),
-            selectinload(Package.availability)
+            selectinload(Package.availability),
+            selectinload(Package.dest_metadata)
         ),
         selectinload(Booking.travelers),
         selectinload(Booking.user)
@@ -65,7 +66,8 @@ async def get_agent_booking(
         selectinload(Booking.package).options(
             selectinload(Package.images),
             selectinload(Package.itinerary_items),
-            selectinload(Package.availability)
+            selectinload(Package.availability),
+            selectinload(Package.dest_metadata)
         ),
         selectinload(Booking.travelers),
         selectinload(Booking.user)

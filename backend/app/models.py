@@ -3,6 +3,7 @@ import enum
 import uuid
 from datetime import datetime, date
 from decimal import Decimal
+from typing import Optional
 from sqlalchemy import (
     Column, String, Boolean, Integer, Text, Date, DateTime, Numeric, Float,
     ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint
@@ -295,6 +296,21 @@ class Package(Base):
     meta_description = Column(String, nullable=True)
     meta_keywords = Column(String, nullable=True)
 
+    # Flight inclusion configuration
+    flights_enabled = Column(Boolean, default=False)
+    flight_origin_cities = Column(Text, default="[]") # JSON list of codes (e.g. ["MAA", "BOM"])
+    flight_cabin_class = Column(String(20), default="ECONOMY") # ECONOMY, BUSINESS
+    flight_price_included = Column(Boolean, default=False)
+    flight_baggage_note = Column(Text, nullable=True)
+
+    @property
+    def destination_image_url(self) -> Optional[str]:
+        if not self.dest_metadata:
+            return None
+        if isinstance(self.dest_metadata, list):
+            return self.dest_metadata[0].image_url if len(self.dest_metadata) > 0 else None
+        return getattr(self.dest_metadata, 'image_url', None)
+
     
     # Relationships
     creator = relationship("User", back_populates="created_packages", foreign_keys=[created_by])
@@ -302,6 +318,25 @@ class Package(Base):
     itinerary_items = relationship("ItineraryItem", back_populates="package", cascade="all, delete-orphan", order_by="ItineraryItem.day_number")
     availability = relationship("PackageAvailability", back_populates="package", cascade="all, delete-orphan", lazy="selectin")
     bookings = relationship("Booking", back_populates="package")
+    dest_metadata = relationship("Destination", back_populates="packages", primaryjoin="Package.destination == Destination.name", foreign_keys="[Package.destination]", viewonly=True)
+
+
+class Destination(Base):
+    __tablename__ = "popular_destinations" # Re-use existing table name for simplicity or we can migrate later
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, unique=True, index=True, nullable=False)
+    country = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    image_url = Column(String, nullable=True)
+    is_popular = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True) # Added to match trip_planner.py query
+    display_order = Column(Integer, default=999) # Added to match trip_planner.py query
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    packages = relationship("Package", back_populates="dest_metadata", primaryjoin="Destination.name == Package.destination", foreign_keys="[Package.destination]", viewonly=True)
 
 
 class PackageImage(Base):
@@ -371,6 +406,11 @@ class Booking(Base):
     payment_status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
     special_requests = Column(Text, nullable=True)
     tripjack_booking_id = Column(String(50), nullable=True)
+    
+    # Flight selection details (for booking intent)
+    flight_origin = Column(String(50), nullable=True)
+    flight_fare = Column(Numeric(10, 2), nullable=True)
+    flight_details = Column(Text, nullable=True) # JSON with airline, flight_no, dep/arr times
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

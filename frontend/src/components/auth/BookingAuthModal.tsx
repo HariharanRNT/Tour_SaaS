@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { authAPI } from '@/lib/api'
 import { useGoogleLogin } from '@react-oauth/google'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 
 interface BookingAuthModalProps {
     isOpen: boolean
@@ -18,6 +19,7 @@ interface BookingAuthModalProps {
 type Tab = 'login' | 'register'
 
 export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModalProps) {
+    const { login: authLogin } = useAuth()
     const [activeTab, setActiveTab] = useState<Tab>('login')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -59,8 +61,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
         setLoading(true)
         try {
             const response = await authAPI.login(email, password)
-            localStorage.setItem('token', response.access_token)
-            localStorage.setItem('user', JSON.stringify(response.user))
+            authLogin(response.access_token, response.user)
             onSuccess()
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Invalid email or password')
@@ -86,8 +87,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                 first_name: firstName,
                 last_name: lastName
             })
-            localStorage.setItem('token', data.access_token)
-            localStorage.setItem('user', JSON.stringify(data.user))
+            authLogin(data.access_token, data.user)
             onSuccess()
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Registration failed')
@@ -101,8 +101,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
             setLoading(true)
             try {
                 const data = await authAPI.googleLogin(tokenResponse.access_token)
-                localStorage.setItem('token', data.access_token)
-                localStorage.setItem('user', JSON.stringify(data.user))
+                authLogin(data.access_token, data.user)
                 onSuccess()
             } catch (err) {
                 setError('Google login failed')

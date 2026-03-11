@@ -79,10 +79,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     useEffect(() => {
         // Enforce booking details if accessing a package itinerary
-        if (slug && (!queryDate || !queryAdults)) {
+        const mode = searchParams.get('mode')
+        if (slug && (!queryDate || !queryAdults) && mode !== 'preview') {
             router.push('/plan-trip')
         }
-    }, [slug, queryDate, queryAdults, router])
+    }, [slug, queryDate, queryAdults, searchParams, router])
 
     // Support legacy URLs but prefer the cookie/slug combination
     const urlSessionId = searchParams.get('session')
@@ -264,6 +265,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 adults: session?.travelers?.adults || 1,
                 children: session?.travelers?.children || 0,
                 infants: session?.travelers?.infants || 0,
+                cabin_class: session?.preferences?.cabin_class || 'ECONOMY',
                 is_direct_flight: true
             }
 
@@ -369,13 +371,21 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     start_date: new Date().toISOString().split('T')[0], // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
-                        departure_location: 'Chennai', // Default
-                        include_flights: false
+                        departure_location: searchParams.get('origin') || 'MAA',
+                        include_flights: data.flights_enabled || false,
+                        cabin_class: data.flight_cabin_class || 'ECONOMY'
                     }
                 })
 
                 if (data.itinerary_by_day) {
                     setItinerary(data.itinerary_by_day)
+                }
+
+                if (data.gst_mode) {
+                    setGstSettings({
+                        inclusive: data.gst_mode === 'inclusive',
+                        percentage: data.gst_percentage || 0
+                    })
                 }
             } else {
                 alert("Failed to load package preview")
@@ -402,13 +412,21 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     start_date: new Date().toISOString().split('T')[0], // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
-                        departure_location: 'Chennai', // Default
-                        include_flights: false
+                        departure_location: searchParams.get('origin') || 'MAA',
+                        include_flights: data.flights_enabled || false,
+                        cabin_class: data.flight_cabin_class || 'ECONOMY'
                     }
                 })
 
                 if (data.itinerary_by_day) {
                     setItinerary(data.itinerary_by_day)
+                }
+
+                if (data.gst_mode) {
+                    setGstSettings({
+                        inclusive: data.gst_mode === 'inclusive',
+                        percentage: data.gst_percentage || 0
+                    })
                 }
             } else {
                 alert("Failed to load package preview")
@@ -629,7 +647,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const preferences = session.preferences || {}
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen">
             {/* Preview Banner */}
             {mode === 'preview' && (
                 <div className="glass-panel border-b border-amber-200/50 px-4 py-3 sticky top-0 z-50">
@@ -646,57 +664,35 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 </div>
             )}
 
-            {/* Header */}
-            <header className="glass-navbar border-b border-orange-100/30 sticky top-0 z-[60] py-3 shadow-sm">
-                <div className="container mx-auto px-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => router.back()}
-                            className="text-[#E8682A] hover:bg-orange-50 rounded-full h-10 w-10 transition-colors"
-                        >
-                            <ArrowLeft className="h-5 w-5 stroke-[2.5]" />
-                        </Button>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#A0501E]/60 leading-none mb-1">Itinerary</span>
-                            <h1 className="text-xl font-bold text-[#3A1A08] leading-tight">
-                                Trip to {session.destination}
-                            </h1>
-                        </div>
-                    </div>
-                </div>
-            </header>
 
-            {/* Hero Section */}
-            <div className="relative h-[450px] w-full bg-cover bg-center overflow-hidden flex items-center justify-center -mt-px group shadow-2xl">
-                {/* Background Image & Overlay */}
+            {/* Hero Section — destination-specific background */}
+            <div className="relative h-[480px] w-full bg-cover bg-center overflow-hidden flex items-center justify-center group shadow-2xl">
+                {/* Background Image & Overlay — Destination-specific */}
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${getValidImageUrl(theme.itin_hero_image || session.destination_image || '/images/default-destination.jpg')}')`,
+                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || theme.itin_hero_image || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`,
                     }}
                 />
 
-                {/* Warm Peach-to-Orange Gradient Overlay */}
+                {/* Gradient Overlay — stronger at bottom for chip readability */}
                 <div
-                    className="absolute inset-0 z-10 transition-opacity duration-700"
+                    className="absolute inset-0 z-10"
                     style={{
-                        background: 'linear-gradient(to bottom, rgba(200,80,20,0.3) 0%, rgba(230,120,40,0.65) 100%)',
-                        opacity: 0.9
+                        background: 'linear-gradient(to bottom, rgba(30,8,2,0.2) 0%, rgba(30,8,2,0.45) 55%, rgba(30,8,2,0.82) 100%)',
                     }}
                 />
 
                 {/* Noise texture overlay */}
-                <div className="absolute inset-0 z-15 opacity-[0.04] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}></div>
+                <div className="absolute inset-0 z-[11] opacity-[0.035] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}></div>
 
                 <div className="container mx-auto px-4 relative z-20 text-center">
                     <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Badges */}
+                        {/* Destination Tag — replaces floating pin */}
                         <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                            <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/30 shadow-sm">
-                                <MapPin className="h-3.5 w-3.5 text-orange-200" />
-                                <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.trip_type}</span>
+                            <div className="inline-flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/20 shadow-sm">
+                                <span className="text-orange-300 text-[11px]">📍</span>
+                                <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.destination}, {session.country || 'India'}</span>
                             </div>
 
                             {(theme.itin_show_ai_badge ?? true) && (
@@ -715,7 +711,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                         {/* Trip Details Grid - Info Chips */}
                         <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
                                 <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
                                     <Calendar className="h-4 w-4 text-white" />
                                 </div>
@@ -725,17 +721,19 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
                                 <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
                                     <Clock className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap">{session.duration_days} Days / {session.duration_nights} N</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap">
+                                        {session.duration_days} Days / {session.duration_nights ?? (session.duration_days > 1 ? session.duration_days - 1 : session.duration_days)} Nights
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
                                 <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
                                     <Users className="h-4 w-4 text-white" />
                                 </div>
@@ -745,26 +743,31 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.25)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
                                 <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
                                     <Wallet className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Budget</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap uppercase tracking-tighter">{session.budget} Tier</p>
+                                    <p className="font-bold text-white text-sm whitespace-nowrap">
+                                        {session.price_per_person ? `₹${session.price_per_person.toLocaleString()}` : session.budget_tier ? `${session.budget_tier} Tier` : 'Custom'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Save Button Floating */}
+                {/* Save Button — frosted pill with orange border */}
                 <div className="absolute top-6 right-6 z-30">
                     <Button
                         id="save-btn"
                         className={`
-                            rounded-full px-6 h-11 border border-white/40 text-white font-bold transition-all shadow-xl backdrop-blur-md
-                            ${success ? 'bg-emerald-500/80 border-transparent' : 'bg-white/10 hover:bg-[#E8682A] hover:border-[#E8682A]'}
+                            rounded-full px-6 h-11 font-bold transition-all shadow-xl backdrop-blur-lg
+                            ${success
+                                ? 'bg-emerald-500 border-transparent text-white'
+                                : 'bg-white/90 border-2 border-[#E8682A] text-[#E8682A] hover:bg-[#E8682A] hover:text-white'
+                            }
                         `}
                         onClick={saveItinerary}
                         disabled={saving || mode === 'preview'}
@@ -775,7 +778,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 -mt-16 pb-24 relative z-30">
+            <div className="container mx-auto px-4 -mt-16 pb-8 relative z-30">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
                     {/* Left Column - Main Content */}
@@ -798,16 +801,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     <p className="text-[#6B3010] leading-relaxed text-lg max-w-2xl">
                                         We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[#E8682A]">{session.destination}</span> based on your love for <span className="font-bold text-[#E8682A]">{session.trip_type}</span> experiences.
                                     </p>
-                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
-                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
-                                            <span>✨ Perfectly Paced</span>
-                                        </div>
-                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
-                                            <span>📍 Top Rated Spots</span>
-                                        </div>
-                                        <div className="bg-orange-100/30 border border-orange-200/50 px-4 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-2 transition-all hover:bg-orange-500 hover:text-white group/pill">
-                                            <span>💎 Local Gems</span>
-                                        </div>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+                                        {[
+                                            { icon: <Sparkles className="h-3 w-3" />, label: 'Perfectly Paced' },
+                                            { icon: <MapPin className="h-3 w-3" />, label: 'Top Rated Spots' },
+                                            { icon: <CheckCircle className="h-3 w-3" />, label: 'Local Gems' },
+                                        ].map((tag) => (
+                                            <div key={tag.label} className="bg-[#E8682A]/10 border border-[#E8682A]/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-1.5 transition-all hover:bg-[#E8682A] hover:text-white hover:border-transparent">
+                                                {tag.icon}
+                                                <span>{tag.label}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -822,14 +826,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {[
-                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", color: "orange" },
-                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", color: "orange" },
-                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", color: "orange" },
-                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", color: "orange" }
+                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
+                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
+                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
+                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
                                 ].map((item, i) => (
-                                    <div key={i} className="group relative bg-white/50 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden">
+                                    <div key={i} className="group relative bg-white/60 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden cursor-default">
                                         {/* Hover glow */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-[#E8682A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#E8682A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
 
                                         <div className="relative z-10">
                                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E8682A] to-[#F4A261] flex items-center justify-center mb-5 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
@@ -837,6 +841,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             </div>
                                             <h3 className="font-bold text-[#3A1A08] text-xl mb-1">{item.label}</h3>
                                             <p className="text-sm text-[#A0501E] font-medium opacity-70">{item.desc}</p>
+                                            <p className="text-[11px] text-[#A0501E]/50 font-semibold mt-1.5">{item.detail}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -914,11 +919,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-4">
-                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-blue-500"></span> Onward Journey
+                                        <h3 className="text-xs font-black text-[#F97316] uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <div className="p-1 bg-[#F97316]/10 rounded-md">
+                                                <Plane className="h-3 w-3" />
+                                            </div>
+                                            Onward Journey
                                         </h3>
                                         {selectedOnwardFlight ? (
-                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 overflow-hidden group">
+                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
                                                 <div className="p-1">
                                                     <FlightCard
                                                         flight={selectedOnwardFlight}
@@ -928,16 +936,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                     <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                         <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-white/20 w-full mb-1" disabled={mode === 'preview'}>
+                                                                <Button variant="link" size="sm" className="text-[#F97316] hover:text-[#EA580C] w-full mb-1 font-black underline decoration-[#F97316]/0 hover:decoration-[#F97316]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
                                                                     Change Onward Flight
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="glass-panel max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border-0">
-                                                                <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/10">
-                                                                    <DialogTitle>Select Onward Flight</DialogTitle>
+                                                            <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_rgba(249,115,22,0.15)]">
+                                                                <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
+                                                                    <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
                                                                 </DialogHeader>
                                                                 <div className="flex flex-1 overflow-hidden">
-                                                                    <div className={`md:block w-72 border-r border-white/20 bg-white/10 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                    <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                         <div className="flex items-center justify-between mb-6">
                                                                             <h3 className="font-bold text-gray-900">Filters</h3>
                                                                             <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
@@ -949,7 +957,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                         <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                         <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                     </div>
-                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent">
+                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
                                                                         <div className="md:hidden mb-4">
                                                                             <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
                                                                                 Filters
@@ -986,11 +994,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                                     {returnFlights.length > 0 && (
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Return Journey
+                                            <h3 className="text-xs font-black text-[#F97316] uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <div className="p-1 bg-[#F97316]/10 rounded-md">
+                                                    <Plane className="h-3 w-3 -rotate-180" />
+                                                </div>
+                                                Return Journey
                                             </h3>
                                             {selectedReturnFlight ? (
-                                                <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 overflow-hidden group">
+                                                <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
                                                     <div className="p-1">
                                                         <FlightCard
                                                             flight={selectedReturnFlight}
@@ -1000,16 +1011,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                         <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
                                                             <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
                                                                 <DialogTrigger asChild>
-                                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-white/20 w-full mb-1" disabled={mode === 'preview'}>
+                                                                    <Button variant="link" size="sm" className="text-[#F97316] hover:text-[#EA580C] w-full mb-1 font-black underline decoration-[#F97316]/0 hover:decoration-[#F97316]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
                                                                         Change Return Flight
                                                                     </Button>
                                                                 </DialogTrigger>
-                                                                <DialogContent className="glass-panel max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border-0">
-                                                                    <DialogHeader className="px-6 py-4 border-b border-white/20 bg-white/10">
-                                                                        <DialogTitle>Select Return Flight</DialogTitle>
+                                                                <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_rgba(249,115,22,0.15)]">
+                                                                    <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
+                                                                        <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
-                                                                        <div className={`md:block w-72 border-r border-white/20 bg-white/10 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                        <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                             <div className="flex items-center justify-between mb-6">
                                                                                 <h3 className="font-bold text-gray-900">Filters</h3>
                                                                                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
@@ -1020,7 +1031,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                             <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                             <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
                                                                         </div>
-                                                                        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent">
+                                                                        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
                                                                             <div className="md:hidden mb-4">
                                                                                 <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
                                                                                     Filters
@@ -1090,6 +1101,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                 <Car className="h-6 w-6" />
                                             </div>
                                             <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
+                                        </div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 bg-gradient-to-br from-[#F97316] to-[#FB923C] rounded-lg shadow-sm">
+                                                    <Plane className="h-4 w-4 text-white" />
+                                                </div>
+                                                <h3 className="font-black text-[#3A1A08] uppercase tracking-widest text-sm">Onward Journey</h3>
+                                            </div>
+                                            <div className="text-xs font-bold text-slate-500 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                                                Direct Flight Only
+                                            </div>
                                         </div>
                                         <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
                                             <ServiceCard
@@ -1164,8 +1186,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     travelers={travelers}
                                     duration={{ days: session.duration_days, nights: session.duration_nights }}
                                     services={[
-                                        ...(selectedOnwardFlight ? [{ name: 'Onward Flight', price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                        ...(selectedReturnFlight ? [{ name: 'Return Flight', price: selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                        ...(selectedOnwardFlight ? [{
+                                            name: 'Onward Flight',
+                                            price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                        }] : []),
+                                        ...(selectedReturnFlight ? [{
+                                            name: 'Return Flight',
+                                            price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                        }] : []),
                                         ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
                                         ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
                                     ]}
@@ -1193,8 +1221,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
                                 const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
                                 const services = [
-                                    ...(selectedOnwardFlight ? [{ price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                    ...(selectedReturnFlight ? [{ price: selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
                                     ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
                                     ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
                                 ]
@@ -1229,8 +1257,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             travelers={travelers}
                             duration={{ days: session.duration_days, nights: session.duration_nights }}
                             services={[
-                                ...(selectedOnwardFlight ? [{ name: 'Onward Flight', price: selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                ...(selectedReturnFlight ? [{ name: 'Return Flight', price: selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                ...(selectedOnwardFlight ? [{
+                                    name: 'Onward Flight',
+                                    price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                }] : []),
+                                ...(selectedReturnFlight ? [{
+                                    name: 'Return Flight',
+                                    price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                }] : []),
                                 ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
                                 ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
                             ]}

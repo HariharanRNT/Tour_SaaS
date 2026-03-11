@@ -265,7 +265,14 @@ class PackageBase(BaseModel):
     activities: List[str] = []
     is_popular_destination: bool = False
     feature_image_url: Optional[str] = None
+    destination_image_url: Optional[str] = None
     view_count: int = 0
+    # Flight Configuration
+    flights_enabled: bool = False
+    flight_origin_cities: List[str] = []
+    flight_cabin_class: str = "ECONOMY"
+    flight_price_included: bool = False
+    flight_baggage_note: Optional[str] = None
 
 
 class PackageCreate(PackageBase):
@@ -295,6 +302,12 @@ class PackageUpdate(BaseModel):
     is_popular_destination: Optional[bool] = None
     feature_image_url: Optional[str] = None
     view_count: Optional[int] = None
+    # Flight Configuration
+    flights_enabled: Optional[bool] = None
+    flight_origin_cities: Optional[List[str]] = None
+    flight_cabin_class: Optional[str] = None
+    flight_price_included: Optional[bool] = None
+    flight_baggage_note: Optional[str] = None
 
 
 class PackageResponse(PackageBase):
@@ -307,7 +320,7 @@ class PackageResponse(PackageBase):
     itinerary_items: List[ItineraryItemResponse] = []
     availability: List[PackageAvailabilityResponse] = []
     
-    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', mode='before')
+    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', mode='before')
     @classmethod
     def parse_json_list(cls, v):
         if isinstance(v, str):

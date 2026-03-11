@@ -212,19 +212,10 @@ async def login(
             # Silently fail if file write fails - don't crash the login
             pass
         
-        # Log OTP to console using stderr for guaranteed visibility
-        import sys
-        try:
-            sys.stderr.write(f"\n{'='*60}\n")
-            sys.stderr.write(f"AGENT LOGIN OTP GENERATED\n")
-            sys.stderr.write(f"Email: {user.email}\n")
-            sys.stderr.write(f"OTP CODE: {otp}\n")
-            sys.stderr.write(f"Valid for: 5 minutes\n")
-            sys.stderr.write(f"{'='*60}\n\n")
-            sys.stderr.flush()
-        except Exception as e:
-            # Silently fail if stderr write fails - don't crash the login
-            pass
+        # Log to terminal securely via Uvicorn logger
+        # otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+        logger.warning(otp_msg)
+        print(otp_msg, flush=True)
         
         if not await OTPService.store_login_otp(user.email, otp):
             raise HTTPException(
@@ -277,6 +268,7 @@ async def login(
     # 4. Handle Customer/Admin (Direct Login)
     if user.role == UserRole.CUSTOMER:
         customer_profile = user.customer_profile
+        agent_profile = None
         if customer_profile and customer_profile.agent_id:
             # Domain Verification (Existing logic)
             agent_query = await db.execute(select(Agent).where(Agent.user_id == customer_profile.agent_id))
@@ -290,10 +282,98 @@ async def login(
                         status_code=status.HTTP_403_FORBIDDEN, 
                         detail=f"Access denied. You must login from {agent_domain}"
                     )
+                    
+        # Feature: Customer Login OTP
+        # Check rate limiting
+        if not await OTPService.check_login_rate_limit(user.email):
+            logger.warning(f"Customer login OTP rate limit exceeded for: {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="OTP request limit exceeded. Please try again after 1 hour."
+            )
+            
+        # Generate and store OTP
+        otp = OTPService.generate_otp()
+        
+        # Log to file
+        import os
+        try:
+            log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
+            with open(log_file, "a") as f:
+                from datetime import datetime
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Timestamp: {datetime.now()}\n")
+                f.write(f"Email (Customer): {user.email}\n")
+                f.write(f"OTP: {otp}\n")
+                f.write(f"{'='*60}\n")
+        except Exception:
+            pass
+            
+        # Log to terminal securely via Uvicorn logger
+        otp_msg = f"\n{'='*50}\n🔑 CUSTOMER LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+        logger.warning(otp_msg)
+        print(otp_msg, flush=True)
+            
+        if not await OTPService.store_login_otp(user.email, otp):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate OTP. Please try again."
+            )
+            
+        # Determine Agency Name and Subject
+        agency_name = "RNT Tour"
+        if agent_profile and agent_profile.agency_name:
+            agency_name = agent_profile.agency_name
+            
+        customer_name = f"{customer_profile.first_name} {customer_profile.last_name}" if customer_profile else "Valued Traveler"
+        
+        subject = f"Your Login OTP for {agency_name}"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;">{agency_name}</h2>
+            <p>Hello {customer_name},</p>
+            <p>Welcome back! Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+                {otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; {datetime.now().year} {agency_name}. All rights reserved.</p>
+        </div>
+        """
+        
+        # Pull Agent SMTP credentials if applicable
+        smtp_config = None
+        if agent_profile:
+            from sqlalchemy.orm import selectinload
+            agent_stmt = select(Agent).where(Agent.user_id == agent_profile.user_id).options(
+                selectinload(Agent.smtp_settings)
+            )
+            agent_res = await db.execute(agent_stmt)
+            loaded_agent = agent_res.scalar_one_or_none()
+            
+            if loaded_agent and loaded_agent.smtp_settings:
+                s = loaded_agent.smtp_settings
+                smtp_config = {
+                    "host": s.host,
+                    "port": s.port,
+                    "user": s.username,
+                    "password": decrypt_value(s.password),
+                    "from_email": s.from_email,
+                    "from_name": s.from_name,
+                    "encryption_type": s.encryption_type
+                }
+                
+        await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
+        
+        return LoginResponse(
+            require_otp=True,
+            message="OTP sent successfully to your registered email",
+            email=user.email,
+            expires_in=300
+        )
     
-
-    
-    # Create access token
+    # Create access token (for Admin)
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
     
     return LoginResponse(
@@ -473,9 +553,9 @@ async def send_login_otp(
         logger.warning(f"❌ User not found for email: {data.email}")
         raise UnauthorizedException("Invalid email or password")
     
-    # 2. Verify user is an agent
-    if user.role != UserRole.AGENT:
-        logger.warning(f"❌ User {data.email} is not an agent. Role: {user.role}")
+    # 2. Verify user role (Allow Agent and Customer)
+    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER]:
+        logger.warning(f"❌ User {data.email} is not permitted for OTP login. Role: {user.role}")
         raise UnauthorizedException("Invalid email or password")
     
     logger.warning(f"✅ Step 2: User is an agent")
@@ -518,15 +598,10 @@ async def send_login_otp(
         f.write(f"OTP: {otp}\n")
         f.write(f"{'='*60}\n")
     
-    # Log OTP to console for development/testing - using stderr for guaranteed visibility
-    import sys
-    sys.stderr.write(f"\n{'='*60}\n")
-    sys.stderr.write(f"🔐 AGENT LOGIN OTP GENERATED\n")
-    sys.stderr.write(f"📧 Email: {data.email}\n")
-    sys.stderr.write(f"🔢 OTP CODE: {otp}\n")
-    sys.stderr.write(f"⏰ Valid for: 5 minutes\n")
-    sys.stderr.write(f"{'='*60}\n\n")
-    sys.stderr.flush()
+    # Log to terminal securely via Uvicorn logger
+    otp_msg = f"\n{'='*50}\n🔑 LOGIN OTP (RESEND): {otp} (for {data.email})\n{'='*50}\n"
+    logger.warning(otp_msg)
+    print(otp_msg, flush=True)
     
     # 7. Store OTP in Redis
     if not await OTPService.store_login_otp(data.email, otp):
@@ -536,38 +611,72 @@ async def send_login_otp(
         )
     
     # 8. Send OTP via email
-    agent_profile = user.agent_profile
-    agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
-    
-    subject = "Your Login OTP for RNT Tour"
-    body = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
-        <p>Hello {agent_name},</p>
-        <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
-        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
-            {otp}
+    # Define Customer vs Agent dynamic layout
+    if user.role == UserRole.CUSTOMER:
+        customer_profile = user.customer_profile
+        agent_profile = None
+        if customer_profile and customer_profile.agent_id:
+            agent_query = await db.execute(select(Agent).where(Agent.user_id == customer_profile.agent_id))
+            agent_profile = agent_query.scalar_one_or_none()
+
+        agency_name = agent_profile.agency_name if (agent_profile and agent_profile.agency_name) else "RNT Tour"
+        target_name = f"{customer_profile.first_name} {customer_profile.last_name}" if customer_profile else "Valued Traveler"
+        
+        subject = f"Your Login OTP for {agency_name}"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;">{agency_name}</h2>
+            <p>Hello {target_name},</p>
+            <p>Welcome back! Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+                {otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">If you didn't request this login, please ignore this email and ensure your account is secure.</p>
+            <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 {agency_name}. All rights reserved.</p>
         </div>
-        <p style="color: #64748b; font-size: 14px;">If you didn't request this login, please ignore this email and ensure your account is secure.</p>
-        <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
-    </div>
-    """
+        """
+    else:    
+        agent_profile = user.agent_profile
+        agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+        
+        subject = "Your Login OTP for RNT Tour"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
+            <p>Hello {agent_name},</p>
+            <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+                {otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">If you didn't request this login, please ignore this email and ensure your account is secure.</p>
+            <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
+        </div>
+        """
     
     # Use agent's SMTP settings if available
     smtp_config = None
-    if agent_profile and agent_profile.smtp_settings:
-        s = agent_profile.smtp_settings
-        smtp_config = {
-            "host": s.host,
-            "port": s.port,
-            "user": s.username,
-            "password": decrypt_value(s.password),
-            "from_email": s.from_email,
-            "from_name": s.from_name,
-            "encryption_type": s.encryption_type
-        }
+    if agent_profile:
+        from sqlalchemy.orm import selectinload
+        agent_stmt = select(Agent).where(Agent.user_id == agent_profile.user_id).options(
+            selectinload(Agent.smtp_settings)
+        )
+        agent_res = await db.execute(agent_stmt)
+        loaded_agent = agent_res.scalar_one_or_none()
+        if loaded_agent and loaded_agent.smtp_settings:
+            s = loaded_agent.smtp_settings
+            smtp_config = {
+                "host": s.host,
+                "port": s.port,
+                "user": s.username,
+                "password": decrypt_value(s.password),
+                "from_email": s.from_email,
+                "from_name": s.from_name,
+                "encryption_type": s.encryption_type
+            }
     
     await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
     
@@ -583,7 +692,7 @@ async def verify_login_otp(
     data: VerifyLoginOTPRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify OTP and complete agent login"""
+    """Verify OTP and complete login for Agent or Customer"""
     from sqlalchemy.orm import selectinload
     from app.services.otp_service import OTPService
     
@@ -609,8 +718,8 @@ async def verify_login_otp(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # 3. Verify user is an agent
-    if user.role != UserRole.AGENT:
+    # 3. Verify allowed roles
+    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER]:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # 4. Check if user is active
@@ -718,18 +827,10 @@ async def forgot_password(
     except Exception as e:
         pass  # Silently fail if file write fails
     
-    # Log OTP to console using stderr for guaranteed visibility
-    import sys
-    try:
-        sys.stderr.write(f"\n{'='*60}\n")
-        sys.stderr.write(f"PASSWORD RESET OTP GENERATED\n")
-        sys.stderr.write(f"Email: {data.email}\n")
-        sys.stderr.write(f"OTP CODE: {otp}\n")
-        sys.stderr.write(f"Valid for: 5 minutes\n")
-        sys.stderr.write(f"{'='*60}\n\n")
-        sys.stderr.flush()
-    except Exception as e:
-        pass  # Silently fail if stderr write fails
+    # Log to terminal securely via Uvicorn logger
+    otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email})\n{'='*50}\n"
+    logger.warning(otp_msg)
+    print(otp_msg, flush=True)
     
     # 4. Store OTP in Redis
     if not await OTPService.store_otp(data.email, otp):

@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     ArrowLeft, ArrowRight, Save, Eye, Check, MapPin, Globe, Calendar, Users,
     Banknote, FileText, Settings, AlertCircle, Info, Lock,
-    Circle, CheckCircle, Image as ImageIcon, Briefcase,
+    Circle, CheckCircle, CheckCircle2, Image as ImageIcon, Briefcase,
     Mountain, Palmtree, Landmark, Coffee, Tent, Building2, ChevronRight,
-    Trash2, GripVertical, ChevronUp, ChevronDown
+    Trash2, GripVertical, ChevronUp, ChevronDown, Plane, Hotel, Utensils,
+    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -30,7 +31,7 @@ interface PackageFormData {
     country: string
     duration_days: number
     duration_nights: number
-    trip_style: string
+    trip_styles: string[]
     price_per_person: number
     description: string
     is_public: boolean
@@ -43,6 +44,12 @@ interface PackageFormData {
     gst_applicable: boolean
     gst_percentage: number
     gst_mode: string
+    // Flight Configuration
+    flights_enabled: boolean
+    flight_origin_cities: string[]
+    flight_cabin_class: string
+    flight_price_included: boolean
+    flight_baggage_note: string
 }
 
 const TRIP_STYLES = [
@@ -86,6 +93,12 @@ export default function CreatePackagePage() {
     const [loading, setLoading] = useState(false)
     const [packageId, setPackageId] = useState<string | null>(editPackageId)
     const [useFeatureImage, setUseFeatureImage] = useState(false)
+    const [tripStyleError, setTripStyleError] = useState(false)
+
+    // Multi-Destination Drag & Drop State
+    const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
+    const [dragOverLegIndex, setDragOverLegIndex] = useState<number | null>(null)
+    const [originInput, setOriginInput] = useState('')
 
     const [formData, setFormData] = useState<PackageFormData>({
         title: '',
@@ -93,8 +106,7 @@ export default function CreatePackagePage() {
         country: '',
         duration_days: 7,
         duration_nights: 6,
-        trip_style: '',
-        price_per_person: 0,
+        trip_styles: [], price_per_person: 0,
         description: '',
         is_public: false,
         feature_image_url: '',
@@ -105,7 +117,13 @@ export default function CreatePackagePage() {
         slug: '',
         gst_applicable: false,
         gst_percentage: 18,
-        gst_mode: 'exclusive'
+        gst_mode: 'exclusive',
+        // Flight Defaults
+        flights_enabled: false,
+        flight_origin_cities: [],
+        flight_cabin_class: 'ECONOMY',
+        flight_price_included: false,
+        flight_baggage_note: ''
     })
 
     // Whether agent has GST set to Applicable in Settings — controls GST section visibility
@@ -170,7 +188,7 @@ export default function CreatePackagePage() {
                         country: packageData.country || '',
                         duration_days: packageData.duration?.days || 7,
                         duration_nights: packageData.duration?.nights || 6,
-                        trip_style: packageData.trip_style || 'Adventure',
+                        trip_styles: packageData.trip_style ? [packageData.trip_style] : ['Adventure'],
                         price_per_person: packageData.pricePerPerson || 0,
                         description: packageData.packageOverview || '',
                         is_public: true,
@@ -182,8 +200,15 @@ export default function CreatePackagePage() {
                         slug: '',
                         gst_applicable: false,
                         gst_percentage: 18,
-                        gst_mode: 'exclusive'
+                        gst_mode: 'exclusive',
+                        // Flight Configuration
+                        flights_enabled: false,
+                        flight_origin_cities: [],
+                        flight_cabin_class: 'ECONOMY',
+                        flight_price_included: false,
+                        flight_baggage_note: ''
                     })
+                    setOriginInput('')
 
                     // Store itinerary data for the itinerary builder
                     if (packageData.itinerary) {
@@ -273,7 +298,7 @@ export default function CreatePackagePage() {
                     country: pkg.country || '',
                     duration_days: pkg.duration_days || 7,
                     duration_nights: pkg.duration_nights || 6,
-                    trip_style: pkg.trip_style || 'Adventure',
+                    trip_styles: pkg.trip_styles || (pkg.trip_style ? [pkg.trip_style] : []),
                     price_per_person: pkg.price_per_person || 0,
                     description: pkg.description || '',
                     is_public: pkg.is_public !== undefined ? pkg.is_public : true,
@@ -285,8 +310,17 @@ export default function CreatePackagePage() {
                     slug: pkg.slug || '',
                     gst_applicable: Boolean(gstApplicable),
                     gst_percentage: gstPercentage,
-                    gst_mode: gstMode
+                    gst_mode: gstMode,
+                    // Flight Configuration
+                    flights_enabled: pkg.flights_enabled || false,
+                    flight_origin_cities: pkg.flight_origin_cities || [],
+                    flight_cabin_class: pkg.flight_cabin_class || 'ECONOMY',
+                    flight_price_included: pkg.flight_price_included || false,
+                    flight_baggage_note: pkg.flight_baggage_note || ''
                 })
+                if (pkg.flight_origin_cities) {
+                    setOriginInput(pkg.flight_origin_cities.join(', '))
+                }
                 if (pkg.feature_image_url) setUseFeatureImage(true)
                 setPackageId(id)
             }
@@ -340,6 +374,44 @@ export default function CreatePackagePage() {
         setFormData(prev => ({ ...prev, destinations: newDestinations }))
     }
 
+    const handleDragStartLeg = (e: React.DragEvent, index: number) => {
+        setDraggedLegIndex(index)
+        e.dataTransfer.effectAllowed = 'move'
+        // Create a transparent image to avoid default drag ghost if needed, or leave default
+    }
+
+    const handleDragOverLeg = (e: React.DragEvent, index: number) => {
+        e.preventDefault() // Necessary to allow dropping
+        if (dragOverLegIndex !== index) {
+            setDragOverLegIndex(index)
+        }
+    }
+
+    const handleDragEndLeg = () => {
+        setDraggedLegIndex(null)
+        setDragOverLegIndex(null)
+    }
+
+    const handleDropLeg = (e: React.DragEvent, index: number) => {
+        e.preventDefault()
+        if (draggedLegIndex === null || draggedLegIndex === index) {
+            setDraggedLegIndex(null)
+            setDragOverLegIndex(null)
+            return
+        }
+
+        const newDestinations = [...formData.destinations]
+        const draggedItem = newDestinations[draggedLegIndex]
+
+        newDestinations.splice(draggedLegIndex, 1)
+        newDestinations.splice(index, 0, draggedItem)
+
+        setFormData(prev => ({ ...prev, destinations: newDestinations }))
+        setDraggedLegIndex(null)
+        setDragOverLegIndex(null)
+    }
+
+
     const updateMultiDuration = (destinations: any[]) => {
         const totalDays = destinations.reduce((sum, dest) => sum + (parseInt(dest.days) || 0), 0)
         setFormData(prev => ({
@@ -358,6 +430,16 @@ export default function CreatePackagePage() {
         })
     }
 
+    const toggleTripStyle = (styleId: string) => {
+        setTripStyleError(false)
+        setFormData(prev => {
+            const styles = prev.trip_styles.includes(styleId)
+                ? prev.trip_styles.filter(s => s !== styleId)
+                : [...prev.trip_styles, styleId]
+            return { ...prev, trip_styles: styles }
+        })
+    }
+
     const toggleIncludedItem = (item: string) => {
         setFormData(prev => {
             const items = prev.included_items.includes(item)
@@ -367,7 +449,7 @@ export default function CreatePackagePage() {
         })
     }
 
-    const handleSaveDraft = async (shouldRedirect: boolean = false) => {
+    const handleContinueSave = async (targetStep: number) => {
         setSaving(true)
         try {
             const url = packageId
@@ -398,20 +480,48 @@ export default function CreatePackagePage() {
                 window.history.replaceState(null, '', `?id=${data.id}`)
             }
 
-            toast.success(packageId ? 'Package updated successfully' : 'Package saved as draft')
+            toast.success(packageId ? 'Package details updated' : 'Package details saved')
+            setActiveStep(targetStep) // Advance step only on success
 
-            if (shouldRedirect) {
-                router.push('/agent/packages')
-            } else if (activeStep === 1) {
-                setActiveStep(2)
-            }
         } catch (error) {
             console.error('Failed to save package:', error)
-            toast.error('Failed to save package')
+            toast.error('Failed to save package details. Please try again.')
         } finally {
             setSaving(false)
         }
     }
+
+    const handleSaveDraftOnly = async () => {
+        setSaving(true)
+        try {
+            const url = packageId
+                ? `http://localhost:8000/api/v1/agent/packages/${packageId}`
+                : 'http://localhost:8000/api/v1/agent/packages'
+
+            const method = packageId ? 'PUT' : 'POST'
+            const token = localStorage.getItem('token')
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            })
+
+            if (!response.ok) throw new Error('Failed to save draft')
+
+            toast.success('Draft saved successfully')
+            router.push('/agent/packages')
+        } catch (error) {
+            console.error('Failed to save draft:', error)
+            toast.error('Failed to save draft. Please try again.')
+        } finally {
+            setSaving(false)
+        }
+    }
+
 
     const handlePublish = async () => {
         if (!packageId) {
@@ -440,9 +550,9 @@ export default function CreatePackagePage() {
 
     const isBasicInfoValid = () => {
         if (formData.package_mode === 'single') {
-            return formData.title && formData.destination && formData.country && formData.price_per_person > 0 && formData.trip_style
+            return formData.title && formData.destination && formData.country && formData.price_per_person > 0 && formData.trip_styles.length >= 1
         } else {
-            return formData.title && formData.destinations.length > 0 && formData.destinations.every(d => d.city && d.country && d.days > 0) && formData.price_per_person > 0 && formData.trip_style
+            return formData.title && formData.destinations.length > 0 && formData.destinations.every(d => d.city && d.country && d.days > 0) && formData.price_per_person > 0 && formData.trip_styles.length >= 1
         }
     }
 
@@ -459,21 +569,30 @@ export default function CreatePackagePage() {
     }
 
     const handleStepClick = (step: number) => {
-        // Only allow clicking if we have a package ID (saved) or moving back
-        if (packageId || step < activeStep) {
-            setActiveStep(step)
+        // Prevent skipping ahead without saving basic info
+        if (step > 1 && !packageId) {
+            if (activeStep === 1 && isBasicInfoValid()) {
+                handleContinueSave(step)
+            } else {
+                toast.info("Please fill required basic info to continue")
+            }
+            return
+        }
+
+        // Auto-save when moving to a different step if we have a package ID
+        if (packageId && step !== activeStep) {
+            handleContinueSave(step)
         } else {
-            toast.info("Please save the basic info first")
+            setActiveStep(step)
         }
     }
 
     return (
-        <div className="min-h-screen pb-32 overflow-x-hidden">
+        <div className="pkg-creation-root min-h-screen pb-32 overflow-x-hidden">
             {/* Header */}
             <div className="glass-navbar sticky top-0 z-10 shadow-sm">
                 <div className="container mx-auto px-4 py-6">
                     <div className="flex flex-col gap-6">
-                        {/* Top Row: Back Button */}
                         <div className="flex items-center justify-between">
                             <Button
                                 variant="ghost"
@@ -484,20 +603,6 @@ export default function CreatePackagePage() {
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Packages
                             </Button>
-
-                            <div className="flex gap-2">
-                                {packageId && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => router.push(`/packages/${packageId}`)}
-                                        className="bg-white text-xs h-8"
-                                    >
-                                        <Eye className="mr-2 h-3.5 w-3.5" />
-                                        Preview
-                                    </Button>
-                                )}
-                            </div>
                         </div>
 
                         {/* Title & Metadata */}
@@ -516,30 +621,9 @@ export default function CreatePackagePage() {
                                 </p>
                             </div>
 
-                            {/* Action Buttons: Preview, Save, Publish */}
+                            {/* Action Buttons: Publish */}
                             <div className="flex items-center gap-3">
-                                {packageId && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => router.push(`/packages/${packageId}`)}
-                                        className="bg-white border-gray-200 text-gray-700 hover:bg-transparent"
-                                    >
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        Preview
-                                    </Button>
-                                )}
-                                <Button
-                                    onClick={() => handleSaveDraft(false)}
-                                    disabled={!isBasicInfoValid() || saving}
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                                >
-                                    <Save className="mr-2 h-4 w-4" />
-                                    {saving ? 'Saving...' : 'Save Draft'}
-                                </Button>
-                                {packageId && (
+                                {packageId && activeStep === 3 && (
                                     <Button
                                         onClick={handlePublish}
                                         size="sm"
@@ -554,20 +638,22 @@ export default function CreatePackagePage() {
 
                         {/* Stepper Component - Modern Design */}
                         <div className="w-full max-w-3xl mx-auto py-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-                                    Progress: {activeStep === 1 ? '33%' : activeStep === 2 ? '66%' : '100%'}
-                                </span>
-                                <span className="text-xs text-gray-400">Step {activeStep} of 3</span>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] px-2 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+                                        Progress: {activeStep === 1 ? '33%' : activeStep === 2 ? '66%' : '100%'}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] font-bold text-[#FF6B2B] uppercase tracking-widest">Step {activeStep} of 3</span>
                             </div>
 
                             <div className="relative flex items-center justify-between">
                                 {/* Background Line */}
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-2 bg-gray-100 rounded-full -z-10" />
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1.5 bg-[#FF6B2B]/10 rounded-full -z-10" />
 
                                 {/* Active Progress Line */}
                                 <div
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 h-2 bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full -z-10 transition-all duration-700 ease-out"
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] rounded-full -z-10 transition-all duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1)"
                                     style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
                                 />
 
@@ -586,10 +672,10 @@ export default function CreatePackagePage() {
                                             onClick={() => handleStepClick(item.step)}
                                         >
                                             <div className={cn(
-                                                "w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-500 z-10",
-                                                isCompleted ? "bg-emerald-500 border-white text-white shadow-lg shadow-emerald-200" :
-                                                    isCurrent ? "bg-white border-indigo-500 text-indigo-600 shadow-xl shadow-indigo-200 scale-110" :
-                                                        "bg-gray-100 border-white text-gray-400"
+                                                "w-10 -10 rounded-full flex items-center justify-center border-2 transition-all duration-700 z-10",
+                                                isCompleted ? "bg-[#10B981] border-white text-white shadow-[0_0_15px_rgba(255,107,43,0.4)]" :
+                                                    isCurrent ? "bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] border-white text-white shadow-[0_0_20px_rgba(255,107,43,0.4)] scale-110" :
+                                                        "bg-white/20 backdrop-blur-md border-white/30 text-gray-500"
                                             )}>
                                                 {isCompleted ? <Check className="w-5 h-5" /> : (
                                                     <span className={cn("text-sm font-bold", isCurrent && "animate-pulse")}>{item.step}</span>
@@ -597,7 +683,7 @@ export default function CreatePackagePage() {
 
                                                 {/* Pulsing ring for current */}
                                                 {isCurrent && (
-                                                    <div className="absolute inset-0 rounded-full border-4 border-indigo-500/30 animate-ping" />
+                                                    <div className="absolute inset-0 rounded-full border-4 border-[#FF6B2B]/30 animate-ping" />
                                                 )}
                                             </div>
 
@@ -606,8 +692,8 @@ export default function CreatePackagePage() {
                                                 isCurrent ? "opacity-100 transform translate-y-0" : "opacity-60 group-hover:opacity-100"
                                             )}>
                                                 <span className={cn(
-                                                    "text-sm font-bold whitespace-nowrap",
-                                                    isCurrent ? "text-indigo-700" : isCompleted ? "text-emerald-600" : "text-gray-400"
+                                                    "text-[11px] font-bold whitespace-nowrap tracking-tight",
+                                                    isCurrent ? "text-[#E8682A]" : isCompleted ? "text-[#10B981]" : "text-gray-400"
                                                 )}>
                                                     {item.label}
                                                 </span>
@@ -632,7 +718,7 @@ export default function CreatePackagePage() {
                     <div className="grid grid-cols-1 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                         {/* Overview Section */}
-                        <Card className="glass-panel border-0 shadow-lg overflow-hidden group rounded-3xl">
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group">
                             <div className="bg-gradient-to-r from-blue-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
                                 <div className="p-2 bg-blue-100/50 rounded-lg text-blue-600 group-hover:scale-110 transition-transform">
                                     <Briefcase className="w-5 h-5" />
@@ -646,28 +732,40 @@ export default function CreatePackagePage() {
                                 {/* Package Type Toggle */}
                                 <div className="space-y-3 md:col-span-2 mb-2">
                                     <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Package Type <span className="text-red-500">*</span></Label>
-                                    <div className="flex p-1 bg-gray-100 rounded-lg max-w-sm">
+                                    <div className="relative flex p-1 rounded-full max-w-sm" style={{ background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+                                        {/* Sliding Background Indicator */}
+                                        <div
+                                            className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 100%)',
+                                                left: formData.package_mode === 'single' ? '4px' : 'calc(50%)',
+                                            }}
+                                        />
+
+                                        {/* Single Option */}
                                         <button
                                             type="button"
                                             onClick={() => updateFormData('package_mode', 'single')}
                                             className={cn(
-                                                "flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2",
-                                                formData.package_mode === 'single' ? "bg-white text-indigo-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                                                "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
+                                                formData.package_mode === 'single' ? "text-white" : "text-[#8C6B5D] hover:text-[#FF6B2B] hover:bg-white/10"
                                             )}
                                         >
                                             <MapPin className="w-4 h-4" />
-                                            Single Destination
+                                            Single
                                         </button>
+
+                                        {/* Multi Option */}
                                         <button
                                             type="button"
                                             onClick={() => updateFormData('package_mode', 'multi')}
                                             className={cn(
-                                                "flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-2",
-                                                formData.package_mode === 'multi' ? "bg-white text-indigo-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                                                "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
+                                                formData.package_mode === 'multi' ? "text-white" : "text-[#8C6B5D] hover:text-[#FF6B2B] hover:bg-white/10"
                                             )}
                                         >
                                             <Globe className="w-4 h-4" />
-                                            Multi Destination
+                                            Multi-Dest
                                         </button>
                                     </div>
                                 </div>
@@ -705,7 +803,7 @@ export default function CreatePackagePage() {
                                                     placeholder="e.g., Tokyo"
                                                     value={formData.destination}
                                                     onChange={(e) => updateFormData('destination', e.target.value)}
-                                                    className="glass-input pl-10 h-11 border-gray-200 rounded-xl"
+                                                    className="glass-input pl-10 h-11 rounded-xl"
                                                 />
                                             </div>
                                         </div>
@@ -723,9 +821,9 @@ export default function CreatePackagePage() {
                                                         </div>
                                                         <SelectValue placeholder="Select a country" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
+                                                    <SelectContent className="pkg-creation-root glass-dropdown-content">
                                                         {Country.getAllCountries().map((country) => (
-                                                            <SelectItem key={country.isoCode} value={country.name}>
+                                                            <SelectItem key={country.isoCode} value={country.name} className="glass-select-item">
                                                                 {country.name}
                                                             </SelectItem>
                                                         ))}
@@ -737,11 +835,24 @@ export default function CreatePackagePage() {
                                 )}
 
                                 {formData.package_mode === 'multi' && (
-                                    <div className="md:col-span-2 space-y-4 mt-2">
-                                        <div className="flex items-center justify-between border-b pb-2">
-                                            <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Destination Legs <span className="text-red-500">*</span></Label>
-                                            <Button type="button" variant="outline" size="sm" onClick={handleAddDestination} className="h-8 text-xs border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                                                + Add Leg
+                                    <div className="md:col-span-2 space-y-4 mt-2 pt-2">
+                                        <div className="flex items-center justify-between border-b border-gray-100/50 pb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-[#FF6B2B]"></span>
+                                                    <Label className="text-xs font-bold text-[#2D1A0E] uppercase tracking-[0.15em]">Destination Legs</Label>
+                                                </div>
+                                                <div className="px-2.5 py-1 text-[10px] font-bold text-[#FF6B2B] bg-white/20 border border-[rgba(255,107,43,0.3)] tracking-wide rounded-full shadow-sm">
+                                                    {formData.destinations.length} Leg{formData.destinations.length !== 1 ? 's' : ''}
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={handleAddDestination}
+                                                className="h-8 px-4 text-xs font-semibold text-[#FF6B2B] bg-[rgba(255,255,255,0.22)] border-[1.5px] border-[rgba(255,107,43,0.45)] hover:bg-[rgba(255,107,43,0.08)] hover:border-[#FF6B2B] transition-all rounded-full shadow-sm"
+                                            >
+                                                <Plus className="w-3.5 h-3.5 mr-1 text-[#FF6B2B]" /> Add Leg
                                             </Button>
                                         </div>
 
@@ -753,94 +864,192 @@ export default function CreatePackagePage() {
                                             </div>
                                         )}
 
-                                        <div className="space-y-3">
+                                        <div className="space-y-0 relative">
                                             {formData.destinations.map((dest, index) => (
-                                                <div key={index} className="flex flex-col sm:flex-row gap-3 p-4 bg-white/60 backdrop-blur-sm border border-white/70 rounded-2xl shadow-sm relative group overflow-hidden">
-                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-xl"></div>
+                                                <div key={index} className="relative group/leg flex flex-col items-center">
+                                                    <div
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStartLeg(e, index)}
+                                                        onDragOver={(e) => handleDragOverLeg(e, index)}
+                                                        onDragEnd={handleDragEndLeg}
+                                                        onDrop={(e) => handleDropLeg(e, index)}
+                                                        className={cn(
+                                                            "w-full flex flex-col sm:flex-row gap-3 p-5 relative transition-all duration-300 group overflow-visible",
+                                                            draggedLegIndex === index ? "opacity-40" : "opacity-100",
+                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex < index ? "border-b-4 border-b-[#FF6B2B]" : "",
+                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex > index ? "border-t-4 border-t-[#FF6B2B]" : ""
+                                                        )}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.20)',
+                                                            backdropFilter: 'blur(16px)',
+                                                            border: '1px solid rgba(255,255,255,0.40)',
+                                                            borderLeft: '3px solid #FF6B2B',
+                                                            borderRadius: '20px',
+                                                            boxShadow: draggedLegIndex === index ? '0 12px 32px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)'
+                                                        }}
+                                                        onMouseEnter={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,107,43,0.15)' } }}
+                                                        onMouseLeave={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)' } }}
+                                                    >
+                                                        {/* Drag Handle */}
+                                                        <div className="absolute left-[-22px] top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity p-2 text-[rgba(255,107,43,0.40)] hover:text-[#FF6B2B]">
+                                                            <GripVertical className="w-5 h-5" />
+                                                        </div>
 
-                                                    {/* Drag Handle & Order */}
-                                                    <div className="flex flex-col items-center justify-center px-1">
-                                                        <span className="text-xs font-bold text-gray-400 mb-1">#{index + 1}</span>
-                                                        <div className="flex flex-col">
-                                                            <button type="button" onClick={() => handleMoveDestination(index, 'up')} disabled={index === 0} className="text-gray-300 hover:text-indigo-500 disabled:opacity-30 p-0.5" title="Move Up">
-                                                                <ChevronUp className="w-4 h-4" />
-                                                            </button>
-                                                            <button type="button" onClick={() => handleMoveDestination(index, 'down')} disabled={index === formData.destinations.length - 1} className="text-gray-300 hover:text-indigo-500 disabled:opacity-30 p-0.5" title="Move Down">
-                                                                <ChevronDown className="w-4 h-4" />
-                                                            </button>
+                                                        {/* Leg Number Badge */}
+                                                        <div
+                                                            className="absolute -top-3 -left-3 w-7 h-7 flex items-center justify-center rounded-full text-white text-xs font-bold shadow-md z-10"
+                                                            style={{ background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)' }}
+                                                        >
+                                                            {index + 1}
                                                         </div>
-                                                    </div>
 
-                                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                                        <div className="sm:col-span-5 space-y-1">
-                                                            <Label className="text-[10px] text-gray-500 uppercase">City / Area</Label>
-                                                            <Input
-                                                                placeholder="e.g. Kyoto"
-                                                                value={dest.city}
-                                                                onChange={(e) => handleUpdateDestination(index, 'city', e.target.value)}
-                                                                className="h-9 text-sm focus-visible:ring-1 focus-visible:ring-indigo-500"
-                                                            />
-                                                        </div>
-                                                        <div className="sm:col-span-4 space-y-1">
-                                                            <Label className="text-[10px] text-gray-500 uppercase">Country</Label>
-                                                            <Select value={dest.country} onValueChange={(val) => handleUpdateDestination(index, 'country', val)}>
-                                                                <SelectTrigger className="h-9 text-sm focus:ring-1 focus:ring-indigo-500">
-                                                                    <SelectValue placeholder="Country" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {Country.getAllCountries().map((c) => (
-                                                                        <SelectItem key={c.isoCode} value={c.name}>{c.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="sm:col-span-3 space-y-1">
-                                                            <Label className="text-[10px] text-gray-500 uppercase">Days Here</Label>
-                                                            <div className="flex items-center">
+                                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-5 mt-2 sm:mt-0 pl-2">
+                                                            <div className="sm:col-span-5 relative flex items-center">
+                                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                                    <MapPin className="h-4 w-4 text-[#FF6B2B]" />
+                                                                </div>
+                                                                <Input
+                                                                    placeholder="City / Area"
+                                                                    value={dest.city}
+                                                                    onChange={(e) => handleUpdateDestination(index, 'city', e.target.value)}
+                                                                    className="pl-9 h-11 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-[#FF6B2B]/40 focus-visible:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)]"
+                                                                    style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
+                                                                />
+                                                            </div>
+                                                            <div className="sm:col-span-4 relative flex items-center">
+                                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                                    <Globe className="h-4 w-4 text-[#FF6B2B]" />
+                                                                </div>
+                                                                <Select value={dest.country} onValueChange={(val) => handleUpdateDestination(index, 'country', val)}>
+                                                                    <SelectTrigger
+                                                                        className="pl-9 h-11 text-sm font-medium transition-all focus:ring-2 focus:ring-[#FF6B2B]/40 focus:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)] relative"
+                                                                        style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
+                                                                    >
+                                                                        <SelectValue placeholder="Country" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent className="pkg-creation-root glass-dropdown-content border-white/40">
+                                                                        {Country.getAllCountries().map((c) => (
+                                                                            <SelectItem key={c.isoCode} value={c.name} className="glass-select-item">{c.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="sm:col-span-3 relative flex items-center">
+                                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                                                                    <Calendar className="h-4 w-4 text-[#FF6B2B]" />
+                                                                </div>
                                                                 <Input
                                                                     type="number" min="1"
                                                                     value={dest.days}
                                                                     onChange={(e) => handleUpdateDestination(index, 'days', parseInt(e.target.value) || 1)}
-                                                                    className="h-9 text-sm text-center pr-8 focus-visible:ring-1 focus-visible:ring-indigo-500"
+                                                                    className="pl-9 h-11 text-sm font-bold text-gray-800 focus-visible:ring-2 focus-visible:ring-[#FF6B2B]/40 focus-visible:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)] pr-12 text-center"
+                                                                    style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
                                                                 />
-                                                                <span className="text-xs text-gray-500 -ml-10 pointer-events-none">days</span>
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-wider font-semibold text-[rgba(120,60,20,0.55)] pointer-events-none">Days</span>
                                                             </div>
+                                                        </div>
+
+                                                        {/* Delete Button - Appears on hover */}
+                                                        <div className="absolute right-[-10px] top-[-10px] sm:top-1/2 sm:-translate-y-1/2 sm:right-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all z-10">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveDestination(index)}
+                                                                className="w-7 h-7 flex items-center justify-center rounded-full text-[rgba(220,50,50,0.6)] hover:text-[#ff4d4f] transition-colors bg-[rgba(255,255,255,0.22)] hover:bg-[#fff0f0] border border-transparent hover:border-[rgba(220,50,50,0.3)] shadow-sm backdrop-blur-md"
+                                                                title="Remove Leg"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center sm:pl-2 sm:border-l border-gray-50 pt-3 sm:pt-0">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveDestination(index)}
-                                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full sm:w-auto flex justify-center"
-                                                            title="Remove Leg"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                    {/* Connector Arrow (Except for last item) */}
+                                                    {index < formData.destinations.length - 1 && (
+                                                        <div className="hidden sm:flex flex-col items-center h-8 my-1 relative">
+                                                            <div className="w-px h-full border-l-[1.5px] border-dashed border-[rgba(255,107,43,0.35)]"></div>
+                                                            <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-[rgba(255,255,255,0.8)] backdrop-blur-sm border border-[rgba(255,107,43,0.30)] rounded-full flex items-center justify-center shadow-sm z-10">
+                                                                <Plane className="w-3 h-3 text-[rgba(255,107,43,0.8)] rotate-[135deg] translate-y-[0.5px] -translate-x-[0.5px]" />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
 
-                                            {/* Summary Bar */}
+                                            {/* Bottom Add Leg Button */}
                                             {formData.destinations.length > 0 && (
-                                                <div className="mt-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex justify-between items-center text-sm shadow-sm">
-                                                    <span className="font-medium text-indigo-700">Trip Summary</span>
-                                                    <div className="flex gap-4 text-indigo-600/80">
-                                                        <span><strong>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0)}</strong> Days</span>
-                                                        <span><strong>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1 > 0 ? formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1 : 0}</strong> Nights</span>
-                                                        <span><strong>{new Set(formData.destinations.filter(d => d.country).map(d => d.country)).size}</strong> Countries</span>
-                                                        <span><strong>{formData.destinations.filter(d => d.city).length}</strong> Cities</span>
-                                                    </div>
+                                                <div className="pt-2 pb-6 mt-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAddDestination}
+                                                        className="w-full py-4 flex items-center justify-center gap-2 text-sm font-bold tracking-wide transition-all group"
+                                                        style={{
+                                                            border: '2px dashed rgba(255,107,43,0.40)',
+                                                            borderRadius: '20px',
+                                                            background: 'rgba(255,255,255,0.10)',
+                                                            color: '#FF6B2B'
+                                                        }}
+                                                        onMouseEnter={(e: any) => {
+                                                            e.currentTarget.style.background = 'rgba(255,107,43,0.08)';
+                                                            e.currentTarget.style.borderStyle = 'solid';
+                                                        }}
+                                                        onMouseLeave={(e: any) => {
+                                                            e.currentTarget.style.background = 'rgba(255,255,255,0.10)';
+                                                            e.currentTarget.style.borderStyle = 'dashed';
+                                                        }}
+                                                    >
+                                                        <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                                        Add Another Destination
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Trip Summary Bar at the bottom */}
+                                        {formData.destinations.length > 0 && (
+                                            <div
+                                                className="flex flex-col sm:flex-row justify-between items-center p-4 shadow-sm mt-2"
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.22)',
+                                                    border: '1px solid rgba(255,255,255,0.40)',
+                                                    borderRadius: '16px'
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-2 mb-3 sm:mb-0">
+                                                    <div className="p-1.5 bg-[#FF6B2B]/10 rounded-lg">
+                                                        <Map className="w-4 h-4 text-[#FF6B2B]" />
+                                                    </div>
+                                                    <span className="font-bold text-[#FF6B2B] text-sm tracking-wide">Trip Summary</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 text-[11px] font-medium">
+                                                    <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
+                                                        <Calendar className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
+                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0)}</span>
+                                                        <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Days</span>
+                                                    </div>
+                                                    <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
+                                                        <Moon className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
+                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.max(0, formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1)}</span>
+                                                        <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Nights</span>
+                                                    </div>
+                                                    <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
+                                                        <Globe className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
+                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{new Set(formData.destinations.filter(d => d.country).map(d => d.country)).size}</span>
+                                                        <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Countries</span>
+                                                    </div>
+                                                    <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
+                                                        <Building2 className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
+                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.filter(d => d.city).length}</span>
+                                                        <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Cities</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
 
                         {/* Logistics & Pricing */}
-                        <Card className="glass-panel border-0 shadow-lg overflow-hidden group rounded-3xl mt-8">
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-emerald-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
                                 <div className="p-2 bg-emerald-100/50 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform">
                                     <Banknote className="w-5 h-5" />
@@ -858,8 +1067,8 @@ export default function CreatePackagePage() {
                                         <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Duration <span className="text-red-500">*</span></Label>
                                         {formData.package_mode === 'multi' && <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded uppercase font-bold tracking-widest">Auto</span>}
                                     </div>
-                                    <div className="flex rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-                                        <div className="flex-1 border-r border-gray-200 bg-white/5 relative group">
+                                    <div className="flex rounded-xl glass-input overflow-hidden group/duration transition-all hover:border-indigo-300">
+                                        <div className="flex-1 relative group">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <Calendar className="h-4 w-4 text-gray-500" />
                                             </div>
@@ -873,7 +1082,8 @@ export default function CreatePackagePage() {
                                             />
                                             <span className="absolute right-3 top-3 text-xs text-gray-500 pointer-events-none">Days</span>
                                         </div>
-                                        <div className="flex-1 bg-white relative group">
+                                        <div className="w-px bg-white/30" />
+                                        <div className="flex-1 relative group">
                                             <Input
                                                 type="number"
                                                 min="0"
@@ -900,7 +1110,7 @@ export default function CreatePackagePage() {
                                             min="0"
                                             value={formData.price_per_person}
                                             onChange={(e) => updateFormData('price_per_person', parseFloat(e.target.value))}
-                                            className={cn("pl-8 h-12 rounded-xl font-mono font-medium text-lg", getInputStyle(formData.price_per_person, true))}
+                                            className={cn("glass-input pl-8 h-12 font-mono font-medium text-lg", getInputStyle(formData.price_per_person, true))}
                                         />
                                         {formData.price_per_person > 0 && (
                                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -920,30 +1130,30 @@ export default function CreatePackagePage() {
                                             {/* GST Percentage */}
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Percentage</Label>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-2">
                                                     {[5, 12, 18].map(pct => (
                                                         <button
                                                             key={pct}
                                                             type="button"
                                                             onClick={() => updateFormData('gst_percentage', pct)}
                                                             className={cn(
-                                                                "px-4 py-2 rounded-lg border-2 text-sm font-bold transition-all",
+                                                                "px-6 py-2.5 text-sm font-bold transition-all rounded-full",
                                                                 formData.gst_percentage === pct
-                                                                    ? "border-indigo-500 bg-indigo-100 text-indigo-700"
-                                                                    : "border-gray-200 bg-white text-gray-500 hover:border-indigo-300"
+                                                                    ? "glass-pill-active"
+                                                                    : "glass-pill"
                                                             )}
                                                         >
                                                             {pct}%
                                                         </button>
                                                     ))}
-                                                    <div className="relative flex-1 max-w-[120px]">
+                                                    <div className="relative flex-1 min-w-[120px]">
                                                         <Input
                                                             type="number" min="0" max="100" step="0.01"
                                                             value={formData.gst_percentage}
                                                             onChange={(e) => updateFormData('gst_percentage', parseFloat(e.target.value) || 0)}
-                                                            className="h-10 pr-8 text-sm font-bold rounded-lg"
+                                                            className="glass-input h-10 pr-8 text-sm font-bold"
                                                         />
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">%</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -951,55 +1161,133 @@ export default function CreatePackagePage() {
                                             {/* GST Mode */}
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Mode</Label>
-                                                <div className="flex gap-3">
+
+                                                {/* Segmented Pill Container */}
+                                                <div
+                                                    className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.18)',
+                                                        border: '1px solid rgba(255,255,255,0.35)',
+                                                        borderRadius: '50px',
+                                                        gap: 0
+                                                    }}
+                                                >
+                                                    {/* Animated Sliding Background */}
+                                                    <div
+                                                        className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
+                                                        style={{
+                                                            background: 'linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 100%)',
+                                                            borderRadius: '50px',
+                                                            left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
+                                                            boxShadow: '0 4px 16px rgba(255,107,43,0.40)'
+                                                        }}
+                                                    />
+
+                                                    {/* Exclusive Option */}
                                                     <button
                                                         type="button"
                                                         onClick={() => updateFormData('gst_mode', 'exclusive')}
-                                                        className={cn(
-                                                            "flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all text-left",
-                                                            formData.gst_mode === 'exclusive'
-                                                                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                                                                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                                                        )}
+                                                        className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
+                                                        style={{
+                                                            borderRadius: '50px',
+                                                            transition: 'background 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'rgba(255,107,43,0.08)' }}
+                                                        onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
-                                                        <div className="font-bold">Exclusive</div>
-                                                        <div className="text-[11px] opacity-70">GST added on top of price</div>
+                                                        <div
+                                                            className="text-sm tracking-wide transition-colors duration-300"
+                                                            style={{
+                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#2D1A0E',
+                                                                fontWeight: formData.gst_mode === 'exclusive' ? 700 : 500
+                                                            }}
+                                                        >
+                                                            Exclusive
+                                                        </div>
+                                                        <div
+                                                            className="text-[12px] mt-0.5 transition-colors duration-300"
+                                                            style={{
+                                                                color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
+                                                            }}
+                                                        >
+                                                            GST added on top of price
+                                                        </div>
                                                     </button>
+
+                                                    {/* Inclusive Option */}
                                                     <button
                                                         type="button"
                                                         onClick={() => updateFormData('gst_mode', 'inclusive')}
-                                                        className={cn(
-                                                            "flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all text-left",
-                                                            formData.gst_mode === 'inclusive'
-                                                                ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                                                                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                                                        )}
+                                                        className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
+                                                        style={{
+                                                            borderRadius: '50px',
+                                                            transition: 'background 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'rgba(255,107,43,0.08)' }}
+                                                        onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
-                                                        <div className="font-bold">Inclusive</div>
-                                                        <div className="text-[11px] opacity-70">Price already includes GST</div>
+                                                        <div
+                                                            className="text-sm tracking-wide transition-colors duration-300"
+                                                            style={{
+                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : '#2D1A0E',
+                                                                fontWeight: formData.gst_mode === 'inclusive' ? 700 : 500
+                                                            }}
+                                                        >
+                                                            Inclusive
+                                                        </div>
+                                                        <div
+                                                            className="text-[12px] mt-0.5 transition-colors duration-300"
+                                                            style={{
+                                                                color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
+                                                            }}
+                                                        >
+                                                            Price already includes GST
+                                                        </div>
                                                     </button>
                                                 </div>
                                             </div>
 
                                             {/* Live Preview */}
                                             {formData.price_per_person > 0 && (
-                                                <div className="mt-2 p-3 bg-white rounded-lg border border-indigo-100 text-sm">
+                                                <div
+                                                    className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.22)',
+                                                        border: '1px solid rgba(255,255,255,0.35)',
+                                                        borderRadius: '14px',
+                                                        padding: '12px 16px'
+                                                    }}
+                                                >
                                                     {formData.gst_mode === 'exclusive' ? (
-                                                        <>
-                                                            <span className="font-medium text-gray-700">Preview: </span>
-                                                            <span className="text-gray-600">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
-                                                            <span className="text-gray-400 mx-1">+</span>
-                                                            <span className="text-amber-600">₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)</span>
-                                                            <span className="text-gray-400 mx-1">=</span>
-                                                            <span className="font-bold text-emerald-700">₹{(formData.price_per_person * (1 + formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })} per person</span>
-                                                        </>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
+                                                            <span className="font-bold text-[#2D1A0E]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="text-[#FF6B2B] font-bold">+</span>
+                                                            <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
+                                                                ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
+                                                            </span>
+                                                        </div>
                                                     ) : (
-                                                        <>
-                                                            <span className="font-medium text-gray-700">Preview: </span>
-                                                            <span className="font-bold text-emerald-700">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
-                                                            <span className="text-gray-500 ml-1">(GST {formData.gst_percentage}% included)</span>
-                                                        </>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
+                                                            <span className="text-gray-400 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
+                                                            <ArrowRight className="w-3 h-3 text-[#FF6B2B]" />
+                                                            <span className="font-bold text-[#2D1A0E]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
+                                                                Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
+                                                            </span>
+                                                        </div>
                                                     )}
+
+                                                    <div className="text-right flex flex-col sm:items-end">
+                                                        <div className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider mb-0.5">Final Total</div>
+                                                        <div className="text-lg font-black" style={{ color: '#FF6B2B' }}>
+                                                            ₹{formData.gst_mode === 'exclusive'
+                                                                ? (formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+                                                                : formData.price_per_person.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -1007,28 +1295,128 @@ export default function CreatePackagePage() {
                                 )}
 
                                 <div className="space-y-3 md:col-span-2">
-                                    <div>
-                                        <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">TRIP STYLE <span className="text-red-500">*</span></Label>
-                                        <p className="text-[11px] text-gray-500 mt-0.5">Who is this package designed for?</p>
+                                    {/* Header row with label, counter pill, Clear All */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Label
+                                            className={cn(
+                                                "text-xs font-semibold uppercase tracking-wider transition-colors",
+                                                tripStyleError ? "text-red-500" : "text-gray-700"
+                                            )}
+                                        >
+                                            TRIP STYLE <span className="text-red-500">*</span>
+                                        </Label>
+
+                                        {/* Live counter pill */}
+                                        {formData.trip_styles.length > 0 && (
+                                            <span
+                                                className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                                                style={{
+                                                    background: 'rgba(255,107,43,0.15)',
+                                                    border: '1px solid rgba(255,107,43,0.40)',
+                                                    color: '#FF6B2B',
+                                                }}
+                                            >
+                                                {formData.trip_styles.length} selected
+                                            </span>
+                                        )}
+
+                                        {/* Clear all — shows when 2+ selected */}
+                                        {formData.trip_styles.length >= 2 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData(prev => ({ ...prev, trip_styles: [] }))
+                                                    setTripStyleError(false)
+                                                }}
+                                                className="text-[10px] font-semibold transition-colors"
+                                                style={{ color: 'rgba(255,107,43,0.70)' }}
+                                                onMouseEnter={e => { e.currentTarget.style.color = '#FF6B2B' }}
+                                                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,107,43,0.70)' }}
+                                            >
+                                                Clear all
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {TRIP_STYLES.map((style) => {
-                                            const isSelected = formData.trip_style === style.id
+
+                                    <p className="text-[11px] text-gray-500 -mt-1">Who is this package designed for? Select all that apply.</p>
+
+                                    {/* Validation error border flash */}
+                                    <div
+                                        className={cn(
+                                            "grid grid-cols-2 lg:grid-cols-3 gap-3 rounded-2xl transition-all duration-300",
+                                            tripStyleError ? "ring-2 ring-red-400/60 ring-offset-1 p-1" : ""
+                                        )}
+                                    >
+                                        {TRIP_STYLES.map((style, index) => {
+                                            const isSelected = formData.trip_styles.includes(style.id)
                                             return (
                                                 <div
                                                     key={style.id}
-                                                    onClick={() => updateFormData('trip_style', style.id)}
+                                                    onClick={() => toggleTripStyle(style.id)}
                                                     className={cn(
-                                                        "cursor-pointer rounded-xl border p-3 flex flex-col items-center gap-2 transition-all hover:border-indigo-300 hover:bg-indigo-50",
-                                                        isSelected ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 text-indigo-700 shadow-sm" : "border-gray-200 text-gray-600 bg-white"
+                                                        "glass-style-card relative cursor-pointer p-4 flex flex-col items-center justify-center gap-3 fade-up-enter group",
+                                                        isSelected ? "active" : ""
                                                     )}
+                                                    style={{
+                                                        animationDelay: `${index * 50}ms`,
+                                                        transition: 'transform 150ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease',
+                                                        ...(isSelected ? {
+                                                            background: 'rgba(255,107,43,0.18)',
+                                                            border: '2px solid rgba(255,107,43,0.65)',
+                                                            borderRadius: '16px',
+                                                            boxShadow: '0 8px 24px rgba(255,107,43,0.25)',
+                                                        } : {
+                                                            background: 'rgba(255,255,255,0.18)',
+                                                            border: '1px solid rgba(255,255,255,0.35)',
+                                                            borderRadius: '16px',
+                                                        })
+                                                    }}
                                                 >
-                                                    <span className={cn("text-2xl transition-all", isSelected ? "scale-110" : "grayscale opacity-80")}>{style.icon}</span>
-                                                    <span className="text-xs font-medium text-center">{style.label}</span>
+                                                    {/* Orange checkmark badge */}
+                                                    {isSelected && (
+                                                        <div
+                                                            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-150"
+                                                            style={{ background: '#FF6B2B', flexShrink: 0 }}
+                                                        >
+                                                            <Check className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />
+                                                        </div>
+                                                    )}
+
+                                                    {/* Animated hover outline */}
+                                                    <div className={cn(
+                                                        "absolute inset-0 rounded-2xl border-2 transition-all duration-300 pointer-events-none",
+                                                        isSelected ? "border-[#FF6B2B] opacity-100 scale-100" : "border-transparent opacity-0 scale-95 group-hover:border-[#FF6B2B]/30 group-hover:scale-100 group-hover:opacity-100"
+                                                    )} />
+
+                                                    {/* Icon */}
+                                                    <span className={cn(
+                                                        "text-3xl transition-all duration-500",
+                                                        isSelected
+                                                            ? "scale-[1.15] drop-shadow-md filter-none transform-gpu"
+                                                            : "opacity-55 grayscale sepia-[.3] hue-rotate-[-30deg] group-hover:scale-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:sepia-0 group-hover:drop-shadow-sm"
+                                                    )}>
+                                                        {style.icon}
+                                                    </span>
+
+                                                    {/* Label */}
+                                                    <span className={cn(
+                                                        "text-xs font-bold text-center tracking-wide transition-colors z-10",
+                                                        isSelected ? "text-[#FF6B2B] font-semibold" : "text-[rgba(80,40,10,0.70)] group-hover:text-[#FF6B2B]"
+                                                    )}>
+                                                        {style.label}
+                                                    </span>
                                                 </div>
                                             )
                                         })}
                                     </div>
+
+                                    {/* Validation tooltip */}
+                                    {tripStyleError && (
+                                        <p className="text-[11px] text-red-500 flex items-center gap-1.5 mt-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            Please select at least one trip style
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Activities (Multi-select Chips) */}
@@ -1068,64 +1456,172 @@ export default function CreatePackagePage() {
                                     {formData.activities.length > 6 && (
                                         <p className="text-[11px] text-amber-600 flex items-center gap-1.5 bg-amber-50 p-2 rounded-md w-fit">
                                             <Info className="w-3 h-3" />
-                                            You've added several activities — make sure they all apply!
+                                            You&apos;ve added several activities — make sure they all apply!
                                         </p>
                                     )}
                                 </div>
 
-                                {/* Price Includes Checklist */}
-                                <div className="space-y-4 md:col-span-2 mt-4 border-t border-gray-100 pt-6">
-                                    <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Price Includes</Label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                        {['Flights', 'Hotels', 'Transfers', 'Meals', 'Sightseeing', 'Guide', 'Visa', 'Insurance'].map((item) => (
-                                            <div key={item} className="flex items-center space-x-3 bg-white/5 p-2.5 rounded-lg border border-transparent hover:border-gray-200 transition-colors">
-                                                <Checkbox
-                                                    id={`include-${item}`}
-                                                    checked={formData.included_items.includes(item)}
-                                                    onCheckedChange={() => toggleIncludedItem(item)}
-                                                    className="data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white data-[state=checked]:border-none shadow-sm h-5 w-5"
-                                                />
-                                                <label
-                                                    htmlFor={`include-${item}`}
-                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-gray-700"
-                                                >
-                                                    {item}
-                                                </label>
-                                            </div>
-                                        ))}
+                                {/* Price Includes Checklist - Glass Pills */}
+                                <div className="space-y-4 md:col-span-2 mt-6 border-t border-white/10 pt-8">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Label className="text-[11px] font-bold text-[#8C6B5D] uppercase tracking-[0.2em]">Package Inclusions</Label>
+                                        <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
                                     </div>
                                 </div>
 
+                                {/* Dedicated Flight Configuration Card */}
+                                <div className="mt-6">
+                                    <div
+                                        className={cn(
+                                            "rounded-2xl border transition-all duration-300 overflow-hidden",
+                                            formData.flights_enabled
+                                                ? "bg-[rgba(255,107,43,0.05)] border-[rgba(255,107,43,0.3)] shadow-[0_8px_30px_rgb(255,107,43,0.08)]"
+                                                : "bg-[rgba(255,255,255,0.4)] border-white/40 hover:border-gray-300"
+                                        )}
+                                    >
+                                        <div className="p-5 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn(
+                                                    "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
+                                                    formData.flights_enabled ? "bg-[#FF6B2B] text-white shadow-lg shadow-[#FF6B2B]/20" : "bg-white/50 text-[#8C6B5D]"
+                                                )}>
+                                                    <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900">Include Flights</h4>
+                                                    <p className="text-xs text-gray-500">Enable live fare search for customers</p>
+                                                </div>
+                                            </div>
+                                            <div
+                                                onClick={() => updateFormData('flights_enabled', !formData.flights_enabled)}
+                                                className={cn(
+                                                    "w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 relative",
+                                                    formData.flights_enabled ? "bg-[#FF6B2B]" : "bg-gray-200"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300",
+                                                    formData.flights_enabled ? "translate-x-7" : "translate-x-0"
+                                                )} />
+                                            </div>
+                                        </div>
 
+                                        {formData.flights_enabled && (
+                                            <div className="px-5 pb-6 pt-2 border-t border-[rgba(255,107,43,0.1)] grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider">Supported Origin Airports</Label>
+                                                    <Textarea
+                                                        placeholder="e.g. MAA, BOM, DEL (Comma separated)"
+                                                        value={originInput}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value
+                                                            setOriginInput(val)
+                                                            const cities = val.split(',').map(c => c.trim().toUpperCase()).filter(c => c !== '')
+                                                            updateFormData('flight_origin_cities', cities)
+                                                        }}
+                                                        className="glass-input min-h-[80px] text-sm font-mono"
+                                                    />
+                                                    <p className="text-[10px] text-gray-400">Add common codes like MAA, BOM, DEL to restrict search origins.</p>
+                                                </div>
 
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider">Cabin Class Preference</Label>
+                                                        <div className="flex gap-2">
+                                                            {['ECONOMY', 'BUSINESS'].map(cls => (
+                                                                <button
+                                                                    key={cls}
+                                                                    type="button"
+                                                                    onClick={() => updateFormData('flight_cabin_class', cls)}
+                                                                    className={cn(
+                                                                        "flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
+                                                                        formData.flight_cabin_class === cls
+                                                                            ? "bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-md shadow-[#FF6B2B]/20"
+                                                                            : "bg-white border-gray-200 text-gray-600 hover:border-[#FF6B2B]/30"
+                                                                    )}
+                                                                >
+                                                                    {cls}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-100">
+                                                        <div>
+                                                            <Label className="text-[11px] font-bold text-gray-700">Flight Price Included?</Label>
+                                                            <p className="text-[10px] text-gray-400">Check if price is part of base package</p>
+                                                        </div>
+                                                        <Checkbox
+                                                            checked={formData.flight_price_included}
+                                                            onCheckedChange={(checked: any) => updateFormData('flight_price_included', checked)}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="md:col-span-2 space-y-2">
+                                                    <Label className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider">Baggage & Additional Notes</Label>
+                                                    <Input
+                                                        placeholder="e.g. 15kg Check-in + 7kg Cabin included"
+                                                        value={formData.flight_baggage_note}
+                                                        onChange={(e) => updateFormData('flight_baggage_note', e.target.value)}
+                                                        className="glass-input"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
 
                         {/* Content & Settings */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {/* Description */}
-                            <Card className="glass-panel md:col-span-2 border-0 shadow-lg rounded-3xl overflow-hidden">
-                                <div className="bg-gradient-to-r from-purple-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-2">
-                                    <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                                        <FileText className="w-5 h-5" />
+                            {/* Description Section */}
+                            <Card className="glass-description-card md:col-span-2 border-0 shadow-lg rounded-3xl overflow-hidden group">
+                                <div className="bg-gradient-to-r from-purple-50/10 to-transparent px-6 py-5 border-b border-white/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 orange-gradient-badge rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform">
+                                            <FileText className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-serif text-lg font-bold text-[#5D4037]">Description</h3>
+                                            <p className="text-[11px] text-[#8C6B5D] font-medium">Craft a compelling story for your travelers</p>
+                                        </div>
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">Description</h3>
                                 </div>
-                                <CardContent className="p-6 space-y-4">
-                                    <div className="bg-transparent p-2 rounded-t-lg border border-b-0 flex gap-2">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"><span className="font-bold">B</span></Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"><span className="italic">I</span></Button>
-                                    </div>
+                                <CardContent className="p-6 space-y-6">
+
                                     <div className="relative group/desc">
                                         <Textarea
                                             name="description"
                                             placeholder="Describe highlights, what's included..."
                                             value={formData.description || ''}
                                             onChange={(e) => updateFormData('description', e.target.value)}
-                                            className={cn("glass-input min-h-[200px] border-t-0 rounded-t-none rounded-b-xl resize-y relative z-10", getInputStyle(formData.description))}
+                                            className={cn("glass-textarea w-full relative z-10", getInputStyle(formData.description))}
                                         />
-                                        <div className="absolute bottom-2 right-3 text-xs text-gray-400 bg-white/80 px-1.5 py-0.5 rounded pointer-events-none z-20 border border-gray-100 shadow-sm">
+
+                                        {/* Character Counter Capsule */}
+                                        <div className={cn(
+                                            "absolute bottom-3 right-3 z-20 px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-md border shadow-sm transition-all animate-in fade-in zoom-in",
+                                            (formData.description?.length || 0) > 400
+                                                ? "bg-orange-500/20 text-orange-600 border-orange-500/30"
+                                                : "bg-white/20 text-[#8C6B5D] border-white/30"
+                                        )}>
                                             {formData.description?.length || 0} characters
+                                        </div>
+                                    </div>
+
+                                    {/* Word Count Progress Bar */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                            <span>Content Quality</span>
+                                            <span>{Math.min(100, Math.round(((formData.description?.length || 0) / 500) * 100))}%</span>
+                                        </div>
+                                        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="word-count-progress rounded-full"
+                                                style={{ width: `${Math.min(100, ((formData.description?.length || 0) / 500) * 100)}%` }}
+                                            />
                                         </div>
                                     </div>
                                 </CardContent>
@@ -1133,105 +1629,122 @@ export default function CreatePackagePage() {
 
                             {/* Settings & Visibility */}
                             <div className="space-y-8">
-                                <Card className="glass-panel border-0 shadow-lg rounded-3xl group">
-                                    <div className="bg-gradient-to-r from-gray-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                        <div className="p-2 bg-gray-100 rounded-lg text-gray-600 group-hover:scale-110 transition-transform">
+                                <Card className="glass-description-card border-0 shadow-lg group">
+                                    <div className="bg-gradient-to-r from-white/10 to-transparent px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                        <div className="p-2 orange-gradient-badge rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg">
                                             <Settings className="w-5 h-5" />
                                         </div>
-                                        <h3 className="font-semibold text-gray-900">Settings</h3>
+                                        <h3 className="font-serif text-lg font-bold text-[#5D4037]">Settings</h3>
                                     </div>
-                                    <CardContent className="p-6 space-y-6">
-
-                                        <div className="flex flex-col gap-3 p-3 rounded-lg border border-indigo-100 bg-indigo-50/30">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="is_public"
-                                                    checked={formData.is_public}
-                                                    onCheckedChange={(checked) => updateFormData('is_public', !!checked)}
-                                                    className="w-5 h-5 border-indigo-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
-                                                />
-                                                <Label htmlFor="is_public" className="cursor-pointer font-medium text-gray-900">
-                                                    Public Visibility
-                                                </Label>
+                                    <CardContent className="p-6 space-y-8">
+                                        {/* Public Visibility Toggle */}
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="space-y-1">
+                                                <Label className="text-sm font-bold text-[#5D4037]">Public Visibility</Label>
+                                                <p className="text-[11px] text-[#8C6B5D] font-medium leading-relaxed">
+                                                    Show this package to customers in search results catalog
+                                                </p>
                                             </div>
-                                            <p className="text-xs text-indigo-600/80 ml-7">
-                                                Show this package to customers in search results
-                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateFormData('is_public', !formData.is_public)}
+                                                className={cn("glass-toggle flex-shrink-0", formData.is_public ? "active" : "")}
+                                            />
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="use_feature_image"
-                                                    checked={useFeatureImage}
-                                                    onCheckedChange={(checked) => {
-                                                        setUseFeatureImage(!!checked);
-                                                        if (!checked) updateFormData('feature_image_url', '');
+                                        <div className="h-px bg-white/10" />
+
+                                        {/* Custom Feature Image Toggle */}
+                                        <div className="space-y-6">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <Label className="text-sm font-bold text-[#5D4037]">Custom Feature Image</Label>
+                                                    <p className="text-[11px] text-[#8C6B5D] font-medium leading-relaxed">
+                                                        Upload a custom banner image for this specific package
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setUseFeatureImage(!useFeatureImage);
+                                                        if (useFeatureImage) updateFormData('feature_image_url', '');
                                                     }}
-                                                    className="w-5 h-5"
+                                                    className={cn("glass-toggle flex-shrink-0", useFeatureImage ? "active" : "")}
                                                 />
-                                                <Label htmlFor="use_feature_image" className="cursor-pointer font-medium text-gray-700">
-                                                    Custom Feature Image
-                                                </Label>
                                             </div>
 
                                             {useFeatureImage && (
-                                                <div className="ml-7 animate-in fade-in slide-in-from-top-2 space-y-2">
-                                                    <div className="flex gap-2">
-                                                        <Input
+                                                <div className="animate-in slide-in-from-top-4 fade-in duration-500 space-y-4">
+                                                    <div
+                                                        className="border-2 border-dashed border-[#FF6B2B]/30 rounded-2xl p-8 bg-white/5 hover:bg-[#FF6B2B]/5 transition-colors group/upload cursor-pointer text-center"
+                                                        onClick={() => document.getElementById('feature-upload')?.click()}
+                                                    >
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <div className="p-3 bg-[#FF6B2B]/10 rounded-full text-[#FF6B2B] group-hover/upload:scale-110 transition-transform">
+                                                                <Upload className="w-6 h-6" />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <p className="text-xs font-bold text-[#5D4037]">Drag & drop or Click to upload</p>
+                                                                <p className="text-[10px] text-[#8C6B5D]">PNG, JPG up to 5MB</p>
+                                                            </div>
+                                                        </div>
+                                                        <input
+                                                            id="feature-upload"
                                                             type="file"
+                                                            className="hidden"
                                                             accept="image/*"
                                                             onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
+                                                                    const toastId = toast.loading('Uploading image...');
                                                                     try {
-                                                                        const formData = new FormData();
-                                                                        formData.append('file', file);
-
-                                                                        // Show loading toast
-                                                                        const toastId = toast.loading('Uploading image...');
-
+                                                                        const upData = new FormData();
+                                                                        upData.append('file', file);
                                                                         const token = localStorage.getItem('token');
-                                                                        const response = await fetch('http://localhost:8000/api/v1/upload', {
+                                                                        const res = await fetch('http://localhost:8000/api/v1/upload', {
                                                                             method: 'POST',
-                                                                            headers: {
-                                                                                'Authorization': `Bearer ${token}`
-                                                                            },
-                                                                            body: formData
+                                                                            headers: { 'Authorization': `Bearer ${token}` },
+                                                                            body: upData
                                                                         });
-
-                                                                        if (!response.ok) throw new Error('Upload failed');
-
-                                                                        const data = await response.json();
+                                                                        if (!res.ok) throw new Error('Upload failed');
+                                                                        const data = await res.json();
                                                                         updateFormData('feature_image_url', data.url);
-                                                                        toast.update(toastId, { render: 'Image uploaded successfully', type: 'success', isLoading: false, autoClose: 3000 });
-                                                                    } catch (error) {
-                                                                        console.error('Upload error:', error);
-                                                                        toast.dismiss();
-                                                                        toast.error('Failed to upload image');
+                                                                        toast.update(toastId, { render: 'Image uploaded!', type: 'success', isLoading: false, autoClose: 2000 });
+                                                                    } catch (err) {
+                                                                        toast.update(toastId, { render: 'Upload failed', type: 'error', isLoading: false, autoClose: 2000 });
                                                                     }
                                                                 }
                                                             }}
-                                                            className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                                                         />
                                                     </div>
-                                                    <div className="text-xs text-gray-500 text-center">- OR -</div>
-                                                    <Input
-                                                        placeholder="Enter Image URL manually..."
-                                                        value={formData.feature_image_url || ''}
-                                                        onChange={(e) => updateFormData('feature_image_url', e.target.value)}
-                                                        className="glass-input h-9 text-xs"
-                                                    />
+
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                                            <Link2 className="w-3.5 h-3.5 text-[#8C6B5D]" />
+                                                        </div>
+                                                        <Input
+                                                            placeholder="Or paste image URL here..."
+                                                            value={formData.feature_image_url || ''}
+                                                            onChange={(e) => updateFormData('feature_image_url', e.target.value)}
+                                                            className="glass-input h-10 pl-9 text-xs font-medium"
+                                                        />
+                                                    </div>
+
                                                     {formData.feature_image_url && (
-                                                        <div className="mt-2 rounded-md overflow-hidden border border-gray-200">
+                                                        <div className="relative rounded-xl overflow-hidden border border-white/20 shadow-xl group/preview">
                                                             <img
                                                                 src={formData.feature_image_url}
-                                                                alt="Feature preview"
-                                                                className="w-full h-32 object-cover"
-                                                                onError={(e) => {
-                                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image+URL';
-                                                                }}
+                                                                alt="Preview"
+                                                                className="w-full h-40 object-cover"
+                                                                onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image'}
                                                             />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateFormData('feature_image_url', '')}
+                                                                className="absolute top-2 right-2 p-1.5 bg-black/40 text-white rounded-full opacity-0 group-hover/preview:opacity-100 transition-opacity"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1239,152 +1752,129 @@ export default function CreatePackagePage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-
                             </div>
-
                         </div>
-
                     </div>
-                )
-                }
+                )}
 
                 {/* STEP 2: Itinerary */}
-                {
-                    activeStep === 2 && (
-                        <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                            {packageId ? (
-                                <ItineraryBuilder
-                                    packageId={packageId}
-                                    durationDays={formData.duration_days}
-                                    packageMode={formData.package_mode}
-                                    destinations={formData.destinations}
-                                />
-                            ) : (
-                                <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
-                                    <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-gray-900">Package not saved</h3>
-                                    <p className="text-gray-500 mb-6">Please save the basic details first to start building the itinerary.</p>
-                                    <Button onClick={() => setActiveStep(1)} variant="outline">
-                                        Go to Basic Info
-                                    </Button>
-                                </div>
-                            )}
-                            <div className="mt-8 flex justify-between">
-                                <Button variant="outline" onClick={() => setActiveStep(1)}>
-                                    Back to Basic Info
-                                </Button>
-                                <Button onClick={() => setActiveStep(3)} className="bg-blue-600 hover:bg-blue-700">
-                                    Continue to Review
+                {activeStep === 2 && (
+                    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                        {packageId ? (
+                            <ItineraryBuilder
+                                packageId={packageId}
+                                durationDays={formData.duration_days}
+                                packageMode={formData.package_mode}
+                                destinations={formData.destinations}
+                            />
+                        ) : (
+                            <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
+                                <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900">Package not saved</h3>
+                                <p className="text-gray-500 mb-6">Please save the basic details first to start building the itinerary.</p>
+                                <Button onClick={() => setActiveStep(1)} variant="outline">
+                                    Go to Basic Info
                                 </Button>
                             </div>
-                        </div>
-                    )
-                }
+                        )}
+                    </div>
+                )}
 
                 {/* STEP 3: Review */}
-                {
-                    activeStep === 3 && (
-                        <div className="animate-in fade-in slide-in-from-right-8 duration-500 max-w-3xl mx-auto">
-                            <Card className="glass-panel border-0 shadow-lg">
-                                <CardHeader className="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-t-xl p-8">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Badge className="bg-blue-500/20 text-blue-100 hover:bg-blue-500/30 border-0 flex items-center gap-1.5 py-1 px-3">
-                                                    <span>{TRIP_STYLES.find(c => c.id === formData.trip_style)?.icon}</span>
-                                                    {TRIP_STYLES.find(c => c.id === formData.trip_style)?.label || formData.trip_style}
-                                                </Badge>
-                                                {formData.is_public ? (
-                                                    <Badge className="bg-green-500/20 text-green-100 border-0">Public</Badge>
-                                                ) : (
-                                                    <Badge className="bg-red-500/20 text-red-100 border-0">Draft</Badge>
-                                                )}
-                                            </div>
-                                            <CardTitle className="text-3xl font-bold mb-2">{formData.title}</CardTitle>
-                                            <div className="flex flex-wrap items-center gap-4 text-gray-300 text-sm">
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="w-4 h-4" />
-                                                    {formData.package_mode === 'multi' && formData.destinations.length > 0
-                                                        ? `${formData.destinations.map(d => d.city).join(' → ')}`
-                                                        : `${formData.destination}, ${formData.country}`
-                                                    }
-                                                </span>
-                                                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {formData.duration_days} Days</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm text-gray-400">Price per person</p>
-                                            <p className="text-3xl font-bold">₹{formData.price_per_person.toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-8 space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Description</h3>
-                                            <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">
-                                                {formData.description || "No description provided."}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-6">
-                                            {formData.activities.length > 0 && (
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Activities</h3>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {formData.activities.map(activityId => {
-                                                            const activityInfo = ACTIVITIES.find(a => a.id === activityId)
-                                                            return activityInfo ? (
-                                                                <Badge key={activityId} variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-full px-3 py-1">
-                                                                    <span className="mr-1.5">{activityInfo.icon}</span> {activityInfo.label}
-                                                                </Badge>
-                                                            ) : null
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {formData.included_items.length > 0 && (
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Price Includes</h3>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {formData.included_items.map(item => (
-                                                            <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                                                                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                                                                {item}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                {activeStep === 3 && (
+                    <div className="animate-in fade-in slide-in-from-right-8 duration-500 max-w-3xl mx-auto">
+                        <Card className="glass-panel border-0 shadow-lg">
+                            <CardHeader className="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-t-xl p-8">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {formData.trip_styles.map(styleId => {
+                                                const style = TRIP_STYLES.find(c => c.id === styleId);
+                                                return style ? (
+                                                    <Badge key={styleId} className="bg-blue-500/20 text-blue-100 hover:bg-blue-500/30 border-0 flex items-center gap-1.5 py-1 px-3">
+                                                        <span>{style.icon}</span>
+                                                        {style.label}
+                                                    </Badge>
+                                                ) : null;
+                                            })}
+                                            {formData.is_public ? (
+                                                <Badge className="bg-green-500/20 text-green-100 border-0">Public</Badge>
+                                            ) : (
+                                                <Badge className="bg-red-500/20 text-red-100 border-0">Draft</Badge>
                                             )}
                                         </div>
-                                    </div>
-
-                                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex gap-3">
-                                        <Info className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                            <h4 className="font-medium text-yellow-800">Ready to Publish?</h4>
-                                            <p className="text-sm text-yellow-700 mt-1">
-                                                Make sure you have added itinerary activities for all {formData.duration_days} days.
-                                                Once published, this package will be visible to your customers.
-                                            </p>
+                                        <CardTitle className="text-3xl font-bold mb-2">{formData.title}</CardTitle>
+                                        <div className="flex flex-wrap items-center gap-4 text-gray-300 text-sm">
+                                            <span className="flex items-center gap-1">
+                                                <MapPin className="w-4 h-4" />
+                                                {formData.package_mode === 'multi' && formData.destinations.length > 0
+                                                    ? `${formData.destinations.map(d => d.city).join(' → ')}`
+                                                    : `${formData.destination}, ${formData.country}`
+                                                }
+                                            </span>
+                                            <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {formData.duration_days} Days</span>
                                         </div>
                                     </div>
-
-                                    <div className="flex gap-4 pt-4">
-                                        <Button variant="outline" className="flex-1 h-12" onClick={() => setActiveStep(2)}>
-                                            Back to Itinerary
-                                        </Button>
-                                        <Button
-                                            onClick={handlePublish}
-                                            className="flex-[2] h-12 bg-green-600 hover:bg-green-700 text-white text-lg shadow-lg shadow-green-200"
-                                        >
-                                            <CheckCircle className="w-5 h-5 mr-2" />
-                                            Publish Package
-                                        </Button>
+                                    <div className="text-right">
+                                        <p className="text-sm text-gray-400">Price per person</p>
+                                        <p className="text-3xl font-bold">₹{formData.price_per_person.toLocaleString()}</p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-8 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Description</h3>
+                                        <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">
+                                            {formData.description || "No description provided."}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-6">
+                                        {formData.activities.length > 0 && (
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Activities</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {formData.activities.map(activityId => {
+                                                        const activityInfo = ACTIVITIES.find(a => a.id === activityId)
+                                                        return activityInfo ? (
+                                                            <Badge key={activityId} variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-full px-3 py-1">
+                                                                <span className="mr-1.5">{activityInfo.icon}</span> {activityInfo.label}
+                                                            </Badge>
+                                                        ) : null
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {formData.included_items.length > 0 && (
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900 border-b pb-2 mb-4">Price Includes</h3>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {formData.included_items.map(item => (
+                                                        <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                                                            <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                                            {item}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex gap-3">
+                                    <Info className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="font-medium text-yellow-800">Ready to Publish?</h4>
+                                        <p className="text-sm text-yellow-700 mt-1">
+                                            Make sure you have added itinerary activities for all {formData.duration_days} days.
+                                            Once published, this package will be visible to your customers.
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </div>
 
             {/* Enhanced Sticky Bottom Action Bar */}
@@ -1393,42 +1883,73 @@ export default function CreatePackagePage() {
                     <div className="flex items-center gap-6">
                         <Button
                             variant="ghost"
-                            onClick={headerBack}
+                            onClick={() => {
+                                if (activeStep === 1) router.push('/agent/packages')
+                                else if (activeStep === 2) setActiveStep(1)
+                                else if (activeStep === 3) setActiveStep(2)
+                            }}
                             className="text-gray-500 hover:text-gray-900 font-medium px-4 h-11"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Basic Info
+                            {activeStep === 1 && 'Back to Packages'}
+                            {activeStep === 2 && 'Back to Basic Info'}
+                            {activeStep === 3 && 'Back to Itinerary'}
                         </Button>
                         <div className="h-6 w-px bg-gray-200 hidden sm:block" />
                         <span className="text-sm text-gray-500 flex items-center gap-2 font-medium bg-transparent px-3 py-1.5 rounded-full border border-gray-100">
                             <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", packageId ? "bg-emerald-400 animate-ping" : "bg-gray-400")}></span>
+                                <span className={cn("relative inline-flex rounded-full h-2 w-2", packageId ? "bg-emerald-500" : "bg-gray-400")}></span>
                             </span>
-                            Auto-saved Recently
+                            {saving ? 'Saving...' : packageId ? 'Draft Saved' : 'Unsaved Draft'}
                         </span>
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {packageId && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => window.open(`/plan-trip/${formData.slug}?mode=preview`, '_blank')}
+                                className="h-11 px-4 text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-medium"
+                            >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Preview
+                            </Button>
+                        )}
+                        {activeStep === 1 && (
+                            <Button
+                                variant="outline"
+                                onClick={handleSaveDraftOnly}
+                                disabled={saving}
+                                className="h-11 px-6 rounded-full border border-orange-200 text-orange-700 bg-white/50 hover:bg-orange-50 font-medium shadow-sm mr-2"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Draft
+                            </Button>
+                        )}
                         <Button
-                            variant="outline"
-                            onClick={() => handleSaveDraft(false)}
+                            onClick={() => {
+                                if (activeStep === 3) handlePublish()
+                                else handleContinueSave(activeStep + 1)
+                            }}
                             disabled={!isBasicInfoValid() || saving}
-                            className="h-11 px-6 rounded-full border border-violet-300 text-violet-700 bg-transparent hover:bg-violet-50 font-medium"
-                        >
-                            <Save className="w-4 h-4 mr-2 text-gray-500" />
-                            {saving ? 'Saving...' : 'Save Draft'}
-                        </Button>
-                        <Button
-                            onClick={() => activeStep === 3 ? handlePublish() : setActiveStep(activeStep + 1)}
-                            disabled={!isBasicInfoValid() || saving}
-                            className="h-auto font-bold text-white transition-all hover:-translate-y-0.5"
-                            style={{ background: 'linear-gradient(135deg, #7c5cfc, #6c47ff)', boxShadow: '0 8px 32px rgba(108,71,255,0.50)', borderRadius: '100px', padding: '16px 40px' }}
+                            className={cn(
+                                "h-11 px-8 font-bold shadow-lg transition-all active:scale-95 rounded-full",
+                                isBasicInfoValid()
+                                    ? "orange-gradient text-white hover:shadow-orange-500/25"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            )}
                         >
                             {activeStep === 3 ? (
-                                <>Publish Package <CheckCircle className="w-4 h-4 ml-2" /></>
+                                <>
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Publish Package
+                                </>
                             ) : (
-                                <>Continue to {activeStep === 1 ? 'Itinerary' : 'Review'} <ArrowRight className="w-4 h-4 ml-2" /></>
+                                <>
+                                    {activeStep === 2 ? 'Review & Finish' : 'Save & Continue'}
+                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                </>
                             )}
                         </Button>
                     </div>
@@ -1436,8 +1957,4 @@ export default function CreatePackagePage() {
             </div>
         </div >
     )
-
-    function headerBack() {
-        router.push('/agent/packages')
-    }
 }

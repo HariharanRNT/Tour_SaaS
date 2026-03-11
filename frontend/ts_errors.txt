@@ -1,0 +1,11 @@
+﻿src/components/ai/CustomerAIChatCard.tsx(10,24): error TS2307: Cannot find module '@/components/ui/button' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(11,23): error TS2307: Cannot find module '@/components/ui/input' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(12,35): error TS2307: Cannot find module '@/components/ui/card' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(13,23): error TS2307: Cannot find module '@/components/ui/badge' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(14,28): error TS2307: Cannot find module '@/components/ui/scroll-area' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(15,53): error TS2307: Cannot find module '@/components/ui/avatar' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(18,99): error TS2307: Cannot find module '@/components/ui/dialog' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(19,23): error TS2307: Cannot find module '@/components/ui/label' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(20,26): error TS2307: Cannot find module '@/components/ui/calendar' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(21,57): error TS2307: Cannot find module '@/components/ui/popover' or its corresponding type declarations.
+src/components/ai/CustomerAIChatCard.tsx(23,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.

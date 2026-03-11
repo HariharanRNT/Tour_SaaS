@@ -32,15 +32,26 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2 } from 'lucide-react'
 import { activitiesAPI } from '@/lib/api'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 interface DestinationSummary {
-    city: string
+    name: string
+    country: string
+    image_url?: string
+    description?: string
     activity_count: number
+    package_count: number
 }
-
-const ITEMS_PER_PAGE = 12
 
 export default function ActivitiesMasterPage() {
     const router = useRouter()
@@ -50,10 +61,20 @@ export default function ActivitiesMasterPage() {
     // Filters & Pagination
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
+    const [pageSize] = useState(8) // Fixed to 8 per page as per request
+    const [totalCount, setTotalCount] = useState(0)
+    const [isFetching, setIsFetching] = useState(false)
 
     // Modal State for New Destination
     const [isNewDestModalOpen, setIsNewDestModalOpen] = useState(false)
     const [newCityName, setNewCityName] = useState('')
+    const [newCityCountry, setNewCityCountry] = useState('')
+    const [newCityImage, setNewCityImage] = useState('')
+    const [isUploading, setIsUploading] = useState(false)
+
+    // Edit State
+    const [isEditing, setIsEditing] = useState(false)
+    const [editingDestOriginalName, setEditingDestOriginalName] = useState('')
 
     // Alert Dialog State for Deletion
     const [cityToDelete, setCityToDelete] = useState<{ city: string, count: number } | null>(null)
@@ -67,32 +88,36 @@ export default function ActivitiesMasterPage() {
         loadDestinations()
     }, [router])
 
-    const loadDestinations = async () => {
-        setLoading(true)
+    const loadDestinations = async (page: number = currentPage) => {
+        setIsFetching(true)
+        if (destinations.length === 0) setLoading(true)
         try {
-            const data = await activitiesAPI.getDestinations()
-            setDestinations(data)
+            const data = await activitiesAPI.getDestinations({ page, limit: pageSize })
+            // If it's a paginated response, handle accordingly
+            if (data.destinations) {
+                setDestinations(data.destinations)
+                setTotalCount(data.total_count)
+            } else {
+                // Fallback for non-paginated API if any
+                setDestinations(data)
+                setTotalCount(data.length)
+            }
         } catch (error) {
             console.error('Failed to load destinations:', error)
             toast.error('Failed to load destinations')
         } finally {
             setLoading(false)
+            setIsFetching(false)
         }
     }
 
-    // Filter destinations locally based on search
-    const filteredDestinations = useMemo(() => {
-        if (!searchTerm) return destinations
-        const lowerSearch = searchTerm.toLowerCase()
-        return destinations.filter(d => d.city.toLowerCase().includes(lowerSearch))
-    }, [destinations, searchTerm])
+    // Load destinations when page changes
+    useEffect(() => {
+        loadDestinations(currentPage)
+    }, [currentPage])
 
-    // Pagination logic
-    const totalPages = Math.ceil(filteredDestinations.length / ITEMS_PER_PAGE)
-    const paginatedDestinations = useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE
-        return filteredDestinations.slice(start, start + ITEMS_PER_PAGE)
-    }, [filteredDestinations, currentPage])
+    // Navigation and delete logic remains same but needs reload
+    const totalPages = Math.ceil(totalCount / pageSize)
 
     // Reset pagination when searching
     useEffect(() => {
@@ -107,14 +132,62 @@ export default function ActivitiesMasterPage() {
         router.push(`/agent/activities/${encodeURIComponent(city)}`)
     }
 
-    const handleCreateNewDestination = (e: React.FormEvent) => {
+    const handleCreateNewDestination = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newCityName.trim()) {
             toast.error('Please enter a destination name')
             return
         }
-        setIsNewDestModalOpen(false)
-        handleNavigateToCity(newCityName.trim())
+
+        const loadingToast = toast.loading(isEditing ? 'Updating destination...' : 'Creating destination...')
+        try {
+            if (isEditing) {
+                await activitiesAPI.updateDestinationMetadata(editingDestOriginalName, {
+                    name: newCityName.trim(),
+                    country: newCityCountry.trim() || 'Unknown',
+                    image_url: newCityImage
+                })
+            } else {
+                // Save metadata
+                await activitiesAPI.saveDestinationMetadata({
+                    name: newCityName.trim(),
+                    country: newCityCountry.trim() || 'Unknown',
+                    image_url: newCityImage
+                })
+            }
+
+            toast.update(loadingToast, {
+                render: isEditing ? 'Destination updated!' : 'Destination created!',
+                type: 'success',
+                isLoading: false,
+                autoClose: 2000
+            })
+
+            setIsNewDestModalOpen(false)
+            setIsEditing(false)
+            if (!isEditing) {
+                handleNavigateToCity(newCityName.trim())
+            } else {
+                loadDestinations()
+            }
+        } catch (error) {
+            console.error('Failed to save destination:', error)
+            toast.update(loadingToast, {
+                render: isEditing ? 'Failed to update destination' : 'Failed to create destination',
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000
+            })
+        }
+    }
+
+    const handleEditDestination = (dest: DestinationSummary) => {
+        setNewCityName(dest.name)
+        setNewCityCountry(dest.country)
+        setNewCityImage(dest.image_url || '')
+        setEditingDestOriginalName(dest.name)
+        setIsEditing(true)
+        setIsNewDestModalOpen(true)
     }
 
     const confirmDeleteDestination = (city: string, count: number) => {
@@ -138,22 +211,26 @@ export default function ActivitiesMasterPage() {
     return (
         <div className="min-h-screen bg-transparent">
             {/* Header */}
-            <div className="glass-navbar sticky top-0 z-30 shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255, 255, 255, 0.20)' }}>
+            <div className="relative sticky top-0 z-30 shadow-sm transition-all duration-300" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255, 255, 255, 0.30)' }}>
                 <div className="container mx-auto px-6 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <nav className="flex items-center text-sm text-gray-500 mb-2">
-                                <span className="hover:text-gray-900 cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
+                            <nav className="flex items-center text-sm font-medium text-slate-500/80 mb-2">
+                                <span className="hover:text-amber-800 cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
                                 <span className="mx-2">/</span>
-                                <span className="font-medium text-gray-900">Activity Master</span>
+                                <span className="text-amber-900/70">Destinations Library</span>
                             </nav>
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-50 rounded-lg">
-                                    <MapPin className="h-6 w-6 text-indigo-600" />
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-orange-100 to-amber-50 rounded-2xl shadow-inner border border-white/60">
+                                    <MapPin className="h-6 w-6 text-[#FF6B2B]" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Destinations Library</h1>
-                                    <p className="text-gray-500 text-sm mt-1">Manage all destinations and their activities</p>
+                                    <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#4A2B1D' }}>
+                                        Destinations Library
+                                    </h1>
+                                    <p className="text-[#8B5E34] text-sm mt-1 font-medium bg-white/40 px-3 py-1 rounded-full border border-white/50 backdrop-blur-md inline-block shadow-sm">
+                                        Manage all destinations and their activities
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -162,12 +239,15 @@ export default function ActivitiesMasterPage() {
                             <Button
                                 onClick={() => {
                                     setNewCityName('')
+                                    setNewCityCountry('')
+                                    setNewCityImage('')
+                                    setIsEditing(false)
                                     setIsNewDestModalOpen(true)
                                 }}
-                                className="text-white px-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
-                                style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px' }}
+                                className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_rgba(255,107,43,0.3)] hover:shadow-[0_12px_30px_rgba(255,107,43,0.4)]"
+                                style={{ background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)', borderRadius: '50px' }}
                             >
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
                                 Add Destination
                             </Button>
                         </div>
@@ -178,137 +258,236 @@ export default function ActivitiesMasterPage() {
             {/* Content */}
             <div className="container mx-auto px-4 py-8">
                 {/* Summary Bar */}
-                <div className="flex flex-wrap items-center gap-6 mb-8 p-5 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100/50">
-                            <MapPin className="h-6 w-6 text-indigo-600" />
+                <div className="flex flex-wrap items-center gap-6 mb-8 p-4 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: '40px', boxShadow: '0 8px 32px rgba(255,107,43,0.05)' }}>
+                    <div className="flex-1 min-w-[200px] flex items-center justify-center gap-5 bg-white/30 px-6 py-4 rounded-[32px] border border-white/50 shadow-sm transition-transform hover:scale-[1.02]">
+                        <div className="p-3.5 bg-gradient-to-br from-[#FF9A5C] to-[#FF6B2B] rounded-2xl shadow-[0_4px_12px_rgba(255,107,43,0.4)] border border-white/20">
+                            <MapPin className="h-6 w-6 text-white" />
                         </div>
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Destinations</p>
-                            <p className="text-2xl font-bold text-slate-800 leading-tight">{destinations.length}</p>
+                        <div className="flex flex-col">
+                            <p className="text-xs text-[#E8A585] font-bold uppercase tracking-widest mb-0.5">Destinations</p>
+                            <p className="text-4xl font-extrabold text-[#FF6B2B] leading-none tracking-tight">{destinations.length}</p>
                         </div>
                     </div>
-                    <div className="hidden sm:block w-px h-12 bg-gray-300/40"></div>
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100/50">
-                            <ActivityIcon className="h-6 w-6 text-emerald-600" />
+
+                    <div className="hidden sm:block w-px h-16 bg-gradient-to-b from-transparent via-[#FF6B2B]/50 to-transparent shadow-[0_0_8px_rgba(255,107,43,0.6)]"></div>
+
+                    <div className="flex-1 min-w-[200px] flex items-center justify-center gap-5 bg-white/30 px-6 py-4 rounded-[32px] border border-white/50 shadow-sm transition-transform hover:scale-[1.02]">
+                        <div className="p-3.5 bg-gradient-to-br from-[#FF9A5C] to-[#FF6B2B] rounded-2xl shadow-[0_4px_12px_rgba(255,107,43,0.4)] border border-white/20">
+                            <ActivityIcon className="h-6 w-6 text-white" />
                         </div>
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Total Activities</p>
-                            <p className="text-2xl font-bold text-slate-800 leading-tight">{totalActivities}</p>
+                        <div className="flex flex-col">
+                            <p className="text-xs text-[#E8A585] font-bold uppercase tracking-widest mb-0.5">Total Activities</p>
+                            <p className="text-4xl font-extrabold text-[#FF6B2B] leading-none tracking-tight">{totalActivities}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Search / Filter Area */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full max-w-2xl group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#FF6B2B] opacity-60 group-focus-within:opacity-100 transition-opacity" />
                         <Input
                             placeholder="Search destinations..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white/60 backdrop-blur-md border-white/40 pl-10 w-full sm:w-80 rounded-full text-slate-800 focus:ring-indigo-500 focus:border-indigo-300 focus:bg-white shadow-sm transition-all"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setCurrentPage(1);
+                                    loadDestinations(1);
+                                }
+                            }}
+                            className="bg-white/25 backdrop-blur-md border-white/40 shadow-sm pl-14 h-12 w-full rounded-full text-slate-800 focus:ring-[#FF9A5C]/40 focus:border-[#FF9A5C] focus:bg-white/40 transition-all font-medium text-[15px] placeholder:text-slate-500/80"
                         />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-[#B4501E]/60 uppercase tracking-widest italic pr-2">
+                            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} destinations
+                        </span>
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="text-center py-20">
-                        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600"></div>
+                {loading || isFetching ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[400px]">
+                        {Array.from({ length: pageSize }).map((_, i) => (
+                            <div key={i} className="h-[160px] p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-[20px] relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmerPulse_2s_infinite]" />
+                                <div className="flex justify-between items-center h-10 mb-2">
+                                    <div className="w-10 h-10 rounded-full bg-white/20" />
+                                    <div className="w-8 h-8 rounded-full bg-white/20" />
+                                </div>
+                                <div className="w-3/4 h-7 bg-white/20 rounded-md mb-2" />
+                                <div className="w-1/2 h-6 bg-white/20 rounded-full mb-4" />
+                                <div className="w-1/3 h-4 bg-white/20 rounded-full absolute bottom-4" />
+                            </div>
+                        ))}
                     </div>
-                ) : filteredDestinations.length === 0 ? (
+                ) : destinations.length === 0 ? (
                     <div className="text-center py-20 px-4 rounded-[20px]" style={{ background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                         <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-slate-800">No destinations found</h3>
                         <p className="text-slate-500 mt-2 max-w-md mx-auto">
                             {searchTerm ? `No destinations match "${searchTerm}".` : "You haven't added any destinations yet."}
                         </p>
-                        {!searchTerm && (
-                            <Button
-                                onClick={() => {
-                                    setNewCityName('')
-                                    setIsNewDestModalOpen(true)
-                                }}
-                                className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md"
-                            >
-                                Add Your First Destination
-                            </Button>
-                        )}
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {paginatedDestinations.map(dest => (
-                                <Card
-                                    key={dest.city}
-                                    className="group cursor-pointer overflow-hidden border border-white/60 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                                    style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderRadius: '24px' }}
-                                    onClick={() => handleNavigateToCity(dest.city)}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[380px]">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentPage}
+                                    initial={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 col-span-full"
                                 >
-                                    <CardContent className="p-6">
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="h-14 w-14 rounded-2xl bg-indigo-100/80 flex items-center justify-center text-indigo-600 shadow-inner group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
-                                                <MapPin className="h-7 w-7" />
-                                            </div>
+                                    {destinations.map((dest, index) => (
+                                        <motion.div
+                                            key={dest.name}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
+                                        >
+                                            <Card
+                                                className="group relative cursor-pointer overflow-hidden border border-white/40 shadow-sm hover:shadow-[0_12px_32px_rgba(255,107,43,0.15)] transition-all duration-300 hover:-translate-y-1 h-[200px]"
+                                                style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: '20px' }}
+                                                onClick={() => handleNavigateToCity(dest.name)}
+                                            >
+                                                {/* Destination Image Overlay */}
+                                                {dest.image_url && (
+                                                    <div className="absolute inset-0 z-0">
+                                                        <img src={dest.image_url} alt={dest.name} className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-white/40 via-transparent to-transparent" />
+                                                    </div>
+                                                )}
 
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-800 hover:bg-white/50 rounded-full">
-                                                        <MoreHorizontal className="h-5 w-5" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-gray-100">
-                                                    <DropdownMenuItem
-                                                        className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer rounded-lg m-1 font-medium"
-                                                        onClick={(e) => { e.stopPropagation(); confirmDeleteDestination(dest.city, dest.activity_count); }}
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete Destination
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
+                                                <CardContent className="p-4 relative z-10 flex flex-col h-full">
+                                                    {/* Row 1: Pin icon badge (left) + ··· menu (right) — 40px height */}
+                                                    <div className="flex justify-between items-center h-10 mb-2">
+                                                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-md border border-white/60 flex items-center justify-center text-[#FF6B2B] shadow-sm group-hover:scale-110 transition-all duration-500">
+                                                            <MapPin className="h-5 w-5" />
+                                                        </div>
 
-                                        <h2 className="text-2xl font-bold text-slate-800 mb-2 truncate group-hover:text-indigo-700 transition-colors">{dest.city}</h2>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#FF6B2B] hover:bg-white/40 rounded-full transition-all">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-52 p-1.5 rounded-2xl shadow-2xl border-white/50 bg-white/80 backdrop-blur-2xl">
+                                                                <DropdownMenuItem
+                                                                    className="text-slate-600 focus:text-orange-600 focus:bg-orange-50 cursor-pointer rounded-xl h-11 font-bold"
+                                                                    onClick={(e) => { e.stopPropagation(); handleEditDestination(dest); }}
+                                                                >
+                                                                    <Edit className="mr-3 h-4 w-4" />
+                                                                    Edit Destination
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    className="text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer rounded-xl h-11 font-bold"
+                                                                    onClick={(e) => { e.stopPropagation(); confirmDeleteDestination(dest.name, dest.activity_count); }}
+                                                                >
+                                                                    <Trash2 className="mr-3 h-4 w-4" />
+                                                                    Delete Destination
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
 
-                                        <Badge variant="secondary" className="bg-white border-slate-200 text-slate-600 px-3 py-1 rounded-full font-medium mb-6 shadow-sm">
-                                            {dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}
-                                        </Badge>
+                                                    <h2 className="text-[20px] font-black group-hover:text-[#FF6B2B] transition-colors leading-tight h-7 overflow-hidden truncate" style={{ fontFamily: "'Playfair Display', serif", color: '#2D1A0E' }}>
+                                                        {dest.name}
+                                                    </h2>
 
-                                        <div className="flex items-center text-indigo-600 font-semibold text-sm group-hover:tracking-wide transition-all">
-                                            Manage Activities
-                                            <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                                    {/* Row 3: Activity count orange dot pill — 24px height */}
+                                                    <div className="flex items-center h-6 mb-2">
+                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[#FF9A5C]/30 bg-[#FF9A5C]/10 text-[#B4501E] text-[10px] uppercase tracking-widest">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B] mr-2 animate-pulse shadow-[0_0_8px_rgba(255,107,43,0.8)]" />
+                                                            {dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}
+                                                            <span className="mx-2 opacity-30">|</span>
+                                                            {dest.package_count} {dest.package_count === 1 ? 'Package' : 'Packages'}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Row 4: MANAGE LIBRARY → link pinned to bottom — 32px height */}
+                                                    <div className="mt-auto flex items-center h-8 text-[#FF6B2B] font-black text-[10px] uppercase tracking-widest group-hover:pl-1 transition-all">
+                                                        Manage Library
+                                                        <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1.5 transition-transform duration-500" />
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
 
                         {/* Pagination Controls */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 mt-12 bg-white/40 backdrop-blur-md rounded-full w-max mx-auto p-2 border border-white/50 shadow-sm">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className="rounded-full hover:bg-white/80"
-                                >
-                                    <ChevronLeft className="h-5 w-5 text-slate-600" />
-                                </Button>
-                                <span className="text-sm font-medium text-slate-700 px-4">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="rounded-full hover:bg-white/80"
-                                >
-                                    <ChevronRight className="h-5 w-5 text-slate-600" />
-                                </Button>
+                            <div className="flex flex-col items-center mt-12 space-y-4">
+                                <div className="flex items-center gap-1.5 p-1.5 bg-white/20 backdrop-blur-[16px] rounded-full border border-white/40 shadow-xl">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1 || isFetching}
+                                        className="h-10 w-10 rounded-full border border-[#FF6B2B]/30 text-[#FF6B2B] hover:bg-[#FF6B2B]/15 hover:text-[#FF6B2B] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </Button>
+
+                                    <div className="flex items-center px-2">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                            if (totalPages > 7) {
+                                                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                                    return (
+                                                        <button
+                                                            key={page}
+                                                            onClick={() => setCurrentPage(page)}
+                                                            disabled={isFetching}
+                                                            className={cn(
+                                                                "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
+                                                                currentPage === page
+                                                                    ? "bg-[#FF6B2B] text-white shadow-[0_4px_12px_rgba(255,107,43,0.4)] scale-110"
+                                                                    : "text-[#4A2B1D] hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B]"
+                                                            )}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    )
+                                                }
+                                                if (page === 2 || page === totalPages - 1) {
+                                                    return <span key={page} className="px-1 text-slate-400">...</span>
+                                                }
+                                                return null
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={page}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    disabled={isFetching}
+                                                    className={cn(
+                                                        "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
+                                                        currentPage === page
+                                                            ? "bg-[#FF6B2B] text-white shadow-[0_4px_12px_rgba(255,107,43,0.4)] scale-110"
+                                                            : "text-[#4A2B1D] hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B]"
+                                                    )}
+                                                >
+                                                    {page}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages || isFetching}
+                                        className="h-10 w-10 rounded-full border border-[#FF6B2B]/30 text-[#FF6B2B] hover:bg-[#FF6B2B]/15 hover:text-[#FF6B2B] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </>
@@ -316,41 +495,262 @@ export default function ActivitiesMasterPage() {
             </div>
 
             {/* New Destination Modal */}
-            <Dialog open={isNewDestModalOpen} onOpenChange={setIsNewDestModalOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-[24px] border-none shadow-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold tracking-tight text-slate-800">New Destination</DialogTitle>
-                        <DialogDescription className="text-slate-500">
-                            Enter the name of the new city to manage its activities.
+            <Dialog open={isNewDestModalOpen} onOpenChange={(open) => {
+                setIsNewDestModalOpen(open);
+                if (!open) {
+                    setIsEditing(false);
+                    setNewCityName('');
+                    setNewCityImage('');
+                }
+            }}>
+                <DialogContent
+                    hideClose
+                    overlayStyle={{
+                        background: 'radial-gradient(circle at center, rgba(255, 179, 138, 0.4), transparent 70%), rgba(255, 122, 69, 0.15)',
+                        backdropFilter: 'blur(18px)',
+                        WebkitBackdropFilter: 'blur(18px)'
+                    }}
+                    className="sm:max-w-[425px] p-0 border-0 animate-custom-modal"
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.28)',
+                        backdropFilter: 'blur(28px)',
+                        WebkitBackdropFilter: 'blur(28px)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        borderRadius: '28px',
+                        boxShadow: '0 25px 70px rgba(255, 122, 69, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                        animation: 'customModalEnter 300ms ease-out forwards, floatModal 6s ease-in-out infinite'
+                    }}
+                >
+                    <style dangerouslySetInnerHTML={{
+                        __html: `
+                        @keyframes customModalEnter {
+                            0% { opacity: 0; transform: translate(-50%, calc(-50% + 10px)) scale(0.95); }
+                            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                        }
+                        @keyframes floatModal {
+                            0%, 100% { transform: translate(-50%, -50%); }
+                            50% { transform: translate(-50%, calc(-50% - 4px)); }
+                        }
+                        @keyframes shimmerPulse {
+                            0% { transform: translateX(-100%); }
+                            100% { transform: translateX(100%); }
+                        }
+                        .animate-custom-modal[data-state="open"] {
+                            animation: customModalEnter 300ms ease-out forwards, floatModal 6s ease-in-out infinite !important;
+                        }
+                    `}} />
+
+                    <button
+                        type="button"
+                        onClick={() => setIsNewDestModalOpen(false)}
+                        className="absolute top-5 right-5 z-20 flex items-center justify-center transition-all duration-250 hover:-translate-y-0.5"
+                        style={{
+                            width: '38px', height: '38px', borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.35)',
+                            backdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(255,255,255,0.5)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 10px rgba(255,107,43,0.3)';
+                            if (e.currentTarget.firstChild) (e.currentTarget.firstChild as HTMLElement).style.transform = 'rotate(90deg)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none';
+                            if (e.currentTarget.firstChild) (e.currentTarget.firstChild as HTMLElement).style.transform = 'rotate(0deg)';
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3A1A08', transition: 'transform 0.25s ease' }}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+
+                    <div className="px-8 pt-6 pb-2 text-center">
+                        <div className="mx-auto w-12 h-12 mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(255, 122, 69, 0.15)', boxShadow: '0 0 20px rgba(255, 122, 69, 0.2)' }}>
+                            <MapPin className="h-6 w-6 text-[#FF7A45]" />
+                        </div>
+                        <DialogTitle style={{ fontFamily: "'Playfair Display', serif", color: '#3A1A08', fontSize: '26px', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '12px' }}>
+                            {isEditing ? 'Edit Destination' : 'New Destination'}
+                        </DialogTitle>
+                        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>
+                        <DialogDescription style={{ color: 'rgba(120,60,20,0.75)', fontWeight: 400, fontSize: '15px' }}>
+                            {isEditing ? `Update details for ${editingDestOriginalName}.` : 'Enter the name of the new destination to manage its activities.'}
                         </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateNewDestination}>
-                        <div className="grid gap-4 py-4">
+                    </div>
+
+                    <form onSubmit={handleCreateNewDestination} className="px-8 pb-8">
+                        <div className="space-y-4 mb-6 text-left">
                             <div className="space-y-2">
-                                <Label htmlFor="city-name" className="font-semibold text-slate-700">City Name</Label>
+                                <label htmlFor="destination-name" style={{ color: 'rgba(255,107,43,0.85)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                    Destination
+                                </label>
                                 <Input
-                                    id="city-name"
+                                    id="destination-name"
                                     value={newCityName}
                                     onChange={(e) => setNewCityName(e.target.value)}
-                                    placeholder="e.g., Paris, Tokyo, New York"
-                                    className="h-12 rounded-xl text-lg border-slate-200 focus:border-indigo-400 focus:ring-indigo-100"
+                                    placeholder="e.g., Bali, Paris, Tokyo"
+                                    className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-[#B4501E]/40 text-[#3A1A08] font-semibold"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.45)',
+                                        backdropFilter: 'blur(14px)',
+                                        border: '1px solid rgba(255,255,255,0.6)',
+                                        borderRadius: '18px',
+                                        padding: '10px 16px',
+                                        height: 'auto',
+                                        boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5)'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#FF7A45';
+                                        e.currentTarget.style.boxShadow = 'inset 0 2px 6px rgba(255,255,255,0.5), 0 0 15px rgba(255,122,69,0.35)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)';
+                                        e.currentTarget.style.boxShadow = 'inset 0 2px 6px rgba(255,255,255,0.5)';
+                                    }}
                                     autoFocus
                                 />
                             </div>
+
+                            <div className="space-y-3">
+                                <label style={{ color: 'rgba(255,107,43,0.85)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                    Destination Image
+                                </label>
+
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer group",
+                                        newCityImage ? "border-[#FF7A45]/50 bg-[#FF7A45]/5" : "border-white/40 bg-white/10 hover:border-[#FF7A45]/40 hover:bg-white/20"
+                                    )}
+                                    onClick={() => document.getElementById('dest-upload')?.click()}
+                                >
+                                    {isUploading ? (
+                                        <div className="flex flex-col items-center py-4">
+                                            <Loader2 className="h-8 w-8 text-[#FF7A45] animate-spin mb-2" />
+                                            <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to S3...</p>
+                                        </div>
+                                    ) : newCityImage ? (
+                                        <div className="relative aspect-video rounded-xl overflow-hidden border border-white/60 shadow-lg">
+                                            <img src={newCityImage} alt="Preview" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <div className="p-2 bg-white/90 rounded-full text-[#FF7A45] shadow-xl">
+                                                    <Upload className="h-5 w-5" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center py-2">
+                                            <div className="p-2.5 bg-white/40 rounded-full text-[#FF7A45] mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                                                <Upload className="h-5 w-5" />
+                                            </div>
+                                            <p className="text-sm font-bold text-[#3A1A08]">Drag & drop or Click to upload</p>
+                                            <p className="text-[9px] text-[#B4501E]/60 mt-0.5 uppercase tracking-widest font-bold">PNG, JPG up to 5MB</p>
+                                        </div>
+                                    )}
+                                    <input
+                                        id="dest-upload"
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0]
+                                            if (!file) return
+
+                                            setIsUploading(true)
+                                            try {
+                                                const formData = new FormData()
+                                                formData.append('file', file)
+
+                                                const token = localStorage.getItem('token')
+                                                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/upload?folder=destinations`, {
+                                                    method: 'POST',
+                                                    headers: { 'Authorization': `Bearer ${token}` },
+                                                    body: formData
+                                                })
+
+                                                if (!response.ok) throw new Error('Upload failed')
+                                                const data = await response.json()
+                                                setNewCityImage(data.url)
+                                                toast.success('Image uploaded successfully')
+                                            } catch (err) {
+                                                console.error(err)
+                                                toast.error('Failed to upload image')
+                                            } finally {
+                                                setIsUploading(false)
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="relative group/url">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF7A45]/60 group-focus-within/url:text-[#FF7A45] transition-colors">
+                                        <Link2 className="h-4 w-4" />
+                                    </div>
+                                    <Input
+                                        placeholder="Or paste image URL here..."
+                                        value={newCityImage}
+                                        onChange={(e) => setNewCityImage(e.target.value)}
+                                        className="pl-11 h-10 text-[11px] font-semibold bg-white/30 backdrop-blur-md border-white/40 rounded-xl focus:ring-[#FF7A45]/30 focus:border-[#FF7A45]/50 transition-all"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <DialogFooter>
+
+                        <div className="flex gap-4 pt-4">
                             <Button
                                 type="button"
-                                variant="ghost"
                                 onClick={() => setIsNewDestModalOpen(false)}
-                                className="rounded-full text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                                className="flex-1 transition-all duration-250"
+                                style={{
+                                    height: '46px',
+                                    background: 'rgba(255,255,255,0.25)',
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid rgba(255,255,255,0.4)',
+                                    color: 'rgba(58,26,8,0.8)',
+                                    borderRadius: '30px',
+                                    fontWeight: 600,
+                                    transform: 'translateY(0)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.4)';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 shadow-md">
-                                Continue to Destination
+                            <Button
+                                type="submit"
+                                className="flex-1 transition-all duration-300 border-0 relative overflow-hidden group"
+                                style={{
+                                    height: '46px',
+                                    background: 'linear-gradient(135deg, #FF7A45, #FFB38A)',
+                                    borderRadius: '30px',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    boxShadow: '0 8px 25px rgba(255,122,69,0.35)',
+                                    transform: 'translateY(0)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(255,122,69,0.5)';
+                                    e.currentTarget.style.filter = 'brightness(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(255,122,69,0.35)';
+                                    e.currentTarget.style.filter = 'brightness(1)';
+                                }}
+                                onMouseDown={(e) => e.currentTarget.style.transform = 'translateY(1px)'}
+                                onMouseUp={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            >
+                                <span className="absolute inset-0 w-full h-full" style={{
+                                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                                    transform: 'translateX(-100%)',
+                                    animation: 'shimmerPulse 3s infinite'
+                                }}></span>
+                                <span className="relative z-10">{isEditing ? 'Save Changes' : 'Continue'}</span>
                             </Button>
-                        </DialogFooter>
+                        </div>
                     </form>
                 </DialogContent>
             </Dialog>

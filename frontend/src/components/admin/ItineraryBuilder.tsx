@@ -108,6 +108,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'breakfast',
         label: 'Breakfast',
+        emoji: '🍳',
         icon: Utensils,
         title: 'Morning Breakfast',
         description: 'Start the day with a delicious breakfast at the hotel or a local cafe.',
@@ -116,6 +117,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'sightseeing',
         label: 'Sightseeing',
+        emoji: '🏛️',
         icon: Map,
         title: 'Local Sightseeing Tour',
         description: 'Explore the key landmarks and hidden gems with a guided tour.',
@@ -124,6 +126,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'lunch',
         label: 'Lunch',
+        emoji: '🍱',
         icon: Utensils,
         title: 'Local Lunch Experience',
         description: 'Enjoy authentic local cuisine at a highly-rated restaurant.',
@@ -132,6 +135,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'free_time',
         label: 'Free Time',
+        emoji: '🌿',
         icon: Clock,
         title: 'Leisure & Exploration',
         description: 'Free time to explore the city at your own pace or relax.',
@@ -140,6 +144,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'dinner',
         label: 'Dinner',
+        emoji: '🍷',
         icon: Moon,
         title: 'Gourmet Dinner',
         description: 'A relaxing evening meal featuring local specialties and fine dining.',
@@ -148,6 +153,7 @@ const ACTIVITY_TEMPLATES = [
     {
         id: 'transfer',
         label: 'Transfer',
+        emoji: '🚗',
         icon: Car,
         title: 'Hotel/Airport Transfer',
         description: 'Safe and comfortable transfer between locations.',
@@ -186,10 +192,13 @@ function DroppableTimeSlot({ id, children }: { id: string, children: React.React
     return (
         <div
             ref={setNodeRef}
-            className={cn(
-                "transition-all duration-300 rounded-[20px]",
-                isOver ? "ring-2 ring-indigo-500 bg-indigo-50/50 shadow-inner scale-[1.01]" : ""
-            )}
+            className="transition-all duration-200 rounded-2xl"
+            style={isOver ? {
+                boxShadow: '0 0 0 2px rgba(255,107,43,0.50), 0 0 20px rgba(255,107,43,0.15)',
+                background: 'rgba(255,107,43,0.05)',
+                transform: 'scale(1.005)',
+                borderRadius: '16px',
+            } : {}}
         >
             {children}
         </div>
@@ -937,32 +946,28 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     "relative flex flex-col items-start min-w-[120px] transition-all duration-300 group flex-shrink-0"
                 )}
                 style={isActive ? {
-                    background: 'linear-gradient(135deg, #7c5cfc, #5535dd)',
+                    background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)',
                     border: 'none',
-                    boxShadow: '0 6px 24px rgba(108,71,255,0.45)',
+                    boxShadow: '0 8px 24px rgba(255,107,43,0.3)',
                     color: 'white',
-                    borderRadius: '16px',
-                    padding: '12px 20px',
+                    borderRadius: '50px',
+                    padding: '8px 20px',
                 } : {
-                    background: 'rgba(255, 255, 255, 0.28)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(255, 255, 255, 0.45)',
-                    borderRadius: '16px',
-                    padding: '12px 20px',
-                    color: 'rgba(30, 20, 60, 0.75)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#5C2500',
+                    borderRadius: '50px',
+                    padding: '8px 20px',
                 }}
             >
-                {isActive && (
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#22c55e]" style={{ boxShadow: '0 0 6px #22c55e' }} />
+                {isActive && activityCount > 0 && (
+                    <div className="absolute top-1.5 right-4 w-1.5 h-1.5 rounded-full bg-[#22c55e]" style={{ boxShadow: '0 0 8px #22c55e' }} />
                 )}
-                <div className="flex items-center justify-between w-full mb-2">
-                    <span className={cn("text-sm", isActive ? "font-bold text-white" : "font-semibold")} style={!isActive ? { color: 'rgba(30, 20, 60, 0.75)' } : {}}>Day {day}</span>
-                </div>
                 <div className="flex items-center gap-2">
-                    <span className={cn("text-xs font-semibold", isActive ? "text-white/80" : "text-slate-500")} style={!isActive ? { color: 'rgba(30, 20, 60, 0.60)' } : {}}>
-                        {activityCount} activities
-                    </span>
+                    <span className={cn("text-[13px] whitespace-nowrap", isActive ? "font-bold text-white" : "font-semibold text-[#5C2500]")}>Day {day}</span>
+                    {!isActive && activityCount > 0 && (
+                        <div className="w-1 h-1 rounded-full bg-[#22c55e]" />
+                    )}
                 </div>
 
                 {/* Context Menu Action */}
@@ -1029,7 +1034,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex-1 flex overflow-hidden rounded-3xl bg-white/30 backdrop-blur-xl border border-white/50 shadow-xl">
+                <div className="flex-1 flex overflow-hidden rounded-[32px] bg-white/12 backdrop-blur-2xl border border-white/20 shadow-2xl">
 
                     {/* COLUMN 1: Activity Library */}
                     <div className="w-1/3 min-w-[320px] max-w-[400px] border-r border-white/40">
@@ -1037,26 +1042,26 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     </div>
 
                     {/* COLUMN 2: Itinerary Builder */}
-                    <div className="flex-1 flex flex-col overflow-hidden bg-white/20">
-                        <div className="px-6 py-5 border-b border-white/40 bg-white/40 flex items-center justify-between">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-white/5">
+                        <div className="px-8 py-6 border-b border-white/20 bg-white/10 backdrop-blur-md flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Day-wise Itinerary</h2>
-                                <p className="text-xs text-slate-500 font-medium">Build your journey by dragging activities into time slots</p>
+                                <h2 className="text-xl font-bold text-[#5C2500] font-serif tracking-tight">Day-wise Itinerary</h2>
+                                <p className="text-[10px] text-[#A0522D]/60 font-bold uppercase tracking-wider mt-0.5">Craft the perfect journey</p>
                             </div>
 
-                            {/* Itinerary Overview Stats (Simplified for center panel) */}
+                            {/* Itinerary Overview Stats */}
                             <div className="hidden lg:flex items-center gap-4">
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/50 border border-indigo-100 rounded-full text-[11px] font-bold text-indigo-700">
-                                    <BarChart3 className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-2 px-4 py-2 bg-white/18 backdrop-blur-md border border-white/30 rounded-full text-[11px] font-bold text-[#FF6B2B] shadow-sm">
+                                    <BarChart3 className="w-4 h-4" />
                                     {Object.values(activities).reduce((acc, day) => acc + Object.values(day).reduce((dAcc, slot) => dAcc + slot.length, 0), 0)} Activities
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200">
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                             <Tabs value={`day-${currentDay}`} onValueChange={(v) => setCurrentDay(parseInt(v.split('-')[1]))}>
-                                <div className="mb-8">
-                                    <div className="flex items-center gap-3 overflow-x-auto pb-4 pt-2 px-1 scrollbar-hide">
+                                <div className="mb-8 overflow-hidden">
+                                    <div className="flex items-center gap-1 overflow-x-auto p-1 bg-white/15 backdrop-blur-md rounded-full border border-white/20 scrollbar-hide">
                                         {packageMode === 'multi' && destinations.length > 0 ? (
                                             (() => {
                                                 let currentDayCounter = 1;
@@ -1108,25 +1113,25 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                                                     return (
                                                         <DroppableTimeSlot key={slot} id={`${day}-${slot}`}>
-                                                            <div className="space-y-3">
+                                                            <div className="space-y-4">
                                                                 {/* Drop-enabled Time Slot Header */}
-                                                                <div className="shadow-sm transition-all duration-300 hover:bg-white/40 rounded-[16px]" style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.45)', padding: '14px 20px' }}>
+                                                                <div className="shadow-lg transition-all duration-500 hover:bg-white/18 rounded-[24px] group" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.25)', padding: '20px 24px' }}>
 
-                                                                    <div className="flex items-center justify-between mb-3">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className="flex justify-center items-center" style={{ background: 'rgba(255,255,255,0.35)', borderRadius: '10px', padding: '8px' }}>
-                                                                                <Icon className={`h-[18px] w-[18px] ${config.color}`} />
+                                                                    <div className="flex items-center justify-between mb-4">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="flex justify-center items-center shadow-inner" style={{ background: 'rgba(255,107,43,0.08)', borderRadius: '12px', padding: '10px', border: '1px solid rgba(255,107,43,0.15)' }}>
+                                                                                <Icon className={`h-5 w-5 ${config.color.replace('indigo', '[#FF6B2B]').replace('sky', '[#0EA5E9]').replace('orange', '[#F59E0B]').replace('emerald', '[#10B981]')}`} style={{ color: config.color.includes('indigo') ? '#FF6B2B' : undefined }} />
                                                                             </div>
                                                                             <div>
-                                                                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                                                                                <h3 className="font-bold text-[#5C2500] flex items-center gap-2.5 text-[15px] font-serif tracking-tight">
                                                                                     {config.label}
-                                                                                    <span className="text-xs font-medium text-slate-400 bg-white/60 px-2 py-0.5 rounded-full border border-white/60">
-                                                                                        {totalCapacityHours} hours
+                                                                                    <span className="text-[10px] font-bold text-[#A0522D]/60 bg-white/20 px-2.5 py-1 rounded-full border border-white/30 uppercase tracking-widest">
+                                                                                        {totalCapacityHours}h Limit
                                                                                     </span>
                                                                                 </h3>
                                                                                 {slotActivities.length > 0 && (
-                                                                                    <p className="text-xs text-slate-400 mt-0.5 font-medium">
-                                                                                        {estimatedHoursUsed} / {totalCapacityHours} hours used
+                                                                                    <p className="text-[10px] text-[#A0522D]/60 mt-1 font-bold uppercase tracking-wider">
+                                                                                        Usage: {estimatedHoursUsed}h / {totalCapacityHours}h
                                                                                     </p>
                                                                                 )}
                                                                             </div>
@@ -1134,11 +1139,11 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                         <div className="flex items-center gap-2">
                                                                             <Button
                                                                                 size="sm"
-                                                                                variant="outline"
+                                                                                variant="ghost"
                                                                                 onClick={() => handleOpenAddForm(slot)}
-                                                                                className="h-8 gap-1.5 bg-white/40 border-white/60 hover:bg-white/60 text-indigo-600 font-bold rounded-full text-[11px]"
+                                                                                className="h-9 gap-2 bg-white/10 border-2 border-dashed border-[#FF6B2B]/30 hover:bg-[#FF6B2B]/5 text-[#FF6B2B] font-bold rounded-xl text-[11px] transition-all px-4"
                                                                             >
-                                                                                <Plus className="w-3 h-3" />
+                                                                                <Plus className="w-3.5 h-3.5" />
                                                                                 Add Manual
                                                                             </Button>
                                                                         </div>
@@ -1146,10 +1151,10 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                                                                     {/* Glowing Progress Bar */}
                                                                     {slotActivities.length > 0 && (
-                                                                        <div className="w-full mt-3 overflow-hidden bg-slate-100 rounded-full h-1">
+                                                                        <div className="w-full mt-4 overflow-hidden bg-white/10 rounded-full h-1.5 border border-white/10">
                                                                             <div
-                                                                                className="transition-all duration-700 shadow-sm h-full"
-                                                                                style={{ width: `${progressPercentage}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)', borderRadius: '100px' }}
+                                                                                className="transition-all duration-1000 shadow-[0_0_10px_rgba(255,107,43,0.3)] h-full"
+                                                                                style={{ width: `${progressPercentage}%`, background: 'linear-gradient(90deg, #FF6B2B, #FF9A5C)', borderRadius: '100px' }}
                                                                             />
                                                                         </div>
                                                                     )}
@@ -1176,13 +1181,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                             ) : (
                                                                                 <div
                                                                                     id={`${day}-${slot}`}
-                                                                                    className="py-10 border border-dashed border-white/80 rounded-2xl flex flex-col items-center justify-center text-slate-400 bg-white/10 backdrop-blur-sm hover:bg-white/30 hover:border-indigo-300 transition-all duration-300 group/drop"
+                                                                                    className="py-12 border-2 border-dashed border-white/30 rounded-3xl flex flex-col items-center justify-center text-slate-400 bg-white/5 backdrop-blur-sm hover:bg-[#FF6B2B]/5 hover:border-[#FF6B2B]/30 transition-all duration-500 group/drop mt-4"
                                                                                 >
-                                                                                    <div className="w-10 h-10 rounded-full bg-white/60 shadow-sm flex items-center justify-center mb-2 group-hover/drop:scale-110 transition-transform backdrop-blur-sm">
-                                                                                        <Icon className={cn("h-4 w-4 opacity-50", config.color)} />
+                                                                                    <div className="w-12 h-12 rounded-2xl bg-white/10 shadow-lg flex items-center justify-center mb-4 group-hover/drop:scale-110 group-hover/drop:rotate-6 transition-all duration-500 backdrop-blur-md border border-white/20">
+                                                                                        <Icon className={cn("h-5 w-5 opacity-40 group-hover/drop:opacity-100 transition-opacity", config.color)} style={{ color: config.color.includes('indigo') ? '#FF6B2B' : undefined }} />
                                                                                     </div>
-                                                                                    <p className="text-xs font-bold text-slate-500">No {config.label} activities</p>
-                                                                                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">Drop Activity Here</p>
+                                                                                    <p className="text-[11px] font-bold text-[#5C2500]/40 uppercase tracking-[0.2em]">Ready for activities</p>
+                                                                                    <p className="text-[10px] text-[#FF6B2B]/60 mt-1 font-black underline decoration-dashed underline-offset-4">DRAG & DROP</p>
                                                                                 </div>
                                                                             )}
                                                                         </SortableContext>
@@ -1203,15 +1208,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                 <DragOverlay>
                     {activeDragItem && activeDragItem.data.current?.type === 'library-activity' ? (
-                        <div className="bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-2xl border-2 border-indigo-500 scale-105 pointer-events-none w-[320px]">
-                            <div className="flex gap-3 items-center">
-                                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 border border-indigo-200">
-                                    <span className="text-xl">✨</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-bold text-slate-800 line-clamp-1">{activeDragItem.data.current.activity.name}</h4>
-                                    <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{activeDragItem.data.current.activity.category}</p>
-                                </div>
+                        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_rgba(255,107,43,0.3)] border-2 border-[#FF6B2B] scale-105 pointer-events-none w-[360px] flex items-center gap-5 rotate-2">
+                            <div className="w-16 h-16 rounded-2xl bg-[#FFF5EB] flex items-center justify-center flex-shrink-0 border border-[#FFD4B0]">
+                                <span className="text-2xl">✨</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="text-[15px] font-bold text-[#5C2500] font-serif line-clamp-1">{activeDragItem.data.current.activity.name}</h4>
+                                <p className="text-[10px] text-[#FF6B2B] font-black uppercase tracking-widest mt-1">Ready to post</p>
                             </div>
                         </div>
                     ) : null}
@@ -1226,20 +1229,29 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4"
+                            className="fixed inset-0 backdrop-blur-[8px] flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4"
+                            style={{ background: 'rgba(140,50,0,0.60)' }}
                         >
                             <motion.div
                                 initial={{ y: "100%", opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: "100%", opacity: 0 }}
                                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                className="w-full max-w-lg max-h-[92vh] sm:max-h-[90vh] flex flex-col"
+                                className="w-full max-w-[700px] max-h-[92vh] sm:max-h-[85vh] flex flex-col"
                             >
-                                <Card className="w-full h-full flex flex-col shadow-2xl border-none overflow-hidden rounded-t-3xl sm:rounded-3xl">
+                                <Card
+                                    className="w-full h-full flex flex-col border-[2px] border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden rounded-[28px]"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.65)',
+                                        backdropFilter: 'blur(40px) brightness(1.2) saturate(60%)',
+                                        WebkitBackdropFilter: 'blur(40px) brightness(1.2) saturate(60%)',
+                                    }}
+                                >
                                     {/* Mobile Drag Handle */}
                                     <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-1 sm:hidden opacity-40" />
 
-                                    <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 p-6 text-white relative">
+                                    {/* Header - transparent, inherits glass */}
+                                    <div className="p-8 pb-4 relative" style={{ background: 'transparent' }}>
                                         <button
                                             onClick={() => {
                                                 setShowAddForm(false)
@@ -1248,448 +1260,451 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                 setSelectedTimeSlot('')
                                                 setEditingId(null)
                                             }}
-                                            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+                                            className="absolute top-6 right-6 p-2.5 bg-white/25 backdrop-blur-md hover:bg-[#FF6B2B]/20 text-[#FF6B2B] rounded-full transition-all hover:rotate-90 duration-300 border border-white/40"
                                         >
                                             <Plus className="w-5 h-5 rotate-45" />
                                         </button>
-                                        <div className="space-y-1">
-                                            <h2 className="text-2xl font-bold tracking-tight">
-                                                {editingId ? 'Edit Activity' : 'Add Activity'}
-                                            </h2>
-                                            <p className="text-indigo-100/80 text-sm font-medium">
-                                                {editingId ? 'Refine activity details' : `Creating new ${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig]?.label} activity for Day ${currentDay}`}
-                                            </p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="space-y-1 text-left">
+                                                <h2 className="text-[28px] font-bold tracking-tight text-[#1A0800] font-serif leading-tight" style={{ fontWeight: 700 }}>
+                                                    {editingId ? 'Edit Activity' : 'Add Activity'}
+                                                </h2>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="px-2.5 py-0.5 rounded-full bg-[#FF6B2B]/20 border border-[#FF6B2B]/50 flex items-center gap-1.5">
+                                                        <span className="w-1 h-1 rounded-full bg-[#FF6B2B] animate-pulse" />
+                                                        <span className="text-[9px] font-black text-[#FF6B2B] uppercase tracking-[0.15em]">
+                                                            {editingId ? 'Updating Entry' : `NEW ${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig]?.label} ACTIVITY`}
+                                                        </span>
+                                                        {selectedTimeSlot === 'night' && <Moon className="w-2.5 h-2.5 text-[#FF6B2B]" />}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <CardContent className="p-6 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                                    <CardContent className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
                                         {/* Quick Templates Section */}
-                                        <div className="space-y-3">
+                                        <div className="space-y-4">
                                             <div className="flex items-center gap-2">
-                                                <Zap className="w-3.5 h-3.5 text-indigo-500" />
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Templates</span>
-                                                {/* Suggestions Logic */}
-                                                <div className="space-y-3">
-                                                    {isSuggestedLunch && !newActivity.title && (
-                                                        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl animate-in fade-in slide-in-from-left-2 duration-500">
-                                                            <Utensils className="w-4 h-4 text-orange-600" />
-                                                            <div className="flex-1">
-                                                                <p className="text-xs font-bold text-orange-900">It's lunchtime! 🍱</p>
-                                                                <p className="text-[10px] text-orange-700/80">Suggesting a lunch break based on your previous activity.</p>
-                                                            </div>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                className="h-7 text-[10px] font-bold border-orange-200 bg-white text-orange-600 hover:bg-orange-50"
-                                                                onClick={() => setNewActivity({ ...newActivity, title: 'Local Lunch Experience' })}
+                                                <div className="p-1 bg-[#FF6B2B]/10 rounded-lg">
+                                                    <Zap className="w-3.5 h-3.5 text-[#FF6B2B] animate-pulse" />
+                                                </div>
+                                                <span className="text-[11px] font-black text-[#FF6B2B] opacity-90 uppercase tracking-[0.2em]">Quick Templates</span>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                {isSuggestedLunch && !newActivity.title && (
+                                                    <div className="flex items-center gap-3 p-4 bg-orange-50/50 backdrop-blur-md border border-orange-100/50 rounded-2xl animate-in fade-in slide-in-from-left-4 duration-500">
+                                                        <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                                                            <Utensils className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-bold text-orange-900 leading-none">It's lunchtime! 🍱</p>
+                                                            <p className="text-[11px] text-orange-700/70 mt-1">Shall we add a local culinary break?</p>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-8 text-[11px] font-black border-orange-200 bg-white/80 text-orange-600 hover:bg-[#FF6B2B] hover:text-white hover:border-[#FF6B2B] rounded-xl transition-all shadow-sm"
+                                                            onClick={() => setNewActivity({ ...newActivity, title: 'Local Lunch Experience' })}
+                                                        >
+                                                            AUTO-FILL
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+                                                    {ACTIVITY_TEMPLATES.map((template) => {
+                                                        const Icon = template.icon;
+                                                        const isActive = newActivity.title === template.title;
+                                                        return (
+                                                            <button
+                                                                key={template.id}
+                                                                onClick={() => handleApplyTemplate(template)}
+                                                                className={cn(
+                                                                    "flex items-center gap-3 px-4 py-3 rounded-[16px] border transition-all active:scale-[0.98] group/template",
+                                                                    isActive
+                                                                        ? "bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] border-transparent text-white shadow-[0_8px_20px_rgba(255,107,43,0.3)]"
+                                                                        : "border-white/75 text-[#2D1A0E] hover:bg-[#FF6B2B]/10 hover:border-[#FF6B2B]/40 hover:-translate-y-0.5 shadow-sm"
+                                                                )}
+                                                                style={!isActive ? { background: 'rgba(255,255,255,0.60)' } : {}}
                                                             >
-                                                                Auto-fill "Lunch"
-                                                            </Button>
+                                                                <div className={cn(
+                                                                    "text-lg transition-transform group-hover/template:scale-125 duration-300",
+                                                                    isActive ? "filter brightness-0 invert" : ""
+                                                                )}>
+                                                                    {template.emoji}
+                                                                </div>
+                                                                <span className={cn(
+                                                                    "text-xs font-bold tracking-tight transition-colors",
+                                                                    isActive ? "text-white" : "text-[#2D1A0E] group-hover/template:text-[#FF6B2B]"
+                                                                )}>{template.label}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Section 1: Basic Info */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 border-b border-white/20 pb-2">
+                                                <div className="flex items-center gap-1.5 opacity-90">
+                                                    <span className="text-[#FF6B2B] text-lg">●</span>
+                                                    <h3 className="text-[11px] font-black text-[#FF6B2B] uppercase tracking-[0.2em]">Basic Information</h3>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 relative">
+                                                <div className="flex justify-between items-center ml-1">
+                                                    <Label htmlFor="activity-title" className="text-[10px] font-bold text-[#A0522D]/60 uppercase tracking-wider">Activity Title</Label>
+                                                </div>
+                                                <div className="relative group/title">
+                                                    <Input
+                                                        id="activity-title"
+                                                        placeholder="e.g., Grand Tour of Tokyo Sky Tree"
+                                                        className="h-[52px] text-base font-bold bg-white/12 border-white/25 focus:border-[#FF6B2B]/50 focus:ring-4 focus:ring-[#FF6B2B]/5 transition-all rounded-2xl placeholder:text-[#A0522D]/30 text-[#3A1A08] shadow-inner"
+                                                        value={newActivity.title}
+                                                        onChange={(e) => {
+                                                            if (e.target.value.length <= 100) {
+                                                                setNewActivity({ ...newActivity, title: e.target.value })
+                                                                setShowSuggestions(true)
+                                                            }
+                                                        }}
+                                                        onFocus={() => setShowSuggestions(true)}
+                                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                                    />
+                                                    <div className={cn(
+                                                        "absolute right-3 bottom-0 -translate-y-[15px] text-[9px] font-black px-1.5 py-0.5 rounded-md border backdrop-blur-md",
+                                                        newActivity.title.length > 80 ? "bg-red-50/80 text-red-600 border-red-100" : "bg-white/40 text-[#A0522D]/60 border-white/40"
+                                                    )}>
+                                                        {newActivity.title.length}/100
+                                                    </div>
+
+                                                    {showSuggestions && (
+                                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-2xl border border-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-2xl z-[120] overflow-hidden animate-in slide-in-from-top-2 duration-300">
+                                                            <div className="p-3 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
+                                                                <Zap className="w-3.5 h-3.5 text-orange-500" />
+                                                                <span className="text-[10px] font-black text-[#A0522D]/50 uppercase tracking-widest">Powered Suggestions</span>
+                                                            </div>
+                                                            <div className="max-h-[220px] overflow-y-auto p-1.5 custom-scrollbar">
+                                                                {ACTIVITY_SUGGESTIONS
+                                                                    .filter(s => !newActivity.title || s.toLowerCase().includes(newActivity.title.toLowerCase()))
+                                                                    .map((suggestion, i) => (
+                                                                        <button
+                                                                            key={i}
+                                                                            onClick={() => {
+                                                                                setNewActivity({ ...newActivity, title: suggestion })
+                                                                                setShowSuggestions(false)
+                                                                            }}
+                                                                            className="w-full text-left px-3 py-2.5 text-[13px] font-bold text-[#5C2500] hover:bg-[#FF6B2B] hover:text-white rounded-xl transition-all flex items-center gap-3 group/sug"
+                                                                        >
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B]/30 group-hover/sug:bg-white/50" />
+                                                                            {suggestion}
+                                                                        </button>
+                                                                    ))}
+                                                            </div>
                                                         </div>
                                                     )}
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {ACTIVITY_TEMPLATES.map((template) => {
-                                                            const Icon = template.icon;
-                                                            return (
-                                                                <button
-                                                                    key={template.id}
-                                                                    onClick={() => handleApplyTemplate(template)}
-                                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-100 bg-white hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all shadow-sm active:scale-95 group/template"
-                                                                >
-                                                                    <div className="p-1 bg-gray-50 text-gray-400 group-hover/template:bg-white group-hover/template:text-indigo-600 rounded-lg">
-                                                                        <Icon className="w-3 h-3" />
-                                                                    </div>
-                                                                    <span className="text-xs font-bold">{template.label}</span>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
                                                 </div>
                                             </div>
-                                            {/* Section 1: Basic Info */}
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-                                                    <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                                                        <Target className="w-4 h-4" />
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1 bg-[#FF6B2B]/10 rounded-lg">
+                                                        <Clock className="w-3.5 h-3.5 text-[#FF6B2B]" />
                                                     </div>
-                                                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Basic Information</h3>
+                                                    <h3 className="text-[11px] font-black text-[#5C2500] uppercase tracking-[0.2em]">Timing</h3>
                                                 </div>
-                                                <div className="space-y-2 relative">
-                                                    <div className="flex justify-between items-center">
-                                                        <Label htmlFor="activity-title" className="text-xs font-semibold text-gray-500 ml-1">Title</Label>
-                                                        <span className={cn(
-                                                            "text-[10px] font-medium px-1.5 py-0.5 rounded",
-                                                            newActivity.title.length > 80 ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-400"
-                                                        )}>
-                                                            {newActivity.title.length}/100
-                                                        </span>
-                                                    </div>
-                                                    <div className="relative group/title">
-                                                        <Input
-                                                            id="activity-title"
-                                                            placeholder="e.g., Grand Tour of Tokyo Sky Tree"
-                                                            className="h-12 text-base font-medium border-gray-200 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
-                                                            value={newActivity.title}
-                                                            onChange={(e) => {
-                                                                if (e.target.value.length <= 100) {
-                                                                    setNewActivity({ ...newActivity, title: e.target.value })
-                                                                    setShowSuggestions(true)
-                                                                }
-                                                            }}
-                                                            onFocus={() => setShowSuggestions(true)}
-                                                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                                                        />
-                                                        {showSuggestions && (
-                                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-xl rounded-xl z-[120] overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                                                                <div className="p-2 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
-                                                                    <Zap className="w-3 h-3 text-orange-500" />
-                                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quick Suggestions</span>
-                                                                </div>
-                                                                <div className="max-h-[200px] overflow-y-auto p-1 py-1 px-1">
-                                                                    {ACTIVITY_SUGGESTIONS
-                                                                        .filter(s => !newActivity.title || s.toLowerCase().includes(newActivity.title.toLowerCase()))
-                                                                        .map((suggestion, i) => (
-                                                                            <button
-                                                                                key={i}
-                                                                                onClick={() => {
-                                                                                    setNewActivity({ ...newActivity, title: suggestion })
-                                                                                    setShowSuggestions(false)
-                                                                                }}
-                                                                                className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700 rounded-lg transition-colors flex items-center gap-2"
-                                                                            >
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-200 group-hover:bg-indigo-400" />
-                                                                                {suggestion}
-                                                                            </button>
-                                                                        ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                <button
+                                                    onClick={toggleAllDay}
+                                                    className={cn(
+                                                        "px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95",
+                                                        isAllDay
+                                                            ? "bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white border-transparent shadow-[0_4px_12px_rgba(255,107,43,0.3)]"
+                                                            : "bg-white/15 text-[#A0522D]/60 border-white/30 hover:border-[#FF6B2B]/40 hover:text-[#FF6B2B]"
+                                                    )}
+                                                >
+                                                    {isAllDay ? '✨ ALL DAY' : 'ALL DAY'}
+                                                </button>
                                             </div>
 
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                            <div className="bg-transparent p-6 rounded-[28px] border border-white/20 space-y-6 shadow-inner">
+                                                <div className="grid grid-cols-2 gap-8 relative">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="start-time" className="text-[10px] font-black text-[#A0522D]/40 uppercase tracking-widest ml-1">START TIME</Label>
+                                                        <div className="relative group/time">
+                                                            <Input
+                                                                id="start-time"
+                                                                type="time"
+                                                                className="h-[52px] border-white/40 bg-white/22 focus:border-[#FF6B2B]/50 transition-all pl-12 text-base font-black text-[#3A1A08] rounded-[14px] shadow-sm"
+                                                                value={newActivity.start_time}
+                                                                onChange={(e) => setNewActivity({ ...newActivity, start_time: e.target.value })}
+                                                            />
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[#FF6B2B]/10">
+                                                                <Sun className="w-3.5 h-3.5 text-[#FF6B2B]" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center">
+                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] border border-white/40 shadow-lg flex items-center justify-center text-white">
+                                                            <ArrowRight className="w-4 h-4" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="end-time" className="text-[10px] font-black text-[#A0522D]/40 uppercase tracking-widest ml-1">END TIME</Label>
+                                                        <div className="relative group/time">
+                                                            <Input
+                                                                id="end-time"
+                                                                type="time"
+                                                                className="h-[52px] border-white/40 bg-white/22 focus:border-[#FF6B2B]/50 transition-all pl-12 text-base font-black text-[#3A1A08] rounded-[14px] shadow-sm"
+                                                                value={newActivity.end_time}
+                                                                onChange={(e) => setNewActivity({ ...newActivity, end_time: e.target.value })}
+                                                            />
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[#A0522D]/10">
+                                                                <Sunset className="w-3.5 h-3.5 text-[#A0522D]" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg">
-                                                            <Clock className="w-4 h-4" />
-                                                        </div>
-                                                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Timing</h3>
-                                                    </div>
-                                                    <button
-                                                        onClick={toggleAllDay}
-                                                        className={cn(
-                                                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border",
-                                                            isAllDay
-                                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                                                : "bg-white text-gray-400 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-                                                        )}
-                                                    >
-                                                        All Day
-                                                    </button>
-                                                </div>
-
-                                                <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-4">
-                                                    <div className="grid grid-cols-2 gap-6 relative">
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor="start-time" className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Start</Label>
-                                                            <div className="relative group/time">
-                                                                <Input
-                                                                    id="start-time"
-                                                                    type="time"
-                                                                    className="h-12 border-gray-200 focus:ring-2 focus:ring-indigo-500/20 transition-all pl-10 text-base font-medium"
-                                                                    value={newActivity.start_time}
-                                                                    onChange={(e) => setNewActivity({ ...newActivity, start_time: e.target.value })}
-                                                                />
-                                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/time:text-indigo-500 transition-colors" />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 z-10 hidden sm:block">
-                                                            <div className="w-8 h-8 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center text-gray-300">
-                                                                <ArrowRight className="w-4 h-4" />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor="end-time" className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">End</Label>
-                                                            <div className="relative group/time">
-                                                                <Input
-                                                                    id="end-time"
-                                                                    type="time"
-                                                                    className="h-12 border-gray-200 focus:ring-2 focus:ring-indigo-500/20 transition-all pl-10 text-base font-medium"
-                                                                    value={newActivity.end_time}
-                                                                    onChange={(e) => setNewActivity({ ...newActivity, end_time: e.target.value })}
-                                                                />
-                                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/time:text-indigo-500 transition-colors" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Presets:</span>
-                                                            {[1, 2, 3, 4].map((h) => (
+                                                        <span className="text-[10px] font-black text-[#FF6B2B] uppercase tracking-widest mr-1">Presets:</span>
+                                                        <div className="flex gap-1.5">
+                                                            {[1, 2, 3].map((h) => (
                                                                 <button
                                                                     key={h}
                                                                     onClick={() => handlePresetTime(h)}
-                                                                    className="px-2.5 py-1 rounded-md bg-white border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all shadow-sm active:scale-95"
+                                                                    className="px-3 py-1.5 rounded-xl bg-white/20 border border-white/40 text-[11px] font-black text-[#2D1A0E] hover:bg-[#FF6B2B] hover:text-white hover:border-[#FF6B2B] transition-all shadow-sm active:scale-95"
                                                                 >
-                                                                    +{h}h
+                                                                    +{h}H
                                                                 </button>
                                                             ))}
                                                             <button
                                                                 onClick={() => handlePresetTime(12)}
-                                                                className="px-2.5 py-1 rounded-md bg-white border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all shadow-sm active:scale-95"
+                                                                className="px-4 py-1.5 rounded-xl bg-[#FF6B2B]/10 border border-[#FF6B2B]/20 text-[11px] font-black text-[#FF6B2B] hover:bg-gradient-to-r hover:from-[#FF6B2B] hover:to-[#FF9A5C] hover:text-white transition-all shadow-sm active:scale-95"
                                                             >
-                                                                Half Day
+                                                                HALF DAY
                                                             </button>
                                                         </div>
-
-                                                        {durationMinutes > 0 && (
-                                                            <div className="flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200 animate-in zoom-in-95 duration-200">
-                                                                <Clock className="w-3 h-3" />
-                                                                <span className="text-xs font-bold uppercase tracking-tight">Duration: {formatDuration(durationMinutes)}</span>
-                                                            </div>
-                                                        )}
                                                     </div>
+
+                                                    {durationMinutes > 0 && (
+                                                        <div className="flex items-center gap-2.5 bg-[#FF6B2B] text-white px-5 py-2 rounded-full shadow-lg shadow-[#FF6B2B]/20 animate-in zoom-in-95 duration-300">
+                                                            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">DURATION: {formatDuration(durationMinutes)}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <div className="pt-2">
-                                                <button
-                                                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                                                    className={cn(
-                                                        "w-full flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98]",
-                                                        showAdvancedOptions
-                                                            ? "bg-indigo-50 border-indigo-100 text-indigo-700 shadow-inner"
-                                                            : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100 hover:border-gray-200"
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={cn(
-                                                            "p-2 rounded-xl transition-colors",
-                                                            showAdvancedOptions ? "bg-white text-indigo-600 shadow-sm" : "bg-white text-gray-400"
-                                                        )}>
-                                                            <Settings className={cn("w-4 h-4", showAdvancedOptions && "animate-spin-slow")} />
-                                                        </div>
-                                                        <span className="text-sm font-bold uppercase tracking-tight">Advanced Options</span>
-                                                    </div>
+                                        <div className="pt-2">
+                                            <button
+                                                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                                                className={cn(
+                                                    "w-full flex items-center justify-between p-5 rounded-[24px] border transition-all active:scale-[0.98] group/adv",
+                                                    showAdvancedOptions
+                                                        ? "bg-[#FF6B2B]/10 border-[#FF6B2B]/25 text-[#FF6B2B] shadow-inner"
+                                                        : "bg-white/10 border-white/20 text-[#A0522D]/60 hover:bg-white/15 hover:border-[#FF6B2B]/30"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-4">
                                                     <div className={cn(
-                                                        "p-1.5 rounded-full transition-transform duration-300",
-                                                        showAdvancedOptions ? "rotate-180 bg-white" : "bg-gray-200/50"
+                                                        "p-2.5 rounded-xl transition-all duration-500",
+                                                        showAdvancedOptions ? "bg-[#FF6B2B] text-white shadow-[0_4px_12px_rgba(255,107,43,0.3)]" : "bg-white/20 text-[#A0522D]/40 group-hover/adv:text-[#FF6B2B]"
                                                     )}>
-                                                        <ChevronDown className="w-4 h-4" />
+                                                        <Settings className={cn("w-4.5 h-4.5", showAdvancedOptions && "animate-spin-slow")} />
                                                     </div>
-                                                </button>
-                                            </div>
+                                                    <span className="text-[11px] font-black uppercase tracking-[0.15em]">Advanced Experience Options</span>
+                                                </div>
+                                                <div className={cn(
+                                                    "p-1.5 rounded-full transition-transform duration-500",
+                                                    showAdvancedOptions ? "rotate-180 bg-white shadow-sm" : "bg-white/10 group-hover/adv:bg-white/20"
+                                                )}>
+                                                    <ChevronDown className="w-4 h-4" />
+                                                </div>
+                                            </button>
+                                        </div>
 
-                                            {showAdvancedOptions && (
-                                                <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                                                                    <FileText className="w-4 h-4" />
-                                                                </div>
-                                                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Experience Details</h3>
+                                        {showAdvancedOptions && (
+                                            <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1.5 bg-[#FF6B2B]/10 rounded-lg">
+                                                                <FileText className="w-4 h-4 text-[#FF6B2B]" />
                                                             </div>
-                                                            <span className={cn(
-                                                                "text-[10px] font-medium px-1.5 py-0.5 rounded",
-                                                                newActivity.description.length > 450 ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-400"
-                                                            )}>
-                                                                {newActivity.description.length}/500
-                                                            </span>
+                                                            <h3 className="text-[11px] font-black text-[#5C2500] uppercase tracking-[0.2em]">Experience Details</h3>
                                                         </div>
+                                                    </div>
 
-                                                        <div className="space-y-3 relative overflow-hidden rounded-2xl border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:border-indigo-500/50 transition-all bg-white shadow-sm">
-                                                            <div className="flex items-center gap-1 p-2 bg-gray-50/80 border-b border-gray-100">
-                                                                <button
-                                                                    className="p-1.5 hover:bg-white hover:text-indigo-600 hover:shadow-sm rounded transition-all text-gray-400"
-                                                                    title="Bold (Selection)"
-                                                                    onClick={() => {
-                                                                        const selection = window.getSelection()?.toString();
-                                                                        if (selection) setNewActivity({ ...newActivity, description: newActivity.description.replace(selection, `**${selection}**`) });
-                                                                    }}
-                                                                >
-                                                                    <Bold className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    className="p-1.5 hover:bg-white hover:text-indigo-600 hover:shadow-sm rounded transition-all text-gray-400"
-                                                                    title="Italic (Selection)"
-                                                                    onClick={() => {
-                                                                        const selection = window.getSelection()?.toString();
-                                                                        if (selection) setNewActivity({ ...newActivity, description: newActivity.description.replace(selection, `*${selection}*`) });
-                                                                    }}
-                                                                >
-                                                                    <Italic className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    className="p-1.5 hover:bg-white hover:text-indigo-600 hover:shadow-sm rounded transition-all text-gray-400"
-                                                                    title="Bullets"
-                                                                    onClick={() => setNewActivity({ ...newActivity, description: newActivity.description + "\n- " })}
-                                                                >
-                                                                    <List className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <div className="w-px h-4 bg-gray-200 mx-1" />
-                                                                <button
-                                                                    className="p-1.5 hover:bg-white hover:text-orange-600 hover:shadow-sm rounded transition-all text-gray-400 flex items-center gap-1"
-                                                                    onClick={() => setNewActivity({ ...newActivity, description: newActivity.description + " ✨" })}
-                                                                >
-                                                                    <Smile className="w-3.5 h-3.5" />
-                                                                    <span className="text-[10px] font-bold">Emojis</span>
-                                                                </button>
-                                                            </div>
+                                                    <div className="relative overflow-hidden rounded-[24px] border border-white/35 focus-within:ring-4 focus-within:ring-[#FF6B2B]/5 focus-within:border-[#FF6B2B]/40 transition-all bg-white/12 shadow-inner">
+                                                        <div className="relative">
                                                             <Textarea
                                                                 id="activity-description"
-                                                                placeholder="Write a compelling description for this activity..."
-                                                                className="min-h-[140px] border-none focus-visible:ring-0 shadow-none text-base leading-relaxed p-4 bg-transparent resize-none overflow-hidden"
+                                                                placeholder="Craft a compelling narrative for this activity..."
+                                                                className="min-h-[140px] border-none focus-visible:ring-0 shadow-none text-[15px] font-medium leading-relaxed p-5 bg-transparent resize-none overflow-hidden placeholder:text-[#A0522D]/30 text-[#3A1A08]"
                                                                 value={newActivity.description}
                                                                 onChange={(e) => {
                                                                     if (e.target.value.length <= 500) {
                                                                         setNewActivity({ ...newActivity, description: e.target.value })
-                                                                        // Auto-expand textarea
                                                                         e.target.style.height = 'auto';
                                                                         e.target.style.height = e.target.scrollHeight + 'px';
                                                                     }
                                                                 }}
                                                             />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1.5 bg-sky-50 text-sky-600 rounded-lg">
-                                                                    <ImageIcon className="w-4 h-4" />
-                                                                </div>
-                                                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Gallery</h3>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Storage:</span>
-                                                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                    <div
-                                                                        className="h-full bg-sky-500 transition-all duration-500"
-                                                                        style={{ width: `${(newActivity.image_urls.filter(u => u).length / 5) * 100}%` }}
-                                                                    />
-                                                                </div>
-                                                                <span className="text-[10px] font-bold text-gray-400">{newActivity.image_urls.filter(u => u).length}/5</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-4">
-                                                            <div
-                                                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                                                                onDragLeave={() => setIsDragging(false)}
-                                                                onDrop={handleDrop}
-                                                                className={cn(
-                                                                    "relative group/dropzone border-2 border-dashed rounded-2xl transition-all p-6 flex flex-col items-center justify-center gap-3",
-                                                                    isDragging
-                                                                        ? "border-sky-500 bg-sky-50/50 scale-[0.99]"
-                                                                        : "border-gray-200 bg-gray-50/30 hover:bg-gray-50 hover:border-sky-300"
-                                                                )}
-                                                            >
-                                                                <input
-                                                                    type="file"
-                                                                    multiple
-                                                                    accept="image/*"
-                                                                    onChange={handleFileChange}
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
-                                                                />
-
-                                                                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-sky-500 group-hover/dropzone:scale-110 transition-transform">
-                                                                    <Upload className="w-6 h-6" />
-                                                                </div>
-
-                                                                <div className="text-center space-y-1">
-                                                                    <p className="text-sm font-bold text-gray-700">Drag & drop images here</p>
-                                                                    <p className="text-xs text-gray-400 font-medium">or click to browse from device</p>
-                                                                </div>
-
-                                                                <div className="w-full max-w-[240px] relative mt-2 z-30">
-                                                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                                                        <Link className="w-3.5 h-3.5 text-gray-400" />
-                                                                    </div>
-                                                                    <Input
-                                                                        placeholder="Paste image URL..."
-                                                                        className="h-10 pl-10 text-xs border-gray-200 bg-white/80 focus:bg-white rounded-lg"
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter') {
-                                                                                const val = (e.target as HTMLInputElement).value;
-                                                                                if (val && newActivity.image_urls.filter(u => u).length < 5) {
-                                                                                    setNewActivity({ ...newActivity, image_urls: [...newActivity.image_urls.filter(u => u), val] });
-                                                                                    (e.target as HTMLInputElement).value = '';
-                                                                                }
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                </div>
-
-                                                                {isUploading && (
-                                                                    <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] z-30 flex flex-col items-center justify-center p-6 animate-in fade-in duration-200">
-                                                                        <div className="w-full max-w-[180px] space-y-3">
-                                                                            <div className="flex justify-between items-center text-[10px] font-bold text-sky-600 uppercase tracking-wider">
-                                                                                <span>Uploading...</span>
-                                                                                <span>{uploadProgress}%</span>
-                                                                            </div>
-                                                                            <div className="h-2 bg-sky-100 rounded-full overflow-hidden">
-                                                                                <div
-                                                                                    className="h-full bg-sky-500 transition-all duration-300 ease-out"
-                                                                                    style={{ width: `${uploadProgress}%` }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="grid grid-cols-5 gap-3">
-                                                                {newActivity.image_urls.filter(url => url).map((url, index) => (
-                                                                    <div key={index} className="relative aspect-square group/thumb rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white">
-                                                                        <img
-                                                                            src={url}
-                                                                            alt={`Preview ${index}`}
-                                                                            className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-500"
-                                                                            onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f8fafc/cbd5e1?text=Invalid+Image'}
-                                                                        />
-                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    const newUrls = newActivity.image_urls.filter((_, i) => i !== index);
-                                                                                    setNewActivity({ ...newActivity, image_urls: newUrls.length > 0 ? newUrls : [''] });
-                                                                                }}
-                                                                                className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-lg active:scale-90"
-                                                                            >
-                                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                                {newActivity.image_urls.filter(url => url).length < 5 && (
-                                                                    <button
-                                                                        className="aspect-square rounded-xl border-2 border-dashed border-gray-100 bg-gray-50/50 flex items-center justify-center text-gray-300 hover:border-sky-200 hover:text-sky-300 transition-all group/add-thumb"
-                                                                        onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
-                                                                    >
-                                                                        <Plus className="w-6 h-6 group-hover/add-thumb:scale-110 transition-transform" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="flex items-start gap-2 p-3 bg-amber-50/50 border border-amber-100 rounded-xl">
-                                                                <Zap className="w-3.5 h-3.5 text-amber-500 mt-0.5" />
-                                                                <div className="space-y-0.5">
-                                                                    <p className="text-[10px] font-bold text-amber-900 uppercase tracking-tight">Optimization Hints</p>
-                                                                    <p className="text-[10px] text-amber-700/80 leading-tight">Use JPG or PNG for faster loading. Max 5MB per file. High-resolution images (1920px width) look best.</p>
-                                                                </div>
+                                                            <div className={cn(
+                                                                "absolute right-4 bottom-4 text-[9px] font-black px-1.5 py-0.5 rounded-md border backdrop-blur-md",
+                                                                newActivity.description.length > 450 ? "bg-red-50/80 text-red-600 border-red-100" : "bg-white/40 text-[#FF6B2B] border-[#FF6B2B]/40"
+                                                            )}>
+                                                                {newActivity.description.length}/500
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
+
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1.5 bg-[#FF6B2B]/10 rounded-lg">
+                                                                <ImageIcon className="w-4 h-4 text-[#FF6B2B]" />
+                                                            </div>
+                                                            <h3 className="text-[11px] font-black text-[#5C2500] uppercase tracking-[0.2em]">Gallery Assets</h3>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 bg-white/20 px-3 py-1 rounded-full border border-white/30 backdrop-blur-md">
+                                                            <span className="text-[9px] font-black text-[#A0522D]/50 uppercase tracking-widest">Storage:</span>
+                                                            <div className="w-16 h-1 bg-white/30 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#FF6B2B] transition-all duration-700 ease-out"
+                                                                    style={{ width: `${(newActivity.image_urls.filter(u => u).length / 5) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[10px] font-black text-[#FF6B2B]">{newActivity.image_urls.filter(u => u).length}/5</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-5">
+                                                        <div
+                                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                                            onDragLeave={() => setIsDragging(false)}
+                                                            onDrop={handleDrop}
+                                                            className={cn(
+                                                                "relative group/dropzone border-2 border-dashed rounded-[20px] transition-all p-10 flex flex-col items-center justify-center gap-4 bg-white/30 shadow-inner overflow-hidden",
+                                                                isDragging
+                                                                    ? "border-[#FF6B2B] bg-[#FF6B2B]/5 scale-[0.985]"
+                                                                    : "border-[#FF6B2B]/40 hover:bg-white/18 hover:border-[#FF6B2B]/60"
+                                                            )}
+                                                        >
+                                                            <input
+                                                                type="file"
+                                                                multiple
+                                                                accept="image/*"
+                                                                onChange={handleFileChange}
+                                                                className="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                                            />
+
+                                                            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] shadow-lg shadow-[#FF6B2B]/30 flex items-center justify-center text-white group-hover/dropzone:scale-110 group-hover/dropzone:rotate-6 transition-all duration-500">
+                                                                <Upload className="w-7 h-7" />
+                                                            </div>
+
+                                                            <div className="text-center space-y-1.5">
+                                                                <p className="text-[15px] font-black text-[#3A1A08] tracking-tight">Drop your visual story here</p>
+                                                                <p className="text-[11px] text-[#A0522D]/60 font-medium uppercase tracking-[0.1em]">or click to browse library</p>
+                                                            </div>
+
+                                                            <div className="w-full max-w-[280px] relative mt-2 z-[60]">
+                                                                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                                                    <Link className="w-3.5 h-3.5 text-[#FF6B2B]" />
+                                                                </div>
+                                                                <Input
+                                                                    placeholder="ENTER ASSET URL..."
+                                                                    className="h-11 pl-11 text-[10px] font-black tracking-widest border-white/65 border-[1px] bg-white/50 focus:bg-white/90 focus:border-[#FF6B2B] rounded-full shadow-inner placeholder:text-[#B4501E]/45"
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            const val = (e.target as HTMLInputElement).value;
+                                                                            if (val && newActivity.image_urls.filter(u => u).length < 5) {
+                                                                                setNewActivity({ ...newActivity, image_urls: [...newActivity.image_urls.filter(u => u), val] });
+                                                                                (e.target as HTMLInputElement).value = '';
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </div>
+
+                                                            {isUploading && (
+                                                                <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[70] flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
+                                                                    <div className="w-full max-w-[220px] space-y-4">
+                                                                        <div className="flex justify-between items-center text-[10px] font-black text-[#FF6B2B] uppercase tracking-widest">
+                                                                            <span>Optimizing Asset...</span>
+                                                                            <span>{uploadProgress}%</span>
+                                                                        </div>
+                                                                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden p-0.5 border border-gray-50">
+                                                                            <div
+                                                                                className="h-full bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] rounded-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(255,107,43,0.4)]"
+                                                                                style={{ width: `${uploadProgress}%` }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="grid grid-cols-5 gap-4 px-1">
+                                                            {newActivity.image_urls.filter(url => url).map((url, index) => (
+                                                                <div key={index} className="relative aspect-square group/thumb rounded-2xl overflow-hidden border-2 border-white/50 shadow-sm bg-white cursor-zoom-in">
+                                                                    <img
+                                                                        src={url}
+                                                                        alt={`Preview ${index}`}
+                                                                        className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-700"
+                                                                        onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f8fafc/cbd5e1?text=INVALID+ASSET'}
+                                                                    />
+                                                                    <div className="absolute inset-0 bg-[#FF6B2B]/40 opacity-0 group-hover/thumb:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const newUrls = newActivity.image_urls.filter((_, i) => i !== index);
+                                                                                setNewActivity({ ...newActivity, image_urls: newUrls.length > 0 ? newUrls : [''] });
+                                                                            }}
+                                                                            className="w-9 h-9 bg-white text-[#FF6B2B] rounded-xl flex items-center justify-center hover:bg-white hover:scale-110 transition-all shadow-xl active:scale-90"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            {newActivity.image_urls.filter(url => url).length < 5 && (
+                                                                <button
+                                                                    className="aspect-square rounded-2xl border-2 border-dashed border-white/30 bg-white/5 flex flex-col items-center justify-center text-white/30 hover:border-[#FF6B2B]/40 hover:text-[#FF6B2B] hover:bg-white/10 transition-all group/add-thumb active:scale-[0.96]"
+                                                                    onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                                                                >
+                                                                    <Plus className="w-8 h-8 group-hover/add-thumb:scale-110 transition-transform duration-500" />
+                                                                    <span className="text-[8px] font-black mt-1 uppercase tracking-tighter opacity-0 group-hover/add-thumb:opacity-100 transition-opacity">ADD PHOTO</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex items-start gap-4 p-5 bg-[#FFD700]/10 border border-[#FFD700]/25 rounded-[24px] backdrop-blur-md">
+                                                            <div className="w-10 h-10 rounded-2xl bg-[#FFD700]/20 flex items-center justify-center">
+                                                                <Zap className="w-5 h-5 text-[#B8860B]" />
+                                                            </div>
+                                                            <div className="flex-1 space-y-1">
+                                                                <p className="text-[12px] font-black text-[#8B4513] uppercase tracking-widest">Optimization Hints</p>
+                                                                <p className="text-[11px] text-[#A0522D]/70 font-medium leading-relaxed">High-resolution JPGs (up to 5MB) provide the best premium experience for travelers. Recommended width: 1920px.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </CardContent>
 
-                                    <div className="p-6 border-t border-gray-100 flex gap-3 bg-gray-50/30">
+                                    <div
+                                        className="p-8 border-t border-white/65 flex gap-4"
+                                        style={{ background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+                                    >
                                         <Button
                                             variant="ghost"
                                             onClick={() => {
@@ -1700,45 +1715,50 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                 setEditingId(null)
                                                 setIsSuggestedLunch(false)
                                             }}
-                                            className="flex-1 h-12 text-gray-500 font-bold hover:text-gray-900 group"
+                                            className="h-[52px] px-8 text-[#FF6B2B] font-black uppercase tracking-widest border-[#FF6B2B]/45 hover:bg-[#FF6B2B]/10 rounded-[50px] group border-[1.5px]"
+                                            style={{ background: 'rgba(255,255,255,0.60)' }}
                                         >
                                             Cancel
-                                            <span className="ml-2 text-[10px] text-gray-400 group-hover:text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 hidden sm:inline-block">Esc</span>
+                                            <span className="ml-3 text-[10px] font-black text-[#FF6B2B]/60 group-hover:text-[#FF6B2B] px-2 py-1 rounded-lg border border-white/40 hidden sm:inline-block bg-white/20 backdrop-blur-md">ESC</span>
                                         </Button>
                                         <Button
                                             onClick={handleAddActivity}
                                             disabled={loading || !newActivity.title || isSuccess}
                                             className={cn(
-                                                "flex-[2] h-12 font-bold shadow-lg transition-all active:scale-[0.98] group relative overflow-hidden",
+                                                "flex-1 h-[54px] font-black uppercase tracking-widest transition-all active:scale-[0.98] group relative overflow-hidden rounded-[50px]",
                                                 isSuccess
-                                                    ? "bg-emerald-500 text-white shadow-emerald-200"
-                                                    : "bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-700 text-white shadow-indigo-200 hover:scale-[1.02]"
+                                                    ? "bg-[#10B981] text-white"
+                                                    : "text-white font-bold hover:scale-[1.02]"
                                             )}
+                                            style={!isSuccess ? {
+                                                background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)',
+                                                boxShadow: '0 8px 24px rgba(255,107,43,0.50)'
+                                            } : {}}
                                         >
                                             {loading ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                    Saving...
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                    <span>PROCESSING...</span>
                                                 </div>
                                             ) : isSuccess ? (
                                                 <motion.div
-                                                    initial={{ scale: 0.5, opacity: 0 }}
-                                                    animate={{ scale: 1, opacity: 1 }}
-                                                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
                                                     className="flex items-center gap-2"
                                                 >
                                                     <CheckCircle2 className="w-5 h-5" />
-                                                    Saved!
+                                                    <span>SUCCESS!</span>
                                                 </motion.div>
                                             ) : (
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span>{editingId ? 'Save Changes' : 'Create Activity'}</span>
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0">
-                                                        <CheckCircle2 className="w-4 h-4" />
-                                                        <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded border border-white/30 hidden sm:inline-block">⌘Enter</span>
+                                                <div className="flex items-center justify-center gap-2.5">
+                                                    <span>{editingId ? 'SAVE CHANGES' : 'CREATE ACTIVITY'}</span>
+                                                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                                                        <span className="text-[10px] bg-white/30 px-2 py-1 rounded-lg border border-white/40 hidden sm:inline-block text-white backdrop-blur-md">ENTER</span>
                                                     </div>
                                                 </div>
                                             )}
+                                            {/* Glow Effect */}
+                                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
                                         </Button>
                                     </div>
                                 </Card>
@@ -1746,8 +1766,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                         </motion.div>
                     )
                 }
-            </AnimatePresence >
+            </AnimatePresence>
             <ToastContainer />
-        </div>
+        </div >
     );
 }

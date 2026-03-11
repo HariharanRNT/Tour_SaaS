@@ -37,6 +37,12 @@ class PackageBase(BaseModel):
     gst_applicable: Optional[bool] = None
     gst_percentage: Optional[float] = None
     gst_mode: Optional[str] = None  # 'inclusive' or 'exclusive'
+    # Flight Configuration
+    flights_enabled: bool = False
+    flight_origin_cities: List[str] = []
+    flight_cabin_class: str = "ECONOMY"
+    flight_price_included: bool = False
+    flight_baggage_note: Optional[str] = None
 
 
 class PackageCreate(PackageBase):
@@ -65,6 +71,12 @@ class PackageUpdate(BaseModel):
     gst_applicable: Optional[bool] = None
     gst_percentage: Optional[float] = None
     gst_mode: Optional[str] = None
+    # Flight Configuration
+    flights_enabled: Optional[bool] = None
+    flight_origin_cities: Optional[List[str]] = None
+    flight_cabin_class: Optional[str] = None
+    flight_price_included: Optional[bool] = None
+    flight_baggage_note: Optional[str] = None
 
 
 class PackageResponse(PackageBase):
@@ -148,6 +160,10 @@ class ItineraryItemResponse(ItineraryItemBase):
         @validator('activities', pre=True, check_fields=False)
         def validate_activities_field(cls, v):
             return cls._parse_json_list(v)
+
+        @validator('flight_origin_cities', pre=True, check_fields=False)
+        def validate_flight_origin_cities_field(cls, v):
+            return cls._parse_json_list(v)
             
         @validator('meals_included', pre=True, check_fields=False)
         def validate_meals_field(cls, v):
@@ -199,7 +215,7 @@ class PackageResponse(PackageBase):
 
     try:
         from pydantic import validator
-        @validator('included_items', 'excluded_items', 'destinations', 'activities', pre=True, check_fields=False)
+        @validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', pre=True, check_fields=False)
         def validate_json_lists(cls, v):
             return cls._parse_json_list(v)
     except ImportError:

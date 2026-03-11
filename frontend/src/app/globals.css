@@ -3,8 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    zoom: 90%;
+  html,
+  body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root,
+  #__next {
+    min-height: 100%;
+    overflow: visible;
   }
 
   :root {
@@ -58,7 +67,6 @@
   }
 
   /* Mesh Gradient Background from Design File */
-  html,
   body {
     background-color: #F4A261;
     background-image: 
@@ -66,7 +74,7 @@
       radial-gradient(at 100% 100%, #FFECD2 0, transparent 50%),
       radial-gradient(at 50% 50%, #F4A261 0, transparent 100%);
     background-attachment: fixed;
-    min-height: 100vh;
+    /* body already has min-height and overflow-x-hidden from base layer */
     @apply text-foreground;
     font-family: var(--font-dm-sans), sans-serif;
   }
@@ -112,7 +120,7 @@
 
   /* Hero Search Bar Glass */
   .glass-search {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -188,6 +196,262 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 24px;
+  }
+
+  /* Form Inputs (Glass) - Scoped to Package Creation */
+  .pkg-creation-root .glass-input {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 14px;
+    transition: all 0.3s ease;
+  }
+  .pkg-creation-root .glass-input:focus, 
+  .pkg-creation-root .glass-input:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2);
+    border-color: rgba(255, 107, 43, 0.4);
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Preset Pills (Glass) - Scoped */
+  .pkg-creation-root .glass-pill {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 9999px; /* full pill rounding */
+    color: #4B5563; /* gray-600 */
+    transition: all 0.3s ease;
+  }
+  .pkg-creation-root .glass-pill:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 107, 43, 0.3);
+  }
+  .pkg-creation-root .glass-pill-active {
+    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%) !important;
+    border-color: transparent !important;
+    color: white !important;
+    border-radius: 9999px;
+    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.3) !important;
+  }
+
+  /* Section Cards - Scoped */
+  .pkg-creation-root .glass-card {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 20px;
+  }
+
+  /* Trip Style Cards - Scoped */
+  .pkg-creation-root .glass-style-card {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .pkg-creation-root .glass-style-card:hover {
+    background: rgba(255, 107, 43, 0.1);
+    transform: translateY(-3px);
+  }
+  .pkg-creation-root .glass-style-card.active {
+    background: rgba(255, 107, 43, 0.18);
+    border-color: rgba(255, 107, 43, 0.6);
+    box-shadow: 0 4px 20px rgba(255, 107, 43, 0.2);
+  }
+
+  /* Description Card - Scoped */
+  .pkg-creation-root .glass-description-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 20px;
+  }
+
+  /* Rich Text Toolbar - Scoped */
+  .pkg-creation-root .glass-toolbar {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px;
+  }
+  .pkg-creation-root .glass-toolbar-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    color: #4B5563;
+  }
+  .pkg-creation-root .glass-toolbar-btn:hover {
+    background: rgba(255, 107, 43, 0.15);
+    color: #FF6B2B;
+  }
+  .pkg-creation-root .glass-toolbar-btn.active {
+    background: #FF6B2B;
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 107, 43, 0.3);
+  }
+
+  /* Custom Textarea Adjustments */
+  .pkg-creation-root .glass-textarea {
+    background: rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 12px 16px !important;
+    min-height: 160px !important;
+    transition: all 0.3s ease !important;
+  }
+  .pkg-creation-root .glass-textarea:focus {
+    box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2) !important;
+    border-color: rgba(255, 107, 43, 0.5) !important;
+    outline: none !important;
+  }
+  .pkg-creation-root .glass-textarea::placeholder {
+    color: rgba(180, 80, 30, 0.4) !important;
+  }
+
+  /* Custom Scrollbar for Textarea */
+  .pkg-creation-root .glass-textarea::-webkit-scrollbar {
+    width: 4px;
+  }
+  .pkg-creation-root .glass-textarea::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .pkg-creation-root .glass-textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 43, 0.4);
+    border-radius: 10px;
+  }
+
+  /* Progress Bar */
+  .pkg-creation-root .word-count-progress {
+    height: 2px;
+    background: #FF6B2B;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(255, 107, 43, 0.3);
+  }
+
+  /* Orange Gradient Badge */
+  .pkg-creation-root .orange-gradient-badge {
+    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.3);
+  }
+
+  /* Custom Glass Toggle Switch */
+  .pkg-creation-root .glass-toggle {
+    width: 44px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .pkg-creation-root .glass-toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    top: 2px;
+    left: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .pkg-creation-root .glass-toggle.active {
+    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    border-color: rgba(255, 107, 43, 0.4);
+    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.2);
+  }
+  .pkg-creation-root .glass-toggle.active::after {
+    left: calc(100% - 20px);
+  }
+
+  /* Inclusions Pills */
+  .pkg-creation-root .inclusion-pill {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .pkg-creation-root .inclusion-pill:hover {
+    background: rgba(255, 107, 43, 0.1);
+    border-color: rgba(255, 107, 43, 0.3);
+  }
+  .pkg-creation-root .inclusion-pill.active {
+    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    border-color: transparent;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
+  }
+  .pkg-creation-root .inclusion-pill.active .pill-icon {
+    color: white !important;
+  }
+  .pkg-creation-root .inclusion-pill .pill-text {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .pkg-creation-root .inclusion-pill.active .pill-check {
+    display: block;
+  }
+  .pkg-creation-root .inclusion-pill .pill-check {
+    display: none;
+  }
+  .pkg-creation-root.glass-dropdown-content {
+    background: rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(255, 107, 43, 0.2) !important;
+  }
+  .pkg-creation-root .glass-select-item[data-highlighted] {
+    background-color: rgba(255, 107, 43, 0.1) !important;
+    color: #FF6B2B !important;
+  }
+
+  /* Page Transitions */
+  .fade-up-enter {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+
+  @keyframes fadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Typography Helpers */
@@ -324,5 +588,82 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 107, 43, 0.6);
+  }
+
+  /* Glass Select Dropdowns */
+  .glass-select-content {
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(255, 107, 43, 0.2);
+  }
+
+  @keyframes selectFadeDown {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .glass-select-content[data-state="open"] {
+    animation: selectFadeDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .glass-select-item {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin: 2px 4px;
+    cursor: pointer;
+  }
+  
+  .glass-select-item[data-highlighted] {
+    background-color: rgba(255, 107, 43, 0.1) !important;
+    color: #FF6B2B !important;
+  }
+
+  .glass-select-item[data-state="checked"] {
+    background-color: rgba(255, 107, 43, 0.15) !important;
+    color: #FF6B2B !important;
+    font-weight: 600;
+  }
+
+  .glass-select-viewport::-webkit-scrollbar {
+    width: 4px;
+  }
+  .glass-select-viewport::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .glass-select-viewport::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 43, 0.4);
+    border-radius: 10px;
+  }
+  .glass-select-viewport::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 43, 0.6);
+  }
+
+  /* Custom Orange Scrollbar for Flight Modal */
+  .custom-orange-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-orange-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-orange-scrollbar::-webkit-scrollbar-thumb {
+    background: #F97316;
+    border-radius: 10px;
+  }
+  .custom-orange-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #EA580C;
+  }
+
+  /* Glass Close Button */
+  .glass-close-button {
+    @apply rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all p-2 flex items-center justify-center;
   }
 }

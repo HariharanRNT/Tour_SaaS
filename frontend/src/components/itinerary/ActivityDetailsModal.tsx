@@ -33,9 +33,9 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col bg-white border-0 shadow-2xl">
+            <DialogContent className="max-w-[640px] max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col bg-white/40 backdrop-blur-3xl border border-white/40 shadow-2xl [&>button]:hidden">
                 {/* 1. Hero Section (Sticky/Fixed Visual) */}
-                <div className="relative h-[40vh] min-h-[300px] w-full shrink-0 group">
+                <div className="relative h-[280px] w-full shrink-0 group">
                     {hasImages ? (
                         <>
                             <Image
@@ -45,7 +45,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                                 unoptimized
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#3A1A08]/80 via-transparent to-transparent opacity-90" />
                         </>
                     ) : (
                         <div className="w-full h-full bg-slate-900 flex items-center justify-center">
@@ -60,7 +60,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 variant="ghost"
                                 size="icon"
                                 onClick={previousImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white hover:bg-black/20 rounded-full h-10 w-10 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+                                className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:bg-white/40 rounded-full h-12 w-12 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 border-none shadow-lg"
                             >
                                 <ChevronLeft className="h-6 w-6" />
                             </Button>
@@ -68,13 +68,13 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 variant="ghost"
                                 size="icon"
                                 onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white hover:bg-black/20 rounded-full h-10 w-10 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+                                className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:bg-white/40 rounded-full h-12 w-12 backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 border-none shadow-lg"
                             >
                                 <ChevronRight className="h-6 w-6" />
                             </Button>
                             {/* Image Counter */}
-                            <div className="absolute bottom-4 right-4 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/90 text-xs font-medium border border-white/10">
-                                {currentImageIndex + 1} / {activity.images.length} Photos
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-xl text-white text-xs font-bold border border-white/20 shadow-lg">
+                                {currentImageIndex + 1} / {activity.images.length}
                             </div>
                         </>
                     )}
@@ -82,7 +82,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                     {/* Close Button */}
                     <button
                         onClick={() => onOpenChange(false)}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-md transition-all border border-white/10 z-50 group/close"
+                        className="absolute top-6 right-6 p-2 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all border-none z-50 group/close shadow-lg h-10 w-10 flex items-center justify-center"
                     >
                         <span className="sr-only">Close</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 group-hover/close:rotate-90 transition-transform"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -110,7 +110,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                 </div>
 
                 {/* 2. Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto bg-slate-50/50">
+                <div className="flex-1 overflow-y-auto bg-[#FFF5EE]/30 backdrop-blur-xl custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
 
                         {/* Quick Info Bar - Sticky within scroll view usually, but placed at top here */}
@@ -160,12 +160,12 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                             <div className="grid md:grid-cols-[2fr,1fr] gap-8">
                                 <div className="space-y-6">
                                     <section>
-                                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-3">
-                                            <span className="h-6 w-1 bg-blue-500 rounded-full" />
+                                        <h3 className="text-xl font-bold text-[#3A1A08] flex items-center gap-3 mb-4">
+                                            <div className="h-7 w-1.5 bg-[#FF7A45] rounded-full" />
                                             About this activity
                                         </h3>
                                         <div
-                                            className="text-slate-600 leading-relaxed text-sm md:text-base space-y-4"
+                                            className="text-[#5D4037] leading-relaxed text-base space-y-4"
                                             dangerouslySetInnerHTML={{ __html: activity.description || 'Experience the best of this destination with our guided activity.' }}
                                         />
                                     </section>
@@ -283,20 +283,20 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                 </div>
 
                 {/* 3. Sticky Footer Action Bar */}
-                <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+                <div className="p-4 bg-white/40 backdrop-blur-2xl border-t border-[#FF7A45]/10 flex items-center justify-between z-20 shadow-[0_-5px_25px_rgba(0,0,0,0.05)]">
                     <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Price</span>
+                        <span className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider opacity-60">Total Price</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-bold text-slate-800">₹{activity.price_per_person?.toLocaleString()}</span>
-                            <span className="text-sm font-medium text-slate-400">/ person</span>
+                            <span className="text-3xl font-black text-[#3A1A08]">₹{activity.price_per_person?.toLocaleString()}</span>
+                            <span className="text-sm font-bold text-[#A0501E]/40">/ person</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <Button
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="hidden sm:flex border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                            className="hidden sm:flex border-[#FF7A45]/20 text-[#A0501E] hover:bg-[#FF7A45]/5 px-8 h-12 rounded-xl font-bold transition-all"
                         >
                             Close Details
                         </Button>
@@ -306,7 +306,10 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                     onAddToDay(activity)
                                     onOpenChange(false)
                                 }}
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/20 px-8 py-6 h-auto text-base font-semibold rounded-xl transition-all hover:scale-[1.02]"
+                                className="text-white shadow-xl shadow-[#FF7A45]/25 px-8 h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.05] border-none"
+                                style={{
+                                    background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                }}
                             >
                                 <Plus className="h-5 w-5 mr-2" />
                                 Add to Itinerary
@@ -315,7 +318,10 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                         {!onAddToDay && activity.booking_link && (
                             <Button
                                 onClick={() => window.open(activity.booking_link, '_blank')}
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-6 h-auto text-base font-semibold rounded-xl"
+                                className="text-white px-8 h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.05] shadow-xl shadow-[#FF7A45]/25 border-none"
+                                style={{
+                                    background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                }}
                             >
                                 Book this Activity
                             </Button>

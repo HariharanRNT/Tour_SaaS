@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { authAPI } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowLeft, Clock, MapPin, Compass, Globe, Wind } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowLeft, Clock, MapPin, Compass, Globe, Wind, Check, Copy, Key, ChevronRight, ShieldCheck, Plane } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGoogleLogin } from '@react-oauth/google'
+import { toast } from 'react-toastify'
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 48 48">
@@ -23,38 +25,11 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 )
 
-// Floating destination badge
-const DestinationBadge = ({ name, emoji, style, delay }: { name: string; emoji: string; style: React.CSSProperties; delay: number }) => (
-    <motion.div
-        initial={{ opacity: 0, scale: 0.6, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay, duration: 0.6, ease: 'easeOut' }}
-        style={style}
-        className="absolute flex items-center gap-1.5 bg-white/90 backdrop-blur-md shadow-lg shadow-black/10 rounded-full px-3 py-1.5 border border-white/60 select-none pointer-events-none z-20"
-    >
-        <span className="text-base">{emoji}</span>
-        <span className="text-xs font-semibold text-gray-700 whitespace-nowrap">{name}</span>
-    </motion.div>
-)
-
-// Animated plane path SVG
-const PlanePath = () => (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 600 700" fill="none" preserveAspectRatio="xMidYMid slice">
-        <path
-            d="M50 600 Q150 400 300 350 Q450 300 550 100"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeDasharray="6 8"
-            opacity="0.15"
-            fill="none"
-        />
-        <circle cx="50" cy="600" r="4" fill="white" opacity="0.3" />
-        <circle cx="550" cy="100" r="4" fill="white" opacity="0.3" />
-    </svg>
-)
+// Google Icon remains for social login
 
 function LoginContent() {
     const router = useRouter()
+    const { login: authLogin } = useAuth()
     const searchParams = useSearchParams()
     const nextUrl = searchParams.get('next')
 
@@ -77,6 +52,12 @@ function LoginContent() {
     const [rememberMe, setRememberMe] = useState(false)
     const [isShaking, setIsShaking] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
+
+    // New focus/validation states for Admin-style UI
+    const [emailFocused, setEmailFocused] = useState(false)
+    const [passwordFocused, setPasswordFocused] = useState(false)
+    const [otpFocused, setOtpFocused] = useState(false)
+
 
     useEffect(() => {
         const fetchAgentInfo = async () => {
@@ -133,8 +114,7 @@ function LoginContent() {
                 setOtpSent(true)
                 setLoading(false)
             } else {
-                localStorage.setItem('token', response.access_token)
-                localStorage.setItem('user', JSON.stringify(response.user))
+                authLogin(response.access_token, response.user)
                 setIsSuccess(true)
                 setTimeout(() => {
                     const user = response.user
@@ -165,8 +145,7 @@ function LoginContent() {
         setOtpLoading(true)
         try {
             const data = await authAPI.verifyLoginOTP(email, otp)
-            localStorage.setItem('token', data.access_token)
-            localStorage.setItem('user', JSON.stringify(data.user))
+            authLogin(data.access_token, data.user)
             setIsSuccess(true)
             setTimeout(() => {
                 if (nextUrl) router.push(nextUrl)
@@ -212,8 +191,7 @@ function LoginContent() {
             setError('')
             try {
                 const data = await authAPI.googleLogin(tokenResponse.access_token)
-                localStorage.setItem('token', data.access_token)
-                localStorage.setItem('user', JSON.stringify(data.user))
+                authLogin(data.access_token, data.user)
                 setIsSuccess(true)
                 setTimeout(() => {
                     const user = data.user
@@ -246,444 +224,359 @@ function LoginContent() {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`
     }
 
-    const destinations = [
-        { name: 'Santorini', emoji: '🏛️', style: { top: '12%', left: '6%' }, delay: 0.8 },
-        { name: 'Bali', emoji: '🌴', style: { top: '28%', right: '4%' }, delay: 1.0 },
-        { name: 'Maldives', emoji: '🏝️', style: { bottom: '32%', left: '3%' }, delay: 1.2 },
-        { name: 'Paris', emoji: '🗼', style: { bottom: '18%', right: '5%' }, delay: 1.4 },
-        { name: 'Tokyo', emoji: '🗾', style: { top: '55%', left: '5%' }, delay: 1.6 },
-    ]
-
     return (
-        <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
-            style={{ fontFamily: "'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif" }}>
+        <div className="min-h-screen bg-[#FFF3E8] flex w-full relative overflow-x-hidden noise-overlay">
+            {/* Ambient Background Orbs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#FFD8B5]/60 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFB38A]/50 blur-[150px] pointer-events-none" />
+            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[#FFD8B5]/40 blur-[100px] pointer-events-none" />
 
-            {/* ── Immersive Background ── */}
-            <div className="absolute inset-0 z-0">
-                {/* Sky gradient */}
-                <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(160deg, #0f2c5e 0%, #1a4a8a 30%, #2d6cc4 55%, #e87d3e 80%, #f5a623 100%)' }} />
+            {/* Mesh Gradient Overlay */}
+            <div className="absolute inset-0 opacity-80 mix-blend-overlay" style={{
+                backgroundImage: 'radial-gradient(at 0% 0%, #FFF3E8 0, transparent 50%), radial-gradient(at 100% 100%, #FFD8B5 0, transparent 60%), radial-gradient(at 50% 50%, #FFB38A 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
+            }} />
 
-                {/* Ocean/horizon band */}
-                <div className="absolute bottom-0 left-0 right-0 h-[38%]"
-                    style={{ background: 'linear-gradient(to top, #0a1628 0%, #0d2347 40%, transparent 100%)' }} />
-
-                {/* Animated clouds */}
-                {[
-                    { w: 220, h: 60, top: '8%', left: '-5%', delay: 0, dur: 28 },
-                    { w: 160, h: 45, top: '16%', left: '30%', delay: 4, dur: 34 },
-                    { w: 260, h: 70, top: '6%', right: '-8%', delay: 8, dur: 40 },
-                    { w: 130, h: 38, top: '22%', right: '20%', delay: 12, dur: 30 },
-                ].map((cloud, i) => (
-                    <motion.div
-                        key={i}
-                        style={{
-                            position: 'absolute',
-                            top: cloud.top,
-                            left: cloud.left,
-                            right: cloud.right,
-                            width: cloud.w,
-                            height: cloud.h,
-                            background: 'radial-gradient(ellipse, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 60%, transparent 100%)',
-                            borderRadius: '50%',
-                            filter: 'blur(8px)',
-                        }}
-                        animate={{ x: [0, 30, 0] }}
-                        transition={{ duration: cloud.dur, repeat: Infinity, delay: cloud.delay, ease: 'easeInOut' }}
-                    />
-                ))}
-
-                {/* Sun / golden orb */}
-                <div className="absolute"
-                    style={{
-                        bottom: '33%', left: '50%', transform: 'translateX(-50%)',
-                        width: 160, height: 160,
-                        background: 'radial-gradient(circle, rgba(255,200,80,0.6) 0%, rgba(255,140,30,0.3) 40%, transparent 70%)',
-                        borderRadius: '50%',
-                        filter: 'blur(2px)',
-                    }} />
-
-                {/* Water shimmer */}
-                <div className="absolute bottom-0 left-0 right-0 h-[36%] overflow-hidden">
-                    {[...Array(8)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            style={{
-                                position: 'absolute',
-                                top: `${i * 14}%`,
-                                left: '-10%',
-                                width: '120%',
-                                height: 2,
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 70%, transparent 100%)',
-                                borderRadius: 2,
-                            }}
-                            animate={{ x: ['-5%', '5%', '-5%'], opacity: [0.4, 0.8, 0.4] }}
-                            transition={{ duration: 4 + i * 0.5, repeat: Infinity, delay: i * 0.3, ease: 'easeInOut' }}
-                        />
-                    ))}
+            {/* Split Screen Layout Container */}
+            <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row relative z-10 min-h-screen">
+                {/* Mobile Header Logo */}
+                <div className="lg:hidden flex justify-center pt-6 pb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
+                            <Plane className="h-5 w-5 text-[#FF7A45]" />
+                        </div>
+                        <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                    </div>
                 </div>
 
-                {/* Stars (upper sky) */}
-                {[...Array(30)].map((_, i) => (
-                    <motion.div
-                        key={`star-${i}`}
-                        style={{
-                            position: 'absolute',
-                            top: `${Math.abs(Math.sin(i * 123.45)) * 45}%`,
-                            left: `${Math.abs(Math.cos(i * 321.65)) * 100}%`,
-                            width: Math.abs(Math.sin(i * 111)) * 2 + 1,
-                            height: Math.abs(Math.cos(i * 222)) * 2 + 1,
-                            background: 'white',
-                            borderRadius: '50%',
-                        }}
-                        animate={{ opacity: [0.2, 0.9, 0.2] }}
-                        transition={{ duration: 2 + Math.abs(Math.sin(i * 333)) * 3, repeat: Infinity, delay: Math.abs(Math.cos(i * 444)) * 4 }}
-                    />
-                ))}
+                {/* Left Side: Brand Message (45%) */}
+                <div className="hidden lg:flex w-full lg:w-[45%] flex-col justify-center p-8 lg:p-12 animate-in fade-in slide-in-from-left-8 duration-700 relative overflow-hidden">
+                    {/* World Map Overlay - Refined Version without rectangles */}
+                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cpath stroke='%23FF7A45' stroke-width='1' fill='none' d='M100 100c50 20 100-20 150 0M300 300c40-30 80 10 120-20M500 100c60 50 120 0 180 30M600 350c-40-20-80 30-120 10M50 250c30-10 60 40 90 20'/%3E%3C/svg%3E")`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    }} />
 
+                    <div className="space-y-6 max-w-lg relative z-20">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
+                                    <Plane className="h-6 w-6 text-[#FF7A45]" />
+                                </div>
+                                <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                            </div>
 
-                {/* Silhouette skyline */}
-                <svg className="absolute bottom-[34%] left-0 w-full" viewBox="0 0 1440 90" fill="none" preserveAspectRatio="none">
-                    <path
-                        d="M0 90 L0 60 L40 60 L40 40 L60 40 L60 20 L70 20 L70 10 L80 10 L80 20 L90 20 L90 40 L120 40 L120 55 L160 55 L160 30 L175 30 L175 15 L185 15 L185 30 L220 30 L220 55 L260 55 L260 45 L290 45 L290 25 L310 25 L310 10 L320 10 L320 5 L330 5 L330 10 L340 10 L340 25 L380 25 L380 50 L420 50 L420 35 L450 35 L450 50 L500 50 L500 40 L520 40 L520 20 L535 20 L535 8 L545 8 L545 20 L560 20 L560 40 L600 40 L600 55 L650 55 L650 35 L675 35 L675 15 L690 15 L690 35 L730 35 L730 55 L780 55 L780 42 L810 42 L810 28 L830 28 L830 42 L870 42 L870 58 L920 58 L920 38 L950 38 L950 22 L965 22 L965 38 L1000 38 L1000 58 L1050 58 L1050 45 L1080 45 L1080 30 L1100 30 L1100 45 L1140 45 L1140 60 L1200 60 L1200 42 L1230 42 L1230 55 L1280 55 L1280 40 L1310 40 L1310 20 L1325 20 L1325 40 L1360 40 L1360 60 L1440 60 L1440 90 Z"
-                        fill="rgba(10,22,40,0.85)"
-                    />
-                </svg>
+                            <div className="space-y-3">
+                                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
+                                    Your Global<br />
+                                    <span className="text-[#FF7A45]">Command Center.</span>
+                                </h1>
 
-                {/* Subtle texture overlay */}
-                <div className="absolute inset-0 opacity-[0.04]"
-                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '200px 200px' }} />
-            </div>
-
-            {/* ── Floating destination badges ── */}
-            {destinations.map((d, i) => (
-                <DestinationBadge key={i} name={d.name} emoji={d.emoji} style={d.style} delay={d.delay} />
-            ))}
-
-            {/* ── Animated Plane ── */}
-            <motion.div
-                className="absolute z-10 pointer-events-none"
-                initial={{ x: -80, y: 80, opacity: 0 }}
-                animate={{ x: ['-5vw', '108vw'], y: ['-2vh', '-18vh'], opacity: [0, 1, 1, 0] }}
-                transition={{ duration: 18, delay: 1.5, repeat: Infinity, repeatDelay: 12, ease: 'linear' }}
-            >
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                    <path d="M44 20L8 4 10 22 28 24 10 26 8 44z" fill="white" opacity="0.9" />
-                    <path d="M14 16L4 20 6 24 14 22z" fill="white" opacity="0.6" />
-                    <path d="M14 32L4 28 6 24 14 26z" fill="white" opacity="0.6" />
-                </svg>
-            </motion.div>
-
-            {/* ── Login Card ── */}
-            <div className="relative z-30 w-full max-w-md px-4">
-
-                {/* Brand above card */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center mb-6"
-                >
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{ background: 'linear-gradient(135deg, #f5a623, #e87d3e)' }}>
-                            <Compass className="w-5 h-5 text-white" />
+                                <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
+                                    Monitor bookings, manage multi-destination packages, and scale your travel empire from one unified portal.
+                                </p>
+                            </div>
                         </div>
-                        <span className="text-2xl font-bold text-white tracking-tight"
-                            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-                            RNT Tour
-                        </span>
+
+                        <div className="flex items-center gap-2 pt-2">
+                            {[
+                                { icon: '✈️', text: 'Real-time Bookings' },
+                                { icon: '📊', text: 'Revenue Tracking' },
+                                { icon: '👥', text: 'Agent Management' }
+                            ].map((pill, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md border border-white/50 h-8 px-3 rounded-full shadow-sm">
+                                    <span className="text-xs">{pill.icon}</span>
+                                    <span className="text-[12px] font-bold text-[#5C2500] whitespace-nowrap">{pill.text}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <p className="text-white/60 text-sm tracking-wide" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-                        Your gateway to extraordinary journeys
-                    </p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={isShaking ? { x: [-8, 8, -8, 8, 0] } : { opacity: 1, y: 0, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.15 }}
-                >
-                    {/* Card */}
-                    <div style={{
-                        background: 'rgba(255,255,255,0.96)',
-                        backdropFilter: 'blur(24px)',
-                        borderRadius: 24,
-                        boxShadow: '0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.6)',
-                        overflow: 'hidden',
-                    }}>
-                        {/* Thin color bar at top */}
-                        <div style={{ height: 4, background: 'linear-gradient(90deg, #1a4a8a, #2d6cc4, #e87d3e, #f5a623)' }} />
+                {/* Right Side: Login Card (55%) */}
+                <div className="w-full lg:w-[55%] flex items-center justify-center p-4 lg:p-8 py-12 sm:py-20 lg:py-16">
+                    <Card className={`glass-panel w-full max-w-[420px] shadow-[0_20px_60px_rgba(255,122,69,0.2)] bg-white/25 backdrop-blur-[20px] border border-white/35 rounded-[24px] p-0 relative z-10 animate-in fade-in slide-in-from-right-8 duration-800 ${isShaking ? 'animate-shake' : ''}`}>
+                        <CardHeader className="space-y-2 pb-2 pt-5 px-4 sm:px-6">
+                            <div className="flex flex-col items-center justify-center space-y-2 mb-0">
+                                {/* 52px Compact Glass Lock Circle */}
+                                <div className="relative w-[52px] h-[52px] flex items-center justify-center animate-pulse-slow group">
+                                    <div className="absolute inset-0 bg-[#FF7A45] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
+                                    <div className="w-full h-full bg-white/25 backdrop-blur-md rounded-full border border-white/40 shadow-[0_4px_16px_rgba(255,122,69,0.15)] flex items-center justify-center relative z-10 overflow-hidden">
+                                        <div className="absolute inset-x-0 bottom-0 top-[20%] bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] opacity-70 rounded-full blur-sm mix-blend-overlay" />
+                                        <Plane className="h-6 w-6 text-[#FF7A45] relative z-20 drop-shadow-md rotate-[-45deg]" />
+                                    </div>
+                                </div>
 
-                        <div className="px-8 py-8">
+                                <div className="text-center space-y-2 w-full">
+                                    <CardTitle className="text-[11px] text-center font-bold text-[#FF7A45] tracking-[0.2em] uppercase">
+                                        {agentInfo?.agency_name ? agentInfo.agency_name : 'Customer & Agent Login'}
+                                    </CardTitle>
+                                    <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
+                                        {otpSent ? 'Enter security code' : 'Enter credentials to access your portal'}
+                                    </CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="px-4 sm:px-6 pb-5 pt-1">
                             <AnimatePresence mode="wait">
                                 {isSuccess ? (
                                     <motion.div
                                         key="success"
                                         initial={{ opacity: 0, scale: 0.85 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="flex flex-col items-center justify-center py-10 space-y-4"
+                                        className="flex flex-col items-center justify-center py-6 space-y-3"
                                     >
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: [0, 1.2, 1] }}
-                                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                                            className="w-20 h-20 rounded-full flex items-center justify-center"
-                                            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
-                                        >
-                                            <CheckCircle className="w-10 h-10 text-white" />
-                                        </motion.div>
-                                        <h3 className="text-2xl font-bold text-gray-900">Welcome Back!</h3>
-                                        <p className="text-gray-400 text-sm">Boarding your dashboard... ✈️</p>
-                                        <div className="flex gap-1 pt-2">
-                                            {[0, 0.15, 0.3].map((d, i) => (
-                                                <motion.div key={i} className="w-2 h-2 rounded-full bg-blue-500"
-                                                    animate={{ opacity: [0.3, 1, 0.3] }}
-                                                    transition={{ duration: 1, repeat: Infinity, delay: d }} />
-                                            ))}
+                                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 shadow-[0_8px_32px_rgba(34,197,94,0.3)]">
+                                            <CheckCircle className="w-8 h-8 text-white" />
                                         </div>
+                                        <h3 className="text-xl font-bold text-[#1a1a2e]">Welcome Back!</h3>
+                                        <p className="text-[#6B3F2A] text-sm font-medium">Boarding your dashboard... ✈️</p>
                                     </motion.div>
                                 ) : !otpSent ? (
                                     <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
-                                        <div className="mb-7">
-                                            <h3 className="text-[22px] font-bold text-gray-900 tracking-tight">
-                                                {agentInfo?.agency_name ? `Welcome to ${agentInfo.agency_name}` : 'Sign In'}
-                                            </h3>
-                                            <p className="text-sm text-gray-400 mt-1">Plan your next adventure</p>
-                                        </div>
+                                        <form onSubmit={handleLogin} className="space-y-4">
+                                            {error && (
+                                                <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded-xl flex items-center gap-2 text-xs">
+                                                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                                                    <span>{error}</span>
+                                                </div>
+                                            )}
 
-                                        <form onSubmit={handleLogin} className="space-y-5" noValidate>
-                                            <AnimatePresence>
-                                                {error && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: 1, height: 'auto' }}
-                                                        exit={{ opacity: 0, height: 0 }}
-                                                        className="bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100 flex items-center gap-2"
-                                                    >
-                                                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                                        <span className="font-medium">{error}</span>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            {/* Email */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-0.5">Email Address</label>
-                                                <div className="relative group">
-                                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                                        <Mail className={cn("h-4.5 w-4.5 transition-colors",
-                                                            emailValid === false ? "text-red-400" :
-                                                                emailValid === true ? "text-emerald-500" : "text-gray-300 group-focus-within:text-blue-500"
-                                                        )} />
-                                                    </div>
+                                            <div className="space-y-2.5">
+                                                {/* Email Field with Floating Label */}
+                                                <div className="relative group/input">
+                                                    <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-[#FF7A45]' : 'text-orange-900/30'}`} />
                                                     <Input
                                                         id="email" type="email" value={email}
                                                         onChange={handleEmailChange} onBlur={handleEmailBlur}
-                                                        placeholder="you@example.com" required
-                                                        className={cn(
-                                                            "glass-input h-12 pl-10 pr-10 rounded-xl border-white/20 bg-white/40 text-gray-800 placeholder:text-gray-500 focus:bg-white/60 focus:ring-2 text-sm transition-all",
-                                                            emailValid === false && "border-red-300 focus:border-red-400 focus:ring-red-100 bg-red-50/60",
-                                                            emailValid === true && "border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100"
-                                                        )}
+                                                        onFocus={() => setEmailFocused(true)}
+                                                        className={`
+                                                            pl-11 pr-10 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
+                                                            transition-all duration-300 text-[#5C2500] font-medium text-sm
+                                                            focus-visible:ring-0 focus-visible:ring-offset-0 
+                                                            ${emailFocused ? 'border-[#FF7A45] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                            ${emailValid === false ? 'border-red-300' : ''}
+                                                        `}
+                                                        required
                                                     />
-                                                    {emailValid === true && (
-                                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
-                                                            <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                                        </motion.div>
-                                                    )}
+                                                    <label
+                                                        htmlFor="email"
+                                                        className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
+                                                            ${emailFocused || email
+                                                                ? '-top-2 text-[10px] font-bold text-[#FF7A45] uppercase tracking-wider bg-[#FFF3E8] px-1.5 rounded-full'
+                                                                : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
+                                                            }`}
+                                                    >
+                                                        Email address
+                                                    </label>
                                                 </div>
-                                                <AnimatePresence>
-                                                    {emailValid === false && (
-                                                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                                                            className="text-xs text-red-500 ml-0.5">
-                                                            Please enter a valid email address
-                                                        </motion.p>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
 
-                                            {/* Password */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-0.5">Password</label>
-                                                <div className="relative group">
-                                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                                        <Lock className="h-4.5 w-4.5 text-gray-300 group-focus-within:text-blue-500 transition-colors" />
-                                                    </div>
+                                                {/* Password Field with Floating Label */}
+                                                <div className="relative group/input">
+                                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-[#FF7A45]' : 'text-orange-900/30'}`} />
                                                     <Input
-                                                        id="password" type={showPassword ? "text" : "password"}
+                                                        id="password" type={showPassword ? 'text' : 'password'}
                                                         value={password} onChange={(e) => setPassword(e.target.value)}
-                                                        placeholder="••••••••" required
-                                                        className="glass-input h-12 pl-10 pr-10 rounded-xl border-white/20 bg-white/40 text-gray-800 placeholder:text-gray-500 focus:bg-white/60 focus:ring-2 focus:ring-blue-100 text-sm transition-all"
+                                                        onFocus={() => setPasswordFocused(true)}
+                                                        onBlur={() => setPasswordFocused(false)}
+                                                        className={`
+                                                            pl-11 pr-11 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
+                                                            transition-all duration-300 text-[#5C2500] font-medium text-sm
+                                                            focus-visible:ring-0 focus-visible:ring-offset-0 
+                                                            ${passwordFocused ? 'border-[#FF7A45] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                        `}
+                                                        required
                                                     />
-                                                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-300 hover:text-gray-500 transition-colors focus:outline-none">
+                                                    <button
+                                                        type="button" onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#FF7A45]/50 hover:text-[#FF7A45] transition-colors focus:outline-none"
+                                                    >
                                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                     </button>
+                                                    <label
+                                                        htmlFor="password"
+                                                        className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
+                                                            ${passwordFocused || password
+                                                                ? '-top-2 text-[10px] font-bold text-[#FF7A45] uppercase tracking-wider bg-[#FFF3E8] px-1.5 rounded-full'
+                                                                : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
+                                                            }`}
+                                                    >
+                                                        Password
+                                                    </label>
                                                 </div>
                                             </div>
 
-                                            {/* Remember / Forgot */}
-                                            <div className="flex items-center justify-between pt-0.5">
+                                            <div className="flex items-center justify-between px-1">
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox id="remember-me" checked={rememberMe}
-                                                        onCheckedChange={(c) => setRememberMe(c as boolean)}
-                                                        className="border-gray-300 rounded data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
-                                                    <label htmlFor="remember-me" className="text-sm text-gray-500 cursor-pointer select-none">Remember me</label>
+                                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} className="w-4 h-4 border-orange-200 data-[state=checked]:bg-[#FF7A45] data-[state=checked]:border-[#FF7A45]" />
+                                                    <label htmlFor="remember-me" className="text-[13px] font-bold text-[#6B3F2A]/70 cursor-pointer">Remember me</label>
                                                 </div>
-                                                <Link href="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
-                                                    Forgot password?
+                                                <Link href="/forgot-password" core-link="true" className="text-[13px] font-bold text-[#FF7A45] hover:underline transition-all">
+                                                    Forgot?
                                                 </Link>
                                             </div>
 
-                                            {/* Sign In button */}
-                                            <Button type="submit" disabled={loading}
-                                                className="w-full h-12 text-sm font-bold rounded-xl shadow-lg transition-all duration-200 mt-1"
-                                                style={{ background: loading ? '#93c5fd' : 'linear-gradient(135deg, #1a4a8a, #2d6cc4)', boxShadow: loading ? 'none' : '0 8px 24px rgba(45,108,196,0.35)' }}>
-                                                {loading ? (
-                                                    <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Authenticating...</span>
-                                                ) : (
-                                                    <span className="flex items-center gap-2">Sign In <span className="text-base">→</span></span>
-                                                )}
-                                            </Button>
+                                            <div className="mt-2">
+                                                <Button
+                                                    type="submit" disabled={loading}
+                                                    className="w-full h-11 rounded-[14px] text-sm font-bold shadow-[0_4px_16px_rgba(255,122,69,0.2)] hover:shadow-[0_8px_24px_rgba(255,122,69,0.3)] transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFA06A] text-white border-none group relative overflow-hidden"
+                                                >
+                                                    {loading ? (
+                                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                                    ) : (
+                                                        <span className="flex items-center gap-2">Sign In <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+                                                    )}
+                                                </Button>
 
-                                            {/* Divider */}
-                                            <div className="relative my-5">
-                                                <div className="absolute inset-0 flex items-center">
-                                                    <span className="w-full border-t border-gray-100" />
-                                                </div>
-                                                <div className="relative flex justify-center">
-                                                    <span className="bg-white px-3 text-[11px] text-gray-400 uppercase tracking-widest font-semibold">or</span>
+                                                <div className="flex items-center justify-center gap-1.5 mt-2 opacity-80">
+                                                    <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                                                    <span className="text-[10px] font-bold text-green-700 uppercase tracking-tighter">SECURE LOGIN · SSL ENCRYPTED</span>
                                                 </div>
                                             </div>
 
-                                            {/* Google */}
-                                            <Button type="button" variant="outline" onClick={() => googleLogin()} disabled={loading}
-                                                className="glass-button w-full h-12 text-sm font-semibold hover:bg-white/50 text-gray-700 border-white/30 rounded-xl flex items-center justify-center gap-2.5 shadow-sm hover:shadow-md transition-all">
-                                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-5 w-5" />}
-                                                Continue with Google
+                                            <div className="relative my-3">
+                                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#FFCBA4]/20" /></div>
+                                                <div className="relative flex justify-center"><span className="bg-transparent px-3 text-[10px] text-[#FFCBA4] uppercase tracking-widest font-black">or</span></div>
+                                            </div>
+
+                                            <Button
+                                                type="button" variant="outline" onClick={() => googleLogin()} disabled={loading}
+                                                className="w-full h-12 bg-white/20 border border-gray-200/50 rounded-[14px] text-sm font-bold hover:bg-white/40 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <GoogleIcon className="h-5 w-5" />
+                                                Google Login
                                             </Button>
 
-                                            {/* Register link */}
-                                            <div className="text-center text-sm text-gray-400 pt-2 border-t border-gray-100 mt-2">
-                                                New traveler?{' '}
-                                                <Link href="/register" className="font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                                    Create account
-                                                </Link>
-                                                <div className="mt-2 text-xs">
-                                                    Are you an agent?{' '}
-                                                    <Link href="/register/agent" className="font-bold text-slate-600 hover:text-slate-800 transition-colors">
-                                                        Register as Agent
-                                                    </Link>
+                                            <div className="text-center pt-2.5 border-t border-[#FFCBA4]/10 mt-2.5">
+                                                <p className="text-[13px] font-bold text-[#6B3F2A]/60">
+                                                    New traveler?{' '}
+                                                    <Link href="/register" className="text-[#FF7A45] hover:underline">Create account</Link>
+                                                </p>
+
+                                                <div className="mt-2.5 pt-2.5 border-t border-[#FFCBA4]/10 relative">
+                                                    <div className="bg-white/5 backdrop-blur-sm p-2 rounded-[14px] border border-white/10 flex flex-col gap-1.5">
+                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-[#FF7A45] hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-[#FF7A45]/20 hover:bg-[#FF7A45] transition-all group/agent">
+                                                            Register as Agent
+                                                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                                        </Link>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </form>
                                     </motion.div>
                                 ) : (
-                                    <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                                        <div className="mb-7">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                                    style={{ background: 'linear-gradient(135deg, #1a4a8a, #2d6cc4)' }}>
-                                                    <Lock className="w-5 h-5 text-white" />
+                                    <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                        <form onSubmit={handleVerifyOTP} className="space-y-6">
+                                            {otpError && (
+                                                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2">
+                                                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                                                    <span className="text-sm">{otpError}</span>
                                                 </div>
-                                                <div>
-                                                    <h3 className="text-[20px] font-bold text-gray-900 tracking-tight">Verify Identity</h3>
-                                                    <p className="text-xs text-gray-400">Almost there — final security check</p>
-                                                </div>
-                                            </div>
-                                            <p className="text-sm text-gray-500 mt-3 bg-blue-50 rounded-xl px-4 py-3 border border-blue-100">
-                                                Code sent to <span className="font-semibold text-gray-700">{email}</span>
-                                            </p>
-                                        </div>
+                                            )}
 
-                                        <form onSubmit={handleVerifyOTP} className="space-y-5">
-                                            <AnimatePresence>
-                                                {otpError && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                                        className="bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100 flex items-center gap-2">
-                                                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                                        <span className="font-medium">{otpError}</span>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            <div className="space-y-2">
-                                                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-0.5">One-Time Password</label>
-                                                <Input
-                                                    id="otp" type="text" value={otp}
-                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                    placeholder="000000" maxLength={6}
-                                                    className="glass-input h-16 text-center text-3xl font-bold tracking-[0.6em] border-white/20 bg-white/40 text-gray-800 focus:bg-white/60 focus:ring-2 focus:ring-blue-100 rounded-xl transition-all"
-                                                    autoComplete="one-time-code"
-                                                />
-                                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    <span>Expires in <span className="font-semibold text-gray-600">{getTimeRemaining()}</span></span>
+                                            <div className="space-y-4">
+                                                <div className="relative group animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both">
+                                                    <Input
+                                                        id="otp" type="text" value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                        onFocus={() => setOtpFocused(true)}
+                                                        onBlur={() => setOtpFocused(false)}
+                                                        placeholder="000000" maxLength={6}
+                                                        className={`
+                                                            h-16 text-center text-3xl font-bold tracking-[0.5em] 
+                                                            bg-white/35 backdrop-blur-[10px] border border-white/40 rounded-[18px] 
+                                                            transition-all duration-300 text-[#5C2500]
+                                                            focus-visible:ring-0 focus-visible:ring-offset-0 
+                                                            ${otpFocused ? 'border-[#FF7A45] shadow-[0_0_12px_rgba(255,122,69,0.4)] bg-white/50' : ''}
+                                                        `}
+                                                        autoComplete="one-time-code"
+                                                    />
                                                 </div>
-                                                {/* OTP progress dots */}
-                                                <div className="flex justify-center gap-2 pt-1">
+
+                                                <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#6B3F2A]/60">
+                                                    <Clock className="w-4 h-4" />
+                                                    <span>Expires in <span className="text-[#FF7A45]">{getTimeRemaining()}</span></span>
+                                                </div>
+
+                                                <div className="flex justify-center gap-3">
                                                     {[...Array(6)].map((_, i) => (
-                                                        <div key={i} className={cn(
-                                                            "w-2 h-2 rounded-full transition-all duration-200",
-                                                            i < otp.length ? "bg-blue-600 scale-110" : "bg-gray-200"
-                                                        )} />
+                                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < otp.length ? 'bg-[#FF7A45] scale-125' : 'bg-[#FFCBA4]/40'}`} />
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            <Button type="submit"
-                                                disabled={otpLoading || otp.length !== 6}
-                                                className="w-full h-12 text-sm font-bold rounded-xl"
-                                                style={{ background: otp.length === 6 ? 'linear-gradient(135deg, #1a4a8a, #2d6cc4)' : '#e5e7eb', color: otp.length === 6 ? 'white' : '#9ca3af', boxShadow: otp.length === 6 ? '0 8px 24px rgba(45,108,196,0.35)' : 'none' }}>
-                                                {otpLoading ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Verifying...</span> : 'Verify & Board'}
+                                            <Button
+                                                type="submit" disabled={otpLoading || otp.length !== 6}
+                                                className="w-full h-14 rounded-[30px] font-bold transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFB38A] disabled:opacity-50 text-white"
+                                            >
+                                                {otpLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify & Board'}
                                             </Button>
 
-                                            <div className="text-center text-sm">
-                                                <span className="text-gray-400">Didn't receive it? </span>
+                                            <div className="flex flex-col gap-4 text-center mt-6">
                                                 <button type="button" onClick={handleResendOTP}
                                                     disabled={resendCooldown > 0 || loading}
-                                                    className={cn("font-semibold transition-colors",
-                                                        resendCooldown > 0 || loading ? "text-gray-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-700 hover:underline"
-                                                    )}>
+                                                    className={`text-sm font-bold transition-colors ${resendCooldown > 0 ? 'text-[#6B3F2A]/30 cursor-not-allowed' : 'text-[#FF7A45] hover:text-[#E66230]'}`}
+                                                >
                                                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
                                                 </button>
-                                            </div>
 
-                                            <button type="button" onClick={handleBackToStep1}
-                                                className="w-full flex items-center justify-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors pt-1">
-                                                <ArrowLeft className="w-4 h-4" />
-                                                Back to login
-                                            </button>
+                                                <button type="button" onClick={handleBackToStep1}
+                                                    className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#6B3F2A]/60 hover:text-[#FF7A45] transition-colors"
+                                                >
+                                                    <ArrowLeft className="w-4 h-4" />
+                                                    Back to login
+                                                </button>
+                                            </div>
                                         </form>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </div>
-                    </div>
-                </motion.div>
+                        </CardContent>
 
-                {/* Bottom trust bar */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="flex items-center justify-center gap-5 mt-5"
-                >
-                    {[
-                        { icon: Globe, label: '50+ Destinations' },
-                        { icon: MapPin, label: 'Live Support' },
-                        { icon: Wind, label: 'Best Fares' },
-                    ].map(({ icon: Icon, label }, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                            <Icon className="w-3.5 h-3.5 text-white/50" />
-                            <span className="text-[11px] text-white/50 font-medium">{label}</span>
-                        </div>
-                    ))}
-                </motion.div>
+                    </Card>
+                </div>
             </div>
+
+            <style jsx global>{`
+                .noise-overlay {
+                    position: relative;
+                }
+                .noise-overlay::after {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                    opacity: 0.04;
+                    z-index: 1;
+                    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+                }
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%) skewX(12deg); }
+                    100% { transform: translateX(200%) skewX(12deg); }
+                }
+                .animate-shimmer {
+                    animation: shimmer 2s infinite;
+                }
+                @keyframes pulse-slow {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.05); opacity: 0.8; }
+                }
+                .animate-pulse-slow {
+                    animation: pulse-slow 3s ease-in-out infinite;
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+                    20%, 40%, 60%, 80% { transform: translateX(4px); }
+                }
+                .animate-shake {
+                    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+                }
+            `}</style>
         </div>
     )
 }

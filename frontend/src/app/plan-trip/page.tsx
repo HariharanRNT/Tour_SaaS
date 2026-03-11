@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
-import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check } from 'lucide-react'
+import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane } from 'lucide-react'
 import { toast } from "react-toastify"
 import { useTheme } from '@/context/ThemeContext'
 import Image from 'next/image'
@@ -33,6 +33,7 @@ interface Package {
     package_mode: string;
     destinations: { city: string, country: string, days: number }[];
     feature_image_url?: string;
+    destination_image_url?: string;
     images?: { url: string }[];
     itinerary_items?: { day_number: number, title: string, description: string, city?: string }[];
     included_items?: string[];
@@ -40,26 +41,52 @@ interface Package {
     gst_applicable?: boolean;
     gst_percentage?: number;
     gst_mode?: string;
+    // Flight fields
+    flights_enabled?: boolean;
+    flight_origin_cities?: string[];
+    flight_cabin_class?: string;
 }
 
 export default function PlanTripPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <PlanTripContent />
+        </Suspense>
+    )
+}
+
+function PlanTripContent() {
     const router = useRouter()
     const { theme } = useTheme()
+    const searchParams = useSearchParams()
 
     // Booking Modal State
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
     const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<Package | null>(null)
     const [selectedDate, setSelectedDate] = useState('')
     const [travelers, setTravelers] = useState({ adults: 2, children: 0, infants: 0 })
+    const [originCity, setOriginCity] = useState('')
 
     // UI State
     const [loading, setLoading] = useState(false)
     const [searching, setSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [inputValue, setInputValue] = useState('')
+
+    // Read destination from URL on mount
+    useEffect(() => {
+        const dest = searchParams.get('destination')
+        if (dest) {
+            setInputValue(dest)
+            setSearchQuery(dest)
+            setHasSearched(true) // Triggers the executeSearch effect
+        }
+    }, [searchParams])
     const [suggestions, setSuggestions] = useState<{ label: string, value: string, type: string }[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
-    const [popularDestinations, setPopularDestinations] = useState<string[]>([])
+
+    type PopularDest = { id: string; name: string; country: string; description: string; image_url: string | null; pkg_count: number; min_price: number; min_duration: number; max_duration: number; display_order: number }
+    const [popularDestinations, setPopularDestinations] = useState<PopularDest[]>([])
 
     // Results State
     const [isActivitiesOpen, setIsActivitiesOpen] = useState(false)
@@ -111,7 +138,7 @@ export default function PlanTripPage() {
         const fetchPopularDestinations = async () => {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch('http://localhost:8000/api/v1/packages/config/destinations/popular', {
+                const res = await fetch('http://localhost:8000/api/v1/trip-planner/popular-destinations', {
                     headers: { 'X-Domain': domain }
                 })
                 if (res.ok) {
@@ -119,13 +146,13 @@ export default function PlanTripPage() {
                     if (data && data.length > 0) {
                         setPopularDestinations(data)
                     } else {
-                        setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+                        setPopularDestinations([])
                     }
                 } else {
-                    setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+                    setPopularDestinations([])
                 }
             } catch (error) {
-                setPopularDestinations(['Goa', 'Mumbai', 'Delhi', 'Manali', 'Kerala'])
+                setPopularDestinations([])
             }
         }
         fetchPopularDestinations()
@@ -378,20 +405,20 @@ export default function PlanTripPage() {
         );
 
         return (
-            <div className="flex flex-col h-full relative">
-                <div className={`flex-1 ${isSliderDragging ? 'overflow-hidden' : 'overflow-y-auto'} custom-scrollbar px-6 pt-6 pb-28 space-y-6`}>
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-[#5C2500] flex items-center gap-2 text-[16px]">
-                            <Filter className="h-4 w-4 text-[#E8682A]" /> Filters
+            <div className="flex flex-col h-full relative w-full">
+                <div className="px-6 pt-6 pb-8 space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-[#3A1A08] flex items-center gap-2.5 text-[18px] font-display">
+                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-orange-100/50">
+                                <Filter className="h-4 w-4 text-[#FF6B2B]" />
+                            </div>
+                            <span>Filters</span>
                             {activeFilterCount > 0 && (
-                                <span className="bg-[#FF6B2B] text-white text-[10px] min-w-[20px] h-[20px] px-1.5 rounded-full flex items-center justify-center font-bold">
+                                <span className="bg-gradient-to-br from-[#FF6B2B] to-[#FF8C00] text-white text-[10px] min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center font-black shadow-md border border-white/20">
                                     {activeFilterCount}
                                 </span>
                             )}
                         </h3>
-                        <button onClick={clearAllFilters} className="text-[11px] text-[#A0501E] bg-white/40 px-3 py-1.5 rounded-full hover:bg-white/60 font-bold transition-all flex items-center gap-1.5 border border-white/50 shadow-sm backdrop-blur-sm">
-                            <RotateCcw className="h-3 w-3" /> Reset All
-                        </button>
                     </div>
 
                     {/* Package Type */}
@@ -492,7 +519,7 @@ export default function PlanTripPage() {
                         </div>
 
                         <div
-                            className="pt-2 px-2 flex flex-col gap-4 relative"
+                            className="pt-2 px-1 flex flex-col gap-6 relative"
                             style={{ touchAction: 'none' }}
                             onPointerDown={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
                             onTouchStart={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
@@ -500,7 +527,7 @@ export default function PlanTripPage() {
                             onPointerUp={() => setIsSliderDragging(false)}
                             onPointerCancel={() => setIsSliderDragging(false)}
                         >
-                            <div className="bg-[#FF6B2B]/85 text-white text-[11px] font-bold rounded-full py-1 px-3 mx-auto shadow-[0_2px_8px_rgba(255,107,43,0.25)] tracking-wide w-max">
+                            <div className="bg-gradient-to-br from-[#FF6B2B] to-[#FF8C00] text-white text-[11px] font-black rounded-xl py-2 px-4 mx-auto shadow-lg tracking-wider w-max border border-white/30 mb-2">
                                 ₹{filters.price_min.toLocaleString()} — ₹{filters.price_max.toLocaleString()}
                             </div>
                             <Slider
@@ -519,10 +546,11 @@ export default function PlanTripPage() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}
                         >
-                            <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex items-center gap-1.5 group-hover:text-[#E8682A] transition-colors">
-                                <span className="text-pink-400 text-sm">🌺</span> TRIP STYLE
+                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[#E8682A] transition-colors">
+                                <span className="text-pink-400 text-sm drop-shadow-sm">🌺</span> TRIP STYLE
+                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-[#FF6B2B] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-orange-200/50">({filters.trip_styles.length})</span>}
                             </p>
-                            <ChevronDown className={`h-4 w-4 text-[#A0501E] transition-transform duration-300 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {isTripStyleOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
@@ -550,10 +578,11 @@ export default function PlanTripPage() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
                         >
-                            <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex items-center gap-1.5 group-hover:text-[#E8682A] transition-colors">
-                                <span className="text-blue-500 text-sm">🏄</span> ACTIVITIES
+                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[#E8682A] transition-colors">
+                                <span className="text-blue-500 text-sm drop-shadow-sm">🏄</span> ACTIVITIES
+                                {filters.activities.length > 0 && <span className="bg-orange-100 text-[#FF6B2B] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-orange-200/50">({filters.activities.length})</span>}
                             </p>
-                            <ChevronDown className={`h-4 w-4 text-[#A0501E] transition-transform duration-300 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {isActivitiesOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
@@ -576,19 +605,19 @@ export default function PlanTripPage() {
                     </div>
 
                     {/* Country */}
-                    <div className="space-y-4 pt-4 border-t border-orange-200/30 pb-6">
-                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="text-cyan-500 text-sm">🌍</span> COUNTRY
+                    <div className="space-y-4 pt-4 border-t border-orange-200/30 pb-4">
+                        <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2">
+                            <span className="text-cyan-500 text-sm drop-shadow-sm">🌍</span> COUNTRY
                         </p>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex overflow-x-auto gap-2.5 pb-2 scrollbar-hide -mx-2 px-2 snap-x">
                             {AVAILABLE_COUNTRIES.map(c => (
                                 <Badge
                                     key={c}
                                     variant={filters.countries.includes(c) ? "default" : "outline"}
-                                    className={`cursor-pointer px-3 py-1.5 rounded-full transition-all border
+                                    className={`cursor-pointer px-4 py-2 rounded-xl transition-all border snap-start whitespace-nowrap text-xs
                                 ${filters.countries.includes(c)
-                                            ? 'bg-[#FF6B2B] border-[#FF6B2B] text-white shadow-sm'
-                                            : 'bg-white/40 border-orange-100 text-[#8B5030] hover:bg-white'}`}
+                                            ? 'bg-[#FF6B2B] border-[#FF6B2B] text-white shadow-[0_4px_12px_rgba(255,107,43,0.3)]'
+                                            : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-orange-200'}`}
                                     onClick={() => toggleFilterArray('countries', c)}
                                 >
                                     {c}
@@ -596,10 +625,29 @@ export default function PlanTripPage() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Sticky Sidebar Action */}
+                    <div className="mt-auto pt-6 border-t border-orange-200/40 sticky bottom-0 bg-white/10 backdrop-blur-md -mx-6 px-6 pb-2 z-20">
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={clearAllFilters}
+                                variant="outline"
+                                className="flex-1 h-12 rounded-2xl border-orange-200 text-[#8B5030] font-bold hover:bg-orange-50 transition-all text-sm gap-2"
+                            >
+                                <RotateCcw className="h-4 w-4" /> Reset
+                            </Button>
+                            <Button
+                                onClick={() => { }} // Auto-applies, but could close mobile sheet if needed
+                                className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white font-black shadow-lg hover:shadow-orange-200 shadow-orange-100 transition-all text-sm"
+                            >
+                                Apply
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Apply Filters Floating Button */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#FFE4CC]/90 via-[#FFE4CC]/80 to-transparent pt-10 rounded-b-3xl">
+                {/* Apply Filters Button - Now part of flow */}
+                <div className="px-6 pb-8">
                     <Button className="w-full h-12 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white font-bold rounded-full shadow-[0_4px_20px_rgba(255,107,43,0.3)] hover:scale-[1.02] transition-all text-[15px]">
                         Apply Filters
                     </Button>
@@ -674,24 +722,11 @@ export default function PlanTripPage() {
     )
 
     return (
-        <div className="min-h-screen font-sans bg-gradient-to-br from-[#FFCC99]/80 via-[#FF9A5C]/80 to-[#FF6B2B]/90 pb-20 relative overflow-x-hidden">
+        <div className="min-h-full font-sans bg-gradient-to-br from-[#FFCC99]/80 via-[#FF9A5C]/80 to-[#FF6B2B]/90 pb-20 relative">
             {/* Ambient Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[#FFD4B0]/40 rounded-full blur-[100px] pointer-events-none z-[-1]" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[#E8682A]/20 rounded-full blur-[120px] pointer-events-none z-[-1]" />
+            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[#FFD4B0]/30 rounded-full blur-[100px] pointer-events-none z-0" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[#E8682A]/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
-            {/* Sticky Header when hasSearched is true */}
-            {hasSearched && (
-                <div className="sticky top-4 z-[100] mx-4 lg:mx-auto max-w-7xl glass-floating-nav py-3 px-6 w-auto mt-4">
-                    <div className="flex items-center justify-between gap-6" ref={searchRef}>
-                        <div className="font-bold text-2xl text-[#E8682A] flex items-center gap-2 cursor-pointer shrink-0 font-display" onClick={() => { setHasSearched(false); clearAllFilters(); }}>
-                            <MapPin className="h-6 w-6 text-[#C2440A]" /> TourSaaS
-                        </div>
-                        <div className="flex-1 max-w-2xl relative">
-                            {renderSearchBar(true)}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Hero Search Section - Shown if NOT hasSearched */}
             {!hasSearched && (
@@ -699,17 +734,17 @@ export default function PlanTripPage() {
                     <div className="relative overflow-visible flex items-center justify-center min-h-[70vh] md:min-h-[80vh] -mt-16 noise-overlay">
                         <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${theme.plan_trip_image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=2021&q=80'}")` }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#EA6E28]/70 via-transparent to-transparent mix-blend-multiply" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#EA6E28]/30 via-transparent to-transparent mix-blend-multiply" />
                             <div className="absolute inset-0 bg-black/20" />
                         </motion.div>
 
                         <div className="container mx-auto px-4 relative z-10 text-center space-y-8 w-full max-w-5xl pt-24 md:pt-16">
-                            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                                <h1 className="text-5xl md:text-8xl font-bold font-display text-white leading-tight drop-shadow-2xl mb-6 tracking-tight">
+                            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pt-8">
+                                <h1 className="text-4xl md:text-7xl font-bold font-display text-white leading-[1.1] drop-shadow-2xl mb-6 tracking-tight">
                                     Where do you <br />
                                     <span className="shimmer-text italic font-medium !text-inherit">want</span> to go?
                                 </h1>
-                                <p className="text-xl text-blue-50 font-light drop-shadow-lg max-w-2xl mx-auto opacity-90">
+                                <p className="text-lg md:text-xl text-blue-50 font-light drop-shadow-lg max-w-2xl mx-auto opacity-90">
                                     Search for a destination, package name, or an experience you love.
                                 </p>
                             </motion.div>
@@ -718,17 +753,17 @@ export default function PlanTripPage() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: 0.3 }}
-                                className="relative z-50 max-w-4xl mx-auto w-full"
+                                className="relative z-40 max-w-4xl mx-auto w-full"
                                 ref={searchRef}
                             >
                                 <div className="glass-search p-2 md:p-3 shadow-[0_20px_50px_rgba(255,107,43,0.15)] rounded-full focus-within:ring-[4px] focus-within:ring-[#FF6B2B]/30 transition-all duration-300">
-                                    <div className="bg-white/95 rounded-full overflow-hidden p-1 flex flex-col md:flex-row items-center gap-2 relative shadow-[inset_0_0_0_2px_transparent] focus-within:shadow-[inset_0_0_0_2px_rgba(255,107,43,0.5)] transition-shadow">
-                                        <div className="flex-1 flex items-center px-6 py-2 group w-full h-[48px] md:h-[56px]">
+                                    <div className="bg-white/95 rounded-full overflow-hidden p-1.5 flex flex-col md:flex-row items-center gap-2 relative shadow-[inset_0_0_0_2px_transparent] focus-within:shadow-[inset_0_0_0_2px_rgba(255,107,43,0.5)] transition-shadow">
+                                        <div className="flex-1 flex items-center px-6 py-2 group w-full h-[52px] md:h-[64px]">
                                             <Search className="h-5 w-5 text-[#FF6B2B] mr-3 group-focus-within:scale-110 transition-transform" />
                                             <input
                                                 type="text"
                                                 placeholder="Search city, country, or package..."
-                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-gray-900 font-medium placeholder:text-gray-400 text-lg"
+                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-gray-900 font-bold placeholder:text-gray-400 text-lg"
                                                 value={inputValue}
                                                 onChange={(e) => {
                                                     setInputValue(e.target.value)
@@ -741,7 +776,7 @@ export default function PlanTripPage() {
                                         </div>
                                         <Button
                                             onClick={() => handleSearchSubmit()}
-                                            className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white px-10 py-6 md:py-7 rounded-full text-lg font-bold shadow-[0_4px_20px_rgba(255,107,43,0.3)] transition-all active:scale-95 w-full md:w-auto hover:shadow-[0_4px_30px_rgba(255,107,43,0.5)] h-[48px] md:h-[56px] flex items-center"
+                                            className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white px-10 py-6 md:py-7 rounded-full text-lg font-black shadow-[0_4px_20px_rgba(255,107,43,0.3)] transition-all active:scale-95 w-full md:w-auto hover:shadow-[0_4px_30px_rgba(255,107,43,0.5)] h-[52px] md:h-[64px] flex items-center shrink-0"
                                         >
                                             Explore Now
                                         </Button>
@@ -779,91 +814,156 @@ export default function PlanTripPage() {
                                     </AnimatePresence>
                                 </div>
 
-                                {/* Quick filter tags - hidden when suggestions are visible */}
+                                {/* QUICK FILTER TAGS */}
                                 {!(showSuggestions || inputValue.length > 0) && (
-                                    <div className="mt-8 flex flex-wrap justify-center gap-3">
-                                        {['Adventure', 'Beach', 'Honeymoon', 'Family'].map((tag) => (
-                                            <button
-                                                key={tag}
-                                                onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [tag] })); setHasSearched(true); }}
-                                                className="px-6 py-2 rounded-full glass-search !bg-white/20 !border-white/30 text-white text-sm font-medium hover:!bg-white/40 transition-all hover:-translate-y-1"
-                                            >
-                                                {tag}
-                                            </button>
-                                        ))}
+                                    <div className="space-y-6">
+                                        <div className="mt-8 flex flex-wrap justify-center gap-3">
+                                            {['Adventure', 'Beach', 'Honeymoon', 'Family'].map((tag) => (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [tag] })); setHasSearched(true); }}
+                                                    className="px-8 py-3 rounded-full border border-white/40 bg-black/80 backdrop-blur-xl text-white font-black text-xs hover:bg-[#FF6B2B] transition-all hover:-translate-y-1 shadow-2xl tracking-[0.1em] uppercase ring-1 ring-white/20"
+                                                >
+                                                    {tag}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* SOCIAL PROOF */}
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 1, duration: 1 }}
+                                            className="flex items-center justify-center gap-3 text-white/80 text-sm font-medium"
+                                        >
+                                            <div className="flex -space-x-2">
+                                                {[1, 2, 3].map(i => (
+                                                    <div key={i} className="w-6 h-6 rounded-full border-2 border-orange-500 bg-orange-200 overflow-hidden">
+                                                        <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="drop-shadow-sm flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                                <span className="font-bold text-white">480+</span> trips planned this week
+                                            </p>
+                                        </motion.div>
                                     </div>
                                 )}
                             </motion.div>
                         </div>
+
+                        {/* Subtle Divider */}
+                        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#FFF5ED] to-transparent z-10" />
                     </div>
 
                     {/* Content Section */}
-                    <div className="container mx-auto px-4 py-24 space-y-32 max-w-7xl">
+                    <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <section>
-                            <div className="mb-12">
-                                <h2 className="text-4xl font-bold text-[#5C2500] inline-block relative font-display">
-                                    Browse by Trip Style
-                                    <div className="absolute -bottom-3 left-0 w-10 h-[3px] bg-[#E8682A]"></div>
-                                </h2>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                {[
-                                    { style: 'Adventure', icon: '⛰️' },
-                                    { style: 'Beach', icon: '🏖️' },
-                                    { style: 'Honeymoon', icon: '💑' },
-                                    { style: 'Family', icon: '👨‍👩‍👧' }
-                                ].map(item => (
-                                    <div
-                                        key={item.style}
-                                        onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [item.style] })); setHasSearched(true); }}
-                                        className="glass-trip-card p-10 text-center cursor-pointer flex flex-col items-center group"
-                                    >
-                                        <div className="w-20 h-20 bg-[#FFE4CC] rounded-full flex items-center justify-center text-4xl mb-6 shadow-sm group-hover:scale-110 transition-transform duration-500">
-                                            {item.icon}
-                                        </div>
-                                        <h3 className="text-xl font-bold text-[#6B3010] tracking-tight">{item.style}</h3>
+                        <section className="relative py-8 px-8 bg-gradient-to-b from-[#FFF5ED] to-white rounded-[48px] shadow-[inset_0_4px_40px_rgba(255,107,43,0.03)] border border-orange-100/50">
+                            <div className="container mx-auto max-w-7xl">
+                                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-[#5C2500] font-display mb-2">
+                                            Browse by Trip Style
+                                        </h2>
+                                        <p className="text-sm text-[#8B5030] font-medium opacity-80 max-w-xl">
+                                            Whether you're seeking thrills or romantic sunsets, we've curated the perfect journeys for every vibe.
+                                        </p>
                                     </div>
-                                ))}
+                                    <div className="hidden md:flex gap-3">
+                                        <button className="w-9 h-9 rounded-full border-none bg-[#FF6B2B] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                            <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                                        </button>
+                                        <button className="w-9 h-9 rounded-full border-none bg-[#FF6B2B] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:grid md:grid-cols-4 gap-6 scrollbar-hide snap-x">
+                                    {[
+                                        { style: 'Adventure', icon: <Mountain className="h-5 w-5 text-[#FF6B2B]" />, desc: 'For the thrill-seekers' },
+                                        { style: 'Beach', icon: <Waves className="h-5 w-5 text-amber-500" />, desc: 'Sun, sand and serenity' },
+                                        { style: 'Honeymoon', icon: <Heart className="h-5 w-5 text-rose-400" />, desc: 'Romantic getaways' },
+                                        { style: 'Family', icon: <Users className="h-5 w-5 text-indigo-400" />, desc: 'Memories for all ages' }
+                                    ].map(item => (
+                                        <div
+                                            key={item.style}
+                                            onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [item.style] })); setHasSearched(true); }}
+                                            className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,107,43,0.1)] snap-start rounded-[24px] border border-white/60 bg-white/40 backdrop-blur-md"
+                                        >
+                                            <div className="w-10 h-10 bg-[#FFE4CC]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[#FF6B2B]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
+                                                {item.icon}
+                                            </div>
+                                            <h3 className="text-base font-bold text-[#6B3010] tracking-tight mb-1">{item.style}</h3>
+                                            <p className="text-xs font-medium text-[#8B5030]/60 uppercase tracking-widest">{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </section>
 
                         {/* Popular Destinations */}
-                        {popularDestinations.length > 0 && (
-                            <section>
-                                <div className="mb-12">
-                                    <h2 className="text-4xl font-bold text-[#5C2500] inline-block relative font-display">
-                                        Popular Destinations
-                                        <div className="absolute -bottom-3 left-0 w-10 h-[3px] bg-[#E8682A]"></div>
-                                    </h2>
+                        {popularDestinations.length >= 0 && (
+                            <section className="pt-8 pb-12 container mx-auto max-w-7xl">
+                                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0">
+                                    <div>
+                                        <h2 className="text-3xl md:text-5xl font-bold text-[#5C2500] font-display mb-4">
+                                            Popular Destinations
+                                        </h2>
+                                        <p className="text-[#8B5030] font-medium opacity-80 max-w-xl">
+                                            Join thousands of travelers exploring these top-rated spots this season.
+                                        </p>
+                                    </div>
+                                    <button className="text-[#E8682A] font-bold text-sm tracking-widest uppercase flex items-center gap-2 group">
+                                        View All Destinations
+                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {popularDestinations.slice(0, 3).map((city, idx) => {
-                                        const images = [
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4 md:px-0">
+                                    {popularDestinations.slice(0, 6).map((dest, idx) => {
+                                        // Fallback Unsplash images when no package image is set
+                                        const fallbackImages = [
                                             "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
                                             "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
                                             "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
                                         ]
+                                        const cardImage = dest.image_url || fallbackImages[idx % fallbackImages.length]
+                                        const city = dest.name
+                                        const pkgCount = dest.pkg_count || 1
                                         return (
                                             <div
                                                 key={city}
                                                 onClick={() => { setSearchQuery(city); setInputValue(city); setHasSearched(true); }}
-                                                className="relative h-[500px] rounded-[32px] overflow-hidden cursor-pointer group shadow-2xl"
+                                                className="relative aspect-[4/3] rounded-[40px] overflow-hidden cursor-pointer group shadow-2xl border border-white/20"
                                             >
                                                 <Image
-                                                    src={images[idx % images.length]}
+                                                    src={cardImage}
                                                     alt={city}
                                                     fill
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-1000"
+                                                    unoptimized={!!dest.image_url}
+                                                    className="object-cover group-hover:scale-110 transition-transform duration-1000"
                                                 />
-                                                <div className="absolute inset-0 destination-overlay opacity-90 group-hover:opacity-100 transition-opacity" />
-                                                <div className="absolute bottom-10 left-10 right-10">
-                                                    <h3 className="text-4xl font-bold text-white mb-3 font-display">{city}</h3>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                                                <div className="absolute top-6 right-6 flex flex-col gap-2">
+                                                    <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
+                                                        <span className="text-yellow-400">★</span> 4.8
+                                                    </Badge>
+                                                    <Badge className="bg-[#FF6B2B] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
+                                                        {pkgCount}+ Packages
+                                                    </Badge>
+                                                </div>
+
+                                                <div className="absolute bottom-8 left-8 right-8">
+                                                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-3 font-display drop-shadow-lg">{city}</h3>
                                                     <div className="relative inline-block group/link">
-                                                        <p className="text-blue-50 text-base font-medium flex items-center gap-2">
+                                                        <p className="text-blue-50 text-sm font-bold flex items-center gap-2 uppercase tracking-widest opacity-90 group-hover:opacity-100">
                                                             Explore packages <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
                                                         </p>
-                                                        <div className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#FFD4A8] group-hover/link:w-full transition-all duration-300"></div>
+                                                        <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[#FF6B2B] group-hover/link:w-full transition-all duration-300"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -872,6 +972,13 @@ export default function PlanTripPage() {
                                 </div>
                             </section>
                         )}
+
+                        {/* Footer Wave Transition */}
+                        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform rotate-180 translate-y-[99%] z-[5]">
+                            <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(110%+1.3px)] h-[70px] fill-[#1A0D05]">
+                                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,-1.14,1200,0.43V0Z" className="shape-fill"></path>
+                            </svg>
+                        </div>
                     </div>
                 </>
             )}
@@ -881,366 +988,324 @@ export default function PlanTripPage() {
                 {hasSearched && (
                     <motion.div
                         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                        className="container mx-auto px-4 mt-8"
+                        className="container mx-auto px-4 mt-8 pb-16"
                     >
-                        <div className="flex flex-col md:flex-row gap-8">
+                        {/* RESULTS CONTEXT SECTION - Alternate BG */}
+                        <div className="relative -mx-4 px-4 py-8 bg-white/30 backdrop-blur-sm rounded-t-[48px] border-t border-orange-100">
+                            <div className="flex flex-col md:flex-row gap-8">
 
-                            {/* Desktop Sidebar Filter */}
-                            <div className="hidden md:block w-[280px] shrink-0">
-                                <div className="glass-filter-panel shadow-[0_8px_32px_rgba(255,107,43,0.06)] bg-white/50 backdrop-blur-xl sticky top-24 h-[calc(100vh-120px)] flex flex-col z-10 border border-white/40 overflow-hidden rounded-3xl">
-                                    <FilterPanel />
-                                </div>
-                            </div>
-
-                            {/* Main Results Area */}
-                            <div className="flex-1 min-w-0">
-                                {/* Context Header & Mobile Filter Trigger */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div className="bg-[#FFE4CC]/30 backdrop-blur-md rounded-2xl h-[120px] px-8 border border-white/20 shadow-[0_8px_32px_rgba(255,107,43,0.04)] flex-1 flex flex-col justify-center relative overflow-hidden">
-                                        {/* faint texture overlay */}
-                                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
-
-                                        <h2 className="text-4xl md:text-[44px] tracking-tight font-bold text-[#3A1A08] flex items-center gap-4 font-display relative z-10">
-                                            {searching ? 'Looking for your next adventure...' : (
-                                                <>
-                                                    <span className="text-[40px] drop-shadow-sm flex-shrink-0 relative">
-                                                        <Search className="h-10 w-10 text-indigo-500 stroke-[2.5]" />
-                                                        <div className="absolute inset-0 bg-purple-300 blur-xl opacity-30 z-[-1] scale-150"></div>
-                                                    </span>
-                                                    <span className="capitalize text-[#3A1A08]">{searchQuery || 'All Destinations'}</span>
-                                                </>
-                                            )}
-                                        </h2>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 self-start sm:self-auto h-[120px]">
-                                        {/* Mobile Filter Sheet */}
-                                        <div className="md:hidden">
-                                            <Sheet>
-                                                <SheetTrigger asChild>
-                                                    <Button variant="outline" className="flex items-center gap-2 h-14 rounded-full border-none shadow-sm bg-white/70">
-                                                        <Filter className="h-4 w-4" /> Filters
-                                                        {(filters.trip_styles.length > 0 || filters.activities.length > 0) && (
-                                                            <span className="bg-[#FF6B2B] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
-                                                        )}
-                                                    </Button>
-                                                </SheetTrigger>
-                                                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto pb-20">
-                                                    <SheetHeader className="mb-6">
-                                                        <SheetTitle>Filters</SheetTitle>
-                                                    </SheetHeader>
-                                                    <FilterPanel />
-                                                </SheetContent>
-                                            </Sheet>
-                                        </div>
-
-                                        {/* Sort Dropdown */}
-                                        <Select value={sort} onValueChange={setSort}>
-                                            <SelectTrigger className="w-[200px] h-14 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold text-[#5C2500]">
-                                                <span className="text-[10px] text-[#A0501E] mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
-                                                <SelectValue placeholder="Recommended" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_rgba(255,107,43,0.1)]">
-                                                <SelectItem value="recommended" className="font-bold text-[#5C2500]">Recommended</SelectItem>
-                                                <SelectItem value="price_asc" className="font-bold text-[#5C2500]">Price: Low to High</SelectItem>
-                                                <SelectItem value="price_desc" className="font-bold text-[#5C2500]">Price: High to Low</SelectItem>
-                                                <SelectItem value="duration_asc" className="font-bold text-[#5C2500]">Duration: Short to Long</SelectItem>
-                                                <SelectItem value="duration_desc" className="font-bold text-[#5C2500]">Duration: Long to Short</SelectItem>
-                                                <SelectItem value="newest" className="font-bold text-[#5C2500]">Newest First</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                {/* Desktop Sidebar Filter */}
+                                <div className="hidden md:block w-[280px] shrink-0">
+                                    <div className="glass-filter-panel shadow-[0_8px_32px_rgba(255,107,43,0.06)] bg-white/50 backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl">
+                                        <FilterPanel />
                                     </div>
                                 </div>
 
-                                {/* Active Filters */}
-                                {renderActiveFilters()}
+                                {/* Main Results Area */}
+                                <div className="flex-1 min-w-0">
+                                    {/* Context Header & Mobile Filter Trigger */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[80px] px-6 border border-white/20 shadow-[0_4px_24px_rgba(255,107,43,0.02)] flex-1 flex flex-col justify-center relative overflow-hidden">
+                                            {/* faint texture overlay */}
+                                            <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
-                                {/* Results Grid */}
-                                {searching ? (
-                                    <div className="flex items-center justify-center py-32">
-                                        <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                                    </div>
-                                ) : packages.length === 0 ? (
-                                    <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border-2 border-dashed border-orange-200 p-20 text-center shadow-sm">
-                                        <div className="w-24 h-24 bg-orange-100/50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <Search className="h-10 w-10 text-[#E8682A]" />
+                                            <div className="flex items-center gap-4 relative z-10">
+                                                <div className="bg-white/60 p-2.5 rounded-xl shadow-sm">
+                                                    <Search className="h-5 w-5 text-indigo-500 stroke-[2.5]" />
+                                                </div>
+                                                <div className="flex items-baseline gap-3">
+                                                    <h2 className="text-2xl md:text-3xl tracking-tight font-bold text-[#3A1A08] font-display capitalize">
+                                                        {searching ? 'Searching...' : (searchQuery || 'All Destinations')}
+                                                    </h2>
+                                                    {!searching && (
+                                                        <span className="text-[13px] font-bold text-[#8B5030]/60 uppercase tracking-widest border-l border-orange-200/50 pl-3">
+                                                            {packages.length} {packages.length === 1 ? 'Result' : 'Results'} Found
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <h3 className="text-2xl font-bold text-[#3A1A08] mb-3">No more results</h3>
-                                        <p className="text-[#8B5030] max-w-sm mx-auto mb-8 font-medium">Try adjusting your filters or expanding your search to find more hidden gems.</p>
-                                        <Button onClick={clearAllFilters} className="bg-[#E8682A] text-white px-8 py-6 rounded-full font-bold shadow-lg hover:shadow-orange-200 transition-all">
-                                            Clear all filters
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px]">
-                                        {packages.map((pkg, idx) => (
-                                            <motion.div
-                                                key={pkg.id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                                className="glass-pkg-card group flex flex-col h-full relative overflow-hidden"
-                                            >
-                                                <div className="flex flex-col flex-1 h-full p-2">
-                                                    {/* Image Header */}
-                                                    <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
 
-                                                        {pkg.feature_image_url || (pkg.images && pkg.images.length > 0) ? (
-                                                            <>
-                                                                <img
-                                                                    src={pkg.feature_image_url || pkg.images![0]?.url}
-                                                                    alt={pkg.title}
-                                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                                />
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
-                                                            </>
-                                                        ) : (
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8] to-[#FF6B2B] flex items-center justify-center p-6 text-center">
-                                                                <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
-                                                                <div className="relative z-10">
-                                                                    <div className="text-white font-bold text-xl mb-2 drop-shadow-md font-display">
-                                                                        {pkg.package_mode === 'multi' && pkg.destinations?.length > 0
-                                                                            ? pkg.destinations.map(d => d.city).join(' → ')
-                                                                            : pkg.destination}
-                                                                    </div>
-                                                                    <div className="text-orange-50 font-bold tracking-wide text-sm flex items-center justify-center gap-1.5 uppercase drop-shadow-sm">
-                                                                        {pkg.package_mode === 'multi' ? '🌍 Multi-City Tour' : `📍 ${pkg.country || 'Destination'}`}
+                                        <div className="flex items-center gap-2 self-start sm:self-auto h-[80px]">
+                                            {/* Mobile Filter Sheet */}
+                                            <div className="md:hidden">
+                                                <Sheet>
+                                                    <SheetTrigger asChild>
+                                                        <Button variant="outline" className="flex items-center gap-2 h-14 rounded-full border-none shadow-sm bg-white/70">
+                                                            <Filter className="h-4 w-4" /> Filters
+                                                            {(filters.trip_styles.length > 0 || filters.activities.length > 0) && (
+                                                                <span className="bg-[#FF6B2B] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
+                                                            )}
+                                                        </Button>
+                                                    </SheetTrigger>
+                                                    <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto pb-20">
+                                                        <SheetHeader className="mb-6">
+                                                            <SheetTitle>Filters</SheetTitle>
+                                                        </SheetHeader>
+                                                        <FilterPanel />
+                                                    </SheetContent>
+                                                </Sheet>
+                                            </div>
+
+                                            {/* Sort Dropdown */}
+                                            <Select value={sort} onValueChange={setSort}>
+                                                <SelectTrigger className="w-[200px] h-14 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold text-[#5C2500]">
+                                                    <span className="text-[10px] text-[#A0501E] mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
+                                                    <SelectValue placeholder="Recommended" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_rgba(255,107,43,0.1)]">
+                                                    <SelectItem value="recommended" className="font-bold text-[#5C2500]">Recommended</SelectItem>
+                                                    <SelectItem value="price_asc" className="font-bold text-[#5C2500]">Price: Low to High</SelectItem>
+                                                    <SelectItem value="price_desc" className="font-bold text-[#5C2500]">Price: High to Low</SelectItem>
+                                                    <SelectItem value="duration_asc" className="font-bold text-[#5C2500]">Duration: Short to Long</SelectItem>
+                                                    <SelectItem value="duration_desc" className="font-bold text-[#5C2500]">Duration: Long to Short</SelectItem>
+                                                    <SelectItem value="newest" className="font-bold text-[#5C2500]">Newest First</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    {/* Active Filters */}
+                                    {renderActiveFilters()}
+
+                                    {/* Results Grid */}
+                                    {searching ? (
+                                        <div className="flex items-center justify-center py-32">
+                                            <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+                                        </div>
+                                    ) : packages.length === 0 ? (
+                                        <div className="bg-white/30 backdrop-blur-xl rounded-[48px] border border-orange-100/50 p-16 md:p-24 text-center shadow-sm relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] opacity-[0.03] pointer-events-none" />
+                                            <div className="relative z-10">
+                                                <div className="w-24 h-24 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-white/50">
+                                                    <div className="relative">
+                                                        <Search className="h-10 w-10 text-[#E8682A] animate-pulse" />
+                                                        <MapPin className="absolute -top-2 -right-2 h-5 w-5 text-indigo-400" />
+                                                    </div>
+                                                </div>
+                                                <h3 className="text-3xl font-bold text-[#3A1A08] mb-4 font-display">No hidden gems found</h3>
+                                                <p className="text-[#8B5030] max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
+                                                    We couldn't find any packages matching your current filters. Try broadening your search!
+                                                </p>
+                                                <Button
+                                                    onClick={clearAllFilters}
+                                                    className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white px-10 py-7 rounded-full font-black shadow-[0_12px_24px_rgba(255,107,43,0.2)] hover:shadow-[0_12px_32px_rgba(255,107,43,0.3)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 mx-auto"
+                                                >
+                                                    <RotateCcw className="h-5 w-5" />
+                                                    Clear All & Refresh
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px]">
+                                            {packages.map((pkg, idx) => (
+                                                <motion.div
+                                                    key={pkg.id}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                                    className="glass-pkg-card group flex flex-col h-full relative overflow-hidden"
+                                                >
+                                                    <div className="flex flex-col flex-1 h-full p-2 overflow-hidden rounded-2xl">
+                                                        {/* Image Header */}
+                                                        <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
+
+                                                            {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
+                                                                <>
+                                                                    <img
+                                                                        src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
+                                                                        alt={pkg.title}
+                                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                                    />
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
+                                                                </>
+                                                            ) : (
+                                                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[#FF6B2B]/40 flex items-center justify-center p-6 text-center z-0">
+                                                                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
+                                                                    {/* Fallback real-world image based on destination if available */}
+                                                                    <img
+                                                                        src={`https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=1200`}
+                                                                        alt="Destination fallback"
+                                                                        className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
+                                                                    />
+                                                                    <div className="relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                                                                        <div className="text-white font-black text-xl mb-1.5 drop-shadow-md font-display leading-tight uppercase tracking-tight">
+                                                                            {pkg.package_mode === 'multi' && pkg.destinations?.length > 0
+                                                                                ? pkg.destinations.map(d => d.city).join(' → ')
+                                                                                : pkg.destination}
+                                                                        </div>
+                                                                        <div className="text-orange-50 font-black tracking-[0.14em] text-[10px] flex items-center justify-center gap-1.5 uppercase drop-shadow-sm opacity-90">
+                                                                            {pkg.package_mode === 'multi' ? '🌍 Multi-City Tour' : `📍 ${pkg.country || 'Destination'}`}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
+                                                            )}
 
-                                                        {/* Overlays */}
-                                                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                                            <Badge className="bg-white/40 text-white hover:bg-white/60 backdrop-blur-md border border-white/50 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
-                                                                {pkg.duration_days} Days
-                                                            </Badge>
-                                                        </div>
-                                                        {pkg.package_mode === 'multi' && (
-                                                            <div className="absolute top-4 right-4">
-                                                                <Badge className="bg-gradient-to-r from-[#FFB347] to-[#FF8C00] text-white border-0 shadow-lg font-bold flex items-center gap-1 rounded-full px-3 py-1">
-                                                                    ✈ Multi-City
+                                                            {/* Overlays */}
+                                                            <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                                                <Badge className="bg-white/40 text-white hover:bg-white/60 backdrop-blur-md border border-white/50 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
+                                                                    {pkg.duration_days} Days
                                                                 </Badge>
                                                             </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Content */}
-                                                    <div className="p-5 flex flex-col flex-1 cursor-pointer bg-transparent" onClick={() => handleContinueToBook(pkg)}>
-                                                        <div className="flex items-start justify-between gap-3 mb-2">
-                                                            <h3 className="font-bold text-[#3A1A08] text-xl line-clamp-2 leading-tight group-hover:text-[#FF6B2B] transition-colors font-display">
-                                                                {pkg.title}
-                                                            </h3>
-                                                        </div>
-
-                                                        {/* Destination Route */}
-                                                        <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
-                                                            <MapPin className="h-4 w-4 shrink-0 text-[#FF6B2B]" />
-                                                            {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
-                                                                <span className="truncate">
-                                                                    {pkg.destinations.map(d => d.city).join(' → ')}
-                                                                </span>
-                                                            ) : (
-                                                                <span>{pkg.destination} · {pkg.country || "Asia"}</span>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Tags */}
-                                                        <div className="flex flex-wrap gap-2 mb-6 max-h-[80px] overflow-hidden">
-                                                            {pkg.trip_style && (
-                                                                <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B]"></span>
-                                                                    {pkg.trip_style}
-                                                                </Badge>
-                                                            )}
-                                                            {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
-                                                                typeof act === 'string' ? ( // Handle JSON string edge cases if any
-                                                                    <Badge key={idx} variant="outline" className="text-[#8B5030] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
-                                                                        {act.replace(/["\[\]]/g, '')}
+                                                            {pkg.package_mode === 'multi' && (
+                                                                <div className="absolute top-4 right-4 z-10">
+                                                                    <Badge className="bg-gradient-to-r from-[#FFB347] to-[#FF8C00] text-white border-0 shadow-lg font-bold flex items-center gap-1 rounded-full px-3 py-1">
+                                                                        ✈ Multi-City
                                                                     </Badge>
-                                                                ) : null
-                                                            ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Wishlist Button */}
+                                                            <button
+                                                                className="absolute top-4 right-4 z-10 group/wishlist"
+                                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                                            >
+                                                                <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all hover:bg-white/40 hover:scale-110 active:scale-90">
+                                                                    <Heart className="h-5 w-5 text-white group-hover/wishlist:text-red-400 transition-colors" />
+                                                                </div>
+                                                            </button>
                                                         </div>
 
-                                                        {/* Rating & Group info (Mocked for now since not in schema) */}
-                                                        <div className="flex items-center gap-3 text-sm font-medium text-[#8B5030]/80 mb-2 mt-auto">
-                                                            <span className="flex items-center gap-1">
-                                                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FFB347] to-[#FF8C00] font-bold text-lg">★</span>
-                                                                4.5
-                                                            </span>
-                                                            <span className="w-1 h-1 rounded-full bg-orange-200"></span>
-                                                            <span className="flex items-center gap-1">👥 Max 20</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                        {/* Content */}
+                                                        <div className="p-5 flex flex-col flex-1 cursor-pointer bg-transparent" onClick={() => handleContinueToBook(pkg)}>
+                                                            <div className="flex items-start justify-between gap-3 mb-2">
+                                                                <h3 className="font-bold text-[#3A1A08] text-xl line-clamp-3 leading-tight transition-colors font-display min-h-[72px]">
+                                                                    {pkg.title}
+                                                                </h3>
+                                                            </div>
 
-                                                {/* Price and Action Section */}
-                                                <div className="px-7 pb-6 pt-0 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="pt-4 border-t border-orange-200/40 flex items-center justify-between gap-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-bold text-[#FF6B2B] uppercase tracking-wider mb-0.5">Starting From</span>
-                                                            <div className="flex items-baseline gap-1">
-                                                                <span className="text-2xl font-bold text-[#5C2500]">₹{pkg.price_per_person.toLocaleString()}</span>
-                                                                <span className="text-[10px] text-[#8B5030]/70 font-medium uppercase tracking-widest">/ pp</span>
+                                                            {/* Destination Route */}
+                                                            <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
+                                                                <MapPin className="h-4 w-4 shrink-0 text-[#FF6B2B]" />
+                                                                {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
+                                                                    <span className="truncate">
+                                                                        {pkg.destinations.map(d => d.city).join(' → ')}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span>{pkg.destination} · {pkg.country || "Asia"}</span>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Tags */}
+                                                            <div className="flex flex-wrap gap-2 mb-3 max-h-[80px] overflow-hidden">
+                                                                {pkg.trip_style && (
+                                                                    <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B]"></span>
+                                                                        {pkg.trip_style}
+                                                                    </Badge>
+                                                                )}
+                                                                {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
+                                                                    typeof act === 'string' ? ( // Handle JSON string edge cases if any
+                                                                        <Badge key={idx} variant="outline" className="text-[#8B5030] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
+                                                                            {act.replace(/["\[\]]/g, '')}
+                                                                        </Badge>
+                                                                    ) : null
+                                                                ))}
+                                                            </div>
+
+                                                            {/* Rating & Group info (Mocked for now since not in schema) */}
+                                                            <div className="flex items-center gap-3 text-sm font-medium text-[#8B5030]/80 mb-2 mt-auto">
+                                                                <span className="flex items-center gap-1">
+                                                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FFB347] to-[#FF8C00] font-bold text-lg">★</span>
+                                                                    4.5
+                                                                </span>
+                                                                <span className="w-1 h-1 rounded-full bg-orange-200"></span>
+                                                                <span className="flex items-center gap-1">👥 Max 20</span>
                                                             </div>
                                                         </div>
-                                                        <Button
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                setSelectedPackageForBooking(pkg);
-                                                                setIsBookingModalOpen(true);
-                                                            }}
-                                                            className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white px-7 py-6 rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(255,107,43,0.3)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative"
-                                                        >
-                                                            <span className="relative z-10 flex items-center gap-2">
-                                                                Book Now
-                                                                <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                            </span>
-                                                            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
-                                                        </Button>
                                                     </div>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
+
+                                                    {/* Price and Action Section */}
+                                                    <div className="p-3 px-4 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="pt-4 border-t border-orange-200/40 flex items-center justify-between gap-2 w-full flex-nowrap">
+                                                            <div className="flex flex-col flex-1">
+                                                                <span className="text-xs font-black text-[#E8682A] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">Starting From</span>
+                                                                <div className="flex items-baseline gap-1">
+                                                                    <span className="text-xl font-bold text-[#5C2500]">₹{pkg.price_per_person.toLocaleString()}</span>
+                                                                    <span className="text-xs text-[#8B5030]/70 font-medium uppercase tracking-widest">/ pp</span>
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setSelectedPackageForBooking(pkg);
+                                                                    setIsBookingModalOpen(true);
+                                                                }}
+                                                                className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(255,107,43,0.3)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
+                                                            >
+                                                                <span className="relative z-10 flex items-center gap-2">
+                                                                    Book Now
+                                                                    <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
+                                                                </span>
+                                                                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Booking Modal */}
+            {/* Sticky CTA Removed as per user request */}
+
+            {/* Booking Modal Redesign */}
             <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
-                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-[#F0A050]/30 shadow-[0_24px_64px_rgba(180,80,20,0.2)] rounded-[24px] !bg-none" style={{
-                    background: 'rgba(255, 248, 240, 0.9)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)'
-                }}>
-                    <div className="absolute top-3 right-3 z-30">
-                        <DialogClose asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/30 text-[#3A1A08] hover:bg-white/50 hover:text-black backdrop-blur-md border border-white/40 transition-all shadow-sm">
+                <DialogContent
+                    className="max-w-md p-5 overflow-hidden border border-white/60 shadow-[0_32px_80px_rgba(0,0,0,0.2)] rounded-[32px] bg-white/40 backdrop-blur-2xl z-[1001]"
+                    overlayClass="z-[1000] bg-black/40 backdrop-blur-sm"
+                    hideClose={true}
+                >
+                    <div className="relative flex flex-col h-full max-h-[90vh]">
+                        {/* Glassy Header Card */}
+                        <div className="bg-gradient-to-br from-[#FF8C66]/90 to-[#FF6B2B]/90 py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
+                            <button
+                                onClick={() => setIsBookingModalOpen(false)}
+                                className="absolute top-3 right-3 text-white/90 hover:text-white hover:bg-white/20 p-1.5 rounded-full transition-all"
+                            >
                                 <X className="h-4 w-4" />
-                            </Button>
-                        </DialogClose>
-                    </div>
+                            </button>
 
-                    <div className="flex flex-col h-full max-h-[85vh]">
-                        {/* Modal Header with Package Banner overlay */}
-                        <div className="relative h-[140px] shrink-0 bg-gray-200 overflow-hidden">
-                            {selectedPackageForBooking?.images && selectedPackageForBooking.images.length > 0 ? (
-                                <img
-                                    src={selectedPackageForBooking.images[0].url}
-                                    alt={selectedPackageForBooking.title || 'Package Image'}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : selectedPackageForBooking?.feature_image_url ? (
-                                <img
-                                    src={selectedPackageForBooking.feature_image_url}
-                                    alt={selectedPackageForBooking.title || 'Package Image'}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-orange-100">
-                                    <ImageIcon className="h-10 w-10 text-orange-300" />
-                                </div>
-                            )}
-
-                            {/* Warm Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#B4460A]/90 via-[#B4460A]/30 to-transparent"></div>
-
-                            {/* Location Pill */}
-                            <div className="absolute top-4 left-4">
-                                <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-0 py-1 px-3 rounded-full flex items-center gap-1.5 font-bold text-[10px] shadow-sm">
-                                    <MapPin className="h-3 w-3 text-orange-200" />
-                                    {selectedPackageForBooking?.package_mode === 'multi' && selectedPackageForBooking?.destinations?.length ? (
-                                        selectedPackageForBooking.destinations[0].city
-                                    ) : (
-                                        selectedPackageForBooking?.destination
-                                    )}
-                                </Badge>
-                            </div>
-
-                            {/* Text Content Overlay */}
-                            <div className="absolute bottom-4 left-6 right-6 text-white text-center">
-                                <h3 className="font-bold text-xl line-clamp-1 mb-0.5 font-display drop-shadow-md">
-                                    {selectedPackageForBooking?.title}
-                                </h3>
-                                <p className="text-[11px] text-orange-50 flex items-center justify-center gap-2 font-medium opacity-90">
-                                    <span className="bg-white/10 px-1.5 py-0.5 rounded backdrop-blur-sm">{selectedPackageForBooking?.duration_days} Days</span>
-                                    <span className="w-1 h-1 rounded-full bg-white/40" />
-                                    <span>{selectedPackageForBooking?.country || "India"}</span>
-                                </p>
-                            </div>
+                            <h2 className="text-xl font-extrabold text-white mb-1 font-display tracking-tight drop-shadow-md">Trip Details</h2>
+                            <p className="text-orange-50/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider">
+                                {selectedPackageForBooking?.title}
+                            </p>
                         </div>
 
-                        {/* Step Indicator */}
-                        <div className="bg-orange-50/50 backdrop-blur-sm border-b border-orange-100/30 py-4 px-8 shrink-0">
-                            <div className="flex items-center justify-between max-w-sm mx-auto relative px-4">
-                                {/* Connecting Lines */}
-                                <div className="absolute top-1/2 left-8 right-8 h-px border-t border-dashed border-orange-200/50 -translate-y-[10px] z-0" />
-
-                                {/* Step 1: Date */}
-                                <div className="relative z-10 flex flex-col items-center gap-1">
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300 ${selectedDate
-                                        ? 'bg-[#E8682A] text-white'
-                                        : 'bg-white border border-orange-200 text-[#A0501E]'
-                                        }`}>
-                                        {selectedDate ? <CheckCircle2 className="h-3.5 w-3.5" /> : '1'}
-                                    </div>
-                                    <span className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider opacity-80">Date</span>
-                                </div>
-
-                                {/* Step 2: Travelers */}
-                                <div className="relative z-10 flex flex-col items-center gap-1">
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300 ${selectedDate
-                                        ? 'bg-white border-2 border-[#E8682A] text-[#E8682A] shadow-[0_0_10px_rgba(232,104,42,0.15)]'
-                                        : 'bg-white border border-orange-100 text-orange-200'
-                                        }`}>
-                                        2
-                                    </div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${selectedDate ? 'text-[#A0501E]' : 'text-orange-200'} opacity-80`}>Travelers</span>
-                                </div>
-
-                                {/* Step 3: Confirm */}
-                                <div className="relative z-10 flex flex-col items-center gap-1">
-                                    <div className="w-7 h-7 rounded-full bg-white border border-orange-100 text-orange-200 flex items-center justify-center text-[11px] font-bold">
-                                        3
-                                    </div>
-                                    <span className="text-[10px] font-bold text-orange-200 uppercase tracking-wider opacity-80">Confirm</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Booking Form Content */}
-                        <div className="px-6 py-6 overflow-y-auto space-y-6 flex-1">
-                            {/* Date Selection */}
-                            <div className="space-y-2.5">
-                                <Label htmlFor="travel-date" className="text-[11px] font-bold text-[#A0501E] uppercase tracking-[0.1em] flex items-center gap-2 px-1">
-                                    <CalendarIcon className="h-3 w-3" />
-                                    Date of Travel
+                        {/* Modal Body */}
+                        <div className="pt-4 p-2 space-y-6 overflow-y-auto custom-scrollbar">
+                            {/* Travel Date Section */}
+                            <div className="space-y-4">
+                                <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
+                                    Travel Date
                                 </Label>
-                                <div className="relative">
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF6B2B]">
+                                        <CalendarIcon className="h-5 w-5" />
+                                    </div>
                                     <Input
-                                        id="travel-date"
                                         type="date"
                                         min={new Date().toISOString().split('T')[0]}
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="h-11 bg-white/70 border-[#F4A261]/35 rounded-xl px-4 font-bold text-sm text-[#3A1A08] focus-visible:ring-orange-500/20 focus-visible:border-orange-500/50 transition-all"
+                                        className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-300 transition-all cursor-pointer shadow-inner"
                                     />
                                 </div>
                             </div>
 
-                            {/* Travelers Selection */}
-                            <div className="space-y-2.5">
-                                <Label className="text-[11px] font-bold text-[#A0501E] uppercase tracking-[0.1em] flex items-center gap-2 px-1">
-                                    <Users className="h-3 w-3" />
+                            {/* Travelers Section */}
+                            <div className="space-y-4">
+                                <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
                                     Travelers
                                 </Label>
-                                <div className="space-y-1.5">
+                                <div className="space-y-3">
                                     <PassengerCounter
                                         label="Adults"
                                         sublabel="Age 13+"
@@ -1248,9 +1313,9 @@ export default function PlanTripPage() {
                                         min={1}
                                         max={10}
                                         compact={true}
+                                        className="bg-white/40 backdrop-blur-sm border-white/30 rounded-2xl p-3"
                                         onChange={(val) => setTravelers(prev => ({ ...prev, adults: val }))}
                                     />
-                                    <div className="h-[1px] bg-[rgba(240,160,80,0.1)] mx-4" />
                                     <PassengerCounter
                                         label="Children"
                                         sublabel="Age 2-12"
@@ -1258,138 +1323,81 @@ export default function PlanTripPage() {
                                         min={0}
                                         max={5}
                                         compact={true}
+                                        className="bg-white/40 backdrop-blur-sm border-white/30 rounded-2xl p-3"
                                         onChange={(val) => setTravelers(prev => ({ ...prev, children: val }))}
                                     />
-                                    <div className="h-[1px] bg-[rgba(240,160,80,0.1)] mx-4" />
                                     <PassengerCounter
                                         label="Infants"
                                         sublabel="Under 2"
-                                        badge="FREE"
                                         value={travelers.infants}
                                         min={0}
                                         max={3}
                                         compact={true}
+                                        className="bg-white/40 backdrop-blur-sm border-white/30 rounded-2xl p-3"
                                         onChange={(val) => setTravelers(prev => ({ ...prev, infants: val }))}
                                     />
                                 </div>
-
-                                {travelers.adults + travelers.children + travelers.infants >= 15 && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/70 rounded-lg border border-amber-200/50 text-amber-700 text-[10px] font-bold">
-                                        <Users className="h-3 w-3" />
-                                        Max 20 travelers allowed per booking
-                                    </div>
-                                )}
                             </div>
-                        </div>
 
-                        <div className="px-6 py-6 bg-white/60 backdrop-blur-md border-t border-orange-100/30 mt-auto rounded-b-[24px] shrink-0">
-                            {selectedDate && travelers.adults >= 1 && selectedPackageForBooking ? (() => {
-                                const pkg = selectedPackageForBooking;
-                                const basePriceTotal = pkg.price_per_person * (travelers.adults + travelers.children);
-                                const gstAmt = pkg.gst_applicable && pkg.gst_mode === 'exclusive'
-                                    ? basePriceTotal * (pkg.gst_percentage || 0) / 100
-                                    : 0;
-                                const grandTotal = basePriceTotal + gstAmt;
-                                return (
-                                    <div className="mb-5 bg-[#FFE4B4]/30 border border-orange-200/40 rounded-xl px-4 py-2.5 h-[44px] flex items-center justify-between transition-all">
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] font-bold text-[#A0501E] uppercase tracking-wider">Estimated Total</span>
-                                            <span className="text-[10px] text-[#8B5030] font-medium leading-none">Incl. GST</span>
+                            {/* Origin City Section - Condition rendering based on flights_enabled */}
+                            {selectedPackageForBooking?.flights_enabled && (
+                                <div className="space-y-4">
+                                    <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
+                                        Starting From
+                                    </Label>
+                                    <div className="relative group">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF6B2B] z-10 pointer-events-none">
+                                            <Plane className="h-5 w-5" />
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-[#A0501E] font-bold">₹{pkg.price_per_person.toLocaleString()} × {travelers.adults + travelers.children}</span>
-                                            <span className="text-2xl font-black text-[#E8682A]">₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                        </div>
+                                        <Select
+                                            value={originCity}
+                                            onValueChange={setOriginCity}
+                                        >
+                                            <SelectTrigger className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus:ring-orange-500/30 focus:border-orange-300 transition-all shadow-inner">
+                                                <SelectValue placeholder="Select Origin City" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-white/90 backdrop-blur-xl border-orange-100 rounded-2xl shadow-xl">
+                                                {selectedPackageForBooking.flight_origin_cities?.map((city) => (
+                                                    <SelectItem key={city} value={city} className="font-bold text-slate-700 focus:bg-orange-50 focus:text-orange-600 rounded-xl m-1">
+                                                        {city}
+                                                    </SelectItem>
+                                                ))}
+                                                {(!selectedPackageForBooking.flight_origin_cities || selectedPackageForBooking.flight_origin_cities.length === 0) && (
+                                                    <SelectItem value="MAA" className="font-bold text-slate-700">Chennai (MAA)</SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                );
-                            })() : (
-                                <div className="mb-5 bg-[#FFE4B4]/30 border border-dashed border-orange-200/50 rounded-xl h-[40px] flex items-center justify-center text-center">
-                                    <p className="text-[10px] text-[#E8682A] font-bold italic flex items-center justify-center gap-2">
-                                        <span className="w-1 h-1 rounded-full bg-[#E8682A] animate-pulse" />
-                                        Select a date to continue
-                                    </p>
                                 </div>
                             )}
+                        </div>
 
-                            <div className="flex gap-3">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1 bg-white/40 hover:bg-white/80 border-[#F4A261]/40 text-[#7C3A10] font-bold rounded-full h-12 transition-all text-sm"
-                                    onClick={() => setIsBookingModalOpen(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    className="flex-1 font-bold rounded-full h-12 shadow-[0_8px_20px_rgba(232,104,42,0.25)] transition-all border-none text-white bg-gradient-to-r from-[#E8682A] to-[#C2440A] hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 text-sm"
-                                    disabled={!selectedDate || travelers.adults < 1}
-                                    onClick={() => {
-                                        if (selectedPackageForBooking) {
-                                            const url = new URL(`/plan-trip/${selectedPackageForBooking.slug}`, window.location.origin);
-                                            url.searchParams.set('date', selectedDate);
-                                            url.searchParams.set('adults', travelers.adults.toString());
-                                            url.searchParams.set('children', travelers.children.toString());
-                                            url.searchParams.set('infants', travelers.infants.toString());
-                                            url.searchParams.set('ref', 'listing');
-                                            router.push(url.toString());
-                                        }
-                                    }}
-                                >
-                                    Continue
-                                </Button>
-                            </div>
+                        {/* Modal Footer */}
+                        <div className="p-2 pt-4 mt-auto">
+                            <Button
+                                className="w-full h-auto py-3 bg-[#FF7D52] hover:bg-[#FF6B2B] text-white rounded-xl text-sm font-black shadow-[0_8px_16px_rgba(255,125,82,0.2)] transition-all active:scale-[0.98] border-none"
+                                disabled={!selectedDate || travelers.adults < 1 || (selectedPackageForBooking?.flights_enabled && !originCity)}
+                                onClick={() => {
+                                    if (selectedPackageForBooking) {
+                                        const url = new URL(`/plan-trip/${selectedPackageForBooking.slug}`, window.location.origin);
+                                        url.searchParams.set('date', selectedDate);
+                                        url.searchParams.set('adults', travelers.adults.toString());
+                                        url.searchParams.set('children', travelers.children.toString());
+                                        url.searchParams.set('infants', travelers.infants.toString());
+                                        if (originCity) url.searchParams.set('origin', originCity);
+                                        url.searchParams.set('ref', 'listing');
+                                        router.push(url.toString());
+                                    }
+                                }}
+                            >
+                                Start Planning Journey
+                            </Button>
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Footer */}
-            <footer className="bg-[#3A1A08] text-[#FFD4A8] py-16 px-4 mt-20 relative z-10">
-                <div className="container mx-auto max-w-7xl">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-                        <div>
-                            <div className="font-bold text-2xl text-[#E8682A] flex items-center gap-2 mb-6 font-display">
-                                <MapPin className="h-6 w-6 text-[#C2440A]" /> TourSaaS
-                            </div>
-                            <p className="text-sm text-orange-200/60 max-w-xs leading-relaxed">
-                                Experience the world through our warm, glassmorphic lens. Premium tours designed for the modern explorer.
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div>
-                                <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Quick Links</h4>
-                                <ul className="space-y-4 text-sm text-orange-200/80 font-medium">
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Find Packages</li>
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Popular Deals</li>
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Trip Stories</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Support</h4>
-                                <ul className="space-y-4 text-sm text-orange-200/80 font-medium">
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Help Center</li>
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Contact Us</li>
-                                    <li className="hover:text-[#E8682A] cursor-pointer transition-colors">Privacy Policy</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Follow Us</h4>
-                            <div className="flex gap-4">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#E8682A] hover:border-[#E8682A] transition-all cursor-pointer">
-                                        <div className="w-1 h-1 rounded-full bg-orange-200" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="pt-12 border-t border-white/5 text-center">
-                        <p className="text-[10px] text-orange-200/40 font-bold tracking-widest uppercase">
-                            © {new Date().getFullYear()} TourSaaS. All rights reserved. Built with warmth.
-                        </p>
-                    </div>
-                </div>
-            </footer>
+            {/* Footer Removed - Using Global Footer with fixed socials */}
 
             <style jsx global>{`
                 .glass-card {

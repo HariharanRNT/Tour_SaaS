@@ -29,6 +29,24 @@ api.interceptors.request.use((config) => {
     return config
 })
 
+// Add response interceptor to handle 401s
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('token')
+                localStorage.removeItem('user')
+                // Avoid infinite redirect if already on login
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login'
+                }
+            }
+        }
+        return Promise.reject(error)
+    }
+)
+
 // Auth API
 export const authAPI = {
     login: async (email: string, password: string) => {
@@ -286,8 +304,8 @@ export const activitiesAPI = {
         return response.data
     },
 
-    getDestinations: async () => {
-        const response = await api.get('/activities/destinations')
+    getDestinations: async (params?: { page?: number; limit?: number }) => {
+        const response = await api.get('/activities/destinations', { params })
         return response.data
     },
 
@@ -313,6 +331,26 @@ export const activitiesAPI = {
 
     deleteDestination: async (city: string) => {
         const response = await api.delete(`/activities/destination/${city}`)
+        return response.data
+    },
+
+    saveDestinationMetadata: async (data: {
+        name: string
+        country: string
+        image_url?: string
+        description?: string
+    }) => {
+        const response = await api.post('/activities/destinations/metadata', data)
+        return response.data
+    },
+
+    updateDestinationMetadata: async (oldName: string, data: {
+        name?: string
+        country?: string
+        image_url?: string
+        description?: string
+    }) => {
+        const response = await api.put(`/activities/destination/${encodeURIComponent(oldName)}`, data)
         return response.data
     }
 }

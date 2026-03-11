@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check } from 'lucide-react'
+import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check, Plane } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { packagesEnhancedAPI } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -45,6 +46,12 @@ interface PackageDetail {
     category: string
     max_group_size: number
     itinerary_by_day: DayItinerary[]
+    // Flight configuration
+    flights_enabled: boolean
+    flight_origin_cities: string[]
+    flight_cabin_class: string
+    flight_price_included: boolean
+    flight_baggage_note: string
 }
 
 const timeSlotConfig = {
@@ -70,6 +77,7 @@ export default function PackageDetailPage() {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState('')
     const [travelers, setTravelers] = useState({ adults: 2, children: 0, infants: 0 })
+    const [originCity, setOriginCity] = useState('')
     const [bookingConfirmed, setBookingConfirmed] = useState(false)
 
     useEffect(() => {
@@ -127,9 +135,40 @@ export default function PackageDetailPage() {
 
     const handleConfirmBooking = () => {
         if (!selectedDate || travelers.adults < 1) return
+
+        // Capture flight intent if enabled
+        if (packageData?.flights_enabled && !originCity) {
+            // In a real app, we'd show a specific validation error
+            return
+        }
+
+        const intent = {
+            packageId: packageData?.id,
+            slug: Array.isArray(params.slug) ? params.slug[0] : params.slug,
+            travelDate: selectedDate,
+            travelers: travelers,
+            originCity: originCity,
+            flightEnabled: packageData?.flights_enabled,
+            cabinClass: packageData?.flight_cabin_class
+        }
+
+        localStorage.setItem('booking_intent', JSON.stringify(intent))
+
         setBookingConfirmed(true)
         setIsBookingModalOpen(false)
-        // In a real app, this would also make an API call or add to cart
+
+        // Redirect to itinerary page with search params
+        const params_slug = Array.isArray(params.slug) ? params.slug[0] : params.slug
+        const queryParams = new URLSearchParams({
+            date: selectedDate,
+            adults: travelers.adults.toString(),
+            children: travelers.children.toString(),
+            infants: travelers.infants.toString(),
+            origin: originCity,
+            package_id: packageData?.id || ''
+        }).toString()
+
+        router.push(`/plan-trip/${params_slug}?${queryParams}`)
     }
 
     if (loading) {
@@ -462,6 +501,50 @@ export default function PackageDetailPage() {
                                     className="h-12 glass-input"
                                 />
                             </div>
+
+                            {/* Starting From (Origin) - Conditional */}
+                            {packageData?.flights_enabled && (
+                                <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-500">
+                                    <Label htmlFor="origin-city" className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                                        <Plane className="h-4 w-4 text-[#FF6B2B]" />
+                                        Starting From
+                                    </Label>
+                                    <div className="relative group/origin">
+                                        <Input
+                                            id="origin-city"
+                                            placeholder={packageData.flight_origin_cities.length > 0
+                                                ? `Search from ${packageData.flight_origin_cities.join(', ')}...`
+                                                : "Enter city or airport code..."
+                                            }
+                                            value={originCity}
+                                            onChange={(e) => setOriginCity(e.target.value.toUpperCase())}
+                                            className="h-12 glass-input border-[#FF6B2B]/20 focus:border-[#FF6B2B] pl-10"
+                                        />
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <MapPin className="h-4 w-4 text-gray-400 group-hover/origin:text-[#FF6B2B] transition-colors" />
+                                        </div>
+                                    </div>
+                                    {packageData.flight_origin_cities.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            <span className="text-[10px] uppercase font-bold text-gray-400">Recommended:</span>
+                                            {packageData.flight_origin_cities.map(city => (
+                                                <button
+                                                    key={city}
+                                                    onClick={() => setOriginCity(city)}
+                                                    className={cn(
+                                                        "px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all",
+                                                        originCity === city
+                                                            ? "bg-[#FF6B2B] text-white border-[#FF6B2B]"
+                                                            : "bg-white text-[#FF6B2B] border-[#FF6B2B]/30 hover:bg-[#FF6B2B]/5"
+                                                    )}
+                                                >
+                                                    {city}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Travelers Selection */}
                             <div className="space-y-3">

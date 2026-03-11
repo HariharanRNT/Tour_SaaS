@@ -123,7 +123,7 @@ export function DatePickerWithRange({
                         <ChevronDown className="ml-auto h-4 w-4 text-[#94A3B8] opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white border-[1.5px] border-[#E2E8F0] shadow-[0_20px_60px_rgba(0,0,0,0.15)] rounded-[16px]" align="end">
+                <PopoverContent className="w-auto p-0 bg-white/15 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15)] rounded-[24px] overflow-hidden" align="end">
                     <div className="p-4 pb-0 flex gap-4">
                         <Calendar
                             initialFocus
@@ -133,43 +133,43 @@ export function DatePickerWithRange({
                             onSelect={setTempDate}
                             numberOfMonths={2}
                             showOutsideDays={false}
-                            className="bg-white"
+                            className="bg-transparent"
                             classNames={{
                                 months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                                 month: "space-y-4",
                                 caption: "flex justify-center pt-1 relative items-center mb-2",
-                                caption_label: "text-[16px] font-bold text-[#0F172A]", // Month title
+                                caption_label: "text-[16px] font-black text-[#1a1a2e]", // Month title
                                 nav: "space-x-1 flex items-center",
                                 nav_button: cn(
-                                    "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 border-[1.5px] border-[#E2E8F0] rounded-[8px] hover:bg-[#EEF2FF] hover:border-[#6366F1] hover:text-[#6366F1] transition-all"
+                                    "h-8 w-8 bg-transparent p-0 opacity-70 hover:opacity-100 border border-white/20 rounded-full hover:bg-white/20 hover:border-white/40 transition-all flex items-center justify-center"
                                 ),
                                 nav_button_previous: "absolute left-1",
                                 nav_button_next: "absolute right-1",
                                 table: "w-full border-collapse space-y-1",
                                 head_row: "flex",
                                 head_cell:
-                                    "text-[#94A3B8] rounded-md w-9 font-bold text-[11px] uppercase tracking-[0.5px]", // Day headers
+                                    "text-[rgba(180,80,0,0.7)] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
                                 row: "flex w-full mt-2",
-                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-[#6366F1]/10 first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
+                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-[#F97316]/20 first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
                                 day: cn(
-                                    "h-9 w-9 p-0 font-medium aria-selected:opacity-100 rounded-[10px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all text-[#374151]"
+                                    "h-9 w-9 p-0 font-bold aria-selected:opacity-100 rounded-[10px] hover:bg-white/20 hover:text-[#1a1a2e] transition-all text-[#2d2d2d]"
                                 ),
                                 day_range_end: "day-range-end",
                                 day_selected:
-                                    "bg-[#6366F1] text-white hover:bg-[#6366F1] hover:text-white focus:bg-[#6366F1] focus:text-white shadow-[0_4px_12px_rgba(99,102,241,0.30)]", // Selected start/end
-                                day_today: "bg-[#EEF2FF] text-[#6366F1] font-bold after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[#6366F1] after:rounded-full", // Today
+                                    "bg-[#F97316] text-white hover:bg-[#F97316] hover:text-white focus:bg-[#F97316] focus:text-white shadow-[0_8px_16px_rgba(249,115,22,0.4)]", // Selected start/end
+                                day_today: "bg-orange-400/10 text-[#F97316] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[#F97316] after:rounded-full", // Today
                                 day_outside:
-                                    "day-outside text-[#D1D5DB] opacity-50 aria-selected:bg-transparent aria-selected:text-[#D1D5DB] aria-selected:opacity-30",
-                                day_disabled: "text-[#D1D5DB] opacity-50",
+                                    "day-outside text-[#2d2d2d] opacity-30 aria-selected:bg-transparent aria-selected:text-[#2d2d2d] aria-selected:opacity-20",
+                                day_disabled: "text-[#2d2d2d] opacity-20",
                                 day_range_middle:
-                                    "aria-selected:bg-[#6366F1]/10 aria-selected:text-[#4338CA] rounded-none", // Range middle
+                                    "aria-selected:bg-[#F97316]/20 aria-selected:text-[#F97316] rounded-none", // Range middle
                                 day_hidden: "invisible",
                             }}
                         />
                     </div>
 
                     {/* Presets */}
-                    <div className="px-5 pt-2 pb-4 border-b border-[#F1F5F9]">
+                    <div className="px-5 pt-2 pb-4 border-b border-white/10">
                         <div className="flex items-center gap-2">
                             <span className="text-[12px] font-semibold text-[#94A3B8] mr-2">Presets:</span>
                             {[
@@ -182,10 +182,10 @@ export function DatePickerWithRange({
                                     key={preset.value}
                                     onClick={() => handlePreset(preset.value)}
                                     className={cn(
-                                        "text-[12px] font-medium px-3 py-1.5 rounded-full border transition-all",
+                                        "text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all",
                                         isPresetActive(preset.value)
-                                            ? "bg-[#EEF2FF] border-[#6366F1] text-[#6366F1] font-semibold"
-                                            : "bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1]"
+                                            ? "bg-[#F97316] border-[#F97316] text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
+                                            : "bg-white/10 border-white/20 text-[#1a1a2e] hover:bg-white/20 hover:border-white/30"
                                     )}
                                 >
                                     {preset.label}
@@ -195,25 +195,25 @@ export function DatePickerWithRange({
                     </div>
 
                     {/* Bottom Action Bar */}
-                    <div className="p-4 bg-[#F8FAFC]/50 flex items-center justify-between border-t border-[#F1F5F9]">
-                        <div className="flex items-center gap-3 bg-white border border-[#E2E8F0] rounded-[10px] px-3 py-2 shadow-sm">
-                            <CalendarIcon className="h-4 w-4 text-[#6366F1]" />
-                            <div className="text-[13px] font-semibold text-[#374151]">
+                    <div className="p-4 bg-white/5 backdrop-blur-md flex items-center justify-between border-t border-white/10">
+                        <div className="flex items-center gap-3 bg-white/20 border border-white/30 rounded-[12px] px-4 py-2.5 shadow-inner">
+                            <CalendarIcon className="h-4 w-4 text-[#F97316]" />
+                            <div className="text-[13px] font-bold text-[#1a1a2e]">
                                 {tempDate?.from ? format(tempDate.from, "MMM dd, yyyy") : "Start"}
-                                <span className="mx-2 text-[#94A3B8]">→</span>
+                                <span className="mx-2 text-[#F97316]/60">→</span>
                                 {tempDate?.to ? format(tempDate.to, "MMM dd, yyyy") : "End"}
                             </div>
                             {tempDate?.from && tempDate?.to && (
-                                <span className="bg-[#EEF2FF] text-[#6366F1] text-[11px] font-bold px-2 py-0.5 rounded-full ml-2">
-                                    {differenceInDays(tempDate.to, tempDate.from) + 1} days
+                                <span className="bg-[#F97316] text-white text-[10px] font-black px-2 py-0.5 rounded-full ml-2 shadow-[0_2px_8px_rgba(249,115,22,0.3)]">
+                                    {differenceInDays(tempDate.to, tempDate.from) + 1} DAYS
                                 </span>
                             )}
                         </div>
                         <div className="flex gap-3">
-                            <Button variant="ghost" onClick={handleCancel} className="text-[#64748B] font-semibold hover:text-[#0F172A] hover:bg-transparent">
+                            <Button variant="ghost" onClick={handleCancel} className="text-[#1a1a2e] font-bold hover:text-black hover:bg-white/10 rounded-xl px-5">
                                 Cancel
                             </Button>
-                            <Button onClick={handleApply} className="bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold shadow-[0_4px_12px_rgba(99,102,241,0.30)]">
+                            <Button onClick={handleApply} className="bg-[#F97316] hover:bg-[#EA6C00] text-white font-black uppercase tracking-widest text-[12px] px-6 rounded-xl shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]">
                                 Apply Range
                             </Button>
                         </div>

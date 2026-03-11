@@ -53,6 +53,35 @@ class ActivityResponse(ActivityBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-class DestinationSummary(BaseModel):
-    city: str
-    activity_count: int
+class DestinationBase(BaseModel):
+    name: str
+    country: str
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    is_popular: bool = True
+    is_active: bool = True
+    display_order: int = 999
+
+class DestinationCreate(DestinationBase):
+    pass
+
+class DestinationUpdate(BaseModel):
+    name: Optional[str] = None
+    country: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    is_popular: Optional[bool] = None
+    is_active: Optional[bool] = None
+    display_order: Optional[int] = None
+
+class DestinationSummary(DestinationBase):
+    activity_count: int = 0
+    package_count: int = 0
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class PaginatedDestinationResponse(BaseModel):
+    destinations: List[DestinationSummary]
+    total_count: int
+    page: int
+    limit: int

@@ -24,14 +24,14 @@ export default function AgentLayout({
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-gradient-radial from-[#F0D4B8]/50 to-transparent rounded-full blur-[80px]" />
                 </div>
 
-                <div className="min-h-screen flex relative z-10 w-full">
+                <div className="flex min-h-[100vh] relative z-10 w-full bg-transparent">
                     <AdminSidebar
                         className={isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                         onCollapsedChange={setIsSidebarCollapsed}
                     />
 
                     <div
-                        className="flex-1 flex flex-col min-w-0 min-h-screen w-full transition-all duration-300 ease-in-out max-lg:!ml-0"
+                        className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
                         style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
                     >
                         {/* Fixed Header */}

@@ -279,7 +279,7 @@ export default function AdminBillingPage() {
                                 Subscription Management
                             </h1>
 
-                            <p className="text-slate-500 font-normal text-[15px] mt-2 font-['Plus_Jakarta_Sans',sans-serif]">
+                            <p className="text-[#1a1a2e] font-bold text-[15px] mt-2 font-['Plus_Jakarta_Sans',sans-serif] opacity-80">
                                 Manage subscription plans and view agent subscriptions
                             </p>
 
@@ -291,9 +291,9 @@ export default function AdminBillingPage() {
                                 setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
                                 setIsCreateOpen(true);
                             }}
-                            className="bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] hover:shadow-[0_4px_20px_rgba(99,102,241,0.4)] text-white px-6 h-[44px] rounded-[12px] font-bold text-[14px] tracking-[0.2px] transition-all active:scale-95 flex items-center gap-[6px] border-0"
+                            className="bg-gradient-to-r from-[#FF6B2B] to-[#FF8E53] hover:from-[#FF5A1F] hover:to-[#FF7D42] text-white px-8 h-[48px] rounded-[16px] font-black text-[14px] uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_24px_rgba(255,107,43,0.3)] flex items-center gap-3 border-0 group"
                         >
-                            <Plus className="h-[16px] w-[16px] stroke-[3px]" /> Create New Plan
+                            <Plus className="h-5 w-5 stroke-[3px] group-hover:rotate-90 transition-transform duration-300" /> Create New Plan
                         </Button>
                     </div>
                 </div>
@@ -304,80 +304,80 @@ export default function AdminBillingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[14px]">
                     {/* Total Subscriptions */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
-                            <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Total Subs</p>
-                                    <div className="absolute top-[20px] right-[20px] w-[36px] h-[36px] bg-[#EEF2FF] rounded-[10px] flex items-center justify-center text-[#6366F1]">
-                                        <Users className="h-[18px] w-[18px]" />
+                        <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
+                            <CardContent className="p-7">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-[#1a1a2e] uppercase tracking-[0.2em] opacity-70">Total Subs</p>
+                                    <div className="h-10 w-10 rounded-2xl bg-white/50 backdrop-blur-sm flex items-center justify-center border border-white/40 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                        <Users className="h-5 w-5 text-teal-600" />
                                     </div>
                                 </div>
-                                <div className="space-y-1 mt-[16px]">
-                                    <h4 className="text-[36px] font-extrabold text-[#0F172A] font-['Outfit'] tracking-[-1px] leading-none">{stats.totalSubscriptions}</h4>
-                                    <p className="text-[#94A3B8] font-normal text-[12px] mt-[4px]">All time</p>
+                                <div className="space-y-1">
+                                    <h4 className="text-[36px] font-black text-white font-['Outfit'] tracking-tighter leading-none">{stats.totalSubscriptions}</h4>
+                                    <p className="text-[10px] font-bold text-[#1a1a2e] uppercase tracking-widest opacity-60">All time</p>
                                 </div>
-                                <div className="h-[3px] bg-gradient-to-r from-[#6366F1] to-[#6366F1]/20 -mx-[20px] mt-[16px]" />
+                                <div className="absolute bottom-0 left-0 w-full h-[4px] bg-teal-400" />
                             </CardContent>
                         </Card>
                     </motion.div>
 
                     {/* Active Subscriptions */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
-                            <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Active Subs</p>
-                                    <div className="absolute top-[20px] right-[20px] w-[36px] h-[36px] bg-[#DCFCE7] rounded-[10px] flex items-center justify-center text-[#10B981]">
-                                        <Activity className="h-[18px] w-[18px]" />
+                        <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
+                            <CardContent className="p-7">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-[#1a1a2e] uppercase tracking-[0.2em] opacity-70">Active Subs</p>
+                                    <div className="h-10 w-10 rounded-2xl bg-white/50 backdrop-blur-sm flex items-center justify-center border border-white/40 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                        <Activity className="h-5 w-5 text-emerald-600" />
                                     </div>
                                 </div>
-                                <div className="space-y-1 mt-[16px]">
-                                    <h4 className="text-[36px] font-extrabold text-[#0F172A] font-['Outfit'] tracking-[-1px] leading-none">{stats.activeSubscriptions}</h4>
-                                    <p className="text-[#94A3B8] font-normal text-[12px] mt-[4px]">
+                                <div className="space-y-1">
+                                    <h4 className="text-[36px] font-black text-white font-['Outfit'] tracking-tighter leading-none">{stats.activeSubscriptions}</h4>
+                                    <p className="text-[10px] font-bold text-[#1a1a2e] uppercase tracking-widest opacity-60">
                                         {stats.totalSubscriptions > 0
                                             ? `${Math.round((stats.activeSubscriptions / stats.totalSubscriptions) * 100)}% of total`
                                             : '0% total'}
                                     </p>
                                 </div>
-                                <div className="h-[3px] bg-gradient-to-r from-[#10B981] to-[#10B981]/20 -mx-[20px] mt-[16px]" />
+                                <div className="absolute bottom-0 left-0 w-full h-[4px] bg-emerald-400" />
                             </CardContent>
                         </Card>
                     </motion.div>
 
                     {/* MRR */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
-                            <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Monthly Rev</p>
-                                    <div className="absolute top-[20px] right-[20px] w-[36px] h-[36px] bg-[#FFF7ED] rounded-[10px] flex items-center justify-center text-[#F97316]">
-                                        <DollarSign className="h-[18px] w-[18px]" />
+                        <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
+                            <CardContent className="p-7">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-[#1a1a2e] uppercase tracking-[0.2em] opacity-70">Monthly Rev</p>
+                                    <div className="h-10 w-10 rounded-2xl bg-white/50 backdrop-blur-sm flex items-center justify-center border border-white/40 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                        <DollarSign className="h-5 w-5 text-orange-600" />
                                     </div>
                                 </div>
-                                <div className="space-y-1 mt-[16px]">
-                                    <h4 className="text-[36px] font-extrabold text-[#0F172A] font-['Outfit'] tracking-[-1px] leading-none">₹{stats.mrr.toLocaleString()}</h4>
-                                    <p className="text-[#94A3B8] font-normal text-[12px] mt-[4px]">MRR from active plans</p>
+                                <div className="space-y-1">
+                                    <h4 className="text-[36px] font-black text-white font-['Outfit'] tracking-tighter leading-none">₹{stats.mrr.toLocaleString()}</h4>
+                                    <p className="text-[10px] font-bold text-[#1a1a2e] uppercase tracking-widest opacity-60">MRR from active plans</p>
                                 </div>
-                                <div className="h-[3px] bg-gradient-to-r from-[#F97316] to-[#F97316]/20 -mx-[20px] mt-[16px]" />
+                                <div className="absolute bottom-0 left-0 w-full h-[4px] bg-orange-400" />
                             </CardContent>
                         </Card>
                     </motion.div>
 
                     {/* Popular */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="group">
-                        <Card className="border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:translate-y-[-4px] rounded-[18px] overflow-hidden glass-card relative transition-all duration-300 min-h-[140px]">
-                            <CardContent className="p-[20px] pb-0 flex flex-col justify-between h-full">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-[#94A3B8] font-semibold text-[10px] uppercase tracking-[1px]">Most Popular</p>
-                                    <div className="absolute top-[20px] right-[20px] w-[36px] h-[36px] bg-[#FFFBEB] rounded-[10px] flex items-center justify-center text-[#F59E0B]">
-                                        <Star className="h-[18px] w-[18px]" />
+                        <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
+                            <CardContent className="p-7">
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className="text-[10px] font-black text-[#1a1a2e] uppercase tracking-[0.2em] opacity-70">Most Popular</p>
+                                    <div className="h-10 w-10 rounded-2xl bg-white/50 backdrop-blur-sm flex items-center justify-center border border-white/40 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                                        <Star className="h-5 w-5 text-amber-600" />
                                     </div>
                                 </div>
-                                <div className="space-y-1 mt-[16px]">
-                                    <h4 className="text-[32px] font-bold text-[#0F172A] truncate font-['Plus_Jakarta_Sans'] tracking-[0.5px] leading-none">{stats.mostPopularPlan || 'N/A'}</h4>
-                                    <p className="text-[#94A3B8] font-normal text-[13px] mt-[4px]">{stats.recentChanges} new this month</p>
+                                <div className="space-y-1">
+                                    <h4 className="text-[32px] font-black text-white font-['Plus_Jakarta_Sans'] tracking-tight leading-none truncate">{stats.mostPopularPlan || 'N/A'}</h4>
+                                    <p className="text-[10px] font-bold text-[#1a1a2e] uppercase tracking-widest opacity-60">{stats.recentChanges} new this month</p>
                                 </div>
-                                <div className="h-[3px] bg-gradient-to-r from-[#3B82F6] to-[#3B82F6]/20 -mx-[20px] mt-[16px]" />
+                                <div className="absolute bottom-0 left-0 w-full h-[4px] bg-amber-400" />
 
                             </CardContent>
                         </Card>
@@ -387,17 +387,17 @@ export default function AdminBillingPage() {
                 {/* Main Content Area */}
                 <div className="space-y-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                        <div className="glass-card border-[1.5px] border-[#F1F5F9] p-[6px] rounded-[12px] w-fit shadow-sm">
+                        <div className="bg-white/20 backdrop-blur-xl border border-white/30 p-[6px] rounded-[16px] w-fit shadow-xl">
                             <TabsList className="bg-transparent h-10 gap-1">
                                 {['plans', 'subscriptions', 'finance'].map((tab) => (
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
-                                        className="rounded-[10px] px-6 h-8 transition-all border-0 tracking-normal data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#6366F1] data-[state=active]:to-[#8B5CF6] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(99,102,241,0.3)] data-[state=active]:font-bold data-[state=inactive]:font-medium data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#64748B] text-[13px]"
+                                        className="rounded-[10px] px-6 h-8 transition-all border-0 tracking-normal data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-slate-400"
                                     >
-                                        {tab === 'plans' ? `Plans` : tab === 'subscriptions' ? 'Active Subscriptions' : 'Financials'}
-                                        {tab === 'plans' && <span className="ml-2 py-0.5 px-2 bg-slate-100 data-[state=active]:bg-white/25 rounded-full text-[11px] font-bold">{plans.length}</span>}
-                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-slate-100 data-[state=active]:bg-white/25 rounded-full text-[11px] font-bold">{stats.activeSubscriptions}</span>}
+                                        {tab === 'plans' ? `Plans` : tab === 'subscriptions' ? 'Subscriptions' : 'Financials'}
+                                        {tab === 'plans' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{plans.length}</span>}
+                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{stats.activeSubscriptions}</span>}
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
@@ -465,7 +465,7 @@ export default function AdminBillingPage() {
                                                     className="relative h-full min-h-[380px]"
                                                 >
                                                     <Card className={cn(
-                                                        "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-visible relative",
+                                                        "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-hidden relative",
                                                         isMostPopular && "border-[2px] border-[#F97316] bg-[rgba(249,115,22,0.02)]"
                                                     )}>
                                                         {isMostPopular && (
@@ -486,13 +486,13 @@ export default function AdminBillingPage() {
                                                         <CardHeader className="p-[24px] pb-[16px]">
                                                             <div className="flex justify-between items-start mb-[20px]">
                                                                 <div className="space-y-[8px]">
-                                                                    <h3 className="text-[17px] font-[700] text-[#0F172A] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight">{plan.name}</h3>
+                                                                    <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight" style={{ color: theme.main }}>{plan.name}</h3>
                                                                     <div className={cn(
-                                                                        "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[11px] font-[700] uppercase tracking-[0.5px] gap-[5px]",
-                                                                        plan.is_active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-slate-100 text-slate-400"
+                                                                        "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[10px] font-black uppercase tracking-[1px] gap-1.5 backdrop-blur-md border",
+                                                                        plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
                                                                     )}>
-                                                                        <div className={cn("w-[6px] h-[6px] rounded-full", plan.is_active ? "bg-[#16A34A]" : "bg-slate-400")} />
-                                                                        {plan.is_active ? '● Active' : '○ Inactive'}
+                                                                        <div className={cn("w-1.5 h-1.5 rounded-full", plan.is_active ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
+                                                                        {plan.is_active ? 'Active' : 'Inactive'}
                                                                     </div>
                                                                 </div>
                                                                 <DropdownMenu>
@@ -528,21 +528,22 @@ export default function AdminBillingPage() {
                                                         <CardContent className="p-[24px] pt-0 flex flex-col flex-1 gap-[20px]">
                                                             {/* Metric Grid */}
                                                             <div className="grid grid-cols-2 gap-3">
-                                                                <div className="bg-[#F8FAFC] p-[12px_16px] rounded-[10px] border border-[#F1F5F9]">
-                                                                    <p className="text-[10px] font-[600] text-[#94A3B8] uppercase tracking-[1px] mb-[6px]">BOOKINGS</p>
-                                                                    <p className="text-[22px] font-[800] text-[#0F172A] font-['Outfit']">
+                                                                <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/limit transition-all hover:bg-white/10">
+                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Bookings</p>
+                                                                    <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/limit:scale-105 transition-transform origin-left">
                                                                         {plan.booking_limit === -1 || plan.booking_limit === 0 ? (
-                                                                            <span className="text-[28px] text-[#6366F1]">∞</span>
+                                                                            <span className="text-[28px] drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">∞</span>
                                                                         ) : (
                                                                             plan.booking_limit
                                                                         )}
                                                                     </p>
                                                                 </div>
-                                                                <div className="bg-[#F8FAFC] p-[12px_16px] rounded-[10px] border border-[#F1F5F9]">
-                                                                    <p className="text-[10px] font-[600] text-[#94A3B8] uppercase tracking-[1px] mb-[6px]">SUBSCRIBERS</p>
-                                                                    <p className="text-[22px] font-[800] text-[#0F172A] font-['Outfit']">{subscriberCount}</p>
+                                                                <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/subs transition-all hover:bg-white/10">
+                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Subscribers</p>
+                                                                    <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/subs:scale-105 transition-transform origin-left">{subscriberCount}</p>
                                                                 </div>
                                                             </div>
+                                                            <div className="hidden">{/* Debug Info */}</div>
 
                                                             {/* Features */}
                                                             <div className="flex-1 flex flex-col">
@@ -567,16 +568,18 @@ export default function AdminBillingPage() {
                                                                 })()}
                                                             </div>
 
-                                                            <div className="mt-auto">
+                                                            <div className="mt-auto pt-4 border-t border-white/10">
                                                                 <Button
                                                                     onClick={() => openEditModal(plan)}
-                                                                    className="w-full h-[44px] rounded-[10px] font-[600] text-[14px] text-white transition-all hover:translate-y-[-2px] border-0"
+                                                                    className="w-full h-[46px] rounded-2xl font-black text-[12px] uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] border-0 overflow-hidden relative group/btn shadow-xl"
                                                                     style={{
-                                                                        background: `linear-gradient(135deg, ${theme.main}, ${theme.dark})`,
-                                                                        boxShadow: `0 4px 12px ${theme.main}30`
+                                                                        background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`,
                                                                     }}
                                                                 >
-                                                                    Edit Plan
+                                                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                                                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                                                        <Edit className="h-4 w-4" /> Edit Plan
+                                                                    </span>
                                                                 </Button>
                                                             </div>
                                                         </CardContent>
@@ -601,7 +604,7 @@ export default function AdminBillingPage() {
                                             <div className="relative w-72">
                                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[16px] w-[16px] text-[#94A3B8]" />
                                                 <Input
-                                                    className="pl-10 h-[42px] rounded-[12px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition-all font-semibold text-[13px] placeholder:text-[#94A3B8]"
+                                                    className="pl-10 h-[42px] rounded-[12px] border-white/20 bg-white/10 backdrop-blur-md focus:bg-white/20 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all font-semibold text-[13px] text-white placeholder:text-slate-400"
                                                     placeholder="Search by agent or ID..."
                                                     value={searchQuery}
                                                     onChange={e => setSearchQuery(e.target.value)}
@@ -628,60 +631,83 @@ export default function AdminBillingPage() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {subscriptions
-                                                    .filter(sub => sub.status === 'active')
-                                                    .map((sub, i) => (
-                                                        <TableRow key={sub.id} className="border-b border-slate-50 hover:bg-white/5 group transition-all h-20">
-                                                            <TableCell className="pl-8">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className={cn(
-                                                                        "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs",
-                                                                        `bg-indigo-50 text-indigo-600`
+                                                {subscriptions.filter(sub => sub.status === 'active').length === 0 ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={7} className="h-72 text-center">
+                                                            <div className="flex flex-col items-center justify-center gap-4 opacity-50">
+                                                                <div className="p-4 bg-white/5 rounded-full border border-white/10">
+                                                                    <CreditCard className="h-10 w-10 text-slate-400" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-white font-black uppercase text-[12px] tracking-widest">No active subscriptions yet</p>
+                                                                    <p className="text-slate-400 text-xs">When agents subscribe to plans, they will appear here.</p>
+                                                                </div>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="mt-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 rounded-xl"
+                                                                    onClick={() => setActiveTab('plans')}
+                                                                >
+                                                                    View Available Plans
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : (
+                                                    subscriptions
+                                                        .filter(sub => sub.status === 'active')
+                                                        .map((sub, i) => (
+                                                            <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
+                                                                <TableCell className="pl-8">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={cn(
+                                                                            "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs",
+                                                                            `bg-indigo-400/10 text-indigo-300 border border-indigo-400/20`
+                                                                        )}>
+                                                                            {sub.user_id.substring(0, 2).toUpperCase()}
+                                                                        </div>
+                                                                        <div className="space-y-0.5">
+                                                                            <p className="font-bold text-white text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">{sub.user_id}</p>
+                                                                            <p className="text-[11px] text-slate-400 font-semibold tracking-[0.5px]">ID: {sub.id.substring(0, 8)}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="p-4">
+                                                                    <span className="text-[13px] font-medium text-slate-300 font-['Plus_Jakarta_Sans',sans-serif]">{sub.plan.name}</span>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <span className={cn(
+                                                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                                                                        sub.status === 'active' ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
                                                                     )}>
-                                                                        {sub.user_id.substring(0, 2).toUpperCase()}
+                                                                        {sub.status}
+                                                                    </span>
+                                                                </TableCell>
+                                                                <TableCell className="text-slate-300 font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
+                                                                <TableCell className="text-slate-300 font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.end_date), 'MMM dd, yyyy')}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                                            <div className="h-full bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
+                                                                        </div>
+                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
                                                                     </div>
-                                                                    <div className="space-y-0.5">
-                                                                        <p className="font-bold text-[#0F172A] text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">{sub.user_id}</p>
-                                                                        <p className="text-[11px] text-[#94A3B8] font-semibold tracking-[0.5px]">ID: {sub.id.substring(0, 8)}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="p-4">
-                                                                <span className="text-[13px] font-medium text-[#64748B] font-['Plus_Jakarta_Sans',sans-serif]">{sub.plan.name}</span>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <span className={cn(
-                                                                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                                                    sub.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
-                                                                )}>
-                                                                    {sub.status}
-                                                                </span>
-                                                            </TableCell>
-                                                            <TableCell className="text-[#64748B] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
-                                                            <TableCell className="text-[#64748B] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.end_date), 'MMM dd, yyyy')}</TableCell>
-                                                            <TableCell>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
-                                                                    </div>
-                                                                    <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="pr-8 text-right">
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-slate-100 h-9 w-9">
-                                                                            <MoreVertical className="h-4 w-4 text-slate-400" />
-                                                                        </Button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl min-w-[150px]">
-                                                                        <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs">Manage Access</DropdownMenuItem>
-                                                                        <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs text-orange-600">Suspend Plan</DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
+                                                                </TableCell>
+                                                                <TableCell className="pr-8 text-right">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/10 h-9 w-9">
+                                                                                <MoreVertical className="h-4 w-4 text-slate-400" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl min-w-[150px]">
+                                                                            <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs text-white hover:bg-white/10">Manage Access</DropdownMenuItem>
+                                                                            <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs text-red-400 hover:bg-red-400/10">Suspend Plan</DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                )}
                                             </TableBody>
                                         </Table>
                                     </div>
@@ -703,8 +729,8 @@ export default function AdminBillingPage() {
                                             return (revenue > 0 || idx < 5) && (
                                                 <div key={plan.id} className="flex items-center gap-4">
                                                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                                                    <div className="w-32 text-[13px] font-medium text-[#64748B] truncate font-['Plus_Jakarta_Sans',sans-serif]">{plan.name}</div>
-                                                    <div className="flex-1 h-2 bg-transparent rounded-full overflow-hidden">
+                                                    <div className="w-32 text-[13px] font-medium text-slate-300 truncate font-['Plus_Jakarta_Sans',sans-serif]">{plan.name}</div>
+                                                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                         <motion.div
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${Math.min(100, (revenue / (stats.mrr * 12 || 1)) * 100)}%` }}
@@ -712,23 +738,35 @@ export default function AdminBillingPage() {
                                                             style={{ backgroundColor: color }}
                                                         />
                                                     </div>
-                                                    <div className="w-24 text-right text-[14px] font-extrabold text-[#0F172A] font-['Outfit']">₹{Math.floor(revenue).toLocaleString('en-IN')}</div>
+                                                    <div className="w-24 text-right text-[14px] font-black text-white font-['Outfit'] tracking-tight">₹{Math.floor(revenue).toLocaleString('en-IN')}</div>
                                                 </div>
                                             );
                                         })}
+
+                                        <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Estimated Revenue</div>
+                                            <div className="text-[20px] font-black text-orange-400 font-['Outfit'] tracking-tight">
+                                                ₹{plans.reduce((sum, p) => sum + (subscriptions.filter(s => s.plan.id === p.id).length * Number(p.price)), 0).toLocaleString('en-IN')}
+                                            </div>
+                                        </div>
                                     </div>
                                 </Card>
 
                                 <div className="space-y-4">
                                     {[
-                                        { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-500' },
-                                        { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected', color: 'text-indigo-500' },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-500' }
+                                        { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
+                                        { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
-                                        <Card key={i} className="border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] glass-card p-6 transition-all hover:translate-y-[-2px]">
-                                            <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-[1.2px] mb-4">{item.label}</div>
-                                            <div className="text-[24px] font-extrabold text-[#0F172A] font-['Outfit'] mb-1 tracking-[-0.5px]">{item.value}</div>
-                                            <div className={cn("text-[12px] font-semibold", item.color)}>{item.sub}</div>
+                                        <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{item.label}</div>
+                                                <div className={cn("p-2 rounded-xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500", item.color)}>
+                                                    <item.icon className="h-4 w-4" />
+                                                </div>
+                                            </div>
+                                            <div className="text-[26px] font-black text-white font-['Outfit'] mb-1 tracking-tighter leading-none">{item.value}</div>
+                                            <div className={cn("text-[11px] font-black uppercase tracking-widest mt-2", item.color)}>{item.sub}</div>
                                         </Card>
                                     ))}
                                 </div>

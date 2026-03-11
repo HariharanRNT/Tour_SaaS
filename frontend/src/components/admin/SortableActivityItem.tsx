@@ -67,23 +67,23 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
             ref={setNodeRef}
             style={{
                 ...style,
-                background: 'rgba(255, 255, 255, 0.45)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.65)',
+                background: 'rgba(255, 255, 255, 0.18)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 borderRadius: '16px',
             }}
-            className={`relative shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden group touch-none`}
+            className={`relative shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group touch-none hover:translate-x-1`}
         >
             {/* Left Color Accent Border */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${accent} rounded-l-2xl`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-[#FF6B2B] rounded-l-2xl`} />
 
             <div className="flex items-start gap-3 p-4 pl-5">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
                     {...listeners}
-                    className="mt-1 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/60 transition-colors flex-shrink-0"
+                    className="mt-1 cursor-grab active:cursor-grabbing text-[#FF6B2B]/40 hover:text-[#FF6B2B] flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/30 transition-colors flex-shrink-0"
                 >
                     <GripVertical className="h-4 w-4" />
                 </div>
@@ -92,25 +92,25 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 <div className="flex-1 min-w-0">
                     {/* Title row */}
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="text-base">{typeIcon}</span>
-                        <h4 className="font-bold text-slate-800 leading-tight text-sm flex-1">{activity.title}</h4>
+                        <span className="text-base">✨</span>
+                        <h4 className="font-bold text-[#5C2500] leading-tight text-[15px] font-serif tracking-tight flex-1">{activity.title}</h4>
                     </div>
 
                     {/* Metadata chips */}
                     <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
                         {(activity.start_time || activity.end_time) && (
-                            <span className="flex items-center gap-1 font-medium text-slate-600 shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.40)', border: '1px solid rgba(255, 255, 255, 0.55)', borderRadius: '100px', padding: '4px 10px' }}>
-                                <Clock className="w-3 h-3 text-violet-500" />
+                            <span className="flex items-center gap-1.5 font-bold text-[#A0522D] shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
+                                <Clock className="w-3 h-3 text-[#FF6B2B]" />
                                 {activity.start_time || '?'} - {activity.end_time || '?'}
-                                {duration && <span className="text-slate-400 font-normal">({duration})</span>}
+                                {duration && <span className="text-[#A0522D]/60 font-medium">({duration})</span>}
                             </span>
                         )}
-                        <span className="flex items-center gap-1 shadow-sm text-slate-500" style={{ background: 'rgba(255, 255, 255, 0.40)', border: '1px solid rgba(255, 255, 255, 0.55)', borderRadius: '100px', padding: '4px 10px' }}>
-                            <MapPin className="w-3 h-3 text-rose-400" />
+                        <span className="flex items-center gap-1.5 shadow-sm text-[#A0522D] font-bold" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
+                            <MapPin className="w-3 h-3 text-[#FF6B2B]" />
                             {activity.location || 'Location TBA'}
                         </span>
-                        <span className="flex items-center gap-1 shadow-sm text-emerald-700 font-semibold" style={{ background: 'rgba(255, 255, 255, 0.40)', border: '1px solid rgba(255, 255, 255, 0.55)', borderRadius: '100px', padding: '4px 10px' }}>
-                            <span className="text-emerald-500">₹</span>
+                        <span className="flex items-center gap-1.5 shadow-sm text-emerald-700 font-black" style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.20)', borderRadius: '100px', padding: '4px 12px' }}>
+                            <span className="text-emerald-600">₹</span>
                             {activity.price ? activity.price : 'Included'}
                         </span>
                     </div>
@@ -132,9 +132,9 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                     </div>
 
                     {/* Feature tags */}
-                    <div className="flex items-center gap-2 mt-2.5">
-                        <span className="text-[10px] uppercase font-bold tracking-wider rounded-full shadow-sm" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', border: '1px solid rgba(34, 197, 94, 0.35)', padding: '2px 8px' }}>✓ GUIDE</span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider rounded-full shadow-sm" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', border: '1px solid rgba(34, 197, 94, 0.35)', padding: '2px 8px' }}>✓ TICKETS</span>
+                    <div className="flex items-center gap-2 mt-3">
+                        <span className="text-[9px] uppercase font-black tracking-widest rounded-full shadow-sm" style={{ background: 'rgba(16, 185, 129, 0.10)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.20)', padding: '3px 10px' }}>✓ GUIDE</span>
+                        <span className="text-[9px] uppercase font-black tracking-widest rounded-full shadow-sm" style={{ background: 'rgba(16, 185, 129, 0.10)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.20)', padding: '3px 10px' }}>✓ TICKETS</span>
                     </div>
 
                     {/* Activity Images */}
@@ -168,32 +168,32 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 w-7 p-0 hover:bg-violet-100 hover:text-violet-700 rounded-full bg-white/50"
+                    className="h-8 w-8 p-0 hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B] rounded-xl bg-white/20 transition-all duration-300"
                     onClick={() => onEdit(activity)}
                     title="Edit"
                 >
-                    <Edit className="h-3.5 w-3.5" />
+                    <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 w-7 p-0 hover:bg-sky-100 hover:text-sky-700 rounded-full bg-white/50"
+                    className="h-8 w-8 p-0 hover:bg-sky-100/50 hover:text-sky-700 rounded-xl bg-white/20 transition-all duration-300"
                     onClick={() => {
                         const duplicate = { ...activity, id: undefined, title: `${activity.title} (Copy)` }
                         onEdit(duplicate)
                     }}
                     title="Duplicate"
                 >
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy className="h-4 w-4" />
                 </Button>
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 w-7 p-0 hover:bg-rose-100 hover:text-rose-600 rounded-full bg-white/50 border border-transparent shadow-sm hover:border-rose-200"
+                    className="h-8 w-8 p-0 hover:bg-rose-100/50 hover:text-rose-600 rounded-xl bg-white/20 border border-transparent transition-all duration-300 shadow-sm hover:border-rose-200"
                     onClick={() => activity.id && onDelete(activity.id)}
                     title="Remove from slot"
                 >
-                    <X className="h-4 w-4" />
+                    <X className="h-4.5 w-4.5" />
                 </Button>
             </div>
         </div>

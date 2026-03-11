@@ -123,7 +123,13 @@ async def create_agent_package(
             feature_image_url=package_data.feature_image_url,
             package_mode=package_data.package_mode,
             destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
-            activities=json.dumps(package_data.activities) if package_data.activities else "[]"
+            activities=json.dumps(package_data.activities) if package_data.activities else "[]",
+            # Flight Configuration
+            flights_enabled=package_data.flights_enabled,
+            flight_origin_cities=json.dumps(package_data.flight_origin_cities) if package_data.flight_origin_cities else "[]",
+            flight_cabin_class=package_data.flight_cabin_class,
+            flight_price_included=package_data.flight_price_included,
+            flight_baggage_note=package_data.flight_baggage_note
         )
         
         db.add(new_package)
@@ -202,7 +208,7 @@ async def update_agent_package(
     
     # Update fields
     update_data = package_data.dict(exclude_unset=True)
-    json_fields = ['included_items', 'excluded_items', 'destinations', 'activities']
+    json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
     
     for field, value in update_data.items():
         if field in json_fields and value is not None:

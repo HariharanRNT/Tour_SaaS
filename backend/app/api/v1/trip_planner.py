@@ -12,7 +12,7 @@ import json
 
 from app.database import get_db
 from app.api.deps import get_optional_current_user, get_current_domain
-from app.models import Package, PackageStatus, ItineraryItem, Agent
+from app.models import Package, PackageStatus, ItineraryItem, Agent, Destination
 from app.schemas import TripSessionUpdate
 
 logger = logging.getLogger(__name__)
@@ -174,14 +174,10 @@ async def get_popular_destinations(
     if not pkg_destinations:
         return []
 
-    # 3. Enrich with popular_destinations table data if available
-    # We'll do this in memory or with a separate query for simplicity/flexibility
-    pd_stmt = select(
-        text("id, name, description, image_url, display_order")
-    ).select_from(text("popular_destinations")).where(text("is_active = TRUE"))
-    
+    # 3. Enrich with Destination table data if available
+    pd_stmt = select(Destination).where(Destination.is_active == True)
     pd_result = await db.execute(pd_stmt)
-    pd_data = {row[1].lower(): row for row in pd_result.fetchall()}
+    pd_data = {dest.name.lower(): dest for dest in pd_result.scalars().all()}
 
     response = []
     
@@ -243,12 +239,12 @@ async def get_popular_destinations(
 
         if master_match:
             response.append({
-                "id": str(master_match[0]),  # id
-                "name": master_match[1],  # name
-                "country": country_name,  # Use country from package data
-                "description": master_match[2] or destination_data["description"],  # description
-                "image_url": master_match[3] or destination_data["image_url"],  # image_url
-                "display_order": master_match[4],  # display_order
+                "id": str(master_match.id),
+                "name": master_match.name,
+                "country": master_match.country or country_name,
+                "description": master_match.description or destination_data["description"],
+                "image_url": master_match.image_url or destination_data["image_url"],
+                "display_order": master_match.display_order,
                 "min_price": destination_data["min_price"],
                 "min_duration": destination_data["min_duration"],
                 "max_duration": destination_data["max_duration"],
@@ -638,9 +634,11 @@ async def get_trip_session(
         SELECT t.id, t.destination, t.duration_days, t.duration_nights, t.start_date,
                t.travelers, t.preferences, t.matched_package_id, t.itinerary, t.status,
                t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details,
-               a.gst_inclusive, a.gst_percentage
+               a.gst_inclusive, a.gst_percentage, p.feature_image_url, d.image_url as destination_image_url,
+               p.gst_mode, p.gst_percentage as package_gst_percentage, p.gst_applicable
         FROM trip_planning_sessions t
         LEFT JOIN packages p ON t.matched_package_id = p.id
+        LEFT JOIN popular_destinations d ON t.destination = d.name
         LEFT JOIN agents a ON p.created_by = a.id
         WHERE t.id = :session_id AND t.status = 'active' AND t.expires_at > NOW()
     """)
@@ -651,6 +649,12 @@ async def get_trip_session(
     if not row:
         raise HTTPException(status_code=404, detail="Session not found or expired")
     
+    # helper for indexing row by field name for easier maintenance
+    # but row is a tuple, so we use indices
+    
+    # 15: a.gst_inclusive, 16: a.gst_percentage, 
+    # 19: p.gst_mode, 20: p.gst_percentage, 21: p.gst_applicable
+
     # Helper to safe parse JSON
     def parse_json_field(field):
         if isinstance(field, str):
@@ -667,9 +671,21 @@ async def get_trip_session(
     flight_details = parse_json_field(row[14])
     
     # GST Settings Logic
-    # 1. Default to Package Creator's settings (from join)
+    # 1. Start with Package specific settings if applicable
+    p_gst_applicable = row[21]
+    p_gst_mode = row[19]
+    p_gst_percentage = row[20]
+
+    # Initialize with agent defaults (package creator's agent)
     gst_inclusive = row[15]
     gst_percentage = row[16]
+
+    # Override with package-specific settings if they exist
+    if p_gst_applicable is not None:
+        if p_gst_mode:
+            gst_inclusive = (p_gst_mode == 'inclusive')
+        if p_gst_percentage is not None:
+            gst_percentage = p_gst_percentage
     
     # 2. If accessed via a custom domain, prefer the Domain Agent's settings
     # This ensures that when an agent sells a package (even a system package), 
@@ -724,6 +740,8 @@ async def get_trip_session(
         "expires_at": row[11].isoformat(),
         "price_per_person": float(row[12]) if row[12] else 0,
         "package_description": row[13] if row[13] else "",
+        "feature_image_url": row[17],
+        "destination_image_url": row[18],
         "flight_details": flight_details,
         "gst_inclusive": gst_inclusive,
         "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0

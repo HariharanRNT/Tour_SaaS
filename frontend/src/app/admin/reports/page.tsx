@@ -25,8 +25,8 @@ export default function ReportsPage() {
                 <div className="container mx-auto px-10 py-8">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                         <div>
-                            <h1 className="text-[28px] font-bold text-[#0F172A] tracking-[-0.3px] mb-2">Reports & Analytics</h1>
-                            <p className="text-[#64748B] text-[15px] font-normal">Comprehensive insights into subscriptions, revenue, and bookings</p>
+                            <h1 className="text-[28px] font-black text-[#1a1a2e] tracking-[-0.3px] mb-2 font-['Outfit']">Reports & Analytics</h1>
+                            <p className="text-[#1a1a2e] text-[15px] font-bold opacity-70">Comprehensive insights into subscriptions, revenue, and bookings</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <DatePickerWithRange date={dateRange} setDate={setDateRange} />
@@ -43,29 +43,31 @@ export default function ReportsPage() {
             <div className="container mx-auto px-10 py-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                     {/* Tab Navigation */}
-                    <TabsList className="glass-card border-[1.5px] border-[#F1F5F9] rounded-[12px] p-[5px] h-auto inline-flex shadow-sm">
-                        <TabsTrigger
-                            value="subscriptions"
-                            className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#6366F1] data-[state=active]:to-[#8B5CF6] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(99,102,241,0.25)] text-[#64748B] font-medium text-[13px] px-6 py-2.5 rounded-[9px] transition-all gap-2"
-                        >
-                            <BarChart3 className="h-3.5 w-3.5" />
-                            Subscription Reports
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="revenue"
-                            className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#10B981] data-[state=active]:to-[#34D399] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(16,185,129,0.25)] text-[#64748B] font-medium text-[13px] px-6 py-2.5 rounded-[9px] transition-all gap-2"
-                        >
-                            <TrendingUp className="h-3.5 w-3.5" />
-                            Revenue Reports
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="bookings"
-                            className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#F59E0B] data-[state=active]:to-[#FCD34D] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(245,158,11,0.25)] text-[#64748B] font-medium text-[13px] px-6 py-2.5 rounded-[9px] transition-all gap-2"
-                        >
-                            <Calendar className="h-3.5 w-3.5" />
-                            Booking Reports
-                        </TabsTrigger>
-                    </TabsList>
+                    <div className="bg-white/20 backdrop-blur-xl border border-white/30 p-[6px] rounded-[16px] w-fit shadow-xl">
+                        <TabsList className="bg-transparent h-10 gap-1 flex">
+                            <TabsTrigger
+                                value="subscriptions"
+                                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#1a1a2e]/60 rounded-[10px] px-6 h-8 transition-all"
+                            >
+                                <BarChart3 className="h-4 w-4 mr-2" />
+                                Subscriptions
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="revenue"
+                                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#1a1a2e]/60 rounded-[10px] px-6 h-8 transition-all"
+                            >
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                Revenue
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="bookings"
+                                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#1a1a2e]/60 rounded-[10px] px-6 h-8 transition-all"
+                            >
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Bookings
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
                     {/* Tab Content */}
                     <TabsContent value="subscriptions" className="space-y-6 focus-visible:outline-none">

@@ -46,6 +46,7 @@ import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calenda
 interface Package {
     id: string
     title: string
+    slug: string
     destination: string
     duration_days: number
     price_per_person: number
@@ -595,7 +596,7 @@ export default function AdminPackagesPage() {
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem
                                                                         className="rounded-lg focus:bg-transparent py-2.5 px-3 cursor-pointer"
-                                                                        onClick={() => window.open(`/packages/${pkg.id}`, '_blank')}
+                                                                        onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}
                                                                     >
                                                                         <Eye className="mr-2 h-4 w-4 text-gray-500" />
                                                                         Preview Listing
@@ -662,7 +663,7 @@ export default function AdminPackagesPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}>Edit</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => window.open(`/packages/${pkg.id}`, '_blank')}>Preview</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}>Preview</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>Delete</DropdownMenuItem>
                                                     </DropdownMenuContent>

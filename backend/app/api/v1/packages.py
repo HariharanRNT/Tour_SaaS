@@ -103,33 +103,72 @@ async def get_package_dates(
     ]
 
 
-@router.get("/config/destinations/popular", response_model=List[str])
+
+@router.get("/config/destinations/popular", response_model=List[dict])
 async def get_popular_destinations(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
     domain: str = Depends(get_current_domain)
 ):
     """
-    Get list of popular destinations based on packages marked as popular.
+    Get list of popular destinations based on packages marked as is_public=True.
+    Returns deduplicated list by destination with the most recently updated package image.
     """
-    query = select(Package.destination).distinct().where(
+    from sqlalchemy import func as sqlfunc
+
+    # Build the base query — select all public, published packages
+    query = select(Package).where(
         Package.status == PackageStatus.PUBLISHED,
-        Package.is_popular_destination == True
+        Package.is_public == True
     )
 
-    # 1. Filter by Agent
+    # Tenant isolation
     if current_user and current_user.agent_id:
         query = query.where(Package.created_by == current_user.agent_id)
     elif not current_user or (current_user and current_user.role != UserRole.ADMIN):
         agent_subquery = select(Agent.user_id).where(Agent.domain == domain).scalar_subquery()
         query = query.where(Package.created_by == agent_subquery)
 
+    # Order by most recently updated so we pick the best image per destination
+    from sqlalchemy.orm import selectinload
+    query = query.options(selectinload(Package.images)).order_by(Package.updated_at.desc().nullslast(), Package.created_at.desc())
+
     result = await db.execute(query)
-    destinations = result.scalars().all()
-    
-    # If no popular destinations set, maybe fallback to just any published destinations?
-    # For now, let's return what we found. The frontend can handle empty list.
+    packages = result.scalars().all()
+
+    # Deduplicate by destination — keep first occurrence (most recently updated)
+    seen: dict = {}
+    for pkg in packages:
+        dest_key = pkg.destination.strip().lower()
+        if dest_key not in seen:
+            seen[dest_key] = pkg
+
+    # Build response objects
+    destinations = []
+    for pkg in seen.values():
+        # Count total public packages for this destination
+        count_q = select(sqlfunc.count(Package.id)).where(
+            Package.status == PackageStatus.PUBLISHED,
+            Package.is_public == True,
+            Package.destination.ilike(f"%{pkg.destination}%")
+        )
+        count_result = await db.execute(count_q)
+        pkg_count = count_result.scalar() or 1
+
+        # Image priority: feature_image_url > first package image > None
+        image_url = pkg.feature_image_url
+        if not image_url and pkg.images:
+            image_url = pkg.images[0].image_url if pkg.images else None
+
+        destinations.append({
+            "destination": pkg.destination,
+            "image_url": image_url,
+            "package_count": pkg_count,
+            "slug": pkg.slug,
+        })
+
     return destinations
+
 
 
 @router.get("/config/suggestions", response_model=List[dict])
@@ -220,7 +259,8 @@ async def list_packages(
     domain: str = Depends(get_current_domain)
 ):
     """List all packages with filters"""
-    query = select(Package).where(Package.status == status)
+    from sqlalchemy.orm import selectinload
+    query = select(Package).options(selectinload(Package.dest_metadata)).where(Package.status == status)
 
     # Restrict packages based on Domain Context
     # 1. If User is logged in as Customer, they are bound to their Agent (via agent_id)
@@ -354,11 +394,12 @@ async def list_packages(
     query = query.options(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),
-        selectinload(Package.availability)
+        selectinload(Package.availability),
+        selectinload(Package.dest_metadata)
     )
     
     result = await db.execute(query)
-    packages = result.scalars().all()
+    packages = result.scalars().unique().all()
     
     return PackageListResponse(
         packages=[PackageResponse.model_validate(p) for p in packages],
@@ -410,6 +451,7 @@ async def get_cheapest_package(
         return {
             'id': str(package.id),
             'title': package.title,
+            'slug': package.slug,
             'destination': package.destination,
             'price_per_person': float(package.price_per_person)
         }

@@ -6,9 +6,16 @@ from app.config import settings
 from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, reports, webhooks, theme, activities
 import traceback
 import logging
+import sys
+
+# Configure root logger to guarantee output to terminal for all warnings and above
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
 logger = logging.getLogger(__name__)
-# Trigger reload
 
 # Create FastAPI app
 app = FastAPI(

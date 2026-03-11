@@ -11,13 +11,16 @@ import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import {
     User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle2, XCircle,
-    ShieldCheck, ArrowRight, Plane, AlertCircle, Check, X
+    ShieldCheck, ArrowRight, Plane, AlertCircle, Check, X,
+    ChevronRight, Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 
 export default function RegisterPage() {
     const router = useRouter()
+    const { login: authLogin } = useAuth()
 
     // Form State
     const [formData, setFormData] = useState({
@@ -97,8 +100,7 @@ export default function RegisterPage() {
                 last_name: formData.last_name,
                 phone: formData.phone
             })
-            localStorage.setItem('token', data.access_token)
-            localStorage.setItem('user', JSON.stringify(data.user))
+            authLogin(data.access_token, data.user)
             router.push('/')
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Registration failed. Please try again.')
@@ -108,259 +110,266 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-blue-50/20 to-transparent -z-10" />
-            <div className="absolute top-20 right-20 w-64 h-64 bg-purple-100/50 rounded-full blur-[100px] opacity-40 -z-10" />
-            <div className="absolute bottom-20 left-20 w-72 h-72 bg-blue-100/50 rounded-full blur-[100px] opacity-40 -z-10" />
+        <div className="min-h-screen bg-[#FFF3E8] flex w-full relative overflow-x-hidden noise-overlay">
+            {/* Ambient Background Orbs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#FFD8B5]/60 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFB38A]/50 blur-[150px] pointer-events-none" />
+            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[#FFD8B5]/40 blur-[100px] pointer-events-none" />
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-[480px] w-full"
-            >
-                <Card className="shadow-2xl shadow-blue-900/5 border-0 rounded-[2rem] overflow-hidden bg-white/80 backdrop-blur-sm">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 w-full" />
-                    <CardHeader className="space-y-1 text-center pb-6 pt-8">
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, type: "spring" }}
-                            className="mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl w-fit mb-4 border border-blue-100 shadow-sm"
-                        >
-                            <Plane className="w-8 h-8 text-blue-600 -rotate-45 translate-x-1" />
-                        </motion.div>
-                        <CardTitle className="text-3xl font-bold tracking-tight text-gray-900">Create Account</CardTitle>
-                        <CardDescription className="text-base text-gray-500 max-w-xs mx-auto">
-                            Join thousands of travelers planning their dream trips effortlessly.
-                        </CardDescription>
-                    </CardHeader>
+            {/* Mesh Gradient Overlay */}
+            <div className="absolute inset-0 opacity-80 mix-blend-overlay" style={{
+                backgroundImage: 'radial-gradient(at 0% 0%, #FFF3E8 0, transparent 50%), radial-gradient(at 100% 100%, #FFD8B5 0, transparent 60%), radial-gradient(at 50% 50%, #FFB38A 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
+            }} />
 
-                    <CardContent className="px-8 pb-8">
-                        {/* Social Signup Mock */}
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                            <Button variant="outline" className="h-11 rounded-xl border-white/20 hover:bg-white/40 hover:text-gray-900 transition-all text-gray-600 font-medium text-sm glass-button">
-                                <svg className="h-4 w-4 mr-2" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-                                Google
-                            </Button>
-                            <Button variant="outline" className="h-11 rounded-xl border-white/20 hover:bg-white/40 hover:text-gray-900 transition-all text-gray-600 font-medium text-sm glass-button">
-                                <svg className="h-4 w-4 mr-2" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="apple" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 52.3-11.4 69.5-34.3z"></path></svg>
-                                Apple
-                            </Button>
+            {/* Split Screen Layout Container */}
+            <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row relative z-10 min-h-screen">
+                {/* Mobile Header Logo */}
+                <div className="lg:hidden flex justify-center pt-6 pb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
+                            <Plane className="h-5 w-5 text-[#FF7A45]" />
+                        </div>
+                        <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                    </div>
+                </div>
+
+                {/* Left Side: Brand Message (45%) */}
+                <div className="hidden lg:flex w-full lg:w-[45%] flex-col justify-center p-8 lg:p-12 animate-in fade-in slide-in-from-left-8 duration-700 relative overflow-hidden">
+                    {/* World Map Overlay */}
+                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cpath stroke='%23FF7A45' stroke-width='1' fill='none' d='M100 100c50 20 100-20 150 0M300 300c40-30 80 10 120-20M500 100c60 50 120 0 180 30M600 350c-40-20-80 30-120 10M50 250c30-10 60 40 90 20'/%3E%3C/svg%3E")`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    }} />
+
+                    <div className="space-y-6 max-w-lg relative z-20">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
+                                    <Plane className="h-6 w-6 text-[#FF7A45]" />
+                                </div>
+                                <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
+                                    Join Thousands of<br />
+                                    <span className="text-[#FF7A45]">Dream Travelers.</span>
+                                </h1>
+
+                                <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
+                                    Create your account to start planning, booking, and managing your global travel adventures with ease.
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="relative mb-6">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-gray-200/50" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="glass-panel px-2 py-0.5 rounded-full text-gray-500 font-medium tracking-wider">Or continue with email</span>
-                            </div>
+                        <div className="flex items-center gap-2 pt-2">
+                            {[
+                                { icon: '✈️', text: 'Real-time Bookings' },
+                                { icon: '📊', text: 'Revenue Tracking' },
+                                { icon: '👥', text: 'Agent Management' }
+                            ].map((pill, i) => (
+                                <div key={i} className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md border border-white/50 h-8 px-3 rounded-full shadow-sm">
+                                    <span className="text-xs">{pill.icon}</span>
+                                    <span className="text-[12px] font-bold text-[#5C2500] whitespace-nowrap">{pill.text}</span>
+                                </div>
+                            ))}
                         </div>
+                    </div>
+                </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <AnimatePresence>
-                                {error && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100 flex items-start gap-2"
-                                    >
-                                        <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                                        <span>{error}</span>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* Email */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wide ml-1">Email Address</label>
-                                <div className="relative group">
-                                    <Input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        onBlur={() => handleBlur('email')}
-                                        required
-                                        placeholder="you@example.com"
-                                        className={cn(
-                                            "h-12 pl-10 pr-10 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all font-medium",
-                                            touched.email && emailValid === false && "border-red-300 focus:border-red-500 focus:ring-red-500/20",
-                                            touched.email && emailValid === true && "border-green-300 focus:border-green-500 focus:ring-green-500/20"
-                                        )}
-                                    />
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                    <AnimatePresence>
-                                        {formData.email && (
-                                            <motion.div
-                                                initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2"
-                                            >
-                                                {emailValid ? (
-                                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                ) : (
-                                                    touched.email && <XCircle className="w-5 h-5 text-red-500" />
-                                                )}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-
-                            {/* Password */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wide ml-1">Password</label>
-                                <div className="relative group">
-                                    <Input
-                                        type={showPassword ? "text" : "password"}
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        required
-                                        placeholder="Create a strong password"
-                                        className="h-12 pl-10 pr-10 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all font-medium"
-                                    />
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                </div>
-                                {/* Strength Meter */}
-                                <div className="space-y-2 pt-1">
-                                    <div className="flex gap-1 h-1">
-                                        {[1, 2, 3].map((level) => (
-                                            <div
-                                                key={level}
-                                                className={cn(
-                                                    "h-full flex-1 rounded-full transition-all duration-500",
-                                                    passwordStrength >= level
-                                                        ? (passwordStrength === 1 ? "bg-red-500" : passwordStrength === 2 ? "bg-yellow-500" : "bg-green-500")
-                                                        : "bg-gray-100"
-                                                )}
-                                            />
-                                        ))}
+                {/* Right Side: Register Card (55%) */}
+                <div className="w-full lg:w-[55%] flex items-center justify-center p-4 lg:p-8 py-12 sm:py-20 lg:py-16">
+                    <Card className={`glass-panel w-full max-w-[480px] shadow-[0_20px_60px_rgba(255,122,69,0.2)] bg-white/25 backdrop-blur-[20px] border border-white/35 rounded-[32px] p-0 relative z-10 animate-in fade-in slide-in-from-right-8 duration-800 overflow-hidden`}>
+                        <CardHeader className="space-y-2 pb-2 pt-6 px-6 sm:px-8 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-3 mb-0">
+                                {/* Compact Glass Plane Circle */}
+                                <div className="relative w-[52px] h-[52px] flex items-center justify-center animate-pulse-slow group">
+                                    <div className="absolute inset-0 bg-[#FF7A45] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
+                                    <div className="relative bg-gradient-to-br from-[#FF7A45] to-[#FFA06A] p-2.5 rounded-full shadow-lg shadow-orange-500/20 border border-white/40 transform group-hover:scale-110 transition-transform duration-500">
+                                        <Plane className="h-6 w-6 text-white rotate-[-45deg]" />
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {getPasswordRequirements().map((req, i) => (
-                                            <div key={i} className={cn("text-xs flex items-center gap-1 transition-colors", req.valid ? "text-green-600 font-medium" : "text-gray-400")}>
-                                                {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-gray-300" />}
-                                                {req.label}
+                                </div>
+                                <div className="space-y-1">
+                                    <CardTitle className="text-[11px] text-center font-bold text-[#FF7A45] tracking-[0.2em] uppercase">
+                                        Join TourSaaS Today
+                                    </CardTitle>
+                                    <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
+                                        Create your account to start your journey
+                                    </CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="px-6 sm:px-8 pb-6 pt-2">
+                            <AnimatePresence mode="wait">
+                                <form onSubmit={handleSubmit} className="space-y-3">
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="bg-red-50 text-red-600 p-2.5 rounded-xl text-xs border border-red-100 flex items-start gap-2 mb-2"
+                                        >
+                                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                            <span>{error}</span>
+                                        </motion.div>
+                                    )}
+
+                                    {/* Social Signup - Only Google for consistency */}
+                                    <div className="pb-1">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-[#FF7A45]/30 text-[#5C2500] font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                        >
+                                            <svg className="h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+                                            Continue with Google
+                                        </Button>
+                                    </div>
+
+                                    <div className="relative my-2">
+                                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#FFCBA4]/20" /></div>
+                                        <div className="relative flex justify-center text-[9px] uppercase tracking-widest font-black text-[#FFCBA4] bg-transparent"><span className="px-2">or join with email</span></div>
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* First Name */}
+                                            <div className="relative group/input">
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <Input
+                                                    value={formData.first_name}
+                                                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                                                    placeholder="First Name"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                                            {/* Last Name */}
+                                            <div className="relative group/input">
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <Input
+                                                    value={formData.last_name}
+                                                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                    placeholder="Last Name"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                />
+                                            </div>
+                                        </div>
 
-                            {/* Name Fields */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide ml-1">First Name</label>
-                                    <div className="relative group">
-                                        <Input
-                                            value={formData.first_name}
-                                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            required
-                                            placeholder="John"
-                                            className="h-11 pl-9 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all font-medium"
+                                        {/* Email */}
+                                        <div className="relative group/input">
+                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                            <Input
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                placeholder="Email Address"
+                                                className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                            />
+                                        </div>
+
+                                        {/* Phone */}
+                                        <div className="relative">
+                                            <PhoneInput
+                                                country={'in'}
+                                                value={formData.phone}
+                                                onChange={phone => setFormData({ ...formData, phone })}
+                                                containerClass="!w-full"
+                                                inputClass="!w-full !h-10 !pl-12 !bg-orange-50/30 !border-orange-100/50 !rounded-xl focus:!bg-white focus:!border-[#FF7A45] !transition-all !text-sm !font-medium !placeholder-orange-900/20"
+                                                buttonClass="!bg-transparent !border-none !rounded-l-xl !pl-2"
+                                            />
+                                        </div>
+
+                                        {/* Password */}
+                                        <div className="space-y-2">
+                                            <div className="relative group/input">
+                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={formData.password}
+                                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                    placeholder="Security Password"
+                                                    className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-900/20 hover:text-[#FF7A45] transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+
+                                            {/* Password Strength Pills */}
+                                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                                {getPasswordRequirements().map((req, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className={cn(
+                                                            "px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1",
+                                                            req.valid
+                                                                ? "bg-green-50 text-green-600 border-green-200"
+                                                                : "bg-orange-50/30 text-orange-900/40 border-orange-100/50"
+                                                        )}
+                                                    >
+                                                        {req.valid && <Check className="w-2.5 h-2.5" />}
+                                                        {req.label}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Terms Checkbox */}
+                                    <div className="flex items-center gap-2.5 py-1 px-1">
+                                        <input
+                                            type="checkbox"
+                                            id="terms"
+                                            checked={formData.terms}
+                                            onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
+                                            className="w-4 h-4 rounded border-orange-200 text-[#FF7A45] focus:ring-[#FF7A45]/20 transition-all cursor-pointer"
                                         />
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <label htmlFor="terms" className="text-[11px] font-medium text-[#6B3F2A]/70 cursor-pointer">
+                                            I agree to the <Link href="/terms" className="text-[#FF7A45] font-bold hover:underline">Terms</Link> & <Link href="/privacy" className="text-[#FF7A45] font-bold hover:underline">Privacy Policy</Link>
+                                        </label>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide ml-1">Last Name</label>
-                                    <div className="relative group">
-                                        <Input
-                                            value={formData.last_name}
-                                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            required
-                                            placeholder="Doe"
-                                            className="h-11 pl-9 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-blue-500/20 transition-all font-medium"
-                                        />
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+
+                                    <div className="pt-2">
+                                        <Button
+                                            type="submit"
+                                            className={cn(
+                                                "w-full h-11 rounded-2xl text-sm font-bold shadow-[0_8px_20px_rgba(255,122,69,0.25)] hover:shadow-[0_12px_28px_rgba(255,122,69,0.35)] transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFA06A] text-white border-none group relative overflow-hidden",
+                                                loading && "opacity-80"
+                                            )}
+                                            disabled={loading}
+                                        >
+                                            {loading ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <span className="flex items-center gap-2">Get Started <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+                                            )}
+                                        </Button>
+
+                                        {/* Security Badge */}
+                                        <div className="flex items-center justify-center gap-1.5 mt-2.5 opacity-80">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                                            <span className="text-[10px] font-bold text-green-700 uppercase tracking-tighter">Your data is secure and encrypted</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Phone */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide ml-1">Phone Number</label>
-                                    <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
-                                </div>
-                                <div className="relative">
-                                    <PhoneInput
-                                        country={'in'}
-                                        value={formData.phone}
-                                        onChange={phone => setFormData({ ...formData, phone })}
-                                        inputProps={{ name: 'phone', id: 'phone' }}
-                                        containerClass="w-full !rounded-xl"
-                                        inputClass="!w-full !h-11 !pl-[48px] !text-sm !border-white/20 !bg-white/40 backdrop-blur-md !rounded-xl focus:!border-blue-500 focus:!ring-blue-500/20 !font-medium !transition-all"
-                                        buttonClass="!border-white/20 !rounded-l-xl !bg-white/40 hover:!bg-white/60 !transition-colors !px-1 backdrop-blur-md"
-                                        dropdownClass="!rounded-xl !shadow-xl !border-gray-100 !mt-2"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Terms */}
-                            <div className="flex items-start gap-3 py-2">
-                                <div className="relative flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        id="terms"
-                                        checked={formData.terms}
-                                        onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
-                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                    />
-                                </div>
-                                <label htmlFor="terms" className="text-sm text-gray-500 cursor-pointer leading-tight">
-                                    I agree to the <Link href="#" className="text-blue-600 font-semibold hover:underline">Terms of Service</Link> and <Link href="#" className="text-blue-600 font-semibold hover:underline">Privacy Policy</Link>
-                                </label>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className={cn(
-                                    "w-full h-12 text-base font-bold text-white transition-all shadow-lg shadow-blue-500/25 rounded-xl group relative overflow-hidden",
-                                    loading ? "bg-blue-700" : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.01] active:scale-[0.99]",
-                                    !isFormValid() && "opacity-70 cursor-not-allowed hover:none grayscale"
-                                )}
-                                disabled={loading || !isFormValid()}
-                            >
-                                {loading ? (
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Creating account...
+                                    <div className="text-center pt-3 mt-1 border-t border-[#FFCBA4]/10">
+                                        <p className="text-[13px] font-bold text-[#6B3F2A]/60">
+                                            Already a member?{' '}
+                                            <Link href="/login" className="text-[#FF7A45] font-black hover:underline">Sign in here</Link>
+                                        </p>
                                     </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        Get Started
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                )}
-                            </Button>
-
-                            <div className="text-center text-sm pt-4">
-                                <span className="text-gray-500">Already a member? </span>
-                                <Link href="/login" className="font-bold text-blue-600 hover:text-indigo-600 hover:underline transition-colors">
-                                    Sign in here
-                                </Link>
-                            </div>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="bg-white/40 backdrop-blur-md border-t border-white/20 py-4 flex justify-center">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>Your data is secure and encrypted</span>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </motion.div>
+                                </form>
+                            </AnimatePresence>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     )
 }
