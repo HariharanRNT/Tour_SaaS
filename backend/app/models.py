@@ -225,7 +225,7 @@ class Agent(Base):
     # Relationships
     smtp_settings = relationship("AgentSMTPSettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
     razorpay_settings = relationship("AgentRazorpaySettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
-    theme = relationship("AgentTheme", back_populates="agent", cascade="all, delete-orphan", lazy="selectin")
+    # theme = relationship("AgentTheme", back_populates="agent", cascade="all, delete-orphan", lazy="selectin")
 
     user = relationship("User", back_populates="agent_profile")
 
@@ -811,127 +811,6 @@ class UserOTP(Base):
     user = relationship("User")
 
 
-class AgentTheme(Base):
-    __tablename__ = "agent_themes"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False)
-    version_type = Column(String, default="live", nullable=False) # draft, live, previous
-
-    __table_args__ = (
-        UniqueConstraint('agent_id', 'version_type', name='uix_agent_version'),
-    )
-    
-    # Theme Colors
-    primary_color = Column(String, default="hsl(221.2 83.2% 53.3%)") # Default blue
-    secondary_color = Column(String, default="hsl(210 40% 96.1%)")
-    accent_color = Column(String, default="hsl(210 40% 96.1%)")
-    background_color = Column(String, default="hsl(0 0% 100%)")
-    foreground_color = Column(String, default="hsl(222.2 84% 4.9%)")
-    heading_color = Column(String, nullable=True)
-    body_text_color = Column(String, nullable=True)
-    
-    # Button & Card Styles
-    button_bg_color = Column(String, nullable=True)
-    button_text_color = Column(String, nullable=True)
-    button_hover_bg_color = Column(String, nullable=True)
-    button_radius = Column(String, default="0.5rem")
-    card_bg_color = Column(String, nullable=True)
-    card_shadow = Column(String, nullable=True)
-    card_radius = Column(String, default="0.75rem")
-    
-    # Typography & Shape
-    font_family = Column(String, default="Inter")
-    radius = Column(String, default="0.5rem")
-    
-    # Content Customization
-    home_hero_title = Column(String, nullable=True)
-    home_hero_subtitle = Column(String, nullable=True)
-    home_hero_image = Column(String, nullable=True)
-    
-    # Hero CTA
-    hero_cta_primary_text = Column(String, nullable=True)
-    hero_cta_secondary_text = Column(String, nullable=True)
-    hero_background_type = Column(String, default="image") # image, gradient, solid
-    hero_gradient = Column(String, nullable=True)
-    
-    # Complex sections (stored as JSON)
-    feature_cards = Column(JSON, nullable=True) 
-    wcu_cards = Column(JSON, nullable=True)
-    
-    # New customization fields
-    wcu_title = Column(String, nullable=True)
-    wcu_accent_title = Column(String, nullable=True)
-    hero_overlay_opacity = Column(Float, default=0.6)
-    show_feature_cards = Column(Boolean, default=True)
-    show_wcu_section = Column(Boolean, default=True)
-    
-    # Layout
-    section_spacing = Column(String, default="comfortable") # compact, comfortable, spacious
-    
-    plan_trip_title = Column(String, nullable=True)
-    plan_trip_subtitle = Column(String, nullable=True)
-    plan_trip_image = Column(String, nullable=True)
-    plan_trip_hero_overlay_opacity = Column(Float, default=0.5)
-    plan_trip_cta_text = Column(String, nullable=True)
-    plan_trip_cta_color = Column(String, nullable=True)
-    plan_trip_info_section_heading = Column(String, nullable=True)
-    plan_trip_info_cards = Column(JSON, nullable=True)
-    
-    # Navbar Customization
-    navbar_logo_text = Column(String, nullable=True)
-    navbar_logo_image = Column(String, nullable=True)
-    navbar_logo_color = Column(String, nullable=True)
-    navbar_links = Column(JSON, nullable=True)
-    navbar_links_color = Column(String, nullable=True)
-    navbar_login_label = Column(String, nullable=True)
-    navbar_login_show = Column(Boolean, default=True)
-    navbar_login_style = Column(String, default="text") # text, outline
-    navbar_signup_label = Column(String, nullable=True)
-    navbar_signup_bg_color = Column(String, nullable=True)
-    navbar_signup_text_color = Column(String, nullable=True)
-    navbar_bg_color = Column(String, nullable=True)
-    navbar_border_color = Column(String, nullable=True)
-    navbar_sticky = Column(Boolean, default=True)
-    navbar_transparent_on_hero = Column(Boolean, default=False)
-    navbar_style_preset = Column(String, default="light") # light, dark, transparent
-    
-    # Itinerary Page Customization
-    itin_hero_image = Column(String, nullable=True)
-    itin_hero_overlay_opacity = Column(Float, default=1.0)
-    itin_destination_accent_color = Column(String, nullable=True)
-    itin_info_card_style = Column(String, default="transparent") # dark, light, transparent, tinted
-    itin_overview_icon_color = Column(String, nullable=True)
-    itin_overview_card_style = Column(String, default="white") # white, tinted
-    itin_overview_card_border = Column(String, default="subtle") # none, subtle, shadow
-    itin_heading_border_color = Column(String, nullable=True)
-    itin_active_day_color = Column(String, nullable=True)
-    itin_morning_color = Column(String, nullable=True)
-    itin_afternoon_color = Column(String, nullable=True)
-    itin_evening_color = Column(String, nullable=True)
-    itin_night_color = Column(String, nullable=True)
-    itin_day_badge_color = Column(String, nullable=True)
-    itin_activity_layout = Column(String, default="expanded") # compact, expanded
-    itin_sidebar_bg = Column(String, default="white") # navy, brand, white
-    itin_price_color = Column(String, nullable=True)
-    itin_cta_text = Column(String, nullable=True)
-    itin_cta_color = Column(String, nullable=True)
-    itin_cta_text_color = Column(String, nullable=True)
-    itin_show_trust_badges = Column(Boolean, default=True)
-    itin_ai_badge_color = Column(String, nullable=True)
-    itin_tag_color = Column(String, nullable=True)
-    itin_show_ai_badge = Column(Boolean, default=True)
-    
-    # Itinerary Trust Section
-    itin_trust_title = Column(String, default="Why book with RNT Tour?")
-    itin_trust_title_color = Column(String, nullable=True)
-    itin_show_trust_section = Column(Boolean, default=True)
-    itin_trust_section_bg = Column(String, nullable=True)
-    itin_trust_card_style = Column(String, default="flat") # flat, bordered, shadowed, colored
-    itin_trust_cards = Column(JSON, nullable=True)
-    
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationships
-    agent = relationship("Agent", back_populates="theme")
+# class AgentTheme(Base):
+#     __tablename__ = "agent_themes"
+# ... (rest of the class)

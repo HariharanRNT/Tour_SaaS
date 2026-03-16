@@ -93,6 +93,8 @@ import {
 
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchAgentDashboardStats, sendAIChatMessage, generateAIPackage as generateAIPackageApi } from '@/lib/api'
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
 import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
 
@@ -236,21 +238,37 @@ export default function AgentDashboard() {
     const [customStart, setCustomStart] = useState('')
     const [customEnd, setCustomEnd] = useState('')
 
-    const [stats, setStats] = useState<DashboardStats>({
-        totalPackages: 0,
-        publishedPackages: 0,
-        draftPackages: 0,
-        totalBookings: 0,
-        activeBookings: 0,
-        pendingBookings: 0,
-        todayBookings: 0,
-        totalRevenue: 0,
-        recentBookings: { upcoming: [], completed: [] },
-        highlights: { mostPopular: null, leastPopular: null },
-        packageAnalytics: { mostBooked: [] },
-        isPlanActive: false // Default to false for safety
+    const queryClient = useQueryClient()
+
+    const { data: backendStats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+        queryKey: ['agent-dashboard-stats', dateFilter, customStart, customEnd],
+        queryFn: () => {
+            if (dateFilter === 'CUSTOM' && (!customStart || !customEnd)) {
+                return null;
+            }
+            return fetchAgentDashboardStats({
+                filter_type: dateFilter,
+                start_date: customStart,
+                end_date: customEnd
+            });
+        },
+        enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd)
     })
-    const [loading, setLoading] = useState(true)
+
+    const stats = {
+        totalPackages: backendStats?.totalPackages || 0,
+        publishedPackages: backendStats?.publishedPackages || 0,
+        draftPackages: backendStats?.draftPackages || 0,
+        totalBookings: backendStats?.totalBookings || 0,
+        activeBookings: backendStats?.activeBookings || 0,
+        pendingBookings: backendStats?.pendingBookings || 0,
+        todayBookings: backendStats?.todayBookings || 0,
+        totalRevenue: backendStats?.totalRevenue || 0,
+        recentBookings: backendStats?.recentBookings || { upcoming: [], completed: [] },
+        highlights: backendStats?.highlights,
+        packageAnalytics: backendStats?.packageAnalytics,
+        isPlanActive: backendStats?.isPlanActive ?? false
+    }
 
     // Helper to checking plan status
     const isPlanActive = stats.isPlanActive;
@@ -271,7 +289,6 @@ export default function AgentDashboard() {
         content: "Hello! I'm your AI Travel Assistant. I can help you create amazing itineraries for your customers. Tell me about the package you'd like to create - destination, duration, budget, and any special preferences!"
     }])
     const [conversationId, setConversationId] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
     const [generatedPackage, setGeneratedPackage] = useState<any>(null)
 
     // Event handlers
@@ -287,91 +304,33 @@ export default function AgentDashboard() {
         })
     }
 
-    // AI Chat functions
-    const sendMessage = async (manualMessage?: string) => {
-        const messageToSend = manualMessage || chatMessage
-        if (!messageToSend.trim() || isLoading) return
-
-        const userMessage = messageToSend.trim()
-        if (!manualMessage) {
-            setChatMessage("")
-        }
-
-        // Add user message to chat
-        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }])
-        setIsLoading(true)
-
-        try {
-            const response = await fetch(`${API_URL}/api/v1/ai-assistant/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'X-Domain': window.location.hostname
-                },
-                body: JSON.stringify({
-                    message: userMessage,
-                    conversation_id: conversationId
-                })
-            })
-
-            const data = await response.json()
-
+    // AI Chat Mutation
+    const chatMutation = useMutation({
+        mutationFn: sendAIChatMessage,
+        onSuccess: (data) => {
             if (data.success) {
-                // Check if the response contains JSON (package data)
                 const isJsonResponse = data.message.trim().startsWith('{') || data.message.trim().startsWith('```json')
-
                 if (isJsonResponse) {
-                    // Don't add JSON responses to chat history, show a friendly message instead
                     setChatHistory(prev => [...prev, {
                         role: 'assistant',
-                        content: "I've prepared a package based on your requirements! Link: http://rnt.local:8000/api/v1/ai-assistant/itinerary/" + data.conversation_id
+                        content: `I've prepared a package based on your requirements! Link: ${API_URL}/api/v1/ai-assistant/itinerary/${data.conversation_id}`
                     }])
                 } else {
-                    // Normal text response
-                    setChatHistory(prev => [...prev, {
-                        role: 'assistant',
-                        content: data.message
-                    }])
+                    setChatHistory(prev => [...prev, { role: 'assistant', content: data.message }])
                 }
-
                 setConversationId(data.conversation_id)
             } else {
-                setChatHistory(prev => [...prev, {
-                    role: 'assistant',
-                    content: 'Sorry, I encountered an error. Please try again.'
-                }])
+                setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
             }
-        } catch (error) {
-            console.error('Error sending message:', error)
-            setChatHistory(prev => [...prev, {
-                role: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.'
-            }])
-        } finally {
-            setIsLoading(false)
+        },
+        onError: () => {
+            setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
         }
-    }
+    })
 
-    const generatePackage = async () => {
-        if (!conversationId || isLoading) return
-
-        setIsLoading(true)
-
-        try {
-            const response = await fetch(`${API_URL}/api/v1/ai-assistant/generate-package`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    conversation_id: conversationId
-                })
-            })
-
-            const data = await response.json()
-
+    const generatePackageMutation = useMutation({
+        mutationFn: generateAIPackageApi,
+        onSuccess: (data) => {
             if (data.success && data.package) {
                 setGeneratedPackage(data.package)
                 setChatHistory(prev => [...prev, {
@@ -379,20 +338,34 @@ export default function AgentDashboard() {
                     content: `Great! I've generated a complete package: "${data.package.packageTitle}". You can review it below and create it when ready!`
                 }])
             } else {
-                setChatHistory(prev => [...prev, {
-                    role: 'assistant',
-                    content: 'Sorry, I couldn\'t generate the package. Please provide more details about your requirements.'
-                }])
+                setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I couldn\'t generate the package. Please provide more details about your requirements.' }])
             }
-        } catch (error) {
-            console.error('Error generating package:', error)
-            setChatHistory(prev => [...prev, {
-                role: 'assistant',
-                content: 'Sorry, I encountered an error while generating the package.'
-            }])
-        } finally {
-            setIsLoading(false)
+        },
+        onError: () => {
+            setChatHistory(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error while generating the package.' }])
         }
+    })
+
+    // AI Chat functions
+    const sendMessage = (manualMessage?: string) => {
+        const messageToSend = manualMessage || chatMessage
+        if (!messageToSend.trim() || chatMutation.isPending) return
+
+        const userMessage = messageToSend.trim()
+        if (!manualMessage) {
+            setChatMessage("")
+        }
+
+        setChatHistory(prev => [...prev, { role: 'user', content: userMessage }])
+        chatMutation.mutate({
+            message: userMessage,
+            conversation_id: conversationId
+        })
+    }
+
+    const generatePackage = () => {
+        if (!conversationId || generatePackageMutation.isPending) return
+        generatePackageMutation.mutate(conversationId)
     }
 
     const createPackageFromAI = () => {
@@ -456,8 +429,7 @@ export default function AgentDashboard() {
 
     const handleRefresh = async () => {
         setIsRefreshing(true)
-        const token = localStorage.getItem('token')
-        if (token) await loadDashboardData(token)
+        await refetchStats()
         setIsRefreshing(false)
     }
 
@@ -472,8 +444,6 @@ export default function AgentDashboard() {
         }
 
         try {
-
-
             const user = JSON.parse(userStr)
             if (user.role !== 'agent') {
                 router.push('/packages') // Redirect non-agents
@@ -485,10 +455,7 @@ export default function AgentDashboard() {
             router.push('/login')
             return
         }
-
-        // 2. Load Data
-        loadDashboardData(token)
-    }, [router, dateFilter]) // Reload when dateFilter changes
+    }, [router])
 
     const handleLogout = () => {
         localStorage.removeItem('token')
@@ -496,73 +463,13 @@ export default function AgentDashboard() {
         router.push('/login')
     }
 
-    const loadDashboardData = async (token: string) => {
-        // For custom, only load if we have dates or explicitly requested
-        if (dateFilter === 'CUSTOM' && (!customStart || !customEnd)) {
-            // Wait for user to apply
-            if (!customStart && !customEnd) return // Initial "CUSTOM" selection
-        }
-
-        setLoading(true)
-        try {
-            // Prepare Query Params
-            const query = new URLSearchParams()
-            query.append('filter_type', dateFilter)
-            if (dateFilter === 'CUSTOM') {
-                if (customStart) query.append('start_date', customStart)
-                if (customEnd) query.append('end_date', customEnd)
-            }
-
-            // Fetch Market Insights & Stats (New Endpoint logic handles aggregates)
-            let backendStats: any = {}
-            try {
-                const marketRes = await fetch(`${API_URL}/api/v1/agent-dashboard/stats?${query.toString()}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'X-Domain': window.location.hostname
-                    }
-                })
-                if (marketRes.ok) {
-                    backendStats = await marketRes.json()
-                }
-            } catch (err) {
-                console.error("Failed to fetch market insights", err)
-            }
-
-            // Note: We use the backend returned stats directly now, 
-            // instead of calculating from list endpoints unless strictly necessary for other things.
-            // The lists (packages/bookings) are not needed for the dashboard summary anymore if backend returns all counts.
-
-            setStats({
-                totalPackages: backendStats.totalPackages || 0,
-                publishedPackages: backendStats.publishedPackages || 0,
-                draftPackages: backendStats.draftPackages || 0,
-                totalBookings: backendStats.totalBookings || 0,
-                activeBookings: backendStats.activeBookings || 0,
-                pendingBookings: backendStats.pendingBookings || 0,
-                todayBookings: backendStats.todayBookings || 0,
-                totalRevenue: backendStats.totalRevenue || 0,
-                recentBookings: backendStats.recentBookings || { upcoming: [], completed: [] },
-                highlights: backendStats.highlights,
-                packageAnalytics: backendStats.packageAnalytics,
-                isPlanActive: backendStats.isPlanActive ?? false
-            })
-
-        } catch (error) {
-            console.error('Failed to load dashboard data:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const applyCustomFilter = () => {
         if (customStart && customEnd) {
-            const token = localStorage.getItem('token')
-            if (token) loadDashboardData(token)
+            refetchStats()
         }
     }
 
-    if (loading) {
+    if (statsLoading) { // Changed from `loading` to `statsLoading`
         return <DashboardSkeleton />
     }
 
@@ -608,11 +515,11 @@ export default function AgentDashboard() {
             value: stats.totalBookings,
             subtext: "Lifetime booking count",
             icon: FileText,
-            color: "text-orange-600",
+            color: "text-[var(--primary)]",
             bgColor: "bg-orange-50",
-            gradientFrom: "from-orange-500",
+            gradientFrom: "from-[var(--gradient-start)]",
             gradientTo: "to-amber-600",
-            bgGradient: "from-orange-500/5 to-amber-500/5",
+            bgGradient: "from-[var(--gradient-start)]/5 to-amber-500/5",
             shadowColor: "shadow-orange-500/20"
         }
     ]
@@ -626,11 +533,11 @@ export default function AgentDashboard() {
         >
             {/* Parallax Background Elements */}
             <motion.div style={{ y: springY1, opacity }} className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-gradient-to-br from-indigo-200/20 to-purple-200/20 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-br from-blue-200/20 to-emerald-200/20 rounded-full blur-[120px]" />
+                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-gradient-to-br from-[var(--primary-glow)] to-transparent rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-br from-[var(--primary-glow)] to-transparent rounded-full blur-[120px]" />
             </motion.div>
 
-            <motion.div style={{ y: springY2 }} className="fixed top-20 right-20 w-80 h-80 bg-yellow-100/10 rounded-full blur-[80px] pointer-events-none z-0 mix-blend-multiply" />
+            <motion.div style={{ y: springY2 }} className="fixed top-20 right-20 w-80 h-80 bg-[var(--primary-soft)]/10 rounded-full blur-[80px] pointer-events-none z-0 mix-blend-multiply" />
 
 
             {/* Pull to Refresh Indicator */}
@@ -695,9 +602,9 @@ export default function AgentDashboard() {
                     >
                         <div className="flex items-center gap-5">
                             <div className="relative group">
-                                <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full group-hover:bg-indigo-500/30 transition-all duration-300"></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-50 animate-pulse"></div>
-                                <div className="h-16 w-16 rounded-full border-2 border-white shadow-lg relative ring-4 ring-indigo-50/50 group-hover:scale-105 transition-transform duration-300 bg-[#6c47ff] flex items-center justify-center text-white font-bold text-xl">
+                                <div className="absolute inset-0 bg-[var(--primary)]/20 blur-xl rounded-full group-hover:bg-[var(--primary)]/30 transition-all duration-300"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] rounded-full blur opacity-50 animate-pulse"></div>
+                                <div className="h-16 w-16 rounded-full border-2 border-white shadow-lg relative ring-4 ring-white/50 group-hover:scale-105 transition-transform duration-300 bg-[var(--primary)] flex items-center justify-center text-white font-bold text-xl">
                                     {(agentName[0] || '').toUpperCase()}{(agentLastName[0] || '').toUpperCase()}
                                 </div>
                                 <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-400 border-[3px] border-white rounded-full shadow-md animate-bounce" title="Online" />
@@ -706,7 +613,7 @@ export default function AgentDashboard() {
                             <div>
                                 <h1 className="text-3xl font-jakarta font-bold flex items-center gap-2 tracking-tight">
                                     <span className="text-slate-800">Welcome back,</span>
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 animate-gradient-x bg-[length:200%_auto]">
+                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] animate-gradient-x bg-[length:200%_auto]">
                                         {agentName}
                                     </span>
                                 </h1>
@@ -719,8 +626,8 @@ export default function AgentDashboard() {
                                             }`}>
                                             {stats.todayBookings > 0 && (
                                                 <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--primary)] opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--primary)]"></span>
                                                 </span>
                                             )}
                                             {stats.todayBookings > 0
@@ -736,7 +643,7 @@ export default function AgentDashboard() {
                         <div className="flex items-center gap-3">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button className="bg-gradient-to-r from-violet-600 to-purple-700 text-white border-0 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
+                                    <Button className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Create New
                                         <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
@@ -744,39 +651,39 @@ export default function AgentDashboard() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                     align="end"
-                                    className="w-56 p-2 z-[100] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.2)] animate-in fade-in slide-in-from-top-4 duration-300 rounded-[20px]"
+                                    className="w-56 p-2 z-[100] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] animate-in fade-in slide-in-from-top-4 duration-300 rounded-[20px]"
                                     style={{
                                         background: 'rgba(255,255,255,0.18)',
                                         backdropFilter: 'blur(24px)',
                                         WebkitBackdropFilter: 'blur(24px)'
                                     }}
                                 >
-                                    <DropdownMenuLabel className="text-xs font-bold text-[#FF6B2B] uppercase tracking-widest px-3 py-2">
+                                    <DropdownMenuLabel className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest px-3 py-2">
                                         Create New
                                     </DropdownMenuLabel>
                                     <DropdownMenuItem
                                         onClick={handleTourPackageClick}
-                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <Package className="h-4 w-4" />
                                         </div>
                                         Tour Package
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => router.push('/agent/activities')}
-                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <MapPin className="h-4 w-4" />
                                         </div>
                                         Activity Master
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleAIItineraryClick}
-                                        className="focus:bg-[#FF6B2B]/12 hover:bg-[#FF6B2B]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
                                     >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[#FF6B2B] shadow-sm group-hover:bg-[#FF6B2B] group-hover:text-white transition-colors">
+                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <Sparkles className="h-4 w-4" />
                                         </div>
                                         AI Itinerary
@@ -848,7 +755,7 @@ export default function AgentDashboard() {
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomEnd(e.target.value)}
                             />
-                            <Button onClick={applyCustomFilter} size="sm" className="bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-full shadow-md hover:-translate-y-0.5 transition-all">
+                            <Button onClick={applyCustomFilter} size="sm" className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white rounded-full shadow-md hover:-translate-y-0.5 transition-all">
                                 Apply
                             </Button>
                         </div>
@@ -1066,7 +973,7 @@ export default function AgentDashboard() {
                                                             <div className="flex items-center gap-3 overflow-hidden">
                                                                 <span className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                                                                     index === 1 ? 'bg-slate-200 text-slate-700 border border-slate-300' :
-                                                                        index === 2 ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                                                                        index === 2 ? 'bg-orange-100 text-orange-800 border border-[var(--primary)]' :
                                                                             'bg-purple-100 text-purple-700'
                                                                     }`}>
                                                                     {index + 1}
@@ -1123,7 +1030,7 @@ export default function AgentDashboard() {
                             </div>
                             <div className="space-y-3">
                                 {stats.recentBookings?.upcoming && stats.recentBookings.upcoming.length > 0 ? (
-                                    stats.recentBookings.upcoming.map((bk, i) => (
+                                    stats.recentBookings.upcoming.map((bk: any, i: number) => (
                                         <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
@@ -1163,7 +1070,7 @@ export default function AgentDashboard() {
                             </div>
                             <div className="space-y-3">
                                 {stats.recentBookings?.completed && stats.recentBookings.completed.length > 0 ? (
-                                    stats.recentBookings.completed.map((bk, i) => (
+                                    stats.recentBookings.completed.map((bk: any, i: number) => (
                                         <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden opacity-80 hover:opacity-100" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
@@ -1250,7 +1157,7 @@ export default function AgentDashboard() {
                                         <CardHeader>
                                             <div className="flex items-center gap-3">
                                                 <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                    <FileText className="h-6 w-6 text-orange-600" />
+                                                    <FileText className="h-6 w-6 text-[var(--primary)]" />
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
@@ -1353,7 +1260,7 @@ export default function AgentDashboard() {
                 {/* New AI Assistant Floating Card */}
                 <AIAssistantCard
                     chatHistory={chatHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))}
-                    isLoading={isLoading}
+                    isLoading={chatMutation.isPending || generatePackageMutation.isPending}
                     onSendMessage={sendMessage}
                     suggestions={["Japan 7 Days", "Maldives Honeymoon"]}
                 />

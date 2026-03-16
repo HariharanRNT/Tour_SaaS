@@ -42,7 +42,7 @@ function PremiumCalendar({
           backdrop-filter: blur(28px);
           border: 1px solid rgba(255, 255, 255, 0.35);
           border-radius: 20px;
-          box-shadow: 0 16px 48px rgba(255, 107, 43, 0.2);
+          box-shadow: 0 16px 48px var(--primary-glow);
           width: fit-content;
         }
 
@@ -55,8 +55,8 @@ function PremiumCalendar({
         .rdp-day_disabled {
           background-image: repeating-linear-gradient(
             45deg,
-            rgba(255, 107, 43, 0.05) 0,
-            rgba(255, 107, 43, 0.05) 1px,
+            var(--primary-glow) 0,
+            var(--primary-glow) 1px,
             transparent 0,
             transparent 50%
           );
@@ -71,28 +71,28 @@ function PremiumCalendar({
         }
 
         .rdp-day_today:not(.rdp-day_selected) {
-           box-shadow: 0 0 0 2px #FF6B2B;
+           box-shadow: 0 0 0 2px var(--primary);
            border-radius: 50%;
-           color: #FF6B2B !important;
+           color: var(--primary) !important;
            font-weight: 700 !important;
-           background: rgba(255, 107, 43, 0.05);
+           background: var(--primary-glow);
         }
 
         /* Valid selectable zone highlight */
         .rdp-day:not(.rdp-day_disabled):not(.rdp-day_outside) {
-            background-color: rgba(255, 107, 43, 0.04);
+            background-color: var(--primary-glow);
         }
         
         .rdp-day_selected {
-            background: linear-gradient(135deg, #FF6B2B, #FF9A5C) !important;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
             color: white !important;
-            box-shadow: 0 0 15px rgba(255, 107, 43, 0.5) !important;
+            box-shadow: 0 0 15px var(--primary-glow) !important;
             border-radius: 50% !important;
         }
 
         /* Range highlighting */
         .rdp-day_range_middle {
-            background-color: rgba(255, 107, 43, 0.1) !important;
+            background-color: var(--primary-glow) !important;
             border-radius: 0 !important;
         }
         .rdp-day_range_start {
@@ -115,16 +115,16 @@ function PremiumCalendar({
                     caption: "flex justify-center pt-1 relative items-center mb-4",
                     caption_label: "text-base font-black text-[#4A2B1D]",
                     nav: "space-x-1 flex items-center",
-                    nav_button: "h-8 w-8 bg-white/20 backdrop-blur-md border border-white/30 p-0 rounded-full flex items-center justify-center text-[#FF6B2B] hover:bg-[#FF6B2B] hover:text-white transition-all",
+                    nav_button: "h-8 w-8 bg-white/20 backdrop-blur-md border border-white/30 p-0 rounded-full flex items-center justify-center text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all",
                     nav_button_previous: "absolute left-1",
                     nav_button_next: "absolute right-1",
                     table: "w-full border-collapse space-y-1",
                     head_row: "flex mb-2",
-                    head_cell: "text-[rgba(255,107,43,0.7)] text-[11px] font-semibold uppercase tracking-widest text-center w-9 py-2 border-b border-white/20",
+                    head_cell: "text-[var(--primary-glow)] text-[11px] font-semibold uppercase tracking-widest text-center w-9 py-2 border-b border-white/20",
                     row: "flex w-full mt-1",
                     cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
                     day: cn(
-                        "h-9 w-9 p-0 font-medium text-[#2D1A0E] rounded-full hover:bg-[rgba(255,107,43,0.12)] transition-all flex items-center justify-center"
+                        "h-9 w-9 p-0 font-medium text-[#2D1A0E] rounded-full hover:bg-[var(--primary-glow)] transition-all flex items-center justify-center"
                     ),
                     day_selected: "day-selected", // Handled in CSS
                     day_today: "day-today", // Handled in CSS
@@ -147,7 +147,7 @@ function PremiumCalendar({
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex gap-4">
                         <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-[#FF6B2B]" />
+                            <div className="h-2 w-2 rounded-full bg-[var(--primary)]" />
                             <span className="text-[10px] font-bold text-[#4A2B1D]/60 uppercase tracking-wider">Available</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -161,13 +161,13 @@ function PremiumCalendar({
                     <Button
                         variant="ghost"
                         onClick={onClear}
-                        className="flex-1 h-9 rounded-full text-[#FF6B2B] hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B] font-black text-[10px] uppercase tracking-widest border border-[#FF6B2B]/20"
+                        className="flex-1 h-9 rounded-full text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] font-black text-[10px] uppercase tracking-widest border border-[var(--primary)]/20"
                     >
                         Clear Selection
                     </Button>
                     <Button
                         onClick={onToday}
-                        className="flex-1 h-9 rounded-full bg-[#FF6B2B] text-white hover:bg-[#FF6B2B] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20"
+                        className="flex-1 h-9 rounded-full bg-[var(--primary)] text-white hover:bg-[var(--primary)] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20"
                     >
                         Jump to Today
                     </Button>

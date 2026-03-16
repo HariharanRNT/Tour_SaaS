@@ -17,6 +17,16 @@
   }
 
   :root {
+    /* Brand Design System Variables */
+    --primary: #F97316;
+    --primary-light: #FDBA74;
+    --primary-soft: #FED7AA;
+    --primary-glow: rgba(249, 115, 22, 0.25);
+    --gradient-start: #F97316;
+    --gradient-mid: #FDBA74;
+    --gradient-end: #FED7AA;
+    --sidebar-bg: rgba(55, 45, 100, 0.50);
+
     /* Background and card are transparent so the body gradient shows through */
     --background: transparent;
     --foreground: 222.2 84% 4.9%;
@@ -24,7 +34,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary-hsl: 221.2 83.2% 53.3%; /* Renamed from --primary to avoid conflict */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -68,11 +78,11 @@
 
   /* Mesh Gradient Background from Design File */
   body {
-    background-color: #F4A261;
+    background-color: var(--primary-light);
     background-image: 
-      radial-gradient(at 0% 0%, #FFD4A8 0, transparent 50%), 
-      radial-gradient(at 100% 100%, #FFECD2 0, transparent 50%),
-      radial-gradient(at 50% 50%, #F4A261 0, transparent 100%);
+      radial-gradient(at 0% 0%, var(--primary-soft) 0, transparent 50%), 
+      radial-gradient(at 100% 100%, var(--primary-soft) 0, transparent 50%),
+      radial-gradient(at 50% 50%, var(--primary-light) 0, transparent 100%);
     background-attachment: fixed;
     /* body already has min-height and overflow-x-hidden from base layer */
     @apply text-foreground;
@@ -150,7 +160,7 @@
 
   /* Deep Mesh Gradient Background */
   .mesh-bg {
-    background: linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 30%, #FFD4B0 70%, #FFF0E6 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 30%, var(--primary-soft) 70%, var(--primary-soft) 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -230,7 +240,7 @@
     border-color: rgba(255, 107, 43, 0.3);
   }
   .pkg-creation-root .glass-pill-active {
-    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%) !important;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%) !important;
     border-color: transparent !important;
     color: white !important;
     border-radius: 9999px;
@@ -297,10 +307,10 @@
   }
   .pkg-creation-root .glass-toolbar-btn:hover {
     background: rgba(255, 107, 43, 0.15);
-    color: #FF6B2B;
+    color: var(--primary);
   }
   .pkg-creation-root .glass-toolbar-btn.active {
-    background: #FF6B2B;
+    background: var(--primary);
     color: white;
     box-shadow: 0 2px 8px rgba(255, 107, 43, 0.3);
   }
@@ -340,14 +350,14 @@
   /* Progress Bar */
   .pkg-creation-root .word-count-progress {
     height: 2px;
-    background: #FF6B2B;
+    background: var(--primary);
     transition: width 0.3s ease;
     box-shadow: 0 0 8px rgba(255, 107, 43, 0.3);
   }
 
   /* Orange Gradient Badge */
   .pkg-creation-root .orange-gradient-badge {
-    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     box-shadow: 0 4px 12px rgba(255, 107, 43, 0.3);
   }
 
@@ -376,7 +386,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   .pkg-creation-root .glass-toggle.active {
-    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     border-color: rgba(255, 107, 43, 0.4);
     box-shadow: 0 4px 12px rgba(255, 107, 43, 0.2);
   }
@@ -404,7 +414,7 @@
     border-color: rgba(255, 107, 43, 0.3);
   }
   .pkg-creation-root .inclusion-pill.active {
-    background: linear-gradient(135deg, #FF8C4B 0%, #FF6B2B 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     border-color: transparent;
     color: white !important;
     box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
@@ -431,8 +441,8 @@
     box-shadow: 0 8px 32px rgba(255, 107, 43, 0.2) !important;
   }
   .pkg-creation-root .glass-select-item[data-highlighted] {
-    background-color: rgba(255, 107, 43, 0.1) !important;
-    color: #FF6B2B !important;
+    background-color: var(--primary-glow) !important;
+    color: var(--primary) !important;
   }
 
   /* Page Transitions */
@@ -488,7 +498,7 @@
   }
 
   .custom-checkbox:checked {
-    @apply border-[#E8682A] bg-[#E8682A];
+    @apply border-[var(--primary)] bg-[var(--primary)];
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
     background-size: 80%;
     background-position: center;
@@ -497,7 +507,7 @@
 
   /* Slider Theming */
   .slider-track {
-    background: linear-gradient(90deg, #FF9A5C 0%, #FF6B2B 100%);
+    background: linear-gradient(90deg, var(--primary-light) 0%, var(--primary) 100%);
     @apply h-1.5 rounded-full;
   }
 
@@ -506,11 +516,11 @@
   }
 
   .glass-form-input {
-    @apply bg-white/40 border-white/50 focus:border-[#FF6B2B] shadow-[0_2px_10px_rgba(0,0,0,0.02)] focus:shadow-[0_4px_20px_rgba(255,107,43,0.15)] text-[#5C2500] font-medium transition-all duration-300 rounded-xl backdrop-blur-md;
+    @apply bg-white/40 border-white/50 focus:border-[var(--primary)] shadow-[0_2px_10px_rgba(0,0,0,0.02)] focus:shadow-[0_4px_20px_var(--primary-glow)] text-slate-700 font-medium transition-all duration-300 rounded-xl backdrop-blur-md;
   }
 
   .slider-thumb {
-    @apply w-5 h-5 bg-white border-2 border-[#FF6B2B] rounded-full shadow-[0_0_10px_rgba(255,107,43,0.5)] cursor-pointer hover:scale-110 transition-transform;
+    @apply w-5 h-5 bg-white border-2 border-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary-glow)] cursor-pointer hover:scale-110 transition-transform;
   }
 
   /* Pulse Animation */
@@ -597,7 +607,7 @@
     -webkit-backdrop-filter: blur(28px);
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(255, 107, 43, 0.2);
+    box-shadow: 0 8px 32px var(--primary-glow);
   }
 
   @keyframes selectFadeDown {
@@ -623,13 +633,13 @@
   }
   
   .glass-select-item[data-highlighted] {
-    background-color: rgba(255, 107, 43, 0.1) !important;
-    color: #FF6B2B !important;
+    background-color: var(--primary-glow) !important;
+    color: var(--primary) !important;
   }
 
   .glass-select-item[data-state="checked"] {
-    background-color: rgba(255, 107, 43, 0.15) !important;
-    color: #FF6B2B !important;
+    background-color: var(--primary-glow) !important;
+    color: var(--primary) !important;
     font-weight: 600;
   }
 
@@ -640,7 +650,7 @@
     background: transparent;
   }
   .glass-select-viewport::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 43, 0.4);
+    background: var(--primary-glow);
     border-radius: 10px;
   }
   .glass-select-viewport::-webkit-scrollbar-thumb:hover {
@@ -655,11 +665,11 @@
     background: transparent;
   }
   .custom-orange-scrollbar::-webkit-scrollbar-thumb {
-    background: #F97316;
+    background: var(--primary);
     border-radius: 10px;
   }
   .custom-orange-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #EA580C;
+    background: var(--primary-light);
   }
 
   /* Glass Close Button */

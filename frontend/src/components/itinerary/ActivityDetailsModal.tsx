@@ -110,7 +110,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                 </div>
 
                 {/* 2. Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto bg-[#FFF5EE]/30 backdrop-blur-xl custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-[var(--primary-soft)]/30 backdrop-blur-xl custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
 
                         {/* Quick Info Bar - Sticky within scroll view usually, but placed at top here */}
@@ -161,7 +161,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 <div className="space-y-6">
                                     <section>
                                         <h3 className="text-xl font-bold text-[#3A1A08] flex items-center gap-3 mb-4">
-                                            <div className="h-7 w-1.5 bg-[#FF7A45] rounded-full" />
+                                            <div className="h-7 w-1.5 bg-[var(--primary)] rounded-full" />
                                             About this activity
                                         </h3>
                                         <div
@@ -283,7 +283,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                 </div>
 
                 {/* 3. Sticky Footer Action Bar */}
-                <div className="p-4 bg-white/40 backdrop-blur-2xl border-t border-[#FF7A45]/10 flex items-center justify-between z-20 shadow-[0_-5px_25px_rgba(0,0,0,0.05)]">
+                <div className="p-4 bg-white/40 backdrop-blur-2xl border-t border-[var(--primary)]/10 flex items-center justify-between z-20 shadow-[0_-5px_25px_rgba(0,0,0,0.05)]">
                     <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider opacity-60">Total Price</span>
                         <div className="flex items-baseline gap-1">
@@ -296,7 +296,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                         <Button
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="hidden sm:flex border-[#FF7A45]/20 text-[#A0501E] hover:bg-[#FF7A45]/5 px-8 h-12 rounded-xl font-bold transition-all"
+                            className="hidden sm:flex border-[var(--primary)]/20 text-[#A0501E] hover:bg-[var(--primary)]/5 px-8 h-12 rounded-xl font-bold transition-all"
                         >
                             Close Details
                         </Button>
@@ -308,7 +308,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 }}
                                 className="text-white shadow-xl shadow-[#FF7A45]/25 px-8 h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.05] border-none"
                                 style={{
-                                    background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))'
                                 }}
                             >
                                 <Plus className="h-5 w-5 mr-2" />
@@ -320,7 +320,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 onClick={() => window.open(activity.booking_link, '_blank')}
                                 className="text-white px-8 h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.05] shadow-xl shadow-[#FF7A45]/25 border-none"
                                 style={{
-                                    background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))'
                                 }}
                             >
                                 Book this Activity

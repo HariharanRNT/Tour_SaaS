@@ -60,14 +60,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
     }
 
     return (
-        <div className="bg-white/15 backdrop-blur-xl p-6 rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] space-y-6 hover:shadow-[0_12px_40px_rgba(255,107,43,0.12)] transition-shadow duration-300 relative overflow-hidden">
+        <div className="bg-white/15 backdrop-blur-xl p-6 rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] space-y-6 hover:shadow-[0_12px_40px_var(--primary-glow)] transition-shadow duration-300 relative overflow-hidden">
             <h3 className="font-bold text-[#3A1A08] font-display text-xl flex items-center justify-between border-b border-white/20 pb-4">
                 <span className="flex items-center gap-3">
-                    <span className="bg-[#FF6B2B]/10 text-[#FF6B2B] p-2 rounded-xl border border-[#FF6B2B]/20">
+                    <span className="bg-[var(--primary)]/10 text-[var(--primary)] p-2 rounded-xl border border-[var(--primary)]/20">
                         <User className="h-5 w-5" />
                     </span>
                     Traveler {index + 1}
-                    <span className="text-[10px] font-bold text-[#FF6B2B] uppercase tracking-wider bg-white/20 border border-[#FF6B2B]/20 px-2.5 py-1 rounded-full ml-2 shadow-inner">
+                    <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-white/20 border border-[var(--primary)]/20 px-2.5 py-1 rounded-full ml-2 shadow-inner">
                         {traveler.type}
                     </span>
                 </span>
@@ -78,7 +78,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                 <div className="md:col-span-2">
                     <div className="relative group">
                         <Select value={traveler.title} onValueChange={(val) => onChange(index, 'title', val)}>
-                            <SelectTrigger className="w-full h-14 bg-white/25 border-white/40 rounded-[14px] px-3 pt-5 pb-1 text-sm shadow-sm transition-all outline-none focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 text-[#5C2500] font-bold backdrop-blur-sm">
+                            <SelectTrigger className="w-full h-14 bg-white/25 border-white/40 rounded-[14px] px-3 pt-5 pb-1 text-sm shadow-sm transition-all outline-none focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 text-[#5C2500] font-bold backdrop-blur-sm">
                                 <SelectValue placeholder=" " />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
@@ -99,7 +99,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                                         key={opt.val}
                                         value={opt.val}
                                         disabled={!opt.types.includes(traveler.type)}
-                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : 'font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10'}
+                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : 'font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10'}
                                     >
                                         {opt.val}
                                     </SelectItem>
@@ -120,7 +120,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                         value={traveler.first_name}
                         onChange={(e: any) => onChange(index, 'first_name', e.target.value)}
                         error={errors[`first_name_${index}`]}
-                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                     />
                 </div>
                 <div className="md:col-span-5">
@@ -129,7 +129,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                         label="Last Name"
                         value={traveler.last_name}
                         onChange={(e: any) => onChange(index, 'last_name', e.target.value)}
-                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                     />
                 </div>
             </div>
@@ -161,7 +161,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                                 className={cn(
                                     "flex-1 flex items-center justify-center gap-2 text-sm font-bold h-full rounded-[12px] transition-all",
                                     traveler.gender === g.val
-                                        ? "bg-[#FF6B2B] text-white shadow-[0_4px_16px_rgba(255,107,43,0.4)] ring-1 ring-[#FF6B2B]"
+                                        ? "bg-[var(--primary)] text-white shadow-[0_4px_16px_var(--primary-glow)] ring-1 ring-[var(--primary)]"
                                         : "text-[#8B5030] hover:text-[#5C2500] hover:bg-white/40"
                                 )}
                             >
@@ -178,36 +178,36 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     <div className="grid grid-cols-3 gap-2">
                         {/* Day */}
                         <Select value={d} onValueChange={(val) => handleDateChange('day', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
                                 <SelectValue placeholder="DD" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {days.map(day => (
-                                    <SelectItem key={day} value={day} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{day}</SelectItem>
+                                    <SelectItem key={day} value={day} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{day}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
                         {/* Month */}
                         <Select value={m} onValueChange={(val) => handleDateChange('month', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
                                 <SelectValue placeholder="MMM" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {months.map(mon => (
-                                    <SelectItem key={mon.value} value={mon.value} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{mon.label}</SelectItem>
+                                    <SelectItem key={mon.value} value={mon.value} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{mon.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
                         {/* Year */}
                         <Select value={y} onValueChange={(val) => handleDateChange('year', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[#FF6B2B]/25 backdrop-blur-sm">
+                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
                                 <SelectValue placeholder="YYYY" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50 h-[300px]">
                                 {years.map(yr => (
-                                    <SelectItem key={yr} value={yr} className="font-bold text-[#3A1A08] focus:bg-[#FF6B2B]/10">{yr}</SelectItem>
+                                    <SelectItem key={yr} value={yr} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{yr}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -223,7 +223,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     value={traveler.nationality}
                     onChange={(e: any) => onChange(index, 'nationality', e.target.value.toUpperCase())}
                     maxLength={2}
-                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                 />
 
                 <FloatingLabelInput
@@ -231,7 +231,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     label="Passport Number (Optional for Domestic)"
                     value={traveler.passport_number}
                     onChange={(e: any) => onChange(index, 'passport_number', e.target.value.toUpperCase())}
-                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                 />
             </div>
         </div>

@@ -76,7 +76,7 @@ export default function BookingsPage() {
                 return {
                     border: 'border-l-amber-500',
                     bg: 'bg-amber-50/30 hover:bg-amber-50/50',
-                    badge: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-200 text-white animate-pulse',
+                    badge: 'bg-gradient-to-r from-amber-500 to-[var(--gradient-end)] shadow-amber-200 text-white animate-pulse',
                     icon: <Clock className="h-3 w-3" />,
                     text: 'PENDING'
                 }

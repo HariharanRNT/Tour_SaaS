@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useTheme } from '@/context/ThemeContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,7 +68,6 @@ interface DraftSession {
 }
 
 export default function BuildTripPage({ slug }: { slug?: string }) {
-    const { theme } = useTheme()
     const router = useRouter()
     const searchParams = useSearchParams()
     const queryDate = searchParams.get('date')
@@ -671,7 +669,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || theme.itin_hero_image || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`,
+                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`,
                     }}
                 />
 
@@ -695,8 +693,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.destination}, {session.country || 'India'}</span>
                             </div>
 
-                            {(theme.itin_show_ai_badge ?? true) && (
-                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_rgba(232,104,42,0.5)] bg-gradient-to-r from-[#E8682A] to-[#F4A261] rounded-full">
+                            {true && (
+                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[#F4A261] rounded-full">
                                     <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></span>
                                     <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
                                     AI Optimized Itinerary ✨
@@ -712,7 +710,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         {/* Trip Details Grid - Info Chips */}
                         <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
-                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Calendar className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
@@ -722,7 +720,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             </div>
 
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
-                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Clock className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
@@ -734,7 +732,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             </div>
 
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
-                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Users className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
@@ -744,7 +742,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             </div>
 
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
-                                <div className="p-2 bg-[#E8682A] rounded-xl shadow-inner">
+                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Wallet className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
@@ -766,7 +764,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             rounded-full px-6 h-11 font-bold transition-all shadow-xl backdrop-blur-lg
                             ${success
                                 ? 'bg-emerald-500 border-transparent text-white'
-                                : 'bg-white/90 border-2 border-[#E8682A] text-[#E8682A] hover:bg-[#E8682A] hover:text-white'
+                                : 'bg-white/90 border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white'
                             }
                         `}
                         onClick={saveItinerary}
@@ -779,245 +777,170 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             </div>
 
             <div className="container mx-auto px-4 -mt-16 pb-8 relative z-30">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                    {/* Left Column - Main Content */}
-                    {/* Left Column - Main Content */}
-                    <div className="lg:col-span-8 xl:col-span-9 space-y-8">
+                        {/* Left Column - Main Content */}
+                        {/* Left Column - Main Content */}
+                        <div className="lg:col-span-8 xl:col-span-9 space-y-8 min-w-0">
 
-                        {/* AI Summary Banner */}
-                        <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(200,80,20,0.1)] border border-orange-100/50 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
-                            <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
-                                <div className="shrink-0">
-                                    <div className="p-5 bg-gradient-to-br from-[#E8682A] to-[#F4A261] rounded-[2rem] text-white shadow-[0_12px_30px_rgba(232,104,42,0.4)] ring-4 ring-white/50">
-                                        <Sparkles className="h-9 w-9 animate-pulse" />
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <h3 className="text-3xl font-bold text-[#C2440A] font-display">
-                                        Your Personalized AI Itinerary
-                                    </h3>
-                                    <p className="text-[#6B3010] leading-relaxed text-lg max-w-2xl">
-                                        We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[#E8682A]">{session.destination}</span> based on your love for <span className="font-bold text-[#E8682A]">{session.trip_type}</span> experiences.
-                                    </p>
-                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                                        {[
-                                            { icon: <Sparkles className="h-3 w-3" />, label: 'Perfectly Paced' },
-                                            { icon: <MapPin className="h-3 w-3" />, label: 'Top Rated Spots' },
-                                            { icon: <CheckCircle className="h-3 w-3" />, label: 'Local Gems' },
-                                        ].map((tag) => (
-                                            <div key={tag.label} className="bg-[#E8682A]/10 border border-[#E8682A]/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#E8682A] flex items-center gap-1.5 transition-all hover:bg-[#E8682A] hover:text-white hover:border-transparent">
-                                                {tag.icon}
-                                                <span>{tag.label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Trip Overview Cards */}
-                        <section>
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="h-10 w-1.5 rounded-full bg-[#E8682A]" />
-                                <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {[
-                                    { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
-                                    { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
-                                    { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
-                                    { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
-                                ].map((item, i) => (
-                                    <div key={i} className="group relative bg-white/60 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden cursor-default">
-                                        {/* Hover glow */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-[#E8682A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
-
-                                        <div className="relative z-10">
-                                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E8682A] to-[#F4A261] flex items-center justify-center mb-5 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                                                {item.icon}
-                                            </div>
-                                            <h3 className="font-bold text-[#3A1A08] text-xl mb-1">{item.label}</h3>
-                                            <p className="text-sm text-[#A0501E] font-medium opacity-70">{item.desc}</p>
-                                            <p className="text-[11px] text-[#A0501E]/50 font-semibold mt-1.5">{item.detail}</p>
+                            {/* AI Summary Banner */}
+                            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(200,80,20,0.1)] border border-orange-100/50 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-var(--primary-soft) rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                                <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
+                                    <div className="shrink-0">
+                                        <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[#F4A261] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
+                                            <Sparkles className="h-9 w-9 animate-pulse" />
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <div className="border-t border-gray-100"></div>
-
-                        {/* Itinerary Tabs - Clean & Modern */}
-                        <section>
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-1 rounded-full" style={{ backgroundColor: theme.itin_heading_border_color || theme.primary_color || '#3b82f6', backgroundImage: theme.itin_heading_border_color ? 'none' : 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
-                                    <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
+                                    <div className="space-y-4">
+                                        <h3 className="text-3xl font-bold text-[#C2440A] font-display">
+                                            Your Personalized AI Itinerary
+                                        </h3>
+                                        <p className="text-[#6B3010] leading-relaxed text-lg max-w-2xl">
+                                            We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[var(--primary)]">{session.destination}</span> based on your love for <span className="font-bold text-[var(--primary)]">{session.trip_type}</span> experiences.
+                                        </p>
+                                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+                                            {[
+                                                { icon: <Sparkles className="h-3 w-3" />, label: 'Perfectly Paced' },
+                                                { icon: <MapPin className="h-3 w-3" />, label: 'Top Rated Spots' },
+                                                { icon: <CheckCircle className="h-3 w-3" />, label: 'Local Gems' },
+                                            ].map((tag) => (
+                                                <div key={tag.label} className="bg-[var(--primary)]/10 border border-[var(--primary)]/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-[var(--primary)] flex items-center gap-1.5 transition-all hover:bg-[var(--primary)] hover:text-white hover:border-transparent">
+                                                    {tag.icon}
+                                                    <span>{tag.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold">
-                                    <Download className="h-4 w-4" /> Download PDF
-                                </Button>
                             </div>
 
-                            <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
-                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto glass-panel p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-white/20">
-                                    {itinerary.map((day) => (
-                                        <TabsTrigger
-                                            key={day.day_number}
-                                            value={day.day_number.toString()}
-                                            className="
+                            {/* Trip Overview Cards */}
+                            <section>
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
+                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {[
+                                        { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
+                                        { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
+                                        { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
+                                        { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
+                                    ].map((item, i) => (
+                                        <div key={i} className="group relative bg-white/60 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden cursor-default">
+                                            {/* Hover glow */}
+                                            <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
+
+                                            <div className="relative z-10">
+                                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center mb-5 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                                                    {item.icon}
+                                                </div>
+                                                <h3 className="font-bold text-[#3A1A08] text-xl mb-1">{item.label}</h3>
+                                                <p className="text-sm text-[#A0501E] font-medium opacity-70">{item.desc}</p>
+                                                <p className="text-[11px] text-[#A0501E]/50 font-semibold mt-1.5">{item.detail}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <div className="border-t border-gray-100"></div>
+
+                            {/* Itinerary Tabs - Clean & Modern */}
+                            <section>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
+                                        <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
+                                    </div>
+                                    <Button variant="outline" className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold">
+                                        <Download className="h-4 w-4" /> Download PDF
+                                    </Button>
+                                </div>
+
+                                <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
+                                    <TabsList className="mb-8 w-full flex justify-start overflow-x-auto glass-panel p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-white/20">
+                                        {itinerary.map((day) => (
+                                            <TabsTrigger
+                                                key={day.day_number}
+                                                value={day.day_number.toString()}
+                                                className="
                                                 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
                                                 data-[state=active]:bg-white data-[state=active]:shadow-md
                                                 text-slate-500 hover:text-slate-700 hover:bg-slate-100/50
                                             "
-                                            style={{
-                                                color: currentDay === day.day_number ? (theme.itin_active_day_color || theme.primary_color || '#1d4ed8') : ''
-                                            }}
-                                        >
-                                            Day {day.day_number}
-                                        </TabsTrigger>
+                                                style={{
+                                                    color: currentDay === day.day_number ? '#1d4ed8' : ''
+                                                }}
+                                            >
+                                                Day {day.day_number}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+
+                                    {itinerary.map((day) => (
+                                        <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-5 duration-500">
+                                            <DayPlanner
+                                                day={day}
+                                                onAddActivity={addActivity}
+                                                onRemoveActivity={removeActivity}
+                                                morningColor={undefined}
+                                                afternoonColor={undefined}
+                                                eveningColor={undefined}
+                                                nightColor={undefined}
+                                                activeDayColor={undefined}
+                                                headingBorderColor={undefined}
+                                                dayBadgeColor={undefined}
+                                                isReadonly={mode === 'preview'}
+                                            />
+                                        </TabsContent>
                                     ))}
-                                </TabsList>
+                                </Tabs>
+                            </section>
 
-                                {itinerary.map((day) => (
-                                    <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-5 duration-500">
-                                        <DayPlanner
-                                            day={day}
-                                            onAddActivity={addActivity}
-                                            onRemoveActivity={removeActivity}
-                                            morningColor={theme.itin_morning_color}
-                                            afternoonColor={theme.itin_afternoon_color}
-                                            eveningColor={theme.itin_evening_color}
-                                            nightColor={theme.itin_night_color}
-                                            activeDayColor={theme.itin_active_day_color}
-                                            headingBorderColor={theme.itin_heading_border_color}
-                                            dayBadgeColor={theme.itin_day_badge_color}
-                                            isReadonly={mode === 'preview'}
-                                        />
-                                    </TabsContent>
-                                ))}
-                            </Tabs>
-                        </section>
+                            {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
+                                <div className="border-t border-gray-100"></div>
+                            )}
 
-                        {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
-                            <div className="border-t border-gray-100"></div>
-                        )}
-
-                        {/* FLIGHTS MODULE - Enhanced */}
-                        {preferences.include_flights && (
-                            <section className="space-y-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                                    <div className="flex-1 flex items-center justify-between">
-                                        <h2 className="text-2xl font-bold text-gray-900">Flights</h2>
-                                        {flightError && <Badge variant="destructive">{flightError}</Badge>}
-                                    </div>
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <div className="space-y-4">
-                                        <h3 className="text-xs font-black text-[#F97316] uppercase tracking-[0.2em] flex items-center gap-2">
-                                            <div className="p-1 bg-[#F97316]/10 rounded-md">
-                                                <Plane className="h-3 w-3" />
-                                            </div>
-                                            Onward Journey
-                                        </h3>
-                                        {selectedOnwardFlight ? (
-                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
-                                                <div className="p-1">
-                                                    <FlightCard
-                                                        flight={selectedOnwardFlight}
-                                                        isSelected={true}
-                                                        onSelect={() => { }}
-                                                    />
-                                                    <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
-                                                        <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
-                                                            <DialogTrigger asChild>
-                                                                <Button variant="link" size="sm" className="text-[#F97316] hover:text-[#EA580C] w-full mb-1 font-black underline decoration-[#F97316]/0 hover:decoration-[#F97316]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
-                                                                    Change Onward Flight
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_rgba(249,115,22,0.15)]">
-                                                                <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                    <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
-                                                                </DialogHeader>
-                                                                <div className="flex flex-1 overflow-hidden">
-                                                                    <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
-                                                                        <div className="flex items-center justify-between mb-6">
-                                                                            <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
-                                                                        </div>
-                                                                        <div className="flex items-center justify-between mb-6 md:hidden">
-                                                                            <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                            <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
-                                                                        </div>
-                                                                        <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
-                                                                        <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
-                                                                    </div>
-                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
-                                                                        <div className="md:hidden mb-4">
-                                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
-                                                                                Filters
-                                                                            </Button>
-                                                                        </div>
-                                                                        <div className="space-y-4">
-                                                                            {filteredOnwardFlights.length === 0 ? (
-                                                                                <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
-                                                                                    <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
-                                                                                    <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
-                                                                                </div>
-                                                                            ) : (
-                                                                                filteredOnwardFlights.map(f => (
-                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
-                                                                                ))
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none">
-                                                <div className="flex flex-col items-center gap-3 text-gray-400">
-                                                    {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
-                                                    <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
-                                                </div>
-                                            </Card>
-                                        )}
+                            {/* FLIGHTS MODULE - Enhanced */}
+                            {preferences.include_flights && (
+                                <section className="space-y-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                        <div className="flex-1 flex items-center justify-between">
+                                            <h2 className="text-2xl font-bold text-gray-900">Flights</h2>
+                                            {flightError && <Badge variant="destructive">{flightError}</Badge>}
+                                        </div>
                                     </div>
 
-                                    {returnFlights.length > 0 && (
+                                    <div className="grid md:grid-cols-2 gap-8">
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-black text-[#F97316] uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <div className="p-1 bg-[#F97316]/10 rounded-md">
-                                                    <Plane className="h-3 w-3 -rotate-180" />
+                                            <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <div className="p-1 bg-[var(--primary)]/10 rounded-md">
+                                                    <Plane className="h-3 w-3" />
                                                 </div>
-                                                Return Journey
+                                                Onward Journey
                                             </h3>
-                                            {selectedReturnFlight ? (
+                                            {selectedOnwardFlight ? (
                                                 <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
                                                     <div className="p-1">
                                                         <FlightCard
-                                                            flight={selectedReturnFlight}
+                                                            flight={selectedOnwardFlight}
                                                             isSelected={true}
                                                             onSelect={() => { }}
                                                         />
                                                         <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
-                                                            <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
+                                                            <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                                 <DialogTrigger asChild>
-                                                                    <Button variant="link" size="sm" className="text-[#F97316] hover:text-[#EA580C] w-full mb-1 font-black underline decoration-[#F97316]/0 hover:decoration-[#F97316]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
-                                                                        Change Return Flight
+                                                                    <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
+                                                                        Change Onward Flight
                                                                     </Button>
                                                                 </DialogTrigger>
-                                                                <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_rgba(249,115,22,0.15)]">
+                                                                <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
                                                                     <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                        <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
+                                                                        <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
                                                                         <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
@@ -1026,7 +949,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
                                                                             </div>
                                                                             <div className="flex items-center justify-between mb-6 md:hidden">
-                                                                                <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                                <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                                <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
                                                                             </div>
                                                                             <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                             <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
@@ -1038,9 +962,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                                 </Button>
                                                                             </div>
                                                                             <div className="space-y-4">
-                                                                                {filteredReturnFlights.map(f => (
-                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
-                                                                                ))}
+                                                                                {filteredOnwardFlights.length === 0 ? (
+                                                                                    <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
+                                                                                        <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
+                                                                                        <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    filteredOnwardFlights.map(f => (
+                                                                                        <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
+                                                                                    ))
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1050,231 +981,296 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none glass-panel">
+                                                <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none">
                                                     <div className="flex flex-col items-center gap-3 text-gray-400">
                                                         {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
-                                                        <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
+                                                        <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
                                                     </div>
                                                 </Card>
                                             )}
                                         </div>
+
+                                        {returnFlights.length > 0 && (
+                                            <div className="space-y-4">
+                                                <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <div className="p-1 bg-[var(--primary)]/10 rounded-md">
+                                                        <Plane className="h-3 w-3 -rotate-180" />
+                                                    </div>
+                                                    Return Journey
+                                                </h3>
+                                                {selectedReturnFlight ? (
+                                                    <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
+                                                        <div className="p-1">
+                                                            <FlightCard
+                                                                flight={selectedReturnFlight}
+                                                                isSelected={true}
+                                                                onSelect={() => { }}
+                                                            />
+                                                            <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
+                                                                <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
+                                                                    <DialogTrigger asChild>
+                                                                        <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
+                                                                            Change Return Flight
+                                                                        </Button>
+                                                                    </DialogTrigger>
+                                                                    <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
+                                                                        <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
+                                                                            <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
+                                                                        </DialogHeader>
+                                                                        <div className="flex flex-1 overflow-hidden">
+                                                                            <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                                <div className="flex items-center justify-between mb-6">
+                                                                                    <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                                    <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
+                                                                                </div>
+                                                                                <div className="flex items-center justify-between mb-6 md:hidden">
+                                                                                    <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                                </div>
+                                                                                <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
+                                                                                <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
+                                                                            </div>
+                                                                            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
+                                                                                <div className="md:hidden mb-4">
+                                                                                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
+                                                                                        Filters
+                                                                                    </Button>
+                                                                                </div>
+                                                                                <div className="space-y-4">
+                                                                                    {filteredReturnFlights.map(f => (
+                                                                                        <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </DialogContent>
+                                                                </Dialog>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none glass-panel">
+                                                        <div className="flex flex-col items-center gap-3 text-gray-400">
+                                                            {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
+                                                            <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
+                                                        </div>
+                                                    </Card>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            )}
+
+
+                            {(preferences.include_hotels || preferences.include_transfers) && (
+                                <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* HOTELS & TRANSFERS MODULES */}
+                                    {preferences.include_hotels && (
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                                                    <Hotel className="h-6 w-6" />
+                                                </div>
+                                                <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
+                                            </div>
+
+                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
+                                                <ServiceCard
+                                                    type="hotel"
+                                                    status={hotelSelected ? 'selected' : 'pending'}
+                                                    title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
+                                                    description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
+                                                    price={hotelSelected ? HOTEL_ESTIMATE : undefined}
+                                                    details={hotelSelected ? {
+                                                        date: 'Check-in: Day 1',
+                                                        rating: 4.8
+                                                    } : undefined}
+                                                    onAction={() => setHotelSelected(!hotelSelected)}
+                                                    disabled={mode === 'preview'}
+                                                />
+                                            </div>
+                                        </div>
                                     )}
-                                </div>
-                            </section>
-                        )}
 
-
-                        {(preferences.include_hotels || preferences.include_transfers) && (
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* HOTELS & TRANSFERS MODULES */}
-                                {preferences.include_hotels && (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
-                                                <Hotel className="h-6 w-6" />
-                                            </div>
-                                            <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
-                                        </div>
-
-                                        <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
-                                            <ServiceCard
-                                                type="hotel"
-                                                status={hotelSelected ? 'selected' : 'pending'}
-                                                title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
-                                                description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
-                                                price={hotelSelected ? HOTEL_ESTIMATE : undefined}
-                                                details={hotelSelected ? {
-                                                    date: 'Check-in: Day 1',
-                                                    rating: 4.8
-                                                } : undefined}
-                                                onAction={() => setHotelSelected(!hotelSelected)}
-                                                disabled={mode === 'preview'}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {preferences.include_transfers && (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
-                                                <Car className="h-6 w-6" />
-                                            </div>
-                                            <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
-                                        </div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-gradient-to-br from-[#F97316] to-[#FB923C] rounded-lg shadow-sm">
-                                                    <Plane className="h-4 w-4 text-white" />
+                                    {preferences.include_transfers && (
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
+                                                    <Car className="h-6 w-6" />
                                                 </div>
-                                                <h3 className="font-black text-[#3A1A08] uppercase tracking-widest text-sm">Onward Journey</h3>
+                                                <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
                                             </div>
-                                            <div className="text-xs font-bold text-slate-500 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
-                                                Direct Flight Only
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[#FB923C] rounded-lg shadow-sm">
+                                                        <Plane className="h-4 w-4 text-white" />
+                                                    </div>
+                                                    <h3 className="font-black text-[#3A1A08] uppercase tracking-widest text-sm">Onward Journey</h3>
+                                                </div>
+                                                <div className="text-xs font-bold text-slate-500 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                                                    Direct Flight Only
+                                                </div>
+                                            </div>
+                                            <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
+                                                <ServiceCard
+                                                    type="transfer"
+                                                    status={transferSelected ? 'selected' : 'pending'}
+                                                    title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
+                                                    description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
+                                                    price={transferSelected ? TRANSFER_ESTIMATE : undefined}
+                                                    details={transferSelected ? {
+                                                        duration: 'Full Trip Coverage'
+                                                    } : undefined}
+                                                    onAction={() => setTransferSelected(!transferSelected)}
+                                                    disabled={mode === 'preview'}
+                                                />
                                             </div>
                                         </div>
-                                        <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
-                                            <ServiceCard
-                                                type="transfer"
-                                                status={transferSelected ? 'selected' : 'pending'}
-                                                title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
-                                                description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
-                                                price={transferSelected ? TRANSFER_ESTIMATE : undefined}
-                                                details={transferSelected ? {
-                                                    duration: 'Full Trip Coverage'
-                                                } : undefined}
-                                                onAction={() => setTransferSelected(!transferSelected)}
-                                                disabled={mode === 'preview'}
-                                            />
-                                        </div>
+                                    )}
+                                </section>
+                            )}
+
+
+                            {/* Footer Confidence Boost - Redesigned */}
+                            {true && (
+                                <div className="pt-16 pb-8" style={{ backgroundColor: 'transparent' }}>
+                                    <div className="text-center mb-12">
+                                        <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A0501E]/60 mb-2">
+                                            Peace of Mind
+                                        </h3>
+                                        <h2 className="text-3xl font-bold text-[#3A1A08] font-display">
+                                            {"Why book with RNT Tour?"}
+                                        </h2>
                                     </div>
-                                )}
-                            </section>
-                        )}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        {[
+                                            { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "var(--primary)", bgColor: "var(--primary-glow)" },
+                                            { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "var(--primary)", bgColor: "var(--primary-glow)" },
+                                            { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "var(--primary)", bgColor: "var(--primary-glow)" }
+                                        ].map((card, idx) => {
+                                            const IconComponent = idx === 0 ? ShieldCheck : idx === 1 ? CheckCircle : Headphones;
 
-
-                        {/* Footer Confidence Boost - Redesigned */}
-                        {theme.itin_show_trust_section !== false && (
-                            <div className="pt-16 pb-8" style={{ backgroundColor: theme.itin_trust_section_bg || 'transparent' }}>
-                                <div className="text-center mb-12">
-                                    <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A0501E]/60 mb-2">
-                                        Peace of Mind
-                                    </h3>
-                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">
-                                        {theme.itin_trust_title || "Why book with RNT Tour?"}
-                                    </h2>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {(theme.itin_trust_cards || [
-                                        { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" },
-                                        { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" },
-                                        { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "#E8682A", bgColor: "rgba(232,104,42,0.05)" }
-                                    ]).map((card, idx) => {
-                                        const IconComponent = idx === 0 ? ShieldCheck : idx === 1 ? CheckCircle : Headphones;
-
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className="flex flex-col items-center text-center gap-6 group p-8 rounded-[2rem] transition-all duration-500 bg-white/40 backdrop-blur-sm border border-orange-100/30 hover:shadow-xl hover:-translate-y-1"
-                                            >
+                                            return (
                                                 <div
-                                                    className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[#E8682A] to-[#F4A261] text-white"
+                                                    key={idx}
+                                                    className="flex flex-col items-center text-center gap-6 group p-8 rounded-[2rem] transition-all duration-500 bg-white/40 backdrop-blur-sm border border-orange-100/30 hover:shadow-xl hover:-translate-y-1"
                                                 >
-                                                    <IconComponent className="h-8 w-8" />
+                                                    <div
+                                                        className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[var(--primary)] to-[#F4A261] text-white"
+                                                    >
+                                                        <IconComponent className="h-8 w-8" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-[#3A1A08] text-xl mb-2 font-display">{card.title}</h4>
+                                                        <p className="text-sm text-[#6B3010]/70 leading-relaxed">{card.desc}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-bold text-[#3A1A08] text-xl mb-2 font-display">{card.title}</h4>
-                                                    <p className="text-sm text-[#6B3010]/70 leading-relaxed">{card.desc}</p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                    </div>
+                        </div>
 
-                    {/* Right Column - Trip Cart (Sticky) */}
-                    <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
-                        <div className="sticky top-8">
-                            <div className="relative">
-                                {/* Decorative elements behind cart */}
-                                <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
-                                <TripCart
-                                    basePrice={session.price_per_person || 18000}
-                                    travelers={travelers}
-                                    duration={{ days: session.duration_days, nights: session.duration_nights }}
-                                    services={[
-                                        ...(selectedOnwardFlight ? [{
-                                            name: 'Onward Flight',
-                                            price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
-                                        }] : []),
-                                        ...(selectedReturnFlight ? [{
-                                            name: 'Return Flight',
-                                            price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
-                                        }] : []),
-                                        ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                        ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                    ]}
-                                    onCheckout={handleCheckout}
-                                    disabled={mode === 'preview'}
-                                    gstSettings={gstSettings || undefined}
-                                    sidebarBg={theme.itin_sidebar_bg === 'brand' ? theme.primary_color : theme.itin_sidebar_bg === 'navy' ? '#0f172a' : ''}
-                                    priceColor={theme.itin_price_color}
-                                    ctaColor={theme.itin_cta_color}
-                                    ctaTextColor={theme.itin_cta_text_color} // Wait, I added ctaTextColor to TripCart but is it in AgentTheme?
-                                />
+                        {/* Right Column - Trip Cart (Sticky) */}
+                        <div className="hidden lg:block lg:col-span-4 xl:col-span-3 min-w-0">
+                            <div className="sticky top-8">
+                                <div className="relative">
+                                    {/* Decorative elements behind cart */}
+                                    <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
+                                    <TripCart
+                                        basePrice={session.price_per_person || 18000}
+                                        travelers={travelers}
+                                        duration={{ days: session.duration_days, nights: session.duration_nights }}
+                                        services={[
+                                            ...(selectedOnwardFlight ? [{
+                                                name: 'Onward Flight',
+                                                price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                            }] : []),
+                                            ...(selectedReturnFlight ? [{
+                                                name: 'Return Flight',
+                                                price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                            }] : []),
+                                            ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                            ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                        ]}
+                                        onCheckout={handleCheckout}
+                                        disabled={mode === 'preview'}
+                                        gstSettings={gstSettings || undefined}
+                                        priceColor={'#FF7A45'}
+                                        ctaColor={'#FF7A45'}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                </div>
-            </div>
-            {/* Mobile Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold text-gray-900">
-                            ₹{(() => {
-                                const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
-                                const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
-                                const services = [
-                                    ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                    ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
-                                    ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                    ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                ]
-                                const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
-                                let subTotal = totalBasePrice + totalServicesPrice
-
-                                if (gstSettings && !gstSettings.inclusive) {
-                                    const gstAmount = (subTotal * gstSettings.percentage) / 100
-                                    subTotal += gstAmount
-                                }
-
-                                return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                            })()}
-                        </span>
-                        <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
                     </div>
                 </div>
-                <Button onClick={handleCheckout} className="bg-blue-600 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-blue-500/20">
-                    Book Now
-                </Button>
-            </div>
+                {/* Mobile Sticky Footer */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-bold text-gray-900">
+                                ₹{(() => {
+                                    const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
+                                    const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
+                                    const services = [
+                                        ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                        ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                        ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                        ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                    ]
+                                    const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
+                                    let subTotal = totalBasePrice + totalServicesPrice
 
-            {/* Mobile Cart Dialog */}
-            <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
-                <DialogContent className="glass-panel max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl border-0">
-                    <div className="p-4 border-b border-white/20 bg-white/10 flex justify-between items-center sticky top-0 z-10">
-                        <DialogTitle>Trip Summary</DialogTitle>
+                                    if (gstSettings && !gstSettings.inclusive) {
+                                        const gstAmount = (subTotal * gstSettings.percentage) / 100
+                                        subTotal += gstAmount
+                                    }
+
+                                    return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                                })()}
+                            </span>
+                            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
+                        </div>
                     </div>
-                    <div className="p-4 bg-transparent min-h-[50vh]">
-                        <TripCart
-                            basePrice={session.price_per_person || 18000}
-                            travelers={travelers}
-                            duration={{ days: session.duration_days, nights: session.duration_nights }}
-                            services={[
-                                ...(selectedOnwardFlight ? [{
-                                    name: 'Onward Flight',
-                                    price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
-                                }] : []),
-                                ...(selectedReturnFlight ? [{
-                                    name: 'Return Flight',
-                                    price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
-                                }] : []),
-                                ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                            ]}
-                            onCheckout={handleCheckout}
-                            disabled={mode === 'preview'}
-                            gstSettings={gstSettings || undefined}
-                        />
-                    </div>
-                </DialogContent>
-            </Dialog>
+                    <Button onClick={handleCheckout} className="bg-blue-600 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-blue-500/20">
+                        Book Now
+                    </Button>
+                </div>
+
+                {/* Mobile Cart Dialog */}
+                <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
+                    <DialogContent className="glass-panel max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl border-0">
+                        <div className="p-4 border-b border-white/20 bg-white/10 flex justify-between items-center sticky top-0 z-10">
+                            <DialogTitle>Trip Summary</DialogTitle>
+                        </div>
+                        <div className="p-4 bg-transparent min-h-[50vh]">
+                            <TripCart
+                                basePrice={session.price_per_person || 18000}
+                                travelers={travelers}
+                                duration={{ days: session.duration_days, nights: session.duration_nights }}
+                                services={[
+                                    ...(selectedOnwardFlight ? [{
+                                        name: 'Onward Flight',
+                                        price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                    }] : []),
+                                    ...(selectedReturnFlight ? [{
+                                        name: 'Return Flight',
+                                        price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                    }] : []),
+                                    ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                    ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                ]}
+                                onCheckout={handleCheckout}
+                                disabled={mode === 'preview'}
+                                gstSettings={gstSettings || undefined}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
             <BookingAuthModal
                 isOpen={isAuthModalOpen}

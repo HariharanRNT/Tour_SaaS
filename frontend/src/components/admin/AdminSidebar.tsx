@@ -108,21 +108,21 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 className
             )}
             style={{
-                background: 'rgba(55, 45, 100, 0.50)',
+                background: 'var(--sidebar-bg)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 borderRightColor: 'rgba(255,255,255,0.12)',
             }}
         >
             {/* Subtle inner glow on right edge */}
-            <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-purple-300/40 to-transparent" />
+            <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--primary-light)]/40 to-transparent" />
 
             {/* Logo Section */}
             <div className="h-20 flex px-5 items-center justify-between border-b border-white/30 shrink-0">
                 {!collapsed && (
                     <div className="flex-1 flex flex-col min-w-0 pr-2">
                         <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.10)' }}>
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#6c47ff' }}>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--primary)' }}>
                                 <Briefcase className="w-5 h-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -140,8 +140,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 {collapsed && (
                     <div className="w-full flex justify-center">
                         <div className="relative group">
-                            <div className="absolute inset-0 bg-purple-500 blur-lg opacity-30 group-hover:opacity-50 transition-opacity rounded-xl" />
-                            <div className="bg-gradient-to-br from-violet-600 to-purple-700 p-2.5 rounded-xl relative group-hover:scale-105 transition-transform duration-300">
+                            <div className="absolute inset-0 bg-[var(--primary)] blur-lg opacity-30 group-hover:opacity-50 transition-opacity rounded-xl" />
+                            <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-2.5 rounded-xl relative group-hover:scale-105 transition-transform duration-300">
                                 <Plane className="h-5 w-5 text-white" />
                             </div>
                         </div>
@@ -182,10 +182,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         )}
                                         style={isActive ? {
                                             color: '#ffffff',
-                                            background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)',
+                                            background: 'linear-gradient(135deg, var(--primary), var(--gradient-mid))',
                                             borderLeft: collapsed ? 'none' : '3px solid rgba(255,255,255,0.80)',
                                             fontWeight: 600,
-                                            boxShadow: '0 4px 16px rgba(255,107,43,0.35)',
+                                            boxShadow: '0 4px 16px var(--primary-glow)',
                                         } : {
                                             color: 'rgba(255, 255, 255, 0.70)',
                                             fontWeight: 500,
@@ -258,8 +258,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 {/* User Avatar & Name */}
                 {!collapsed ? (
                     <div className="flex items-center gap-3 px-3 py-3 mt-1 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-sm hover:bg-white/20 transition-colors">
-                        {/* Avatar circle with solid purple branding */}
-                        <div className="h-8 w-8 rounded-xl bg-[#6c47ff] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-purple-500/20 flex-shrink-0">
+                        {/* Avatar circle with branded background */}
+                        <div className="h-8 w-8 rounded-xl bg-[var(--primary)] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[var(--primary)]/20 flex-shrink-0">
                             {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || 'A')).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">

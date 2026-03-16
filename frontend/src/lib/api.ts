@@ -139,6 +139,138 @@ export const packagesAPI = {
     },
 }
 
+// Flat named exports as requested
+export const fetchDashboardStats = async (filter_type: string = 'ALL') => {
+    const response = await api.get('/admin-simple/dashboard-stats', {
+        params: { filter_type }
+    })
+    return response.data
+}
+
+export const fetchAgents = async (status: string = 'all') => {
+    const params = status !== 'all' ? { status } : {}
+    const response = await api.get('/admin/agents', { params })
+    return response.data
+}
+
+export const createAgent = async (data: any) => {
+    const response = await api.post('/admin/agents', data)
+    return response.data
+}
+
+export const updateAgent = async (id: string, data: any) => {
+    const response = await api.put(`/admin/agents/${id}`, data)
+    return response.data
+}
+
+export const deleteAgent = async (id: string) => {
+    const response = await api.delete(`/admin/agents/${id}`)
+    return response.data
+}
+
+export const approveAgent = async (id: string) => {
+    const response = await api.patch(`/admin/agents/${id}/approve`)
+    return response.data
+}
+
+export const rejectAgent = async (id: string, reason: string = "") => {
+    const response = await api.patch(`/admin/agents/${id}/reject`, { reason })
+    return response.data
+}
+
+export const updateAgentStatus = async (id: string, is_active: boolean) => {
+    const response = await api.patch(`/admin/agents/${id}/status`, null, {
+        params: { is_active }
+    })
+    return response.data
+}
+
+export const bulkDeleteAgents = async (ids: string[]) => {
+    const response = await api.post('/admin/agents/bulk-delete', { ids });
+    return response.data;
+};
+
+export const bulkUpdateAgentsStatus = async (ids: string[], is_active: boolean) => {
+    const response = await api.post('/admin/agents/bulk-status', { ids, is_active });
+    return response.data;
+};
+
+export const fetchPackagesSimple = async () => {
+    const response = await api.get('/admin-simple/packages-simple')
+    return response.data
+}
+
+export const deletePackageSimple = async (id: string) => {
+    const response = await api.delete(`/admin-simple/packages-simple/${id}`)
+    return response.data
+}
+
+export const updatePackageStatus = async (id: string, new_status: string) => {
+    const response = await api.patch(`/admin/packages/${id}/status`, null, {
+        params: { new_status }
+    })
+    return response.data
+}
+
+// Agent Packages API
+export const fetchAgentPackages = async (params: any) => {
+    const response = await api.get('/agent/packages', { params })
+    return response.data
+}
+
+export const deleteAgentPackage = async (id: string) => {
+    const response = await api.delete(`/agent/packages/${id}`)
+    return response.data
+}
+
+export const updateAgentPackageStatus = async (id: string, new_status: string) => {
+    const response = await api.patch(`/agent/packages/${id}/status`, null, {
+        params: { new_status }
+    })
+    return response.data
+}
+
+export const fetchAgentDashboardStats = async (params: any) => {
+    const response = await api.get('/agent-dashboard/stats', { params })
+    return response.data
+}
+
+// AI Assistant API
+export const sendAIChatMessage = async (data: { message: string, conversation_id: string | null }) => {
+    const response = await api.post('/ai-assistant/chat', data)
+    return response.data
+}
+
+export const generateAIPackage = async (conversation_id: string) => {
+    const response = await api.post('/ai-assistant/generate-package', { conversation_id })
+    return response.data
+}
+
+export const fetchAdminPlans = async () => {
+    const response = await api.get('/subscriptions/admin/plans')
+    return response.data
+}
+
+export const fetchAdminSubscriptions = async () => {
+    const response = await api.get('/subscriptions/admin/subscriptions')
+    return response.data
+}
+
+export const createSubscriptionPlan = async (data: any) => {
+    const response = await api.post('/subscriptions/plans', data)
+    return response.data
+}
+
+export const updateSubscriptionPlan = async (id: string, data: any) => {
+    const response = await api.put(`/subscriptions/plans/${id}`, data)
+    return response.data
+}
+
+export const deleteSubscriptionPlan = async (id: string) => {
+    const response = await api.delete(`/subscriptions/plans/${id}`)
+    return response.data
+}
+
 // Bookings API
 export const bookingsAPI = {
     create: async (data: {
@@ -299,12 +431,12 @@ export const tripPlannerAPI = {
 
 // Activities API
 export const activitiesAPI = {
-    getAll: async (params?: { city?: string; category?: string }) => {
+    getAll: async (params?: { city?: string; category?: string; search?: string }) => {
         const response = await api.get('/activities', { params })
         return response.data
     },
 
-    getDestinations: async (params?: { page?: number; limit?: number }) => {
+    getDestinations: async (params?: { page?: number; limit?: number; search?: string }) => {
         const response = await api.get('/activities/destinations', { params })
         return response.data
     },
@@ -353,6 +485,32 @@ export const activitiesAPI = {
         const response = await api.put(`/activities/destination/${encodeURIComponent(oldName)}`, data)
         return response.data
     }
+}
+
+// Agent Settings API
+export const fetchAgentSettings = async () => {
+    const response = await api.get('/agent/settings')
+    return response.data
+}
+
+export const updateAgentSettingsGeneral = async (data: any) => {
+    const response = await api.put('/agent/settings/general', data)
+    return response.data
+}
+
+export const updateAgentSettingsSmtp = async (data: any) => {
+    const response = await api.put('/agent/settings/smtp', data)
+    return response.data
+}
+
+export const updateAgentSettingsRazorpay = async (data: any) => {
+    const response = await api.put('/agent/settings/razorpay', data)
+    return response.data
+}
+
+export const testSmtpSettings = async (data: any) => {
+    const response = await api.post('/agent/settings/smtp/test', data)
+    return response.data
 }
 
 export default api

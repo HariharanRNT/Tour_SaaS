@@ -640,20 +640,20 @@ export default function CreatePackagePage() {
                         <div className="w-full max-w-3xl mx-auto py-4">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] px-2 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+                                    <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[var(--primary)] to-[#FF9A5C] px-2 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
                                         Progress: {activeStep === 1 ? '33%' : activeStep === 2 ? '66%' : '100%'}
                                     </span>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#FF6B2B] uppercase tracking-widest">Step {activeStep} of 3</span>
+                                <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">Step {activeStep} of 3</span>
                             </div>
 
                             <div className="relative flex items-center justify-between">
                                 {/* Background Line */}
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1.5 bg-[#FF6B2B]/10 rounded-full -z-10" />
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1.5 bg-[var(--primary)]/10 rounded-full -z-10" />
 
                                 {/* Active Progress Line */}
                                 <div
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] rounded-full -z-10 transition-all duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1)"
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[var(--primary)] to-[#FF9A5C] rounded-full -z-10 transition-all duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1)"
                                     style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
                                 />
 
@@ -674,7 +674,7 @@ export default function CreatePackagePage() {
                                             <div className={cn(
                                                 "w-10 -10 rounded-full flex items-center justify-center border-2 transition-all duration-700 z-10",
                                                 isCompleted ? "bg-[#10B981] border-white text-white shadow-[0_0_15px_rgba(255,107,43,0.4)]" :
-                                                    isCurrent ? "bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] border-white text-white shadow-[0_0_20px_rgba(255,107,43,0.4)] scale-110" :
+                                                    isCurrent ? "bg-gradient-to-br from-[var(--primary)] to-[#FF9A5C] border-white text-white shadow-[0_0_20px_rgba(255,107,43,0.4)] scale-110" :
                                                         "bg-white/20 backdrop-blur-md border-white/30 text-gray-500"
                                             )}>
                                                 {isCompleted ? <Check className="w-5 h-5" /> : (
@@ -683,7 +683,7 @@ export default function CreatePackagePage() {
 
                                                 {/* Pulsing ring for current */}
                                                 {isCurrent && (
-                                                    <div className="absolute inset-0 rounded-full border-4 border-[#FF6B2B]/30 animate-ping" />
+                                                    <div className="absolute inset-0 rounded-full border-4 border-[var(--primary)]/30 animate-ping" />
                                                 )}
                                             </div>
 
@@ -737,7 +737,7 @@ export default function CreatePackagePage() {
                                         <div
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
-                                                background: 'linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 100%)',
+                                                background: 'linear-gradient(135deg, var(--primary) 0%, #FF9A5C 100%)',
                                                 left: formData.package_mode === 'single' ? '4px' : 'calc(50%)',
                                             }}
                                         />
@@ -748,7 +748,7 @@ export default function CreatePackagePage() {
                                             onClick={() => updateFormData('package_mode', 'single')}
                                             className={cn(
                                                 "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
-                                                formData.package_mode === 'single' ? "text-white" : "text-[#8C6B5D] hover:text-[#FF6B2B] hover:bg-white/10"
+                                                formData.package_mode === 'single' ? "text-white" : "text-[#8C6B5D] hover:text-[var(--primary)] hover:bg-white/10"
                                             )}
                                         >
                                             <MapPin className="w-4 h-4" />
@@ -761,7 +761,7 @@ export default function CreatePackagePage() {
                                             onClick={() => updateFormData('package_mode', 'multi')}
                                             className={cn(
                                                 "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
-                                                formData.package_mode === 'multi' ? "text-white" : "text-[#8C6B5D] hover:text-[#FF6B2B] hover:bg-white/10"
+                                                formData.package_mode === 'multi' ? "text-white" : "text-[#8C6B5D] hover:text-[var(--primary)] hover:bg-white/10"
                                             )}
                                         >
                                             <Globe className="w-4 h-4" />
@@ -839,10 +839,10 @@ export default function CreatePackagePage() {
                                         <div className="flex items-center justify-between border-b border-gray-100/50 pb-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-[#FF6B2B]"></span>
-                                                    <Label className="text-xs font-bold text-[#2D1A0E] uppercase tracking-[0.15em]">Destination Legs</Label>
+                                                    <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
+                                                    <Label className="text-xs font-bold text-[slate-900] uppercase tracking-[0.15em]">Destination Legs</Label>
                                                 </div>
-                                                <div className="px-2.5 py-1 text-[10px] font-bold text-[#FF6B2B] bg-white/20 border border-[rgba(255,107,43,0.3)] tracking-wide rounded-full shadow-sm">
+                                                <div className="px-2.5 py-1 text-[10px] font-bold text-[var(--primary)] bg-white/20 border border-[rgba(255,107,43,0.3)] tracking-wide rounded-full shadow-sm">
                                                     {formData.destinations.length} Leg{formData.destinations.length !== 1 ? 's' : ''}
                                                 </div>
                                             </div>
@@ -850,9 +850,9 @@ export default function CreatePackagePage() {
                                                 type="button"
                                                 size="sm"
                                                 onClick={handleAddDestination}
-                                                className="h-8 px-4 text-xs font-semibold text-[#FF6B2B] bg-[rgba(255,255,255,0.22)] border-[1.5px] border-[rgba(255,107,43,0.45)] hover:bg-[rgba(255,107,43,0.08)] hover:border-[#FF6B2B] transition-all rounded-full shadow-sm"
+                                                className="h-8 px-4 text-xs font-semibold text-[var(--primary)] bg-[rgba(255,255,255,0.22)] border-[1.5px] border-[rgba(255,107,43,0.45)] hover:bg-[rgba(255,107,43,0.08)] hover:border-[var(--primary)] transition-all rounded-full shadow-sm"
                                             >
-                                                <Plus className="w-3.5 h-3.5 mr-1 text-[#FF6B2B]" /> Add Leg
+                                                <Plus className="w-3.5 h-3.5 mr-1 text-[var(--primary)]" /> Add Leg
                                             </Button>
                                         </div>
 
@@ -876,14 +876,14 @@ export default function CreatePackagePage() {
                                                         className={cn(
                                                             "w-full flex flex-col sm:flex-row gap-3 p-5 relative transition-all duration-300 group overflow-visible",
                                                             draggedLegIndex === index ? "opacity-40" : "opacity-100",
-                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex < index ? "border-b-4 border-b-[#FF6B2B]" : "",
-                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex > index ? "border-t-4 border-t-[#FF6B2B]" : ""
+                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex < index ? "border-b-4 border-b-[var(--primary)]" : "",
+                                                            dragOverLegIndex === index && draggedLegIndex !== null && draggedLegIndex > index ? "border-t-4 border-t-[var(--primary)]" : ""
                                                         )}
                                                         style={{
                                                             background: 'rgba(255,255,255,0.20)',
                                                             backdropFilter: 'blur(16px)',
                                                             border: '1px solid rgba(255,255,255,0.40)',
-                                                            borderLeft: '3px solid #FF6B2B',
+                                                            borderLeft: '3px solid var(--primary)',
                                                             borderRadius: '20px',
                                                             boxShadow: draggedLegIndex === index ? '0 12px 32px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)'
                                                         }}
@@ -891,14 +891,14 @@ export default function CreatePackagePage() {
                                                         onMouseLeave={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)' } }}
                                                     >
                                                         {/* Drag Handle */}
-                                                        <div className="absolute left-[-22px] top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity p-2 text-[rgba(255,107,43,0.40)] hover:text-[#FF6B2B]">
+                                                        <div className="absolute left-[-22px] top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity p-2 text-[rgba(255,107,43,0.40)] hover:text-[var(--primary)]">
                                                             <GripVertical className="w-5 h-5" />
                                                         </div>
 
                                                         {/* Leg Number Badge */}
                                                         <div
                                                             className="absolute -top-3 -left-3 w-7 h-7 flex items-center justify-center rounded-full text-white text-xs font-bold shadow-md z-10"
-                                                            style={{ background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)' }}
+                                                            style={{ background: 'linear-gradient(135deg, var(--primary), #FF9A5C)' }}
                                                         >
                                                             {index + 1}
                                                         </div>
@@ -906,23 +906,23 @@ export default function CreatePackagePage() {
                                                         <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-5 mt-2 sm:mt-0 pl-2">
                                                             <div className="sm:col-span-5 relative flex items-center">
                                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                                                    <MapPin className="h-4 w-4 text-[#FF6B2B]" />
+                                                                    <MapPin className="h-4 w-4 text-[var(--primary)]" />
                                                                 </div>
                                                                 <Input
                                                                     placeholder="City / Area"
                                                                     value={dest.city}
                                                                     onChange={(e) => handleUpdateDestination(index, 'city', e.target.value)}
-                                                                    className="pl-9 h-11 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-[#FF6B2B]/40 focus-visible:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)]"
+                                                                    className="pl-9 h-11 text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)]"
                                                                     style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
                                                                 />
                                                             </div>
                                                             <div className="sm:col-span-4 relative flex items-center">
                                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                                                    <Globe className="h-4 w-4 text-[#FF6B2B]" />
+                                                                    <Globe className="h-4 w-4 text-[var(--primary)]" />
                                                                 </div>
                                                                 <Select value={dest.country} onValueChange={(val) => handleUpdateDestination(index, 'country', val)}>
                                                                     <SelectTrigger
-                                                                        className="pl-9 h-11 text-sm font-medium transition-all focus:ring-2 focus:ring-[#FF6B2B]/40 focus:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)] relative"
+                                                                        className="pl-9 h-11 text-sm font-medium transition-all focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] relative"
                                                                         style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
                                                                     >
                                                                         <SelectValue placeholder="Country" />
@@ -936,13 +936,13 @@ export default function CreatePackagePage() {
                                                             </div>
                                                             <div className="sm:col-span-3 relative flex items-center">
                                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                                                    <Calendar className="h-4 w-4 text-[#FF6B2B]" />
+                                                                    <Calendar className="h-4 w-4 text-[var(--primary)]" />
                                                                 </div>
                                                                 <Input
                                                                     type="number" min="1"
                                                                     value={dest.days}
                                                                     onChange={(e) => handleUpdateDestination(index, 'days', parseInt(e.target.value) || 1)}
-                                                                    className="pl-9 h-11 text-sm font-bold text-gray-800 focus-visible:ring-2 focus-visible:ring-[#FF6B2B]/40 focus-visible:border-[#FF6B2B]/50 w-full hover:bg-[rgba(255,255,255,0.4)] pr-12 text-center"
+                                                                    className="pl-9 h-11 text-sm font-bold text-gray-800 focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] pr-12 text-center"
                                                                     style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
                                                                 />
                                                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-wider font-semibold text-[rgba(120,60,20,0.55)] pointer-events-none">Days</span>
@@ -985,7 +985,7 @@ export default function CreatePackagePage() {
                                                             border: '2px dashed rgba(255,107,43,0.40)',
                                                             borderRadius: '20px',
                                                             background: 'rgba(255,255,255,0.10)',
-                                                            color: '#FF6B2B'
+                                                            color: 'var(--primary)'
                                                         }}
                                                         onMouseEnter={(e: any) => {
                                                             e.currentTarget.style.background = 'rgba(255,107,43,0.08)';
@@ -1014,30 +1014,30 @@ export default function CreatePackagePage() {
                                                 }}
                                             >
                                                 <div className="flex items-center gap-2 mb-3 sm:mb-0">
-                                                    <div className="p-1.5 bg-[#FF6B2B]/10 rounded-lg">
-                                                        <Map className="w-4 h-4 text-[#FF6B2B]" />
+                                                    <div className="p-1.5 bg-[var(--primary)]/10 rounded-lg">
+                                                        <Map className="w-4 h-4 text-[var(--primary)]" />
                                                     </div>
-                                                    <span className="font-bold text-[#FF6B2B] text-sm tracking-wide">Trip Summary</span>
+                                                    <span className="font-bold text-[var(--primary)] text-sm tracking-wide">Trip Summary</span>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2 text-[11px] font-medium">
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
                                                         <Calendar className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
-                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0)}</span>
+                                                        <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0)}</span>
                                                         <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Days</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
                                                         <Moon className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
-                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.max(0, formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1)}</span>
+                                                        <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.max(0, formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1)}</span>
                                                         <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Nights</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
                                                         <Globe className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
-                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{new Set(formData.destinations.filter(d => d.country).map(d => d.country)).size}</span>
+                                                        <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{new Set(formData.destinations.filter(d => d.country).map(d => d.country)).size}</span>
                                                         <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Countries</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
                                                         <Building2 className="w-3.5 h-3.5 text-[rgba(120,60,20,0.5)]" />
-                                                        <span className="text-[#FF6B2B] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.filter(d => d.city).length}</span>
+                                                        <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.filter(d => d.city).length}</span>
                                                         <span className="text-[rgba(120,60,20,0.7)] uppercase tracking-wider">Cities</span>
                                                     </div>
                                                 </div>
@@ -1176,7 +1176,7 @@ export default function CreatePackagePage() {
                                                     <div
                                                         className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
                                                         style={{
-                                                            background: 'linear-gradient(135deg, #FF6B2B 0%, #FF9A5C 100%)',
+                                                            background: 'linear-gradient(135deg, var(--primary) 0%, #FF9A5C 100%)',
                                                             borderRadius: '50px',
                                                             left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
                                                             boxShadow: '0 4px 16px rgba(255,107,43,0.40)'
@@ -1198,7 +1198,7 @@ export default function CreatePackagePage() {
                                                         <div
                                                             className="text-sm tracking-wide transition-colors duration-300"
                                                             style={{
-                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#2D1A0E',
+                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : 'slate-900',
                                                                 fontWeight: formData.gst_mode === 'exclusive' ? 700 : 500
                                                             }}
                                                         >
@@ -1229,7 +1229,7 @@ export default function CreatePackagePage() {
                                                         <div
                                                             className="text-sm tracking-wide transition-colors duration-300"
                                                             style={{
-                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : '#2D1A0E',
+                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : 'slate-900',
                                                                 fontWeight: formData.gst_mode === 'inclusive' ? 700 : 500
                                                             }}
                                                         >
@@ -1261,8 +1261,8 @@ export default function CreatePackagePage() {
                                                     {formData.gst_mode === 'exclusive' ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
-                                                            <span className="font-bold text-[#2D1A0E]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
-                                                            <span className="text-[#FF6B2B] font-bold">+</span>
+                                                            <span className="font-bold text-[slate-900]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="text-[var(--primary)] font-bold">+</span>
                                                             <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
                                                                 ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
@@ -1271,8 +1271,8 @@ export default function CreatePackagePage() {
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="text-gray-400 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
-                                                            <ArrowRight className="w-3 h-3 text-[#FF6B2B]" />
-                                                            <span className="font-bold text-[#2D1A0E]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <ArrowRight className="w-3 h-3 text-[var(--primary)]" />
+                                                            <span className="font-bold text-[slate-900]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
                                                                 Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
                                                             </span>
@@ -1281,7 +1281,7 @@ export default function CreatePackagePage() {
 
                                                     <div className="text-right flex flex-col sm:items-end">
                                                         <div className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider mb-0.5">Final Total</div>
-                                                        <div className="text-lg font-black" style={{ color: '#FF6B2B' }}>
+                                                        <div className="text-lg font-black" style={{ color: 'var(--primary)' }}>
                                                             ₹{formData.gst_mode === 'exclusive'
                                                                 ? (formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })
                                                                 : formData.price_per_person.toLocaleString('en-IN', { maximumFractionDigits: 2 })
@@ -1313,7 +1313,7 @@ export default function CreatePackagePage() {
                                                 style={{
                                                     background: 'rgba(255,107,43,0.15)',
                                                     border: '1px solid rgba(255,107,43,0.40)',
-                                                    color: '#FF6B2B',
+                                                    color: 'var(--primary)',
                                                 }}
                                             >
                                                 {formData.trip_styles.length} selected
@@ -1330,7 +1330,7 @@ export default function CreatePackagePage() {
                                                 }}
                                                 className="text-[10px] font-semibold transition-colors"
                                                 style={{ color: 'rgba(255,107,43,0.70)' }}
-                                                onMouseEnter={e => { e.currentTarget.style.color = '#FF6B2B' }}
+                                                onMouseEnter={e => { e.currentTarget.style.color = 'var(--primary)' }}
                                                 onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,107,43,0.70)' }}
                                             >
                                                 Clear all
@@ -1376,7 +1376,7 @@ export default function CreatePackagePage() {
                                                     {isSelected && (
                                                         <div
                                                             className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-150"
-                                                            style={{ background: '#FF6B2B', flexShrink: 0 }}
+                                                            style={{ background: 'var(--primary)', flexShrink: 0 }}
                                                         >
                                                             <Check className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />
                                                         </div>
@@ -1385,7 +1385,7 @@ export default function CreatePackagePage() {
                                                     {/* Animated hover outline */}
                                                     <div className={cn(
                                                         "absolute inset-0 rounded-2xl border-2 transition-all duration-300 pointer-events-none",
-                                                        isSelected ? "border-[#FF6B2B] opacity-100 scale-100" : "border-transparent opacity-0 scale-95 group-hover:border-[#FF6B2B]/30 group-hover:scale-100 group-hover:opacity-100"
+                                                        isSelected ? "border-[var(--primary)] opacity-100 scale-100" : "border-transparent opacity-0 scale-95 group-hover:border-[var(--primary)]/30 group-hover:scale-100 group-hover:opacity-100"
                                                     )} />
 
                                                     {/* Icon */}
@@ -1401,7 +1401,7 @@ export default function CreatePackagePage() {
                                                     {/* Label */}
                                                     <span className={cn(
                                                         "text-xs font-bold text-center tracking-wide transition-colors z-10",
-                                                        isSelected ? "text-[#FF6B2B] font-semibold" : "text-[rgba(80,40,10,0.70)] group-hover:text-[#FF6B2B]"
+                                                        isSelected ? "text-[var(--primary)] font-semibold" : "text-[rgba(80,40,10,0.70)] group-hover:text-[var(--primary)]"
                                                     )}>
                                                         {style.label}
                                                     </span>
@@ -1483,7 +1483,7 @@ export default function CreatePackagePage() {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
                                                     "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
-                                                    formData.flights_enabled ? "bg-[#FF6B2B] text-white shadow-lg shadow-[#FF6B2B]/20" : "bg-white/50 text-[#8C6B5D]"
+                                                    formData.flights_enabled ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20" : "bg-white/50 text-[#8C6B5D]"
                                                 )}>
                                                     <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} />
                                                 </div>
@@ -1496,7 +1496,7 @@ export default function CreatePackagePage() {
                                                 onClick={() => updateFormData('flights_enabled', !formData.flights_enabled)}
                                                 className={cn(
                                                     "w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 relative",
-                                                    formData.flights_enabled ? "bg-[#FF6B2B]" : "bg-gray-200"
+                                                    formData.flights_enabled ? "bg-[var(--primary)]" : "bg-gray-200"
                                                 )}
                                             >
                                                 <div className={cn(
@@ -1536,8 +1536,8 @@ export default function CreatePackagePage() {
                                                                     className={cn(
                                                                         "flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
                                                                         formData.flight_cabin_class === cls
-                                                                            ? "bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-md shadow-[#FF6B2B]/20"
-                                                                            : "bg-white border-gray-200 text-gray-600 hover:border-[#FF6B2B]/30"
+                                                                            ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/20"
+                                                                            : "bg-white border-gray-200 text-gray-600 hover:border-[var(--primary)]/30"
                                                                     )}
                                                                 >
                                                                     {cls}
@@ -1676,11 +1676,11 @@ export default function CreatePackagePage() {
                                             {useFeatureImage && (
                                                 <div className="animate-in slide-in-from-top-4 fade-in duration-500 space-y-4">
                                                     <div
-                                                        className="border-2 border-dashed border-[#FF6B2B]/30 rounded-2xl p-8 bg-white/5 hover:bg-[#FF6B2B]/5 transition-colors group/upload cursor-pointer text-center"
+                                                        className="border-2 border-dashed border-[var(--primary)]/30 rounded-2xl p-8 bg-white/5 hover:bg-[var(--primary)]/5 transition-colors group/upload cursor-pointer text-center"
                                                         onClick={() => document.getElementById('feature-upload')?.click()}
                                                     >
                                                         <div className="flex flex-col items-center gap-2">
-                                                            <div className="p-3 bg-[#FF6B2B]/10 rounded-full text-[#FF6B2B] group-hover/upload:scale-110 transition-transform">
+                                                            <div className="p-3 bg-[var(--primary)]/10 rounded-full text-[var(--primary)] group-hover/upload:scale-110 transition-transform">
                                                                 <Upload className="w-6 h-6" />
                                                             </div>
                                                             <div className="space-y-1">

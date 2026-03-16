@@ -19,6 +19,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Plan {
     id: string;
@@ -45,16 +46,13 @@ interface Subscription {
 }
 
 export default function SubscriptionPage() {
-    const [plans, setPlans] = useState<Plan[]>([]);
-    const [activeSub, setActiveSub] = useState<Subscription | null>(null);
-    const [upcomingSubs, setUpcomingSubs] = useState<Subscription[]>([]);
-    const [historySubs, setHistorySubs] = useState<Subscription[]>([]);
-    const [pausedSubs, setPausedSubs] = useState<Subscription[]>([]);
-    const [loading, setLoading] = useState(true);
+    const router = useRouter();
+    const queryClient = useQueryClient();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [activatingId, setActivatingId] = useState<string | null>(null);
     const [successPlan, setSuccessPlan] = useState<Plan | null>(null);
     const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
+    
     // Live countdown display for plans expiring within 24 hours
     const [countdownText, setCountdownText] = useState<string>('');
     const countdownRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,6 +61,100 @@ export default function SubscriptionPage() {
     const [historyPage, setHistoryPage] = useState(1);
     const [historyDateFilter, setHistoryDateFilter] = useState<{ start: string; end: string }>({ start: '', end: '' });
     const ITEMS_PER_PAGE = 5;
+
+    // Queries
+    const { data: plans = [], isLoading: plansLoading } = useQuery({
+        queryKey: ['subscription-plans'],
+        queryFn: async () => {
+            const res = await fetch('http://localhost:8000/api/v1/subscriptions/plans');
+            if (!res.ok) throw new Error('Failed to fetch plans');
+            const rawPlans = await res.json();
+            return rawPlans.map((p: any) => {
+                let period = '/mo';
+                if (p.billing_cycle === 'yearly') period = '/yr';
+                if (p.billing_cycle === 'lifetime') period = '';
+                if (p.duration_days === 1) period = '/day';
+                else if (p.duration_days) period = `/${p.duration_days}d`;
+
+                return {
+                    ...p,
+                    features: Array.isArray(p.features) && typeof p.features[0] === 'string'
+                        ? [
+                            { category: "USAGE LIMITS", items: [`${p.booking_limit === -1 ? 'Unlimited' : p.booking_limit} Bookings${period}`, `${p.user_limit || 1} User(s)`] },
+                            { category: "FEATURES", items: p.features },
+                            { category: "PRICING", items: ["Standard Commission"] }
+                        ]
+                        : p.features
+                };
+            });
+        }
+    });
+
+    const { data: subsData, isLoading: subsLoading } = useQuery({
+        queryKey: ['my-subscriptions'],
+        queryFn: async () => {
+            const token = localStorage.getItem('token');
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            // Check expiry first
+            await fetch('http://localhost:8000/api/v1/subscriptions/check-expiry', {
+                method: 'POST',
+                headers
+            }).catch(() => {});
+
+            const res = await fetch('http://localhost:8000/api/v1/subscriptions/my-subscription', { headers });
+            if (!res.ok) throw new Error('Failed to fetch subscriptions');
+            const subs: Subscription[] = await res.json();
+
+            const now = new Date();
+            const active = subs.find(s => s.status === 'active' && new Date(s.end_date) > now);
+            const upcoming = subs.filter(s => s.status === 'upcoming');
+            const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
+                || (s.status === 'active' && new Date(s.end_date) <= now));
+            const paused = subs.filter(s => s.status === 'on_hold');
+
+            return { active, upcoming, history, paused };
+        }
+    });
+
+    const activeSub = subsData?.active || null;
+    const upcomingSubs = subsData?.upcoming || [];
+    const historySubs = subsData?.history || [];
+    const pausedSubs = subsData?.paused || [];
+    const loading = plansLoading || subsLoading;
+
+    // Mutations
+    const activateMutation = useMutation({
+        mutationFn: async (subId: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8000/api/v1/subscriptions/${subId}/activate`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Activation failed");
+            }
+            return res.json();
+        },
+        onSuccess: (updatedSub) => {
+            queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+            toast.success(`Success! Your ${updatedSub.plan.name} plan is now active.`);
+            
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                user.has_active_subscription = true;
+                user.subscription_status = 'active';
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+            router.push('/agent/dashboard');
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "We couldn't activate your plan. Please try again.");
+        },
+        onSettled: () => setActivatingId(null)
+    });
 
     const getBillingCycleDisplay = (plan: Plan) => {
         if (plan.billing_cycle === 'monthly') return 'Monthly';
@@ -84,7 +176,7 @@ export default function SubscriptionPage() {
 
     const getPlanTheme = (planName: string) => {
         const lower = planName.toLowerCase();
-        if (lower.includes('gold')) return { color: 'amber', hex: '#F59E0B', bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-800', gradient: 'from-amber-600 to-orange-600' };
+        if (lower.includes('gold')) return { color: 'amber', hex: '#F59E0B', bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-800', gradient: 'from-amber-600 to-[var(--gradient-end)]' };
         if (lower.includes('pro')) return { color: 'indigo', hex: '#6366F1', bg: 'bg-indigo-50', border: 'border-indigo-500', text: 'text-indigo-600', badge: 'bg-indigo-100 text-indigo-800', gradient: 'from-indigo-600 to-violet-600' };
         if (lower.includes('enterprise')) return { color: 'violet', hex: '#8B5CF6', bg: 'bg-violet-50', border: 'border-violet-500', text: 'text-violet-600', badge: 'bg-violet-100 text-violet-800', gradient: 'from-violet-600 to-purple-600' };
         return { color: 'blue', hex: '#3B82F6', bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-800', gradient: 'from-blue-600 to-cyan-600' };
@@ -111,7 +203,7 @@ export default function SubscriptionPage() {
 
     const exportHistory = () => {
         const headers = ["Plan Name", "Status", "Start Date", "End Date", "Usage"];
-        const rows = filteredHistory.map(sub => [
+        const rows = filteredHistory.map((sub: Subscription) => [
             sub.plan.name,
             sub.status,
             new Date(sub.start_date).toLocaleDateString(),
@@ -119,7 +211,7 @@ export default function SubscriptionPage() {
             sub.current_bookings_usage.toString()
         ]);
 
-        const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+        const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map((e: string[]) => e.join(",")).join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -138,10 +230,7 @@ export default function SubscriptionPage() {
         confirmText?: string;
     }>({ open: false, title: "", description: "", action: () => { } });
 
-    const router = useRouter();
-
     useEffect(() => {
-        loadData();
         if (typeof window !== 'undefined' && 'Razorpay' in window) {
             setIsRazorpayLoaded(true);
         }
@@ -160,7 +249,7 @@ export default function SubscriptionPage() {
                 setCountdownText('Expired');
                 clearInterval(countdownRef.current!);
                 // Trigger a reload to pick up the new state after expiry
-                loadData();
+                queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
                 return;
             }
             const hoursLeft = Math.floor(msLeft / (1000 * 3600));
@@ -186,88 +275,6 @@ export default function SubscriptionPage() {
         return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
     }, [activeSub]);
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
-            // Step 1: Check & auto-fix expiry BEFORE fetching subscriptions
-            try {
-                const expiryRes = await fetch('http://localhost:8000/api/v1/subscriptions/check-expiry', {
-                    method: 'POST',
-                    headers
-                });
-                if (expiryRes.ok) {
-                    const expiry = await expiryRes.json();
-                    if (expiry.was_expired && expiry.auto_activated_plan) {
-                        // Queued plan was automatically promoted
-                        toast.success(
-                            `Your ${expiry.expired_plan_name} plan expired. ${expiry.auto_activated_plan} has been activated automatically.`,
-                            { autoClose: 6000 }
-                        );
-                    } else if (expiry.was_expired) {
-                        toast.error(
-                            `Your ${expiry.expired_plan_name} plan has expired. Please purchase a new plan to continue.`,
-                            { autoClose: 6000 }
-                        );
-                    }
-                }
-            } catch { /* non-blocking — proceed to fetch subs even if this fails */ }
-
-            // Step 2: Fetch Plans
-            const plansRes = await fetch('http://localhost:8000/api/v1/subscriptions/plans');
-            if (plansRes.ok) {
-                const rawPlans = await plansRes.json();
-                const transformedPlans = rawPlans.map((p: any) => {
-                    let period = '/mo';
-                    if (p.billing_cycle === 'yearly') period = '/yr';
-                    if (p.billing_cycle === 'lifetime') period = '';
-                    if (p.duration_days === 1) period = '/day';
-                    else if (p.duration_days) period = `/${p.duration_days}d`;
-
-                    return {
-                        ...p,
-                        features: Array.isArray(p.features) && typeof p.features[0] === 'string'
-                            ? [
-                                { category: "USAGE LIMITS", items: [`${p.booking_limit === -1 ? 'Unlimited' : p.booking_limit} Bookings${period}`, `${p.user_limit || 1} User(s)`] },
-                                { category: "FEATURES", items: p.features },
-                                { category: "PRICING", items: ["Standard Commission"] }
-                            ]
-                            : p.features
-                    };
-                });
-                setPlans(transformedPlans);
-            }
-
-            // Step 3: Fetch Subscriptions (AFTER expiry fix, so state is correct)
-            const subRes = await fetch('http://localhost:8000/api/v1/subscriptions/my-subscription', { headers });
-            if (subRes.ok) {
-                const subs: Subscription[] = await subRes.json();
-
-                // Client-side expiry guard: if a sub has status='active' but its
-                // end_date is in the past, treat it as 'expired' (belt-and-suspenders over the backend check)
-                const now = new Date();
-                const active = subs.find(s =>
-                    s.status === 'active' && new Date(s.end_date) > now
-                );
-                const upcoming = subs.filter(s => s.status === 'upcoming');
-                const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
-                    || (s.status === 'active' && new Date(s.end_date) <= now));
-                const paused = subs.filter(s => s.status === 'on_hold');
-
-                setActiveSub(active || null);
-                setUpcomingSubs(upcoming);
-                setPausedSubs(paused);
-                setHistorySubs(history);
-            }
-        } catch (error) {
-            console.error("Failed to load subscription data", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleActivate = (subId: string, isPaused = false) => {
         const confirmMsg = isPaused
             ? "Ready to switch plans? We'll pause your current plan and resume this one immediately."
@@ -278,41 +285,10 @@ export default function SubscriptionPage() {
             title: isPaused ? "Resume Plan" : "Activate Plan",
             description: confirmMsg,
             confirmText: isPaused ? "Resume Plan" : "Activate Plan",
-            action: async () => {
+            action: () => {
                 setActivatingId(subId);
-                try {
-                    const token = localStorage.getItem('token');
-                    const res = await fetch(`http://localhost:8000/api/v1/subscriptions/${subId}/activate`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-
-                    if (res.ok) {
-                        const updatedSub = await res.json();
-                        toast.success(
-                            isPaused
-                                ? `Welcome back! You've successfully resumed your ${updatedSub.plan.name} plan.`
-                                : `Success! Your ${updatedSub.plan.name} plan is now active.`
-                        );
-                        // Update local user data and redirect
-                        const userStr = localStorage.getItem('user');
-                        if (userStr) {
-                            const user = JSON.parse(userStr);
-                            user.has_active_subscription = true;
-                            user.subscription_status = 'active';
-                            localStorage.setItem('user', JSON.stringify(user));
-                        }
-                        router.push('/agent/dashboard');
-                    } else {
-                        const err = await res.json();
-                        toast.error(err.detail || "We couldn't activate your plan. Please try again.");
-                    }
-                } catch (e) {
-                    toast.error("Something went wrong. Please check your connection and try again.");
-                } finally {
-                    setActivatingId(null);
-                    setConfirmDialog(prev => ({ ...prev, open: false }));
-                }
+                activateMutation.mutate(subId);
+                setConfirmDialog(prev => ({ ...prev, open: false }));
             }
         });
     };
@@ -696,7 +672,7 @@ export default function SubscriptionPage() {
                             <Calendar className="h-5 w-5 text-purple-600" /> Upcoming / Queued Plans
                         </h2>
                         <div className="grid gap-4">
-                            {upcomingSubs.map(sub => (
+                            {upcomingSubs.map((sub: Subscription) => (
                                 <Card key={sub.id} className="border-purple-200 bg-purple-50/20">
                                     <CardContent className="flex items-center justify-between p-6">
                                         <div>
@@ -732,7 +708,7 @@ export default function SubscriptionPage() {
                             <PauseCircle className="h-5 w-5 text-amber-600" /> Paused Plans
                         </h2>
                         <div className="flex flex-col gap-4">
-                            {pausedSubs.map(sub => (
+                            {pausedSubs.map((sub: Subscription) => (
                                 <div key={sub.id} className="relative overflow-hidden rounded-xl border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                         <div className="flex items-start gap-4">
@@ -817,42 +793,42 @@ export default function SubscriptionPage() {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead className="w-[200px] font-bold">Feature</TableHead>
-                                                    {plans.map(p => (
-                                                        <TableHead key={p.id} className="text-center font-bold text-gray-900">{p.name}</TableHead>
-                                                    ))}
+                                                     {plans.map((p: Plan) => (
+                                                         <TableHead key={p.id} className="text-center font-bold text-gray-900">{p.name}</TableHead>
+                                                     ))}
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 <TableRow>
                                                     <TableCell className="font-medium text-gray-500">Price</TableCell>
-                                                    {plans.map(p => (
-                                                        <TableCell key={p.id} className="text-center font-bold">₹{p.price.toLocaleString()}</TableCell>
-                                                    ))}
+                                                     {plans.map((p: Plan) => (
+                                                         <TableCell key={p.id} className="text-center font-bold">₹{p.price.toLocaleString()}</TableCell>
+                                                     ))}
                                                 </TableRow>
                                                 <TableRow>
                                                     <TableCell className="font-medium text-gray-500">Bookings Limit</TableCell>
-                                                    {plans.map(p => (
-                                                        <TableCell key={p.id} className="text-center">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
-                                                    ))}
+                                                     {plans.map((p: Plan) => (
+                                                         <TableCell key={p.id} className="text-center">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
+                                                     ))}
                                                 </TableRow>
                                                 <TableRow>
                                                     <TableCell className="font-medium text-gray-500">Users</TableCell>
-                                                    {plans.map(p => (
-                                                        <TableCell key={p.id} className="text-center">{p.user_limit || 'Varies'}</TableCell>
-                                                    ))}
+                                                     {plans.map((p: Plan) => (
+                                                         <TableCell key={p.id} className="text-center">{p.user_limit || 'Varies'}</TableCell>
+                                                     ))}
                                                 </TableRow>
                                                 <TableRow>
                                                     <TableCell className="font-medium text-gray-500">Support</TableCell>
-                                                    {plans.map(p => {
-                                                        const theme = getPlanTheme(p.name);
-                                                        return (
-                                                            <TableCell key={p.id} className="text-center">
-                                                                <Badge variant="outline" className={`${theme.badge} border-0`}>
-                                                                    {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
-                                                                </Badge>
-                                                            </TableCell>
-                                                        )
-                                                    })}
+                                                     {plans.map((p: Plan) => {
+                                                         const theme = getPlanTheme(p.name);
+                                                         return (
+                                                             <TableCell key={p.id} className="text-center">
+                                                                 <Badge variant="outline" className={`${theme.badge} border-0`}>
+                                                                     {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
+                                                                 </Badge>
+                                                             </TableCell>
+                                                         )
+                                                     })}
                                                 </TableRow>
                                             </TableBody>
                                         </Table>
@@ -863,7 +839,7 @@ export default function SubscriptionPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                        {plans.map(plan => {
+                        {plans.map((plan: Plan) => {
                             const isCurrent = activeSub?.plan_id === plan.id;
                             const isPopular = plan.is_popular;
                             const theme = getPlanTheme(plan.name);
@@ -1033,7 +1009,7 @@ export default function SubscriptionPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {paginatedHistory.map((sub, i) => {
+                                         {paginatedHistory.map((sub: Subscription, i: number) => {
                                             const theme = getPlanTheme(sub.plan.name);
                                             return (
                                                 <tr key={sub.id} className={`hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-white/5'}`}>

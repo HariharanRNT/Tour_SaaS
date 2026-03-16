@@ -190,7 +190,7 @@ export default function SavedTripsPage() {
 
                                             <div className="flex items-center gap-3 text-gray-700">
                                                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                                                    <Clock className="h-4 w-4 text-orange-600" />
+                                                    <Clock className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Duration</p>

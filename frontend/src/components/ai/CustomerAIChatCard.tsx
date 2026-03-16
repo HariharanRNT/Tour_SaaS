@@ -247,13 +247,13 @@ export default function CustomerAIChatCard() {
                             }}
                         >
                             {/* Radial Glow Background */}
-                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF7A45] opacity-10 blur-[80px] pointer-events-none" />
+                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--primary)] opacity-10 blur-[80px] pointer-events-none" />
                             <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#FFB38A] opacity-10 blur-[80px] pointer-events-none" />
 
                             {/* Header */}
                             <div className="h-12 flex items-center justify-between px-4 shrink-0 border-b border-white/20 bg-white/80 backdrop-blur-md sticky top-0 z-50">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] flex items-center justify-center shadow-sm">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] flex items-center justify-center shadow-sm">
                                         <Sparkles className="w-3.5 h-3.5 text-white" />
                                     </div>
                                     <span className="font-bold text-sm text-slate-900 drop-shadow-sm">AI Assistant</span>
@@ -282,7 +282,7 @@ export default function CustomerAIChatCard() {
                                                 className={cn(
                                                     "max-w-[85%] p-3 rounded-[16px] text-sm shadow-sm",
                                                     msg.role === 'user'
-                                                        ? "bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white rounded-tr-none shadow-[#FF7A45]/20"
+                                                        ? "bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] text-white rounded-tr-none shadow-[var(--primary)]/20"
                                                         : "bg-white/40 backdrop-blur-md border border-white/30 text-slate-800 rounded-tl-none"
                                                 )}
                                             >
@@ -311,12 +311,12 @@ export default function CustomerAIChatCard() {
                                                                 <div className="p-3 flex items-center justify-between">
                                                                     <div>
                                                                         <p className="text-[10px] text-slate-500">Starting from</p>
-                                                                        <p className="font-bold text-sm text-[#FF7A45]">₹{pkg.price.toLocaleString()}</p>
+                                                                        <p className="font-bold text-sm text-[var(--primary)]">₹{pkg.price.toLocaleString()}</p>
                                                                     </div>
                                                                     <Button
                                                                         size="sm"
                                                                         onClick={() => handleSelectPackage(pkg)}
-                                                                        className="bg-[#FF7A45] hover:bg-[#EA580C] text-white h-8 px-4 rounded-lg text-xs font-bold transition-all"
+                                                                        className="bg-[var(--primary)] hover:bg-[var(--primary)] text-white h-8 px-4 rounded-lg text-xs font-bold transition-all"
                                                                     >
                                                                         View Trip
                                                                     </Button>
@@ -331,9 +331,9 @@ export default function CustomerAIChatCard() {
                                     {isLoading && (
                                         <div className="flex justify-start">
                                             <div className="bg-white/40 backdrop-blur-md border border-white/30 p-3 rounded-[16px] rounded-tl-none flex gap-1 items-center">
-                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
-                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
-                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-[#FF7A45] rounded-full" />
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full" />
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full" />
+                                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full" />
                                             </div>
                                         </div>
                                     )}
@@ -350,7 +350,7 @@ export default function CustomerAIChatCard() {
                                             <button
                                                 key={s}
                                                 onClick={() => handleSend(s)}
-                                                className="px-3 py-1.5 rounded-full border border-[#FF7A45]/30 text-[#FF7A45] text-[11px] font-bold hover:bg-[#FF7A45] hover:text-white transition-all backdrop-blur-sm"
+                                                className="px-3 py-1.5 rounded-full border border-[var(--primary)]/30 text-[var(--primary)] text-[11px] font-bold hover:bg-[var(--primary)] hover:text-white transition-all backdrop-blur-sm"
                                             >
                                                 {s}
                                             </button>
@@ -365,12 +365,12 @@ export default function CustomerAIChatCard() {
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                         placeholder="Tell me your destination..."
-                                        className="w-full bg-white/40 backdrop-blur-md border-white/30 focus:border-[#FF7A45]/50 focus:ring-4 focus:ring-[#FF7A45]/10 pr-12 rounded-full h-11 text-sm shadow-inner transition-all placeholder:text-slate-400"
+                                        className="w-full bg-white/40 backdrop-blur-md border-white/30 focus:border-[var(--primary)]/50 focus:ring-4 focus:ring-[var(--primary)]/10 pr-12 rounded-full h-11 text-sm shadow-inner transition-all placeholder:text-slate-400"
                                     />
                                     <button
                                         onClick={() => handleSend()}
                                         disabled={isLoading || !input.trim()}
-                                        className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm"
+                                        className="absolute right-1.5 top-1.5 h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 shadow-sm"
                                     >
                                         <Send className="w-3.5 h-3.5" />
                                     </button>
@@ -384,7 +384,7 @@ export default function CustomerAIChatCard() {
             {/* Trip Config Modal (Ported logic) */}
             <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
                 <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden bg-white/95 backdrop-blur-xl border-0 shadow-2xl rounded-[24px]">
-                    <div className="bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] p-6 text-white text-center">
+                    <div className="bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] p-6 text-white text-center">
                         <DialogTitle className="text-xl font-bold">Trip Details</DialogTitle>
                         <DialogDescription className="text-white/80 text-xs mt-1">
                             Configure your stay at {selectedPackage?.title}
@@ -396,8 +396,8 @@ export default function CustomerAIChatCard() {
                             <Label className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Travel Date</Label>
                             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-slate-100 hover:border-[#FF7A45]/30 group transition-all">
-                                        <CalendarIcon className="w-4 h-4 mr-2 text-[#FF7A45]" />
+                                    <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-slate-100 hover:border-[var(--primary)]/30 group transition-all">
+                                        <CalendarIcon className="w-4 h-4 mr-2 text-[var(--primary)]" />
                                         {date ? format(date, "PPP") : <span>Select date</span>}
                                     </Button>
                                 </PopoverTrigger>
@@ -430,7 +430,7 @@ export default function CustomerAIChatCard() {
                         <Button
                             onClick={handleCreateSession}
                             disabled={!date || isCreatingSession}
-                            className="w-full h-12 bg-[#FF7A45] hover:bg-[#EA580C] text-white rounded-xl font-bold shadow-lg shadow-[#FF7A45]/20"
+                            className="w-full h-12 bg-[var(--primary)] hover:bg-[var(--primary)] text-white rounded-xl font-bold shadow-lg shadow-[var(--primary)]/20"
                         >
                             {isCreatingSession ? <Loader2 className="animate-spin" /> : "Start Planning Journey"}
                         </Button>

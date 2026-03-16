@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
 import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
-import { useTheme } from '@/context/ThemeContext'
+// import { useTheme } from '@/context/ThemeContext'
 
 interface Destination {
     id: string
@@ -27,7 +27,23 @@ interface Destination {
 
 export default function Home() {
     const router = useRouter()
-    const { theme, isLoading } = useTheme()
+    // const { theme, isLoading } = useTheme()
+    const isLoading = false
+    const theme: any = {
+        id: 'default',
+        hero_background_type: 'image',
+        home_hero_image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
+        home_hero_title: null,
+        home_hero_subtitle: null,
+        hero_cta_primary_text: null,
+        hero_cta_secondary_text: null,
+        show_feature_cards: true,
+        feature_cards: [],
+        show_wcu_section: true,
+        wcu_title: null,
+        wcu_accent_title: null,
+        wcu_cards: []
+    }
     const [destinations, setDestinations] = useState<Destination[]>([])
     const [destLoading, setDestLoading] = useState(true)
 
@@ -77,13 +93,7 @@ export default function Home() {
         fetchDestinations()
     }, [isLoading])
 
-    const heroBgStyle = (isLoading && theme.id === 'default')
-        ? { backgroundColor: '#111' } // Neutral dark background while loading first time
-        : theme.hero_background_type === 'gradient'
-            ? { background: theme.hero_gradient || 'linear-gradient(to bottom, #000, #1e3a8a)' }
-            : theme.hero_background_type === 'solid'
-                ? { backgroundColor: theme.hero_gradient || '#000' }
-                : { backgroundImage: `url("${theme.home_hero_image || (isLoading ? '' : 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop')}")` };
+    const heroBgStyle = { backgroundImage: `url("https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop")` };
 
     if (isLoading || destLoading) {
         return (
@@ -106,7 +116,7 @@ export default function Home() {
             '#8B5CF6': ['#A78BFA', '#7C3AED'], // Purple
             '#06B6D4': ['#22D3EE', '#0891B2'], // Teal
             '#10B981': ['#34D399', '#059669'], // Green
-            '#F97316': ['#FB923C', '#EA580C'], // Orange
+            'var(--primary)': ['#FB923C', 'var(--primary)'], // Orange
             '#F43F5E': ['#FB7185', '#E11D48'], // Rose
         };
 
@@ -121,15 +131,15 @@ export default function Home() {
 
                 {/* Background with Overlay */}
                 <div
-                    className={`absolute inset-0 z-0 ${theme.hero_background_type === 'image' ? 'bg-cover bg-center bg-no-repeat bg-fixed' : ''}`}
+                    className={`absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed`}
                     style={heroBgStyle}
                 >
                     <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/20 mix-blend-multiply" />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(255,107,43,0.1), rgba(255,180,100,0.2))' }} />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, var(--primary-glow), rgba(255,180,100,0.2))' }} />
                 </div>
 
                 {/* Blurred ambient orbs */}
-                <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-[rgba(255,107,43,0.25)] blur-[80px] z-0 pointer-events-none" />
+                <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-[var(--primary-glow)] blur-[80px] z-0 pointer-events-none" />
                 <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-[rgba(255,180,100,0.2)] blur-[100px] z-0 pointer-events-none" />
 
                 {/* Animated Floating Icons */}
@@ -178,7 +188,7 @@ export default function Home() {
                             ) : (
                                 <>
                                     Adventure Awaits—<br className="hidden md:block" />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFF0E5] via-[#FFD1B5] to-[#FF7A45] drop-shadow-sm">
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary-soft)] via-[var(--primary-light)] to-[var(--primary)] drop-shadow-sm">
                                         Tailored Just for You
                                     </span>
                                 </>
@@ -206,8 +216,8 @@ export default function Home() {
                             <Link href="/plan-trip">
                                 <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
                                     style={{
-                                        background: 'linear-gradient(135deg,#FF7A45,#FFB38A)',
-                                        boxShadow: '0 10px 30px rgba(255,122,69,0.35)',
+                                        background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))',
+                                        boxShadow: '0 10px 30px var(--primary-glow)',
                                         borderRadius: "30px",
                                         border: 'none',
                                     }}>
@@ -239,7 +249,7 @@ export default function Home() {
                                     title: "Instant Booking",
                                     description: "Save your plan and book securely when ready",
                                 }
-                            ]).map((card, idx) => (
+                            ]).map((card: any, idx: number) => (
                                 <motion.div
                                     key={idx}
                                     initial={{ opacity: 0, y: 20 }}
@@ -266,7 +276,7 @@ export default function Home() {
                                     }}
                                 >
                                     <div className="relative z-10 flex flex-col items-center">
-                                        <div className="w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_rgba(255,122,69,0.4)] transition-all duration-300" style={{ background: "linear-gradient(135deg,#FF7A45,#FFD1B5)" }}>
+                                        <div className="w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_var(--primary-glow)] transition-all duration-300" style={{ background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" }}>
                                             {getIcon(card.icon, <Sparkles className="h-6 w-6 text-white" />)}
                                         </div>
                                         <h3 className="font-bold text-2xl mb-3 text-white">{card.title}</h3>
@@ -290,7 +300,7 @@ export default function Home() {
                     <section className="bg-[#FFF3E8] relative overflow-hidden" style={{ paddingTop: "var(--section-spacing, 4rem)", paddingBottom: "calc(var(--section-spacing, 4rem) / 2)" }}>
                         {/* Floating Blobs */}
                         <div className="absolute inset-0 pointer-events-none z-0" style={{
-                            background: 'radial-gradient(circle at 20% 30%, #FFD8B5 0%, transparent 40%), radial-gradient(circle at 80% 70%, #FFB38A 0%, transparent 40%)',
+                            background: 'radial-gradient(circle at 20% 30%, #FFD8B5 0%, transparent 40%), radial-gradient(circle at 80% 70%, var(--primary-light) 0%, transparent 40%)',
                             opacity: 0.6
                         }} />
 
@@ -312,10 +322,10 @@ export default function Home() {
 
                         <div className="container mx-auto px-4 relative z-10 pt-16">
                             <div className="text-center mb-20">
-                                <Badge variant="outline" className="mb-4 border-[#FF7A45] text-[#FF7A45] bg-[rgba(255,107,43,0.15)] px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md">Why Choose Us</Badge>
+                                <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-soft)] opacity-20 px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md" style={{ backgroundColor: 'var(--primary-glow)' }}>Why Choose Us</Badge>
                                 <h2 className="text-3xl md:text-[42px] font-black text-gray-900 tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: "1.2" }}>
                                     {theme.wcu_title || "Everything You Need"}<br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A45] to-[#FFB38A]">
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">
                                         {theme.wcu_accent_title || "For a Perfect Trip"}
                                     </span>
                                 </h2>
@@ -348,7 +358,7 @@ export default function Home() {
                                         title: "Safe Payments",
                                         description: "Seamless, secure payments via Razorpay with instant confirmation."
                                     }
-                                ]).map((feature, idx) => (
+                                ]).map((feature: any, idx: number) => (
                                     <motion.div
                                         key={idx}
                                         initial={{ opacity: 0, y: 20 }}
@@ -365,17 +375,17 @@ export default function Home() {
                                             e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)';
                                         }}
                                     >
-                                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500" style={{ background: "linear-gradient(135deg,#FF7A45,#FFB38A)" }}>
+                                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500" style={{ background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" }}>
                                             {getIcon(feature.icon, <Globe className="h-8 w-8 text-white" />)}
                                         </div>
-                                        <h3 className="text-xl font-bold text-[#7C3A10] mb-3 group-hover:text-[#FF7A45] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                                        <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                                             {feature.title}
                                         </h3>
                                         <p className="text-[rgba(80,40,10,0.65)] leading-relaxed font-medium text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                             {feature.description || feature.desc}
                                         </p>
                                         <div className="mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                            <span className="text-sm font-bold text-[#FF7A45] flex items-center gap-1">Learn more <ArrowRight className="w-4 h-4" /></span>
+                                            <span className="text-sm font-bold text-[var(--primary)] flex items-center gap-1">Learn more <ArrowRight className="w-4 h-4" /></span>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -390,17 +400,17 @@ export default function Home() {
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
                         <div className="text-left max-w-2xl">
-                            <Badge variant="outline" className="mb-4 border-[#FF7A45] text-[#FF7A45] bg-[rgba(255,107,43,0.15)] px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md">Trending Now</Badge>
+                            <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-soft)] opacity-20 px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md" style={{ backgroundColor: 'var(--primary-glow)' }}>Trending Now</Badge>
                             <h2 className="text-3xl md:text-[42px] font-black text-gray-900 tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: "1.2" }}>
-                                Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A45] to-[#FFB38A]">Destinations</span>
+                                Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">Destinations</span>
                             </h2>
                             <p className="text-[rgba(80,40,10,0.65)] text-lg leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>
                                 Explore our most booked locations and start your next adventure today.
                             </p>
                         </div>
-                        <Link href="/plan-trip" className="group flex items-center gap-2 font-bold text-[#FF7A45] hover:text-[#FFB38A] transition-colors">
+                        <Link href="/plan-trip" className="group flex items-center gap-2 font-bold text-[var(--primary)] hover:opacity-80 transition-opacity">
                             View All Locations
-                            <div className="w-8 h-8 rounded-full bg-[rgba(255,107,43,0.1)] flex items-center justify-center group-hover:translate-x-1 transition-all">
+                            <div className="w-8 h-8 rounded-full bg-[var(--primary-glow)] flex items-center justify-center group-hover:translate-x-1 transition-all">
                                 <ArrowRight className="w-4 h-4" />
                             </div>
                         </Link>
@@ -434,7 +444,7 @@ export default function Home() {
                                                         className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-[#FFF3E8] to-[#FFD1B5] flex flex-col items-center justify-center text-[#FF7A45] opacity-80">
+                                                    <div className="w-full h-full bg-gradient-to-br from-[#FFF3E8] to-[#FFD1B5] flex flex-col items-center justify-center text-[var(--primary)] opacity-80">
                                                         <Plane className="h-16 w-16 mb-2 animate-pulse" />
                                                         <span className="text-xs font-bold uppercase tracking-widest opacity-60">Photo Coming Soon</span>
                                                     </div>
@@ -446,7 +456,7 @@ export default function Home() {
 
                                             {/* Top Badges */}
                                             <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
-                                                <Badge className="bg-gradient-to-r from-[#FF7A45] to-[#FFB38A] text-white border-none px-2.5 py-0.5 font-bold shadow-lg text-[10px] uppercase tracking-wider">
+                                                <Badge className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)] text-white border-none px-2.5 py-0.5 font-bold shadow-lg text-[10px] uppercase tracking-wider">
                                                     {i === 0 ? '🔥 Best Seller' : '⭐ Top Rated'}
                                                 </Badge>
                                                 <button className="h-9 w-9 rounded-full bg-[rgba(255,255,255,0.25)] backdrop-blur-md flex items-center justify-center hover:bg-white hover:text-red-500 text-white transition-all duration-300 group/heart active:scale-95 shadow-md">
@@ -497,7 +507,7 @@ export default function Home() {
 
                                                 {/* Hover Action */}
                                                 <div className="h-0 group-hover:h-11 transition-all duration-300 overflow-hidden transform group-hover:translate-y-0 translate-y-4 opacity-0 group-hover:opacity-100">
-                                                    <Button className="w-full mt-2.5 bg-gradient-to-r from-[#FF7A45] to-[#FFB38A] text-white hover:opacity-90 font-bold rounded-xl h-9 shadow-lg border-none">
+                                                    <Button className="w-full mt-2.5 bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)] text-white hover:opacity-90 font-bold rounded-xl h-9 shadow-lg border-none">
                                                         Explore &rarr;
                                                     </Button>
                                                 </div>

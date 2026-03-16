@@ -28,7 +28,7 @@ export function TimeSlotSelector({ onSelect, onCancel, occupiedSlots }: TimeSlot
         {
             value: 'full_day',
             label: 'Full Day',
-            icon: <Sun className="h-6 w-6 text-orange-500" />,
+            icon: <Sun className="h-6 w-6 text-[var(--primary)]" />,
             description: '6 AM - 10 PM (occupies both slots)'
         }
     ]

@@ -11,6 +11,7 @@ import {
     LogOut,
     Menu
 } from 'lucide-react'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,14 +40,12 @@ function getUserRole(): string | null {
 }
 
 
-import { useTheme } from '@/context/ThemeContext'
 import { Plane } from 'lucide-react'
 
 // ...
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter()
-    const { theme } = useTheme() // Get theme context
     const [userEmail, setUserEmail] = useState('')
     const [userData, setUserData] = useState<{ first_name?: string; last_name?: string } | null>(null)
     const userRole = getUserRole()
@@ -74,8 +73,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
     // Determine branding based on role
     const isAgent = userRole === 'agent'
-    const logoImage = isAgent ? theme.navbar_logo_image : null
-    const logoText = isAgent ? (theme.navbar_logo_text || 'TourSaaS') : 'TourSaaS'
+    const logoImage = null
+    const logoText = 'TourSaaS'
 
     // Fallback logo if no image
     const LogoIcon = () => (
@@ -100,8 +99,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 background: 'rgba(255,255,255,0.20)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,107,43,0.3)',
-                boxShadow: '0 8px 32px rgba(255,107,43,0.1)'
+                border: '1px solid var(--primary-light)',
+                boxShadow: '0 8px 32px var(--primary-glow)'
             }}
         >
 
@@ -125,14 +124,15 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         </span>
                     )}
                 </div>
-
             </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-[#FF6B2B] hover:bg-[#FF6B2B]/10 transition-colors relative">
+                {isAgent && <ThemeSwitcher />}
+                
+                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
                     <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-[#FF6B2B] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
                 </Button>
 
                 <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 hidden sm:flex">
@@ -141,8 +141,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="pl-1.5 pr-3 py-1.5 gap-3 rounded-full hover:bg-white inset-shadow-sm hover:shadow transition-all duration-300 border border-transparent hover:border-[#FF6B2B]/20 h-11 bg-white/20 backdrop-blur-md">
-                            <div className="bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-md shadow-[#FF6B2B]/30 border border-white/40">
+                        <Button variant="ghost" className="pl-1.5 pr-3 py-1.5 gap-3 rounded-full hover:bg-white inset-shadow-sm hover:shadow transition-all duration-300 border border-transparent hover:border-[var(--primary)]/20 h-11 bg-white/20 backdrop-blur-md">
+                            <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-md shadow-[var(--primary)]/30 border border-white/40">
                                 {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || (userRole === 'agent' ? 'A' : 'AD'))).toUpperCase()}
                             </div>
                             <div className="hidden sm:flex flex-col items-start gap-0.5">

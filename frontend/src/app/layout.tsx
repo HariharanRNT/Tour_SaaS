@@ -16,8 +16,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/Providers";
-
-// ...
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export default function RootLayout({
     children,
@@ -27,12 +26,14 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${dmSans.className} ${fraunces.variable} ${dmSans.variable} ${inter.variable} ${jakarta.variable}`}>
-                <Providers>
-                    <MainLayout>
-                        {children}
-                    </MainLayout>
-                    <ToastContainer position="top-right" autoClose={3000} />
-                </Providers>
+                <ThemeProvider storageKey="customer-theme">
+                    <Providers>
+                        <MainLayout>
+                            {children}
+                        </MainLayout>
+                        <ToastContainer position="top-right" autoClose={3000} />
+                    </Providers>
+                </ThemeProvider>
             </body>
         </html>
     );

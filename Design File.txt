@@ -1,255 +1,95 @@
-1️⃣ Top KPI Cards – Make Them More Insightful
-
-Current cards:
-
-Total Revenue
-
-Active Agents
-
-Expiring Soon
-
-Improve them like this
-
-Add mini charts + comparison metrics
-
-Example structure inside each glass card:
-
---------------------------------
-Total Revenue        ↑ 12%
-₹1.4K
-
-Mini trend chart (last 7 days)
-
-Last Month: ₹1.2K
---------------------------------
-Suggestions
-
-Card 1 – Revenue
-
-Add 7 day mini sparkline
-
-Show Avg order value
-
-Example:
-
-₹1.4K
-↑12% vs last month
-Avg booking: ₹350
-
-Card 2 – Active Agents
-
-Add Agent growth
-
-4 Active
-+1 this week
-2 pending approvals
-
-Card 3 – Expiring Soon
-Make it more useful:
-
-0 Expiring Soon
-Next expiry: 12 Mar
-
-Or
-
-2 Expiring
-Renewal revenue: ₹800
-
-💡 Glass style tip
-Add a blurred gradient line on top of card.
-
-2️⃣ Add a “Quick Stats” Row (Very Useful)
-
-Under the KPI cards add 4 small glass pills
-
-Example:
-
-Total Bookings
-128
-
-Pending Payments
-₹2.1K
-
-Active Subscriptions
-4
-
-Conversion Rate
-18%
-
-This gives instant business insight.
-
-3️⃣ Revenue Analytics Section – Improve UX
-
-Your chart area is good but can feel more powerful.
-
-Add toggle options
-
-Instead of only:
-
-Revenue | Subscriptions
-
-Add:
-
-Revenue | Subscriptions | Bookings
-Add filters
-
-Right side:
-
-Monthly
-Weekly
-Daily
-Add summary above chart
-Revenue (2026)
-
-Total: ₹1.4K
-Highest Month: Feb
-Growth: +12%
-4️⃣ Replace “Recent Activity” with Smart Activity
-
-Your recent activity is mostly agent logs.
-
-For Admin dashboard it should show important system events.
-
-Suggested activity types:
-
-New Agent Registered
-Subscription Purchased
-Plan Renewed
-Agent Deactivated
-Payment Failed
-
-Example UI:
-
-🟢 New Agent
-Hariharan (ABC Travels)
-
-💳 Subscription Purchased
-Pro Plan – ₹499
-
-⚠️ Payment Failed
-Agent: Naveen Travels
-
-💡 Also add:
-
-Filter: All | Payments | Agents | System
-5️⃣ Add a “Subscription Health” Card
-
-Admins care about business health.
-
-Add a new card:
-
-Subscription Health
-
-Active Plans     4
-Expiring Soon    1
-Trial Users      2
-Churn Rate       5%
-
-This helps SaaS monitoring.
-
-6️⃣ Improve Agent Management Section
-
-Current:
-
-Agent Management
-4 Active
-1 Inactive
-
-Make it more visual.
-
-Agent Distribution
-
-Active        ██████ 4
-Inactive      ██ 1
-Pending       █ 1
-
-Add:
-
-Top Agent
-ABC Travels – 32 bookings
-7️⃣ Billing & Subscription Section
-
-Current card is good but can be more SaaS-like.
-
-Example:
-
-Billing Overview
-
-Total Revenue
-₹1.4K
-
-Pending Payments
-₹200
-
-Upcoming Renewals
-3 Agents
-
-Button:
-
-View Billing Dashboard
-8️⃣ Add a “Top Agents” Leaderboard
-
-This is great for dashboards.
-
-Top Performing Agents
-
-1. ABC Travels        ₹600
-2. Global Travels     ₹420
-3. Sky Tours          ₹210
-
-Or
-
-Top by bookings
-Top by revenue
-9️⃣ Add “Upcoming Renewals”
-
-This helps business forecasting.
-
-Upcoming Renewals
-
-ABC Travels      Mar 12
-Sky Tours        Mar 18
-Travel Hub       Mar 22
-
-Button:
-
-View all renewals
-🔟 Add “System Health” Card
-
-Very modern SaaS dashboards show this.
-
-System Status
-
-API Status        ✅ Operational
-Payments          ✅ Active
-Bookings API      ⚠ Delay
-
-Last Sync: 2 min ago
-🏆 Ideal Dashboard Layout (Best Structure)
-KPI Cards
-Revenue | Active Agents | Expiring Soon
-
-Quick Stats
-Bookings | Pending Payments | Subscriptions | Conversion
-
-Revenue Analytics Chart
-
-Top Agents         Recent Activity
-
-Agent Management   Billing & Subscriptions
-
-Subscription Health
-Upcoming Renewals
-🎨 Small Glass UI Improvements
-
-Add to cards:
-
-backdrop-blur-xl
-bg-white/20
-border-white/30
-shadow-[0_8px_30px_rgba(0,0,0,0.1)]
-
-Add soft glow hover effect
-
-hover:shadow-orange-300/30
-hover:scale-[1.02]
+Implement a Multi-Theme System for the TourSaaS customer-facing pages and agent portal. Do not touch any admin pages.
+1. Create /lib/themes.ts
+Define 7 theme objects with keys: default, orange, purple, teal, blue, rose, amber. Each object has: name, primary, primaryLight, primarySoft, gradientStart, gradientMid, gradientEnd, glow (primary at 25% opacity), preview (3 color array).
+Values:
+
+default (current design — must match exactly what is live now): #F97316 / #FDBA74 / #FED7AA — label it "Default" and mark it as the baseline. This is what the app looks like before any theme is applied. Selecting this always restores the original orange/peach glassmorphism design exactly.
+orange: #F97316 / #FDBA74 / #FED7AA
+purple: #9333EA / #C084FC / #F3E8FF
+teal: #0D9488 / #5EEAD4 / #CCFBF1
+blue: #2563EB / #93C5FD / #DBEAFE
+rose: #E11D48 / #FB7185 / #FFE4E6
+amber: #D97706 / #FCD34D / #FEF3C7
+
+The default theme object values must be identical to the current hardcoded colors in the app so that selecting Default is visually indistinguishable from the original design.
+2. Add to globals.css :root
+css--primary: #F97316;
+--primary-light: #FDBA74;
+--primary-soft: #FED7AA;
+--primary-glow: rgba(249,115,22,0.25);
+--gradient-start: #F97316;
+--gradient-mid: #FDBA74;
+--gradient-end: #FED7AA;
+These must match the current live design exactly so the app looks identical before and after the CSS variable migration.
+3. Replace hardcoded colors in ALL customer pages, components and agent portal pages
+
+#F97316 → var(--primary)
+#FDBA74 → var(--primary-light)
+#FED7AA → var(--primary-soft)
+rgba(249,115,22,...) → var(--primary-glow)
+All gradients using orange → linear-gradient(135deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end))
+Tailwind orange-* classes in customer and agent files → replace with inline style={{ color/background: 'var(--primary)' }}
+
+Do NOT change any admin pages.
+4. Create /context/ThemeContext.tsx
+
+useState('default') for activeTheme — default is 'default' not 'orange'
+useEffect on activeTheme change → document.documentElement.style.setProperty() for all 7 CSS variables using values from /lib/themes.ts
+When activeTheme === 'default', apply the same values as orange — this ensures clicking Default always restores the original design
+Two separate localStorage keys:
+
+Customer theme → localStorage key 'customer-theme'
+Agent theme → localStorage key 'agent-theme'
+
+
+On mount restore from correct localStorage key
+Export ThemeProvider (accepts storageKey prop) and useTheme hook
+
+5. Wrap customer layout and agent layout separately
+
+Customer root layout → <ThemeProvider storageKey="customer-theme">
+Agent root layout → <ThemeProvider storageKey="agent-theme">
+Do NOT add ThemeProvider to admin layout
+Customer and agent themes are completely independent
+
+6. Create /components/ThemeSwitcher.tsx
+
+Palette icon button (🎨) in navbar
+Dropdown shows all 7 themes — Default appears first at the top with a "★ Current Design" label below its name
+Each row: 3 color dots + theme name + checkmark if active
+Default row also shows a small tag: "Restore original"
+Click calls setActiveTheme(key)
+Closes on outside click
+Add between username and logout in customer navbar
+Add between agent name and logout in agent navbar
+
+7. Add Appearance section in customer settings page
+
+Show all 7 themes as cards with color preview dots and name
+Default card appears first, labeled "Default" with subtitle "Original Design"
+Active theme card has a highlighted border using var(--primary)
+Click to switch
+
+8. Add Appearance section in agent settings page
+In /agent/settings, add a dedicated "Appearance & Theme" section:
+
+Section title: "Portal Appearance"
+Subtitle: "Customize your agent portal color theme"
+Show all 7 themes as a grid of cards
+Default card appears first with subtitle "Original Design"
+Each card: 3 color preview dots + theme name + "Active" badge if selected
+Active card has highlighted border using var(--primary)
+Clicking calls setActiveTheme(key) using agent's ThemeContext
+Show toast: "Theme updated successfully" on change
+Agent theme change does NOT affect customer pages
+
+Strict Rules:
+
+Zero changes to admin pages or components
+Zero changes to API calls, business logic, or layout structure
+When no theme is saved in localStorage, the app must look exactly like the current live design — no visual difference
+default and orange themes must produce identical visual output
+Customer and agent themes stored and applied independently
+Theme persists across page refresh via localStorage
+Every customer and agent page button, gradient, badge, border, hover state must respond to theme change
+Do NOT touch admin sidebar, admin dashboard, admin agents, admin billing, or any admin route

@@ -54,6 +54,31 @@ const config: Config = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+                brand: {
+                    primary: "var(--primary)",
+                    light: "var(--primary-light)",
+                    soft: "var(--primary-soft)",
+                    glow: "var(--primary-glow)",
+                    gradient: {
+                        start: "var(--gradient-start)",
+                        mid: "var(--gradient-mid)",
+                        end: "var(--gradient-end)",
+                    }
+                },
+                // Redirect standard orange to theme variables
+                orange: {
+                    50: "#FFF7ED",
+                    100: "var(--primary-soft)",
+                    200: "var(--primary-soft)",
+                    300: "var(--primary-light)",
+                    400: "var(--primary-light)",
+                    500: "var(--primary)",
+                    600: "var(--primary)",
+                    700: "var(--primary)",
+                    800: "var(--primary)",
+                    900: "var(--primary)",
+                    950: "var(--primary)",
+                }
             },
             borderRadius: {
                 lg: "var(--radius)",

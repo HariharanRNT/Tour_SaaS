@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
 import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane } from 'lucide-react'
 import { toast } from "react-toastify"
-import { useTheme } from '@/context/ThemeContext'
 import Image from 'next/image'
 
 // Types
@@ -57,7 +56,6 @@ export default function PlanTripPage() {
 
 function PlanTripContent() {
     const router = useRouter()
-    const { theme } = useTheme()
     const searchParams = useSearchParams()
 
     // Booking Modal State
@@ -354,7 +352,7 @@ function PlanTripContent() {
             chips.push(
                 <Badge key="sq" variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span className="capitalize">{searchQuery}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[#E8682A] transition-colors" onClick={() => removeFilter('searchQuery')} />
+                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('searchQuery')} />
                 </Badge>
             )
         }
@@ -363,7 +361,7 @@ function PlanTripContent() {
             chips.push(
                 <Badge key={`ts-${ts}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span>{ts}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[#E8682A] transition-colors" onClick={() => removeFilter('trip_styles', ts)} />
+                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('trip_styles', ts)} />
                 </Badge>
             )
         })
@@ -371,7 +369,7 @@ function PlanTripContent() {
             chips.push(
                 <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span>{act}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[#E8682A] transition-colors" onClick={() => removeFilter('activities', act)} />
+                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('activities', act)} />
                 </Badge>
             )
         })
@@ -380,7 +378,7 @@ function PlanTripContent() {
             return (
                 <div className="flex flex-wrap items-center gap-4 mb-4 mt-2">
                     {chips}
-                    <button onClick={clearAllFilters} className="text-[11px] font-bold text-[#FF6B2B] hover:underline px-2 transition-all">Clear All</button>
+                    <button onClick={clearAllFilters} className="text-[11px] font-bold text-[var(--primary)] hover:underline px-2 transition-all">Clear All</button>
                 </div>
             )
         }
@@ -409,12 +407,12 @@ function PlanTripContent() {
                 <div className="px-6 pt-6 pb-8 space-y-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-[#3A1A08] flex items-center gap-2.5 text-[18px] font-display">
-                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-orange-100/50">
-                                <Filter className="h-4 w-4 text-[#FF6B2B]" />
+                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-var(--primary-light)">
+                                <Filter className="h-4 w-4 text-[var(--primary)]" />
                             </div>
                             <span>Filters</span>
                             {activeFilterCount > 0 && (
-                                <span className="bg-gradient-to-br from-[#FF6B2B] to-[#FF8C00] text-white text-[10px] min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center font-black shadow-md border border-white/20">
+                                <span className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[10px] min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center font-black shadow-md border border-white/20">
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -423,7 +421,7 @@ function PlanTripContent() {
 
                     {/* Package Type */}
                     <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest border-b border-orange-200/50 pb-2 flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
                             <span className="text-[#FFB347]">📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
@@ -434,8 +432,8 @@ function PlanTripContent() {
                                     className={`
                                 py-2.5 px-4 rounded-xl text-[13px] font-bold cursor-pointer border transition-all duration-300 flex items-center justify-between group
                                 ${filters.package_mode === type
-                                            ? 'bg-gradient-to-r from-[#FF6B2B] to-[#FF8C00] border-transparent text-white shadow-md'
-                                            : 'bg-white/50 border-orange-100 text-[#7C3A10] hover:border-[#E8682A] hover:bg-white'}
+                                            ? 'bg-gradient-to-r from-[var(--primary)] to-[#FF8C00] border-transparent text-white shadow-md'
+                                            : 'bg-white/50 border-orange-100 text-[#7C3A10] hover:border-[var(--primary)] hover:bg-white'}
                             `}
                                 >
                                     <span>{type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}</span>
@@ -446,7 +444,7 @@ function PlanTripContent() {
                     </div>
 
                     {/* Duration */}
-                    <div className="space-y-4 pt-4 border-t border-orange-200/30">
+                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
                         <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex justify-between items-center gap-1.5 mb-3">
                             <span className="flex items-center gap-1.5"><span className="text-[#4F46E5]">⏱️</span> DURATION</span>
                         </p>
@@ -462,7 +460,7 @@ function PlanTripContent() {
                                         onClick={() => {
                                             setFilters(prev => ({ ...prev, duration_min: minLabel, duration_max: maxLabel }));
                                         }}
-                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border ${isActive ? 'bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-[0_0_12px_rgba(255,107,43,0.3)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
+                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
                                     >
                                         {range} Days
                                     </button>
@@ -479,7 +477,7 @@ function PlanTripContent() {
                             onPointerUp={() => setIsSliderDragging(false)}
                             onPointerCancel={() => setIsSliderDragging(false)}
                         >
-                            <div className="bg-[#FF6B2B]/85 text-white text-[11px] font-bold rounded-full py-1 px-3 mx-auto shadow-[0_2px_8px_rgba(255,107,43,0.25)] tracking-wide w-max">
+                            <div className="bg-[var(--primary)]/85 text-white text-[11px] font-bold rounded-full py-1 px-3 mx-auto shadow-[0_2px_8px_var(--primary-glow)] tracking-wide w-max">
                                 {filters.duration_min} - {filters.duration_max} Days
                             </div>
                             <Slider
@@ -493,7 +491,7 @@ function PlanTripContent() {
                     </div>
 
                     {/* Budget */}
-                    <div className="space-y-4 pt-4 border-t border-orange-200/30">
+                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
                         <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex items-center gap-1.5">
                             <span className="text-[#10B981]">💰</span> BUDGET (PER PERSON)
                         </p>
@@ -510,7 +508,7 @@ function PlanTripContent() {
                                     <button
                                         key={range.label}
                                         onClick={() => setFilters(prev => ({ ...prev, price_min: range.min, price_max: range.max }))}
-                                        className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border ${isActive ? 'bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-[0_0_12px_rgba(255,107,43,0.3)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
+                                        className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
                                     >
                                         {range.label}
                                     </button>
@@ -527,7 +525,7 @@ function PlanTripContent() {
                             onPointerUp={() => setIsSliderDragging(false)}
                             onPointerCancel={() => setIsSliderDragging(false)}
                         >
-                            <div className="bg-gradient-to-br from-[#FF6B2B] to-[#FF8C00] text-white text-[11px] font-black rounded-xl py-2 px-4 mx-auto shadow-lg tracking-wider w-max border border-white/30 mb-2">
+                            <div className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[11px] font-black rounded-xl py-2 px-4 mx-auto shadow-lg tracking-wider w-max border border-white/30 mb-2">
                                 ₹{filters.price_min.toLocaleString()} — ₹{filters.price_max.toLocaleString()}
                             </div>
                             <Slider
@@ -541,14 +539,14 @@ function PlanTripContent() {
                     </div>
 
                     {/* Trip Style */}
-                    <div className="pt-4 border-t border-orange-200/30">
+                    <div className="pt-4 border-t border-[var(--primary)]/30">
                         <div
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}
                         >
-                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[#E8682A] transition-colors">
+                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-pink-400 text-sm drop-shadow-sm">🌺</span> TRIP STYLE
-                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-[#FF6B2B] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-orange-200/50">({filters.trip_styles.length})</span>}
+                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.trip_styles.length})</span>}
                             </p>
                             <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -557,10 +555,10 @@ function PlanTripContent() {
                                 <div className="space-y-3 pb-6">
                                     {TRIP_STYLES.map(style => (
                                         <div key={style} className="flex items-center group cursor-pointer" onClick={() => toggleFilterArray('trip_styles', style)}>
-                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[#FF6B2B] border-[#FF6B2B]' : 'bg-white/50 border-orange-200 group-hover:border-[#FF6B2B]'}`}>
+                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)] group-hover:border-[var(--primary)]'}`}>
                                                 {filters.trip_styles.includes(style) && <Check className="h-3 w-3 text-white" />}
                                             </div>
-                                            <label className="text-[13px] font-bold text-[#6B3010] cursor-pointer group-hover:text-[#E8682A] transition-colors uppercase tracking-tight">
+                                            <label className="text-[13px] font-bold text-[#6B3010] cursor-pointer group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">
                                                 {style}
                                             </label>
                                         </div>
@@ -573,14 +571,14 @@ function PlanTripContent() {
                     </div>
 
                     {/* Activities */}
-                    <div className="pt-4 border-t border-orange-200/30">
+                    <div className="pt-4 border-t border-[var(--primary)]/30">
                         <div
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
                         >
-                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[#E8682A] transition-colors">
+                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-blue-500 text-sm drop-shadow-sm">🏄</span> ACTIVITIES
-                                {filters.activities.length > 0 && <span className="bg-orange-100 text-[#FF6B2B] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-orange-200/50">({filters.activities.length})</span>}
+                                {filters.activities.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.activities.length})</span>}
                             </p>
                             <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -589,10 +587,10 @@ function PlanTripContent() {
                                 <div className="space-y-3 pb-6">
                                     {ACTIVITIES.slice(0, 10).map(act => (
                                         <div key={act} className="flex items-center group cursor-pointer" onClick={() => toggleFilterArray('activities', act)}>
-                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[#FF6B2B] border-[#FF6B2B]' : 'bg-white/50 border-orange-200 group-hover:border-[#FF6B2B]'}`}>
+                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)] group-hover:border-[var(--primary)]'}`}>
                                                 {filters.activities.includes(act) && <Check className="h-3 w-3 text-white" />}
                                             </div>
-                                            <label className="text-[13px] font-bold text-[#8B5030] cursor-pointer group-hover:text-[#E8682A] transition-colors uppercase tracking-tight">
+                                            <label className="text-[13px] font-bold text-[#8B5030] cursor-pointer group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">
                                                 {act}
                                             </label>
                                         </div>
@@ -605,7 +603,7 @@ function PlanTripContent() {
                     </div>
 
                     {/* Country */}
-                    <div className="space-y-4 pt-4 border-t border-orange-200/30 pb-4">
+                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30 pb-4">
                         <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2">
                             <span className="text-cyan-500 text-sm drop-shadow-sm">🌍</span> COUNTRY
                         </p>
@@ -616,8 +614,8 @@ function PlanTripContent() {
                                     variant={filters.countries.includes(c) ? "default" : "outline"}
                                     className={`cursor-pointer px-4 py-2 rounded-xl transition-all border snap-start whitespace-nowrap text-xs
                                 ${filters.countries.includes(c)
-                                            ? 'bg-[#FF6B2B] border-[#FF6B2B] text-white shadow-[0_4px_12px_rgba(255,107,43,0.3)]'
-                                            : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-orange-200'}`}
+                                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]'
+                                            : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-[var(--primary)]'}`}
                                     onClick={() => toggleFilterArray('countries', c)}
                                 >
                                     {c}
@@ -627,18 +625,18 @@ function PlanTripContent() {
                     </div>
 
                     {/* Sticky Sidebar Action */}
-                    <div className="mt-auto pt-6 border-t border-orange-200/40 sticky bottom-0 bg-white/10 backdrop-blur-md -mx-6 px-6 pb-2 z-20">
+                    <div className="mt-auto pt-6 border-t border-[var(--primary)]/40 sticky bottom-0 bg-white/10 backdrop-blur-md -mx-6 px-6 pb-2 z-20">
                         <div className="flex gap-3">
                             <Button
                                 onClick={clearAllFilters}
                                 variant="outline"
-                                className="flex-1 h-12 rounded-2xl border-orange-200 text-[#8B5030] font-bold hover:bg-orange-50 transition-all text-sm gap-2"
+                                className="flex-1 h-12 rounded-2xl border-[var(--primary)] text-[#8B5030] font-bold hover:bg-[var(--primary)] transition-all text-sm gap-2"
                             >
                                 <RotateCcw className="h-4 w-4" /> Reset
                             </Button>
                             <Button
                                 onClick={() => { }} // Auto-applies, but could close mobile sheet if needed
-                                className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white font-black shadow-lg hover:shadow-orange-200 shadow-orange-100 transition-all text-sm"
+                                className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black shadow-lg hover:shadow-orange-200 shadow-orange-100 transition-all text-sm"
                             >
                                 Apply
                             </Button>
@@ -648,7 +646,7 @@ function PlanTripContent() {
 
                 {/* Apply Filters Button - Now part of flow */}
                 <div className="px-6 pb-8">
-                    <Button className="w-full h-12 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white font-bold rounded-full shadow-[0_4px_20px_rgba(255,107,43,0.3)] hover:scale-[1.02] transition-all text-[15px]">
+                    <Button className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-full shadow-[0_4px_20px_var(--primary-glow)] hover:scale-[1.02] transition-all text-[15px]">
                         Apply Filters
                     </Button>
                 </div>
@@ -663,7 +661,7 @@ function PlanTripContent() {
 
     // Reusable Search Bar
     const renderSearchBar = (isCompact: boolean) => (
-        <div className={`relative flex items-center shadow-[0_8px_32px_rgba(255,107,43,0.15)] bg-white/95 backdrop-blur-lg rounded-full overflow-visible ${isCompact ? 'p-1 pl-4 mx-auto w-full max-w-4xl' : 'p-2 pl-6'}`}>
+        <div className={`relative flex items-center shadow-[0_8px_32px_var(--primary-glow)] bg-white/95 backdrop-blur-lg rounded-full overflow-visible ${isCompact ? 'p-1 pl-4 mx-auto w-full max-w-4xl' : 'p-2 pl-6'}`}>
             <Search className={`text-blue-500 ${isCompact ? 'h-5 w-5' : 'h-6 w-6'} mr-2`} />
             <Input
                 placeholder="Search destination, package, or activity..."
@@ -722,10 +720,10 @@ function PlanTripContent() {
     )
 
     return (
-        <div className="min-h-full font-sans bg-gradient-to-br from-[#FFCC99]/80 via-[#FF9A5C]/80 to-[#FF6B2B]/90 pb-20 relative">
+        <div className="min-h-full font-sans bg-gradient-to-br from-[#FFCC99]/80 via-[var(--primary-light)]/80 to-[var(--primary)]/90 pb-20 relative">
             {/* Ambient Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[#FFD4B0]/30 rounded-full blur-[100px] pointer-events-none z-0" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[#E8682A]/10 rounded-full blur-[120px] pointer-events-none z-0" />
+            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[var(--primary-soft)]/30 rounded-full blur-[100px] pointer-events-none z-0" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[var(--primary)]/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
 
             {/* Hero Search Section - Shown if NOT hasSearched */}
@@ -733,7 +731,7 @@ function PlanTripContent() {
                 <>
                     <div className="relative overflow-visible flex items-center justify-center min-h-[70vh] md:min-h-[80vh] -mt-16 noise-overlay">
                         <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
-                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${theme.plan_trip_image || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=2021&q=80'}")` }} />
+                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=2021&q=80")` }} />
                             <div className="absolute inset-0 bg-gradient-to-t from-[#EA6E28]/30 via-transparent to-transparent mix-blend-multiply" />
                             <div className="absolute inset-0 bg-black/20" />
                         </motion.div>
@@ -756,10 +754,10 @@ function PlanTripContent() {
                                 className="relative z-40 max-w-4xl mx-auto w-full"
                                 ref={searchRef}
                             >
-                                <div className="glass-search p-2 md:p-3 shadow-[0_20px_50px_rgba(255,107,43,0.15)] rounded-full focus-within:ring-[4px] focus-within:ring-[#FF6B2B]/30 transition-all duration-300">
-                                    <div className="bg-white/95 rounded-full overflow-hidden p-1.5 flex flex-col md:flex-row items-center gap-2 relative shadow-[inset_0_0_0_2px_transparent] focus-within:shadow-[inset_0_0_0_2px_rgba(255,107,43,0.5)] transition-shadow">
+                                <div className="glass-search p-2 md:p-3 shadow-[0_20px_50px_var(--primary-glow)] rounded-full focus-within:ring-[4px] focus-within:ring-[var(--primary)]/30 transition-all duration-300">
+                                    <div className="bg-white/95 rounded-full overflow-hidden p-1.5 flex flex-col md:flex-row items-center gap-2 relative shadow-[inset_0_0_0_2px_transparent] focus-within:shadow-[inset_0_0_0_2px_var(--primary-glow)] transition-shadow">
                                         <div className="flex-1 flex items-center px-6 py-2 group w-full h-[52px] md:h-[64px]">
-                                            <Search className="h-5 w-5 text-[#FF6B2B] mr-3 group-focus-within:scale-110 transition-transform" />
+                                            <Search className="h-5 w-5 text-[var(--primary)] mr-3 group-focus-within:scale-110 transition-transform" />
                                             <input
                                                 type="text"
                                                 placeholder="Search city, country, or package..."
@@ -776,7 +774,7 @@ function PlanTripContent() {
                                         </div>
                                         <Button
                                             onClick={() => handleSearchSubmit()}
-                                            className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white px-10 py-6 md:py-7 rounded-full text-lg font-black shadow-[0_4px_20px_rgba(255,107,43,0.3)] transition-all active:scale-95 w-full md:w-auto hover:shadow-[0_4px_30px_rgba(255,107,43,0.5)] h-[52px] md:h-[64px] flex items-center shrink-0"
+                                            className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white px-10 py-6 md:py-7 rounded-full text-lg font-black shadow-[0_4px_20px_var(--primary-glow)] transition-all active:scale-95 w-full md:w-auto hover:shadow-[0_4px_30px_var(--primary-glow)] h-[52px] md:h-[64px] flex items-center shrink-0"
                                         >
                                             Explore Now
                                         </Button>
@@ -822,7 +820,7 @@ function PlanTripContent() {
                                                 <button
                                                     key={tag}
                                                     onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [tag] })); setHasSearched(true); }}
-                                                    className="px-8 py-3 rounded-full border border-white/40 bg-black/80 backdrop-blur-xl text-white font-black text-xs hover:bg-[#FF6B2B] transition-all hover:-translate-y-1 shadow-2xl tracking-[0.1em] uppercase ring-1 ring-white/20"
+                                                    className="px-8 py-3 rounded-full border border-white/40 bg-black/80 backdrop-blur-xl text-white font-black text-xs hover:bg-[var(--primary)] transition-all hover:-translate-y-1 shadow-2xl tracking-[0.1em] uppercase ring-1 ring-white/20"
                                                 >
                                                     {tag}
                                                 </button>
@@ -838,7 +836,7 @@ function PlanTripContent() {
                                         >
                                             <div className="flex -space-x-2">
                                                 {[1, 2, 3].map(i => (
-                                                    <div key={i} className="w-6 h-6 rounded-full border-2 border-orange-500 bg-orange-200 overflow-hidden">
+                                                    <div key={i} className="w-6 h-6 rounded-full border-2 border-[var(--primary)] bg-orange-200 overflow-hidden">
                                                         <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" className="w-full h-full object-cover" />
                                                     </div>
                                                 ))}
@@ -860,7 +858,7 @@ function PlanTripContent() {
                     {/* Content Section */}
                     <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <section className="relative py-8 px-8 bg-gradient-to-b from-[#FFF5ED] to-white rounded-[48px] shadow-[inset_0_4px_40px_rgba(255,107,43,0.03)] border border-orange-100/50">
+                        <section className="relative py-8 px-8 bg-gradient-to-b from-[#FFF5ED] to-white rounded-[48px] shadow-[inset_0_4px_40px_var(--primary-glow)] border border-var(--primary-glow)">
                             <div className="container mx-auto max-w-7xl">
                                 <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                     <div>
@@ -872,10 +870,10 @@ function PlanTripContent() {
                                         </p>
                                     </div>
                                     <div className="hidden md:flex gap-3">
-                                        <button className="w-9 h-9 rounded-full border-none bg-[#FF6B2B] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                        <button className="w-9 h-9 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
                                             <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
                                         </button>
-                                        <button className="w-9 h-9 rounded-full border-none bg-[#FF6B2B] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                        <button className="w-9 h-9 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
                                             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </div>
@@ -883,7 +881,7 @@ function PlanTripContent() {
 
                                 <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:grid md:grid-cols-4 gap-6 scrollbar-hide snap-x">
                                     {[
-                                        { style: 'Adventure', icon: <Mountain className="h-5 w-5 text-[#FF6B2B]" />, desc: 'For the thrill-seekers' },
+                                        { style: 'Adventure', icon: <Mountain className="h-5 w-5 text-[var(--primary)]" />, desc: 'For the thrill-seekers' },
                                         { style: 'Beach', icon: <Waves className="h-5 w-5 text-amber-500" />, desc: 'Sun, sand and serenity' },
                                         { style: 'Honeymoon', icon: <Heart className="h-5 w-5 text-rose-400" />, desc: 'Romantic getaways' },
                                         { style: 'Family', icon: <Users className="h-5 w-5 text-indigo-400" />, desc: 'Memories for all ages' }
@@ -891,9 +889,9 @@ function PlanTripContent() {
                                         <div
                                             key={item.style}
                                             onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [item.style] })); setHasSearched(true); }}
-                                            className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(255,107,43,0.1)] snap-start rounded-[24px] border border-white/60 bg-white/40 backdrop-blur-md"
+                                            className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_var(--primary-glow)] snap-start rounded-[24px] border border-white/60 bg-white/40 backdrop-blur-md"
                                         >
-                                            <div className="w-10 h-10 bg-[#FFE4CC]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[#FF6B2B]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
+                                            <div className="w-10 h-10 bg-[var(--primary-soft)]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[var(--primary)]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
                                                 {item.icon}
                                             </div>
                                             <h3 className="text-base font-bold text-[#6B3010] tracking-tight mb-1">{item.style}</h3>
@@ -916,7 +914,7 @@ function PlanTripContent() {
                                             Join thousands of travelers exploring these top-rated spots this season.
                                         </p>
                                     </div>
-                                    <button className="text-[#E8682A] font-bold text-sm tracking-widest uppercase flex items-center gap-2 group">
+                                    <button className="text-[var(--primary)] font-bold text-sm tracking-widest uppercase flex items-center gap-2 group">
                                         View All Destinations
                                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                     </button>
@@ -952,7 +950,7 @@ function PlanTripContent() {
                                                     <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
                                                         <span className="text-yellow-400">★</span> 4.8
                                                     </Badge>
-                                                    <Badge className="bg-[#FF6B2B] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
+                                                    <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
                                                         {pkgCount}+ Packages
                                                     </Badge>
                                                 </div>
@@ -963,7 +961,7 @@ function PlanTripContent() {
                                                         <p className="text-blue-50 text-sm font-bold flex items-center gap-2 uppercase tracking-widest opacity-90 group-hover:opacity-100">
                                                             Explore packages <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
                                                         </p>
-                                                        <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[#FF6B2B] group-hover/link:w-full transition-all duration-300"></div>
+                                                        <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[var(--primary)] group-hover/link:w-full transition-all duration-300"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -996,7 +994,7 @@ function PlanTripContent() {
 
                                 {/* Desktop Sidebar Filter */}
                                 <div className="hidden md:block w-[280px] shrink-0">
-                                    <div className="glass-filter-panel shadow-[0_8px_32px_rgba(255,107,43,0.06)] bg-white/50 backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl">
+                                    <div className="glass-filter-panel shadow-[0_8px_32px_var(--primary-glow)] bg-white/50 backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl">
                                         <FilterPanel />
                                     </div>
                                 </div>
@@ -1005,7 +1003,7 @@ function PlanTripContent() {
                                 <div className="flex-1 min-w-0">
                                     {/* Context Header & Mobile Filter Trigger */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[80px] px-6 border border-white/20 shadow-[0_4px_24px_rgba(255,107,43,0.02)] flex-1 flex flex-col justify-center relative overflow-hidden">
+                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[80px] px-6 border border-white/20 shadow-[0_4px_24px_var(--primary-glow)] flex-1 flex flex-col justify-center relative overflow-hidden">
                                             {/* faint texture overlay */}
                                             <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
@@ -1018,7 +1016,7 @@ function PlanTripContent() {
                                                         {searching ? 'Searching...' : (searchQuery || 'All Destinations')}
                                                     </h2>
                                                     {!searching && (
-                                                        <span className="text-[13px] font-bold text-[#8B5030]/60 uppercase tracking-widest border-l border-orange-200/50 pl-3">
+                                                        <span className="text-[13px] font-bold text-[#8B5030]/60 uppercase tracking-widest border-l border-[var(--primary)]/50 pl-3">
                                                             {packages.length} {packages.length === 1 ? 'Result' : 'Results'} Found
                                                         </span>
                                                     )}
@@ -1034,7 +1032,7 @@ function PlanTripContent() {
                                                         <Button variant="outline" className="flex items-center gap-2 h-14 rounded-full border-none shadow-sm bg-white/70">
                                                             <Filter className="h-4 w-4" /> Filters
                                                             {(filters.trip_styles.length > 0 || filters.activities.length > 0) && (
-                                                                <span className="bg-[#FF6B2B] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
+                                                                <span className="bg-[var(--primary)] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
                                                             )}
                                                         </Button>
                                                     </SheetTrigger>
@@ -1053,7 +1051,7 @@ function PlanTripContent() {
                                                     <span className="text-[10px] text-[#A0501E] mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
                                                     <SelectValue placeholder="Recommended" />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_rgba(255,107,43,0.1)]">
+                                                <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_var(--primary-glow)]">
                                                     <SelectItem value="recommended" className="font-bold text-[#5C2500]">Recommended</SelectItem>
                                                     <SelectItem value="price_asc" className="font-bold text-[#5C2500]">Price: Low to High</SelectItem>
                                                     <SelectItem value="price_desc" className="font-bold text-[#5C2500]">Price: High to Low</SelectItem>
@@ -1079,7 +1077,7 @@ function PlanTripContent() {
                                             <div className="relative z-10">
                                                 <div className="w-24 h-24 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-white/50">
                                                     <div className="relative">
-                                                        <Search className="h-10 w-10 text-[#E8682A] animate-pulse" />
+                                                        <Search className="h-10 w-10 text-[var(--primary)] animate-pulse" />
                                                         <MapPin className="absolute -top-2 -right-2 h-5 w-5 text-indigo-400" />
                                                     </div>
                                                 </div>
@@ -1089,7 +1087,7 @@ function PlanTripContent() {
                                                 </p>
                                                 <Button
                                                     onClick={clearAllFilters}
-                                                    className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white px-10 py-7 rounded-full font-black shadow-[0_12px_24px_rgba(255,107,43,0.2)] hover:shadow-[0_12px_32px_rgba(255,107,43,0.3)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 mx-auto"
+                                                    className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white px-10 py-7 rounded-full font-black shadow-[0_12px_24px_var(--primary-glow)] hover:shadow-[0_12px_32px_var(--primary-glow)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 mx-auto"
                                                 >
                                                     <RotateCcw className="h-5 w-5" />
                                                     Clear All & Refresh
@@ -1120,7 +1118,7 @@ function PlanTripContent() {
                                                                     <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
                                                                 </>
                                                             ) : (
-                                                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[#FF6B2B]/40 flex items-center justify-center p-6 text-center z-0">
+                                                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[var(--primary)]/40 flex items-center justify-center p-6 text-center z-0">
                                                                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
                                                                     {/* Fallback real-world image based on destination if available */}
                                                                     <img
@@ -1176,7 +1174,7 @@ function PlanTripContent() {
 
                                                             {/* Destination Route */}
                                                             <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
-                                                                <MapPin className="h-4 w-4 shrink-0 text-[#FF6B2B]" />
+                                                                <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
                                                                 {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
                                                                     <span className="truncate">
                                                                         {pkg.destinations.map(d => d.city).join(' → ')}
@@ -1190,7 +1188,7 @@ function PlanTripContent() {
                                                             <div className="flex flex-wrap gap-2 mb-3 max-h-[80px] overflow-hidden">
                                                                 {pkg.trip_style && (
                                                                     <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B]"></span>
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
                                                                         {pkg.trip_style}
                                                                     </Badge>
                                                                 )}
@@ -1218,9 +1216,9 @@ function PlanTripContent() {
 
                                                     {/* Price and Action Section */}
                                                     <div className="p-3 px-4 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
-                                                        <div className="pt-4 border-t border-orange-200/40 flex items-center justify-between gap-2 w-full flex-nowrap">
+                                                        <div className="pt-4 border-t border-[var(--primary)]/40 flex items-center justify-between gap-2 w-full flex-nowrap">
                                                             <div className="flex flex-col flex-1">
-                                                                <span className="text-xs font-black text-[#E8682A] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">Starting From</span>
+                                                                <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">Starting From</span>
                                                                 <div className="flex items-baseline gap-1">
                                                                     <span className="text-xl font-bold text-[#5C2500]">₹{pkg.price_per_person.toLocaleString()}</span>
                                                                     <span className="text-xs text-[#8B5030]/70 font-medium uppercase tracking-widest">/ pp</span>
@@ -1233,7 +1231,7 @@ function PlanTripContent() {
                                                                     setSelectedPackageForBooking(pkg);
                                                                     setIsBookingModalOpen(true);
                                                                 }}
-                                                                className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(255,107,43,0.3)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
+                                                                className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
                                                             >
                                                                 <span className="relative z-10 flex items-center gap-2">
                                                                     Book Now
@@ -1265,7 +1263,7 @@ function PlanTripContent() {
                 >
                     <div className="relative flex flex-col h-full max-h-[90vh]">
                         {/* Glassy Header Card */}
-                        <div className="bg-gradient-to-br from-[#FF8C66]/90 to-[#FF6B2B]/90 py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
+                        <div className="bg-gradient-to-br from-[#FF8C66]/90 to-[var(--primary)]/90 py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
                             <button
                                 onClick={() => setIsBookingModalOpen(false)}
                                 className="absolute top-3 right-3 text-white/90 hover:text-white hover:bg-white/20 p-1.5 rounded-full transition-all"
@@ -1287,7 +1285,7 @@ function PlanTripContent() {
                                     Travel Date
                                 </Label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF6B2B]">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]">
                                         <CalendarIcon className="h-5 w-5" />
                                     </div>
                                     <Input
@@ -1295,7 +1293,7 @@ function PlanTripContent() {
                                         min={new Date().toISOString().split('T')[0]}
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus-visible:ring-orange-500/30 focus-visible:border-orange-300 transition-all cursor-pointer shadow-inner"
+                                        className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus-visible:ring-var(--primary) focus-visible:border-[var(--primary)] transition-all cursor-pointer shadow-inner"
                                     />
                                 </div>
                             </div>
@@ -1346,19 +1344,19 @@ function PlanTripContent() {
                                         Starting From
                                     </Label>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF6B2B] z-10 pointer-events-none">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)] z-10 pointer-events-none">
                                             <Plane className="h-5 w-5" />
                                         </div>
                                         <Select
                                             value={originCity}
                                             onValueChange={setOriginCity}
                                         >
-                                            <SelectTrigger className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus:ring-orange-500/30 focus:border-orange-300 transition-all shadow-inner">
+                                            <SelectTrigger className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus:ring-var(--primary) focus:border-[var(--primary)] transition-all shadow-inner">
                                                 <SelectValue placeholder="Select Origin City" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-white/90 backdrop-blur-xl border-orange-100 rounded-2xl shadow-xl">
                                                 {selectedPackageForBooking.flight_origin_cities?.map((city) => (
-                                                    <SelectItem key={city} value={city} className="font-bold text-slate-700 focus:bg-orange-50 focus:text-orange-600 rounded-xl m-1">
+                                                    <SelectItem key={city} value={city} className="font-bold text-slate-700 focus:bg-orange-50 focus:text-[var(--primary)] rounded-xl m-1">
                                                         {city}
                                                     </SelectItem>
                                                 ))}
@@ -1375,7 +1373,7 @@ function PlanTripContent() {
                         {/* Modal Footer */}
                         <div className="p-2 pt-4 mt-auto">
                             <Button
-                                className="w-full h-auto py-3 bg-[#FF7D52] hover:bg-[#FF6B2B] text-white rounded-xl text-sm font-black shadow-[0_8px_16px_rgba(255,125,82,0.2)] transition-all active:scale-[0.98] border-none"
+                                className="w-full h-auto py-3 bg-[#FF7D52] hover:bg-[var(--primary)] text-white rounded-xl text-sm font-black shadow-[0_8px_16px_rgba(255,125,82,0.2)] transition-all active:scale-[0.98] border-none"
                                 disabled={!selectedDate || travelers.adults < 1 || (selectedPackageForBooking?.flights_enabled && !originCity)}
                                 onClick={() => {
                                     if (selectedPackageForBooking) {
@@ -1417,8 +1415,8 @@ function PlanTripContent() {
                 }
                 .glass-input:focus {
                     background: rgba(255, 255, 255, 0.8) !important;
-                    border-color: rgba(249, 115, 22, 0.5) !important;
-                    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
+                    border-color: var(--primary-glow) !important;
+                    box-shadow: 0 0 0 3px var(--primary-glow) !important;
                 }
             `}</style>
         </div>

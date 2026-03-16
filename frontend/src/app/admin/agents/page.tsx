@@ -1,7 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { 
+    fetchAgents, 
+    approveAgent, 
+    rejectAgent, 
+    createAgent, 
+    updateAgent as apiUpdateAgent, 
+    deleteAgent as apiDeleteAgent, 
+    updateAgentStatus as apiUpdateAgentStatus,
+    bulkDeleteAgents,
+    bulkUpdateAgentsStatus
+} from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,8 +91,6 @@ interface Agent {
 
 export default function AdminAgentsPage() {
     const router = useRouter()
-    const [agents, setAgents] = useState<Agent[]>([])
-    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all')
     const [showPassword, setShowPassword] = useState(false)
@@ -100,17 +110,106 @@ export default function AdminAgentsPage() {
     // Date filter state
     const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'year'>('all')
 
-    // Stats state
-    const [stats, setStats] = useState({
-        total: 0,
-        active: 0,
-        newThisMonth: 0,
-        totalBookings: 0
+    const queryClient = useQueryClient()
+
+    // Queries
+    const { data: agents = [], isLoading: loading } = useQuery({
+        queryKey: ['agents', statusFilter],
+        queryFn: () => fetchAgents(statusFilter),
     })
+
+    // Mutations
+    const approveMutation = useMutation({
+        mutationFn: approveAgent,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+        },
+    })
+
+    const rejectMutation = useMutation({
+        mutationFn: ({ id, reason }: { id: string, reason: string }) => rejectAgent(id, reason),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+        },
+    })
+
+    const createMutation = useMutation({
+        mutationFn: createAgent,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+            setIsCreateOpen(false)
+            setNewAgent({
+                email: '', password: '', first_name: '', last_name: '', phone: '',
+                agency_name: '', company_legal_name: '', business_address: '',
+                country: 'IN', state: '', city: '', gst_no: '', tax_id: '', domain: '',
+                currency: 'INR', commission_type: 'percentage', commission_value: '0'
+            })
+            setCountryStates(State.getStatesOfCountry('IN'))
+            setStateCities([])
+            setFormTouched(false)
+        },
+    })
+
+    const statusMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: string, is_active: boolean }) => apiUpdateAgentStatus(id, is_active),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+        },
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: apiDeleteAgent,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+            setAgentToDelete(null)
+        },
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => apiUpdateAgent(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+            setIsEditOpen(false)
+        },
+    })
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: bulkDeleteAgents,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+            setSelectedAgents(new Set())
+            setShowBulkDeleteDialog(false)
+            toast.success('Agents deleted successfully')
+        },
+        onError: () => toast.error('Failed to delete agents')
+    })
+
+    const bulkStatusMutation = useMutation({
+        mutationFn: ({ ids, is_active }: { ids: string[], is_active: boolean }) => bulkUpdateAgentsStatus(ids, is_active),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['agents'] })
+            setSelectedAgents(new Set())
+            toast.success(`Agents ${variables.is_active ? 'activated' : 'deactivated'} successfully`)
+        },
+        onError: () => toast.error('Failed to update status')
+    })
+
+    // Derived stats
+    const stats = useMemo(() => {
+        const now = new Date()
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const newThisMonth = agents.filter((agent: Agent) => new Date(agent.created_at) >= thisMonth).length
+
+        return {
+            total: agents.length,
+            active: agents.filter((agent: Agent) => agent.is_active).length,
+            newThisMonth,
+            totalBookings: 0 // TODO: Fetch from API
+        }
+    }, [agents])
 
     // Create Agent Form State
     const [isCreateOpen, setIsCreateOpen] = useState(false)
-    const [creating, setCreating] = useState(false)
     const [formTouched, setFormTouched] = useState(false)
     const [newAgent, setNewAgent] = useState({
         email: '',
@@ -139,14 +238,12 @@ export default function AdminAgentsPage() {
     const [stateCities, setStateCities] = useState<ICity[]>([])
 
     // Delete Confirmation State
-    const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null)
-    const [isDeleting, setIsDeleting] = useState(false)
+    const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null)
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
 
     // Edit Agent State
     const [isEditOpen, setIsEditOpen] = useState(false)
-    const [editingAgent, setEditingAgent] = useState<Agent | null>(null)
-    const [isUpdating, setIsUpdating] = useState(false)
+    const [agentToEdit, setAgentToEdit] = useState<Agent | null>(null)
     const [editForm, setEditForm] = useState({
         first_name: '',
         last_name: '',
@@ -168,52 +265,6 @@ export default function AdminAgentsPage() {
     // Validation states
     const [emailValid, setEmailValid] = useState<boolean | null>(null)
 
-    const loadAgents = useCallback(async (status: string = statusFilter) => {
-        setLoading(true)
-        try {
-            const token = localStorage.getItem('token')
-            const url = new URL('http://localhost:8000/api/v1/admin/agents')
-            if (status !== 'all') {
-                url.searchParams.append('status', status)
-            }
-
-            const response = await fetch(url.toString(), {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    localStorage.removeItem('token')
-                    localStorage.removeItem('user')
-                    router.push('/admin/login')
-                    return
-                }
-                throw new Error('Failed to load agents')
-            }
-
-            const data = await response.json()
-            setAgents(data)
-
-            // Calculate stats
-            const now = new Date()
-            const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-            const newThisMonth = data.filter((agent: Agent) => new Date(agent.created_at) >= thisMonth).length
-
-            setStats({
-                total: data.length,
-                active: data.filter((agent: Agent) => agent.is_active).length,
-                newThisMonth,
-                totalBookings: 0 // TODO: Fetch from API
-            })
-        } catch (error) {
-            console.error('Failed to load agents:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [statusFilter, setLoading, setAgents, setStats, router])
-
     useEffect(() => {
         const token = localStorage.getItem('token')
         const userStr = localStorage.getItem('user')
@@ -233,9 +284,7 @@ export default function AdminAgentsPage() {
             router.push('/admin/login')
             return
         }
-
-        loadAgents()
-    }, [router, loadAgents])
+    }, [router])
 
     // Password strength calculator
     useEffect(() => {
@@ -260,160 +309,56 @@ export default function AdminAgentsPage() {
     }, [newAgent.email])
 
     const handleApprove = async (id: string) => {
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${id}/approve`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) throw new Error('Failed to approve agent')
-
-            toast.success('Agent approved successfully')
-            loadAgents()
-        } catch (error: any) {
-            toast.error(error.message)
-        }
+        approveMutation.mutate(id, {
+            onSuccess: () => toast.success('Agent approved successfully'),
+            onError: (error: any) => toast.error(error.message)
+        })
     }
 
     const handleReject = async (id: string, reason: string = "") => {
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${id}/reject`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ reason })
-            })
-
-            if (!response.ok) throw new Error('Failed to reject agent')
-
-            toast.success('Agent rejected')
-            loadAgents()
-        } catch (error: any) {
-            toast.error(error.message)
-        }
+        rejectMutation.mutate({ id, reason }, {
+            onSuccess: () => toast.success('Agent rejected'),
+            onError: (error: any) => toast.error(error.message)
+        })
     }
 
     const handleCreateAgent = async (e: React.FormEvent) => {
         e.preventDefault()
-        setCreating(true)
-        try {
-            const token = localStorage.getItem('token')
-            const payload = {
-                ...newAgent,
-                country: Country.getCountryByCode(newAgent.country)?.name || newAgent.country,
-                state: State.getStateByCodeAndCountry(newAgent.state, newAgent.country)?.name || newAgent.state,
-                // Fix for 422: Convert empty strings to null or correct types
-                commission_value: newAgent.commission_value ? Number(newAgent.commission_value) : 0,
-                phone: newAgent.phone || null,
-                gst_no: newAgent.gst_no || null,
-                tax_id: newAgent.tax_id || null,
-                agency_name: newAgent.agency_name || null,
-                company_legal_name: newAgent.company_legal_name || null,
-                business_address: newAgent.business_address || null,
-                city: newAgent.city || null,
-                domain: newAgent.domain || null,
-            }
-            const response = await fetch('http://localhost:8000/api/v1/admin/agents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    localStorage.removeItem('token')
-                    localStorage.removeItem('user')
-                    router.push('/admin/login')
-                    toast.error('Session expired. Please login again.')
-                    return
-                }
-                const error = await response.json()
-                throw new Error(error.detail || 'Failed to create agent')
-            }
-
-            await loadAgents()
-            setIsCreateOpen(false)
-            setNewAgent({
-                email: '', password: '', first_name: '', last_name: '', phone: '',
-                agency_name: '', company_legal_name: '', business_address: '',
-                country: 'IN', state: '', city: '', gst_no: '', tax_id: '', domain: '',
-                currency: 'INR', commission_type: 'percentage', commission_value: '0'
-            })
-            setCountryStates(State.getStatesOfCountry('IN'))
-            setStateCities([])
-            setFormTouched(false)
-            toast.success('Agent created successfully')
-        } catch (error: any) {
-            toast.error(error.message)
-        } finally {
-            setCreating(false)
+        const payload = {
+            ...newAgent,
+            country: Country.getCountryByCode(newAgent.country)?.name || newAgent.country,
+            state: State.getStateByCodeAndCountry(newAgent.state, newAgent.country)?.name || newAgent.state,
+            commission_value: newAgent.commission_value ? Number(newAgent.commission_value) : 0,
+            phone: newAgent.phone || null,
+            gst_no: newAgent.gst_no || null,
+            tax_id: newAgent.tax_id || null,
+            agency_name: newAgent.agency_name || null,
+            company_legal_name: newAgent.company_legal_name || null,
+            business_address: newAgent.business_address || null,
+            city: newAgent.city || null,
+            domain: newAgent.domain || null,
         }
+        createMutation.mutate(payload)
     }
 
     const toggleStatus = async (agent: Agent) => {
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${agent.id}/status?is_active=${!agent.is_active}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) throw new Error('Failed to update status')
-
-            loadAgents()
-            toast.success(`Agent ${!agent.is_active ? 'activated' : 'deactivated'} successfully`)
-        } catch (error) {
-            console.error('Failed to toggle status:', error)
-            toast.error('Failed to update status')
-        }
+        statusMutation.mutate({ id: agent.id, is_active: !agent.is_active }, {
+            onSuccess: () => toast.success(`Agent ${!agent.is_active ? 'activated' : 'deactivated'} successfully`),
+            onError: () => toast.error('Failed to update status')
+        })
     }
 
     const handleDeleteClick = (agent: Agent) => {
-        setDeleteAgent(agent)
+        setAgentToDelete(agent)
     }
 
     const confirmDelete = async () => {
-        if (!deleteAgent) return
-
-        setIsDeleting(true)
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${deleteAgent.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.detail || 'Failed to delete agent')
-            }
-
-            await loadAgents()
-            toast.success('Agent has been deleted.')
-            setDeleteAgent(null)
-        } catch (error: any) {
-            console.error('Failed to delete agent:', error)
-            toast.error(error.message)
-        } finally {
-            setIsDeleting(false)
-        }
+        if (!agentToDelete) return
+        deleteMutation.mutate(agentToDelete.id)
     }
 
     const handleEditClick = (agent: any) => {
-        setEditingAgent(agent)
+        setAgentToEdit(agent)
         setEditForm({
             first_name: agent.first_name || '',
             last_name: agent.last_name || '',
@@ -446,50 +391,87 @@ export default function AdminAgentsPage() {
 
     const handleUpdateAgent = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!editingAgent) return
+        if (!agentToEdit) return
 
-        setIsUpdating(true)
-        try {
-            const token = localStorage.getItem('token')
-            const payload = {
-                ...editForm,
-                country: Country.getCountryByCode(editForm.country)?.name || editForm.country,
-                state: State.getStateByCodeAndCountry(editForm.state, editForm.country)?.name || editForm.state,
-                commission_value: editForm.commission_value ? Number(editForm.commission_value) : 0,
-                phone: editForm.phone || null,
-                gst_no: editForm.gst_no || null,
-                tax_id: editForm.tax_id || null,
-                agency_name: editForm.agency_name || null,
-                company_legal_name: editForm.company_legal_name || null,
-                business_address: editForm.business_address || null,
-                city: editForm.city || null,
-                domain: editForm.domain || null,
-            }
-
-            const response = await fetch(`http://localhost:8000/api/v1/admin/agents/${editingAgent.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.detail || 'Failed to update agent')
-            }
-
-            await loadAgents()
-            setIsEditOpen(false)
-            toast.success('Agent updated successfully')
-        } catch (error: any) {
-            console.error('Failed to update agent:', error)
-            toast.error(error.message)
-        } finally {
-            setIsUpdating(false)
+        const payload = {
+            ...editForm,
+            country: Country.getCountryByCode(editForm.country)?.name || editForm.country,
+            state: State.getStateByCodeAndCountry(editForm.state, editForm.country)?.name || editForm.state,
+            commission_value: editForm.commission_value ? Number(editForm.commission_value) : 0,
+            phone: editForm.phone || null,
+            gst_no: editForm.gst_no || null,
+            tax_id: editForm.tax_id || null,
+            agency_name: editForm.agency_name || null,
+            company_legal_name: editForm.company_legal_name || null,
+            business_address: editForm.business_address || null,
+            city: editForm.city || null,
+            domain: editForm.domain || null,
         }
+
+        updateMutation.mutate({ id: agentToEdit.id, data: payload })
     }
+
+
+    // Filtering and sorting
+    const filteredAndSortedAgents = useMemo(() => {
+        return agents.filter((agent: Agent) => {
+            const matchesSearch = agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                agent.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                agent.last_name.toLowerCase().includes(searchQuery.toLowerCase())
+
+            const matchesStatus = statusFilter === 'all' ||
+                (statusFilter === 'active' && agent.is_active) ||
+                (statusFilter === 'inactive' && !agent.is_active) ||
+                (statusFilter === 'pending' && agent.approval_status === 'pending')
+
+            const matchesDate = (() => {
+                if (dateFilter === 'all') return true
+                const createdDate = new Date(agent.created_at)
+                const now = new Date()
+                if (dateFilter === 'week') {
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+                    return createdDate >= weekAgo
+                }
+                if (dateFilter === 'month') {
+                    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+                    return createdDate >= monthAgo
+                }
+                if (dateFilter === 'year') {
+                    const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+                    return createdDate >= yearAgo
+                }
+                return true
+            })()
+
+            return matchesSearch && matchesStatus && matchesDate
+        }).sort((a: Agent, b: Agent) => {
+            if (!sortColumn) return 0
+
+            let aValue: any, bValue: any
+
+            if (sortColumn === 'name') {
+                aValue = `${a.first_name} ${a.last_name}`.toLowerCase()
+                bValue = `${b.first_name} ${b.last_name}`.toLowerCase()
+            } else if (sortColumn === 'email') {
+                aValue = a.email.toLowerCase()
+                bValue = b.email.toLowerCase()
+            } else if (sortColumn === 'created_at') {
+                aValue = new Date(a.created_at).getTime()
+                bValue = new Date(b.created_at).getTime()
+            }
+
+            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+            return 0
+        })
+    }, [agents, searchQuery, statusFilter, dateFilter, sortColumn, sortDirection])
+
+    // Pagination
+    const totalPages = Math.ceil(filteredAndSortedAgents.length / itemsPerPage)
+    const paginatedAgents = filteredAndSortedAgents.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    )
 
     // Helper functions
     const handleSort = (column: 'name' | 'email' | 'created_at') => {
@@ -505,7 +487,7 @@ export default function AdminAgentsPage() {
         if (selectedAgents.size === filteredAndSortedAgents.length) {
             setSelectedAgents(new Set())
         } else {
-            setSelectedAgents(new Set(filteredAndSortedAgents.map(a => a.id)))
+            setSelectedAgents(new Set(filteredAndSortedAgents.map((a: Agent) => a.id)))
         }
     }
 
@@ -519,46 +501,12 @@ export default function AdminAgentsPage() {
         setSelectedAgents(newSelected)
     }
 
-    const handleBulkDelete = async () => {
-        setShowBulkDeleteDialog(false)
-
-        const count = selectedAgents.size
-        try {
-            const token = localStorage.getItem('token')
-            await Promise.all(
-                Array.from(selectedAgents).map(id =>
-                    fetch(`http://localhost:8000/api/v1/admin/agents/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                )
-            )
-            await loadAgents()
-            setSelectedAgents(new Set())
-            toast.success(`Successfully deleted ${count} agent${count > 1 ? 's' : ''}`)
-        } catch (error) {
-            console.error('Failed to delete agents:', error)
-            toast.error('Failed to delete agents. Please try again.')
-        }
+    const handleBulkDelete = () => {
+        bulkDeleteMutation.mutate(Array.from(selectedAgents))
     }
 
-    const handleBulkStatusChange = async (isActive: boolean) => {
-        try {
-            const token = localStorage.getItem('token')
-            await Promise.all(
-                Array.from(selectedAgents).map(id =>
-                    fetch(`http://localhost:8000/api/v1/admin/agents/${id}/status?is_active=${isActive}`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                )
-            )
-            await loadAgents()
-            setSelectedAgents(new Set())
-            toast.success(`${selectedAgents.size} agents ${isActive ? 'activated' : 'deactivated'}`)
-        } catch (error) {
-            toast.error('Failed to update agents')
-        }
+    const handleBulkStatusChange = (is_active: boolean) => {
+        bulkStatusMutation.mutate({ ids: Array.from(selectedAgents), is_active })
     }
 
     const clearFilters = () => {
@@ -571,82 +519,12 @@ export default function AdminAgentsPage() {
         statusFilter !== 'all' ? 1 : 0,
         dateFilter !== 'all' ? 1 : 0,
         searchQuery ? 1 : 0
-    ].reduce((a, b) => a + b, 0)
-
-    // Filtering and sorting
-    const filteredAndSortedAgents = agents.filter(agent => {
-        const matchesSearch = agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.last_name.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'active' && agent.is_active) ||
-            (statusFilter === 'inactive' && !agent.is_active)
-
-        const matchesDate = (() => {
-            if (dateFilter === 'all') return true
-            const createdDate = new Date(agent.created_at)
-            const now = new Date()
-            if (dateFilter === 'week') {
-                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-                return createdDate >= weekAgo
-            }
-            if (dateFilter === 'month') {
-                const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-                return createdDate >= monthAgo
-            }
-            if (dateFilter === 'year') {
-                const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-                return createdDate >= yearAgo
-            }
-            return true
-        })()
-
-        return matchesSearch && matchesStatus && matchesDate
-    }).sort((a, b) => {
-        if (!sortColumn) return 0
-
-        let aValue: any, bValue: any
-
-        if (sortColumn === 'name') {
-            aValue = `${a.first_name} ${a.last_name}`.toLowerCase()
-            bValue = `${b.first_name} ${b.last_name}`.toLowerCase()
-        } else if (sortColumn === 'email') {
-            aValue = a.email.toLowerCase()
-            bValue = b.email.toLowerCase()
-        } else if (sortColumn === 'created_at') {
-            aValue = new Date(a.created_at).getTime()
-            bValue = new Date(b.created_at).getTime()
-        }
-
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
-        return 0
-    })
-
-    // Pagination
-    const totalPages = Math.ceil(filteredAndSortedAgents.length / itemsPerPage)
-    const paginatedAgents = filteredAndSortedAgents.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    )
+    ].reduce((a: number, b: number) => a + b, 0)
 
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1)
     }, [searchQuery, statusFilter, dateFilter])
-
-    const filteredAgents = agents.filter(agent => {
-        const matchesSearch = agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.last_name.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchesStatus = statusFilter === 'all' ||
-            (statusFilter === 'active' && agent.is_active) ||
-            (statusFilter === 'inactive' && !agent.is_active)
-
-        return matchesSearch && matchesStatus
-    })
 
     const getPasswordStrengthColor = () => {
         if (passwordStrength <= 1) return 'bg-red-500'
@@ -1053,10 +931,10 @@ export default function AdminAgentsPage() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            disabled={creating}
+                                            disabled={createMutation.isPending}
                                             className="min-w-32"
                                         >
-                                            {creating ? 'Creating...' : '✓ Create Agent'}
+                                            {createMutation.isPending ? 'Creating...' : '✓ Create Agent'}
                                         </Button>
                                     </div>
                                 </form>
@@ -1154,6 +1032,7 @@ export default function AdminAgentsPage() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleBulkStatusChange(true)}
+                                        disabled={bulkStatusMutation.isPending}
                                         className="bg-white"
                                     >
                                         <UserCheck className="h-4 w-4 mr-2" />
@@ -1163,6 +1042,7 @@ export default function AdminAgentsPage() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleBulkStatusChange(false)}
+                                        disabled={bulkStatusMutation.isPending}
                                         className="bg-white"
                                     >
                                         <UserX className="h-4 w-4 mr-2" />
@@ -1172,6 +1052,7 @@ export default function AdminAgentsPage() {
                                         variant="destructive"
                                         size="sm"
                                         onClick={() => setShowBulkDeleteDialog(true)}
+                                        disabled={bulkDeleteMutation.isPending}
                                         className="bg-rose-500 hover:bg-rose-600 font-bold uppercase tracking-wider text-[10px]"
                                     >
                                         <Trash2 className="h-4 w-4 mr-2" />
@@ -1351,7 +1232,7 @@ export default function AdminAgentsPage() {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            paginatedAgents.map((agent, index) => {
+                                            paginatedAgents.map((agent: Agent, index: number) => {
                                                 const initials = `${agent.first_name[0] || ''}${agent.last_name[0] || ''}`;
 
                                                 // Dynamic initials-based gradients
@@ -1556,7 +1437,7 @@ export default function AdminAgentsPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
                                             disabled={currentPage === 1}
                                         >
                                             Previous
@@ -1589,7 +1470,7 @@ export default function AdminAgentsPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
                                             disabled={currentPage === totalPages}
                                         >
                                             Next
@@ -1767,7 +1648,7 @@ export default function AdminAgentsPage() {
                                                 <Label className="font-semibold text-gray-400">Email (Cannot be changed)</Label>
                                                 <Input
                                                     disabled
-                                                    value={editingAgent?.email || ''}
+                                                    value={agentToEdit?.email || ''}
                                                     className="h-11 bg-transparent"
                                                 />
                                             </div>
@@ -1831,10 +1712,10 @@ export default function AdminAgentsPage() {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isUpdating}
-                                    className="min-w-32 bg-indigo-600 hover:bg-indigo-700"
+                                    className="min-w-32"
+                                    disabled={updateMutation.isPending}
                                 >
-                                    {isUpdating ? 'Updating...' : 'Save Changes'}
+                                    {updateMutation.isPending ? 'Updating...' : 'Save Changes'}
                                 </Button>
                             </div>
                         </form>
@@ -1842,20 +1723,18 @@ export default function AdminAgentsPage() {
                 </Dialog>
 
                 {/* Delete Confirmation Dialog */}
-                <Dialog open={!!deleteAgent} onOpenChange={() => setDeleteAgent(null)}>
+                <Dialog open={!!agentToDelete} onOpenChange={() => setAgentToDelete(null)}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Delete Agent?</DialogTitle>
+                            <DialogTitle>Delete Agent</DialogTitle>
                             <DialogDescription>
-                                Are you sure you want to delete {deleteAgent?.first_name} {deleteAgent?.last_name}? This action cannot be undone.
+                                Are you sure you want to delete {agentToDelete?.first_name} {agentToDelete?.last_name}? This action cannot be undone.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setDeleteAgent(null)}>
-                                Cancel
-                            </Button>
-                            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            <Button variant="outline" onClick={() => setAgentToDelete(null)}>Cancel</Button>
+                            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+                                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

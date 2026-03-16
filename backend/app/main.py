@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, reports, webhooks, theme, activities
+from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, reports, webhooks, activities
 import traceback
 import logging
 import sys
@@ -100,7 +100,7 @@ app.include_router(ai_assistant.router, prefix=f"{settings.API_V1_PREFIX}", tags
 app.include_router(upload.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Uploads"])
 app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", tags=["Reports"])
 app.include_router(webhooks.router, prefix=f"{settings.API_V1_PREFIX}/webhooks", tags=["Webhooks"])
-app.include_router(theme.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Agent - Theme"])
+# app.include_router(theme.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Agent - Theme"])
 app.include_router(activities.router, prefix=f"{settings.API_V1_PREFIX}/activities", tags=["Activities"])
 
 

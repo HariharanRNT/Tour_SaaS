@@ -225,15 +225,15 @@ function LoginContent() {
     }
 
     return (
-        <div className="min-h-screen bg-[#FFF3E8] flex w-full relative overflow-x-hidden noise-overlay">
+        <div className="min-h-screen bg-[var(--primary-soft)] flex w-full relative overflow-x-hidden noise-overlay">
             {/* Ambient Background Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#FFD8B5]/60 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFB38A]/50 blur-[150px] pointer-events-none" />
-            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[#FFD8B5]/40 blur-[100px] pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--primary-soft)]/60 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-light)]/50 blur-[150px] pointer-events-none" />
+            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[var(--primary-soft)]/40 blur-[100px] pointer-events-none" />
 
             {/* Mesh Gradient Overlay */}
             <div className="absolute inset-0 opacity-80 mix-blend-overlay" style={{
-                backgroundImage: 'radial-gradient(at 0% 0%, #FFF3E8 0, transparent 50%), radial-gradient(at 100% 100%, #FFD8B5 0, transparent 60%), radial-gradient(at 50% 50%, #FFB38A 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
+                backgroundImage: 'radial-gradient(at 0% 0%, var(--primary-soft) 0, transparent 50%), radial-gradient(at 100% 100%, var(--primary-soft) 0, transparent 60%), radial-gradient(at 50% 50%, var(--primary-light) 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
             }} />
 
             {/* Split Screen Layout Container */}
@@ -242,7 +242,7 @@ function LoginContent() {
                 <div className="lg:hidden flex justify-center pt-6 pb-2">
                     <div className="flex items-center gap-3">
                         <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
-                            <Plane className="h-5 w-5 text-[#FF7A45]" />
+                            <Plane className="h-5 w-5 text-[var(--primary)]" />
                         </div>
                         <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
                     </div>
@@ -261,7 +261,7 @@ function LoginContent() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
-                                    <Plane className="h-6 w-6 text-[#FF7A45]" />
+                                    <Plane className="h-6 w-6 text-[var(--primary)]" />
                                 </div>
                                 <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
                             </div>
@@ -269,7 +269,7 @@ function LoginContent() {
                             <div className="space-y-3">
                                 <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
                                     Your Global<br />
-                                    <span className="text-[#FF7A45]">Command Center.</span>
+                                    <span className="text-[var(--primary)]">Command Center.</span>
                                 </h1>
 
                                 <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
@@ -300,15 +300,15 @@ function LoginContent() {
                             <div className="flex flex-col items-center justify-center space-y-2 mb-0">
                                 {/* 52px Compact Glass Lock Circle */}
                                 <div className="relative w-[52px] h-[52px] flex items-center justify-center animate-pulse-slow group">
-                                    <div className="absolute inset-0 bg-[#FF7A45] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
+                                    <div className="absolute inset-0 bg-[var(--primary)] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
                                     <div className="w-full h-full bg-white/25 backdrop-blur-md rounded-full border border-white/40 shadow-[0_4px_16px_rgba(255,122,69,0.15)] flex items-center justify-center relative z-10 overflow-hidden">
-                                        <div className="absolute inset-x-0 bottom-0 top-[20%] bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] opacity-70 rounded-full blur-sm mix-blend-overlay" />
-                                        <Plane className="h-6 w-6 text-[#FF7A45] relative z-20 drop-shadow-md rotate-[-45deg]" />
+                                        <div className="absolute inset-x-0 bottom-0 top-[20%] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] opacity-70 rounded-full blur-sm mix-blend-overlay" />
+                                        <Plane className="h-6 w-6 text-[var(--primary)] relative z-20 drop-shadow-md rotate-[-45deg]" />
                                     </div>
                                 </div>
 
                                 <div className="text-center space-y-2 w-full">
-                                    <CardTitle className="text-[11px] text-center font-bold text-[#FF7A45] tracking-[0.2em] uppercase">
+                                    <CardTitle className="text-[11px] text-center font-bold text-[var(--primary)] tracking-[0.2em] uppercase">
                                         {agentInfo?.agency_name ? agentInfo.agency_name : 'Customer & Agent Login'}
                                     </CardTitle>
                                     <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
@@ -346,7 +346,7 @@ function LoginContent() {
                                             <div className="space-y-2.5">
                                                 {/* Email Field with Floating Label */}
                                                 <div className="relative group/input">
-                                                    <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-[#FF7A45]' : 'text-orange-900/30'}`} />
+                                                    <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-[var(--primary)]' : 'text-orange-900/30'}`} />
                                                     <Input
                                                         id="email" type="email" value={email}
                                                         onChange={handleEmailChange} onBlur={handleEmailBlur}
@@ -355,7 +355,7 @@ function LoginContent() {
                                                             pl-11 pr-10 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
                                                             transition-all duration-300 text-[#5C2500] font-medium text-sm
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${emailFocused ? 'border-[#FF7A45] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                            ${emailFocused ? 'border-[var(--primary)] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
                                                             ${emailValid === false ? 'border-red-300' : ''}
                                                         `}
                                                         required
@@ -364,7 +364,7 @@ function LoginContent() {
                                                         htmlFor="email"
                                                         className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
                                                             ${emailFocused || email
-                                                                ? '-top-2 text-[10px] font-bold text-[#FF7A45] uppercase tracking-wider bg-[#FFF3E8] px-1.5 rounded-full'
+                                                                ? '-top-2 text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-[var(--primary-soft)] px-1.5 rounded-full'
                                                                 : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
                                                             }`}
                                                     >
@@ -374,7 +374,7 @@ function LoginContent() {
 
                                                 {/* Password Field with Floating Label */}
                                                 <div className="relative group/input">
-                                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-[#FF7A45]' : 'text-orange-900/30'}`} />
+                                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-[var(--primary)]' : 'text-orange-900/30'}`} />
                                                     <Input
                                                         id="password" type={showPassword ? 'text' : 'password'}
                                                         value={password} onChange={(e) => setPassword(e.target.value)}
@@ -384,13 +384,13 @@ function LoginContent() {
                                                             pl-11 pr-11 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
                                                             transition-all duration-300 text-[#5C2500] font-medium text-sm
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${passwordFocused ? 'border-[#FF7A45] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                            ${passwordFocused ? 'border-[var(--primary)] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
                                                         `}
                                                         required
                                                     />
                                                     <button
                                                         type="button" onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#FF7A45]/50 hover:text-[#FF7A45] transition-colors focus:outline-none"
+                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--primary)]/50 hover:text-[var(--primary)] transition-colors focus:outline-none"
                                                     >
                                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                     </button>
@@ -398,7 +398,7 @@ function LoginContent() {
                                                         htmlFor="password"
                                                         className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
                                                             ${passwordFocused || password
-                                                                ? '-top-2 text-[10px] font-bold text-[#FF7A45] uppercase tracking-wider bg-[#FFF3E8] px-1.5 rounded-full'
+                                                                ? '-top-2 text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-[var(--primary-soft)] px-1.5 rounded-full'
                                                                 : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
                                                             }`}
                                                     >
@@ -409,10 +409,10 @@ function LoginContent() {
 
                                             <div className="flex items-center justify-between px-1">
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} className="w-4 h-4 border-orange-200 data-[state=checked]:bg-[#FF7A45] data-[state=checked]:border-[#FF7A45]" />
+                                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} className="w-4 h-4 border-[var(--primary)] data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]" />
                                                     <label htmlFor="remember-me" className="text-[13px] font-bold text-[#6B3F2A]/70 cursor-pointer">Remember me</label>
                                                 </div>
-                                                <Link href="/forgot-password" core-link="true" className="text-[13px] font-bold text-[#FF7A45] hover:underline transition-all">
+                                                <Link href="/forgot-password" core-link="true" className="text-[13px] font-bold text-[var(--primary)] hover:underline transition-all">
                                                     Forgot?
                                                 </Link>
                                             </div>
@@ -420,7 +420,7 @@ function LoginContent() {
                                             <div className="mt-2">
                                                 <Button
                                                     type="submit" disabled={loading}
-                                                    className="w-full h-11 rounded-[14px] text-sm font-bold shadow-[0_4px_16px_rgba(255,122,69,0.2)] hover:shadow-[0_8px_24px_rgba(255,122,69,0.3)] transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFA06A] text-white border-none group relative overflow-hidden"
+                                                    className="w-full h-11 rounded-[14px] text-sm font-bold shadow-[0_4px_16px_rgba(255,122,69,0.2)] hover:shadow-[0_8px_24px_rgba(255,122,69,0.3)] transition-all duration-300 bg-gradient-to-r from-[var(--primary)] to-[#FFA06A] text-white border-none group relative overflow-hidden"
                                                 >
                                                     {loading ? (
                                                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -451,12 +451,12 @@ function LoginContent() {
                                             <div className="text-center pt-2.5 border-t border-[#FFCBA4]/10 mt-2.5">
                                                 <p className="text-[13px] font-bold text-[#6B3F2A]/60">
                                                     New traveler?{' '}
-                                                    <Link href="/register" className="text-[#FF7A45] hover:underline">Create account</Link>
+                                                    <Link href="/register" className="text-[var(--primary)] hover:underline">Create account</Link>
                                                 </p>
 
                                                 <div className="mt-2.5 pt-2.5 border-t border-[#FFCBA4]/10 relative">
                                                     <div className="bg-white/5 backdrop-blur-sm p-2 rounded-[14px] border border-white/10 flex flex-col gap-1.5">
-                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-[#FF7A45] hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-[#FF7A45]/20 hover:bg-[#FF7A45] transition-all group/agent">
+                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-[var(--primary)] hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-[var(--primary)]/20 hover:bg-[var(--primary)] transition-all group/agent">
                                                             Register as Agent
                                                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                                         </Link>
@@ -488,7 +488,7 @@ function LoginContent() {
                                                             bg-white/35 backdrop-blur-[10px] border border-white/40 rounded-[18px] 
                                                             transition-all duration-300 text-[#5C2500]
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${otpFocused ? 'border-[#FF7A45] shadow-[0_0_12px_rgba(255,122,69,0.4)] bg-white/50' : ''}
+                                                            ${otpFocused ? 'border-[var(--primary)] shadow-[0_0_12px_rgba(255,122,69,0.4)] bg-white/50' : ''}
                                                         `}
                                                         autoComplete="one-time-code"
                                                     />
@@ -496,19 +496,19 @@ function LoginContent() {
 
                                                 <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#6B3F2A]/60">
                                                     <Clock className="w-4 h-4" />
-                                                    <span>Expires in <span className="text-[#FF7A45]">{getTimeRemaining()}</span></span>
+                                                    <span>Expires in <span className="text-[var(--primary)]">{getTimeRemaining()}</span></span>
                                                 </div>
 
                                                 <div className="flex justify-center gap-3">
                                                     {[...Array(6)].map((_, i) => (
-                                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < otp.length ? 'bg-[#FF7A45] scale-125' : 'bg-[#FFCBA4]/40'}`} />
+                                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < otp.length ? 'bg-[var(--primary)] scale-125' : 'bg-[#FFCBA4]/40'}`} />
                                                     ))}
                                                 </div>
                                             </div>
 
                                             <Button
                                                 type="submit" disabled={otpLoading || otp.length !== 6}
-                                                className="w-full h-14 rounded-[30px] font-bold transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFB38A] disabled:opacity-50 text-white"
+                                                className="w-full h-14 rounded-[30px] font-bold transition-all duration-300 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] disabled:opacity-50 text-white"
                                             >
                                                 {otpLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify & Board'}
                                             </Button>
@@ -516,13 +516,13 @@ function LoginContent() {
                                             <div className="flex flex-col gap-4 text-center mt-6">
                                                 <button type="button" onClick={handleResendOTP}
                                                     disabled={resendCooldown > 0 || loading}
-                                                    className={`text-sm font-bold transition-colors ${resendCooldown > 0 ? 'text-[#6B3F2A]/30 cursor-not-allowed' : 'text-[#FF7A45] hover:text-[#E66230]'}`}
+                                                    className={`text-sm font-bold transition-colors ${resendCooldown > 0 ? 'text-[#6B3F2A]/30 cursor-not-allowed' : 'text-[var(--primary)] hover:text-[#E66230]'}`}
                                                 >
                                                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
                                                 </button>
 
                                                 <button type="button" onClick={handleBackToStep1}
-                                                    className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#6B3F2A]/60 hover:text-[#FF7A45] transition-colors"
+                                                    className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#6B3F2A]/60 hover:text-[var(--primary)] transition-colors"
                                                 >
                                                     <ArrowLeft className="w-4 h-4" />
                                                     Back to login

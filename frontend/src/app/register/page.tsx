@@ -110,15 +110,15 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#FFF3E8] flex w-full relative overflow-x-hidden noise-overlay">
+        <div className="min-h-screen bg-[var(--primary-soft)] flex w-full relative overflow-x-hidden noise-overlay">
             {/* Ambient Background Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#FFD8B5]/60 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#FFB38A]/50 blur-[150px] pointer-events-none" />
-            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[#FFD8B5]/40 blur-[100px] pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--primary-soft)]/60 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-soft)]/50 blur-[150px] pointer-events-none" />
+            <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-[var(--primary-soft)]/40 blur-[100px] pointer-events-none" />
 
             {/* Mesh Gradient Overlay */}
             <div className="absolute inset-0 opacity-80 mix-blend-overlay" style={{
-                backgroundImage: 'radial-gradient(at 0% 0%, #FFF3E8 0, transparent 50%), radial-gradient(at 100% 100%, #FFD8B5 0, transparent 60%), radial-gradient(at 50% 50%, #FFB38A 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
+                backgroundImage: 'radial-gradient(at 0% 0%, var(--primary-soft) 0, transparent 50%), radial-gradient(at 100% 100%, var(--primary-soft) 0, transparent 60%), radial-gradient(at 50% 50%, var(--primary-soft) 0, transparent 100%), radial-gradient(circle, transparent 40%, rgba(255,179,138,0.2) 100%)'
             }} />
 
             {/* Split Screen Layout Container */}
@@ -127,7 +127,7 @@ export default function RegisterPage() {
                 <div className="lg:hidden flex justify-center pt-6 pb-2">
                     <div className="flex items-center gap-3">
                         <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
-                            <Plane className="h-5 w-5 text-[#FF7A45]" />
+                            <Plane className="h-5 w-5 text-[var(--primary)]" />
                         </div>
                         <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
                     </div>
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
-                                    <Plane className="h-6 w-6 text-[#FF7A45]" />
+                                    <Plane className="h-6 w-6 text-[var(--primary)]" />
                                 </div>
                                 <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
                             </div>
@@ -154,7 +154,7 @@ export default function RegisterPage() {
                             <div className="space-y-3">
                                 <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
                                     Join Thousands of<br />
-                                    <span className="text-[#FF7A45]">Dream Travelers.</span>
+                                    <span className="text-[var(--primary)]">Dream Travelers.</span>
                                 </h1>
 
                                 <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
@@ -185,13 +185,13 @@ export default function RegisterPage() {
                             <div className="flex flex-col items-center justify-center space-y-3 mb-0">
                                 {/* Compact Glass Plane Circle */}
                                 <div className="relative w-[52px] h-[52px] flex items-center justify-center animate-pulse-slow group">
-                                    <div className="absolute inset-0 bg-[#FF7A45] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
-                                    <div className="relative bg-gradient-to-br from-[#FF7A45] to-[#FFA06A] p-2.5 rounded-full shadow-lg shadow-orange-500/20 border border-white/40 transform group-hover:scale-110 transition-transform duration-500">
+                                    <div className="absolute inset-0 bg-[var(--primary)] rounded-full blur-[8px] opacity-30 group-hover:blur-[10px] transition-all" />
+                                    <div className="relative bg-gradient-to-br from-[var(--primary)] to-[#FFA06A] p-2.5 rounded-full shadow-lg shadow-orange-500/20 border border-white/40 transform group-hover:scale-110 transition-transform duration-500">
                                         <Plane className="h-6 w-6 text-white rotate-[-45deg]" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <CardTitle className="text-[11px] text-center font-bold text-[#FF7A45] tracking-[0.2em] uppercase">
+                                    <CardTitle className="text-[11px] text-center font-bold text-[var(--primary)] tracking-[0.2em] uppercase">
                                         Join TourSaaS Today
                                     </CardTitle>
                                     <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
@@ -221,7 +221,7 @@ export default function RegisterPage() {
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-[#FF7A45]/30 text-[#5C2500] font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                            className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-[var(--primary)]/30 text-[#5C2500] font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                                         >
                                             <svg className="h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
                                             Continue with Google
@@ -237,35 +237,35 @@ export default function RegisterPage() {
                                         <div className="grid grid-cols-2 gap-3">
                                             {/* First Name */}
                                             <div className="relative group/input">
-                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
                                                 <Input
                                                     value={formData.first_name}
                                                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                                                     placeholder="First Name"
-                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
                                                 />
                                             </div>
                                             {/* Last Name */}
                                             <div className="relative group/input">
-                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
                                                 <Input
                                                     value={formData.last_name}
                                                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                                                     placeholder="Last Name"
-                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Email */}
                                         <div className="relative group/input">
-                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
                                             <Input
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="Email Address"
-                                                className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
                                             />
                                         </div>
 
@@ -276,7 +276,7 @@ export default function RegisterPage() {
                                                 value={formData.phone}
                                                 onChange={phone => setFormData({ ...formData, phone })}
                                                 containerClass="!w-full"
-                                                inputClass="!w-full !h-10 !pl-12 !bg-orange-50/30 !border-orange-100/50 !rounded-xl focus:!bg-white focus:!border-[#FF7A45] !transition-all !text-sm !font-medium !placeholder-orange-900/20"
+                                                inputClass="!w-full !h-10 !pl-12 !bg-orange-50/30 !border-orange-100/50 !rounded-xl focus:!bg-white focus:!border-[var(--primary)] !transition-all !text-sm !font-medium !placeholder-orange-900/20"
                                                 buttonClass="!bg-transparent !border-none !rounded-l-xl !pl-2"
                                             />
                                         </div>
@@ -284,18 +284,18 @@ export default function RegisterPage() {
                                         {/* Password */}
                                         <div className="space-y-2">
                                             <div className="relative group/input">
-                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#FF7A45]/40 group-focus-within/input:text-[#FF7A45] transition-colors" />
+                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={formData.password}
                                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                     placeholder="Security Password"
-                                                    className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[#FF7A45] focus:ring-4 focus:ring-[#FF7A45]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-900/20 hover:text-[#FF7A45] transition-colors"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-900/20 hover:text-[var(--primary)] transition-colors"
                                                 >
                                                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                 </button>
@@ -328,10 +328,10 @@ export default function RegisterPage() {
                                             id="terms"
                                             checked={formData.terms}
                                             onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
-                                            className="w-4 h-4 rounded border-orange-200 text-[#FF7A45] focus:ring-[#FF7A45]/20 transition-all cursor-pointer"
+                                            className="w-4 h-4 rounded border-[var(--primary)] text-[var(--primary)] focus:ring-[var(--primary)]/20 transition-all cursor-pointer"
                                         />
                                         <label htmlFor="terms" className="text-[11px] font-medium text-[#6B3F2A]/70 cursor-pointer">
-                                            I agree to the <Link href="/terms" className="text-[#FF7A45] font-bold hover:underline">Terms</Link> & <Link href="/privacy" className="text-[#FF7A45] font-bold hover:underline">Privacy Policy</Link>
+                                            I agree to the <Link href="/terms" className="text-[var(--primary)] font-bold hover:underline">Terms</Link> & <Link href="/privacy" className="text-[var(--primary)] font-bold hover:underline">Privacy Policy</Link>
                                         </label>
                                     </div>
 
@@ -339,7 +339,7 @@ export default function RegisterPage() {
                                         <Button
                                             type="submit"
                                             className={cn(
-                                                "w-full h-11 rounded-2xl text-sm font-bold shadow-[0_8px_20px_rgba(255,122,69,0.25)] hover:shadow-[0_12px_28px_rgba(255,122,69,0.35)] transition-all duration-300 bg-gradient-to-r from-[#FF7A45] to-[#FFA06A] text-white border-none group relative overflow-hidden",
+                                                "w-full h-11 rounded-2xl text-sm font-bold shadow-[0_8px_20px_rgba(255,122,69,0.25)] hover:shadow-[0_12px_28px_rgba(255,122,69,0.35)] transition-all duration-300 bg-gradient-to-r from-[var(--primary)] to-[#FFA06A] text-white border-none group relative overflow-hidden",
                                                 loading && "opacity-80"
                                             )}
                                             disabled={loading}

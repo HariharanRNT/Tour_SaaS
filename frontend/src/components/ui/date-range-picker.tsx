@@ -150,19 +150,19 @@ export function DatePickerWithRange({
                                 head_cell:
                                     "text-[rgba(180,80,0,0.7)] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
                                 row: "flex w-full mt-2",
-                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-[#F97316]/20 first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
+                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-[var(--primary)]/20 first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
                                 day: cn(
                                     "h-9 w-9 p-0 font-bold aria-selected:opacity-100 rounded-[10px] hover:bg-white/20 hover:text-[#1a1a2e] transition-all text-[#2d2d2d]"
                                 ),
                                 day_range_end: "day-range-end",
                                 day_selected:
-                                    "bg-[#F97316] text-white hover:bg-[#F97316] hover:text-white focus:bg-[#F97316] focus:text-white shadow-[0_8px_16px_rgba(249,115,22,0.4)]", // Selected start/end
-                                day_today: "bg-orange-400/10 text-[#F97316] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[#F97316] after:rounded-full", // Today
+                                    "bg-[var(--primary)] text-white hover:bg-[var(--primary)] hover:text-white focus:bg-[var(--primary)] focus:text-white shadow-[0_8px_16px_var(--primary-glow)]", // Selected start/end
+                                day_today: "bg-[var(--primary)]/10 text-[var(--primary)] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[var(--primary)] after:rounded-full", // Today
                                 day_outside:
                                     "day-outside text-[#2d2d2d] opacity-30 aria-selected:bg-transparent aria-selected:text-[#2d2d2d] aria-selected:opacity-20",
                                 day_disabled: "text-[#2d2d2d] opacity-20",
                                 day_range_middle:
-                                    "aria-selected:bg-[#F97316]/20 aria-selected:text-[#F97316] rounded-none", // Range middle
+                                    "aria-selected:bg-[var(--primary)]/20 aria-selected:text-[var(--primary)] rounded-none", // Range middle
                                 day_hidden: "invisible",
                             }}
                         />
@@ -184,7 +184,7 @@ export function DatePickerWithRange({
                                     className={cn(
                                         "text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all",
                                         isPresetActive(preset.value)
-                                            ? "bg-[#F97316] border-[#F97316] text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
+                                            ? "bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]"
                                             : "bg-white/10 border-white/20 text-[#1a1a2e] hover:bg-white/20 hover:border-white/30"
                                     )}
                                 >
@@ -197,14 +197,14 @@ export function DatePickerWithRange({
                     {/* Bottom Action Bar */}
                     <div className="p-4 bg-white/5 backdrop-blur-md flex items-center justify-between border-t border-white/10">
                         <div className="flex items-center gap-3 bg-white/20 border border-white/30 rounded-[12px] px-4 py-2.5 shadow-inner">
-                            <CalendarIcon className="h-4 w-4 text-[#F97316]" />
+                            <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
                             <div className="text-[13px] font-bold text-[#1a1a2e]">
                                 {tempDate?.from ? format(tempDate.from, "MMM dd, yyyy") : "Start"}
-                                <span className="mx-2 text-[#F97316]/60">→</span>
+                                <span className="mx-2 text-[var(--primary)]/60">→</span>
                                 {tempDate?.to ? format(tempDate.to, "MMM dd, yyyy") : "End"}
                             </div>
                             {tempDate?.from && tempDate?.to && (
-                                <span className="bg-[#F97316] text-white text-[10px] font-black px-2 py-0.5 rounded-full ml-2 shadow-[0_2px_8px_rgba(249,115,22,0.3)]">
+                                <span className="bg-[var(--primary)] text-white text-[10px] font-black px-2 py-0.5 rounded-full ml-2 shadow-[0_2px_8px_var(--primary-glow)]">
                                     {differenceInDays(tempDate.to, tempDate.from) + 1} DAYS
                                 </span>
                             )}
@@ -213,7 +213,7 @@ export function DatePickerWithRange({
                             <Button variant="ghost" onClick={handleCancel} className="text-[#1a1a2e] font-bold hover:text-black hover:bg-white/10 rounded-xl px-5">
                                 Cancel
                             </Button>
-                            <Button onClick={handleApply} className="bg-[#F97316] hover:bg-[#EA6C00] text-white font-black uppercase tracking-widest text-[12px] px-6 rounded-xl shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <Button onClick={handleApply} className="bg-[var(--primary)] hover:bg-[#EA6C00] text-white font-black uppercase tracking-widest text-[12px] px-6 rounded-xl shadow-[0_8px_20px_var(--primary-glow)] transition-all hover:scale-[1.02] active:scale-[0.98]">
                                 Apply Range
                             </Button>
                         </div>

@@ -175,7 +175,7 @@ export default function BookingDetailsPage() {
                     text: 'text-amber-700',
                     border: 'border-amber-200',
                     icon: <Clock className="h-4 w-4" />,
-                    gradient: 'bg-gradient-to-r from-amber-500 to-orange-500',
+                    gradient: 'bg-gradient-to-r from-amber-500 to-[var(--gradient-end)]',
                     label: 'PENDING'
                 }
             case 'cancelled':

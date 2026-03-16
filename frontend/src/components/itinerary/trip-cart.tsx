@@ -73,10 +73,10 @@ export function TripCart({
         >
             {/* Header */}
             <CardHeader className="bg-white/5 py-5 border-b border-white/10 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#E8682A]/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
 
                 <CardTitle className="flex items-center gap-2.5 text-lg font-bold relative z-10 font-display">
-                    <div className="p-2 bg-gradient-to-br from-[#E8682A] to-[#F4A261] rounded-xl text-white shadow-lg ring-1 ring-white/20">
+                    <div className="p-2 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-xl text-white shadow-lg ring-1 ring-white/20">
                         <ShoppingCart className="h-4 w-4" />
                     </div>
                     Trip Summary
@@ -90,14 +90,14 @@ export function TripCart({
                 {/* Traveler & Duration Info - Pill Style */}
                 <div className="flex items-center justify-between bg-white/5 p-1 rounded-[1.2rem] border border-white/10">
                     <div className="flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-sm">
-                        <Users className="h-3.5 w-3.5 text-[#E8682A]" />
+                        <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
                             <span className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-0.5">Travelers</span>
                             <span className="font-bold text-white text-xs">{totalTravelers} People</span>
                         </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-xl ml-1">
-                        <Clock className="h-3.5 w-3.5 text-[#E8682A]" />
+                        <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
                             <span className="text-[8px] text-white/40 font-black uppercase tracking-widest mb-0.5">Duration</span>
                             <span className="font-bold text-white text-xs">{duration.days}D / {duration.nights}N</span>
@@ -115,7 +115,7 @@ export function TripCart({
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-white/60 font-bold flex items-center gap-2">
-                                <Users className="h-3 w-3 opacity-50 text-[#F97316]" />
+                                <Users className="h-3 w-3 opacity-50 text-[var(--primary)]" />
                                 <span className="text-[10px]">x {totalTravelers} Travelers</span>
                             </span>
                             <span className="font-black text-lg text-white">₹{totalBasePrice.toLocaleString()}</span>
@@ -131,11 +131,11 @@ export function TripCart({
                                 <div key={index} className="flex flex-col space-y-2 py-2 border-b border-white/10 last:border-0 group">
                                     <div className="flex justify-between items-start text-xs">
                                         <span className="flex items-center gap-2 text-white/70 font-bold">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#F97316]" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                             <div className="flex flex-col">
                                                 <span>{service.name}</span>
                                                 {service.name.includes('Flight') && (
-                                                    <span className="text-[9px] text-[#F97316] font-black uppercase tracking-tighter">Live Fare Rate</span>
+                                                    <span className="text-[9px] text-[var(--primary)] font-black uppercase tracking-tighter">Live Fare Rate</span>
                                                 )}
                                             </div>
                                         </span>
@@ -164,8 +164,8 @@ export function TripCart({
 
                     {/* GST Section (Exclusive) - Now below Subtotal/Net Amount */}
                     {gstSettings && !gstSettings.inclusive && (
-                        <div className="flex justify-between items-center text-[11px] group bg-[#F97316]/10 p-2.5 rounded-xl border border-[#F97316]/20">
-                            <span className="flex items-center gap-2 text-[#F97316] font-black uppercase tracking-widest">
+                        <div className="flex justify-between items-center text-[11px] group bg-[var(--primary)]/10 p-2.5 rounded-xl border border-[var(--primary)]/20">
+                            <span className="flex items-center gap-2 text-[var(--primary)] font-black uppercase tracking-widest">
                                 GST ({gstSettings.percentage}%)
                             </span>
                             <span className="font-black text-white">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
@@ -175,7 +175,7 @@ export function TripCart({
 
                 {/* Total */}
                 <div className="bg-white/5 -mx-6 -mb-6 p-6 text-white mt-4 relative overflow-hidden border-t border-white/10">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-[#F97316]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--primary)]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
                     <div className="relative z-10 space-y-5">
                         <div className="flex justify-between items-end">
@@ -200,7 +200,7 @@ export function TripCart({
 
                         <Button
                             id="checkout-trigger"
-                            className="w-full h-13 text-white font-bold text-base rounded-xl shadow-[0_8px_30px_rgba(232,104,42,0.3)] bg-gradient-to-r from-[#E8682A] to-[#F4A261] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 border border-white/20"
+                            className="w-full h-13 text-white font-bold text-base rounded-xl shadow-[0_8px_30px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 border border-white/20"
                             onClick={onCheckout}
                             disabled={loading || disabled}
                         >

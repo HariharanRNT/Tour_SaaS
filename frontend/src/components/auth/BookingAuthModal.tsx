@@ -147,7 +147,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
 
                 <div className="p-8 md:p-10">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF6B35] to-[#FFB347] text-white shadow-lg shadow-orange-500/30 mb-4 ring-4 ring-white/10">
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-orange-500/30 mb-4 ring-4 ring-white/10">
                             <ShieldCheck className="w-7 h-7" />
                         </div>
                         <h2 className="text-2xl font-bold text-white tracking-tight">Complete Booking</h2>
@@ -163,7 +163,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                 className={cn(
                                     "flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
                                     activeTab === tab
-                                        ? "bg-gradient-to-r from-[#FF6B35] to-[#FFB347] text-white shadow-md"
+                                        ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md"
                                         : "text-white/60 hover:text-white hover:bg-white/5"
                                 )}
                             >
@@ -286,7 +286,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                                         key={level}
                                                         className={cn(
                                                             "h-full flex-1 rounded-full transition-all duration-500",
-                                                            strength >= level ? "bg-gradient-to-r from-[#FF6B35] to-[#FFB347]" : "bg-white/5"
+                                                            strength >= level ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]" : "bg-white/5"
                                                         )}
                                                     />
                                                 );
@@ -307,7 +307,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#FFB347] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
+                                    className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
                                 >
                                     {loading ? (
                                         <Loader2 className="w-5 h-5 animate-spin" />

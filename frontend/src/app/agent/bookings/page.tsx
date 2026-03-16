@@ -65,14 +65,15 @@ import { PremiumCalendar } from "@/components/ui/premium-calendar"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
 
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
 
 export default function AgentBookingsPage() {
     const router = useRouter()
-    const [bookings, setBookings] = useState<Booking[]>([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
     const [activeTab, setActiveTab] = useState('upcoming')
     const [startDate, setStartDate] = useState('')
@@ -82,29 +83,17 @@ export default function AgentBookingsPage() {
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-    useEffect(() => {
-        loadBookings()
-    }, [])
-
-    const loadBookings = async () => {
-        setLoading(true)
-        try {
+    const { data: bookingsData, isLoading: loading, refetch: loadBookings } = useQuery({
+        queryKey: ['agent-bookings'],
+        queryFn: async () => {
             const data = await bookingsAPI.getAgentBookings()
-            if (Array.isArray(data)) {
-                setBookings(data)
-            } else if (data.bookings && Array.isArray(data.bookings)) {
-                // Handle potential paginated response structure
-                setBookings(data.bookings)
-            } else {
-                console.error("Unexpected booking data format", data)
-                setBookings([])
-            }
-        } catch (error) {
-            console.error("Failed to load bookings:", error)
-        } finally {
-            setLoading(false)
+            if (Array.isArray(data)) return data
+            if (data.bookings && Array.isArray(data.bookings)) return data.bookings
+            return []
         }
-    }
+    })
+
+    const bookings = bookingsData || []
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -136,13 +125,13 @@ export default function AgentBookingsPage() {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        return bookings.filter(booking => {
+        return bookings.filter((booking: Booking) => {
             // Search filter
             const matchesSearch = !searchQuery ||
                 booking.booking_reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 booking.package?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (booking.package?.destination && booking.package.destination.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (booking.travelers && booking.travelers.some(t =>
+                (booking.travelers && booking.travelers.some((t: any) =>
                     `${t.first_name} ${t.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
                 ));
 
@@ -159,7 +148,7 @@ export default function AgentBookingsPage() {
                 : (travelDate < today || booking.status === 'cancelled' || booking.status === 'completed')
 
             return isValues
-        }).sort((a, b) => {
+        }).sort((a: Booking, b: Booking) => {
             return new Date(b.travel_date).getTime() - new Date(a.travel_date).getTime()
         })
     }
@@ -178,6 +167,25 @@ export default function AgentBookingsPage() {
     }
 
     const groupedBookings = groupBookingsByDate(filteredBookings)
+
+    // Mutations
+    const cancelMutation = useMutation({
+        mutationFn: (bookingId: string) => bookingsAPI.cancel(bookingId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-bookings'] })
+            toast.success('Booking cancelled successfully')
+            setIsDetailsOpen(false)
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to cancel booking')
+        }
+    })
+
+    const handleCancelBooking = (bookingId: string) => {
+        if (window.confirm('Are you sure you want to cancel this booking?')) {
+            cancelMutation.mutate(bookingId)
+        }
+    }
 
     return (
         <div className="min-h-screen pb-20">
@@ -220,9 +228,9 @@ export default function AgentBookingsPage() {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[#B4501E]/60">Total:</span>
                                 <span className="text-xs font-black text-[#2D1A0E]">{bookings.length}</span>
                             </div>
-                            <div className="px-3 py-1.5 rounded-full bg-[#FF6B2B]/10 backdrop-blur-md border border-[#FF6B2B]/20 shadow-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6B2B]/70">Upcoming:</span>
-                                <span className="text-xs font-black text-[#FF6B2B]">{filterBookings('upcoming').length}</span>
+                            <div className="px-3 py-1.5 rounded-full bg-[var(--primary)]/10 backdrop-blur-md border border-[var(--primary)]/20 shadow-sm flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]/70">Upcoming:</span>
+                                <span className="text-xs font-black text-[var(--primary)]">{filterBookings('upcoming').length}</span>
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[#B4501E]/60">Completed:</span>
@@ -242,11 +250,11 @@ export default function AgentBookingsPage() {
                             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-white/50 backdrop-blur-2xl bg-white/80 shadow-2xl">
                                 <DropdownMenuLabel className="text-[10px] uppercase font-black text-slate-400 px-3 py-2">Choose Format</DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-slate-100" />
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[#FF6B2B]/10 focus:text-[#FF6B2B]">
+                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
                                     <FileText className="h-4 w-4 mr-3 text-red-500" />
                                     <span className="font-bold">Export as PDF</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[#FF6B2B]/10 focus:text-[#FF6B2B]">
+                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
                                     <FileSpreadsheet className="h-4 w-4 mr-3 text-green-600" />
                                     <span className="font-bold">Export for Excel</span>
                                 </DropdownMenuItem>
@@ -258,15 +266,15 @@ export default function AgentBookingsPage() {
                 {/* Search & Filter Bar */}
                 <div className="flex flex-col lg:flex-row items-stretch gap-4 mb-10">
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#FF6B2B] opacity-60 group-focus-within:opacity-100 transition-opacity" />
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--primary)] opacity-60 group-focus-within:opacity-100 transition-opacity" />
                         <Input
                             placeholder="Search booking reference, destination, or traveler names..."
-                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-[#2D1A0E] font-semibold placeholder:text-[#B4501E]/40 focus:bg-white/35 focus:border-[#FF6B2B]/50 transition-all shadow-sm"
+                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-[#2D1A0E] font-semibold placeholder:text-[#B4501E]/40 focus:bg-white/35 focus:border-[var(--primary)]/50 transition-all shadow-sm"
                             style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={(e) => {
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255,107,43,0.2)';
+                                e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-glow)';
                             }}
                             onBlur={(e) => {
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)';
@@ -277,7 +285,7 @@ export default function AgentBookingsPage() {
                     <div className="flex flex-col sm:flex-row items-center gap-3">
                         <div className="h-[52px] px-6 rounded-full bg-white/25 backdrop-blur-[16px] border border-white/40 flex items-center gap-4 group shadow-sm transition-all hover:bg-white/30">
                             <div className="flex items-center gap-3">
-                                <Calendar className="h-5 w-5 text-[#FF6B2B] opacity-60" />
+                                <Calendar className="h-5 w-5 text-[var(--primary)] opacity-60" />
 
                                 <Popover open={isFromOpen} onOpenChange={setIsFromOpen}>
                                     <PopoverTrigger asChild>
@@ -311,7 +319,7 @@ export default function AgentBookingsPage() {
                                 </Popover>
                             </div>
 
-                            <div className="h-6 w-px bg-[#FF6B2B]/20" />
+                            <div className="h-6 w-px bg-[var(--primary)]/20" />
 
                             <Popover open={isToOpen} onOpenChange={setIsToOpen}>
                                 <PopoverTrigger asChild>
@@ -347,7 +355,7 @@ export default function AgentBookingsPage() {
                             {(startDate || endDate) && (
                                 <button
                                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                                    className="ml-2 text-[#B4501E]/40 hover:text-[#FF6B2B] transition-colors"
+                                    className="ml-2 text-[#B4501E]/40 hover:text-[var(--primary)] transition-colors"
                                     title="Clear All Dates"
                                 >
                                     <XCircle className="h-4 w-4" />
@@ -356,8 +364,8 @@ export default function AgentBookingsPage() {
                         </div>
 
                         <Button
-                            className="h-[52px] px-8 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
-                            onClick={loadBookings}
+                            className="h-[52px] px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
+                            onClick={() => loadBookings()}
                         >
                             <Filter className="h-4 w-4" />
                             Apply Filters
@@ -371,13 +379,13 @@ export default function AgentBookingsPage() {
                         <TabsList className="h-[52px] bg-white/15 backdrop-blur-xl p-1.5 rounded-full border border-white/30 shadow-sm inline-flex relative overflow-hidden">
                             <TabsTrigger
                                 value="upcoming"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[#FF6B2B] data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Upcoming Trips
                             </TabsTrigger>
                             <TabsTrigger
                                 value="completed"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[#FF6B2B] data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Past Travels
                             </TabsTrigger>
@@ -392,14 +400,14 @@ export default function AgentBookingsPage() {
                                         {groupedBookings.map(([date, bookingsInGroup]) => (
                                             <div key={date} className="space-y-8 stagger-item">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FF6B2B]/20 to-transparent" />
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
-                                                        <Calendar className="h-4 w-4 text-[#FF6B2B]" />
+                                                        <Calendar className="h-4 w-4 text-[var(--primary)]" />
                                                         <span className="text-sm font-black text-[#2D1A0E]">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
-                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FF6B2B]/20 to-transparent" />
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                 </div>
                                                 <div className="grid gap-6">
                                                     {bookingsInGroup.map(booking => (
@@ -431,14 +439,14 @@ export default function AgentBookingsPage() {
                                         {groupedBookings.map(([date, bookingsInGroup]) => (
                                             <div key={date} className="space-y-8 stagger-item">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FF6B2B]/20 to-transparent" />
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
-                                                        <Calendar className="h-4 w-4 text-[#FF6B2B]" />
+                                                        <Calendar className="h-4 w-4 text-[var(--primary)]" />
                                                         <span className="text-sm font-black text-[#2D1A0E]">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
-                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#FF6B2B]/20 to-transparent" />
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                 </div>
                                                 <div className="grid gap-6">
                                                     {bookingsInGroup.map(booking => (
@@ -481,7 +489,7 @@ export default function AgentBookingsPage() {
         const travelerName = primaryTraveler ? `${primaryTraveler.first_name} ${primaryTraveler.last_name}` : 'Guest';
 
         return (
-            <Card className="relative overflow-hidden transition-all duration-500 hover:-translate-y-1 group border-white/40 shadow-[0_16px_48px_rgba(255,107,43,0.08)] hover:shadow-[0_20px_60px_rgba(255,107,43,0.18)]"
+            <Card className="relative overflow-hidden transition-all duration-500 hover:-translate-y-1 group border-white/40 shadow-[0_16px_48px_var(--primary-glow)] hover:shadow-[0_20px_60px_var(--primary-glow)]"
                 style={{
                     background: 'rgba(255, 255, 255, 0.18)',
                     backdropFilter: 'blur(24px)',
@@ -498,7 +506,7 @@ export default function AgentBookingsPage() {
                                 className="w-full h-48 md:h-full object-cover group-hover:scale-110 transition-transform duration-700 group-hover:brightness-110"
                             />
                         ) : (
-                            <div className="w-full h-48 md:h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#FF6B2B]/20 to-[#FF9A5C]/10 text-[#FF6B2B]/40">
+                            <div className="w-full h-48 md:h-full flex flex-col items-center justify-center bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary-light)]/10 text-[var(--primary)]/40">
                                 <MapPin className="h-10 w-10 mb-2 opacity-40 animate-pulse" />
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Location Preview</span>
                             </div>
@@ -526,35 +534,35 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
-                                        <MapPin className="h-3.5 w-3.5 text-[#FF6B2B]" />
+                                        <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{booking.package?.destination || 'Global Discovery'}</span>
                                     </div>
                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
-                                        <Clock className="h-3.5 w-3.5 text-[#FF6B2B]" />
+                                        <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{booking.package?.duration_days}D / {booking.package?.duration_nights || (booking.package?.duration_days ?? 0) - 1}N</span>
                                     </div>
                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
-                                        <Users className="h-3.5 w-3.5 text-[#FF6B2B]" />
+                                        <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{travelerCount} Guest{travelerCount > 1 ? 's' : ''}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2 self-end sm:self-start">
-                                <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B] hover:border-[#FF6B2B]/30 backdrop-blur-md transition-all">
+                                <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
                                     <Share2 className="h-4 w-4" />
                                 </Button>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B] hover:border-[#FF6B2B]/30 backdrop-blur-md transition-all">
+                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
                                             <MoreHorizontal className="h-5 w-5" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-52 p-2 rounded-2xl border-white/50 backdrop-blur-2xl bg-white/80 shadow-2xl">
-                                        <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 focus:bg-[#FF6B2B]/10 focus:text-[#FF6B2B]">
+                                        <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
                                             <Info className="h-4 w-4 mr-3" /> <span className="font-bold">View Full Details</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[#FF6B2B]/10 focus:text-[#FF6B2B]">
+                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
                                             <Share className="h-4 w-4 mr-3" /> <span className="font-bold">Share Itinerary</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="bg-slate-100" />
@@ -572,7 +580,7 @@ export default function AgentBookingsPage() {
                             <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="h-11 w-11 border-2 border-white shadow-md ring-1 ring-white/40">
-                                        <AvatarFallback className="bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] text-white font-black text-xs">
+                                        <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white font-black text-xs">
                                             {travelerName.charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
@@ -591,10 +599,10 @@ export default function AgentBookingsPage() {
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
                                     <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#B4501E]/50 mb-1">Total Payment</p>
-                                    <p className="text-2xl font-black text-[#FF6B2B]">₹{booking.total_amount.toLocaleString()}</p>
+                                    <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
                                 <Button
-                                    className="h-12 px-8 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center gap-3"
+                                    className="h-12 px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center gap-3"
                                     onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }}
                                 >
                                     Details <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -619,7 +627,7 @@ export default function AgentBookingsPage() {
                     hideClose
                 >
                     {/* Header Section: Reduced height, more purposeful actions */}
-                    <div className="bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] px-8 py-8 text-white relative shrink-0">
+                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-8 py-8 text-white relative shrink-0">
                         <div className="absolute top-6 right-6">
                             <Button
                                 variant="ghost"
@@ -671,15 +679,15 @@ export default function AgentBookingsPage() {
                                 {/* Booking Contact Card */}
                                 <section className="bg-white/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/50 shadow-sm flex flex-col h-full">
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="bg-[#FF6B2B]/10 p-3 rounded-2xl">
-                                            <User className="h-6 w-6 text-[#FF6B2B]" />
+                                        <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
+                                            <User className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
                                         <h3 className="text-xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>Booking Contact</h3>
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         <div className="flex items-center gap-5 p-6 bg-white/40 rounded-3xl border border-white/60">
                                             <Avatar className="h-12 w-12 border-2 border-white shadow-md ring-1 ring-white/40">
-                                                <AvatarFallback className="bg-[#FF6B2B] text-white font-black text-sm">
+                                                <AvatarFallback className="bg-[var(--primary)] text-white font-black text-sm">
                                                     {booking.user?.first_name?.[0]}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -689,18 +697,18 @@ export default function AgentBookingsPage() {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
-                                            <a href={`mailto:${booking.user?.email}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[#FF6B2B]/40 transition-all group overflow-hidden">
-                                                <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[#FF6B2B]/10">
-                                                    <Mail className="h-4 w-4 text-[#FF6B2B]" />
+                                            <a href={`mailto:${booking.user?.email}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
+                                                <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[var(--primary)]/10">
+                                                    <Mail className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
                                                     <span className="truncate text-sm font-bold text-[#2D1A0E] block">{booking.user?.email}</span>
                                                 </div>
                                             </a>
-                                            <a href={`tel:${booking.user?.phone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[#FF6B2B]/40 transition-all group overflow-hidden">
-                                                <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[#FF6B2B]/10">
-                                                    <Phone className="h-4 w-4 text-[#FF6B2B]" />
+                                            <a href={`tel:${booking.user?.phone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
+                                                <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[var(--primary)]/10">
+                                                    <Phone className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
@@ -714,8 +722,8 @@ export default function AgentBookingsPage() {
                                 {/* Tour Logistics Card */}
                                 <section className="bg-white/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/50 shadow-sm flex flex-col h-full">
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="bg-[#FF6B2B]/10 p-3 rounded-2xl">
-                                            <MapPin className="h-6 w-6 text-[#FF6B2B]" />
+                                        <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
+                                            <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
                                         <h3 className="text-xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>Tour Logistics</h3>
                                     </div>
@@ -730,7 +738,7 @@ export default function AgentBookingsPage() {
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60 flex flex-col justify-between">
                                             <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
-                                            <Badge className="bg-[#FF6B2B]/10 text-[#FF6B2B] border-[#FF6B2B]/20 font-black uppercase py-0.5 px-3 text-[9px] rounded-full w-fit">
+                                            <Badge className="bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20 font-black uppercase py-0.5 px-3 text-[9px] rounded-full w-fit">
                                                 {booking.package?.category || 'Standard'}
                                             </Badge>
                                         </div>
@@ -1002,8 +1010,13 @@ export default function AgentBookingsPage() {
                             </Button>
 
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-                                <Button variant="ghost" className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest">
-                                    <Trash2 className="h-4 w-4 mr-2" /> Cancel Booking
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => handleCancelBooking(booking.id)}
+                                    disabled={cancelMutation.isPending}
+                                    className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest"
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" /> {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
                                 </Button>
                                 <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
                                     <Edit className="h-4 w-4 mr-2" /> Modify Trip
@@ -1037,7 +1050,7 @@ const LoadingSkeleton = () => (
 
 const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setEndDate, router }: any) => (
     <div className="text-center py-24 bg-white/10 backdrop-blur-xl rounded-[32px] border border-white/20 shadow-xl max-w-2xl mx-auto stagger-item">
-        <div className="bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
+        <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
             <Calendar className="h-12 w-12 text-white" />
         </div>
         <h3 className="text-3xl font-bold text-[#2D1A0E] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -1061,7 +1074,7 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
                 activeTab === 'upcoming' && (
                     <Button
                         onClick={() => router.push('/agent/packages')}
-                        className="h-14 px-10 bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all"
+                        className="h-14 px-10 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all"
                     >
                         Browse Packages
                     </Button>

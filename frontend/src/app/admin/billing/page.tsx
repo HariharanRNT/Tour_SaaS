@@ -1,7 +1,15 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+    fetchAdminPlans, 
+    fetchAdminSubscriptions, 
+    createSubscriptionPlan, 
+    updateSubscriptionPlan, 
+    deleteSubscriptionPlan 
+} from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,21 +62,9 @@ interface Subscription {
 }
 
 export default function AdminBillingPage() {
-    const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+    const router = useRouter();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('plans');
-
-    // Stats
-    const [stats, setStats] = useState({
-        totalSubscriptions: 0,
-        activeSubscriptions: 0,
-        mrr: 0,
-        mostPopularPlan: '',
-        recentChanges: 0
-    });
-
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [sortColumn, setSortColumn] = useState<string>('');
@@ -87,157 +83,122 @@ export default function AdminBillingPage() {
         is_active: true
     });
 
-    const router = useRouter();
+    const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
+        queryKey: ['admin-plans'],
+        queryFn: fetchAdminPlans,
+    });
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const { data: subscriptions = [], isLoading: isLoadingSubs } = useQuery({
+        queryKey: ['admin-subscriptions'],
+        queryFn: fetchAdminSubscriptions,
+    });
 
-    const fetchData = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Authorization': `Bearer ${token}` };
+    const isLoading = isLoadingPlans || isLoadingSubs;
 
-            const [plansRes, subsRes] = await Promise.all([
-                fetch('http://localhost:8000/api/v1/subscriptions/admin/plans', { headers }),
-                fetch('http://localhost:8000/api/v1/subscriptions/admin/subscriptions', { headers })
-            ]);
+    const createMutation = useMutation({
+        mutationFn: createSubscriptionPlan,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
+            setIsCreateOpen(false);
+            setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
+            toast.success("Plan created successfully!");
+        },
+        onError: (err: any) => toast.error(`Save failed: ${err.response?.data?.detail || err.message}`)
+    });
 
-            if (plansRes.ok) setPlans(await plansRes.json());
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => updateSubscriptionPlan(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
+            setIsCreateOpen(false);
+            setEditingId(null);
+            toast.success("Plan updated successfully!");
+        },
+        onError: (err: any) => toast.error(`Update failed: ${err.response?.data?.detail || err.message}`)
+    });
 
-            if (subsRes.ok) {
-                const subsData = await subsRes.json();
-                setSubscriptions(subsData);
+    const deleteMutation = useMutation({
+        mutationFn: deleteSubscriptionPlan,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
+            toast.success("Plan deleted successfully");
+        },
+        onError: (err: any) => toast.error(err.response?.data?.detail || "Error deleting plan")
+    });
 
-                const activeCount = subsData.filter((s: Subscription) => s.status === 'active').length;
-                const mrr = subsData
-                    .filter((s: Subscription) => s.status === 'active')
-                    .reduce((sum: number, s: Subscription) => {
-                        const price = Number(s.plan?.price) || 0;
-                        const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
-                        if (cycle === 'yearly') return sum + (price / 12);
-                        if (cycle === 'quarterly') return sum + (price / 3);
-                        return sum + price;
-                    }, 0);
+    const isCurrentMonth = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        return date.getMonth() === now.getMonth() &&
+            date.getFullYear() === now.getFullYear();
+    };
 
-                // Helper function to check if a date is in the current month
-                const isCurrentMonth = (dateString: string) => {
-                    const date = new Date(dateString);
-                    const now = new Date();
-                    return date.getMonth() === now.getMonth() &&
-                        date.getFullYear() === now.getFullYear();
-                };
+    const currentMonthSubscriptions = subscriptions.filter((s: Subscription) =>
+        isCurrentMonth(s.start_date)
+    );
 
-                // Filter subscriptions to only current month for Most Popular calculation
-                const currentMonthSubs = subsData.filter((s: Subscription) => isCurrentMonth(s.start_date));
+    const planSubscriberCounts = plans.map((p: SubscriptionPlan) => ({
+        id: p.id,
+        name: p.name,
+        count: currentMonthSubscriptions.filter((s: Subscription) => s.plan.id === p.id).length,
+        totalCount: subscriptions.filter((s: Subscription) => s.plan.id === p.id).length
+    }));
 
-                const planCounts: { [key: string]: number } = {};
-                currentMonthSubs.forEach((s: Subscription) => {
-                    planCounts[s.plan.name] = (planCounts[s.plan.name] || 0) + 1;
-                });
-                const mostPopular = Object.entries(planCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const maxSubscribers = planSubscriberCounts.length > 0 
+        ? Math.max(...planSubscriberCounts.map((p: { count: number }) => p.count))
+        : 0;
 
-                // Count subscriptions in current month (not last 30 days)
-                const recentCount = currentMonthSubs.length;
+    const stats = (() => {
+        const activeCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
+        const mrr = subscriptions
+            .filter((s: Subscription) => s.status === 'active')
+            .reduce((sum: number, s: Subscription) => {
+                const price = Number(s.plan?.price) || 0;
+                const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
+                if (cycle === 'yearly') return sum + (price / 12);
+                if (cycle === 'quarterly') return sum + (price / 3);
+                return sum + price;
+            }, 0);
 
-                setStats({
-                    totalSubscriptions: subsData.length,
-                    activeSubscriptions: activeCount,
-                    mrr: Math.round(mrr),
-                    mostPopularPlan: mostPopular,
-                    recentChanges: recentCount
-                });
-            }
-        } catch (err) {
-            console.error("Failed to fetch admin billing data", err);
-        } finally {
-            setLoading(false);
+        return {
+            totalSubscriptions: subscriptions.length,
+            activeSubscriptions: activeCount,
+            mrr: Math.round(mrr),
+            mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
+            recentChanges: currentMonthSubscriptions.length
+        };
+    })();
+
+    const handleToggleStatus = (plan: SubscriptionPlan) => {
+        updateMutation.mutate({ 
+            id: plan.id, 
+            data: { is_active: !plan.is_active } 
+        });
+    };
+
+    const handleSavePlan = () => {
+        const featuresArray = newPlan.features.split('\n').filter(f => f.trim() !== '');
+        const payload = {
+            name: newPlan.name,
+            price: parseFloat(newPlan.price),
+            currency: 'INR',
+            billing_cycle: newPlan.billing_cycle,
+            duration_days: newPlan.billing_cycle === 'custom' ? parseInt(newPlan.duration_days) : null,
+            features: featuresArray,
+            booking_limit: parseInt(newPlan.booking_limit),
+            is_active: newPlan.is_active
+        };
+
+        if (editingId) {
+            updateMutation.mutate({ id: editingId, data: payload });
+        } else {
+            createMutation.mutate(payload);
         }
     };
 
-    const handleToggleStatus = async (plan: SubscriptionPlan) => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8000/api/v1/subscriptions/plans/${plan.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ is_active: !plan.is_active })
-            });
-
-            if (res.ok) {
-                await fetchData();
-                toast.success(`Plan ${plan.is_active ? 'deactivated' : 'activated'} successfully!`);
-            } else {
-                const err = await res.json();
-                toast.error(err.detail);
-            }
-        } catch (e) {
-            toast.error("Error toggling status");
-        }
-    };
-
-    const handleSavePlan = async () => {
-        setIsSaving(true);
-        try {
-            const token = localStorage.getItem('token');
-            const featuresArray = newPlan.features.split('\n').filter(f => f.trim() !== '');
-            const payload = {
-                name: newPlan.name,
-                price: parseFloat(newPlan.price),
-                currency: 'INR',
-                billing_cycle: newPlan.billing_cycle,
-                duration_days: newPlan.billing_cycle === 'custom' ? parseInt(newPlan.duration_days) : null,
-                features: featuresArray,
-                booking_limit: parseInt(newPlan.booking_limit),
-                is_active: newPlan.is_active
-            };
-
-            const url = editingId ? `http://localhost:8000/api/v1/subscriptions/plans/${editingId}` : 'http://localhost:8000/api/v1/subscriptions/plans';
-            const method = editingId ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method,
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                await fetchData();
-                setIsCreateOpen(false);
-                setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
-                setEditingId(null);
-                toast.success(`Plan ${editingId ? 'updated' : 'created'} successfully!`);
-            } else {
-                const error = await res.json();
-                toast.error(`Save failed: ${error.detail}`);
-            }
-        } catch (e) {
-            toast.error("Error saving plan");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleDeletePlan = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete ${name}?`)) return;
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8000/api/v1/subscriptions/plans/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                await fetchData();
-                toast.success("Plan deleted");
-            } else {
-                const err = await res.json();
-                toast.error(err.detail);
-            }
-        } catch (e) {
-            toast.error("Error deleting plan");
+    const handleDeletePlan = (id: string, name: string) => {
+        if (confirm(`Are you sure you want to delete ${name}?`)) {
+            deleteMutation.mutate(id);
         }
     };
 
@@ -256,7 +217,7 @@ export default function AdminBillingPage() {
         setIsCreateOpen(true);
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex flex-col gap-4 justify-center items-center h-screen bg-transparent">
                 <Loader2 className="animate-spin h-12 w-12 text-indigo-600" />
@@ -374,7 +335,7 @@ export default function AdminBillingPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="text-[32px] font-black text-white font-['Plus_Jakarta_Sans'] tracking-tight leading-none truncate">{stats.mostPopularPlan || 'N/A'}</h4>
+                                    <h4 className="text-[32px] font-black text-white font-['Plus_Jakarta_Sans'] tracking-tight leading-none truncate">{stats.mostPopularPlan}</h4>
                                     <p className="text-[10px] font-bold text-[#1a1a2e] uppercase tracking-widest opacity-60">{stats.recentChanges} new this month</p>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-amber-400" />
@@ -404,192 +365,160 @@ export default function AdminBillingPage() {
                         </div>
 
                         <TabsContent value="plans" className="outline-none pt-2">
-                            {/* Calculate most popular plan once, outside the map */}
-                            {(() => {
-                                // Helper function to check if a date is in the current month
-                                const isCurrentMonth = (dateString: string) => {
-                                    const date = new Date(dateString);
-                                    const now = new Date();
-                                    return date.getMonth() === now.getMonth() &&
-                                        date.getFullYear() === now.getFullYear();
-                                };
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+                                {plans.map((plan: SubscriptionPlan, idx: number) => {
+                                    const subscriberCount = subscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
+                                    const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
+                                    const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
 
-                                // Filter subscriptions to only current month
-                                const currentMonthSubscriptions = subscriptions.filter(s =>
-                                    isCurrentMonth(s.start_date)
-                                );
+                                    // Debug logging for each plan
+                                    if (isMostPopular) {
+                                        console.log(`${plan.name} is Most Popular with ${monthlySubscriberCount} subscribers this month (${subscriberCount} total)`);
+                                    }
 
-                                const planSubscriberCounts = plans.map(p => ({
-                                    id: p.id,
-                                    name: p.name,
-                                    count: currentMonthSubscriptions.filter(s => s.plan.id === p.id).length,
-                                    totalCount: subscriptions.filter(s => s.plan.id === p.id).length
-                                }));
-                                const maxSubscribers = Math.max(...planSubscriberCounts.map(p => p.count));
+                                    // Cycle colors for plans based on design file
+                                    const colors = [
+                                        { main: '#6366f1', dark: '#4F46E5', gradientBar: { from: '#6366F1', to: '#818CF8' } },
+                                        { main: '#0ea5e9', dark: '#0284C7', gradientBar: { from: '#0EA5E9', to: '#38BDF8' } },
+                                        { main: '#10b981', dark: '#059669', gradientBar: { from: '#10B981', to: '#34D399' } },
+                                        { main: '#f97316', dark: '#EA6C00', gradientBar: { from: '#F97316', to: '#FB923C' } },
+                                        { main: '#f59e0b', dark: '#D97706', gradientBar: { from: '#F59E0B', to: '#FCD34D' } },
+                                        { main: '#8b5cf6', dark: '#7C3AED', gradientBar: { from: '#8B5CF6', to: '#A78BFA' } },
+                                    ];
+                                    const theme = colors[idx % colors.length];
 
-                                // Debug logging
-                                console.log('Current Month Subscriptions:', currentMonthSubscriptions.length);
-                                console.log('Plan Subscriber Counts (This Month):', planSubscriberCounts);
-                                console.log('Max Subscribers This Month:', maxSubscribers);
+                                    return (
+                                        <motion.div
+                                            key={plan.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            whileHover={{ y: -4 }}
+                                            className="relative h-full min-h-[380px]"
+                                        >
+                                            <Card className={cn(
+                                                "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-hidden relative",
+                                                isMostPopular && "border-[2px] border-[#F97316] bg-[rgba(249,115,22,0.02)]"
+                                            )}>
+                                                {isMostPopular && (
+                                                    <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-20">
+                                                        <div className="bg-gradient-to-r from-[#F97316] to-[#EF4444] text-white px-[18px] py-[6px] rounded-[20px] font-[700] text-[10px] uppercase tracking-[1px] flex items-center gap-1.5 shadow-[0_4px_12px_rgba(249,115,22,0.40)]">
+                                                            ★ Most Popular
+                                                        </div>
+                                                    </div>
+                                                )}
 
-                                return (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
-                                        {plans.map((plan, idx) => {
-                                            const subscriberCount = subscriptions.filter(s => s.plan.id === plan.id).length;
-                                            const monthlySubscriberCount = currentMonthSubscriptions.filter(s => s.plan.id === plan.id).length;
-                                            const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
+                                                <div
+                                                    className="h-[4px] w-full"
+                                                    style={{
+                                                        background: `linear-gradient(90deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`
+                                                    }}
+                                                />
 
-                                            // Debug logging for each plan
-                                            if (isMostPopular) {
-                                                console.log(`${plan.name} is Most Popular with ${monthlySubscriberCount} subscribers this month (${subscriberCount} total)`);
-                                            }
-
-                                            // Cycle colors for plans based on design file
-                                            const colors = [
-                                                { main: '#6366f1', dark: '#4F46E5', gradientBar: { from: '#6366F1', to: '#818CF8' } },
-                                                { main: '#0ea5e9', dark: '#0284C7', gradientBar: { from: '#0EA5E9', to: '#38BDF8' } },
-                                                { main: '#10b981', dark: '#059669', gradientBar: { from: '#10B981', to: '#34D399' } },
-                                                { main: '#f97316', dark: '#EA6C00', gradientBar: { from: '#F97316', to: '#FB923C' } },
-                                                { main: '#f59e0b', dark: '#D97706', gradientBar: { from: '#F59E0B', to: '#FCD34D' } },
-                                                { main: '#8b5cf6', dark: '#7C3AED', gradientBar: { from: '#8B5CF6', to: '#A78BFA' } },
-                                            ];
-                                            const theme = colors[idx % colors.length];
-
-                                            return (
-                                                <motion.div
-                                                    key={plan.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: idx * 0.05 }}
-                                                    whileHover={{ y: -4 }}
-                                                    className="relative h-full min-h-[380px]"
-                                                >
-                                                    <Card className={cn(
-                                                        "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-hidden relative",
-                                                        isMostPopular && "border-[2px] border-[#F97316] bg-[rgba(249,115,22,0.02)]"
-                                                    )}>
-                                                        {isMostPopular && (
-                                                            <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-20">
-                                                                <div className="bg-gradient-to-r from-[#F97316] to-[#EF4444] text-white px-[18px] py-[6px] rounded-[20px] font-[700] text-[10px] uppercase tracking-[1px] flex items-center gap-1.5 shadow-[0_4px_12px_rgba(249,115,22,0.40)]">
-                                                                    ★ Most Popular
-                                                                </div>
+                                                <CardHeader className="p-[24px] pb-[16px]">
+                                                    <div className="flex justify-between items-start mb-[20px]">
+                                                        <div className="space-y-[8px]">
+                                                            <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight" style={{ color: theme.main }}>{plan.name}</h3>
+                                                            <div className={cn(
+                                                                "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[10px] font-black uppercase tracking-[1px] gap-1.5 backdrop-blur-md border",
+                                                                plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
+                                                            )}>
+                                                                <div className={cn("w-1.5 h-1.5 rounded-full", plan.is_active ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
+                                                                {plan.is_active ? 'Active' : 'Inactive'}
                                                             </div>
-                                                        )}
-
-                                                        <div
-                                                            className="h-[4px] w-full"
-                                                            style={{
-                                                                background: `linear-gradient(90deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`
-                                                            }}
-                                                        />
-
-                                                        <CardHeader className="p-[24px] pb-[16px]">
-                                                            <div className="flex justify-between items-start mb-[20px]">
-                                                                <div className="space-y-[8px]">
-                                                                    <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight" style={{ color: theme.main }}>{plan.name}</h3>
-                                                                    <div className={cn(
-                                                                        "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[10px] font-black uppercase tracking-[1px] gap-1.5 backdrop-blur-md border",
-                                                                        plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
-                                                                    )}>
-                                                                        <div className={cn("w-1.5 h-1.5 rounded-full", plan.is_active ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
-                                                                        {plan.is_active ? 'Active' : 'Inactive'}
-                                                                    </div>
-                                                                </div>
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="rounded-[8px] hover:bg-[#F8FAFC] h-[28px] w-[28px] text-[#94A3B8] hover:text-[#64748B] transition-colors">
-                                                                            <MoreVertical className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl min-w-[180px]">
-                                                                        <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
-                                                                            <Edit className="h-4 w-4 mr-3" /> Edit Plan
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
-                                                                            <Power className="h-4 w-4 mr-3" /> {plan.is_active ? 'Deactivate' : 'Activate'}
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuSeparator className="my-2 bg-transparent" />
-                                                                        <DropdownMenuItem
-                                                                            onClick={() => handleDeletePlan(plan.id, plan.name)}
-                                                                            className="rounded-xl font-bold py-3 px-4 text-red-500 focus:bg-red-50 focus:text-red-600"
-                                                                        >
-                                                                            <Trash className="h-4 w-4 mr-3" /> Delete
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            </div>
-
-                                                            <div className="flex items-baseline gap-[6px]">
-                                                                <span className="text-[32px] font-[800] text-[#0F172A] tracking-[-1px] font-['Outfit']">₹{Math.floor(plan.price).toLocaleString('en-IN')}</span>
-                                                                <span className="text-[#94A3B8] font-normal text-[13px] ml-[6px]">/ {plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'yearly' ? 'year' : 'day'}</span>
-                                                            </div>
-                                                        </CardHeader>
-
-                                                        <CardContent className="p-[24px] pt-0 flex flex-col flex-1 gap-[20px]">
-                                                            {/* Metric Grid */}
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/limit transition-all hover:bg-white/10">
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Bookings</p>
-                                                                    <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/limit:scale-105 transition-transform origin-left">
-                                                                        {plan.booking_limit === -1 || plan.booking_limit === 0 ? (
-                                                                            <span className="text-[28px] drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">∞</span>
-                                                                        ) : (
-                                                                            plan.booking_limit
-                                                                        )}
-                                                                    </p>
-                                                                </div>
-                                                                <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/subs transition-all hover:bg-white/10">
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Subscribers</p>
-                                                                    <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/subs:scale-105 transition-transform origin-left">{subscriberCount}</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="hidden">{/* Debug Info */}</div>
-
-                                                            {/* Features */}
-                                                            <div className="flex-1 flex flex-col">
-                                                                <div className="h-[1px] bg-[#F1F5F9] mb-[16px]" />
-                                                                <p className="text-[10px] font-[700] text-[#94A3B8] uppercase tracking-[1.2px] mb-[12px]">FEATURES</p>
-                                                                {(() => {
-                                                                    const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features;
-                                                                    return features && features.length > 0 ? (
-                                                                        <ul className="grid gap-[10px] mb-[20px]">
-                                                                            {features.map((f: string, i: number) => (
-                                                                                <li key={i} className="flex items-center text-[13px] font-normal text-[#475569]">
-                                                                                    <div className="mr-[10px]" style={{ color: theme.main }}>
-                                                                                        <CheckCircle2 className="h-4 w-4" />
-                                                                                    </div>
-                                                                                    {f}
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <p className="text-[13px] italic text-[#94A3B8] mb-[20px]">No features configured</p>
-                                                                    );
-                                                                })()}
-                                                            </div>
-
-                                                            <div className="mt-auto pt-4 border-t border-white/10">
-                                                                <Button
-                                                                    onClick={() => openEditModal(plan)}
-                                                                    className="w-full h-[46px] rounded-2xl font-black text-[12px] uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] border-0 overflow-hidden relative group/btn shadow-xl"
-                                                                    style={{
-                                                                        background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`,
-                                                                    }}
-                                                                >
-                                                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-                                                                    <span className="relative z-10 flex items-center justify-center gap-2">
-                                                                        <Edit className="h-4 w-4" /> Edit Plan
-                                                                    </span>
+                                                        </div>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="rounded-[8px] hover:bg-[#F8FAFC] h-[28px] w-[28px] text-[#94A3B8] hover:text-[#64748B] transition-colors">
+                                                                    <MoreVertical className="h-4 w-4" />
                                                                 </Button>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </motion.div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })()}
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl min-w-[180px]">
+                                                                <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
+                                                                    <Edit className="h-4 w-4 mr-3" /> Edit Plan
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
+                                                                    <Power className="h-4 w-4 mr-3" /> {plan.is_active ? 'Deactivate' : 'Activate'}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator className="my-2 bg-transparent" />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleDeletePlan(plan.id, plan.name)}
+                                                                    className="rounded-xl font-bold py-3 px-4 text-red-500 focus:bg-red-50 focus:text-red-600"
+                                                                >
+                                                                    <Trash className="h-4 w-4 mr-3" /> Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+
+                                                    <div className="flex items-baseline gap-[6px]">
+                                                        <span className="text-[32px] font-[800] text-[#0F172A] tracking-[-1px] font-['Outfit']">₹{Math.floor(plan.price).toLocaleString('en-IN')}</span>
+                                                        <span className="text-[#94A3B8] font-normal text-[13px] ml-[6px]">/ {plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'yearly' ? 'year' : 'day'}</span>
+                                                    </div>
+                                                </CardHeader>
+
+                                                <CardContent className="p-[24px] pt-0 flex flex-col flex-1 gap-[20px]">
+                                                    {/* Metric Grid */}
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/limit transition-all hover:bg-white/10">
+                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Bookings</p>
+                                                            <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/limit:scale-105 transition-transform origin-left">
+                                                                {plan.booking_limit === -1 || plan.booking_limit === 0 ? (
+                                                                    <span className="text-[28px] drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">∞</span>
+                                                                ) : (
+                                                                    plan.booking_limit
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/subs transition-all hover:bg-white/10">
+                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Subscribers</p>
+                                                            <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/subs:scale-105 transition-transform origin-left">{subscriberCount}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Features */}
+                                                    <div className="flex-1 flex flex-col">
+                                                        <div className="h-[1px] bg-[#F1F5F9] mb-[16px]" />
+                                                        <p className="text-[10px] font-[700] text-[#94A3B8] uppercase tracking-[1.2px] mb-[12px]">FEATURES</p>
+                                                        {(() => {
+                                                            const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features;
+                                                            return features && features.length > 0 ? (
+                                                                <ul className="grid gap-[10px] mb-[20px]">
+                                                                    {features.map((f: string, i: number) => (
+                                                                        <li key={i} className="flex items-center text-[13px] font-normal text-[#475569]">
+                                                                            <div className="mr-[10px]" style={{ color: theme.main }}>
+                                                                                <CheckCircle2 className="h-4 w-4" />
+                                                                            </div>
+                                                                            {f}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            ) : (
+                                                                <p className="text-[13px] italic text-[#94A3B8] mb-[20px]">No features configured</p>
+                                                            );
+                                                        })()}
+                                                    </div>
+
+                                                    <div className="mt-auto pt-4 border-t border-white/10">
+                                                        <Button
+                                                            onClick={() => openEditModal(plan)}
+                                                            className="w-full h-[46px] rounded-2xl font-black text-[12px] uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] border-0 overflow-hidden relative group/btn shadow-xl"
+                                                            style={{
+                                                                background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`,
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                                                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                                                <Edit className="h-4 w-4" /> Edit Plan
+                                                            </span>
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
                         </TabsContent>
 
                         <TabsContent value="subscriptions">
@@ -631,7 +560,7 @@ export default function AdminBillingPage() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {subscriptions.filter(sub => sub.status === 'active').length === 0 ? (
+                                                {subscriptions.filter((sub: Subscription) => sub.status === 'active').length === 0 ? (
                                                     <TableRow>
                                                         <TableCell colSpan={7} className="h-72 text-center">
                                                             <div className="flex flex-col items-center justify-center gap-4 opacity-50">
@@ -654,8 +583,8 @@ export default function AdminBillingPage() {
                                                     </TableRow>
                                                 ) : (
                                                     subscriptions
-                                                        .filter(sub => sub.status === 'active')
-                                                        .map((sub, i) => (
+                                                        .filter((sub: Subscription) => sub.status === 'active')
+                                                        .map((sub: Subscription, i: number) => (
                                                             <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
                                                                 <TableCell className="pl-8">
                                                                     <div className="flex items-center gap-3">
@@ -720,8 +649,8 @@ export default function AdminBillingPage() {
                                 <Card className="lg:col-span-2 border-[1.5px] border-[#F1F5F9] shadow-sm rounded-[18px] overflow-hidden glass-panel p-8">
                                     <div className="text-[20px] font-bold text-[#0F172A] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
-                                        {plans.map((plan, idx) => {
-                                            const subCount = subscriptions.filter(s => s.plan.id === plan.id).length;
+                                        {plans.map((plan: SubscriptionPlan, idx: number) => {
+                                            const subCount = subscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
                                             const revenue = subCount * Number(plan.price);
                                             const colors = ['#f97316', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#0ea5e9'];
                                             const color = colors[idx % colors.length];
@@ -746,7 +675,7 @@ export default function AdminBillingPage() {
                                         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Estimated Revenue</div>
                                             <div className="text-[20px] font-black text-orange-400 font-['Outfit'] tracking-tight">
-                                                ₹{plans.reduce((sum, p) => sum + (subscriptions.filter(s => s.plan.id === p.id).length * Number(p.price)), 0).toLocaleString('en-IN')}
+                                                ₹{plans.reduce((sum: number, p: SubscriptionPlan) => sum + (subscriptions.filter((s: Subscription) => s.plan.id === p.id).length * Number(p.price)), 0).toLocaleString('en-IN')}
                                             </div>
                                         </div>
                                     </div>
@@ -942,18 +871,18 @@ Feature 3`}
                                     </Button>
                                     <Button
                                         onClick={handleSavePlan}
-                                        disabled={isSaving}
-                                        className="flex-[60] h-[44px] rounded-[10px] font-bold text-[14px] bg-gradient-to-r from-[#6366F1] to-[#7C3AED] text-white shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:translate-y-[-2px] hover:shadow-[0_6px_24px_rgba(99,102,241,0.45)] transition-all duration-200 border-0 flex items-center justify-center gap-2"
+                                        disabled={createMutation.isPending || updateMutation.isPending}
+                                        className="rounded-[12px] bg-[#4F46E5] hover:bg-[#4338CA] text-white px-[24px] h-[46px] font-[700] text-[13px] transition-all duration-200 shadow-md flex items-center gap-2"
                                     >
-                                        {isSaving ? (
+                                        {(createMutation.isPending || updateMutation.isPending) ? (
                                             <>
                                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                                {editingId ? 'Updating...' : 'Creating...'}
+                                                <span>Saving...</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Check className="h-4 w-4" />
-                                                {editingId ? 'Update Plan' : 'Create Plan'}
+                                                <span>{editingId ? 'Update Plan' : 'Create Plan'}</span>
                                             </>
                                         )}
                                     </Button>

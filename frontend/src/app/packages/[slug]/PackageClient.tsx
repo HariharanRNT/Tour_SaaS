@@ -59,7 +59,7 @@ const timeSlotConfig = {
     morning: { icon: Sun, label: 'Morning', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
     half_day: { icon: Clock, label: 'Half Day', color: 'text-teal-600', bgColor: 'bg-teal-50' },
     afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    evening: { icon: Sunset, label: 'Evening', color: 'text-orange-600', bgColor: 'bg-orange-50' },
+    evening: { icon: Sunset, label: 'Evening', color: 'text-[var(--primary)]', bgColor: 'bg-orange-50' },
     night: { icon: Moon, label: 'Night', color: 'text-purple-600', bgColor: 'bg-purple-50' }
 }
 
@@ -506,7 +506,7 @@ export default function PackageDetailPage() {
                             {packageData?.flights_enabled && (
                                 <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-500">
                                     <Label htmlFor="origin-city" className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                        <Plane className="h-4 w-4 text-[#FF6B2B]" />
+                                        <Plane className="h-4 w-4 text-[var(--primary)]" />
                                         Starting From
                                     </Label>
                                     <div className="relative group/origin">
@@ -518,10 +518,10 @@ export default function PackageDetailPage() {
                                             }
                                             value={originCity}
                                             onChange={(e) => setOriginCity(e.target.value.toUpperCase())}
-                                            className="h-12 glass-input border-[#FF6B2B]/20 focus:border-[#FF6B2B] pl-10"
+                                            className="h-12 glass-input border-[var(--primary)]/20 focus:border-[var(--primary)] pl-10"
                                         />
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <MapPin className="h-4 w-4 text-gray-400 group-hover/origin:text-[#FF6B2B] transition-colors" />
+                                            <MapPin className="h-4 w-4 text-gray-400 group-hover/origin:text-[var(--primary)] transition-colors" />
                                         </div>
                                     </div>
                                     {packageData.flight_origin_cities.length > 0 && (
@@ -534,8 +534,8 @@ export default function PackageDetailPage() {
                                                     className={cn(
                                                         "px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all",
                                                         originCity === city
-                                                            ? "bg-[#FF6B2B] text-white border-[#FF6B2B]"
-                                                            : "bg-white text-[#FF6B2B] border-[#FF6B2B]/30 hover:bg-[#FF6B2B]/5"
+                                                            ? "bg-[var(--primary)] text-white border-[var(--primary)]"
+                                                            : "bg-white text-[var(--primary)] border-[var(--primary)]/30 hover:bg-[var(--primary)]/5"
                                                     )}
                                                 >
                                                     {city}

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchPackagesSimple, deletePackageSimple, updatePackageStatus } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,78 +37,46 @@ interface Package {
 
 export default function AdminPackagesPage() {
     const router = useRouter()
-    const [packages, setPackages] = useState<Package[]>([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
 
-    useEffect(() => {
-        // Check if admin is logged in
-        const isAdmin = localStorage.getItem('isAdmin')
-        if (!isAdmin || isAdmin !== 'true') {
-            router.push('/admin/login')
-            return
-        }
+    const { data: packages = [], isLoading } = useQuery({
+        queryKey: ['packages', statusFilter],
+        queryFn: fetchPackagesSimple,
+    })
 
-        loadPackages()
-    }, [statusFilter, router])
+    const deleteMutation = useMutation({
+        mutationFn: deletePackageSimple,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['packages'] })
+            toast.success('Package deleted successfully')
+        },
+        onError: () => toast.error('Failed to delete package')
+    })
 
-    const loadPackages = async () => {
-        setLoading(true)
-        try {
-            // Use simplified admin endpoint that works
-            const response = await fetch('http://localhost:8000/api/v1/admin-simple/packages-simple')
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data = await response.json()
-            setPackages(data || [])
-        } catch (error) {
-            console.error('Failed to load packages:', error)
-            setPackages([])
-        } finally {
-            setLoading(false)
-        }
-    }
+    const statusMutation = useMutation({
+        mutationFn: ({ id, newStatus }: { id: string, newStatus: string }) => 
+            updatePackageStatus(id, newStatus),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['packages'] })
+            toast.success('Status updated successfully')
+        },
+        onError: () => toast.error('Failed to update status')
+    })
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this package?')) {
-            return
-        }
-
-        try {
-            const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${id}`, {
-                method: 'DELETE'
-            })
-
-            if (response.ok) {
-                loadPackages()
-                toast.success('Package deleted successfully')
-            } else {
-                throw new Error('Failed to delete')
-            }
-        } catch (error) {
-            console.error('Failed to delete package:', error)
-            toast.error('Failed to delete package')
+        if (confirm('Are you sure you want to delete this package?')) {
+            deleteMutation.mutate(id)
         }
     }
 
-    const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const handleToggleStatus = (id: string, currentStatus: string) => {
         const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
-
-        try {
-            await fetch(`http://localhost:8000/api/v1/admin/packages/${id}/status?new_status=${newStatus}`, {
-                method: 'PATCH'
-            })
-            loadPackages()
-        } catch (error) {
-            console.error('Failed to toggle status:', error)
-        }
+        statusMutation.mutate({ id, newStatus })
     }
 
-    const filteredPackages = packages.filter(pkg =>
+    const filteredPackages = packages.filter((pkg: Package) =>
         pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pkg.destination.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -185,7 +155,7 @@ export default function AdminPackagesPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
+                        {isLoading ? (
                             <div className="text-center py-12">
                                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                 <p className="mt-4 text-gray-600">Loading packages...</p>
@@ -213,7 +183,7 @@ export default function AdminPackagesPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredPackages.map((pkg) => (
+                                    {filteredPackages.map((pkg: Package) => (
                                         <TableRow key={pkg.id} className="group transition-colors">
                                             <TableCell className="font-medium text-gray-900">{pkg.title}</TableCell>
                                             <TableCell className="text-gray-600">{pkg.destination}</TableCell>

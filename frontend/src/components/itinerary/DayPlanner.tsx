@@ -117,7 +117,7 @@ export function DayPlanner({
         // Enhanced Color themes
         const themeMap = {
             morning: { text: 'text-[#D97706]', bg: 'bg-white', border: 'border-[#D97706]', iconBg: 'bg-gradient-to-br from-[#F59E0B] to-[#FCD34D]', iconColor: 'text-white' },
-            afternoon: { text: 'text-[#EA580C]', bg: 'bg-white', border: 'border-[#EA580C]', iconBg: 'bg-gradient-to-br from-[#F97316] to-[#FB923C]', iconColor: 'text-white' },
+            afternoon: { text: 'text-[var(--primary)]', bg: 'bg-white', border: 'border-[var(--primary)]', iconBg: 'bg-gradient-to-br from-[var(--primary)] to-[#FB923C]', iconColor: 'text-white' },
             evening: { text: 'text-[#DC4E2A]', bg: 'bg-white', border: 'border-[#DC4E2A]', iconBg: 'bg-gradient-to-br from-[#E11D48] to-[#FB7185]', iconColor: 'text-white' },
             night: { text: 'text-[#92400E]', bg: 'bg-white', border: 'border-[#92400E]', iconBg: 'bg-gradient-to-br from-[#451A03] to-[#92400E]', iconColor: 'text-white' },
             half_day: { text: 'text-teal-700', bg: 'bg-white', border: 'border-teal-200', iconBg: 'bg-teal-500', iconColor: 'text-white' },
@@ -133,7 +133,7 @@ export function DayPlanner({
                     <div
                         className="absolute left-[27px] md:left-[39px] top-12 bottom-0 w-0.5"
                         style={{
-                            backgroundImage: 'linear-gradient(to bottom, rgba(232,104,42,0.4) 50%, transparent 50%)',
+                            backgroundImage: 'linear-gradient(to bottom, var(--primary-glow) 50%, transparent 50%)',
                             backgroundSize: '1px 8px',
                             backgroundRepeat: 'repeat-y'
                         }}
@@ -149,7 +149,7 @@ export function DayPlanner({
                 >
                     {icon}
                     {/* Timeline dot */}
-                    <div className="absolute -left-1 w-2.5 h-2.5 rounded-full bg-[#E8682A] hidden md:block" />
+                    <div className="absolute -left-1 w-2.5 h-2.5 rounded-full bg-[var(--primary)] hidden md:block" />
                 </div>
 
                 {/* Frosted Time-Strip Header */}
@@ -158,7 +158,7 @@ export function DayPlanner({
                         <h4 className={cn("font-display text-xl md:text-2xl italic font-bold", theme.text)}>
                             {label}
                         </h4>
-                        <div className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full border border-orange-100/30">
+                        <div className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full border border-var(--primary-glow)">
                             <span className="text-[#8B5030] font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
                                 {timeRange}
                             </span>
@@ -174,7 +174,7 @@ export function DayPlanner({
                         return (
                             <div
                                 key={index}
-                                className="group/card relative overflow-hidden rounded-[2.5rem] border border-orange-200/20 bg-white/60 backdrop-blur-[16px] shadow-[0_8px_24px_rgba(180,80,20,0.1)] hover:shadow-[0_20px_50px_rgba(200,80,20,0.18)] hover:-translate-y-2 transition-all duration-500 cursor-pointer ml-1"
+                                className="group/card relative overflow-hidden rounded-[2.5rem] border border-[var(--primary)]/20 bg-white/60 backdrop-blur-[16px] shadow-[0_8px_24px_rgba(180,80,20,0.1)] hover:shadow-[0_20px_50px_rgba(200,80,20,0.18)] hover:-translate-y-2 transition-all duration-500 cursor-pointer ml-1"
                                 onClick={() => setSelectedActivity(activity)}
                             >
                                 <div className="flex flex-col md:flex-row h-full">
@@ -190,7 +190,7 @@ export function DayPlanner({
                                                     unoptimized
                                                 />
                                                 {/* Warm Overlay */}
-                                                <div className="absolute inset-0 bg-orange-900/10 group-hover/card:bg-transparent transition-colors duration-500" />
+                                                <div className="absolute inset-0 bg-var(--primary-soft) group-hover/card:bg-transparent transition-colors duration-500" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
                                                 {images.length > 1 && (
@@ -208,20 +208,20 @@ export function DayPlanner({
                                     </div>
 
                                     {/* Details */}
-                                    <div className="flex-1 p-3 md:py-3 md:pr-6 md:pl-2 flex flex-col">
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="space-y-2">
+                                    <div className="flex-1 min-w-0 p-3 md:py-3 md:pr-6 md:pl-2 flex flex-col">
+                                        <div className="flex justify-between items-start gap-4 min-w-0">
+                                            <div className="space-y-2 min-w-0 flex-1">
                                                 {/* Category Tag */}
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100/50 border border-orange-200/50 text-[#A0501E] text-[10px] font-bold uppercase tracking-wider mb-1">
+                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-var(--primary-glow) border border-[var(--primary)]/50 text-[#A0501E] text-[10px] font-bold uppercase tracking-wider mb-1">
                                                     ✨ Top Experience
                                                 </div>
 
-                                                <h5 className="font-display text-lg md:text-xl text-[#3A1A08] leading-tight group-hover/card:text-[#E8682A] transition-colors">
+                                                <h5 className="font-display text-lg md:text-xl text-[#3A1A08] leading-tight group-hover/card:text-[var(--primary)] transition-colors break-words">
                                                     {activity.title}
                                                 </h5>
                                                 {(activity.start_time || activity.end_time) && (
                                                     <div className="flex items-center text-xs font-bold text-[#A0501E]/60 uppercase tracking-widest">
-                                                        <Clock className="h-3.5 w-3.5 mr-2 text-[#E8682A]" />
+                                                        <Clock className="h-3.5 w-3.5 mr-2 text-[var(--primary)]" />
                                                         {activity.start_time || '?'} - {activity.end_time || '?'}
                                                     </div>
                                                 )}
@@ -232,22 +232,22 @@ export function DayPlanner({
                                             {activity.description.replace(/<[^>]*>/g, '').substring(0, 100)}...
                                         </p>
 
-                                        <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-orange-100/30">
+                                        <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-var(--primary-glow)">
                                             <div className="flex items-center gap-3">
                                                 {activity.duration && (
-                                                    <Badge variant="outline" className="bg-transparent text-[#A0501E] border-orange-200/50 px-3 py-1 font-bold text-[10px] flex items-center gap-1.5 uppercase tracking-wider">
+                                                    <Badge variant="outline" className="bg-transparent text-[#A0501E] border-[var(--primary)]/50 px-3 py-1 font-bold text-[10px] flex items-center gap-1.5 uppercase tracking-wider">
                                                         <Clock className="h-3 w-3" />
                                                         {activity.duration}
                                                     </Badge>
                                                 )}
                                                 {activity.price_per_person !== undefined && (
-                                                    <div className="flex items-center text-[11px] font-black text-[#E8682A] bg-orange-50/50 px-3 py-1 rounded-full border border-orange-100/50 uppercase tracking-wider">
+                                                    <div className="flex items-center text-[11px] font-black text-[var(--primary)] bg-orange-50/50 px-3 py-1 rounded-full border border-var(--primary-glow) uppercase tracking-wider">
                                                         ₹{activity.price_per_person}
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div className="flex items-center gap-1.5 bg-[#E8682A]/10 border border-[#E8682A]/30 px-2.5 py-1 rounded-full text-[8px] font-bold text-[#E8682A] uppercase tracking-widest transition-all group/btn hover:bg-[#E8682A] hover:text-white">
+                                            <div className="flex items-center gap-1.5 bg-[var(--primary)]/10 border border-[var(--primary)]/30 px-2.5 py-1 rounded-full text-[8px] font-bold text-[var(--primary)] uppercase tracking-widest transition-all group/btn hover:bg-[var(--primary)] hover:text-white">
                                                 <span>Details</span>
                                                 <ChevronRight className="h-2 w-2 transition-transform group-hover/btn:translate-x-1" />
                                             </div>
@@ -271,16 +271,16 @@ export function DayPlanner({
     return (
         <div className="relative group/main">
             {/* Main Glass Container */}
-            <div className="bg-[#FFEBD2]/35 backdrop-blur-[20px] rounded-[2rem] border border-orange-200/30 shadow-[inset_0_1px_0_rgba(255,220,160,0.5),0_20px_60px_rgba(200,80,20,0.12)] overflow-hidden transition-all duration-500">
+            <div className="bg-[var(--primary-soft)]/35 backdrop-blur-[20px] rounded-[2rem] border border-[var(--primary)]/30 shadow-[inset_0_1px_0_rgba(255,220,160,0.5),0_20px_60px_rgba(200,80,20,0.12)] overflow-hidden transition-all duration-500">
                 {/* Header */}
-                <div className="px-8 py-10 border-b border-orange-200/20 flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
+                <div className="px-8 py-10 border-b border-[var(--primary)]/20 flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
                     <div className="flex items-center gap-8">
                         {/* Pulsing Day Badge */}
                         <div className="relative shrink-0">
                             {/* Outer pulsing ring */}
-                            <div className="absolute inset-[-8px] rounded-full bg-[#E8682A]/10 animate-pulse" />
+                            <div className="absolute inset-[-8px] rounded-full bg-[var(--primary)]/10 animate-pulse" />
 
-                            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#E8682A] to-[#C2440A] text-white flex flex-col items-center justify-center shadow-[0_12px_30px_rgba(232,104,42,0.4)] relative z-10 border-4 border-white">
+                            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#C2440A] text-white flex flex-col items-center justify-center shadow-[0_12px_30px_var(--primary-glow)] relative z-10 border-4 border-white">
                                 <span className="text-[9px] font-bold opacity-90 uppercase tracking-[0.2em] mb-0.5 mt-1">Day</span>
                                 <span className="text-4xl leading-none font-display font-black">{day.day_number}</span>
                             </div>
@@ -288,17 +288,17 @@ export function DayPlanner({
 
                         <div className="relative group">
                             {/* Decorative left accent bar */}
-                            <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-gradient-to-b from-[#E8682A] to-[#C2440A] rounded-full hidden md:block" />
+                            <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-gradient-to-b from-[var(--primary)] to-[#C2440A] rounded-full hidden md:block" />
 
                             <h3 className="font-display text-4xl leading-none">
                                 <span className="text-[#3A1A08] font-bold">Destination</span>{' '}
-                                <span className="text-[#E8682A] italic font-medium">Highlights</span>
+                                <span className="text-[var(--primary)] italic font-medium">Highlights</span>
                             </h3>
 
                             <div className="flex flex-wrap items-center gap-3 mt-4">
-                                <span className="flex items-center gap-2 bg-[#E8682A]/10 px-4 py-1.5 rounded-full border border-[#E8682A]/30 transition-all hover:bg-[#E8682A]/20">
-                                    <div className="w-2 h-2 rounded-full bg-[#E8682A]" />
-                                    <span className="font-bold text-[#E8682A] text-[10px] uppercase tracking-widest">{totalActivities} Experiences</span>
+                                <span className="flex items-center gap-2 bg-[var(--primary)]/10 px-4 py-1.5 rounded-full border border-[var(--primary)]/30 transition-all hover:bg-[var(--primary)]/20">
+                                    <div className="w-2 h-2 rounded-full bg-[var(--primary)]" />
+                                    <span className="font-bold text-[var(--primary)] text-[10px] uppercase tracking-widest">{totalActivities} Experiences</span>
                                 </span>
                                 <span className={cn(
                                     "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
@@ -463,10 +463,10 @@ export function DayPlanner({
                                 </div>
 
                                 {/* Content */}
-                                <div className="p-8 md:p-10 space-y-6 bg-[#FFF5EE]/30 backdrop-blur-xl flex-1">
+                                <div className="p-8 md:p-10 space-y-6 bg-[var(--primary-soft)]/30 backdrop-blur-xl flex-1">
                                     <div className="space-y-6">
                                         <h3 className="font-bold text-2xl text-[#3A1A08] flex items-center gap-3">
-                                            <div className="h-8 w-1.5 bg-[#FF7A45] rounded-full"></div>
+                                            <div className="h-8 w-1.5 bg-[var(--primary)] rounded-full"></div>
                                             About this activity
                                         </h3>
                                         <div className="text-[#5D4037] leading-relaxed text-lg whitespace-pre-wrap">
@@ -474,13 +474,13 @@ export function DayPlanner({
                                         </div>
                                     </div>
 
-                                    <div className="mt-8 pt-8 border-t border-[#FF7A45]/10 flex justify-end">
+                                    <div className="mt-8 pt-8 border-t border-[var(--primary)]/10 flex justify-end">
                                         <Button
                                             onClick={() => setSelectedActivity(null)}
                                             size="lg"
-                                            className="rounded-xl px-10 h-12 text-lg font-bold text-white transition-all hover:scale-[1.05] shadow-lg shadow-[#FF7A45]/30 hover:shadow-[#FF7A45]/50 border-none"
+                                            className="rounded-xl px-10 h-12 text-lg font-bold text-white transition-all hover:scale-[1.05] shadow-lg shadow-[var(--primary)]/30 hover:shadow-[var(--primary)]/50 border-none"
                                             style={{
-                                                background: 'linear-gradient(135deg, #FF7A45, #FFB38A)'
+                                                background: 'linear-gradient(135deg, var(--primary), #FFB38A)'
                                             }}
                                         >
                                             Close Details

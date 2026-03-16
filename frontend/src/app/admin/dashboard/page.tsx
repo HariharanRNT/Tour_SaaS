@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
     Users,
@@ -27,93 +28,73 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RevenueChart } from '@/components/admin/dashboard/RevenueChart'
 import { RecentActivityFeed } from '@/components/admin/dashboard/RecentActivityFeed'
+import { fetchDashboardStats } from '@/lib/api'
+
+const INITIAL_STATS = {
+    totalPackages: 0,
+    totalBookings: 128,
+    totalRevenue: 1400,
+    avgOrderValue: 352,
+    conversionRate: 18.4,
+    agents: { total: 5, active: 4, inactive: 1, pending: 2 },
+    activeSubscriptions: 4,
+    subscriptionsNearingExpiry: 0,
+    packageAnalytics: {
+        popularDestinations: [],
+        agentActivities: []
+    },
+    alerts: {
+        paymentFailures: 0,
+        cancelledBookings: 0
+    },
+    monthlyTrends: [],
+    weeklyTrends: [],
+    dailyTrends: [
+        { name: 'Mon', revenue: 120, bookings: 2 },
+        { name: 'Tue', revenue: 340, bookings: 5 },
+        { name: 'Wed', revenue: 210, bookings: 3 },
+        { name: 'Thu', revenue: 450, bookings: 8 },
+        { name: 'Fri', revenue: 380, bookings: 6 },
+        { name: 'Sat', revenue: 520, bookings: 10 },
+        { name: 'Sun', revenue: 480, bookings: 9 },
+    ],
+    leaderboard: [
+        { name: "ABC Travels", revenue: 600, bookings: 32, avatar: "A" },
+        { name: "Global Travels", revenue: 420, bookings: 24, avatar: "G" },
+        { name: "Sky Tours", revenue: 210, bookings: 12, avatar: "S" },
+    ],
+    renewals: [
+        { name: "ABC Travels", date: "Mar 12", daysLeft: 6 },
+        { name: "Sky Tours", date: "Mar 18", daysLeft: 12 },
+        { name: "Travel Hub", date: "Mar 22", daysLeft: 16 },
+    ],
+    health: {
+        activePlans: 4,
+        expiringSoon: 1,
+        trialUsers: 2,
+        churnRate: 5,
+        system: [
+            { name: "API Status", status: "Operational", color: "text-emerald-500" },
+            { name: "Payments", status: "Active", color: "text-emerald-500" },
+            { name: "Bookings API", status: "Delay", color: "text-amber-500" },
+        ]
+    },
+    sparklines: {
+        revenue: [30, 45, 35, 60, 55, 75, 70],
+        agents: [2, 3, 3, 4, 4, 4, 4],
+        bookings: [10, 15, 8, 20, 18, 25, 22]
+    }
+}
 
 export default function AdminDashboard() {
     const [dateFilter, setDateFilter] = useState('ALL')
-    const [stats, setStats] = useState<any>({
-        totalPackages: 0,
-        totalBookings: 128,
-        totalRevenue: 1400,
-        avgOrderValue: 352,
-        conversionRate: 18.4,
-        agents: { total: 5, active: 4, inactive: 1, pending: 2 },
-        activeSubscriptions: 4,
-        subscriptionsNearingExpiry: 0,
-        packageAnalytics: {
-            popularDestinations: [],
-            agentActivities: []
-        },
-        alerts: {
-            paymentFailures: 0,
-            cancelledBookings: 0
-        },
-        monthlyTrends: [],
-        weeklyTrends: [],
-        dailyTrends: [
-            { name: 'Mon', revenue: 120, bookings: 2 },
-            { name: 'Tue', revenue: 340, bookings: 5 },
-            { name: 'Wed', revenue: 210, bookings: 3 },
-            { name: 'Thu', revenue: 450, bookings: 8 },
-            { name: 'Fri', revenue: 380, bookings: 6 },
-            { name: 'Sat', revenue: 520, bookings: 10 },
-            { name: 'Sun', revenue: 480, bookings: 9 },
-        ],
-        leaderboard: [
-            { name: "ABC Travels", revenue: 600, bookings: 32, avatar: "A" },
-            { name: "Global Travels", revenue: 420, bookings: 24, avatar: "G" },
-            { name: "Sky Tours", revenue: 210, bookings: 12, avatar: "S" },
-        ],
-        renewals: [
-            { name: "ABC Travels", date: "Mar 12", daysLeft: 6 },
-            { name: "Sky Tours", date: "Mar 18", daysLeft: 12 },
-            { name: "Travel Hub", date: "Mar 22", daysLeft: 16 },
-        ],
-        health: {
-            activePlans: 4,
-            expiringSoon: 1,
-            trialUsers: 2,
-            churnRate: 5,
-            system: [
-                { name: "API Status", status: "Operational", color: "text-emerald-500" },
-                { name: "Payments", status: "Active", color: "text-emerald-500" },
-                { name: "Bookings API", status: "Delay", color: "text-amber-500" },
-            ]
-        },
-        sparklines: {
-            revenue: [30, 45, 35, 60, 55, 75, 70],
-            agents: [2, 3, 3, 4, 4, 4, 4],
-            bookings: [10, 15, 8, 20, 18, 25, 22]
-        }
+
+    const { data: apiStats } = useQuery({
+        queryKey: ['dashboard-stats', dateFilter],
+        queryFn: () => fetchDashboardStats(dateFilter),
     })
 
-    useEffect(() => {
-        loadStats()
-    }, [dateFilter])
-
-    const loadStats = async () => {
-        try {
-            const token = localStorage.getItem('token')
-            const query = new URLSearchParams()
-            query.append('filter_type', dateFilter)
-
-            const response = await fetch(`http://localhost:8000/api/v1/admin-simple/dashboard-stats?${query.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                console.error('Failed to fetch stats:', response.statusText)
-                return
-            }
-
-            const data = await response.json()
-            setStats((prev: any) => ({ ...prev, ...data }))
-
-        } catch (error) {
-            console.error('Failed to load stats:', error)
-        }
-    }
+    const stats = { ...INITIAL_STATS, ...apiStats }
 
     // Simple Sparkline Component
     function Sparkline({ data, color }: { data: number[], color: string }) {

@@ -28,14 +28,18 @@ import {
     RefreshCw
 } from 'lucide-react'
 import { toast } from 'react-toastify'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+    fetchAgentSettings,
+    updateAgentSettingsGeneral,
+    updateAgentSettingsSmtp,
+    updateAgentSettingsRazorpay,
+    testSmtpSettings
+} from '@/lib/api'
 
 export default function AgentSettingsPage() {
     const router = useRouter()
-    const [loading, setLoading] = useState(true)
-    const [submitting, setSubmitting] = useState(false)
-    const [testingSmtp, setTestingSmtp] = useState(false)
-
-    // UI Visibility states
+    const queryClient = useQueryClient()
     const [showSmtpPassword, setShowSmtpPassword] = useState(false)
     const [showRazorpaySecret, setShowRazorpaySecret] = useState(false)
     const [originalSettings, setOriginalSettings] = useState<any>(null)
@@ -103,75 +107,91 @@ export default function AgentSettingsPage() {
         return JSON.stringify(currentSettings) !== JSON.stringify(originalSettingsForComparison);
     }, [currency, gstDefaults, smtp, razorpay, originalSettings]);
 
+    const { data: settingsData, isLoading } = useQuery({
+        queryKey: ['agent-settings'],
+        queryFn: fetchAgentSettings,
+    })
+
     useEffect(() => {
-        const token = localStorage.getItem('token')
-        const userStr = localStorage.getItem('user')
+        if (settingsData) {
+            const data = settingsData
+            const initialSmtp = data.smtp ? {
+                host: data.smtp.host || '',
+                port: data.smtp.port || 587,
+                username: data.smtp.username || '',
+                password: '',
+                from_email: data.smtp.from_email || '',
+                from_name: data.smtp.from_name || '',
+                encryption_type: data.smtp.encryption_type || 'starttls'
+            } : {
+                host: '',
+                port: 587,
+                username: '',
+                password: '',
+                from_email: '',
+                from_name: '',
+                encryption_type: 'starttls'
+            };
 
-        if (!token || !userStr) {
-            router.push('/login')
-            return
-        }
+            const initialRazorpay = data.razorpay ? {
+                key_id: data.razorpay.key_id || '',
+                key_secret: ''
+            } : {
+                key_id: '',
+                key_secret: ''
+            };
 
-        loadSettings(token)
-    }, [router])
-
-    const loadSettings = async (token: string) => {
-        try {
-            const res = await fetch('http://localhost:8000/api/v1/agent/settings', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            if (res.ok) {
-                const data = await res.json()
-                const initialSmtp = data.smtp ? {
-                    host: data.smtp.host || '',
-                    port: data.smtp.port || 587,
-                    username: data.smtp.username || '',
-                    password: '',
-                    from_email: data.smtp.from_email || '',
-                    from_name: data.smtp.from_name || '',
-                    encryption_type: data.smtp.encryption_type || 'starttls'
-                } : smtp;
-
-                const initialRazorpay = data.razorpay ? {
-                    key_id: data.razorpay.key_id || '',
-                    key_secret: ''
-                } : razorpay;
-
-                // Currency & GST Defaults
-                const initialCurrency = data.currency || 'INR';
-                const initialGstDefaults = {
-                    gst_applicable: data.gst_applicable ?? false,
-                    gst_inclusive: data.gst_inclusive ?? false,
-                    gst_percentage: data.gst_percentage ?? 18.00
-                }
-
-                setCurrency(initialCurrency)
-                setGstDefaults(initialGstDefaults)
-                setSmtp(initialSmtp)
-                setRazorpay(initialRazorpay)
-
-                // Track original for unsaved changes warning
-                setOriginalSettings({
-                    currency: initialCurrency,
-                    gstDefaults: initialGstDefaults,
-                    smtp: initialSmtp,
-                    razorpay: initialRazorpay
-                })
-
-                if (data.updated_at) {
-                    setLastUpdated(new Date(data.updated_at).toLocaleDateString() + ' ' + new Date(data.updated_at).toLocaleTimeString())
-                }
-            } else {
-                console.error("Failed to fetch settings")
-                toast.error("Failed to fetch current settings")
+            const initialCurrency = data.currency || 'INR';
+            const initialGstDefaults = {
+                gst_applicable: data.gst_applicable ?? false,
+                gst_inclusive: data.gst_inclusive ?? false,
+                gst_percentage: data.gst_percentage ?? 18.00
             }
-        } catch (error) {
-            console.error('Failed to load settings:', error)
-            toast.error("Failed to load settings.")
-        } finally {
-            setLoading(false)
+
+            setCurrency(initialCurrency)
+            setGstDefaults(initialGstDefaults)
+            setSmtp(initialSmtp)
+            setRazorpay(initialRazorpay)
+
+            setOriginalSettings({
+                currency: initialCurrency,
+                gstDefaults: initialGstDefaults,
+                smtp: initialSmtp,
+                razorpay: initialRazorpay
+            })
+
+            if (data.updated_at) {
+                setLastUpdated(new Date(data.updated_at).toLocaleDateString() + ' ' + new Date(data.updated_at).toLocaleTimeString())
+            }
         }
-    }
+    }, [settingsData])
+
+    // Mutations
+    const updateGeneralMutation = useMutation({
+        mutationFn: updateAgentSettingsGeneral,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-settings'] })
+    })
+
+    const updateSmtpMutation = useMutation({
+        mutationFn: updateAgentSettingsSmtp,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-settings'] })
+    })
+
+    const updateRazorpayMutation = useMutation({
+        mutationFn: updateAgentSettingsRazorpay,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-settings'] })
+    })
+
+    const testSmtpMutation = useMutation({
+        mutationFn: testSmtpSettings,
+        onSuccess: (data) => {
+            toast.success(data.message || "Connection successful! Test email sent.")
+        },
+        onError: (error: any) => {
+            const detail = error.response?.data?.detail || error.message || "Connection failed. Check credentials."
+            toast.error(detail)
+        }
+    })
 
     const handleSmtpChange = (field: keyof SmtpSettings, value: any) => {
         setSmtp(prev => ({ ...prev, [field]: value }))
@@ -181,103 +201,35 @@ export default function AgentSettingsPage() {
         setRazorpay(prev => ({ ...prev, [field]: value }))
     }
 
-    const saveSmtp = async (token: string) => {
-        const res = await fetch('http://localhost:8000/api/v1/agent/settings/smtp', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(smtp)
-        })
-        if (!res.ok) throw new Error('Failed to update SMTP settings')
-    }
-
-    const saveRazorpay = async (token: string) => {
-        const res = await fetch('http://localhost:8000/api/v1/agent/settings/razorpay', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(razorpay)
-        })
-        if (!res.ok) throw new Error('Failed to update Razorpay settings')
-    }
-
-    const saveGeneral = async (token: string) => {
-        const res = await fetch('http://localhost:8000/api/v1/agent/settings/general', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ currency, ...gstDefaults })
-        })
-        if (!res.ok) throw new Error('Failed to update General settings')
-    }
+    const submitting = updateGeneralMutation.isPending || updateSmtpMutation.isPending || updateRazorpayMutation.isPending;
+    const testingSmtp = testSmtpMutation.isPending;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setSubmitting(true)
 
         try {
-            const token = localStorage.getItem('token')
-            if (!token) return
-
-            // We could run these in parallel
             await Promise.all([
-                saveGeneral(token),
-                saveSmtp(token),
-                saveRazorpay(token)
+                updateGeneralMutation.mutateAsync({ currency, ...gstDefaults }),
+                updateSmtpMutation.mutateAsync(smtp),
+                updateRazorpayMutation.mutateAsync(razorpay)
             ])
 
-            // Update original settings after successful save
             setOriginalSettings({
                 currency,
+                gstDefaults,
                 smtp: { ...smtp, password: '' },
                 razorpay: { ...razorpay, key_secret: '' }
             })
 
             toast.success("All settings updated successfully.")
-
         } catch (error) {
             console.error('Failed to update settings:', error)
             toast.error("Failed to update some settings. Please check details.")
-        } finally {
-            setSubmitting(false)
         }
     }
 
-    const testSmtpConnection = async () => {
-        setTestingSmtp(true)
-        try {
-            const token = localStorage.getItem('token')
-            if (!token) return
-
-            const res = await fetch('http://localhost:8000/api/v1/agent/settings/smtp/test', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(smtp)
-            })
-
-            const text = await res.text()
-            let data;
-            try { data = JSON.parse(text) } catch { data = { detail: text } }
-
-            if (res.ok) {
-                toast.success(data.message || "Connection successful! Test email sent.")
-            } else {
-                toast.error(data.detail || "Connection failed. Check credentials.")
-            }
-        } catch (error) {
-            toast.error("Network error while testing connection.")
-        } finally {
-            setTestingSmtp(false)
-        }
+    const testSmtpConnection = () => {
+        testSmtpMutation.mutate(smtp)
     }
 
     // Keyboard shortcut for saving
@@ -317,7 +269,7 @@ export default function AgentSettingsPage() {
         }
     }
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">

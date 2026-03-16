@@ -561,10 +561,10 @@ function CheckoutContent() {
     return (
         <div className="min-h-screen bg-transparent font-sans pb-20 overflow-x-hidden relative">
             {/* Ambient Deep Mesh Background */}
-            <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[#FF6B2B] via-[#FFAC82] to-[#FFF3EC]" />
+            <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[#FFAC82] to-[#FFF3EC]" />
             {/* Ambient Orbs */}
-            <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[#FF6B2B]/40 to-[#FF9A5C]/40 blur-[120px] pointer-events-none z-[-1]" />
-            <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#FF9A5C]/30 to-[#FFD4B0]/40 blur-[100px] pointer-events-none z-[-1]" />
+            <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+            <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
 
             {/* Subtle Noise Texture */}
             <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
@@ -572,7 +572,7 @@ function CheckoutContent() {
             {/* Header / Stepper Section */}
             <div className="pt-6 relative z-50">
                 <div className="container mx-auto px-4 lg:max-w-6xl">
-                    <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_rgba(255,107,43,0.15)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
+                    <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_var(--primary-glow)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
                         <h1 className="text-xl font-bold text-[#3A1A08] drop-shadow-sm font-display tracking-wide">Checkout</h1>
 
                         {/* Glowing Glass Stepper */}
@@ -584,18 +584,18 @@ function CheckoutContent() {
 
                                 return (
                                     <div key={s.id} className="flex items-center">
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden backdrop-blur-md border ${isCurrent ? 'bg-[#FF6B2B] text-white border-[#FF6B2B] shadow-[0_0_16px_rgba(255,107,43,0.4)]' :
+                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden backdrop-blur-md border ${isCurrent ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_16px_var(--primary-glow)]' :
                                             isCompleted ? 'bg-white/40 border-white/50 text-green-700 shadow-sm' : 'bg-white/20 border-white/30 text-[#8B5030]'
                                             }`}>
                                             {/* Pulse Ring for Current Step */}
                                             {isCurrent && <div className="absolute inset-0 border-[2px] border-white/30 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-50" />}
 
-                                            {isCompleted ? <div className="bg-green-100 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-green-600" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-orange-400'}`} />}
+                                            {isCompleted ? <div className="bg-green-100 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-green-600" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-[var(--primary)]'}`} />}
                                             <span className={`text-sm font-bold whitespace-nowrap ${isCurrent ? 'drop-shadow-sm' : 'opacity-80'}`}>{s.label}</span>
                                         </div>
                                         {idx < steps.length - 1 && (
                                             <div className="mx-1.5 md:mx-3 h-1 w-6 md:w-10 rounded-full bg-black/5 overflow-hidden relative shadow-inner">
-                                                <div className={`absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[#FF6B2B] to-orange-300 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                                                <div className={`absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[var(--primary)] to-orange-300 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
                                             </div>
                                         )}
                                     </div>
@@ -614,7 +614,7 @@ function CheckoutContent() {
                         {/* Travelers Section */}
                         <div className="space-y-4">
                             <h2 className="text-xl font-bold text-[#3A1A08] flex items-center gap-2 px-1 font-display">
-                                <span className="bg-white/40 backdrop-blur-md border border-white/50 text-[#FF6B2B] p-2 rounded-xl shadow-sm"><FileText className="h-5 w-5" /></span>
+                                <span className="bg-white/40 backdrop-blur-md border border-white/50 text-[var(--primary)] p-2 rounded-xl shadow-sm"><FileText className="h-5 w-5" /></span>
                                 Who&apos;s Traveling?
                             </h2>
                             {travelers.map((t, idx) => (
@@ -630,18 +630,18 @@ function CheckoutContent() {
                         </div>
 
                         {/* Contact Section */}
-                        <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] overflow-hidden bg-white/15 backdrop-blur-xl">
+                        <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                             <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-r from-orange-100/30 to-white/10 pointer-events-none" />
                                 <CardTitle className="text-lg flex items-center gap-2 relative z-10 text-[#3A1A08] font-display">
-                                    <span className="bg-[#FF6B2B]/10 text-[#FF6B2B] p-2 rounded-xl border border-[#FF6B2B]/20"><CreditCard className="h-5 w-5" /></span>
+                                    <span className="bg-[var(--primary)]/10 text-[var(--primary)] p-2 rounded-xl border border-[var(--primary)]/20"><CreditCard className="h-5 w-5" /></span>
                                     Contact Information
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6 pt-6 relative">
                                 <div className="flex items-center space-x-3 mb-4 bg-white/30 p-3 rounded-xl border border-white/40 w-max shadow-sm">
                                     <div
-                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${sameAsTraveler1 ? 'bg-[#FF6B2B] shadow-[0_0_10px_rgba(255,107,43,0.4)]' : 'bg-black/10 border border-white/20'}`}
+                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${sameAsTraveler1 ? 'bg-[var(--primary)] shadow-[0_0_10px_var(--primary-glow)]' : 'bg-black/10 border border-white/20'}`}
                                         onClick={() => {
                                             setSameAsTraveler1(!sameAsTraveler1)
                                             if (!sameAsTraveler1 && travelers.length > 0) {
@@ -669,7 +669,7 @@ function CheckoutContent() {
                                                 inputProps={{ name: 'phone', required: true, autoFocus: false }}
                                                 containerClass="w-full !rounded-[14px] peer transition-all"
                                                 inputClass={
-                                                    `!w-full !h-14 !text-sm !border-white/40 !bg-white/25 !backdrop-blur-sm !text-[#5C2500] !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 transition-all font-bold pt-1 ${errors.phone ? '!border-red-500' : ''}`
+                                                    `!w-full !h-14 !text-sm !border-white/40 !bg-white/25 !backdrop-blur-sm !text-[#5C2500] !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 transition-all font-bold pt-1 ${errors.phone ? '!border-red-500' : ''}`
                                                 }
                                                 buttonClass="!border-white/30 !rounded-l-[14px] !bg-white/20 hover:!bg-white/40 transition-colors"
                                                 dropdownClass="!rounded-2xl !bg-white/95 !backdrop-blur-md !shadow-xl !border-white/50"
@@ -689,7 +689,7 @@ function CheckoutContent() {
                                             value={contactEmail}
                                             onChange={(e: any) => setContactEmail(e.target.value)}
                                             error={errors.email}
-                                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                                         />
                                     </div>
                                 </div>
@@ -701,7 +701,7 @@ function CheckoutContent() {
                                         value={contactAddress}
                                         onChange={(e: any) => setContactAddress(e.target.value)}
                                         error={errors.address}
-                                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[#FF6B2B] focus:!ring-[3px] focus:!ring-[#FF6B2B]/25 !text-[#5C2500] !font-bold transition-all"
+                                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
                                     />
                                 </div>
 
@@ -710,7 +710,7 @@ function CheckoutContent() {
                                         <div className="relative group">
                                             <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">Country</label>
                                             <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm"
                                                 value={contactCountry}
                                                 onChange={(e) => {
                                                     const code = e.target.value
@@ -726,7 +726,7 @@ function CheckoutContent() {
                                                     <option key={c.isoCode} value={c.isoCode} className="text-[#3A1A08] font-bold">{c.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -737,7 +737,7 @@ function CheckoutContent() {
                                         <div className="relative group">
                                             <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">State</label>
                                             <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 value={contactState}
                                                 onChange={(e) => {
                                                     const stateCode = e.target.value
@@ -753,7 +753,7 @@ function CheckoutContent() {
                                                     <option key={s.isoCode} value={s.isoCode} className="text-[#3A1A08] font-bold">{s.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -764,7 +764,7 @@ function CheckoutContent() {
                                         <div className="relative group">
                                             <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">City</label>
                                             <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[#FF6B2B] focus-visible:ring-[3px] focus-visible:ring-[#FF6B2B]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 value={contactCity}
                                                 onChange={(e) => setContactCity(e.target.value)}
                                                 disabled={!contactState}
@@ -774,7 +774,7 @@ function CheckoutContent() {
                                                     <option key={c.name} value={c.name} className="text-[#3A1A08] font-bold">{c.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#FF6B2B]">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
                                                 <ChevronDown className="h-4 w-4" />
                                             </div>
                                         </div>
@@ -792,7 +792,7 @@ function CheckoutContent() {
                             {sessionData?.destination && (
                                 <div className="mb-6">
                                     <div
-                                        className="bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] text-white rounded-[24px] shadow-[0_8px_32px_rgba(255,107,43,0.25)] overflow-hidden cursor-pointer group"
+                                        className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white rounded-[24px] shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden cursor-pointer group"
                                         onClick={() => setIsPackageDetailsOpen(!isPackageDetailsOpen)}
                                     >
                                         <div className="p-5 flex items-center justify-between">
@@ -827,9 +827,9 @@ function CheckoutContent() {
                                 </div>
                             )}
 
-                            <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_rgba(255,107,43,0.06)] overflow-hidden bg-white/15 backdrop-blur-xl">
+                            <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                                 <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B2B]/10 to-transparent pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/10 to-transparent pointer-events-none" />
                                     <CardTitle className="text-lg text-[#3A1A08] font-display relative z-10">Order Summary</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-6">
@@ -844,7 +844,7 @@ function CheckoutContent() {
                                     {flightPrice > 0 && (
                                         <>
                                             <div className="flex justify-between items-center group text-[#8B5030] font-bold mt-2">
-                                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B] shadow-[0_0_8px_rgba(255,107,43,0.8)]"></span> Flights</span>
+                                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"></span> Flights</span>
                                                 <span>₹{(flightPrice * travelers.length).toLocaleString()}</span>
                                             </div>
                                             <div className="text-xs text-[#A0501E] font-semibold -mt-3 flex justify-between">
@@ -856,7 +856,7 @@ function CheckoutContent() {
                                     {gstSettings && !gstSettings.inclusive ? (
                                         <div className="group bg-orange-100/40 p-3 rounded-[14px] border border-white/50 flex justify-between items-center text-sm shadow-sm backdrop-blur-sm mt-2">
                                             <span className="flex items-center gap-2 text-[#8B5030] font-bold">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B2B] shadow-[0_0_6px_rgba(255,107,43,0.6)]"></span>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_6px_var(--primary-glow)]"></span>
                                                 GST ({gstSettings.percentage}%)
                                             </span>
                                             <span className="font-extrabold text-[#5C2500]">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
@@ -893,7 +893,7 @@ function CheckoutContent() {
                                 </CardContent>
                                 <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative">
                                     <Button
-                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_rgba(255,107,43,0.3)] bg-gradient-to-r from-[#FF6B2B] to-[#FF9A5C] hover:shadow-[0_16px_40px_rgba(255,107,43,0.5)] hover:from-[#FF7A42] hover:to-[#FFAC78] text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-between px-6 border border-white/20 relative overflow-hidden group"
+                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:from-[#FF7A42] hover:to-[#FFAC78] text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-between px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
                                         onClick={handlePayment}
                                         disabled={step === 'PROCESSING'}

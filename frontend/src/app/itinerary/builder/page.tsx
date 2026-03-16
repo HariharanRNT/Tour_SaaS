@@ -12,7 +12,6 @@ import { DayPlanner, DayItineraryData, Activity as PlannerActivity } from '@/com
 import { ItinerarySummary } from '@/components/itinerary/ItinerarySummary'
 import { TimeSlotSelector } from '@/components/itinerary/TimeSlotSelector'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
-import { useTheme } from '@/context/ThemeContext'
 
 interface LocationInfo {
     city: string
@@ -24,7 +23,6 @@ interface LocationInfo {
 }
 
 export default function ItineraryBuilderPage() {
-    const { theme } = useTheme()
     // Step management
     const [currentStep, setCurrentStep] = useState(1)
 

@@ -42,6 +42,8 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
 
 interface Package {
     id: string
@@ -54,23 +56,35 @@ interface Package {
     created_at: string
 }
 
-export default function AdminPackagesPage() {
+export default function AgentPackagesPage() {
     const router = useRouter()
-    const [packages, setPackages] = useState<Package[]>([])
-    const [totalPackages, setTotalPackages] = useState(0)
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
 
     const [statusFilter, setStatusFilter] = useState('all')
     const [destinationFilter, setDestinationFilter] = useState('all')
     const [deleteId, setDeleteId] = useState<string | null>(null)
-    const [isDeleting, setIsDeleting] = useState(false)
     const [selectedPackages, setSelectedPackages] = useState<string[]>([])
 
     // Pagination & Sort State
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(5)
     const [sortConfig, setSortConfig] = useState<{ key: keyof Package; direction: 'asc' | 'desc' } | null>(null)
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['agent-packages', currentPage, itemsPerPage, sortConfig, statusFilter, destinationFilter, searchQuery],
+        queryFn: () => fetchAgentPackages({
+            page: currentPage,
+            limit: itemsPerPage,
+            sort_by: sortConfig?.key || 'created_at',
+            sort_order: sortConfig?.direction || 'desc',
+            status_filter: statusFilter === 'all' ? undefined : statusFilter,
+            destination: destinationFilter === 'all' ? (searchQuery || undefined) : destinationFilter
+        })
+    })
+
+    const packages = data?.items || []
+    const totalPackages = data?.total || 0
 
     useEffect(() => {
         // Check if agent is logged in
@@ -91,145 +105,68 @@ export default function AdminPackagesPage() {
         } catch (e) {
             router.push('/login')
         }
+    }, [router])
 
-        loadPackages()
-    }, [router, currentPage, itemsPerPage, sortConfig, statusFilter, destinationFilter])
-
-    // Debounce search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            loadPackages()
-        }, 500)
-        return () => clearTimeout(timer)
-    }, [searchQuery])
-
-    const loadPackages = async () => {
-        setLoading(true)
-        try {
-            // Build query params
-            const params = new URLSearchParams()
-            params.append('page', currentPage.toString())
-            params.append('limit', itemsPerPage.toString())
-
-            if (sortConfig) {
-                params.append('sort_by', sortConfig.key as string)
-                params.append('sort_order', sortConfig.direction)
-            } else {
-                params.append('sort_by', 'created_at')
-                params.append('sort_order', 'desc')
-            }
-
-            if (statusFilter !== 'all') {
-                params.append('status_filter', statusFilter)
-            }
-
-            if (destinationFilter !== 'all') {
-                params.append('destination', destinationFilter)
-            }
-            // For now, search query filter acts on client side for destination/title if backend doesn't support generic search yet? 
-            // The backend supports 'destination' filter. Title search might not be fully supported by backend 'list_agent_packages' yet 
-            // except via 'destination' param? 
-            // Let's check backend: It has 'destination' and 'status_filter'. 
-            // No generic 'q' or 'title' search. 
-            // For now, strict server side filtering for destination. 
-            // If user types in search, we might need to update backend to support title search or just use destination for now.
-            // Let's assume search query maps to destination for now or we add title search support later.
-            // Wait, the backend has:
-            // if destination: stmt = stmt.where(Package.destination.ilike(f"%{destination}%"))
-            // It does NOT search title.
-            // Let's leave search client side? No, that breaks pagination.
-            // We should ideally update backend to search title too. 
-            // For now, let's map search query to destination if provided.
-            if (searchQuery) {
-                params.append('destination', searchQuery)
-            }
-
-            // Use agent endpoint
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data = await response.json()
-            setPackages(data.items || [])
-            setTotalPackages(data.total || 0)
-        } catch (error) {
-            console.error('Failed to load packages:', error)
-            setPackages([])
-            setTotalPackages(0)
-        } finally {
-            setLoading(false)
+    // Mutations
+    const deleteMutation = useMutation({
+        mutationFn: deleteAgentPackage,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
+            toast.success('Your package has been deleted.')
+            setDeleteId(null)
+            setSelectedPackages(prev => prev.filter(id => id !== deleteId))
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to delete package.')
         }
-    }
+    })
+
+    const statusMutation = useMutation({
+        mutationFn: ({ id, new_status }: { id: string, new_status: string }) => updateAgentPackageStatus(id, new_status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
+            toast.success('Status updated successfully')
+        },
+        onError: (error: any) => {
+            toast.error(error.message || 'Failed to update status')
+        }
+    })
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: async (ids: string[]) => {
+            return Promise.all(ids.map(id => deleteAgentPackage(id)))
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
+            toast.success(`${selectedPackages.length} packages deleted successfully`)
+            setSelectedPackages([])
+        },
+        onError: () => {
+            toast.error('Failed to delete some packages')
+        }
+    })
 
     const handleDeleteClick = (id: string) => {
         setDeleteId(id)
     }
 
-    const confirmDelete = async () => {
-        if (!deleteId) return
-
-        setIsDeleting(true)
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages/${deleteId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (response.ok) {
-                loadPackages()
-                toast.success('Your package has been deleted.')
-                setDeleteId(null)
-            } else {
-                const errorData = await response.json().catch(() => ({}))
-                const errorMessage = errorData.detail || 'Failed to delete'
-                throw new Error(errorMessage)
-            }
-        } catch (error: any) {
-            console.error('Failed to delete package:', error)
-            toast.error(error.message || 'Failed to delete package.')
-        } finally {
-            setIsDeleting(false)
+    const confirmDelete = () => {
+        if (deleteId) {
+            deleteMutation.mutate(deleteId)
         }
     }
 
-    const handleToggleStatus = async (id: string, currentStatus: string) => {
-        // Backend uses lowercase enum values: 'published', 'draft'
-        const newStatus = currentStatus.toLowerCase() === 'published' ? 'draft' : 'published'
-
-        try {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages/${id}/status?new_status=${newStatus}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                console.error('Status update failed:', errorData)
-                toast.error(`Failed to update status: ${errorData.detail}`)
-                return
-            }
-
-            loadPackages()
-        } catch (error) {
-            console.error('Failed to toggle status:', error)
-            toast.error('Network error while updating status')
-        }
+    const handleToggleStatus = (id: string, currentStatus: string) => {
+        const new_status = currentStatus.toLowerCase() === 'published' ? 'draft' : 'published'
+        statusMutation.mutate({ id, new_status })
     }
 
-    // Bulk Actions Handlers
+    const handleBulkDelete = () => {
+        if (!window.confirm(`Are you sure you want to delete ${selectedPackages.length} packages?`)) return
+        bulkDeleteMutation.mutate(selectedPackages)
+    }
+
+    // Selection Handlers
     const handleSelectRow = (id: string, checked: boolean) => {
         if (checked) {
             setSelectedPackages(prev => [...prev, id])
@@ -240,46 +177,13 @@ export default function AdminPackagesPage() {
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            const allIds = packages.map(pkg => pkg.id)
+            const allIds = packages.map((pkg: any) => pkg.id)
             setSelectedPackages(allIds)
         } else {
             setSelectedPackages([])
         }
     }
 
-    const handleBulkDelete = async () => {
-        if (!window.confirm(`Are you sure you want to delete ${selectedPackages.length} packages?`)) return
-
-        setIsDeleting(true)
-        try {
-            const token = localStorage.getItem('token')
-            const deletePromises = selectedPackages.map(id =>
-                fetch(`http://localhost:8000/api/v1/agent/packages/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }).then(async res => {
-                    if (!res.ok) {
-                        const data = await res.json().catch(() => ({}))
-                        throw new Error(data.detail || `Failed to delete package`)
-                    }
-                    return id
-                })
-            )
-
-            await Promise.all(deletePromises)
-
-            toast.success(`${selectedPackages.length} packages deleted successfully`)
-            setSelectedPackages([])
-            loadPackages()
-        } catch (error) {
-            console.error('Bulk delete failed:', error)
-            toast.error('Failed to delete some packages')
-        } finally {
-            setIsDeleting(false)
-        }
-    }
 
     // Server-side Pagination Logic
     const totalPages = Math.ceil(totalPackages / itemsPerPage);
@@ -453,7 +357,7 @@ export default function AdminPackagesPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        {loading ? (
+                        {isLoading ? (
                             <div className="text-center py-20">
                                 <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
                                 <p className="mt-4 text-gray-500 font-medium">Loading your packages...</p>
@@ -521,7 +425,7 @@ export default function AdminPackagesPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {packages.map((pkg, index) => (
+                                            {packages.map((pkg: any, index: number) => (
                                                 <TableRow
                                                     key={pkg.id}
                                                     className={`
@@ -638,7 +542,7 @@ export default function AdminPackagesPage() {
 
                                 {/* Mobile View (Cards) */}
                                 <div className="md:hidden grid gap-4 p-4">
-                                    {packages.map((pkg) => (
+                                    {packages.map((pkg: any) => (
                                         <div key={pkg.id} className={`glass-card rounded-2xl p-4 transition-all duration-300 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-violet-500' : ''}`}>
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
@@ -713,7 +617,7 @@ export default function AdminPackagesPage() {
                                                 className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                             />
                                         </PaginationItem>
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page: number) => (
                                             <PaginationItem key={page}>
                                                 <PaginationLink
                                                     isActive={page === currentPage}
@@ -769,8 +673,8 @@ export default function AdminPackagesPage() {
                         <Button variant="outline" onClick={() => setDeleteId(null)}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-                            {isDeleting ? 'Deleting...' : 'Delete'}
+                        <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -5,10 +5,9 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Plane, User, LogOut, Menu, X } from 'lucide-react'
-import { useTheme } from '@/context/ThemeContext'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 export function Navbar() {
-    const { theme } = useTheme()
     const pathname = usePathname()
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
@@ -63,15 +62,15 @@ export function Navbar() {
     }
 
     const NavLinks = () => {
-        // Default links if none provided in theme
+        // Default links
         const defaultLinks = [
             { label: 'Packages', href: '/', show: true, requiresAuth: false, role: null },
             { label: 'Plan Trip', href: '/plan-trip', show: true, requiresAuth: false, role: null },
             { label: 'My Bookings', href: '/bookings', show: true, requiresAuth: true, role: 'customer' }
         ]
 
-        // Merge theme links with logic
-        const rawLinks = theme.navbar_links || defaultLinks
+        // Use default links
+        const rawLinks = defaultLinks
 
         // Filter based on auth and role
         const filteredLinks = rawLinks.filter((link: any) => {
@@ -87,8 +86,8 @@ export function Navbar() {
                     <Link
                         key={i}
                         href={link.href}
-                        className={`text-sm font-medium transition-all px-4 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-white shadow-md drop-shadow-sm' : 'text-[#7C3A10] hover:text-[#FF7A45] hover:bg-white/40'}`}
-                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { background: 'linear-gradient(135deg,#FF7A45,#FFB38A)', boxShadow: '0 8px 24px rgba(255,122,69,0.45)' } : {}}
+                        className={`text-sm font-medium transition-all px-4 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-white shadow-md drop-shadow-sm' : 'text-slate-700 hover:text-[var(--primary)] hover:bg-white/40'}`}
+                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))', boxShadow: '0 8px 24px var(--primary-glow)' } : {}}
                         onClick={() => setIsOpen(false)}
                     >
                         {link.label}
@@ -123,13 +122,14 @@ export function Navbar() {
 
 
     const AuthButtons = () => {
-        const loginLabel = theme.navbar_login_label || 'Login'
-        const signupLabel = theme.navbar_signup_label || 'Sign Up'
-        const showLogin = theme.navbar_login_show !== false
+        const loginLabel = 'Login'
+        const signupLabel = 'Sign Up'
+        const showLogin = true
 
         if (isAuthenticated) {
             return (
                 <>
+                    <ThemeSwitcher />
                     {userName && (
                         <div className="flex items-center space-x-2 text-muted-foreground">
                             <User className="h-4 w-4" />
@@ -140,7 +140,7 @@ export function Navbar() {
                         variant="ghost"
                         size="sm"
                         onClick={handleLogout}
-                        className="rounded-full border-2 border-[#FF7A45] text-[#FF7A45] hover:bg-[#FF7A45] hover:text-white transition-all px-6 font-black"
+                        className="rounded-full border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all px-6 font-black"
                         style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)' }}
                     >
                         <LogOut className="h-4 w-4 mr-2 stroke-[3px]" />
@@ -154,7 +154,7 @@ export function Navbar() {
             <>
                 {showLogin && (
                     <Link href="/login" onClick={() => setIsOpen(false)}>
-                        <Button variant={theme.navbar_login_style === 'outline' ? 'outline' : 'ghost'} size="sm">
+                        <Button variant="ghost" size="sm">
                             {loginLabel}
                         </Button>
                     </Link>
@@ -162,10 +162,7 @@ export function Navbar() {
                 <Link href="/register" onClick={() => setIsOpen(false)}>
                     <Button
                         size="sm"
-                        style={{
-                            backgroundColor: theme.navbar_signup_bg_color || theme.primary_color,
-                            color: theme.navbar_signup_text_color || '#fff'
-                        }}
+                        className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white"
                     >
                         {signupLabel}
                     </Button>
@@ -175,14 +172,14 @@ export function Navbar() {
     }
 
 
-    const isTransparent = theme.navbar_transparent_on_hero && pathname === '/' && !scrolled
-    const navbarStyle = theme.navbar_style_preset || 'light'
+    const isTransparent = pathname === '/' && !scrolled
+    const navbarStyle = 'light'
 
-    // Base styles for colors based on light/dark/transparent
-    const textClass = navbarStyle === 'dark' ? 'text-white' : (isTransparent ? 'text-white' : 'text-[#7C3A10]')
+    // Base styles for colors based on light/transparent
+    const textClass = isTransparent ? 'text-white' : 'text-slate-800'
     const bgClass = isTransparent
         ? 'bg-transparent'
-        : (navbarStyle === 'dark' ? 'bg-gray-900' : 'glass-navbar')
+        : 'glass-navbar'
     const borderClass = isTransparent ? 'border-transparent' : ''
 
     return (
@@ -191,12 +188,12 @@ export function Navbar() {
             style={{ paddingTop: scrolled ? '8px' : '16px', paddingBottom: scrolled ? '6px' : '10px' }}
         >
             <nav
-                className={`pointer-events-auto flex w-full max-w-4xl transition-all duration-500 ${scrolled ? 'shadow-[0_12px_40px_rgba(0,0,0,0.12)]' : 'shadow-[0_8px_32px_rgba(0,0,0,0.08)]'} ${navbarStyle === 'dark' ? 'bg-gray-900 border-gray-800' : ''}`}
+                className={`pointer-events-auto flex w-full max-w-4xl transition-all duration-500 ${scrolled ? 'shadow-[0_12px_40px_rgba(0,0,0,0.12)]' : 'shadow-[0_8px_32px_rgba(0,0,0,0.08)]'}`}
                 style={{
-                    background: navbarStyle === 'dark' ? undefined : (isTransparent ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.28)'),
+                    background: isTransparent ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.28)',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
-                    border: navbarStyle === 'dark' ? undefined : (scrolled ? '1px solid rgba(255,122,69,0.15)' : '1px solid rgba(255,255,255,0.35)'),
+                    border: scrolled ? '1px solid rgba(255,122,69,0.15)' : '1px solid rgba(255,255,255,0.35)',
                     borderRadius: '999px',
                     padding: scrolled ? '2px 6px' : '4px 8px'
                 }}
@@ -204,13 +201,9 @@ export function Navbar() {
                 <div className="w-full px-2 md:px-6">
                     <div className="flex h-14 items-center justify-between">
                         <Link href="/" className="flex items-center space-x-2">
-                            {theme.navbar_logo_image ? (
-                                <img src={theme.navbar_logo_image} alt="Logo" className="h-8 w-auto object-contain" />
-                            ) : (
-                                <Plane className="h-6 w-6" style={{ color: '#C2440A' }} />
-                            )}
-                            <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[#C2440A]'}`}>
-                                {theme.navbar_logo_text || 'TourSaaS'}
+                             <Plane className="h-6 w-6" style={{ color: 'var(--primary)' }} />
+                            <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[var(--primary)]'}`}>
+                                TourSaaS
                             </span>
                         </Link>
 
@@ -231,7 +224,7 @@ export function Navbar() {
 
                     {/* Mobile Menu Dropdown */}
                     {isOpen && (
-                        <div className={`md:hidden mt-2 py-4 rounded-3xl border-t border-white/20 space-y-4 flex flex-col px-6 ${navbarStyle === 'dark' ? 'bg-gray-900' : 'bg-white/80 backdrop-blur-3xl shadow-xl'}`}>
+                        <div className={`md:hidden mt-2 py-4 rounded-3xl border-t border-white/20 space-y-4 flex flex-col px-6 bg-white/80 backdrop-blur-3xl shadow-xl`}>
                             <NavLinks />
                             <div className="pt-4 border-t border-gray-200 flex flex-col gap-3 items-start">
                                 <AuthButtons />

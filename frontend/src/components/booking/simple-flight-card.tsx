@@ -62,7 +62,7 @@ export function SimpleFlightCard({ type, details }: SimpleFlightCardProps) {
     const getAirlineColor = (code: string) => {
         const colors: Record<string, string> = {
             '6E': 'bg-blue-600',
-            'AI': 'bg-orange-600',
+            'AI': 'bg-[var(--primary)]',
             'UK': 'bg-purple-700',
             'SG': 'bg-red-600',
             'IX': 'bg-red-500',

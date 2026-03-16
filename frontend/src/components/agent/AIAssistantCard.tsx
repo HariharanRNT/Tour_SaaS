@@ -82,7 +82,7 @@ export default function AIAssistantCard({
                             {/* Header */}
                             <div className="p-4 flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-[#FF7A45]/10 to-[#FFB38A]/10">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF7A45] to-[#FFB38A] flex items-center justify-center shadow-lg shadow-orange-500/20">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center shadow-lg shadow-orange-500/20">
                                         <Sparkles className="h-4 w-4 text-white" />
                                     </div>
                                     <span className="font-bold text-slate-800 text-sm tracking-tight">AI Assistant</span>
@@ -107,7 +107,7 @@ export default function AIAssistantCard({
                                 {/* Chat Messages */}
                                 <div
                                     ref={scrollRef}
-                                    className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-orange-200"
+                                    className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-[var(--primary-soft)]"
                                 >
                                     {chatHistory.map((msg, i) => (
                                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
