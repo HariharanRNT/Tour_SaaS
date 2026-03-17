@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
     fetchAgents, 
@@ -91,8 +91,11 @@ interface Agent {
 
 export default function AdminAgentsPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const urlStatus = searchParams.get('status') as 'all' | 'active' | 'inactive' | 'pending' | null
+    
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>(urlStatus || 'all')
     const [showPassword, setShowPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
 

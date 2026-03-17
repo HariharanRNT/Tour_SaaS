@@ -513,4 +513,19 @@ export const testSmtpSettings = async (data: any) => {
     return response.data
 }
 
+export const fetchAdminNotifications = async () => {
+    const response = await api.get('/admin/notifications')
+    return response.data
+}
+
+export const markNotificationAsRead = async (id: string) => {
+    const response = await api.patch(`/admin/notifications/${id}/read`)
+    return response.data
+}
+
+export const deleteNotification = async (id: string) => {
+    const response = await api.delete(`/admin/notifications/${id}`)
+    return response.data
+}
+
 export default api

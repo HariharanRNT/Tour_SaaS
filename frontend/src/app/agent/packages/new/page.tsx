@@ -299,11 +299,11 @@ export default function CreatePackagePage() {
                     duration_days: pkg.duration_days || 7,
                     duration_nights: pkg.duration_nights || 6,
                     trip_styles: pkg.trip_styles || (pkg.trip_style ? [pkg.trip_style] : []),
-                    price_per_person: pkg.price_per_person || 0,
+                    price_per_person: Number(pkg.price_per_person) || 0,
                     description: pkg.description || '',
                     is_public: pkg.is_public !== undefined ? pkg.is_public : true,
                     feature_image_url: pkg.feature_image_url || '',
-                    package_mode: pkg.package_mode || 'single',
+                    package_mode: (pkg.package_mode || 'single').toLowerCase(),
                     destinations: pkg.destinations || [],
                     activities: pkg.activities || [],
                     included_items: pkg.included_items || [],
@@ -450,6 +450,34 @@ export default function CreatePackagePage() {
     }
 
     const handleContinueSave = async (targetStep: number) => {
+        // Validation check before proceeding
+        if (targetStep > activeStep) {
+            const missingFields: string[] = [];
+            if (!formData.title) missingFields.push("Package Title");
+            if (formData.package_mode === 'multi') {
+                if (formData.destinations.length === 0) missingFields.push("Destinations");
+                else if (formData.destinations.some(d => !d.city || !d.country || (d.days || 0) <= 0)) {
+                    missingFields.push("Incomplete Destination Legs");
+                }
+            } else {
+                if (!formData.destination) missingFields.push("Location City");
+                if (!formData.country) missingFields.push("Country");
+            }
+            if (!formData.price_per_person || Number(formData.price_per_person) <= 0) missingFields.push("Price per Person");
+            if (formData.trip_styles.length === 0) missingFields.push("Trip Style");
+
+            if (missingFields.length > 0) {
+                const warningMsg = `Required fields missing: ${missingFields.join(', ')}`;
+                if (packageId) {
+                    toast.warning(`${warningMsg}. Proceeding anyway since it's an update.`);
+                } else {
+                    toast.error(`Please fill in required fields: ${missingFields.join(', ')}`);
+                    setTripStyleError(formData.trip_styles.length === 0);
+                    return;
+                }
+            }
+        }
+
         setSaving(true)
         try {
             const url = packageId
@@ -549,10 +577,15 @@ export default function CreatePackagePage() {
     }
 
     const isBasicInfoValid = () => {
-        if (formData.package_mode === 'single') {
-            return formData.title && formData.destination && formData.country && formData.price_per_person > 0 && formData.trip_styles.length >= 1
+        const hasTitle = Boolean(formData.title);
+        const hasPrice = Number(formData.price_per_person) > 0;
+        const hasTripStyle = formData.trip_styles.length >= 1;
+        const mode = (formData.package_mode || 'single').toLowerCase();
+
+        if (mode === 'single') {
+            return hasTitle && Boolean(formData.destination) && Boolean(formData.country) && hasPrice && hasTripStyle;
         } else {
-            return formData.title && formData.destinations.length > 0 && formData.destinations.every(d => d.city && d.country && d.days > 0) && formData.price_per_person > 0 && formData.trip_styles.length >= 1
+            return hasTitle && formData.destinations.length > 0 && formData.destinations.every(d => d.city && d.country && (Number(d.days) || 0) > 0) && hasPrice && hasTripStyle;
         }
     }
 
@@ -612,7 +645,7 @@ export default function CreatePackagePage() {
                                     <span className="text-3xl">🗺️</span>
                                     {packageId ? (
                                         <span className="truncate max-w-xl block" title={formData.title}>
-                                            Edit Package: <span className="text-indigo-600">{formData.title || 'Untitled Package'}</span>
+                                            Edit Package: <span className="text-[var(--primary)]">{formData.title || 'Untitled Package'}</span>
                                         </span>
                                     ) : 'Create New Package'}
                                 </h1>
@@ -627,7 +660,7 @@ export default function CreatePackagePage() {
                                     <Button
                                         onClick={handlePublish}
                                         size="sm"
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                        className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white shadow-sm"
                                     >
                                         <CheckCircle className="mr-2 h-4 w-4" />
                                         Publish
@@ -673,8 +706,8 @@ export default function CreatePackagePage() {
                                         >
                                             <div className={cn(
                                                 "w-10 -10 rounded-full flex items-center justify-center border-2 transition-all duration-700 z-10",
-                                                isCompleted ? "bg-[#10B981] border-white text-white shadow-[0_0_15px_rgba(255,107,43,0.4)]" :
-                                                    isCurrent ? "bg-gradient-to-br from-[var(--primary)] to-[#FF9A5C] border-white text-white shadow-[0_0_20px_rgba(255,107,43,0.4)] scale-110" :
+                                                isCompleted ? "bg-emerald-500 border-white text-white shadow-[0_0_15px_var(--primary-glow)]" :
+                                                    isCurrent ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] border-white text-white shadow-[0_0_20px_var(--primary-glow)] scale-110" :
                                                         "bg-white/20 backdrop-blur-md border-white/30 text-gray-500"
                                             )}>
                                                 {isCompleted ? <Check className="w-5 h-5" /> : (
@@ -693,7 +726,7 @@ export default function CreatePackagePage() {
                                             )}>
                                                 <span className={cn(
                                                     "text-[11px] font-bold whitespace-nowrap tracking-tight",
-                                                    isCurrent ? "text-[#E8682A]" : isCompleted ? "text-[#10B981]" : "text-gray-400"
+                                                    isCurrent ? "text-[var(--primary)]" : isCompleted ? "text-emerald-500" : "text-gray-400"
                                                 )}>
                                                     {item.label}
                                                 </span>
@@ -719,8 +752,8 @@ export default function CreatePackagePage() {
 
                         {/* Overview Section */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group">
-                            <div className="bg-gradient-to-r from-blue-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-blue-100/50 rounded-lg text-blue-600 group-hover:scale-110 transition-transform">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
                                     <Briefcase className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -737,7 +770,7 @@ export default function CreatePackagePage() {
                                         <div
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
-                                                background: 'linear-gradient(135deg, var(--primary) 0%, #FF9A5C 100%)',
+                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
                                                 left: formData.package_mode === 'single' ? '4px' : 'calc(50%)',
                                             }}
                                         />
@@ -765,18 +798,18 @@ export default function CreatePackagePage() {
                                             )}
                                         >
                                             <Globe className="w-4 h-4" />
-                                            Multi-Dest
+                                            Multi-Destinations
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2 md:col-span-2">
-                                    <Label className={cn("text-xs font-medium text-gray-500 uppercase tracking-wider", formData.title ? "text-blue-600" : "")}>
+                                    <Label className={cn("text-xs font-medium text-gray-500 uppercase tracking-wider", formData.title ? "text-[var(--primary)]" : "")}>
                                         Package Title <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <FileText className={cn("h-4 w-4 transition-colors", formData.title ? "text-indigo-500" : "text-gray-400 group-focus-within/input:text-indigo-500")} />
+                                            <FileText className={cn("h-4 w-4 transition-colors", formData.title ? "text-[var(--primary)]" : "text-gray-400 group-focus-within/input:text-[var(--primary)]")} />
                                         </div>
                                         <Input
                                             placeholder="e.g., Tokyo Adventure 7 Days"
@@ -794,16 +827,16 @@ export default function CreatePackagePage() {
                                 {formData.package_mode === 'single' && (
                                     <>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Destination <span className="text-red-500">*</span></Label>
+                                            <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Location <span className="text-red-500">*</span></Label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <MapPin className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                                    <MapPin className="h-4 w-4 text-gray-400 group-focus-within:text-[var(--primary)] transition-colors" />
                                                 </div>
                                                 <Input
                                                     placeholder="e.g., Tokyo"
                                                     value={formData.destination}
                                                     onChange={(e) => updateFormData('destination', e.target.value)}
-                                                    className="glass-input pl-10 h-11 rounded-xl"
+                                                    className="glass-input pl-10 h-11 rounded-xl focus:border-[var(--primary)]/50"
                                                 />
                                             </div>
                                         </div>
@@ -887,7 +920,7 @@ export default function CreatePackagePage() {
                                                             borderRadius: '20px',
                                                             boxShadow: draggedLegIndex === index ? '0 12px 32px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)'
                                                         }}
-                                                        onMouseEnter={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(255,107,43,0.15)' } }}
+                                                        onMouseEnter={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px var(--primary-glow)' } }}
                                                         onMouseLeave={(e: any) => { if (draggedLegIndex === null) { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)' } }}
                                                     >
                                                         {/* Drag Handle */}
@@ -898,7 +931,7 @@ export default function CreatePackagePage() {
                                                         {/* Leg Number Badge */}
                                                         <div
                                                             className="absolute -top-3 -left-3 w-7 h-7 flex items-center justify-center rounded-full text-white text-xs font-bold shadow-md z-10"
-                                                            style={{ background: 'linear-gradient(135deg, var(--primary), #FF9A5C)' }}
+                                                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
                                                         >
                                                             {index + 1}
                                                         </div>
@@ -1050,8 +1083,8 @@ export default function CreatePackagePage() {
 
                         {/* Logistics & Pricing */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
-                            <div className="bg-gradient-to-r from-emerald-50/20 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-emerald-100/50 rounded-lg text-emerald-600 group-hover:scale-110 transition-transform">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
                                     <Banknote className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -1065,9 +1098,9 @@ export default function CreatePackagePage() {
                                 <div className="space-y-2 col-span-2 md:col-span-1">
                                     <div className="flex items-center justify-between">
                                         <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Duration <span className="text-red-500">*</span></Label>
-                                        {formData.package_mode === 'multi' && <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded uppercase font-bold tracking-widest">Auto</span>}
+                                        {formData.package_mode === 'multi' && <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded uppercase font-bold tracking-widest">Auto</span>}
                                     </div>
-                                    <div className="flex rounded-xl glass-input overflow-hidden group/duration transition-all hover:border-indigo-300">
+                                    <div className="flex rounded-xl glass-input overflow-hidden group/duration transition-all hover:border-[var(--primary)]/30">
                                         <div className="flex-1 relative group">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <Calendar className="h-4 w-4 text-gray-500" />
@@ -1176,10 +1209,10 @@ export default function CreatePackagePage() {
                                                     <div
                                                         className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
                                                         style={{
-                                                            background: 'linear-gradient(135deg, var(--primary) 0%, #FF9A5C 100%)',
+                                                            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
                                                             borderRadius: '50px',
                                                             left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
-                                                            boxShadow: '0 4px 16px rgba(255,107,43,0.40)'
+                                                            boxShadow: '0 4px 16px var(--primary-glow)'
                                                         }}
                                                     />
 
@@ -1192,7 +1225,7 @@ export default function CreatePackagePage() {
                                                             borderRadius: '50px',
                                                             transition: 'background 0.2s',
                                                         }}
-                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'rgba(255,107,43,0.08)' }}
+                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
                                                         <div
@@ -1223,7 +1256,7 @@ export default function CreatePackagePage() {
                                                             borderRadius: '50px',
                                                             transition: 'background 0.2s',
                                                         }}
-                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'rgba(255,107,43,0.08)' }}
+                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
                                                         <div
@@ -1361,10 +1394,10 @@ export default function CreatePackagePage() {
                                                         animationDelay: `${index * 50}ms`,
                                                         transition: 'transform 150ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease',
                                                         ...(isSelected ? {
-                                                            background: 'rgba(255,107,43,0.18)',
-                                                            border: '2px solid rgba(255,107,43,0.65)',
+                                                            background: 'var(--primary-glow)',
+                                                            border: '2px solid var(--primary)',
                                                             borderRadius: '16px',
-                                                            boxShadow: '0 8px 24px rgba(255,107,43,0.25)',
+                                                            boxShadow: '0 8px 24px var(--primary-glow)',
                                                         } : {
                                                             background: 'rgba(255,255,255,0.18)',
                                                             border: '1px solid rgba(255,255,255,0.35)',
@@ -1435,8 +1468,10 @@ export default function CreatePackagePage() {
                                                     key={activity.id}
                                                     variant="outline"
                                                     className={cn(
-                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full",
-                                                        isSelected ? "bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700" : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-sm"
+                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
+                                                        isSelected 
+                                                            ? "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-transparent shadow-indigo-200/50" 
+                                                            : "bg-white/10 backdrop-blur-md text-[#2D1A0E] border-white/40 hover:bg-white/20 hover:border-indigo-300 hover:text-indigo-600"
                                                     )}
                                                     onClick={() => toggleActivity(activity.id)}
                                                 >
@@ -1932,12 +1967,12 @@ export default function CreatePackagePage() {
                                 if (activeStep === 3) handlePublish()
                                 else handleContinueSave(activeStep + 1)
                             }}
-                            disabled={!isBasicInfoValid() || saving}
+                            disabled={saving}
                             className={cn(
                                 "h-11 px-8 font-bold shadow-lg transition-all active:scale-95 rounded-full",
-                                isBasicInfoValid()
+                                (isBasicInfoValid() || Boolean(packageId))
                                     ? "orange-gradient text-white hover:shadow-orange-500/25"
-                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                             )}
                         >
                             {activeStep === 3 ? (

@@ -1132,7 +1132,7 @@ export default function AgentDashboard() {
                                         <CardHeader>
                                             <div className="flex items-center gap-3">
                                                 <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                    <Package className="h-6 w-6 text-blue-600" />
+                                                    <Package className="h-6 w-6 text-[var(--primary)]" />
                                                 </div>
                                                 <div>
                                                     <CardTitle className="text-lg text-slate-800">Manage Packages</CardTitle>
@@ -1141,7 +1141,7 @@ export default function AgentDashboard() {
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
+                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
                                                 Go to Packages
                                             </Button>
                                         </CardContent>
@@ -1166,7 +1166,7 @@ export default function AgentDashboard() {
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
+                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
                                                 View Bookings
                                             </Button>
                                         </CardContent>
@@ -1179,7 +1179,7 @@ export default function AgentDashboard() {
                                             <CardHeader>
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <Star className="h-6 w-6 text-purple-600" />
+                                                        <Star className="h-6 w-6 text-[var(--primary)]" />
                                                     </div>
                                                     <div>
                                                         <CardTitle className="text-lg text-slate-800">Subscription</CardTitle>
@@ -1188,9 +1188,9 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
-                                                    Manage Plan
-                                                </Button>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                        Manage Plan
+                                                    </Button>
                                             </CardContent>
                                         </Link>
                                     </Card>
@@ -1211,9 +1211,9 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px rgba(108, 71, 255, 0.40)', padding: '12px 24px' }}>
-                                                    Configure Settings
-                                                </Button>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                        Configure Settings
+                                                    </Button>
                                             </CardContent>
                                         </Link>
                                     </Card>

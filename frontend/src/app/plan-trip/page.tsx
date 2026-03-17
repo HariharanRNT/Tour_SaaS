@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,8 +13,10 @@ import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PremiumCalendar } from '@/components/ui/premium-calendar'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
-import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane } from 'lucide-react'
+import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane, Trees, Palmtree, Compass, Camera, Sparkles } from 'lucide-react'
 import { toast } from "react-toastify"
 import Image from 'next/image'
 
@@ -62,8 +65,10 @@ function PlanTripContent() {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
     const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<Package | null>(null)
     const [selectedDate, setSelectedDate] = useState('')
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [travelers, setTravelers] = useState({ adults: 2, children: 0, infants: 0 })
     const [originCity, setOriginCity] = useState('')
+
 
     // UI State
     const [loading, setLoading] = useState(false)
@@ -71,13 +76,20 @@ function PlanTripContent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [inputValue, setInputValue] = useState('')
 
-    // Read destination from URL on mount
+    // Read destination and style from URL
     useEffect(() => {
         const dest = searchParams.get('destination')
+        const style = searchParams.get('trip_style')
+        
         if (dest) {
             setInputValue(dest)
             setSearchQuery(dest)
-            setHasSearched(true) // Triggers the executeSearch effect
+            setHasSearched(true)
+        }
+        
+        if (style) {
+            setFilters(prev => ({ ...prev, trip_styles: [style] }))
+            setHasSearched(true)
         }
     }, [searchParams])
     const [suggestions, setSuggestions] = useState<{ label: string, value: string, type: string }[]>([])
@@ -91,7 +103,7 @@ function PlanTripContent() {
     const [isTripStyleOpen, setIsTripStyleOpen] = useState(false)
     const [isSliderDragging, setIsSliderDragging] = useState(false)
 
-    // Load initial packages, setPackages] = useState<Package[]>([])
+    // Load initial packages
     const [packages, setPackages] = useState<Package[]>([])
     const [totalPackages, setTotalPackages] = useState(0)
     const [hasSearched, setHasSearched] = useState(false) // Whether user has executed a search/filter to show grid
@@ -367,7 +379,7 @@ function PlanTripContent() {
         })
         filters.activities.forEach(act => {
             chips.push(
-                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[var(--primary-soft)] text-[var(--primary)] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span>{act}</span>
                     <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('activities', act)} />
                 </Badge>
@@ -421,7 +433,7 @@ function PlanTripContent() {
 
                     {/* Package Type */}
                     <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
                             <span className="text-[#FFB347]">📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
@@ -460,7 +472,7 @@ function PlanTripContent() {
                                         onClick={() => {
                                             setFilters(prev => ({ ...prev, duration_min: minLabel, duration_max: maxLabel }));
                                         }}
-                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
+                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[var(--primary)] hover:bg-[var(--primary-soft)]'}`}
                                     >
                                         {range} Days
                                     </button>
@@ -544,7 +556,7 @@ function PlanTripContent() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}
                         >
-                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
+                            <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-pink-400 text-sm drop-shadow-sm">🌺</span> TRIP STYLE
                                 {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.trip_styles.length})</span>}
                             </p>
@@ -565,7 +577,7 @@ function PlanTripContent() {
                                     ))}
                                 </div>
                                 {/* Fade out gradient indicating scroll */}
-                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#FFE4CC] to-transparent pointer-events-none rounded-b-md" />
+                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[var(--primary-soft)] to-transparent pointer-events-none rounded-b-md" />
                             </div>
                         )}
                     </div>
@@ -576,7 +588,7 @@ function PlanTripContent() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
                         >
-                            <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
+                            <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-blue-500 text-sm drop-shadow-sm">🏄</span> ACTIVITIES
                                 {filters.activities.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.activities.length})</span>}
                             </p>
@@ -597,7 +609,7 @@ function PlanTripContent() {
                                     ))}
                                 </div>
                                 {/* Fade out gradient indicating scroll */}
-                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#FFE4CC] to-transparent pointer-events-none rounded-b-md" />
+                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[var(--primary-soft)] to-transparent pointer-events-none rounded-b-md" />
                             </div>
                         )}
                     </div>
@@ -720,13 +732,13 @@ function PlanTripContent() {
     )
 
     return (
-        <div className="min-h-full font-sans bg-gradient-to-br from-[#FFCC99]/80 via-[var(--primary-light)]/80 to-[var(--primary)]/90 pb-20 relative">
+        <div className="min-h-full font-sans pb-20 relative">
             {/* Ambient Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[var(--primary-soft)]/30 rounded-full blur-[100px] pointer-events-none z-0" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[var(--primary)]/10 rounded-full blur-[120px] pointer-events-none z-0" />
+            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[var(--primary)]/40 rounded-full blur-[100px] pointer-events-none z-0" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[var(--primary-light)]/20 rounded-full blur-[120px] pointer-events-none z-0" />
 
 
-            {/* Hero Search Section - Shown if NOT hasSearched */}
+
             {!hasSearched && (
                 <>
                     <div className="relative overflow-visible flex items-center justify-center min-h-[70vh] md:min-h-[80vh] -mt-16 noise-overlay">
@@ -816,10 +828,10 @@ function PlanTripContent() {
                                 {!(showSuggestions || inputValue.length > 0) && (
                                     <div className="space-y-6">
                                         <div className="mt-8 flex flex-wrap justify-center gap-3">
-                                            {['Adventure', 'Beach', 'Honeymoon', 'Family'].map((tag) => (
+                                            {['Adventure', 'Beach', 'Honeymoon', 'Family'].map((tag: string) => (
                                                 <button
                                                     key={tag}
-                                                    onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [tag] })); setHasSearched(true); }}
+                                                    onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(tag)}`)}
                                                     className="px-8 py-3 rounded-full border border-white/40 bg-black/80 backdrop-blur-xl text-white font-black text-xs hover:bg-[var(--primary)] transition-all hover:-translate-y-1 shadow-2xl tracking-[0.1em] uppercase ring-1 ring-white/20"
                                                 >
                                                     {tag}
@@ -858,7 +870,7 @@ function PlanTripContent() {
                     {/* Content Section */}
                     <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <section className="relative py-8 px-8 bg-gradient-to-b from-[#FFF5ED] to-white rounded-[48px] shadow-[inset_0_4px_40px_var(--primary-glow)] border border-var(--primary-glow)">
+                        <section className="relative py-12 px-8 bg-white/10 backdrop-blur-md rounded-[48px] shadow-[inset_0_4px_40px_var(--primary-glow)] border border-white/20">
                             <div className="container mx-auto max-w-7xl">
                                 <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                     <div>
@@ -866,7 +878,7 @@ function PlanTripContent() {
                                             Browse by Trip Style
                                         </h2>
                                         <p className="text-sm text-[#8B5030] font-medium opacity-80 max-w-xl">
-                                            Whether you're seeking thrills or romantic sunsets, we've curated the perfect journeys for every vibe.
+                                            Whether you&apos;re seeking thrills or romantic sunsets, we&apos;ve curated the perfect journeys for every vibe.
                                         </p>
                                     </div>
                                     <div className="hidden md:flex gap-3">
@@ -881,23 +893,40 @@ function PlanTripContent() {
 
                                 <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:grid md:grid-cols-4 gap-6 scrollbar-hide snap-x">
                                     {[
-                                        { style: 'Adventure', icon: <Mountain className="h-5 w-5 text-[var(--primary)]" />, desc: 'For the thrill-seekers' },
-                                        { style: 'Beach', icon: <Waves className="h-5 w-5 text-amber-500" />, desc: 'Sun, sand and serenity' },
-                                        { style: 'Honeymoon', icon: <Heart className="h-5 w-5 text-rose-400" />, desc: 'Romantic getaways' },
-                                        { style: 'Family', icon: <Users className="h-5 w-5 text-indigo-400" />, desc: 'Memories for all ages' }
-                                    ].map(item => (
-                                        <div
-                                            key={item.style}
-                                            onClick={() => { setFilters(prev => ({ ...prev, trip_styles: [item.style] })); setHasSearched(true); }}
-                                            className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_var(--primary-glow)] snap-start rounded-[24px] border border-white/60 bg-white/40 backdrop-blur-md"
-                                        >
-                                            <div className="w-10 h-10 bg-[var(--primary-soft)]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[var(--primary)]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
-                                                {item.icon}
+                                        { title: 'Adventure', icon_name: 'Mountain', description: 'For the thrill-seekers' },
+                                        { title: 'Beach', icon_name: 'Waves', description: 'Sun, sand and serenity' },
+                                        { title: 'Honeymoon', icon_name: 'Heart', description: 'Romantic getaways' },
+                                        { title: 'Family', icon_name: 'Users', description: 'Memories for all ages' }
+                                    ].map((item: any) => {
+                                        const IconComponent = (() => {
+                                            switch (item.icon_name) {
+                                                case 'Mountain': return Mountain;
+                                                case 'Waves': return Waves;
+                                                case 'Heart': return Heart;
+                                                case 'Users': return Users;
+                                                case 'Trees': return Trees;
+                                                case 'Palmtree': return Palmtree;
+                                                case 'Compass': return Compass;
+                                                case 'MapPin': return MapPin;
+                                                case 'Camera': return Camera;
+                                                default: return Sparkles;
+                                            }
+                                        })();
+
+                                        return (
+                                            <div
+                                                key={item.title}
+                                                onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(item.title)}`)}
+                                                className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:shadow-[0_20px_40px_var(--primary-glow)] snap-start"
+                                            >
+                                                <div className="w-10 h-10 bg-[var(--primary-soft)]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[var(--primary)]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
+                                                    <IconComponent className="h-5 w-5 text-[var(--primary)]" />
+                                                </div>
+                                                <h3 className="text-base font-bold text-[#6B3010] tracking-tight mb-1">{item.title}</h3>
+                                                <p className="text-xs font-medium text-[#8B5030]/60 uppercase tracking-widest">{item.description}</p>
                                             </div>
-                                            <h3 className="text-base font-bold text-[#6B3010] tracking-tight mb-1">{item.style}</h3>
-                                            <p className="text-xs font-medium text-[#8B5030]/60 uppercase tracking-widest">{item.desc}</p>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </section>
@@ -934,7 +963,7 @@ function PlanTripContent() {
                                         return (
                                             <div
                                                 key={city}
-                                                onClick={() => { setSearchQuery(city); setInputValue(city); setHasSearched(true); }}
+                                                onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(city)}`)}
                                                 className="relative aspect-[4/3] rounded-[40px] overflow-hidden cursor-pointer group shadow-2xl border border-white/20"
                                             >
                                                 <Image
@@ -959,7 +988,7 @@ function PlanTripContent() {
                                                     <h3 className="text-3xl md:text-4xl font-bold text-white mb-3 font-display drop-shadow-lg">{city}</h3>
                                                     <div className="relative inline-block group/link">
                                                         <p className="text-blue-50 text-sm font-bold flex items-center gap-2 uppercase tracking-widest opacity-90 group-hover:opacity-100">
-                                                            Explore packages <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
+                                                            Explore packages
                                                         </p>
                                                         <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[var(--primary)] group-hover/link:w-full transition-all duration-300"></div>
                                                     </div>
@@ -1083,7 +1112,7 @@ function PlanTripContent() {
                                                 </div>
                                                 <h3 className="text-3xl font-bold text-[#3A1A08] mb-4 font-display">No hidden gems found</h3>
                                                 <p className="text-[#8B5030] max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
-                                                    We couldn't find any packages matching your current filters. Try broadening your search!
+                                                    We couldn&apos;t find any packages matching your current filters. Try broadening your search!
                                                 </p>
                                                 <Button
                                                     onClick={clearAllFilters}
@@ -1231,7 +1260,7 @@ function PlanTripContent() {
                                                                     setSelectedPackageForBooking(pkg);
                                                                     setIsBookingModalOpen(true);
                                                                 }}
-                                                                className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
+                                                                className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
                                                             >
                                                                 <span className="relative z-10 flex items-center gap-2">
                                                                     Book Now
@@ -1263,13 +1292,11 @@ function PlanTripContent() {
                 >
                     <div className="relative flex flex-col h-full max-h-[90vh]">
                         {/* Glassy Header Card */}
-                        <div className="bg-gradient-to-br from-[#FF8C66]/90 to-[var(--primary)]/90 py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
-                            <button
-                                onClick={() => setIsBookingModalOpen(false)}
-                                className="absolute top-3 right-3 text-white/90 hover:text-white hover:bg-white/20 p-1.5 rounded-full transition-all"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
+                        <div className="bg-gradient-to-br from-[var(--primary-light,var(--primary))] to-[var(--primary)] py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
+                            <DialogClose className="absolute top-2 right-2 text-white/90 hover:text-white hover:bg-white/20 p-2.5 rounded-full transition-all z-[1010] outline-none border-none shadow-none">
+                                <X className="h-5 w-5" />
+                                <span className="sr-only">Close</span>
+                            </DialogClose>
 
                             <h2 className="text-xl font-extrabold text-white mb-1 font-display tracking-tight drop-shadow-md">Trip Details</h2>
                             <p className="text-orange-50/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider">
@@ -1284,18 +1311,39 @@ function PlanTripContent() {
                                 <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
                                     Travel Date
                                 </Label>
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]">
-                                        <CalendarIcon className="h-5 w-5" />
-                                    </div>
-                                    <Input
-                                        type="date"
-                                        min={new Date().toISOString().split('T')[0]}
-                                        value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border-white/40 rounded-2xl font-bold text-slate-800 focus-visible:ring-var(--primary) focus-visible:border-[var(--primary)] transition-all cursor-pointer shadow-inner"
-                                    />
-                                </div>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                    <PopoverTrigger asChild>
+                                        <div className="relative group cursor-pointer">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)] z-10">
+                                                <CalendarIcon className="h-5 w-5" />
+                                            </div>
+                                            <div className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border border-white/40 rounded-2xl font-bold text-slate-800 flex items-center shadow-inner group-hover:bg-white/60 transition-all">
+                                                {selectedDate ? format(new Date(selectedDate), 'dd-MM-yyyy') : 'Select Date'}
+                                            </div>
+                                        </div>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 border-0 bg-transparent shadow-none p-0 z-[1100]" align="start">
+                                        <PremiumCalendar
+                                            mode="single"
+                                            selected={selectedDate ? new Date(selectedDate) : undefined}
+                                            onSelect={(date) => {
+                                                if (date) {
+                                                    setSelectedDate(format(date, 'yyyy-MM-dd'));
+                                                    setIsCalendarOpen(false);
+                                                }
+                                            }}
+                                            onClear={() => {
+                                                setSelectedDate('');
+                                                setIsCalendarOpen(false);
+                                            }}
+                                            onToday={() => {
+                                                const today = new Date();
+                                                setSelectedDate(format(today, 'yyyy-MM-dd'));
+                                                setIsCalendarOpen(false);
+                                            }}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             {/* Travelers Section */}
@@ -1373,7 +1421,7 @@ function PlanTripContent() {
                         {/* Modal Footer */}
                         <div className="p-2 pt-4 mt-auto">
                             <Button
-                                className="w-full h-auto py-3 bg-[#FF7D52] hover:bg-[var(--primary)] text-white rounded-xl text-sm font-black shadow-[0_8px_16px_rgba(255,125,82,0.2)] transition-all active:scale-[0.98] border-none"
+                                className="w-full h-auto py-3 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl text-sm font-black shadow-[0_8px_16px_var(--primary-glow)] transition-all active:scale-[0.98] border-none"
                                 disabled={!selectedDate || travelers.adults < 1 || (selectedPackageForBooking?.flights_enabled && !originCity)}
                                 onClick={() => {
                                     if (selectedPackageForBooking) {
@@ -1397,7 +1445,7 @@ function PlanTripContent() {
 
             {/* Footer Removed - Using Global Footer with fixed socials */}
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 .glass-card {
                     background: rgba(255, 255, 255, 0.4);
                     backdrop-filter: blur(16px) saturate(180%);
@@ -1418,7 +1466,7 @@ function PlanTripContent() {
                     border-color: var(--primary-glow) !important;
                     box-shadow: 0 0 0 3px var(--primary-glow) !important;
                 }
-            `}</style>
+            ` }} />
         </div>
     )
 }

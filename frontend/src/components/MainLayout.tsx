@@ -14,7 +14,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         pathname?.startsWith('/admin') ||
         pathname?.startsWith('/agent') ||
         pathname === '/login' ||
-        pathname === '/register'
+        pathname?.startsWith('/register')
 
     return (
         <div className="flex flex-col min-h-full">

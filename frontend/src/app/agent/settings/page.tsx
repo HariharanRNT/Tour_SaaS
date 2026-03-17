@@ -273,7 +273,7 @@ export default function AgentSettingsPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                    <Loader2 className="h-10 w-10 animate-spin text-[var(--primary)]" />
                     <p className="text-sm font-medium text-gray-500 animate-pulse">Loading settings...</p>
                 </div>
             </div>
@@ -325,7 +325,7 @@ export default function AgentSettingsPage() {
                         <nav className="flex items-center text-sm font-medium text-slate-500">
                             <button
                                 onClick={() => router.push('/agent/dashboard')}
-                                className="hover:text-blue-600 transition-colors"
+                                className="hover:text-[var(--primary)] transition-colors"
                             >
                                 Dashboard
                             </button>
@@ -351,7 +351,7 @@ export default function AgentSettingsPage() {
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={submitting || !isDirty}
-                                    className="min-w-[160px] bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white shadow-lg shadow-purple-400/30 font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
+                                    className="min-w-[160px] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary-glow)] font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
                                     title="Ctrl + S to save"
                                 >
                                     {submitting ? (
@@ -363,7 +363,7 @@ export default function AgentSettingsPage() {
                                         <>
                                             <Save className="mr-2 h-5 w-5" />
                                             Save Changes
-                                            <span className="ml-2 px-1.5 py-0.5 bg-blue-500 rounded text-[10px] opacity-70">Ctrl+S</span>
+                                            <span className="ml-2 px-1.5 py-0.5 bg-[var(--primary)] text-white rounded text-[10px] opacity-90">Ctrl+S</span>
                                         </>
                                     )}
                                 </Button>
@@ -403,7 +403,7 @@ export default function AgentSettingsPage() {
                     <Card id="general-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="pb-4">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-50 rounded-xl text-blue-600 border border-blue-100">
+                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
                                     <Globe className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-1">
@@ -476,7 +476,7 @@ export default function AgentSettingsPage() {
                     <Card id="email-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-50 rounded-xl text-purple-600 border border-purple-100">
+                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
                                     <Mail className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-1">
@@ -588,7 +588,7 @@ export default function AgentSettingsPage() {
                                         Username / Email <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_user"
                                             className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
@@ -602,7 +602,7 @@ export default function AgentSettingsPage() {
                                         Password
                                     </Label>
                                     <div className="relative group">
-                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_pass"
                                             type={showSmtpPassword ? "text" : "password"}
@@ -646,7 +646,7 @@ export default function AgentSettingsPage() {
                     <Card id="payment-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-100">
+                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
                                     <CreditCard className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-1">
@@ -681,7 +681,7 @@ export default function AgentSettingsPage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-7 text-xs font-bold text-slate-400 hover:text-blue-600 bg-transparent px-2"
+                                            className="h-7 text-xs font-bold text-slate-400 hover:text-[var(--primary)] bg-transparent px-2"
                                             onClick={() => {
                                                 navigator.clipboard.writeText(razorpay.key_id);
                                                 toast.info("Key ID copied to clipboard");
@@ -691,7 +691,7 @@ export default function AgentSettingsPage() {
                                         </Button>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-blue-100 group-focus-within:text-blue-600 transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <ShieldCheck className="h-3.5 w-3.5" />
                                         </div>
                                         <Input
@@ -703,8 +703,8 @@ export default function AgentSettingsPage() {
                                         />
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
-                                        <ExternalLink className="h-3 w-3 text-blue-500" />
-                                        <a href="https://dashboard.razorpay.com/app/settings/api_keys" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-500 hover:underline">
+                                        <ExternalLink className="h-3 w-3 text-[var(--primary)]" />
+                                        <a href="https://dashboard.razorpay.com/app/settings/api_keys" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-[var(--primary)] hover:underline">
                                             Get API Keys from Razorpay Dashboard
                                         </a>
                                     </div>
@@ -717,7 +717,7 @@ export default function AgentSettingsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-7 text-xs font-bold text-slate-400 hover:text-blue-600 bg-transparent px-2"
+                                                className="h-7 text-xs font-bold text-slate-400 hover:text-[var(--primary)] bg-transparent px-2"
                                                 onClick={() => {
                                                     if (razorpay.key_secret) {
                                                         navigator.clipboard.writeText(razorpay.key_secret);
@@ -731,7 +731,7 @@ export default function AgentSettingsPage() {
                                         </div>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-blue-100 group-focus-within:text-blue-600 transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <Key className="h-3.5 w-3.5" />
                                         </div>
                                         <Input

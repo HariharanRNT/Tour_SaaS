@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Plane, User, LogOut, Menu, X } from 'lucide-react'
+import { User, LogOut, Menu, X } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 export function Navbar() {
@@ -15,6 +15,29 @@ export function Navbar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [userName, setUserName] = useState('')
     const [userRole, setUserRole] = useState('')
+    const [logoUrl, setLogoUrl] = useState('https://toursaas.s3.us-east-1.amazonaws.com/logo.png')
+
+    // Fetch public settings for branding (Logo, etc)
+    useEffect(() => {
+        const fetchPublicSettings = async () => {
+            try {
+                const domain = window.location.hostname;
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
+                    headers: { 'X-Domain': domain }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.homepage_settings?.navbar_logo_image) {
+                        setLogoUrl(data.homepage_settings.navbar_logo_image);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch navbar branding", err);
+            }
+        };
+        fetchPublicSettings();
+    }, []);
 
     // Handle scroll for transparent navbar
     useEffect(() => {
@@ -57,7 +80,7 @@ export function Navbar() {
     }
 
     // Hide global navbar for all admin and agent pages, and auth pages
-    if (pathname?.startsWith('/admin') || pathname?.startsWith('/agent') || pathname === '/login' || pathname === '/register') {
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/agent') || pathname === '/login' || pathname?.startsWith('/register')) {
         return null
     }
 
@@ -190,7 +213,7 @@ export function Navbar() {
             <nav
                 className={`pointer-events-auto flex w-full max-w-4xl transition-all duration-500 ${scrolled ? 'shadow-[0_12px_40px_rgba(0,0,0,0.12)]' : 'shadow-[0_8px_32px_rgba(0,0,0,0.08)]'}`}
                 style={{
-                    background: isTransparent ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.28)',
+                    background: isTransparent ? 'rgba(255,255,255,0.15)' : 'var(--nav-bg, rgba(255,255,255,1))',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     border: scrolled ? '1px solid rgba(255,122,69,0.15)' : '1px solid rgba(255,255,255,0.35)',
@@ -201,7 +224,11 @@ export function Navbar() {
                 <div className="w-full px-2 md:px-6">
                     <div className="flex h-14 items-center justify-between">
                         <Link href="/" className="flex items-center space-x-2">
-                             <Plane className="h-6 w-6" style={{ color: 'var(--primary)' }} />
+                            <img 
+                                src={logoUrl} 
+                                alt="Agent Logo" 
+                                className="h-9 w-9 object-contain"
+                            />
                             <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[var(--primary)]'}`}>
                                 TourSaaS
                             </span>

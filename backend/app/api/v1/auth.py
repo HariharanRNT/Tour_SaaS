@@ -135,6 +135,26 @@ async def register_agent(
     )
     db.add(agent)
     
+    # Create notifications for all admins
+    try:
+        from app.models import Notification
+        admin_stmt = select(User).where(User.role == UserRole.ADMIN)
+        admin_result = await db.execute(admin_stmt)
+        admins = admin_result.scalars().all()
+        
+        for admin in admins:
+            notification = Notification(
+                user_id=admin.id,
+                type="agent_registration",
+                title="New Agent Registration Request",
+                message=f"A new agent {agent_data.first_name} {agent_data.last_name} from {agent_data.agency_name} has registered and is pending approval."
+            )
+            db.add(notification)
+    except Exception as e:
+        logger.error(f"Failed to create admin notifications: {str(e)}")
+        # Don't fail the registration if notification creation fails
+        pass
+
     await db.commit()
     
     # Reload with profiles
@@ -213,7 +233,7 @@ async def login(
             pass
         
         # Log to terminal securely via Uvicorn logger
-        # otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+        otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
         logger.warning(otp_msg)
         print(otp_msg, flush=True)
         

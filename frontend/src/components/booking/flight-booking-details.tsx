@@ -67,8 +67,8 @@ export function FlightBookingDetails({ details, travelers = [], contactInfo }: F
     return (
         <div className="space-y-6 w-full max-w-2xl mx-auto">
             {/* Booking Summary Card */}
-            <Card className="border-l-4 border-l-green-500 shadow-sm">
-                <CardHeader className="bg-gray-50/50 pb-2">
+            <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl border-l-[6px] border-l-green-500/80">
+                <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
                     <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-xl text-green-700 flex items-center gap-2">
@@ -120,13 +120,13 @@ export function FlightBookingDetails({ details, travelers = [], contactInfo }: F
                 const totalDuration = trip.totalDuration || segments.reduce((acc: number, s: any) => acc + s.duration, 0)
 
                 return (
-                    <Card key={tripIdx} className="overflow-hidden">
-                        <div className="bg-blue-50 px-4 py-2 border-b border-blue-100 flex justify-between items-center">
-                            <span className="font-semibold text-blue-800 flex items-center gap-2">
-                                <span className="bg-blue-200 text-blue-800 text-xs px-2 py-0.5 rounded">
+                    <Card key={tripIdx} className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
+                        <div className="bg-blue-500/10 px-4 py-3 border-b border-white/20 flex justify-between items-center backdrop-blur-md">
+                            <span className="font-bold text-blue-900 flex items-center gap-2">
+                                <span className="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                                     {tripIdx === 0 ? "ONWARD" : "RETURN"}
                                 </span>
-                                {origin} <span className="text-blue-400">→</span> {dest}
+                                {origin} <span className="text-blue-500/60">→</span> {dest}
                             </span>
                             <span className="text-sm text-blue-600 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" /> {formatDate(firstSeg.dt)}

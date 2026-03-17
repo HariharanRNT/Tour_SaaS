@@ -275,10 +275,12 @@ export default function RegisterPage() {
                                                 country={'in'}
                                                 value={formData.phone}
                                                 onChange={phone => setFormData({ ...formData, phone })}
-                                                containerClass="!w-full"
-                                                inputClass="!w-full !h-10 !pl-12 !bg-orange-50/30 !border-orange-100/50 !rounded-xl focus:!bg-white focus:!border-[var(--primary)] !transition-all !text-sm !font-medium !placeholder-orange-900/20"
-                                                buttonClass="!bg-transparent !border-none !rounded-l-xl !pl-2"
+                                                containerClass="!w-full !rounded-xl"
+                                                inputClass="!w-full !h-10 !pl-12 !bg-white/20 !backdrop-blur-md !border-white/30 !rounded-xl focus:!bg-white/40 focus:!border-[var(--primary)] !transition-all !text-sm !font-medium !placeholder-orange-900/40"
+                                                buttonClass="!bg-white/10 !border-none !rounded-l-xl !pl-2 hover:!bg-white/20 !transition-colors"
+                                                dropdownClass="glass-phone-dropdown"
                                             />
+
                                         </div>
 
                                         {/* Password */}

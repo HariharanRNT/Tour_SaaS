@@ -106,19 +106,21 @@ async def get_agent_dashboard_stats(
         res = await db.execute(bk_count_query)
         total_bookings = res.scalar() or 0
         
-        # Active (Confirmed or Pending)
+        # Active (Confirmed or Pending) AND Upcoming Trip
         active_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status.in_(['confirmed', 'pending'])
+            Booking.status.in_(['confirmed', 'pending']),
+            Booking.travel_date >= now.date()  # Only upcoming trips
         )
         active_query = apply_date_filter(active_query, Booking.created_at)
         res = await db.execute(active_query)
         active_bookings = res.scalar() or 0
         
-        # Pending Only
+        # Pending Only AND Upcoming Trip
         pending_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status == 'pending'
+            Booking.status == 'pending',
+            Booking.travel_date >= now.date()  # Only upcoming trips
         )
         pending_query = apply_date_filter(pending_query, Booking.created_at)
         res = await db.execute(pending_query)

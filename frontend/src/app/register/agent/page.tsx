@@ -12,7 +12,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion'
-import { Shield, UserPlus, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { Shield, UserPlus, Eye, EyeOff, CheckCircle2, ChevronRight, ChevronDown, Globe, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, LogOut, Check, ArrowRight, Youtube, Sparkles } from 'lucide-react'
 import { toast } from 'react-toastify'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
@@ -20,6 +20,38 @@ import { Country, State, City } from 'country-state-city'
 import { ICountry, IState, ICity } from 'country-state-city'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+const registrationSchema = z.object({
+    agency_name: z.string().min(2, 'Agency name is required'),
+    company_legal_name: z.string().min(2, 'Legal entity name is required'),
+    domain: z.string().url('Invalid business domain URL (e.g., https://agency.com)'),
+    business_address: z.string().min(10, 'Full office address is required'),
+    country: z.string().min(1, 'Country is required'),
+    state: z.string().min(1, 'State is required'),
+    city: z.string().min(1, 'City is required'),
+    first_name: z.string().min(2, 'First name is required'),
+    last_name: z.string().min(2, 'Last name is required'),
+    email: z.string().email('Invalid work email'),
+    phone: z.string().min(8, 'Valid mobile number is required'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirm_password: z.string(),
+    captcha: z.string().min(1, 'Solve the puzzle')
+}).refine((data) => data.password === data.confirm_password, {
+    message: "Passwords don't match",
+    path: ["confirm_password"],
+})
+
+type RegistrationFormValues = z.infer<typeof registrationSchema>
 
 export default function AgentRegisterPage() {
     const router = useRouter()
@@ -28,30 +60,22 @@ export default function AgentRegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
+    const [activeStep, setActiveStep] = useState(2) // Defaults to Step 2 (Agency Profile) as per design
 
-    const [form, setForm] = useState({
-        // Agency Details
-        agency_name: '',
-        company_legal_name: '',
-        domain: '',
-        business_address: '',
-        country: 'IN',
-        state: '',
-        city: '',
-
-        // Contact Details
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-
-        // Credentials
-        password: '',
-        confirm_password: '',
-
-        // Simple CAPTCHA
-        captcha: ''
+    const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm<RegistrationFormValues>({
+        resolver: zodResolver(registrationSchema),
+        defaultValues: {
+            country: 'IN',
+            state: '',
+            city: '',
+            phone: '',
+            password: '',
+            confirm_password: '',
+            captcha: ''
+        }
     })
+
+    const formValues = watch()
 
     // Geographic state
     const [allCountries] = useState<ICountry[]>(Country.getAllCountries())
@@ -68,8 +92,12 @@ export default function AgentRegisterPage() {
     }, [])
 
     // Password strength calculator
+    const password = watch('password')
     useEffect(() => {
-        const password = form.password
+        if (!password) {
+            setPasswordStrength(0)
+            return
+        }
         let strength = 0
         if (password.length >= 8) strength++
         if (password.length >= 12) strength++
@@ -77,27 +105,15 @@ export default function AgentRegisterPage() {
         if (/\d/.test(password)) strength++
         if (/[^a-zA-Z0-9]/.test(password)) strength++
         setPasswordStrength(strength)
-    }, [form.password])
+    }, [password])
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (form.password !== form.confirm_password) {
-            toast.error('Passwords do not match')
-            return
-        }
-
-        if (parseInt(form.captcha) !== captchaQuest.answer) {
-            toast.error('Invalid CAPTCHA answer')
-            return
-        }
-
+    const handleRegister = async (data: RegistrationFormValues) => {
         setSubmitting(true)
         try {
             const payload = {
-                ...form,
-                country: Country.getCountryByCode(form.country)?.name || form.country,
-                state: State.getStateByCodeAndCountry(form.state, form.country)?.name || form.state,
+                ...data,
+                country: Country.getCountryByCode(data.country)?.name || data.country,
+                state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state,
             }
             delete (payload as any).captcha
 
@@ -123,331 +139,505 @@ export default function AgentRegisterPage() {
 
     if (submitted) {
         return (
-            <div className="min-h-screen bg-[#F8FAFF] flex items-center justify-center p-6">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-md w-full"
-                >
-                    <Card className="border-none shadow-2xl bg-white/80 backdrop-blur-xl rounded-[24px] overflow-hidden">
-                        <CardHeader className="text-center pb-2">
-                            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                                <CheckCircle2 className="h-10 w-10 text-green-600" />
-                            </div>
-                            <CardTitle className="text-2xl font-bold text-slate-900">Registration Submitted!</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-center space-y-6">
-                            <p className="text-slate-600 text-lg leading-relaxed">
-                                Your registration request has been submitted. The admin will review and approve your account.
-                            </p>
-                            <p className="text-slate-500 text-sm">
-                                You will receive an email once your account is activated.
-                            </p>
-                            <Button
-                                onClick={() => router.push('/login')}
-                                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
-                            >
-                                Return to Login
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+            <div className="min-h-screen bg-[#FFF5ED] flex flex-col relative overflow-hidden font-body text-slate-800">
+                {/* Admin-style Mesh Gradient Background */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-40" 
+                        style={{
+                            backgroundImage: `
+                                radial-gradient(at 0% 0%, var(--primary) 0, transparent 60%), 
+                                radial-gradient(at 100% 100%, var(--primary-light) 0, transparent 60%),
+                                radial-gradient(at 50% 50%, var(--primary-soft) 0, transparent 100%)
+                            `
+                        }} 
+                    />
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-[120px] animate-blob" />
+                    <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-amber-100/30 rounded-full blur-[100px] animate-blob [animation-delay:2s]" />
+                    <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-orange-50/40 rounded-full blur-[130px] animate-blob [animation-delay:4s]" />
+                </div>
+
+                {/* Navbar */}
+                <nav className="glass-navbar sticky top-0 z-50 px-8 h-16 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2 group">
+                        <Globe className="h-6 w-6 text-[var(--primary)] group-hover:rotate-12 transition-transform" />
+                        <span className="text-xl font-bold text-slate-900 font-display tracking-tight">TourSaaS</span>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                        <span className="text-slate-400 text-[10px] sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
+                            Official Partner Portal
+                        </span>
+                        <div className="h-4 w-[1px] bg-slate-200 mx-2" />
+                        <button 
+                            onClick={() => router.push('/login')} 
+                            className="bg-white/60 hover:bg-white px-5 py-2 rounded-full font-bold text-slate-700 transition-all border border-white/80 text-[11px] uppercase tracking-widest shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            Sign In
+                        </button>
+                    </div>
+                </nav>
+
+                <div className="flex-grow flex items-center justify-center p-6 relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 120 }}
+                        className="max-w-md w-full"
+                    >
+                        <Card className="bg-white/40 backdrop-blur-[24px] border border-white/60 rounded-[32px] overflow-hidden shadow-2xl shadow-orange-500/5">
+                            <CardContent className="text-center space-y-8 p-12">
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.2, type: "spring" }}
+                                    className="mx-auto w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-emerald-500/20"
+                                >
+                                    <CheckCircle2 className="h-12 w-12 text-white" />
+                                </motion.div>
+                                <div className="space-y-4">
+                                    <h3 className="text-4xl font-[1000] text-slate-900 font-display tracking-tight">Request Sent!</h3>
+                                    <p className="text-slate-500 text-lg leading-relaxed font-bold px-4">
+                                        Your registration is being reviewed. Check your email for activation details.
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => router.push('/login')}
+                                    className="w-full h-14 bg-gradient-to-r from-[var(--primary)] to-orange-400 text-white hover:scale-[1.02] active:scale-95 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 transition-all"
+                                >
+                                    Back to Login
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFF] py-12 px-6">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <div className="text-center space-y-2">
-                    <Link href="/">
-                        <img src="/logo.png" alt="RNT Tour" className="h-12 mx-auto mb-6" />
-                    </Link>
-                    <h1 className="text-3xl font-bold text-slate-900">Partner with RNT Tour</h1>
-                    <p className="text-slate-500 text-lg">Register your travel agency and start creating unforgettable experiences.</p>
+        <div className="min-h-screen bg-[#FFF5ED] flex flex-col relative overflow-hidden font-body text-slate-800">
+            {/* Admin-style Mesh Gradient Background */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-full opacity-40" 
+                    style={{
+                        backgroundImage: `
+                            radial-gradient(at 0% 0%, var(--primary) 0, transparent 60%), 
+                            radial-gradient(at 100% 100%, var(--primary-light) 0, transparent 60%),
+                            radial-gradient(at 50% 50%, var(--primary-soft) 0, transparent 100%)
+                        `
+                    }} 
+                />
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-[120px] animate-blob" />
+                <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-amber-100/30 rounded-full blur-[100px] animate-blob [animation-delay:2s]" />
+                <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-orange-50/40 rounded-full blur-[130px] animate-blob [animation-delay:4s]" />
+            </div>
+
+            {/* Navbar */}
+            <nav className="glass-navbar sticky top-0 z-[100] px-8 h-16 flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-2 group">
+                    <Globe className="h-6 w-6 text-[var(--primary)] group-hover:rotate-12 transition-transform" />
+                    <span className="text-xl font-bold text-slate-900 font-display tracking-tight">TourSaaS</span>
+                </Link>
+                <div className="flex items-center gap-3">
+                    <span className="text-slate-400 text-[10px] hidden sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
+                        Official Partner Portal
+                    </span>
+                    <div className="h-4 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
+                    <button 
+                        onClick={() => router.push('/login')} 
+                        className="bg-white/60 hover:bg-white px-5 py-2 rounded-full font-bold text-slate-700 transition-all border border-white/80 text-[11px] uppercase tracking-widest shadow-sm hover:shadow-md active:scale-95"
+                    >
+                        Sign In
+                    </button>
+                </div>
+            </nav>
+
+            <div className="flex-grow pt-16 pb-20 px-6 relative z-10 overflow-y-auto">
+                {/* Hero Section */}
+                <div className="max-w-4xl mx-auto text-center mb-16 px-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center gap-2 bg-white/40 backdrop-blur-[25px] rounded-full px-5 py-2 border border-white/60 mb-8 shadow-xl shadow-orange-500/5"
+                    >
+                        <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--primary)]">✦ Enterprise Partner Program</span>
+                    </motion.div>
+
+                    <h1 className="text-6xl md:text-7xl font-[1000] text-slate-900 font-playfair tracking-tight mb-8 leading-[1.05]" style={{ fontFamily: 'var(--font-playfair)' }}>
+                        Empower Your <span className="text-orange-600/30">Travel</span> Vision
+                    </h1>
+
+                    <p className="text-slate-600 text-lg font-bold max-w-xl mx-auto leading-relaxed font-body">
+                        Join the next generation of travel agencies using AI to craft perfect journeys. Seamlessly manage fleet, operations, and global inventory.
+                    </p>
                 </div>
 
-                <Card className="border-none shadow-xl bg-white/80 backdrop-blur-xl rounded-[24px] overflow-hidden">
-                    <form onSubmit={handleRegister} className="p-8 space-y-8">
-                        <Accordion type="multiple" defaultValue={['agency', 'contact', 'credentials']} className="space-y-6">
+                {/* Step Progress Bar */}
+                <div className="max-w-2xl mx-auto mb-20 px-4">
+                    <div className="relative flex justify-between items-center">
+                        {/* Connecting Lines */}
+                        <div className="absolute top-[16px] left-[20px] right-[20px] h-[2px] bg-slate-200 -z-10">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: activeStep >= 2 ? (activeStep === 2 ? '33%' : activeStep === 3 ? '66%' : '100%') : '0%' }}
+                                className="h-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary-glow)]"
+                            />
+                        </div>
+
+                        {[
+                            { step: 1, label: 'Account' },
+                            { step: 2, label: 'Agency Profile' },
+                            { step: 3, label: 'Contact' },
+                            { step: 4, label: 'Verification' }
+                        ].map((item) => (
+                            <div key={item.step} className="flex flex-col items-center gap-3">
+                                <motion.div
+                                    whileHover={{ scale: 1.1 }}
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-black transition-all duration-500 shadow-xl ${item.step < activeStep
+                                        ? 'bg-[var(--primary)] text-white shadow-orange-500/20'
+                                        : item.step === activeStep
+                                            ? 'bg-white text-[var(--primary)] ring-4 ring-orange-500/10 border border-orange-100 shadow-orange-500/10'
+                                            : 'bg-white/40 text-slate-400 border border-white/60'
+                                        }`}
+                                >
+                                    {item.step < activeStep ? <Check size={18} strokeWidth={3} /> : item.step}
+                                </motion.div>
+                                <span className={`text-[11px] font-[1000] uppercase tracking-[0.15em] ${item.step === activeStep ? 'text-slate-900' : 'text-slate-400'}`}>
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="max-w-[800px] mx-auto">
+                    <form onSubmit={handleSubmit(handleRegister)} className="space-y-6">
+                        <Accordion type="multiple" defaultValue={['agency', 'contact', 'credentials']} className="space-y-8">
                             {/* Agency Details */}
-                            <AccordionItem value="agency" className="border rounded-[20px] px-6 bg-purple-50/30 border-purple-100/50">
-                                <AccordionTrigger className="hover:no-underline py-6">
-                                    <h3 className="font-bold text-xl flex items-center gap-3 text-slate-900">
-                                        <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                                            <Shield className="h-5 w-5" />
+                            <AccordionItem value="agency" className="border-none mb-6">
+                                <div className="bg-white/40 backdrop-blur-[24px] border border-white/60 rounded-[32px] overflow-hidden shadow-2xl shadow-orange-500/5 hover:-translate-y-1 transition-all duration-500 group/card">
+                                    <AccordionTrigger className="hover:no-underline px-8 py-7 group">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-3.5 bg-gradient-to-br from-[var(--primary)] to-orange-400 rounded-2xl text-white shadow-lg shadow-orange-500/20 group-hover:rotate-6 transition-transform">
+                                                <Shield className="h-6 w-6" />
+                                            </div>
+                                            <div className="text-left">
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Agency Profile</h3>
+                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Primary business & legal information</p>
+                                            </div>
                                         </div>
-                                        Agency Details
-                                    </h3>
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-6 pb-6 pt-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="agency_name" className="text-[14px] font-semibold text-slate-700">Agency Name *</Label>
-                                            <Input
-                                                id="agency_name"
-                                                required
-                                                placeholder="e.g., Wanderlust Travels"
-                                                value={form.agency_name}
-                                                onChange={e => setForm({ ...form, agency_name: e.target.value })}
-                                                className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-purple-500"
-                                            />
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-8 pb-10 pt-2">
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Agency Name</Label>
+                                                    <Input
+                                                        {...register('agency_name')}
+                                                        placeholder="e.g., Wanderlust Travels"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.agency_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.agency_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.agency_name.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Legal Entity Name</Label>
+                                                    <Input
+                                                        {...register('company_legal_name')}
+                                                        placeholder="Full legal entity name"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.company_legal_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.company_legal_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.company_legal_name.message}</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Business Domain</Label>
+                                                    <Input
+                                                        {...register('domain')}
+                                                        placeholder="https://wanderlust.com"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.domain ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.domain && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.domain.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Headquarters Address</Label>
+                                                    <Input
+                                                        {...register('business_address')}
+                                                        placeholder="Full office address"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.business_address ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.business_address && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.business_address.message}</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Country</Label>
+                                                    <Controller
+                                                        name="country"
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Select 
+                                                                onValueChange={(value) => {
+                                                                    field.onChange(value);
+                                                                    setValue('state', '');
+                                                                    setValue('city', '');
+                                                                    setCountryStates(State.getStatesOfCountry(value));
+                                                                    setStateCities([]);
+                                                                }} 
+                                                                value={field.value}
+                                                            >
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                    <SelectValue placeholder="Select Country" />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="glass-select-content">
+                                                                    {allCountries.map(c => (
+                                                                        <SelectItem key={c.isoCode} value={c.isoCode} className="text-slate-900 font-bold glass-select-item">
+                                                                            {c.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">State</Label>
+                                                    <Controller
+                                                        name="state"
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Select 
+                                                                onValueChange={(value) => {
+                                                                    field.onChange(value);
+                                                                    setValue('city', '');
+                                                                    setStateCities(City.getCitiesOfState(formValues.country, value));
+                                                                }} 
+                                                                value={field.value}
+                                                                disabled={!formValues.country}
+                                                            >
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                    <SelectValue placeholder="Select State" />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="glass-select-content">
+                                                                    {countryStates.map(s => (
+                                                                        <SelectItem key={s.isoCode} value={s.isoCode} className="text-slate-900 font-bold glass-select-item">
+                                                                            {s.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">City</Label>
+                                                    <Controller
+                                                        name="city"
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Select 
+                                                                onValueChange={field.onChange} 
+                                                                value={field.value}
+                                                                disabled={!formValues.state}
+                                                            >
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                    <SelectValue placeholder="Select City" />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="glass-select-content">
+                                                                    {stateCities.map(c => (
+                                                                        <SelectItem key={c.name} value={c.name} className="text-slate-900 font-bold glass-select-item">
+                                                                            {c.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="company_legal_name" className="text-[14px] font-semibold text-slate-700">Company Legal Name *</Label>
-                                            <Input
-                                                id="company_legal_name"
-                                                required
-                                                placeholder="Full legal entity name"
-                                                value={form.company_legal_name}
-                                                onChange={e => setForm({ ...form, company_legal_name: e.target.value })}
-                                                className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-purple-500"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="domain" className="text-[14px] font-semibold text-slate-700">Website / Domain Name *</Label>
-                                        <Input
-                                            id="domain"
-                                            required
-                                            placeholder="e.g., wanderlust.com"
-                                            value={form.domain}
-                                            onChange={e => setForm({ ...form, domain: e.target.value })}
-                                            className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-purple-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="business_address" className="text-[14px] font-semibold text-slate-700">Business Address *</Label>
-                                        <Input
-                                            id="business_address"
-                                            required
-                                            placeholder="Full office address"
-                                            value={form.business_address}
-                                            onChange={e => setForm({ ...form, business_address: e.target.value })}
-                                            className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-purple-500"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="country" className="text-[14px] font-semibold text-slate-700">Country *</Label>
-                                            <select
-                                                id="country"
-                                                required
-                                                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white/50 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                                                value={form.country}
-                                                onChange={e => {
-                                                    const countryCode = e.target.value;
-                                                    setForm({ ...form, country: countryCode, state: '', city: '' });
-                                                    setCountryStates(State.getStatesOfCountry(countryCode));
-                                                    setStateCities([]);
-                                                }}
-                                            >
-                                                {allCountries.map(c => (
-                                                    <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="state" className="text-[14px] font-semibold text-slate-700">State *</Label>
-                                            <select
-                                                id="state"
-                                                required
-                                                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white/50 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                                                value={form.state}
-                                                onChange={e => {
-                                                    const stateCode = e.target.value;
-                                                    setForm({ ...form, state: stateCode, city: '' });
-                                                    setStateCities(City.getCitiesOfState(form.country, stateCode));
-                                                }}
-                                            >
-                                                <option value="">Select State</option>
-                                                {countryStates.map(s => (
-                                                    <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="city" className="text-[14px] font-semibold text-slate-700">City *</Label>
-                                            <select
-                                                id="city"
-                                                required
-                                                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white/50 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                                                value={form.city}
-                                                onChange={e => setForm({ ...form, city: e.target.value })}
-                                            >
-                                                <option value="">Select City</option>
-                                                {stateCities.map(c => (
-                                                    <option key={c.name} value={c.name}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </AccordionContent>
+                                    </AccordionContent>
+                                </div>
                             </AccordionItem>
 
                             {/* Contact Details */}
-                            <AccordionItem value="contact" className="border rounded-[20px] px-6 bg-indigo-50/30 border-indigo-100/50">
-                                <AccordionTrigger className="hover:no-underline py-6">
-                                    <h3 className="font-bold text-xl flex items-center gap-3 text-slate-900">
-                                        <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-                                            <UserPlus className="h-5 w-5" />
+                            <AccordionItem value="contact" className="border-none mb-6">
+                                <div className="bg-white/40 backdrop-blur-[24px] border border-white/60 rounded-[32px] overflow-hidden shadow-2xl shadow-orange-500/5 hover:-translate-y-1 transition-all duration-500 group/card">
+                                    <AccordionTrigger className="hover:no-underline px-8 py-7 group">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-3.5 bg-gradient-to-br from-[var(--primary)] to-orange-400 rounded-2xl text-white shadow-lg shadow-orange-500/20 group-hover:rotate-6 transition-transform">
+                                                <UserPlus className="h-6 w-6" />
+                                            </div>
+                                            <div className="text-left">
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Primary Contact</h3>
+                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Authorised representative details</p>
+                                            </div>
                                         </div>
-                                        Contact Details
-                                    </h3>
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-6 pb-6 pt-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="first_name" className="text-[14px] font-semibold text-slate-700">First Name *</Label>
-                                            <Input
-                                                id="first_name"
-                                                required
-                                                placeholder="Primary contact first name"
-                                                value={form.first_name}
-                                                onChange={e => setForm({ ...form, first_name: e.target.value })}
-                                                className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-indigo-500"
-                                            />
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-8 pb-10 pt-2">
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">First Name</Label>
+                                                    <Input
+                                                        {...register('first_name')}
+                                                        placeholder="e.g., John"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.first_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.first_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.first_name.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Last Name</Label>
+                                                    <Input
+                                                        {...register('last_name')}
+                                                        placeholder="e.g., Doe"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.last_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.last_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.last_name.message}</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Work Email</Label>
+                                                    <Input
+                                                        {...register('email')}
+                                                        type="email"
+                                                        placeholder="contact@agency.com"
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.email ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    />
+                                                    {errors.email && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.email.message}</p>}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mobile Number</Label>
+                                                    <PhoneInput
+                                                        country={'in'}
+                                                        value={formValues.phone}
+                                                        onChange={phone => setValue('phone', phone)}
+                                                        containerClass="!w-full !rounded-2xl shadow-sm"
+                                                        inputClass={`!w-full !h-14 !pl-16 !bg-white/40 !border-white/60 !rounded-2xl !transition-all !text-[15px] !font-bold !text-slate-900 placeholder:!text-slate-300 focus:!bg-white focus:!border-[var(--primary)] focus:!ring-4 focus:!ring-orange-500/5 ${errors.phone ? '!border-red-400 !ring-1 !ring-red-400/20' : ''}`}
+                                                        buttonClass="!bg-transparent !border-white/20 !rounded-l-2xl !pl-4 hover:!bg-white/10 !transition-colors"
+                                                        dropdownClass="glass-phone-dropdown"
+                                                    />
+                                                    {errors.phone && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.phone.message}</p>}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="last_name" className="text-[14px] font-semibold text-slate-700">Last Name *</Label>
-                                            <Input
-                                                id="last_name"
-                                                required
-                                                placeholder="Primary contact last name"
-                                                value={form.last_name}
-                                                onChange={e => setForm({ ...form, last_name: e.target.value })}
-                                                className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="email" className="text-[14px] font-semibold text-slate-700">Email Address *</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                required
-                                                placeholder="contact@agency.com"
-                                                value={form.email}
-                                                onChange={e => setForm({ ...form, email: e.target.value })}
-                                                className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="phone" className="text-[14px] font-semibold text-slate-700">Phone Number *</Label>
-                                            <PhoneInput
-                                                country={'in'}
-                                                value={form.phone}
-                                                onChange={phone => setForm({ ...form, phone })}
-                                                inputStyle={{
-                                                    width: '100%',
-                                                    height: '48px',
-                                                    borderRadius: '12px',
-                                                    border: '1px solid #e2e8f0',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.5)'
-                                                }}
-                                                containerStyle={{
-                                                    width: '100%'
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </AccordionContent>
+                                    </AccordionContent>
+                                </div>
                             </AccordionItem>
 
                             {/* Credentials */}
-                            <AccordionItem value="credentials" className="border rounded-[20px] px-6 bg-slate-50/50 border-slate-100">
-                                <AccordionTrigger className="hover:no-underline py-6">
-                                    <h3 className="font-bold text-xl flex items-center gap-3 text-slate-900">
-                                        <div className="p-2 bg-slate-200 rounded-lg text-slate-600">
-                                            <Shield className="h-5 w-5" />
-                                        </div>
-                                        Login Credentials
-                                    </h3>
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-6 pb-6 pt-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="password" title="At least 8 characters, one uppercase, one number" className="text-[14px] font-semibold text-slate-700">Password *</Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="password"
-                                                    type={showPassword ? "text" : "password"}
-                                                    required
-                                                    value={form.password}
-                                                    onChange={e => setForm({ ...form, password: e.target.value })}
-                                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl pr-10 focus:ring-slate-500 ${form.password ? (passwordStrength >= 3 ? 'border-green-200' : 'border-red-200') : ''}`}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                                >
-                                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                                </button>
+                            <AccordionItem value="credentials" className="border-none mb-6">
+                                <div className="bg-white/40 backdrop-blur-[24px] border border-white/60 rounded-[32px] overflow-hidden shadow-2xl shadow-orange-500/5 hover:-translate-y-1 transition-all duration-500 group/card">
+                                    <AccordionTrigger className="hover:no-underline px-8 py-7 group">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-3.5 bg-gradient-to-br from-[var(--primary)] to-orange-400 rounded-2xl text-white shadow-lg shadow-orange-500/20 group-hover:rotate-6 transition-transform">
+                                                <Shield className="h-6 w-6" />
                                             </div>
-                                            {form.password && (
-                                                <div className="flex gap-1 mt-2">
-                                                    {[1, 2, 3, 4, 5].map((i) => (
-                                                        <div
-                                                            key={i}
-                                                            className={`h-1 w-full rounded-full ${i <= passwordStrength ? (passwordStrength <= 2 ? 'bg-red-400' : passwordStrength <= 4 ? 'bg-yellow-400' : 'bg-green-500') : 'bg-slate-200'}`}
+                                            <div className="text-left">
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Security</h3>
+                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Secure your agency account</p>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-8 pb-10 pt-2">
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Enter Password</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            {...register('password')}
+                                                            type={showPassword ? "text" : "password"}
+                                                            placeholder="••••••••"
+                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />
-                                                    ))}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--primary)] transition-colors"
+                                                        >
+                                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        </button>
+                                                    </div>
+                                                    {formValues.password && (
+                                                        <div className="flex gap-1.5 mt-3 px-1">
+                                                            {[1, 2, 3, 4, 5].map((i) => (
+                                                                <div
+                                                                    key={i}
+                                                                    className={`h-1.5 w-full rounded-full transition-all duration-500 ${i <= passwordStrength ? (passwordStrength <= 2 ? 'bg-red-400' : passwordStrength <= 4 ? 'bg-amber-400' : 'bg-green-400') : 'bg-white/10'}`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    {errors.password && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.password.message}</p>}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="confirm_password" className="text-[14px] font-semibold text-slate-700">Confirm Password *</Label>
-                                            <div className="relative">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Confirm Password</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            {...register('confirm_password')}
+                                                            type={showConfirmPassword ? "text" : "password"}
+                                                            placeholder="••••••••"
+                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.confirm_password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--primary)] transition-colors"
+                                                        >
+                                                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        </button>
+                                                    </div>
+                                                    {errors.confirm_password && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.confirm_password.message}</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-8 bg-white/40 rounded-[32px] border border-white/60 backdrop-blur-md space-y-6 shadow-sm">
+                                                <Label className="text-[14px] font-[1000] text-slate-900 flex items-center gap-3">
+                                                    <Sparkles className="h-4 w-4 text-[var(--primary)]" />
+                                                    Intelligence Check: What is {captchaQuest.num1} + {captchaQuest.num2}?
+                                                </Label>
                                                 <Input
-                                                    id="confirm_password"
-                                                    type={showConfirmPassword ? "text" : "password"}
-                                                    required
-                                                    value={form.confirm_password}
-                                                    onChange={e => setForm({ ...form, confirm_password: e.target.value })}
-                                                    className={`h-12 bg-white/50 border-slate-200 rounded-xl pr-10 focus:ring-slate-500 ${form.confirm_password && form.confirm_password === form.password ? 'border-green-200' : form.confirm_password ? 'border-red-200' : ''}`}
+                                                    {...register('captcha')}
+                                                    placeholder="Solve"
+                                                    className={`h-20 bg-white shadow-inner border border-slate-100 rounded-3xl transition-all font-[1000] text-5xl text-center tracking-[0.3em] text-slate-900 placeholder:text-slate-100 focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 ${errors.captcha ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                 />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                                >
-                                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                                </button>
+                                                {errors.captcha && <p className="text-[11px] font-bold text-red-500 mt-1 text-center">{errors.captcha.message}</p>}
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="p-4 bg-slate-100 rounded-xl space-y-3">
-                                        <Label className="text-[14px] font-bold text-slate-800">Bot Protection: What is {captchaQuest.num1} + {captchaQuest.num2}? *</Label>
-                                        <Input
-                                            placeholder="Enter your answer"
-                                            required
-                                            value={form.captcha}
-                                            onChange={e => setForm({ ...form, captcha: e.target.value })}
-                                            className="h-10 bg-white border-slate-200 rounded-lg"
-                                        />
-                                    </div>
-                                </AccordionContent>
+                                    </AccordionContent>
+                                </div>
                             </AccordionItem>
                         </Accordion>
 
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-8 pt-10">
                             <Button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full h-14 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-lg rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                                className="w-full h-20 bg-gradient-to-r from-[var(--primary)] to-orange-400 text-white hover:scale-[1.02] active:scale-95 font-[1000] text-xl rounded-[28px] shadow-2xl shadow-orange-500/30 transition-all relative overflow-hidden group"
                             >
-                                {submitting ? 'Processing Registration...' : 'Submit Registration Request'}
+                                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                {submitting ? (
+                                    <span className="flex items-center gap-3 justify-center">
+                                        <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                                        Initializing Agency...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-2 justify-center">
+                                        Complete Enterprise Registration <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                                    </span>
+                                )}
                             </Button>
-                            <p className="text-center text-slate-500 font-medium">
-                                Already have an account? <Link href="/login" className="text-indigo-600 hover:underline">Log in here</Link>
+                            <p className="text-center text-slate-500 font-bold text-sm uppercase tracking-widest">
+                                Already a partner? <Link href="/login" className="text-[var(--primary)] hover:underline underline-offset-4 font-black transition-all ml-1">Log in to Portal</Link>
                             </p>
                         </div>
                     </form>
-                </Card>
+                </div>
             </div>
         </div>
-    )
+    );
 }

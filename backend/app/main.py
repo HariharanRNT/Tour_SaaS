@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, reports, webhooks, activities
+from app.api.v1 import auth, packages, bookings, payments, tours, flights, templates, user_itineraries, packages_enhanced, bookings_custom, admin_packages, admin_simple, trip_planner, agent_packages, admin_agents, admin_notifications, agent_bookings, agent_customers, agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, reports, webhooks, activities
 import traceback
 import logging
 import sys
@@ -90,6 +90,7 @@ app.include_router(agent_bookings.router, prefix=f"{settings.API_V1_PREFIX}/agen
 app.include_router(agent_customers.router, prefix=f"{settings.API_V1_PREFIX}/agent/customers", tags=["Agent - Customers"])
 app.include_router(agent_packages.router, prefix=f"{settings.API_V1_PREFIX}/agent", tags=["Agent - Packages"])
 app.include_router(admin_agents.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["Admin - Agents"])
+app.include_router(admin_notifications.router, prefix=f"{settings.API_V1_PREFIX}/admin/notifications", tags=["Admin - Notifications"])
 app.include_router(admin_packages.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["Admin - Packages"])
 app.include_router(admin_simple.router, prefix=f"{settings.API_V1_PREFIX}/admin-simple", tags=["Admin - Simple"])
 app.include_router(agent_dashboard.router, prefix=f"{settings.API_V1_PREFIX}/agent-dashboard", tags=["Agent - Dashboard"])

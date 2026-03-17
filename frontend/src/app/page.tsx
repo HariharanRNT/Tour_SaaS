@@ -6,7 +6,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle, Globe, Users, Clock, Star, Heart, Luggage, Compass, Palmtree, Search } from 'lucide-react'
+import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
+    Globe, Users, Clock, Star, Heart, Luggage, Compass, Search,
+    Camera, Car, Hotel, Mountain, Waves, Umbrella, Gift, Award, Zap,
+    CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Palmtree, ChevronRight
+} from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
@@ -47,13 +51,116 @@ export default function Home() {
     const [destinations, setDestinations] = useState<Destination[]>([])
     const [destLoading, setDestLoading] = useState(true)
 
+    const [hpSettings, setHpSettings] = useState<{
+        headline1: string;
+        headline2: string;
+        subheading: string;
+        primaryBtnText: string;
+        secondaryBtnText: string;
+        backgroundImageUrl: string;
+        badgeText: string;
+        showAiBadge: boolean;
+    } | null>(null)
+
+    const [agentFeatureCards, setAgentFeatureCards] = useState<{
+        icon: string; title: string; description: string;
+    }[] | null>(null)
+
+    const [wcuCards, setWcuCards] = useState<{
+        icon: string; title: string; description: string;
+    }[] | null>(null)
+
+    const [cardAppearance, setCardAppearance] = useState<{
+        iconStyle: string;
+        background: string;
+        border: string;
+        hover: string;
+        titleColor: string;
+        layout: string;
+        iconColor: string;
+        customIconColor: string;
+    } | null>(null)
+
+    useEffect(() => {
+        // 1. Initial load from LocalStorage for speed/dev
+        try {
+            const saved = localStorage.getItem('agent-homepage-settings');
+            if (saved) setHpSettings(JSON.parse(saved));
+        } catch { /* ignore */ }
+        try {
+            const savedCards = localStorage.getItem('agent-homepage-cards');
+            if (savedCards) {
+                const parsed = JSON.parse(savedCards);
+                if (Array.isArray(parsed) && parsed.length > 0) setAgentFeatureCards(parsed);
+            }
+        } catch { /* ignore */ }
+        try {
+            const savedWcu = localStorage.getItem('agent-homepage-wcu-cards');
+            if (savedWcu) {
+                const parsed = JSON.parse(savedWcu);
+                if (Array.isArray(parsed) && parsed.length > 0) setWcuCards(parsed);
+            }
+        } catch { /* ignore */ }
+        try {
+            const savedStyle = localStorage.getItem('agent-homepage-card-style');
+            if (savedStyle) setCardAppearance(JSON.parse(savedStyle));
+        } catch { /* ignore */ }
+
+        // 2. Load from Public API for accuracy
+        const fetchPublicSettings = async () => {
+            try {
+                // Determine domain for X-Domain header
+                const domain = window.location.hostname;
+                const res = await fetch('http://localhost:8000/api/v1/agent/settings/public', {
+                    headers: { 'X-Domain': domain }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.homepage_settings) {
+                        const hs = data.homepage_settings;
+                        if (hs.headline1) {
+                            setHpSettings({
+                                headline1: hs.headline1,
+                                headline2: hs.headline2 || "",
+                                subheading: hs.subheading || "",
+                                primaryBtnText: hs.primaryBtnText || "See Sample Itinerary",
+                                secondaryBtnText: hs.secondaryBtnText || "Start Your Journey",
+                                backgroundImageUrl: hs.backgroundImageUrl || "",
+                                badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
+                                showAiBadge: hs.showAiBadge !== false,
+                            });
+                        }
+                        if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
+                        if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
+                        if (hs.card_appearance) setCardAppearance(hs.card_appearance);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch public settings", err);
+            }
+        };
+        fetchPublicSettings();
+    }, [])
+
     const IconMap: Record<string, any> = {
-        Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin
+        Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin,
+        Camera, Car, Hotel, Compass, Mountain, Waves, Umbrella, Gift, Award, Zap,
+        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Search,
     };
 
     const getIcon = (name: string, fallback: any) => {
         const Icon = IconMap[name];
-        return Icon ? <Icon className="h-10 w-10 text-current" /> : fallback;
+        if (!Icon) return fallback;
+
+        const isFilled = cardAppearance?.iconStyle === 'filled-circle' || cardAppearance?.iconStyle === 'gradient-circle';
+        let iconColor = 'white';
+
+        if (!isFilled) {
+            if (cardAppearance?.iconColor === 'custom') iconColor = cardAppearance.customIconColor;
+            else iconColor = 'var(--primary)';
+        }
+
+        return <Icon className="h-6 w-6" style={{ color: iconColor }} />;
     };
 
     const handleSampleItinerary = async () => {
@@ -93,9 +200,11 @@ export default function Home() {
         fetchDestinations()
     }, [isLoading])
 
-    const heroBgStyle = { backgroundImage: `url("https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop")` };
+    const heroBgImage = hpSettings?.backgroundImageUrl ||
+        'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop';
+    const heroBgStyle = { backgroundImage: `url("${heroBgImage}")` };
 
-    if (isLoading || destLoading) {
+    if (destLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[80vh] w-full bg-white">
                 <div className="relative">
@@ -106,23 +215,6 @@ export default function Home() {
             </div>
         )
     }
-
-    const getWcuIconBg = (idx: number, iconBgColor?: string) => {
-        const defaults = ['#3B82F6', '#8B5CF6', '#06B6D4', '#10B981'];
-        const baseColor = (iconBgColor || defaults[idx % defaults.length]).toUpperCase();
-
-        const presetGradients: Record<string, string[]> = {
-            '#3B82F6': ['#60A5FA', '#2563EB'], // Blue
-            '#8B5CF6': ['#A78BFA', '#7C3AED'], // Purple
-            '#06B6D4': ['#22D3EE', '#0891B2'], // Teal
-            '#10B981': ['#34D399', '#059669'], // Green
-            'var(--primary)': ['#FB923C', 'var(--primary)'], // Orange
-            '#F43F5E': ['#FB7185', '#E11D48'], // Rose
-        };
-
-        const colors = presetGradients[baseColor] || [baseColor, baseColor];
-        return `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
-    };
 
     return (
         <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
@@ -159,37 +251,30 @@ export default function Home() {
                 </div>
 
                 {/* AI Badge - Upper Right */}
+                {(hpSettings?.showAiBadge !== false) && (
                 <div className="absolute top-6 right-6 z-20 hidden md:block">
                     <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-xl animate-in fade-in slide-in-from-top-4 duration-1000">
                         <Sparkles className="h-4 w-4 text-amber-300" />
-                        <span className="font-semibold tracking-wide shadow-black drop-shadow-md">AI-Powered Trip Planning</span>
+                        <span className="font-semibold tracking-wide shadow-black drop-shadow-md">{hpSettings?.badgeText || 'AI-Powered Trip Planning'}</span>
                     </Badge>
                 </div>
+                )}
 
                 <div className="container mx-auto px-4 relative z-10 py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="max-w-5xl mx-auto text-center p-8 md:p-14 relative mb-12"
-                        style={{
-                            // backdropFilter: 'blur(22px)',
-                            // background: 'rgba(255,255,255,0.1)',
-                            // border: '1px solid rgba(255,255,255,0.3)',
-                            // borderRadius: '36px',
-                            // boxShadow: '0 25px 80px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.45)'
-                        }}
+                        className="max-w-5xl mx-auto text-center p-6 md:p-8 relative mb-4"
                     >
                         <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.05] text-white drop-shadow-md" style={{ color: "var(--heading, white)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             {isLoading ? (
                                 <span className="h-20 w-3/4 bg-white/10 rounded-2xl animate-pulse mx-auto block" />
-                            ) : theme.home_hero_title ? (
-                                theme.home_hero_title
                             ) : (
                                 <>
-                                    Adventure Awaits—<br className="hidden md:block" />
+                                    {hpSettings?.headline1 || 'Adventure Awaits—'}<br className="hidden md:block" />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary-soft)] via-[var(--primary-light)] to-[var(--primary)] drop-shadow-sm">
-                                        Tailored Just for You
+                                        {hpSettings?.headline2 || 'Tailored Just for You'}
                                     </span>
                                 </>
                             )}
@@ -198,11 +283,11 @@ export default function Home() {
                         <p className="text-xl md:text-2xl mb-10 text-white/90 max-w-3xl mx-auto leading-relaxed font-light drop-shadow-sm" style={{ color: "var(--body-text, rgba(255, 255, 255, 0.9))", fontFamily: "'Inter', sans-serif" }}>
                             {isLoading ? (
                                 <span className="h-8 w-1/2 bg-white/10 rounded-lg animate-pulse mx-auto inline-block" />
-                            ) : (theme.home_hero_subtitle || "Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.")}
+                            ) : (hpSettings?.subheading || theme.home_hero_subtitle || "Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.")}
                         </p>
 
                         {/* CTA Section */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
                             <Button
                                 onClick={handleSampleItinerary}
                                 variant="outline"
@@ -210,7 +295,7 @@ export default function Home() {
                                 className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white bg-transparent rounded-[30px]"
                             >
                                 <PlayCircle className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
-                                {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (theme.hero_cta_secondary_text || "See Sample Itinerary")}
+                                {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
                             </Button>
 
                             <Link href="/plan-trip">
@@ -221,71 +306,45 @@ export default function Home() {
                                         borderRadius: "30px",
                                         border: 'none',
                                     }}>
-                                    {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (theme.hero_cta_primary_text || "Start Your Journey")}
+                                    {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.primaryBtnText || theme.hero_cta_primary_text || "Start Your Journey")}
                                     <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
                         </div>
                     </motion.div>
 
-
-
                     {/* Feature Cards */}
                     {theme.show_feature_cards !== false && (
-                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto transform translate-y-8 z-20 relative">
-                            {(theme.feature_cards && theme.feature_cards.length > 0 ? theme.feature_cards : [
-                                {
-                                    icon: "Sparkles",
-                                    title: "Smart Recommendations",
-                                    description: "Tailored trips based on your unique preferences",
-                                },
-                                {
-                                    icon: "Sliders",
-                                    title: "Customize Everything",
-                                    description: "Full control to adjust dates, activities, and stays",
-                                },
-                                {
-                                    icon: "CheckCircle2",
-                                    title: "Instant Booking",
-                                    description: "Save your plan and book securely when ready",
-                                }
-                            ]).map((card: any, idx: number) => (
+                        <div className={`grid ${cardAppearance?.layout === 'horizontal' ? 'grid-cols-1 md:grid-cols-2' : 'md:grid-cols-3'} gap-8 max-w-6xl mx-auto transform translate-y-2 z-20 relative 
+                            cards-style-container 
+                            ${cardAppearance ? `cards-icon-${cardAppearance.iconStyle} cards-bg-${cardAppearance.background} cards-border-${cardAppearance.border} cards-hover-${cardAppearance.hover} cards-layout-${cardAppearance.layout} cards-title-${cardAppearance.titleColor}` : ''}`}>
+                            {(agentFeatureCards && agentFeatureCards.length > 0 ? agentFeatureCards : (theme.feature_cards && theme.feature_cards.length > 0 ? theme.feature_cards : [
+                                { icon: 'Sparkles', title: 'Smart Recommendations', description: 'Tailored trips based on your unique preferences' },
+                                { icon: 'Sliders',  title: 'Customize Everything',  description: 'Full control to adjust dates, activities, and stays' },
+                                { icon: 'CheckCircle2', title: 'Instant Booking',   description: 'Save your plan and book securely when ready' },
+                            ])).map((card: any, idx: number) => (
                                 <motion.div
                                     key={idx}
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                    className={`group glass-panel rounded-[20px] p-8 transition-all duration-300 relative overflow-hidden text-center`}
-                                    style={{
+                                    className={`group feature-card glass-panel rounded-[20px] p-8 transition-all duration-300 relative overflow-hidden text-center`}
+                                    style={!cardAppearance ? {
                                         borderRadius: "20px",
                                         backgroundColor: "rgba(255,255,255,0.18)",
                                         backdropFilter: "blur(18px)",
                                         border: "1px solid rgba(255,255,255,0.3)",
                                         boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = 'translateY(-10px)';
-                                        e.currentTarget.style.boxShadow = '0 25px 50px rgba(0,0,0,0.2)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.45)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.1)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
-                                    }}
+                                    } : { borderRadius: "20px" }}
                                 >
                                     <div className="relative z-10 flex flex-col items-center">
-                                        <div className="w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_var(--primary-glow)] transition-all duration-300" style={{ background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" }}>
+                                        <div className="card-icon-container w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_var(--primary-glow)] transition-all duration-300" 
+                                            style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(card.icon, <Sparkles className="h-6 w-6 text-white" />)}
                                         </div>
-                                        <h3 className="font-bold text-2xl mb-3 text-white">{card.title}</h3>
+                                        <h3 className="card-title font-bold text-2xl mb-3 text-white">{card.title}</h3>
                                         <p className="text-white/75 leading-relaxed mb-6">{card.description || card.desc}</p>
-                                        <div className="opacity-60 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-0">
-                                            <span className="text-sm font-semibold text-white flex items-center gap-1 justify-center">
-                                                Learn more <ArrowRight className="w-4 h-4" />
-                                            </span>
-                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
@@ -294,99 +353,167 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* AI-Powered Popular Destinations */}
+            {destinations.length > 0 && (
+                <section className="py-24 bg-white relative overflow-hidden">
+                    {/* Background Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-orange-50 rounded-full blur-[120px] -z-10" />
+                    <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-blue-50 rounded-full blur-[100px] -z-10" />
+                    
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0">
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-orange-50 font-bold px-4 py-1.5 uppercase tracking-wider text-[10px]">
+                                        Explore the World
+                                    </Badge>
+                                    <h2 className="text-4xl md:text-6xl font-black text-slate-900 font-display mb-4 tracking-tight">
+                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[#FF8C00]">Destinations</span>
+                                    </h2>
+                                    <p className="text-slate-500 font-medium max-w-xl text-lg opacity-80">
+                                        Join thousands of travelers exploring these top-rated spots this season. AI-curated based on traveler trends.
+                                    </p>
+                                </motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <button 
+                                        onClick={() => router.push('/plan-trip')}
+                                        className="text-[var(--primary)] font-black text-sm tracking-widest uppercase flex items-center gap-2 group hover:gap-3 transition-all"
+                                    >
+                                        View All Destinations
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </motion.div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {destinations.slice(0, 6).map((dest, idx) => {
+                                    const fallbackImages = [
+                                        "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
+                                        "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
+                                        "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
+                                    ]
+                                    const cardImage = dest.image_url || fallbackImages[idx % fallbackImages.length]
+                                    const city = dest.name
+                                    const pkgCount = dest.pkg_count || 5
+
+                                    return (
+                                        <motion.div
+                                            key={city}
+                                            initial={{ opacity: 0, y: 30 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(city)}`)}
+                                            className="relative aspect-[4/5] md:aspect-[4/3] rounded-[32px] overflow-hidden cursor-pointer group shadow-2xl"
+                                        >
+                                            <img
+                                                src={cardImage}
+                                                alt={city}
+                                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
+
+                                            <div className="absolute top-6 right-6 flex flex-col gap-2">
+                                                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
+                                                    <span className="text-yellow-400">★</span> 4.8
+                                                </Badge>
+                                                <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
+                                                    {pkgCount}+ Packages
+                                                </Badge>
+                                            </div>
+
+                                            <div className="absolute bottom-8 left-8 right-8">
+                                                <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{dest.country || 'International'}</p>
+                                                <h3 className="text-4xl font-bold text-white mb-4 font-display drop-shadow-lg">{city}</h3>
+                                                <div className="relative inline-block group/link">
+                                                    <p className="text-white text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
+                                                        Explore now <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
+                                                    </p>
+                                                    <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[var(--primary)] group-hover/link:w-full transition-all duration-300"></div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Why Choose Us Section */}
             {
                 theme.show_wcu_section !== false && (
-                    <section className="bg-[#FFF3E8] relative overflow-hidden" style={{ paddingTop: "var(--section-spacing, 4rem)", paddingBottom: "calc(var(--section-spacing, 4rem) / 2)" }}>
+                    <section className="bg-[#FFF3E8] relative overflow-hidden" style={{ paddingTop: "1rem", paddingBottom: "1rem" }}>
                         {/* Floating Blobs */}
                         <div className="absolute inset-0 pointer-events-none z-0" style={{
                             background: 'radial-gradient(circle at 20% 30%, #FFD8B5 0%, transparent 40%), radial-gradient(circle at 80% 70%, var(--primary-light) 0%, transparent 40%)',
                             opacity: 0.6
                         }} />
 
-                        {/* Wave Separator - Top */}
-                        <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0] rotate-180 z-10">
-                            <svg className="absolute top-0 w-full h-[120px] rotate-180" viewBox="0 0 1440 120" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="wave-gradient" x1="0" x2="0" y1="0" y2="1">
-                                        <stop offset="0%" stopColor="rgba(255,179,138,0.25)" />
-                                        <stop offset="100%" stopColor="rgba(255,243,232,1)" />
-                                    </linearGradient>
-                                </defs>
-                                <path
-                                    fill="url(#wave-gradient)"
-                                    d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"
-                                ></path>
-                            </svg>
-                        </div>
-
-                        <div className="container mx-auto px-4 relative z-10 pt-16">
-                            <div className="text-center mb-20">
-                                <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-soft)] opacity-20 px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md" style={{ backgroundColor: 'var(--primary-glow)' }}>Why Choose Us</Badge>
-                                <h2 className="text-3xl md:text-[42px] font-black text-gray-900 tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: "1.2" }}>
-                                    {theme.wcu_title || "Everything You Need"}<br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">
-                                        {theme.wcu_accent_title || "For a Perfect Trip"}
-                                    </span>
-                                </h2>
-                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">We handle the details so you can focus on making memories.</p>
+                        <div className="container mx-auto px-4 relative z-10">
+                            <div className="text-center mb-10">
+                                <Badge variant="outline" className="mb-4 border-2 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-glow)] px-5 py-2 uppercase tracking-widest text-xs font-black shadow-[0_4px_15px_var(--primary-glow)] border-opacity-50" style={{ background: 'var(--primary-glow)', color: 'var(--primary)' }}>Why Choose Us</Badge>
                             </div>
 
-                            <div className="grid md:grid-cols-4 gap-8">
-                                {(theme.wcu_cards && theme.wcu_cards.length > 0 ? theme.wcu_cards : [
+                            <div className={`grid ${cardAppearance?.layout === 'horizontal' ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-8 
+                                cards-style-container 
+                                ${cardAppearance ? `cards-icon-${cardAppearance.iconStyle} cards-bg-${cardAppearance.background} cards-border-${cardAppearance.border} cards-hover-${cardAppearance.hover} cards-layout-${cardAppearance.layout} cards-title-${cardAppearance.titleColor}` : ''}`}>
+                                {(wcuCards && wcuCards.length > 0 ? wcuCards : (theme.wcu_cards && theme.wcu_cards.length > 0 ? theme.wcu_cards : [
                                     {
                                         icon: "Globe",
-                                        icon_bg_color: "#3B82F6",
                                         title: "Curated Destinations",
                                         description: "Discover handpicked, verified experiences at the world’s top destinations."
                                     },
                                     {
                                         icon: "Users",
-                                        icon_bg_color: "#8B5CF6",
                                         title: "Local Experts",
                                         description: "Authentic experiences guided by seasoned locals who know the hidden gems."
                                     },
                                     {
                                         icon: "Clock",
-                                        icon_bg_color: "#06B6D4",
                                         title: "Flexible Plans",
                                         description: "Change dates, activities, or cancel with ease. Your plan adapts to you."
                                     },
                                     {
                                         icon: "Shield",
-                                        icon_bg_color: "#10B981",
                                         title: "Safe Payments",
                                         description: "Seamless, secure payments via Razorpay with instant confirmation."
                                     }
-                                ]).map((feature: any, idx: number) => (
+                                ])).map((feature: any, idx: number) => (
                                     <motion.div
                                         key={idx}
                                         initial={{ opacity: 0, y: 20 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                        className="group glass-panel bg-[rgba(255,250,245,0.45)] backdrop-blur-[16px] rounded-[20px] p-8 shadow-lg transition-all duration-300 border border-[rgba(255,255,255,0.65)] relative overflow-hidden"
-                                        onMouseEnter={e => {
-                                            e.currentTarget.style.transform = 'translateY(-10px)';
-                                            e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.12)';
-                                        }}
-                                        onMouseLeave={e => {
-                                            e.currentTarget.style.transform = 'none';
-                                            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)';
-                                        }}
+                                        className="group feature-card glass-panel rounded-[20px] p-8 shadow-xl hover:shadow-[0_20px_50px_var(--primary-glow)] transition-all duration-500 relative overflow-hidden"
+                                        style={!cardAppearance ? {
+                                            background: "rgba(255,255,255,0.7)",
+                                            backdropFilter: "blur(16px)",
+                                            borderRadius: "20px",
+                                            border: "1px solid var(--primary-light)",
+                                            boxShadow: "0 10px 40px -10px var(--primary-glow)"
+                                        } : { borderRadius: "20px" }}
                                     >
-                                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500" style={{ background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" }}>
+                                        <div className="card-icon-container w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500" 
+                                            style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(feature.icon, <Globe className="h-8 w-8 text-white" />)}
                                         </div>
-                                        <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                                        <h3 className="card-title text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                                             {feature.title}
                                         </h3>
                                         <p className="text-[rgba(80,40,10,0.65)] leading-relaxed font-medium text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                             {feature.description || feature.desc}
                                         </p>
-                                        <div className="mt-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                            <span className="text-sm font-bold text-[var(--primary)] flex items-center gap-1">Learn more <ArrowRight className="w-4 h-4" /></span>
-                                        </div>
                                     </motion.div>
                                 ))}
                             </div>
@@ -395,146 +522,6 @@ export default function Home() {
                 )
             }
 
-            {/* Popular Destinations */}
-            <section className="pt-12 pb-24 bg-[#FFF3E8]">
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
-                        <div className="text-left max-w-2xl">
-                            <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-soft)] opacity-20 px-4 py-1.5 uppercase tracking-widest text-xs font-bold backdrop-blur-md" style={{ backgroundColor: 'var(--primary-glow)' }}>Trending Now</Badge>
-                            <h2 className="text-3xl md:text-[42px] font-black text-gray-900 tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: "1.2" }}>
-                                Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">Destinations</span>
-                            </h2>
-                            <p className="text-[rgba(80,40,10,0.65)] text-lg leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>
-                                Explore our most booked locations and start your next adventure today.
-                            </p>
-                        </div>
-                        <Link href="/plan-trip" className="group flex items-center gap-2 font-bold text-[var(--primary)] hover:opacity-80 transition-opacity">
-                            View All Locations
-                            <div className="w-8 h-8 rounded-full bg-[var(--primary-glow)] flex items-center justify-center group-hover:translate-x-1 transition-all">
-                                <ArrowRight className="w-4 h-4" />
-                            </div>
-                        </Link>
-                    </div>
-
-                    {destLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-gray-500 font-medium">Curating best spots...</p>
-                        </div>
-                    ) : destinations.length > 0 ? (
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {destinations.map((dest, i) => (
-                                <motion.div
-                                    key={dest.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    whileHover={{ y: -5, rotateX: 2, rotateY: -1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: i * 0.1 }}
-                                    style={{ perspective: "1000px" }}
-                                >
-                                    <Link href={`/plan-trip?destination=${encodeURIComponent(dest.name)}`} className="group block h-full">
-                                        <div className="relative h-[420px] rounded-[1.5rem] overflow-hidden shadow-xl shadow-[rgba(255,122,69,0.15)] group-hover:shadow-[rgba(255,122,69,0.25)] hover:scale-[1.03] transition-all duration-500 cursor-pointer">
-                                            {/* Image with zoom effect */}
-                                            <div className="absolute inset-0 bg-gray-100 overflow-hidden">
-                                                {dest.image_url ? (
-                                                    <img
-                                                        src={dest.image_url}
-                                                        alt={dest.name}
-                                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-[#FFF3E8] to-[#FFD1B5] flex flex-col items-center justify-center text-[var(--primary)] opacity-80">
-                                                        <Plane className="h-16 w-16 mb-2 animate-pulse" />
-                                                        <span className="text-xs font-bold uppercase tracking-widest opacity-60">Photo Coming Soon</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Overlays */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,0.6)] to-transparent transition-opacity duration-300"></div>
-
-                                            {/* Top Badges */}
-                                            <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
-                                                <Badge className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)] text-white border-none px-2.5 py-0.5 font-bold shadow-lg text-[10px] uppercase tracking-wider">
-                                                    {i === 0 ? '🔥 Best Seller' : '⭐ Top Rated'}
-                                                </Badge>
-                                                <button className="h-9 w-9 rounded-full bg-[rgba(255,255,255,0.25)] backdrop-blur-md flex items-center justify-center hover:bg-white hover:text-red-500 text-white transition-all duration-300 group/heart active:scale-95 shadow-md">
-                                                    <Heart className="h-4 w-4 fill-transparent group-hover/heart:fill-red-500" />
-                                                </button>
-                                            </div>
-
-                                            {/* Content Glass Bar */}
-                                            <div className="absolute bottom-4 left-4 right-4 p-4 text-white z-10 bg-[rgba(255,255,255,0.15)] backdrop-blur-[14px] rounded-2xl border border-[rgba(255,255,255,0.25)] overflow-hidden transition-all duration-300 group-hover:bg-[rgba(255,255,255,0.2)]">
-                                                {/* Rating & Location */}
-                                                <div className="flex items-center gap-2 mb-2 text-white/90 font-medium text-[11px] uppercase tracking-wider">
-                                                    <div className="bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                        <Star className="h-3 w-3 fill-white" />
-                                                        <span>4.8</span>
-                                                    </div>
-                                                    <span>•</span>
-                                                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded">
-                                                        <img src={`https://flagcdn.com/16x12/${(dest.country === 'India' ? 'in' : 'us')}.png`} alt={dest.country} className="w-3.5 h-auto rounded-[2px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                        {dest.country || 'International'}
-                                                    </div>
-                                                </div>
-
-                                                <h3 className="text-xl font-bold mb-1 leading-tight tracking-tight drop-shadow-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                                                    {dest.name}
-                                                </h3>
-
-                                                {/* Price & Duration Row */}
-                                                <div className="flex items-center justify-between mt-3">
-                                                    <div className="bg-white/25 backdrop-blur-md rounded-[20px] px-3 py-1.5 inline-block">
-                                                        <p className="text-[10px] text-white/90 uppercase tracking-wider font-bold mb-0.5 shadow-sm">Starting from</p>
-                                                        <div className="flex items-baseline gap-1 drop-shadow-sm">
-                                                            <span className="text-xl font-bold">₹{dest.min_price || 'N/A'}</span>
-                                                            <span className="text-[10px] text-white/80 font-semibold">/person</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[10px] text-white/70 uppercase tracking-wider font-semibold mb-0.5">Duration</p>
-                                                        <div className="flex items-center gap-1 justify-end text-sm bg-white/10 px-2 py-0.5 rounded-full border border-white/20">
-                                                            <Clock className="h-3 w-3" />
-                                                            <span className="font-semibold text-xs">
-                                                                {dest.min_duration === dest.max_duration
-                                                                    ? `${dest.min_duration} Days`
-                                                                    : `${dest.min_duration}-${dest.max_duration} Days`}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Hover Action */}
-                                                <div className="h-0 group-hover:h-11 transition-all duration-300 overflow-hidden transform group-hover:translate-y-0 translate-y-4 opacity-0 group-hover:opacity-100">
-                                                    <Button className="w-full mt-2.5 bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)] text-white hover:opacity-90 font-bold rounded-xl h-9 shadow-lg border-none">
-                                                        Explore &rarr;
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 glass-panel rounded-[3rem] border border-white/20">
-                            <div className="bg-white/10 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500 shadow-sm">
-                                <Plane className="h-10 w-10" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No Destinations Found</h3>
-                            <p className="text-gray-500 max-w-sm mx-auto mb-8">
-                                We're currently curating new packages. Please check back soon or try searching for a custom trip.
-                            </p>
-                            <Link href="/plan-trip">
-                                <Button variant="outline" size="lg" className="rounded-full border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 bg-white">
-                                    Start Custom Plan &rarr;
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </section>
             <CustomerAIChatCard />
         </div>
     )

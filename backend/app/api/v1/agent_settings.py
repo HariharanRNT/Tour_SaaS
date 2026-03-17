@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 from typing import Optional
 
 from app.database import get_db
@@ -8,9 +9,10 @@ from app.models import User, UserRole, Agent, AgentSMTPSettings, AgentRazorpaySe
 from app.schemas import (
     AgentSMTPSettingsCreate, AgentSMTPSettingsResponse,
     AgentRazorpaySettingsCreate, AgentRazorpaySettingsResponse,
-    AgentSettingsResponse, AgentGeneralSettingsUpdate
+    AgentSettingsResponse, AgentGeneralSettingsUpdate,
+    HomepageSettingsUpdate
 )
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_current_domain
 from app.utils.crypto import encrypt_value
 from app.services.email_service import EmailService
 
@@ -61,7 +63,8 @@ async def get_agent_settings(
         "gst_inclusive": agent.gst_inclusive,
         "gst_percentage": agent.gst_percentage,
         "smtp": smtp_settings,
-        "razorpay": rp_settings
+        "razorpay": rp_settings,
+        "homepage_settings": agent.homepage_settings
     }
 
 # --- General Settings Endpoints ---
@@ -105,7 +108,8 @@ async def update_general_settings(
         "gst_inclusive": agent.gst_inclusive,
         "gst_percentage": agent.gst_percentage,
         "smtp": smtp_settings,
-        "razorpay": rp_settings
+        "razorpay": rp_settings,
+        "homepage_settings": agent.homepage_settings
     }
 
 # --- SMTP Endpoints ---
@@ -156,12 +160,6 @@ async def update_smtp_settings(
     await db.commit()
     await db.refresh(smtp_settings)
     
-    # Mask password for response manually since pydantic model expects string
-    # (Though fields marked masked in response model typically just don't return the raw value, 
-    # but let's be explicit to ensure safety)
-    # The Pydantic model response has password as Optional. 
-    # If we return the ORM object, Pydantic will try to read the attribute.
-    # We should return a dict or object with masked values.
     return smtp_settings
 
 @router.post("/smtp/test")
@@ -296,3 +294,70 @@ async def update_razorpay_settings(
     
     return rp_settings
 
+
+# --- Homepage Settings Endpoints ---
+
+@router.put("/homepage")
+async def update_homepage_settings(
+    settings_in: HomepageSettingsUpdate,
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update homepage customization settings.
+    """
+    current_settings = agent.homepage_settings or {}
+    
+    # Update only provided fields
+    update_data = settings_in.model_dump(exclude_unset=True)
+    
+    print(f"DEBUG: Updating homepage settings for agent {agent.id}")
+    print(f"DEBUG: Payload: {update_data}")
+    
+    # Merge nested dictionaries if necessary, or just update top level
+    for key, value in update_data.items():
+        if isinstance(value, dict) and key in current_settings and isinstance(current_settings[key], dict):
+            current_settings[key].update(value)
+        else:
+            current_settings[key] = value
+            
+    agent.homepage_settings = current_settings
+    # EXPLICITLY mark as modified to ensure SQLAlchemy detects the change in the dict
+    flag_modified(agent, "homepage_settings")
+    
+    db.add(agent)
+    await db.commit()
+    await db.refresh(agent)
+    
+    print(f"DEBUG: Homepage settings updated in DB for agent {agent.id}")
+    
+    return {"message": "Homepage settings updated", "settings": agent.homepage_settings}
+
+
+@router.get("/public")
+async def get_public_settings(
+    domain: str = Depends(get_current_domain),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get public settings (brand name, homepage customizations) for the current domain.
+    """
+    stmt = select(Agent).where(Agent.domain == domain)
+    result = await db.execute(stmt)
+    agent = result.scalar_one_or_none()
+    
+    if not agent:
+        # Fallback ONLY for localhost/development
+        if domain in ['localhost', '127.0.0.1']:
+            # Pick an agent that actually has settings if possible, otherwise just any
+            stmt = select(Agent).order_by(Agent.homepage_settings.isnot(None).desc()).limit(1)
+            result = await db.execute(stmt)
+            agent = result.scalar_one_or_none()
+            
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found for this domain")
+        
+    return {
+        "agency_name": agent.agency_name,
+        "homepage_settings": agent.homepage_settings or {}
+    }

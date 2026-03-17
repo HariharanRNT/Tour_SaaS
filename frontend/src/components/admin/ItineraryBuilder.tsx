@@ -1325,9 +1325,9 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                     "flex items-center gap-3 px-4 py-3 rounded-[16px] border transition-all active:scale-[0.98] group/template",
                                                                     isActive
                                                                         ? "bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] border-transparent text-white shadow-[0_8px_20px_rgba(255,107,43,0.3)]"
-                                                                        : "border-white/75 text-[#2D1A0E] hover:bg-[#FF6B2B]/10 hover:border-[#FF6B2B]/40 hover:-translate-y-0.5 shadow-sm"
+                                                                        : "border-white/40 text-[#2D1A0E] hover:bg-[#FF6B2B]/10 hover:border-[#FF6B2B]/40 hover:-translate-y-0.5 shadow-sm"
                                                                 )}
-                                                                style={!isActive ? { background: 'rgba(255,255,255,0.60)' } : {}}
+                                                                style={!isActive ? { background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' } : {}}
                                                             >
                                                                 <div className={cn(
                                                                     "text-lg transition-transform group-hover/template:scale-125 duration-300",

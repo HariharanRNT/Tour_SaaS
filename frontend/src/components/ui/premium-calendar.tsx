@@ -38,12 +38,23 @@ function PremiumCalendar({
         <div className={cn("p-4 glass-calendar-container", className)}>
             <style jsx global>{`
         .glass-calendar-container {
-          background: rgba(255, 255, 255, 0.18);
-          backdrop-filter: blur(28px);
-          border: 1px solid rgba(255, 255, 255, 0.35);
-          border-radius: 20px;
-          box-shadow: 0 16px 48px var(--primary-glow);
+          background: rgba(255, 255, 255, 0.1) !important;
+          backdrop-filter: blur(25px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          border-radius: 32px;
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
           width: fit-content;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .glass-calendar-container::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+          pointer-events: none;
         }
 
         /* Weekend styling */

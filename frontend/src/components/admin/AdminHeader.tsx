@@ -2,18 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-    Search,
-    Bell,
-    HelpCircle,
-    Settings,
-    User,
-    LogOut,
-    Menu
-} from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchAdminNotifications, markNotificationAsRead } from '@/lib/api'
+import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { formatDistanceToNow } from 'date-fns'
+import { cn } from '@/lib/utils'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -49,6 +47,23 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const [userEmail, setUserEmail] = useState('')
     const [userData, setUserData] = useState<{ first_name?: string; last_name?: string } | null>(null)
     const userRole = getUserRole()
+
+    const queryClient = useQueryClient()
+    const { data: notifications = [] } = useQuery({
+        queryKey: ['admin-notifications'],
+        queryFn: fetchAdminNotifications,
+        enabled: userRole === 'admin' || userRole === 'ADMIN',
+        refetchInterval: 30000 // Poll every 30 seconds
+    })
+
+    const markAsReadMutation = useMutation({
+        mutationFn: markNotificationAsRead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-notifications'] })
+        }
+    })
+
+    const unreadCount = notifications.filter((n: any) => !n.is_read).length
 
     useEffect(() => {
         const userStr = localStorage.getItem('user')
@@ -130,10 +145,71 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <div className="flex items-center gap-2">
                 {isAgent && <ThemeSwitcher />}
                 
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
+                            <Bell className="h-5 w-5" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
+                            )}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border-indigo-100 shadow-2xl glass-card">
+                        <div className="p-4 border-b border-indigo-50 bg-indigo-50/30 flex items-center justify-between">
+                            <DropdownMenuLabel className="font-bold text-slate-800">Notifications</DropdownMenuLabel>
+                            {unreadCount > 0 && (
+                                <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-orange-200">
+                                    {unreadCount} New
+                                </Badge>
+                            )}
+                        </div>
+                        <ScrollArea className="max-h-[400px]">
+                            {notifications.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400">
+                                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm">No notifications yet</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-indigo-50">
+                                    {notifications.map((notification: any) => (
+                                        <DropdownMenuItem 
+                                            key={notification.id}
+                                            className={cn(
+                                                "p-4 cursor-pointer focus:bg-indigo-50/50 flex flex-col items-start gap-1 transition-colors",
+                                                !notification.is_read && "bg-indigo-50/30"
+                                            )}
+                                            onClick={() => {
+                                                if (!notification.is_read) {
+                                                    markAsReadMutation.mutate(notification.id)
+                                                }
+                                                if (notification.type === 'agent_registration') {
+                                                    router.push('/admin/agents?status=pending')
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="font-bold text-sm text-slate-800">{notification.title}</span>
+                                                <span className="text-[10px] text-slate-400">
+                                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 line-clamp-2">{notification.message}</p>
+                                            {!notification.is_read && (
+                                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-1"></div>
+                                            )}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </div>
+                            )}
+                        </ScrollArea>
+                        <DropdownMenuSeparator />
+                        <div className="p-2">
+                             <Button variant="ghost" className="w-full text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl py-4" onClick={() => router.push('/admin/reports')}>
+                                View All Activity
+                             </Button>
+                        </div>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 hidden sm:flex">
                     <HelpCircle className="h-5 w-5" />

@@ -66,18 +66,35 @@ async def test_public_endpoint():
         else:
              print(f"[FAIL] Expected 200, got {response.status_code}")
 
-        # Scenario 3: Localhost
-        print("\n--- Test 3: Fetch info for 'localhost' ---")
+        # Scenario 3: rnt.local
+        print("\n--- Test 3: Fetch info for 'rnt.local' ---")
+        headers = {"X-Domain": "rnt.local"}
+        response = await client.get(base_url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            # In dev fallback, it might return an empty dict if no agent has settings, 
+            # but it SHOULD return a 200 and some structure.
+            print(f"[INFO] Response for rnt.local: {data}")
+            if "agency_name" in data:
+                print("[PASS] Success: Root structure returned for rnt.local.")
+            else:
+                print(f"[FAIL] Missing 'agency_name' in response: {data}")
+        else:
+             print(f"[FAIL] Expected 200, got {response.status_code}. Content: {response.text}")
+
+        # Scenario 4: Localhost
+        print("\n--- Test 4: Fetch info for 'localhost' ---")
         headers = {"X-Domain": "localhost"}
         response = await client.get(base_url, headers=headers)
         if response.status_code == 200:
             data = response.json()
-            if data['agency_name'] is None:
-                print("[PASS] Success: Returned null for localhost.")
+            print(f"[INFO] Response for localhost: {data}")
+            if "agency_name" in data:
+                print("[PASS] Success: Root structure returned for localhost.")
             else:
-                print(f"[FAIL] Unexpected data: {data}")
+                print(f"[FAIL] Missing 'agency_name' in response: {data}")
         else:
-             print(f"[FAIL] Expected 200, got {response.status_code}")
+             print(f"[FAIL] Expected 200, got {response.status_code}. Content: {response.text}")
 
 if __name__ == "__main__":
     # Ensure DB is populated

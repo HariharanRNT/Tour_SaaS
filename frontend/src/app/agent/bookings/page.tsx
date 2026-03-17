@@ -98,7 +98,7 @@ export default function AgentBookingsPage() {
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
             case 'confirmed': return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-            case 'completed': return 'bg-blue-500/15 text-blue-600 border-blue-500/30'
+            case 'completed': return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30'
             case 'pending': return 'bg-amber-500/15 text-amber-600 border-amber-500/30'
             case 'cancelled': return 'bg-red-500/15 text-red-600 border-red-500/30'
             default: return 'bg-slate-500/15 text-slate-600 border-slate-500/30'
@@ -364,7 +364,7 @@ export default function AgentBookingsPage() {
                         </div>
 
                         <Button
-                            className="h-[52px] px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
+                            className="h-[52px] px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
                             onClick={() => loadBookings()}
                         >
                             <Filter className="h-4 w-4" />
@@ -489,7 +489,7 @@ export default function AgentBookingsPage() {
         const travelerName = primaryTraveler ? `${primaryTraveler.first_name} ${primaryTraveler.last_name}` : 'Guest';
 
         return (
-            <Card className="relative overflow-hidden transition-all duration-500 hover:-translate-y-1 group border-white/40 shadow-[0_16px_48px_var(--primary-glow)] hover:shadow-[0_20px_60px_var(--primary-glow)]"
+            <Card className="relative overflow-hidden transition-all duration-500 hover:-translate-y-1 group border-white/40 shadow-[0_16px_48px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_60px_var(--primary-glow)]"
                 style={{
                     background: 'rgba(255, 255, 255, 0.18)',
                     backdropFilter: 'blur(24px)',
@@ -602,7 +602,7 @@ export default function AgentBookingsPage() {
                                     <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
                                 <Button
-                                    className="h-12 px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center gap-3"
+                                    className="h-12 px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)] transition-all flex items-center gap-3"
                                     onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }}
                                 >
                                     Details <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -754,8 +754,8 @@ export default function AgentBookingsPage() {
                             <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm ring-1 ring-slate-900/5">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3">
-                                        <div className="bg-purple-50 p-2.5 rounded-xl">
-                                            <Users className="h-5 w-5 text-purple-600" />
+                                        <div className="bg-[var(--primary)]/10 p-2.5 rounded-xl">
+                                            <Users className="h-5 w-5 text-[var(--primary)]" />
                                         </div>
                                         <h3 className="text-xl font-black text-slate-900 tracking-tight">Traveler Details</h3>
                                     </div>
@@ -765,15 +765,15 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {booking.travelers?.map((traveler, index) => (
-                                        <div key={traveler.id} className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-indigo-200 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                                        <div className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-[var(--primary)]/20 hover:bg-white hover:shadow-xl hover:shadow-[var(--primary-glow)] transition-all duration-500">
                                             <div className="flex items-start gap-4">
-                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-400 shrink-0 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-400 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                                                     {String(index + 1).padStart(2, '0')}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <p className="font-black text-slate-900 truncate tracking-tight">{traveler.first_name} {traveler.last_name}</p>
-                                                        {traveler.is_primary && <Badge className="bg-indigo-600 text-[8px] py-0 px-1.5 h-4 uppercase font-black">Primary</Badge>}
+                                                        {traveler.is_primary && <Badge className="bg-[var(--primary)] text-[8px] py-0 px-1.5 h-4 uppercase font-black">Primary</Badge>}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3 uppercase text-[9px] font-black tracking-widest">
                                                         <div>

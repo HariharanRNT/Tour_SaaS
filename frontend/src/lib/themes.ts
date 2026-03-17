@@ -24,14 +24,14 @@ export const themes: Record<string, Theme> = {
     },
     orange: {
         name: "Orange",
-        primary: "#F97316",
-        primaryLight: "#FDBA74",
-        primarySoft: "#FED7AA",
-        gradientStart: "#F97316",
-        gradientMid: "#FDBA74",
-        gradientEnd: "#FED7AA",
-        glow: "rgba(249, 115, 22, 0.25)",
-        preview: ["#F97316", "#FDBA74", "#FED7AA"]
+        primary: "#f47310ff",
+        primaryLight: "#cda478ff",
+        primarySoft: "#e08815ff",
+        gradientStart: "#edeae7ff",
+        gradientMid: "#df8a2eff",
+        gradientEnd: "#8d6940ff",
+        glow: "rgba(250, 151, 1, 0.25)",
+        preview: ["#b97545ff", "#f68409ff", "#8d6940ff"]
     },
     purple: {
         name: "Purple",

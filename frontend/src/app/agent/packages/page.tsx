@@ -244,8 +244,8 @@ export default function AgentPackagesPage() {
 
                             {/* Title & Subtitle */}
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-50 rounded-lg">
-                                    <Package className="h-6 w-6 text-indigo-600" />
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
+                                    <Package className="h-6 w-6 text-[var(--primary)]" />
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Agent Package Management</h1>
@@ -268,7 +268,7 @@ export default function AgentPackagesPage() {
                             <Button
                                 onClick={() => router.push('/agent/packages/new')}
                                 className="text-white px-6 transition-all hover:-translate-y-0.5 border-none"
-                                style={{ background: 'linear-gradient(135deg, #6c47ff, #9333ea)', borderRadius: '100px', boxShadow: '0 6px 20px rgba(108,71,255,0.40)' }}
+                                style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', boxShadow: '0 6px 20px var(--primary-glow)' }}
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create New Package
@@ -293,7 +293,7 @@ export default function AgentPackagesPage() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-xl">
-                                    <Package className="h-5 w-5 text-indigo-600" />
+                                    <Package className="h-5 w-5 text-[var(--primary)]" />
                                     All Packages
                                 </CardTitle>
                                 <CardDescription className="mt-1">
@@ -359,7 +359,7 @@ export default function AgentPackagesPage() {
                     <CardContent className="p-0">
                         {isLoading ? (
                             <div className="text-center py-20">
-                                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
+                                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[var(--primary)]/10 border-t-[var(--primary)]"></div>
                                 <p className="mt-4 text-gray-500 font-medium">Loading your packages...</p>
                             </div>
                         ) : packages.length === 0 ? (
@@ -373,7 +373,7 @@ export default function AgentPackagesPage() {
                                 </p>
                                 <Button
                                     onClick={() => router.push('/agent/packages/new')}
-                                    className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-8 shadow-lg shadow-indigo-600/20"
+                                    className="mt-6 bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-full px-8 shadow-lg shadow-[var(--primary-glow)]"
                                 >
                                     Create First Package
                                 </Button>
@@ -389,33 +389,34 @@ export default function AgentPackagesPage() {
                                                     <Checkbox
                                                         checked={packages.length > 0 && selectedPackages.length === packages.length}
                                                         onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                                        className="data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]"
                                                     />
                                                 </TableHead>
-                                                <TableHead className="py-4 pl-6 font-semibold text-gray-600 w-[30%] cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('title')}>
+                                                <TableHead className="py-4 pl-6 font-semibold text-gray-600 w-[30%] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('title')}>
                                                     <div className="flex items-center gap-2">
                                                         Package Details
                                                         {sortConfig?.key === 'title' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('destination')}>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('destination')}>
                                                     <div className="flex items-center gap-2">
                                                         Destination
                                                         {sortConfig?.key === 'destination' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('duration_days')}>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('duration_days')}>
                                                     <div className="flex items-center gap-2">
                                                         Duration
                                                         {sortConfig?.key === 'duration_days' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('price_per_person')}>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('price_per_person')}>
                                                     <div className="flex items-center gap-2">
                                                         Price
                                                         {sortConfig?.key === 'price_per_person' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => handleSort('status')}>
+                                                <TableHead className="py-4 font-semibold text-gray-600 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('status')}>
                                                     <div className="flex items-center gap-2">
                                                         Status
                                                         {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
@@ -438,11 +439,12 @@ export default function AgentPackagesPage() {
                                                         <Checkbox
                                                             checked={selectedPackages.includes(pkg.id)}
                                                             onCheckedChange={(checked) => handleSelectRow(pkg.id, checked as boolean)}
+                                                            className="data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="py-5 pl-6">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 text-lg">
+                                                            <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center flex-shrink-0 text-lg font-bold">
                                                                 {pkg.title.charAt(0)}
                                                             </div>
                                                             <div>
@@ -549,9 +551,9 @@ export default function AgentPackagesPage() {
                                                     <Checkbox
                                                         checked={selectedPackages.includes(pkg.id)}
                                                         onCheckedChange={(checked) => handleSelectRow(pkg.id, checked as boolean)}
-                                                        className="mr-1"
+                                                        className="mr-1 data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]"
                                                     />
-                                                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                                    <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold text-lg">
                                                         {pkg.title.charAt(0)}
                                                     </div>
                                                     <div>
@@ -596,7 +598,7 @@ export default function AgentPackagesPage() {
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
-                                                    className="rounded-full text-xs h-8"
+                                                    className="rounded-full text-xs h-8 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30"
                                                 >
                                                     Manage
                                                 </Button>
@@ -647,7 +649,7 @@ export default function AgentPackagesPage() {
                                 {selectedPackages.length} selected
                             </span>
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-indigo-600 hover:bg-indigo-50" onClick={() => setSelectedPackages([])}>
+                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
                                     Cancel
                                 </Button>
                                 <Button variant="destructive" size="sm" className="rounded-full shadow-sm" onClick={handleBulkDelete}>

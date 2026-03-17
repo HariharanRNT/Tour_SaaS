@@ -183,9 +183,95 @@ class AgentSettingsResponse(BaseModel):
     gst_percentage: Decimal = Decimal("18.00")
     smtp: Optional[AgentSMTPSettingsResponse] = None
     razorpay: Optional[AgentRazorpaySettingsResponse] = None
+    homepage_settings: Optional[dict] = None
     
     class Config:
         from_attributes = True
+
+
+class HomepageWcuCard(BaseModel):
+    icon: str
+    title: str
+    description: str
+
+class HomepageCardAppearance(BaseModel):
+    iconStyle: str = "simple" # simple, circle, filled-circle, gradient-circle
+    background: str = "glass" # glass, white, light, dark, primary-tint
+    border: str = "none" # none, thin, thick, glow
+    hover: str = "lift" # none, lift, glow, scale
+    titleColor: str = "default" # default, primary, gradient
+    layout: str = "vertical" # vertical, horizontal
+    iconColor: str = "primary" # primary, white, custom
+    customIconColor: str = "#3B82F6"
+
+class HomepageSettingsUpdate(BaseModel):
+    headline1: Optional[str] = None
+    headline2: Optional[str] = None
+    subheading: Optional[str] = None
+    primaryBtnText: Optional[str] = None
+    secondaryBtnText: Optional[str] = None
+    backgroundImageUrl: Optional[str] = None
+    navbar_logo_image: Optional[str] = None
+    badgeText: Optional[str] = None
+    showAiBadge: Optional[bool] = None
+    feature_cards: Optional[List[dict]] = None
+    wcu_cards: Optional[List[dict]] = None
+    card_appearance: Optional[HomepageCardAppearance] = None
+    # Plan Trip Theme customization
+    activeTheme: Optional[str] = None
+    primaryColor: Optional[str] = None
+    secondaryColor: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    plan_trip_heading: Optional[str] = None
+    plan_trip_italic: Optional[str] = None
+    plan_trip_subheading: Optional[str] = None
+    plan_trip_placeholder: Optional[str] = None
+    plan_trip_button_text: Optional[str] = None
+    plan_trip_stats_text: Optional[str] = None
+    plan_trip_categories: Optional[List[str]] = None
+    plan_trip_section_heading: Optional[str] = None
+    plan_trip_section_subtext: Optional[str] = None
+    destinations_heading: Optional[str] = None
+    destinations_subtext: Optional[str] = None
+    destinations_link_text: Optional[str] = None
+    destinations_cta_text: Optional[str] = None
+    # UI Toggles and other page settings
+    show_category_pills: Optional[bool] = None
+    show_stat_bar: Optional[bool] = None
+    packages_title: Optional[str] = None
+    packages_subtitle: Optional[str] = None
+    show_best_seller_badge: Optional[bool] = None
+    show_top_rated_badge: Optional[bool] = None
+    show_wishlist: Optional[bool] = None
+    show_ai_optimized_badge: Optional[bool] = None
+    ai_optimized_text: Optional[str] = None
+    morning_label: Optional[str] = None
+    afternoon_label: Optional[str] = None
+    evening_label: Optional[str] = None
+    night_label: Optional[str] = None
+    show_activity_images: Optional[bool] = None
+    cart_summary_title: Optional[str] = None
+    cart_cta_text: Optional[str] = None
+    show_gst_breakdown: Optional[bool] = None
+    show_per_person: Optional[bool] = None
+    show_verified_badge: Optional[bool] = None
+    show_support_badge: Optional[bool] = None
+    show_flexible_badge: Optional[bool] = None
+    modal_cta_text: Optional[str] = None
+    package_cta_text: Optional[str] = None
+    # Design File Alignment
+    buttonStyle: Optional[dict] = None
+    navbarSettings: Optional[dict] = None
+    layoutChoices: Optional[dict] = None
+    
+    # Audit requested color variables (legacy compatibility items)
+    nav_bg: Optional[str] = None
+    button_color: Optional[str] = None
+    bg_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    font_size: Optional[str] = None
+    font_family: Optional[str] = None
 
 
 class Token(BaseModel):
@@ -624,3 +710,16 @@ class LoginResponse(BaseModel):
     message: Optional[str] = None
     email: Optional[str] = None
     expires_in: Optional[int] = None
+
+
+class NotificationResponse(BaseModel):
+    id: UUID4
+    user_id: UUID4
+    type: str
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

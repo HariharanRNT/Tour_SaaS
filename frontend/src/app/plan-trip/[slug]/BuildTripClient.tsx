@@ -677,7 +677,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div
                     className="absolute inset-0 z-10"
                     style={{
-                        background: 'linear-gradient(to bottom, rgba(30,8,2,0.2) 0%, rgba(30,8,2,0.45) 55%, rgba(30,8,2,0.82) 100%)',
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.8) 100%)',
                     }}
                 />
 
@@ -694,7 +694,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             </div>
 
                             {true && (
-                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[#F4A261] rounded-full">
+                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] rounded-full">
                                     <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></span>
                                     <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
                                     AI Optimized Itinerary ✨
@@ -704,12 +704,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                         {/* Title */}
                         <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] font-display drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                            Trip to <span className="text-[#FFECD2] italic font-serif bg-clip-text drop-shadow-sm">{session.destination}</span>
+                            Trip to <span className="text-white italic font-serif bg-clip-text drop-shadow-sm">{session.destination}</span>
                         </h1>
 
                         {/* Trip Details Grid - Info Chips */}
                         <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
                                 <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Calendar className="h-4 w-4 text-white" />
                                 </div>
@@ -719,7 +719,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
                                 <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Clock className="h-4 w-4 text-white" />
                                 </div>
@@ -731,7 +731,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
+                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
                                 <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Users className="h-4 w-4 text-white" />
                                 </div>

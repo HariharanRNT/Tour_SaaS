@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { FloatingLabelInput } from "@/components/ui/floating-input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TravelerForm, Traveler } from "@/components/booking/traveler-form"
 import { MockPaymentModal } from "@/components/booking/mock-payment-modal"
 import { FlightBookingDetails } from "@/components/booking/flight-booking-details"
@@ -671,9 +672,10 @@ function CheckoutContent() {
                                                 inputClass={
                                                     `!w-full !h-14 !text-sm !border-white/40 !bg-white/25 !backdrop-blur-sm !text-[#5C2500] !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 transition-all font-bold pt-1 ${errors.phone ? '!border-red-500' : ''}`
                                                 }
-                                                buttonClass="!border-white/30 !rounded-l-[14px] !bg-white/20 hover:!bg-white/40 transition-colors"
-                                                dropdownClass="!rounded-2xl !bg-white/95 !backdrop-blur-md !shadow-xl !border-white/50"
+                                                buttonClass="!border-white/30 !rounded-l-[14px] !bg-white/20 hover:!bg-white/40 transition-colors !h-14 !pb-0"
+                                                dropdownClass="glass-phone-dropdown"
                                             />
+
                                             {/* Fake Label for Phone */}
                                             <span className="absolute left-[54px] top-1 text-[10px] text-[#A0501E] font-bold z-10 transition-all uppercase tracking-widest px-1">
                                                 Mobile Number
@@ -708,12 +710,10 @@ function CheckoutContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">Country</label>
-                                            <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm"
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10 transition-all group-focus-within:text-[var(--primary)]">Country</label>
+                                            <Select
                                                 value={contactCountry}
-                                                onChange={(e) => {
-                                                    const code = e.target.value
+                                                onValueChange={(code) => {
                                                     setContactCountry(code)
                                                     const states = State.getStatesOfCountry(code)
                                                     setCountryStates(states)
@@ -722,61 +722,62 @@ function CheckoutContent() {
                                                     setStateCities([])
                                                 }}
                                             >
-                                                {allCountries.map(c => (
-                                                    <option key={c.isoCode} value={c.isoCode} className="text-[#3A1A08] font-bold">{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
-                                                <ChevronDown className="h-4 w-4" />
-                                            </div>
+                                                <SelectTrigger className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus:outline-none focus:bg-white/50 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm">
+                                                    <SelectValue placeholder="Select Country" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
+                                                    {allCountries.map(c => (
+                                                        <SelectItem key={c.isoCode} value={c.isoCode} className="text-[#3A1A08] font-bold focus:bg-[var(--primary)]/10">{c.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         {errors.country && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.country}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">State</label>
-                                            <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10 transition-all group-focus-within:text-[var(--primary)]">State</label>
+                                            <Select
                                                 value={contactState}
-                                                onChange={(e) => {
-                                                    const stateCode = e.target.value
+                                                onValueChange={(stateCode) => {
                                                     setContactState(stateCode)
                                                     const cities = City.getCitiesOfState(contactCountry, stateCode)
                                                     setStateCities(cities)
                                                     setContactCity('')
                                                 }}
-                                                disabled={!contactCountry}
+                                                disabled={!contactCountry || countryStates.length === 0}
                                             >
-                                                <option value="" className="text-slate-400">Select State</option>
-                                                {countryStates.map(s => (
-                                                    <option key={s.isoCode} value={s.isoCode} className="text-[#3A1A08] font-bold">{s.name}</option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
-                                                <ChevronDown className="h-4 w-4" />
-                                            </div>
+                                                <SelectTrigger className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus:outline-none focus:bg-white/50 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <SelectValue placeholder="Select State" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
+                                                    {countryStates.map(s => (
+                                                        <SelectItem key={s.isoCode} value={s.isoCode} className="text-[#3A1A08] font-bold focus:bg-[var(--primary)]/10">{s.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         {errors.state && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.state}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="relative group">
-                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10">City</label>
-                                            <select
-                                                className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus-visible:outline-none focus-visible:bg-white/50 focus-visible:border-[var(--primary)] focus-visible:ring-[3px] focus-visible:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            <label className="absolute left-3 top-2 text-[10px] text-[#A0501E] font-bold uppercase tracking-widest z-10 transition-all group-focus-within:text-[var(--primary)]">City</label>
+                                            <Select
                                                 value={contactCity}
-                                                onChange={(e) => setContactCity(e.target.value)}
-                                                disabled={!contactState}
+                                                onValueChange={(val) => setContactCity(val)}
+                                                disabled={!contactState || stateCities.length === 0}
                                             >
-                                                <option value="" className="text-slate-400">Select City</option>
-                                                {stateCities.map(c => (
-                                                    <option key={c.name} value={c.name} className="text-[#3A1A08] font-bold">{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary)]">
-                                                <ChevronDown className="h-4 w-4" />
-                                            </div>
+                                                <SelectTrigger className="flex h-14 w-full appearance-none rounded-[14px] border border-white/40 bg-white/25 px-3 pt-5 pb-1 text-sm focus:outline-none focus:bg-white/50 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 font-bold text-[#5C2500] transition-all hover:bg-white/40 cursor-pointer backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <SelectValue placeholder="Select City" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
+                                                    {stateCities.map(c => (
+                                                        <SelectItem key={c.name} value={c.name} className="text-[#3A1A08] font-bold focus:bg-[var(--primary)]/10">{c.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         {errors.city && <p className="text-xs font-bold text-red-500 flex items-center gap-1 mt-1"><AlertCircle className="h-3 w-3" /> {errors.city}</p>}
                                     </div>

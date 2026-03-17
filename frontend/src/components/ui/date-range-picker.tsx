@@ -148,21 +148,22 @@ export function DatePickerWithRange({
                                 table: "w-full border-collapse space-y-1",
                                 head_row: "flex",
                                 head_cell:
-                                    "text-[rgba(180,80,0,0.7)] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
+                                    "text-[#94A3B8] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
                                 row: "flex w-full mt-2",
-                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-[var(--primary)]/20 first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
+                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-range-start)]:rounded-l-[10px] [&:has([aria-selected].day-outside)]:bg-transparent [&:has([aria-selected])]:bg-transparent first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
                                 day: cn(
-                                    "h-9 w-9 p-0 font-bold aria-selected:opacity-100 rounded-[10px] hover:bg-white/20 hover:text-[#1a1a2e] transition-all text-[#2d2d2d]"
+                                    "h-9 w-9 p-0 font-bold aria-selected:opacity-100 rounded-[10px] hover:bg-[#F97316]/10 hover:text-[#F97316] transition-all text-[#1a1a2e]"
                                 ),
+                                day_range_start: "day-range-start",
                                 day_range_end: "day-range-end",
                                 day_selected:
-                                    "bg-[var(--primary)] text-white hover:bg-[var(--primary)] hover:text-white focus:bg-[var(--primary)] focus:text-white shadow-[0_8px_16px_var(--primary-glow)]", // Selected start/end
-                                day_today: "bg-[var(--primary)]/10 text-[var(--primary)] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[var(--primary)] after:rounded-full", // Today
+                                    "bg-gradient-to-br from-[#F97316] to-[#FF8E53] text-white hover:bg-gradient-to-br hover:from-[#F97316] hover:to-[#FF8E53] hover:text-white focus:bg-gradient-to-br focus:from-[#F97316] focus:to-[#FF8E53] focus:text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] z-30 relative", // Selected start/end
+                                day_today: "text-[#F97316] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[#F97316] after:rounded-full", // Today
                                 day_outside:
-                                    "day-outside text-[#2d2d2d] opacity-30 aria-selected:bg-transparent aria-selected:text-[#2d2d2d] aria-selected:opacity-20",
-                                day_disabled: "text-[#2d2d2d] opacity-20",
+                                    "day-outside text-[#94A3B8] opacity-50 aria-selected:bg-transparent aria-selected:text-[#94A3B8] aria-selected:opacity-30",
+                                day_disabled: "text-[#94A3B8] opacity-20",
                                 day_range_middle:
-                                    "aria-selected:bg-[var(--primary)]/20 aria-selected:text-[var(--primary)] rounded-none", // Range middle
+                                    "aria-selected:bg-gradient-to-r aria-selected:from-[#F97316]/20 aria-selected:to-[#FF8E53]/20 aria-selected:backdrop-blur-[2px] aria-selected:text-[#F97316] aria-selected:font-black rounded-none", // Range middle - glassy gradient
                                 day_hidden: "invisible",
                             }}
                         />

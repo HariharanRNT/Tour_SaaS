@@ -222,6 +222,9 @@ class Agent(Base):
     smtp_password = Column(String, nullable=True) # Should be encrypted in application layer
     smtp_from_email = Column(String, nullable=True)
     
+    # Homepage Customization
+    homepage_settings = Column(JSON, nullable=True) # Stores headline, hero, cards, WCU, styles
+    
     # Relationships
     smtp_settings = relationship("AgentSMTPSettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
     razorpay_settings = relationship("AgentRazorpaySettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
