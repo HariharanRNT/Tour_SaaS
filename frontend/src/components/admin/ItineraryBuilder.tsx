@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, Clock, BarChart3, ListChecks, Utensils, Car, Map, MapPin, MoreVertical, Copy as CopyIcon, RotateCcw, Target, FileText, Image as ImageIcon, Bold, Italic, List, Smile, Zap, ArrowRight, Upload, Link, X, Settings, CheckCircle2, ChevronDown } from 'lucide-react'
-import { toast, ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { toast } from 'sonner'
 import { getValidImageUrl } from '@/lib/utils/image'
 import {
     DndContext,
@@ -59,6 +58,7 @@ interface Activity {
     start_time?: string
     end_time?: string
     display_order: number
+    is_optional?: boolean
 }
 
 interface DayActivities {
@@ -215,7 +215,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
         description: '',
         image_urls: [''] as string[],
         start_time: '',
-        end_time: ''
+        end_time: '',
+        is_optional: false
     })
     const [currentImageUrl, setCurrentImageUrl] = useState('')
     const [loading, setLoading] = useState(false)
@@ -271,6 +272,15 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
     };
 
     const handleApplyTemplate = (template: typeof ACTIVITY_TEMPLATES[0]) => {
+        if (newActivity.title === template.title) {
+            // Toggle off
+            setNewActivity({
+                ...newActivity,
+                title: '',
+                description: ''
+            });
+            return;
+        }
         setNewActivity({
             ...newActivity,
             title: template.title,
@@ -346,7 +356,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                 end_time: activity.end_time || '',
                                 display_order: activity.display_order,
                                 activities: [],
-                                is_optional: false
+                                is_optional: activity.is_optional || false
                             }
 
                             const response = await fetch(
@@ -433,7 +443,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                 start_time: activity.startTime || '',
                                 end_time: activity.endTime || '',
                                 display_order: index,
-                                image_urls: activity.imageUrls || []  // Use Unsplash images from AI
+                                image_urls: activity.imageUrls || [],  // Use Unsplash images from AI
+                                is_optional: false
                             }
 
                             // Add to appropriate time slot
@@ -533,7 +544,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                 end_time: newActivity.end_time,
                 display_order: editingId ? undefined : getMaxDisplayOrder(currentDay, selectedTimeSlot),
                 activities: [], // Clear activities field as per requirement
-                is_optional: false
+                is_optional: newActivity.is_optional
             }
 
             const response = await fetch(url, {
@@ -544,18 +555,10 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
             if (response.ok) {
                 setIsSuccess(true)
-                toast.success(editingId ? "Activity updated! ✓" : "Activity added! ✓", {
-                    position: "bottom-center",
-                    autoClose: 2000,
-                    hideProgressBar: true,
-                    closeOnClick: true,
-                    pauseOnHover: false,
-                    draggable: true,
-                    theme: "colored",
-                })
+                toast.success(editingId ? "Activity updated! ✓" : "Activity added! ✓")
 
                 setTimeout(() => {
-                    setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '' })
+                    setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '', is_optional: false })
                     setCurrentImageUrl('')
                     setShowAddForm(false)
                     setSelectedTimeSlot('')
@@ -896,7 +899,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
             description: activity.description || '',
             image_urls: activity.image_url ? (Array.isArray(activity.image_url) ? activity.image_url : [activity.image_url]) : [''],
             start_time: activity.start_time || '',
-            end_time: activity.end_time || ''
+            end_time: activity.end_time || '',
+            is_optional: activity.is_optional || false
         })
         setShowAddForm(true)
     }
@@ -927,7 +931,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
             description: '',
             image_urls: [''],
             start_time: startTime,
-            end_time: endTime
+            end_time: endTime,
+            is_optional: false
         })
         setShowAddForm(true)
     }
@@ -1255,7 +1260,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                         <button
                                             onClick={() => {
                                                 setShowAddForm(false)
-                                                setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '' })
+                                                setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '', is_optional: false })
                                                 setCurrentImageUrl('')
                                                 setSelectedTimeSlot('')
                                                 setEditingId(null)
@@ -1347,11 +1352,32 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                         </div>
                                         {/* Section 1: Basic Info */}
                                         <div className="space-y-4">
-                                            <div className="flex items-center gap-2 border-b border-white/20 pb-2">
+                                            <div className="flex items-center justify-between border-b border-white/20 pb-2">
                                                 <div className="flex items-center gap-1.5 opacity-90">
                                                     <span className="text-[#FF6B2B] text-lg">●</span>
                                                     <h3 className="text-[11px] font-black text-[#FF6B2B] uppercase tracking-[0.2em]">Basic Information</h3>
                                                 </div>
+                                                <button
+                                                    onClick={() => setNewActivity({ ...newActivity, is_optional: !newActivity.is_optional })}
+                                                    className={cn(
+                                                        "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95 flex items-center gap-2",
+                                                        newActivity.is_optional
+                                                            ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-transparent shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
+                                                            : "bg-white/15 text-[#A0522D]/60 border-white/30 hover:border-teal-500/40 hover:text-teal-600"
+                                                    )}
+                                                >
+                                                    {newActivity.is_optional ? (
+                                                        <>
+                                                            <CheckCircle2 className="w-3 h-3" />
+                                                            OPTIONAL ENTRY
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#A0522D]/40" />
+                                                            SET AS OPTIONAL
+                                                        </>
+                                                    )}
+                                                </button>
                                             </div>
                                             <div className="space-y-2 relative">
                                                 <div className="flex justify-between items-center ml-1">
@@ -1709,7 +1735,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                             variant="ghost"
                                             onClick={() => {
                                                 setShowAddForm(false)
-                                                setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '' })
+                                                setNewActivity({ title: '', description: '', image_urls: [''], start_time: '', end_time: '', is_optional: false })
                                                 setCurrentImageUrl('')
                                                 setSelectedTimeSlot('')
                                                 setEditingId(null)
@@ -1767,7 +1793,6 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     )
                 }
             </AnimatePresence>
-            <ToastContainer />
         </div >
     );
 }

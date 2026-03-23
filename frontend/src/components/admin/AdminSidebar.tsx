@@ -111,8 +111,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 background: 'var(--sidebar-bg)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
-                borderRightColor: 'rgba(255,255,255,0.12)',
-            }}
+                borderRightColor: 'rgba(255,255,255,0.12)' }}
         >
             {/* Subtle inner glow on right edge */}
             <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--primary-light)]/40 to-transparent" />
@@ -185,11 +184,9 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                             background: 'linear-gradient(135deg, var(--primary), var(--gradient-mid))',
                                             borderLeft: collapsed ? 'none' : '3px solid rgba(255,255,255,0.80)',
                                             fontWeight: 600,
-                                            boxShadow: '0 4px 16px var(--primary-glow)',
-                                        } : {
+                                            boxShadow: '0 4px 16px var(--primary-glow)' } : {
                                             color: 'rgba(255, 255, 255, 0.70)',
-                                            fontWeight: 500,
-                                        }}
+                                            fontWeight: 500 }}
                                         title={collapsed ? item.label : undefined}
                                     >
                                         {/* Icon */}

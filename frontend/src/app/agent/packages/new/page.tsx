@@ -18,12 +18,13 @@ import {
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { Checkbox } from '@/components/ui/checkbox'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { compressImage, uploadToS3 } from '@/lib/image-upload-utils'
 
 interface PackageFormData {
     title: string
@@ -50,6 +51,9 @@ interface PackageFormData {
     flight_cabin_class: string
     flight_price_included: boolean
     flight_baggage_note: string
+    // Cancellation Policy
+    cancellation_enabled: boolean
+    cancellation_rules: { daysBefore: number; refundPercentage: number }[]
 }
 
 const TRIP_STYLES = [
@@ -123,7 +127,10 @@ export default function CreatePackagePage() {
         flight_origin_cities: [],
         flight_cabin_class: 'ECONOMY',
         flight_price_included: false,
-        flight_baggage_note: ''
+        flight_baggage_note: '',
+        // Cancellation Policy
+        cancellation_enabled: false,
+        cancellation_rules: []
     })
 
     // Whether agent has GST set to Applicable in Settings — controls GST section visibility
@@ -206,7 +213,10 @@ export default function CreatePackagePage() {
                         flight_origin_cities: [],
                         flight_cabin_class: 'ECONOMY',
                         flight_price_included: false,
-                        flight_baggage_note: ''
+                        flight_baggage_note: '',
+                        // Cancellation Policy
+                        cancellation_enabled: false,
+                        cancellation_rules: []
                     })
                     setOriginInput('')
 
@@ -316,7 +326,10 @@ export default function CreatePackagePage() {
                     flight_origin_cities: pkg.flight_origin_cities || [],
                     flight_cabin_class: pkg.flight_cabin_class || 'ECONOMY',
                     flight_price_included: pkg.flight_price_included || false,
-                    flight_baggage_note: pkg.flight_baggage_note || ''
+                    flight_baggage_note: pkg.flight_baggage_note || '',
+                    // Cancellation Policy
+                    cancellation_enabled: pkg.cancellation_enabled || false,
+                    cancellation_rules: pkg.cancellation_rules || []
                 })
                 if (pkg.flight_origin_cities) {
                     setOriginInput(pkg.flight_origin_cities.join(', '))
@@ -771,8 +784,7 @@ export default function CreatePackagePage() {
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
                                                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
-                                                left: formData.package_mode === 'single' ? '4px' : 'calc(50%)',
-                                            }}
+                                                left: formData.package_mode === 'single' ? '4px' : 'calc(50%)' }}
                                         />
 
                                         {/* Single Option */}
@@ -873,7 +885,7 @@ export default function CreatePackagePage() {
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
-                                                    <Label className="text-xs font-bold text-[slate-900] uppercase tracking-[0.15em]">Destination Legs</Label>
+                                                    <Label className="text-xs font-bold text-[#1e293b] uppercase tracking-[0.15em]">Destination Legs</Label>
                                                 </div>
                                                 <div className="px-2.5 py-1 text-[10px] font-bold text-[var(--primary)] bg-white/20 border border-[rgba(255,107,43,0.3)] tracking-wide rounded-full shadow-sm">
                                                     {formData.destinations.length} Leg{formData.destinations.length !== 1 ? 's' : ''}
@@ -1154,7 +1166,6 @@ export default function CreatePackagePage() {
                                         )}
                                     </div>
                                 </div>
-
                                 {/* GST Configuration — visibility controlled by Agent Settings */}
                                 {agentGstApplicable === true && (
                                     <div className="space-y-3 md:col-span-2">
@@ -1179,14 +1190,14 @@ export default function CreatePackagePage() {
                                                             {pct}%
                                                         </button>
                                                     ))}
-                                                    <div className="relative flex-1 min-w-[120px]">
+                                                    <div className="relative w-32">
                                                         <Input
                                                             type="number" min="0" max="100" step="0.01"
                                                             value={formData.gst_percentage}
                                                             onChange={(e) => updateFormData('gst_percentage', parseFloat(e.target.value) || 0)}
-                                                            className="glass-input h-10 pr-8 text-sm font-bold"
+                                                            className="glass-input h-11 pr-8 text-sm font-bold text-center"
                                                         />
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">%</span>
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold pointer-events-none">%</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1223,15 +1234,14 @@ export default function CreatePackagePage() {
                                                         className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                         style={{
                                                             borderRadius: '50px',
-                                                            transition: 'background 0.2s',
-                                                        }}
+                                                            transition: 'background 0.2s' }}
                                                         onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
                                                         <div
                                                             className="text-sm tracking-wide transition-colors duration-300"
                                                             style={{
-                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : 'slate-900',
+                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#1e293b',
                                                                 fontWeight: formData.gst_mode === 'exclusive' ? 700 : 500
                                                             }}
                                                         >
@@ -1254,15 +1264,14 @@ export default function CreatePackagePage() {
                                                         className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                         style={{
                                                             borderRadius: '50px',
-                                                            transition: 'background 0.2s',
-                                                        }}
+                                                            transition: 'background 0.2s' }}
                                                         onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
                                                         <div
                                                             className="text-sm tracking-wide transition-colors duration-300"
                                                             style={{
-                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : 'slate-900',
+                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : '#1e293b',
                                                                 fontWeight: formData.gst_mode === 'inclusive' ? 700 : 500
                                                             }}
                                                         >
@@ -1294,7 +1303,7 @@ export default function CreatePackagePage() {
                                                     {formData.gst_mode === 'exclusive' ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
-                                                            <span className="font-bold text-[slate-900]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="font-bold text-[#1e293b]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="text-[var(--primary)] font-bold">+</span>
                                                             <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
                                                                 ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
@@ -1305,7 +1314,7 @@ export default function CreatePackagePage() {
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="text-gray-400 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
                                                             <ArrowRight className="w-3 h-3 text-[var(--primary)]" />
-                                                            <span className="font-bold text-[slate-900]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="font-bold text-[#1e293b]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="font-medium px-2 py-0.5 rounded text-[12px]" style={{ background: 'rgba(255,107,43,0.10)', color: 'rgba(120,60,20,0.70)' }}>
                                                                 Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
                                                             </span>
@@ -1326,8 +1335,139 @@ export default function CreatePackagePage() {
                                         </div>
                                     </div>
                                 )}
+                            </CardContent>
+                        </Card>
 
-                                <div className="space-y-3 md:col-span-2">
+                        {/* ── Cancellation Policy ──────────────────────────── */}
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                        <ShieldCheck className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">Cancellation Policy</h3>
+                                        <p className="text-xs text-gray-500">Define refund rules based on days before travel</p>
+                                    </div>
+                                </div>
+                                {/* Toggle */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const next = !formData.cancellation_enabled
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            cancellation_enabled: next,
+                                            // Auto-add default rule when enabling with empty list
+                                            cancellation_rules: next && prev.cancellation_rules.length === 0
+                                                ? [{ daysBefore: 0, refundPercentage: 0 }]
+                                                : prev.cancellation_rules
+                                        }))
+                                    }}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+                                        formData.cancellation_enabled ? 'bg-emerald-500' : 'bg-gray-300'
+                                    }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                                        formData.cancellation_enabled ? 'translate-x-6' : 'translate-x-1'
+                                    }`} />
+                                </button>
+                            </div>
+
+                            {formData.cancellation_enabled && (
+                                <CardContent className="p-6 space-y-4">
+                                    <p className="text-xs text-gray-500">
+                                        Rules are matched by <b>days before travel</b>. List them in <b>descending</b> order (largest daysBefore first). Refund % applies to the amount paid.
+                                    </p>
+
+                                    {/* Rule rows */}
+                                    <div className="space-y-2">
+                                        {formData.cancellation_rules.map((rule, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 bg-white/60 border border-gray-100 rounded-lg px-4 py-3">
+                                                <div className="flex-1">
+                                                    <Label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Days Before Travel</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        value={rule.daysBefore}
+                                                        onChange={(e) => {
+                                                            const updated = [...formData.cancellation_rules]
+                                                            updated[idx] = { ...updated[idx], daysBefore: Number(e.target.value) }
+                                                            setFormData(prev => ({ ...prev, cancellation_rules: updated }))
+                                                        }}
+                                                        className="mt-1 h-8 text-sm"
+                                                        placeholder="e.g. 7"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <Label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Refund %</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={100}
+                                                        value={rule.refundPercentage}
+                                                        onChange={(e) => {
+                                                            const updated = [...formData.cancellation_rules]
+                                                            updated[idx] = { ...updated[idx], refundPercentage: Number(e.target.value) }
+                                                            setFormData(prev => ({ ...prev, cancellation_rules: updated }))
+                                                        }}
+                                                        className="mt-1 h-8 text-sm"
+                                                        placeholder="0–100"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = formData.cancellation_rules.filter((_, i) => i !== idx)
+                                                        setFormData(prev => ({ ...prev, cancellation_rules: updated }))
+                                                    }}
+                                                    className="mt-5 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Add rule button */}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2 text-[var(--primary)] border-[var(--primary)]/40 hover:border-[var(--primary)] hover:bg-[var(--primary)]/5"
+                                        onClick={() => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                cancellation_rules: [
+                                                    ...prev.cancellation_rules,
+                                                    { daysBefore: 0, refundPercentage: 0 }
+                                                ]
+                                            }))
+                                        }}
+                                    >
+                                        <Plus className="w-4 h-4" /> Add Rule
+                                    </Button>
+
+                                    {/* Example hint */}
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
+                                        <b>Example:</b> Cancel 7+ days before → 80% refund | 3–6 days → 50% | &lt;3 days → 0%
+                                    </div>
+                                </CardContent>
+                            )}
+                        </Card>
+
+                        {/* Trip Categorization */}
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                    <Briefcase className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Trip Style</h3>
+                                    <p className="text-xs text-gray-500">Categorize your package for the right audience</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-6">
                                     {/* Header row with label, counter pill, Clear All */}
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <Label
@@ -1346,8 +1486,7 @@ export default function CreatePackagePage() {
                                                 style={{
                                                     background: 'rgba(255,107,43,0.15)',
                                                     border: '1px solid rgba(255,107,43,0.40)',
-                                                    color: 'var(--primary)',
-                                                }}
+                                                    color: 'var(--primary)' }}
                                             >
                                                 {formData.trip_styles.length} selected
                                             </span>
@@ -1397,12 +1536,10 @@ export default function CreatePackagePage() {
                                                             background: 'var(--primary-glow)',
                                                             border: '2px solid var(--primary)',
                                                             borderRadius: '16px',
-                                                            boxShadow: '0 8px 24px var(--primary-glow)',
-                                                        } : {
+                                                            boxShadow: '0 8px 24px var(--primary-glow)' } : {
                                                             background: 'rgba(255,255,255,0.18)',
                                                             border: '1px solid rgba(255,255,255,0.35)',
-                                                            borderRadius: '16px',
-                                                        })
+                                                            borderRadius: '16px' })
                                                     }}
                                                 >
                                                     {/* Orange checkmark badge */}
@@ -1450,10 +1587,22 @@ export default function CreatePackagePage() {
                                             Please select at least one trip style
                                         </p>
                                     )}
-                                </div>
+                            </CardContent>
+                        </Card>
 
-                                {/* Activities (Multi-select Chips) */}
-                                <div className="space-y-3 md:col-span-2 mt-4 pt-4 border-t border-gray-100">
+                        {/* Experiences & Activities */}
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                    <Mountain className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Experiences & Activities</h3>
+                                    <p className="text-xs text-gray-500">Help travelers discover what they will experience</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-6">
+                                <div className="space-y-3">
                                     <div className="flex justify-between items-end">
                                         <div>
                                             <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">ACTIVITIES <span className="text-gray-400 font-normal normal-case">(Optional)</span></Label>
@@ -1495,17 +1644,22 @@ export default function CreatePackagePage() {
                                         </p>
                                     )}
                                 </div>
+                            </CardContent>
+                        </Card>
 
-                                {/* Price Includes Checklist - Glass Pills */}
-                                <div className="space-y-4 md:col-span-2 mt-6 border-t border-white/10 pt-8">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Label className="text-[11px] font-bold text-[#8C6B5D] uppercase tracking-[0.2em]">Package Inclusions</Label>
-                                        <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
-                                    </div>
+                        {/* Flight Configuration */}
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                    <Plane className="w-5 h-5" />
                                 </div>
-
-                                {/* Dedicated Flight Configuration Card */}
-                                <div className="mt-6">
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">Include Flights</h3>
+                                    <p className="text-xs text-gray-500">Manage air travel availability and preferences</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-6">
+                                <div className="space-y-6">
                                     <div
                                         className={cn(
                                             "rounded-2xl border transition-all duration-300 overflow-hidden",
@@ -1731,22 +1885,42 @@ export default function CreatePackagePage() {
                                                             onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
-                                                                    const toastId = toast.loading('Uploading image...');
+                                                                    const toastId = toast.loading('Optimizing and uploading image...');
                                                                     try {
-                                                                        const upData = new FormData();
-                                                                        upData.append('file', file);
-                                                                        const token = localStorage.getItem('token');
-                                                                        const res = await fetch('http://localhost:8000/api/v1/upload', {
-                                                                            method: 'POST',
-                                                                            headers: { 'Authorization': `Bearer ${token}` },
-                                                                            body: upData
+                                                                        // 1. Compress image
+                                                                        const compressedFile = await compressImage(file, {
+                                                                            maxWidthOrHeight: 1920,
+                                                                            initialQuality: 0.8
                                                                         });
-                                                                        if (!res.ok) throw new Error('Upload failed');
-                                                                        const data = await res.json();
-                                                                        updateFormData('feature_image_url', data.url);
-                                                                        toast.update(toastId, { render: 'Image uploaded!', type: 'success', isLoading: false, autoClose: 2000 });
+
+                                                                        // 2. Get presigned URL
+                                                                        const token = localStorage.getItem('token');
+                                                                        const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
+                                                                            method: 'POST',
+                                                                            headers: { 
+                                                                                'Authorization': `Bearer ${token}`,
+                                                                                'Content-Type': 'application/json'
+                                                                            },
+                                                                            body: JSON.stringify({
+                                                                                file_name: compressedFile.name,
+                                                                                content_type: compressedFile.type,
+                                                                                folder: 'packages'
+                                                                            })
+                                                                        });
+
+                                                                        if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+                                                                        const { upload_url, file_url } = await presignedRes.json();
+
+                                                                        // 3. Direct upload to S3
+                                                                        const success = await uploadToS3(compressedFile, upload_url);
+                                                                        if (!success) throw new Error('S3 upload failed');
+
+                                                                        // 4. Update form state
+                                                                        updateFormData('feature_image_url', file_url);
+                                                                        toast.update(toastId, { render: 'Image uploaded successfully!', type: 'success', isLoading: false });
                                                                     } catch (err) {
-                                                                        toast.update(toastId, { render: 'Upload failed', type: 'error', isLoading: false, autoClose: 2000 });
+                                                                        console.error(err);
+                                                                        toast.update(toastId, { render: 'Upload failed', type: 'error', isLoading: false });
                                                                     }
                                                                 }
                                                             }}
@@ -1971,7 +2145,7 @@ export default function CreatePackagePage() {
                             className={cn(
                                 "h-11 px-8 font-bold shadow-lg transition-all active:scale-95 rounded-full",
                                 (isBasicInfoValid() || Boolean(packageId))
-                                    ? "orange-gradient text-white hover:shadow-orange-500/25"
+                                    ? "orange-gradient-badge text-white hover:shadow-orange-500/25"
                                     : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                             )}
                         >
@@ -1990,6 +2164,6 @@ export default function CreatePackagePage() {
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     )
 }

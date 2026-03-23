@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
 
 // Types
@@ -85,13 +85,11 @@ export default function AdminBillingPage() {
 
     const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
         queryKey: ['admin-plans'],
-        queryFn: fetchAdminPlans,
-    });
+        queryFn: fetchAdminPlans });
 
     const { data: subscriptions = [], isLoading: isLoadingSubs } = useQuery({
         queryKey: ['admin-subscriptions'],
-        queryFn: fetchAdminSubscriptions,
-    });
+        queryFn: fetchAdminSubscriptions });
 
     const isLoading = isLoadingPlans || isLoadingSubs;
 
@@ -364,7 +362,7 @@ export default function AdminBillingPage() {
                             </TabsList>
                         </div>
 
-                        <TabsContent value="plans" className="outline-none pt-2">
+                        <TabsContent value="plans" className="outline-none pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
                                 {plans.map((plan: SubscriptionPlan, idx: number) => {
                                     const subscriberCount = subscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
@@ -396,20 +394,20 @@ export default function AdminBillingPage() {
                                             whileHover={{ y: -4 }}
                                             className="relative h-full min-h-[380px]"
                                         >
+                                            {isMostPopular && (
+                                                <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-20">
+                                                    <div className="bg-gradient-to-r from-[#F97316] to-[#EF4444] text-white px-[18px] py-[6px] rounded-[20px] font-[700] text-[10px] uppercase tracking-[1px] flex items-center gap-1.5 shadow-[0_4px_12px_rgba(249,115,22,0.40)]">
+                                                        ★ Most Popular
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <Card className={cn(
-                                                "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card overflow-hidden relative",
+                                                "group flex flex-col h-full border-[1.5px] border-[#F1F5F9] rounded-[16px] shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-300 glass-card relative overflow-hidden",
                                                 isMostPopular && "border-[2px] border-[#F97316] bg-[rgba(249,115,22,0.02)]"
                                             )}>
-                                                {isMostPopular && (
-                                                    <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-20">
-                                                        <div className="bg-gradient-to-r from-[#F97316] to-[#EF4444] text-white px-[18px] py-[6px] rounded-[20px] font-[700] text-[10px] uppercase tracking-[1px] flex items-center gap-1.5 shadow-[0_4px_12px_rgba(249,115,22,0.40)]">
-                                                            ★ Most Popular
-                                                        </div>
-                                                    </div>
-                                                )}
-
                                                 <div
-                                                    className="h-[4px] w-full"
+                                                    className="h-[4px] w-full shrink-0"
                                                     style={{
                                                         background: `linear-gradient(90deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`
                                                     }}
@@ -504,8 +502,7 @@ export default function AdminBillingPage() {
                                                             onClick={() => openEditModal(plan)}
                                                             className="w-full h-[46px] rounded-2xl font-black text-[12px] uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] border-0 overflow-hidden relative group/btn shadow-xl"
                                                             style={{
-                                                                background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`,
-                                                            }}
+                                                                background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})` }}
                                                         >
                                                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                                                             <span className="relative z-10 flex items-center justify-center gap-2">

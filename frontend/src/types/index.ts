@@ -28,6 +28,8 @@ export interface Package {
     images: PackageImage[]
     itinerary_items: ItineraryItem[]
     availability: PackageAvailability[]
+    cancellation_enabled?: boolean
+    cancellation_rules?: Array<{ daysBefore: number; refundPercentage: number }>
 }
 
 export interface PackageImage {

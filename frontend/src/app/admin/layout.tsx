@@ -7,8 +7,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 
 export default function AdminLayout({
-    children,
-}: {
+    children }: {
     children: React.ReactNode
 }) {
     const pathname = usePathname()

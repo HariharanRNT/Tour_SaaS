@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check, Plane } from 'lucide-react'
+import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check, Plane, FileDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { packagesEnhancedAPI } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
@@ -263,11 +263,24 @@ export default function PackageDetailPage() {
 
                         {/* Itinerary */}
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Day-wise Itinerary</CardTitle>
-                                <CardDescription>
-                                    Explore the detailed schedule for your {packageData.duration_days}-day journey
-                                </CardDescription>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Day-wise Itinerary</CardTitle>
+                                    <CardDescription>
+                                        Explore the detailed schedule for your {packageData.duration_days}-day journey
+                                    </CardDescription>
+                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                                        window.open(`${apiUrl}/api/v1/packages/${packageData.id}/itinerary-pdf`, '_blank')
+                                    }}
+                                >
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Download PDF
+                                </Button>
                             </CardHeader>
                             <CardContent>
                                 {packageData.itinerary_by_day && packageData.itinerary_by_day.length > 0 ? (

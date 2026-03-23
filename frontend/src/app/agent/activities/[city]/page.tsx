@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { ArrowLeft, Plus, Save, Trash2, Edit, CheckCircle2, GripVertical, Upload, X, Clock, Sun, Sunset, Moon, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

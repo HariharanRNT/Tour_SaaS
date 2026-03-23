@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import {
     LayoutDashboard,
     Package,
@@ -62,8 +62,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+    SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from '@/components/ui/badge'
@@ -73,23 +72,20 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+    DialogTrigger } from "@/components/ui/dialog"
 import {
     Carousel,
     CarouselContent,
     CarouselItem,
     CarouselNext,
-    CarouselPrevious,
-} from "@/components/ui/carousel"
+    CarouselPrevious } from "@/components/ui/carousel"
 
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
@@ -177,6 +173,7 @@ interface DashboardStats {
     activeBookings: number
     pendingBookings: number
     todayBookings: number
+    cancelledBookings: number
     totalRevenue: number
     recentBookings?: {
         upcoming: any[]
@@ -263,6 +260,7 @@ export default function AgentDashboard() {
         activeBookings: backendStats?.activeBookings || 0,
         pendingBookings: backendStats?.pendingBookings || 0,
         todayBookings: backendStats?.todayBookings || 0,
+        cancelledBookings: backendStats?.cancelledBookings || 0,
         totalRevenue: backendStats?.totalRevenue || 0,
         recentBookings: backendStats?.recentBookings || { upcoming: [], completed: [] },
         highlights: backendStats?.highlights,
@@ -521,6 +519,18 @@ export default function AgentDashboard() {
             gradientTo: "to-amber-600",
             bgGradient: "from-[var(--gradient-start)]/5 to-amber-500/5",
             shadowColor: "shadow-orange-500/20"
+        },
+        {
+            title: "Cancellations",
+            value: stats.cancelledBookings,
+            subtext: "This period",
+            icon: XCircle,
+            color: "text-red-600",
+            bgColor: "bg-red-50",
+            gradientFrom: "from-red-500",
+            gradientTo: "to-rose-600",
+            bgGradient: "from-rose-500/5 to-red-500/5",
+            shadowColor: "shadow-red-500/20"
         }
     ]
 
@@ -569,13 +579,11 @@ export default function AgentDashboard() {
                             width: Math.random() * 400 + 300,
                             height: Math.random() * 400 + 300,
                             top: `${Math.random() * 80}%`,
-                            left: `${Math.random() * 80}%`,
-                        }}
+                            left: `${Math.random() * 80}%` }}
                         animate={{
                             y: [0, Math.random() * 100 - 50, 0],
                             x: [0, Math.random() * 100 - 50, 0],
-                            scale: [1, 1.05, 1],
-                        }}
+                            scale: [1, 1.05, 1] }}
                         transition={{
                             duration: Math.random() * 10 + 15,
                             repeat: Infinity,
@@ -597,8 +605,7 @@ export default function AgentDashboard() {
                         style={{
                             background: 'rgba(255,255,255,0.15)',
                             backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                        }}
+                            WebkitBackdropFilter: 'blur(16px)' }}
                     >
                         <div className="flex items-center gap-5">
                             <div className="relative group">
@@ -651,19 +658,14 @@ export default function AgentDashboard() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                     align="end"
-                                    className="w-56 p-2 z-[100] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] animate-in fade-in slide-in-from-top-4 duration-300 rounded-[20px]"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.18)',
-                                        backdropFilter: 'blur(24px)',
-                                        WebkitBackdropFilter: 'blur(24px)'
-                                    }}
+                                    className="w-56 p-2 z-[100] glass-popover"
                                 >
                                     <DropdownMenuLabel className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest px-3 py-2">
                                         Create New
                                     </DropdownMenuLabel>
                                     <DropdownMenuItem
                                         onClick={handleTourPackageClick}
-                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                     >
                                         <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <Package className="h-4 w-4" />
@@ -672,7 +674,7 @@ export default function AgentDashboard() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => router.push('/agent/activities')}
-                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                     >
                                         <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <MapPin className="h-4 w-4" />
@@ -681,7 +683,7 @@ export default function AgentDashboard() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleAIItineraryClick}
-                                        className="focus:bg-[var(--primary)]/12 hover:bg-[var(--primary)]/12 text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group"
+                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                     >
                                         <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                             <Sparkles className="h-4 w-4" />
@@ -718,8 +720,7 @@ export default function AgentDashboard() {
                     style={{
                         background: 'rgba(255,255,255,0.30)',
                         backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)',
-                    }}
+                        WebkitBackdropFilter: 'blur(10px)' }}
                 >
                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/60 bg-white/30">
                         <Calendar className="h-4 w-4 text-violet-600" />
@@ -791,7 +792,7 @@ export default function AgentDashboard() {
                     </div>
 
                     {/* Desktop View */}
-                    <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-8">
                         {statCards.map((card, index) => (
                             <TiltCard key={index} className="h-full">
                                 <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>

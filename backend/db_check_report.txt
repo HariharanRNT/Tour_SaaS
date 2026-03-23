@@ -1,0 +1,28 @@
+--- Database Check ---
+Table subscription_plans: 4 rows
+Table subscriptions: 10 rows
+Table invoices: 6 rows
+Table payments: 23 rows
+
+--- SubscriptionPlan Detail ---
+Columns: RMKeyView(['id', 'name', 'price', 'currency', 'billing_cycle', 'duration_days', 'features', 'booking_limit', 'is_active', 'razorpay_plan_id', 'created_at', 'updated_at'])
+Plan ID: b36e9b50-8f6d-4622-af65-5927933476db, Name: Gold Plan
+Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2, Name: Silver Plan
+Plan ID: a482f7ab-92f3-44c6-ba82-2d3d15da3a62, Name: Professional Plan
+Plan ID: 8a2e5b52-bd23-4647-b034-269912f823f2, Name: Enterprise Plan
+
+--- Subscription Detail ---
+Columns: RMKeyView(['id', 'user_id', 'plan_id', 'status', 'start_date', 'end_date', 'current_bookings_usage', 'auto_renew', 'razorpay_subscription_id', 'razorpay_payment_id', 'created_at', 'updated_at'])
+Sub ID: 15c3b0f4-600e-4b51-93bf-948da95db0ba, Plan ID: b36e9b50-8f6d-4622-af65-5927933476db
+Sub ID: 215af13a-ae53-474e-a72d-e43c664686f6, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+Sub ID: bca9d365-e791-480a-a561-0bd3a8c3c468, Plan ID: a482f7ab-92f3-44c6-ba82-2d3d15da3a62
+Sub ID: ea3af811-5e54-4245-b6f2-c5d873cdd9ca, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+Sub ID: 166b0dc9-1d32-4c79-aa09-3bb65926cef8, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+Sub ID: 06486f92-208b-447c-a78a-14e122566eb2, Plan ID: b36e9b50-8f6d-4622-af65-5927933476db
+Sub ID: 77f6c5b4-7b50-4163-bc48-5006674201b6, Plan ID: b36e9b50-8f6d-4622-af65-5927933476db
+Sub ID: 70c5beef-49b0-46be-80de-1bb722c09bc8, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+Sub ID: 9862447f-ca56-4e23-b6b6-3133e2cd675f, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+Sub ID: 5c618991-9f1c-496f-98f8-fe21f7ab4915, Plan ID: 05ddd175-e382-4c41-a9a6-1d8d03406fe2
+
+--- Agent Detail ---
+Columns: RMKeyView(['id', 'user_id', 'first_name', 'last_name', 'phone', 'domain', 'agency_name', 'company_legal_name', 'business_address', 'city', 'state', 'country', 'gst_no', 'tax_id', 'currency', 'commission_type', 'commission_value', 'gst_inclusive', 'gst_percentage', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_from_email', 'gst_applicable', 'homepage_settings'])

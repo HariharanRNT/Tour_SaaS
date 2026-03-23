@@ -1,0 +1,171 @@
+# Package Cancellation & Refund System — Implementation Plan
+
+This feature adds agent-defined cancellation policies to packages, a customer cancel flow
+with Razorpay refund processing, and a cancellation email notification.
+
+## Proposed Changes
+
+---
+
+### 1. Backend — Data Model
+
+#### [MODIFY] [__init__.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py)
+- Add two JSON columns to [Package](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#252-325):
+  - `cancellation_enabled: bool = False`
+  - `cancellation_rules: JSON` (list of `{daysBefore, refundPercentage}`)
+- Add columns to [Booking](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#396-426):
+  - `refund_amount: Numeric(10,2)` (nullable)
+  - `cancelled_at: DateTime` (nullable)
+- Add new model `BookingRefund` with fields:
+  - `id, booking_id (FK), razorpay_payment_id, razorpay_refund_id, refund_amount, status (pending/succeeded/failed), created_at`
+  - Relationship: `Booking.refund`
+
+#### [NEW] Migration script
+- Alembic migration: `add_cancellation_columns_and_booking_refund_table`
+
+---
+
+### 2. Backend — Schemas
+
+#### [MODIFY] [packages.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py)
+- Add `cancellation_enabled: bool = False` and `cancellation_rules: List[CancellationRule] = []` to [PackageBase](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#17-46), [PackageUpdate](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#52-80), [PackageResponse](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#82-91).
+- Add `CancellationRule` Pydantic model: `{daysBefore: int, refundPercentage: float (0-100)}`.
+
+#### [MODIFY] [schemas.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas.py)
+- Add `refund_amount: Optional[Decimal]` and `cancelled_at: Optional[datetime]` to `BookingResponse` and `BookingWithPackageResponse`.
+- Add `BookingCancelResponse` schema with refund details.
+
+---
+
+### 3. Backend — Cancellation Service
+
+#### [NEW] `cancellation_service.py`
+```python
+# Core logic:
+def calculate_refund(booking, rules) -> float:
+    days_before = (booking.travel_date - date.today()).days
+    if days_before < 0: return 0  # Past travel date
+    applicable = next((r for r in sorted(rules, key=lambda x: -x['daysBefore'])
+                       if days_before >= r['daysBefore']), None)
+    if not applicable: return 0
+    return float(booking.total_amount) * applicable['refundPercentage'] / 100
+
+async def process_cancellation(booking, db, agent_razorpay_settings) -> dict:
+    # 1. Calculate refund
+    # 2. Trigger Razorpay refund (or mark PENDING on failure)
+    # 3. Create BookingRefund record
+    # 4. Update booking.status=CANCELLED, refund_amount, cancelled_at
+    # 5. Return result
+```
+
+---
+
+### 4. Backend — Agent Package Endpoints
+
+#### [MODIFY] [agent_packages.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/agent_packages.py)
+- In [create_agent_package](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/agent_packages.py#85-158) and [update_agent_package](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/agent_packages.py#188-232): persist `cancellation_enabled` and `cancellation_rules` (serialised to JSON).
+- Add validation: rules must have `daysBefore` in descending order, `refundPercentage` 0-100, no duplicate `daysBefore`.
+
+---
+
+### 5. Backend — Booking Endpoints
+
+#### [MODIFY] [bookings.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/bookings.py)
+- **`GET /{booking_id}/cancel-preview`** (new): returns `{days_before, refund_amount, refund_percentage, cancellation_enabled}`.
+- **`PUT /{booking_id}/cancel`** (enhance): calls `CancellationService.process_cancellation()`, stores refund, sends email, returns updated booking with refund info.
+
+---
+
+### 6. Backend — Razorpay Service
+
+#### [MODIFY] [razorpay_service.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/services/razorpay_service.py)
+- Add `refund_payment(payment_id, amount_paise, agent_key_id, agent_key_secret) -> dict` — uses agent-specific Razorpay credentials.
+- On failure returns `{"status": "failed"}` (caller marks refund as PENDING).
+- Mock support: if `pay_mock` in `payment_id`, return a fake refund ID.
+
+---
+
+### 7. Backend — Email Notification
+
+#### [MODIFY] [customer_notification_service.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/services/customer_notification_service.py)
+- Add `send_cancellation_confirmation(booking, refund_amount)` method.
+
+#### [MODIFY] `customer_email_templates.py`
+- Add `booking_cancellation` template with: package name, travel date, refund amount, 5-7 day timeline note.
+
+---
+
+### 8. Frontend — Agent Package Form (Cancellation Rules Section)
+
+#### [MODIFY] [new/page.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx)
+- Extend [PackageFormData](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx#29-55) interface: `cancellation_enabled: boolean`, `cancellation_rules: {daysBefore: number, refundPercentage: number}[]`.
+- Add UI section in **Step 1** (Basic Info) below the GST section:
+  - Toggle: "Enable Cancellation Policy"
+  - If enabled: rule builder table (add/remove rows, `daysBefore` + `refundPercentage` inputs)
+  - Client-side validation: descending `daysBefore`, no duplicates, 0–100%
+- Load existing values in [loadPackageData](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx#249-335).
+- Include in [handleContinueSave](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx#453-522) payload.
+
+---
+
+### 9. Frontend — Plan-Trip Policy Display
+
+#### [MODIFY] [BuildTripClient.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/plan-trip/[slug]/BuildTripClient.tsx)
+- After the package details section add a **"Cancellation Policy"** card:
+  - Only render if `package.cancellation_enabled`.
+  - List rules: "Cancel before X days → Y% refund"
+  - Highlight "Less than N days → No refund" in red.
+
+---
+
+### 10. Frontend — Customer Bookings (Cancel Flow)
+
+#### [MODIFY] [bookings/page.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/bookings/page.tsx)
+- Show **"Cancel Booking"** button for bookings with `status !== 'cancelled' && status !== 'completed'` and `travel_date > today`.
+- On click: fetch `/bookings/{id}/cancel-preview`, show confirmation `Dialog`:
+  - Package name, travel date, days until travel
+  - Refund amount preview (green if > 0, orange if 0)
+  - "Confirm Cancellation" button → calls `PUT /bookings/{id}/cancel`
+  - On success: toast + reload bookings.
+
+#### [MODIFY] [lib/api.ts](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/lib/api.ts)
+- Add `bookingsAPI.getCancelPreview(id)` and update `bookingsAPI.cancel(id)` to return full refund info.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+No existing test files found in the project. Manual verification will be used.
+
+### Manual Verification
+
+#### A. Agent Creates Package with Cancellation Rules
+1. Log in as an agent at `http://localhost:3000/login`
+2. Go to **Agent → Packages → Create New Package**
+3. In Step 1, toggle **"Enable Cancellation Policy"** ON
+4. Add rules: `{daysBefore: 7, refundPercentage: 80}`, `{daysBefore: 3, refundPercentage: 50}`, `{daysBefore: 0, refundPercentage: 0}`
+5. Save the package — verify no validation error
+6. Try adding a rule with `daysBefore: 7` again → expect duplicate error
+7. Try `daysBefore: 10` after `daysBefore: 3` (wrong order) → expect order error
+
+#### B. Customer Sees Cancellation Policy
+1. Navigate to `/plan-trip/[slug]` for that package
+2. Verify "Cancellation Policy" section appears with the 3 rules listed
+3. The 0% row should be highlighted in red
+
+#### C. Customer Cancel + Refund Preview
+1. Log in as a customer who has a confirmed booking for that package
+2. Go to **My Bookings** → click **"Cancel Booking"**
+3. Verify the dialog shows the correct refund amount based on `days_before`
+4. Confirm cancellation → booking status changes to CANCELLED
+5. Check the backend logs for Razorpay refund attempt
+
+#### D. Edge Cases
+- Try cancelling already-cancelled booking → expect "Booking is already cancelled" error
+- Try cancelling a booking with `travel_date < today` → expect error
+- Disable Razorpay (wrong key) → booking should be cancelled but refund should be PENDING
+
+> [!NOTE]
+> Razorpay test mode should be used with test credentials from the agent's settings.
+> The backend runs at `http://localhost:8000`; frontend at `http://localhost:3000`.

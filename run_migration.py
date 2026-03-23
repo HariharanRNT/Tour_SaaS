@@ -3,8 +3,15 @@ import sys
 sys.path.insert(0, 'd:\\Hariharan\\G-Project\\RNT_Tour\\backend')
 
 async def run_migration():
-    from app.database import engine
-    from sqlalchemy import text
+    try:
+        from app.database import engine
+        from sqlalchemy import text
+    except ImportError as e:
+        print(f"\n[ERROR] Missing dependency: {e.name}")
+        print("Please ensure your Python environment is correctly set up.")
+        print(f"Current Python interpreter: {sys.executable}")
+        print("Try running: pip install sqlalchemy aiosqlite\n")
+        return
     
     try:
         async with engine.begin() as conn:

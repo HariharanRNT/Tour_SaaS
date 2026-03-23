@@ -1,0 +1,21 @@
+Found 5 recent bookings.
+Ref: BKDQM143255, Status: BookingStatus.CONFIRMED, Payment Status: PaymentStatus.SUCCEEDED (val: succeeded, type: <enum 'PaymentStatus'>)
+  Total Amount: 1770.00
+  Created At: 2026-03-19 12:49:21.864422+00:00
+--------------------
+Ref: BKHEI937996, Status: BookingStatus.CONFIRMED, Payment Status: PaymentStatus.SUCCEEDED (val: succeeded, type: <enum 'PaymentStatus'>)
+  Total Amount: 1770.00
+  Created At: 2026-03-19 10:55:13.055130+00:00
+--------------------
+Ref: BKVLB622480, Status: BookingStatus.CONFIRMED, Payment Status: PaymentStatus.SUCCEEDED (val: succeeded, type: <enum 'PaymentStatus'>)
+  Total Amount: 1770.00
+  Created At: 2026-03-19 10:36:52.842954+00:00
+--------------------
+Ref: BKPJK077094, Status: BookingStatus.CONFIRMED, Payment Status: PaymentStatus.SUCCEEDED (val: succeeded, type: <enum 'PaymentStatus'>)
+  Total Amount: 1770.00
+  Created At: 2026-03-19 10:25:05.045632+00:00
+--------------------
+Ref: BKOWH756782, Status: BookingStatus.CONFIRMED, Payment Status: PaymentStatus.SUCCEEDED (val: succeeded, type: <enum 'PaymentStatus'>)
+  Total Amount: 1534.00
+  Created At: 2026-03-19 10:02:36.554921+00:00
+--------------------

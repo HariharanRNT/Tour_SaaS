@@ -6,38 +6,21 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { User, LogOut, Menu, X } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+import { useTheme } from '@/context/ThemeContext'
 
 export function Navbar() {
     const pathname = usePathname()
     const router = useRouter()
+    const { publicSettings } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [userName, setUserName] = useState('')
     const [userRole, setUserRole] = useState('')
-    const [logoUrl, setLogoUrl] = useState('https://toursaas.s3.us-east-1.amazonaws.com/logo.png')
-
-    // Fetch public settings for branding (Logo, etc)
-    useEffect(() => {
-        const fetchPublicSettings = async () => {
-            try {
-                const domain = window.location.hostname;
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
-                    headers: { 'X-Domain': domain }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.homepage_settings?.navbar_logo_image) {
-                        setLogoUrl(data.homepage_settings.navbar_logo_image);
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch navbar branding", err);
-            }
-        };
-        fetchPublicSettings();
-    }, []);
+    
+    // Branding derived from publicSettings
+    const agencyName = publicSettings?.agency_name || 'TourSaaS';
+    const logoUrl = publicSettings?.homepage_settings?.navbar_logo_image || 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png';
 
     // Handle scroll for transparent navbar
     useEffect(() => {
@@ -230,7 +213,7 @@ export function Navbar() {
                                 className="h-9 w-9 object-contain"
                             />
                             <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[var(--primary)]'}`}>
-                                TourSaaS
+                                {agencyName}
                             </span>
                         </Link>
 

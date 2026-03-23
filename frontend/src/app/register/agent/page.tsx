@@ -10,10 +10,9 @@ import {
     Accordion,
     AccordionContent,
     AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion'
+    AccordionTrigger } from '@/components/ui/accordion'
 import { Shield, UserPlus, Eye, EyeOff, CheckCircle2, ChevronRight, ChevronDown, Globe, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Linkedin, LogOut, Check, ArrowRight, Youtube, Sparkles } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { Country, State, City } from 'country-state-city'
@@ -28,8 +27,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+    SelectValue } from "@/components/ui/select"
 
 const registrationSchema = z.object({
     agency_name: z.string().min(2, 'Agency name is required'),
@@ -48,8 +46,7 @@ const registrationSchema = z.object({
     captcha: z.string().min(1, 'Solve the puzzle')
 }).refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
-    path: ["confirm_password"],
-})
+    path: ["confirm_password"] })
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>
 
@@ -113,8 +110,7 @@ export default function AgentRegisterPage() {
             const payload = {
                 ...data,
                 country: Country.getCountryByCode(data.country)?.name || data.country,
-                state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state,
-            }
+                state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state }
             delete (payload as any).captcha
 
             const response = await fetch('http://localhost:8000/api/v1/auth/register/agent', {

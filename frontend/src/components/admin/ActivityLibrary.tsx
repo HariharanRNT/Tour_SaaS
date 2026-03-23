@@ -77,8 +77,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 transformOrigin: showAbove ? 'bottom center' : 'top center',
                 transition: 'opacity 200ms ease-out, transform 200ms ease-out',
                 pointerEvents: isVisible ? 'auto' : 'none',
-                overflow: 'hidden',
-            }}
+                overflow: 'hidden' }}
             onClick={e => e.stopPropagation()}
         >
             {/* Arrow pointing toward the card */}
@@ -96,8 +95,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     borderBottom: showAbove ? 'none' : '1.5px solid rgba(255,255,255,0.70)',
                     borderLeft: showAbove ? 'none' : '1.5px solid rgba(255,255,255,0.70)',
                     transform: 'rotate(45deg)',
-                    zIndex: -1,
-                }}
+                    zIndex: -1 }}
             />
 
             {/* Image */}
@@ -117,8 +115,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'rgba(255,107,43,0.08)',
-                    }}
+                        background: 'rgba(255,107,43,0.08)' }}
                 >
                     <LayoutGrid style={{ width: '32px', height: '32px', color: 'rgba(255,107,43,0.25)' }} />
                 </div>
@@ -142,8 +139,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-                    zIndex: 10,
-                }}
+                    zIndex: 10 }}
             >
                 <X style={{ width: '12px', height: '12px', color: '#A0522D' }} />
             </button>
@@ -156,8 +152,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     color: '#2D1A0E',
                     lineHeight: 1.3,
                     marginBottom: '6px',
-                    fontFamily: 'serif',
-                }}>
+                    fontFamily: 'serif' }}>
                     {activity.name}
                 </h4>
             </div>
@@ -171,8 +166,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     background: 'rgba(255,255,255,0.55)',
                     border: '1px solid rgba(255,255,255,0.65)',
                     borderRadius: '999px',
-                    padding: '2px 8px',
-                }}>
+                    padding: '2px 8px' }}>
                     {activity.category}
                 </span>
                 <span style={{
@@ -184,8 +178,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     padding: '2px 8px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '3px',
-                }}>
+                    gap: '3px' }}>
                     <Clock style={{ width: '10px', height: '10px', color: '#FF6B2B' }} />
                     {activity.duration_hours}h
                 </span>
@@ -209,8 +202,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
-                    }}>
+                        overflow: 'hidden' }}>
                         {activity.description}
                     </p>
                 </div>
@@ -224,8 +216,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                background: 'rgba(255,255,255,0.20)',
-            }}>
+                background: 'rgba(255,255,255,0.20)' }}>
                 <GripVertical style={{ width: '12px', height: '12px', color: 'rgba(255,107,43,0.50)' }} />
                 <span style={{ fontSize: '11px', color: 'rgba(160,82,45,0.65)', fontStyle: 'italic' }}>
                     Drag to add to itinerary
@@ -258,8 +249,7 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
 
     const dragStyle = transform ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 1000,
-    } : {}
+        zIndex: 1000 } : {}
 
     const isPreviewOpen = activePreviewId === String(activity.id)
 
@@ -301,8 +291,7 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
             style={{
                 ...dragStyle,
                 background: isDragging ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.18)',
-                backdropFilter: 'blur(12px)',
-            }}
+                backdropFilter: 'blur(12px)' }}
             onMouseEnter={handleFirstHover}
             onClick={handleClick}
         >
@@ -639,8 +628,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                                 style={{
                                     background: 'rgba(255,255,255,0.22)',
                                     border: `1.5px ${showAll ? 'solid' : 'dashed'} rgba(255,107,43,0.45)`,
-                                    marginTop: '6px',
-                                }}
+                                    marginTop: '6px' }}
                                 onMouseEnter={e => {
                                     const el = e.currentTarget
                                     el.style.background = 'rgba(255,107,43,0.10)'
@@ -664,8 +652,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                                         height: '14px',
                                         color: '#FF6B2B',
                                         transform: showAll ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.25s ease',
-                                    }}
+                                        transition: 'transform 0.25s ease' }}
                                 />
                             </button>
                         )}

@@ -18,6 +18,7 @@ from app.schemas.packages import (
 )
 from app.schemas.packages import PackageImageResponse
 from app.api.deps import get_current_agent
+from app.services.cancellation_service import validate_and_sort_rules
 from sqlalchemy import select, delete
 from fastapi import File, UploadFile
 import shutil
@@ -25,6 +26,20 @@ import os
 import json
 
 router = APIRouter()
+
+
+def _persist_cancellation_rules(enabled: bool, rules: list) -> list:
+    """
+    Validate and normalise cancellation rules before persisting to the DB.
+    Raises HTTP 400 on invalid input.
+    Returns an empty list when cancellation is disabled.
+    """
+    if not enabled:
+        return []
+    try:
+        return validate_and_sort_rules(rules)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/packages", response_model=PaginatedPackageResponse)
@@ -129,7 +144,13 @@ async def create_agent_package(
             flight_origin_cities=json.dumps(package_data.flight_origin_cities) if package_data.flight_origin_cities else "[]",
             flight_cabin_class=package_data.flight_cabin_class,
             flight_price_included=package_data.flight_price_included,
-            flight_baggage_note=package_data.flight_baggage_note
+            flight_baggage_note=package_data.flight_baggage_note,
+            # Cancellation Policy (validate + sort rules before storing)
+            cancellation_enabled=package_data.cancellation_enabled,
+            cancellation_rules=_persist_cancellation_rules(
+                package_data.cancellation_enabled,
+                [r.dict() for r in package_data.cancellation_rules]
+            )
         )
         
         db.add(new_package)
@@ -211,10 +232,24 @@ async def update_agent_package(
     json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
     
     for field, value in update_data.items():
-        if field in json_fields and value is not None:
+        if field == 'cancellation_rules':
+            # Skip here — handled separately below
+            continue
+        elif field in json_fields and value is not None:
             setattr(package, field, json.dumps(value))
         else:
             setattr(package, field, value)
+
+    # Handle cancellation policy update
+    if 'cancellation_enabled' in update_data or 'cancellation_rules' in update_data:
+        enabled = update_data.get('cancellation_enabled', package.cancellation_enabled)
+        rules_raw = update_data.get('cancellation_rules', None)
+        if rules_raw is not None:
+            rules_dicts = [r.dict() if hasattr(r, 'dict') else r for r in rules_raw]
+        else:
+            rules_dicts = package.cancellation_rules or []
+        package.cancellation_enabled = enabled
+        package.cancellation_rules = _persist_cancellation_rules(enabled, rules_dicts)
     
     await db.commit()
     

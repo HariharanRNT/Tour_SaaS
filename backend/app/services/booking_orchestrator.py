@@ -8,7 +8,10 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.models import Booking, Payment, PaymentStatus, BookingStatus, User, Customer, Agent, AgentSMTPSettings, AgentRazorpaySettings
+from app.models import (
+    Booking, Payment, PaymentStatus, BookingStatus, User, Customer, 
+    Agent, AgentSMTPSettings, AgentRazorpaySettings, Package
+)
 from app.services.tripjack_adapter import TripJackAdapter
 from app.config import settings
 from app.utils.crypto import decrypt_value
@@ -93,10 +96,11 @@ class BookingOrchestrator:
         # Eager load relationships for email generation
         from sqlalchemy.orm import selectinload
         stmt = select(Booking).where(Booking.id == booking_id).options(
-            selectinload(Booking.package),
+            selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.travelers),
             selectinload(Booking.user),
-            selectinload(Booking.agent)
+            selectinload(Booking.agent).selectinload(User.agent_profile),
+            selectinload(Booking.payments)
         ).execution_options(populate_existing=True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -188,93 +192,39 @@ class BookingOrchestrator:
 
     async def _send_confirmation_email(self, booking: Booking):
         """
-        Sends a booking confirmation email to the user
+        Sends all immediate customer notifications using the Customer Notification System
         """
-        from app.services.email_service import EmailService
+        from app.services.customer_notification_service import CustomerNotificationService
         
-        if not booking.user or not booking.user.email:
-            logger.warning(f"Booking {booking.booking_reference} has no user email linked. Skipping email.")
-            return
-
-        subject = f"Booking Confirmed: {booking.booking_reference} - {booking.package.title}"
-        
-        # Simple HTML Template
-        html_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-                <h2 style="color: #2563eb; text-align: center;">Booking Confirmed!</h2>
-                <p>Dear {booking.user.first_name} {booking.user.last_name},</p>
-                
-                <p>Thank you for booking with us! Your trip to <strong>{booking.package.destination}</strong> is successfully confirmed.</p>
-                
-                <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #1e293b;">Booking Details</h3>
-                    <p><strong>Reference ID:</strong> {booking.booking_reference}</p>
-                    <p><strong>Package:</strong> {booking.package.title}</p>
-                    <p><strong>Travel Date:</strong> {booking.travel_date}</p>
-                    <p><strong>Travelers:</strong> {booking.number_of_travelers}</p>
-                    <p><strong>Total Amount:</strong> {booking.total_amount} INR</p>
-                </div>
-                
-                <h3>Itinerary Summary</h3>
-                <p>{booking.package.duration_days} Days / {booking.package.duration_nights} Nights</p>
-                
-                <p>We have attached your detailed itinerary and invoice to your dashboard.</p>
-                
-                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                
-                <p style="font-size: 12px; color: #666; text-align: center;">
-                    Need help? Contact our support team.
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-        
-        
-        # Determine SMTP Configuration (Agent vs Admin)
-        smtp_config = None
         try:
-             # Check if user has a customer profile linked to an agent
-             if booking.user and booking.user.customer_profile and booking.user.customer_profile.agent:
-                 agent_user = booking.user.customer_profile.agent
-                 if agent_user.agent_profile:
-                     ap = agent_user.agent_profile
-                     
-                     # Check new settings table first
-                     if ap.smtp_settings:
-                         logger.info(f"Using Agent SMTP Settings (Table) for {agent_user.email}")
-                         smtp = ap.smtp_settings
-                         smtp_config = {
-                             "host": smtp.host,
-                             "port": smtp.port,
-                             "user": smtp.username,
-                             "password": decrypt_value(smtp.password),
-                             "from_email": smtp.from_email,
-                             "from_name": smtp.from_name
-                         }
-                     # Fallback to old columns
-                     elif ap.smtp_host and ap.smtp_user:
-                         logger.info(f"Using Agent SMTP (Legacy) for {agent_user.email}")
-                         smtp_config = {
-                             "host": ap.smtp_host,
-                             "port": ap.smtp_port,
-                             "user": ap.smtp_user,
-                             "password": ap.smtp_password, 
-                             "from_email": ap.smtp_from_email,
-                             "from_name": ap.agency_name or agent_user.first_name
-                         }
+            logger.info(f"Triggering immediate customer notifications for booking {booking.booking_reference}")
+            
+            # 1. Booking Confirmation
+            await CustomerNotificationService.send_booking_confirmation(booking)
+            
+            # 2. Itinerary Details
+            await CustomerNotificationService.send_itinerary_details(booking)
+            
+            # 3. Booking Status Update
+            await CustomerNotificationService.send_booking_status_update(booking)
+            
+            # 4. Payment Receipt (if paid)
+            from app.models import PaymentStatus
+            
+            # Check for multiple formats of the enum returned by SQLAlchemy
+            status_str = str(booking.payment_status).lower()
+            is_paid = "succeeded" in status_str or "captured" in status_str or booking.payment_status == PaymentStatus.SUCCEEDED
+            if is_paid:
+                payment_details = {
+                    "amount": float(booking.total_amount),
+                    "method": "Online Payment",
+                    "date": booking.updated_at.strftime("%Y-%m-%d") if booking.updated_at else datetime.utcnow().strftime("%Y-%m-%d")
+                }
+                await CustomerNotificationService.send_payment_receipt(booking, payment_details)
+            else:
+                logger.info(f"Booking {booking.booking_reference} is not paid ({booking.payment_status}), skipping payment receipt.")
         except Exception as e:
-            logger.error(f"Error resolving agent SMTP: {e}")
-
-        logger.info(f"Sending booking confirmation email to {booking.user.email}")
-        await EmailService.send_email(
-            to_email=booking.user.email,
-            subject=subject,
-            body=html_body,
-            smtp_config=smtp_config
-        )
+            logger.error(f"Error in _send_confirmation_email: {e}")
 
     async def _send_agent_notification_email(self, booking: Booking):
         """

@@ -1,0 +1,83 @@
+Found 12 packages.
+ID: 6af93628-fe9c-4ccb-898e-174a71760307, Title: Chennai Heritage & Shoreline Sojourn: A 3-Day Cultural Escape, Mode: single
+  Destination: Chennai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 621bb7dc-4ba4-4d6f-a96e-f85d6b3793d5, Title: Kochi Coastal Charms: A 3-Day Heritage & Backwater Escape, Mode: single
+  Destination: Kochi
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 0c953b71-7d9d-43c3-bf8d-3e9a8de3b677, Title: Mumbai Ad, Mode: single
+  Destination: Mumbai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 2638ca29-9dab-4c4f-847d-4b8d22b240e4, Title: Chennai Adventure, Mode: single
+  Destination: Chennai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: e93041cf-7eb6-48b9-abdf-dac3e374e80b, Title: Multi destination, Mode: single
+  Destination: Banglore
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: bb58c2dd-fd2b-4baf-b122-6a025c20c236, Title: Test Package, Mode: single
+  Destination: Mumbai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: ecb2cf43-f51b-47db-a186-5fef4f6dcff5, Title: Indian's Dual City, Mode: multi
+  Destination: 
+  Destinations (JSON string): [{"city": "Chennai", "country": "India", "days": 3}, {"city": "Mumbai", "country": "India", "days": 4}]
+  Parsed: [
+  {
+    "city": "Chennai",
+    "country": "India",
+    "days": 3
+  },
+  {
+    "city": "Mumbai",
+    "country": "India",
+    "days": 4
+  }
+]
+--------------------
+ID: 36f7df5c-364b-4f62-b08e-aa99e9523f50, Title: Pairs pack, Mode: single
+  Destination: Pairs
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 603dc1ae-22f9-4451-ad28-5f7862a9248b, Title: Enchanting Kochi: A 4-Day Cultural & Backwater Odyssey, Mode: single
+  Destination: Kochi
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 5b8321ac-57f6-46d2-a95d-9ca59d54893f, Title: Chennai, Mode: single
+  Destination: Chennai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 7d59b6fe-6c53-46ce-bbbe-5beb0a89e400, Title: Classic Chennai, Mode: single
+  Destination: Chennai
+  Destinations (JSON string): []
+  Parsed: []
+--------------------
+ID: 66d4c3e7-7c32-4287-af5b-46fcde20023d, Title: Chennai 3 days Packae, Mode: single
+  Destination: Chennai
+  Destinations (JSON string): [{"city": "", "country": "", "days": 1}, {"city": "", "country": "", "days": 1}]
+  Parsed: [
+  {
+    "city": "",
+    "country": "",
+    "days": 1
+  },
+  {
+    "city": "",
+    "country": "",
+    "days": 1
+  }
+]
+--------------------

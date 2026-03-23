@@ -76,8 +76,7 @@ export default function AIAssistantCard({
                             style={{
                                 background: 'rgba(255, 255, 255, 0.12)',
                                 backdropFilter: 'blur(20px)',
-                                WebkitBackdropFilter: 'blur(20px)',
-                            }}
+                                WebkitBackdropFilter: 'blur(20px)' }}
                         >
                             {/* Header */}
                             <div className="p-4 flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-[#FF7A45]/10 to-[#FFB38A]/10">

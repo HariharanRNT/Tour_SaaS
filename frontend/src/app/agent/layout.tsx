@@ -8,8 +8,7 @@ import { SubscriptionGuard } from "@/components/auth/subscription-guard"
 
 
 export default function AgentLayout({
-    children,
-}: {
+    children }: {
     children: React.ReactNode
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Fraunces, DM_Sans, Sora, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { MainLayout } from "@/components/MainLayout";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: '--font-jakarta' });
@@ -67,7 +66,7 @@ export default async function RootLayout({
                         <MainLayout>
                             {children}
                         </MainLayout>
-                        <ToastContainer position="top-right" autoClose={3000} />
+                        <Toaster richColors position="top-right" />
                     </Providers>
                 </ThemeProvider>
             </body>

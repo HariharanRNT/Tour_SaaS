@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowLeft, MapPin, Calendar, Plus, Edit2, Trash2 } from 'lucide-react'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 interface Package {
     id: string

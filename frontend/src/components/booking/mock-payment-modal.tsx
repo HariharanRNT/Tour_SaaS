@@ -11,8 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog"
+    DialogFooter } from "@/components/ui/dialog"
 
 interface MockPaymentModalProps {
     isOpen: boolean

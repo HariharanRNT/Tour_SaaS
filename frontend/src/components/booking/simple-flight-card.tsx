@@ -69,8 +69,7 @@ export function SimpleFlightCard({ type, details }: SimpleFlightCardProps) {
             'QP': 'bg-purple-500',
             'EK': 'bg-red-700',
             'EY': 'bg-yellow-600',
-            'QR': 'bg-purple-800',
-        }
+            'QR': 'bg-purple-800' }
         return colors[code] || 'bg-blue-500'
     }
 

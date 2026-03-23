@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 interface PackageFormData {
     title: string

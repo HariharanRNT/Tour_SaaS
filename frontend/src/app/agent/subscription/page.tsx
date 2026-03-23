@@ -6,19 +6,19 @@ import { Button } from "@/components/ui/button";
 import Script from 'next/script';
 import { Check, Loader2, AlertTriangle, Calendar, CreditCard, PauseCircle, ArrowLeft, Sparkles, Rocket, ChevronDown, Zap, Clock, Download, Filter, Search, X } from "lucide-react";
 import Link from "next/link";
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Plan {
@@ -422,7 +422,6 @@ export default function SubscriptionPage() {
                     }
                 },
                 prefill: { email: "agent@example.com" },
-                theme: { color: "#3399cc" },
                 modal: {
                     ondismiss: function () {
                         setProcessingId(null);
@@ -782,56 +781,70 @@ export default function SubscriptionPage() {
                                         <ArrowLeft className="h-4 w-4 rotate-180" /> Compare Plans
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                            ⚖️ Compare All Plans
-                                        </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="mt-4">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="w-[200px] font-bold">Feature</TableHead>
-                                                     {plans.map((p: Plan) => (
-                                                         <TableHead key={p.id} className="text-center font-bold text-gray-900">{p.name}</TableHead>
-                                                     ))}
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                <TableRow>
-                                                    <TableCell className="font-medium text-gray-500">Price</TableCell>
-                                                     {plans.map((p: Plan) => (
-                                                         <TableCell key={p.id} className="text-center font-bold">₹{p.price.toLocaleString()}</TableCell>
-                                                     ))}
-                                                </TableRow>
-                                                <TableRow>
-                                                    <TableCell className="font-medium text-gray-500">Bookings Limit</TableCell>
-                                                     {plans.map((p: Plan) => (
-                                                         <TableCell key={p.id} className="text-center">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
-                                                     ))}
-                                                </TableRow>
-                                                <TableRow>
-                                                    <TableCell className="font-medium text-gray-500">Users</TableCell>
-                                                     {plans.map((p: Plan) => (
-                                                         <TableCell key={p.id} className="text-center">{p.user_limit || 'Varies'}</TableCell>
-                                                     ))}
-                                                </TableRow>
-                                                <TableRow>
-                                                    <TableCell className="font-medium text-gray-500">Support</TableCell>
-                                                     {plans.map((p: Plan) => {
-                                                         const theme = getPlanTheme(p.name);
-                                                         return (
-                                                             <TableCell key={p.id} className="text-center">
-                                                                 <Badge variant="outline" className={`${theme.badge} border-0`}>
-                                                                     {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
-                                                                 </Badge>
-                                                             </TableCell>
-                                                         )
-                                                     })}
-                                                </TableRow>
-                                            </TableBody>
-                                        </Table>
+                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                                    <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10 flex items-center justify-between">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+                                                ⚖️ Compare <span className="text-indigo-600">All Plans</span>
+                                            </DialogTitle>
+                                            <DialogDescription className="text-slate-500 font-medium text-xs mt-1 uppercase tracking-wider">
+                                                Find the perfect fit for your agency
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="overflow-hidden rounded-2xl border border-white/40 bg-white/20 backdrop-blur-sm">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="bg-white/40 hover:bg-white/40 border-b border-white/40">
+                                                        <TableHead className="w-[200px] font-black text-slate-500 uppercase tracking-widest text-[10px] py-5 pl-6">Feature</TableHead>
+                                                            {plans.map((p: Plan) => (
+                                                                <TableHead key={p.id} className="text-center font-black text-slate-800 uppercase tracking-widest text-[10px] py-5 px-4">{p.name}</TableHead>
+                                                            ))}
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
+                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
+                                                            {plans.map((p: Plan) => (
+                                                                <TableCell key={p.id} className="text-center font-black text-indigo-600 text-[15px] py-4">₹{p.price.toLocaleString()}</TableCell>
+                                                            ))}
+                                                    </TableRow>
+                                                    <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
+                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
+                                                            {plans.map((p: Plan) => (
+                                                                <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
+                                                            ))}
+                                                    </TableRow>
+                                                    <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
+                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Users Access</TableCell>
+                                                            {plans.map((p: Plan) => (
+                                                                <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.user_limit || 'Varies'}</TableCell>
+                                                            ))}
+                                                    </TableRow>
+                                                    <TableRow className="hover:bg-white/30 border-0 transition-colors">
+                                                        <TableCell className="font-bold text-slate-500 py-5 pl-6 text-[13px]">Support Level</TableCell>
+                                                            {plans.map((p: Plan) => {
+                                                                const theme = getPlanTheme(p.name);
+                                                                return (
+                                                                    <TableCell key={p.id} className="text-center py-5">
+                                                                        <Badge className={cn("font-black text-[9px] py-1 px-3 rounded-full border shadow-sm uppercase tracking-widest", theme.badge, "border-0")}>
+                                                                            {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                )
+                                                            })}
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-50/50 backdrop-blur-md px-8 py-5 flex justify-end gap-3 border-t border-white/20">
+                                        <DialogTrigger asChild>
+                                            <Button className="h-11 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-600/20 uppercase tracking-widest text-[11px]">
+                                                Got it
+                                            </Button>
+                                        </DialogTrigger>
                                     </div>
                                 </DialogContent>
                             </Dialog>

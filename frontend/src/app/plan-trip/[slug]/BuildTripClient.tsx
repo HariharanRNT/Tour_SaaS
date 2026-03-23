@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft } from 'lucide-react'
+import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { formatDate, cn } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -23,8 +23,7 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+    AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { DayPlanner } from '@/components/itinerary/DayPlanner'
 import { BookingAuthModal } from '@/components/auth/BookingAuthModal'
 
@@ -524,7 +523,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         duration: selectedReturnFlight.duration,
                         stops: selectedReturnFlight.stops
                     } : null
-                } : null
+                } : null,
+                destination: session?.destination || session?.title || slug || 'Trip',
+                duration_days: session?.duration_days,
+                duration_nights: session?.duration_nights,
+                start_date: session?.start_date,
+                travelers: travelers,
+                preferences: session?.preferences,
+                package_id: session?.id || packageId
             }
 
             let currentSessionId = sessionId;
@@ -669,16 +675,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`,
-                    }}
+                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')` }}
                 />
 
                 {/* Gradient Overlay — stronger at bottom for chip readability */}
                 <div
                     className="absolute inset-0 z-10"
                     style={{
-                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.8) 100%)',
-                    }}
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.8) 100%)' }}
                 />
 
                 {/* Noise texture overlay */}
@@ -855,7 +859,21 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
                                         <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
                                     </div>
-                                    <Button variant="outline" className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold">
+                                    <Button 
+                                        variant="outline" 
+                                        className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold"
+                                        onClick={() => {
+                                            // The original package ID is used for generating the PDF
+                                            // Handling both TripSession (has package_id) and Package modes (has id)
+                                            const pkgId = session?.package_id || session?.id || packageId;
+                                            if (pkgId) {
+                                                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                                                window.open(`${apiUrl}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
+                                            } else {
+                                                alert("Could not locate the package ID required for the PDF.");
+                                            }
+                                        }}
+                                    >
                                         <Download className="h-4 w-4" /> Download PDF
                                     </Button>
                                 </div>
@@ -1130,6 +1148,92 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </section>
                             )}
 
+
+
+                            {/* Cancellation Policy Section */}
+                            <section className="pt-16 pb-8 border-t border-gray-100">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-10 w-1.5 rounded-full bg-orange-500" />
+                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Cancellation Policy</h2>
+                                </div>
+
+                                {session.cancellation_enabled ? (
+                                    <div className="space-y-4 max-w-3xl">
+                                        <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-8 shadow-sm">
+                                            <div className="flex items-center gap-3 mb-6 text-emerald-800">
+                                                <div className="p-2 bg-emerald-100 rounded-lg">
+                                                    <CheckCircle className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-bold text-xl">Cancellable Package</span>
+                                            </div>
+                                            <div className="grid gap-4">
+                                                {session.cancellation_rules?.map((rule: any, idx: number) => {
+                                                    const amount = ((rule.refundPercentage / 100) * (session.price_per_person || 0) * (travelers.adults + travelers.children));
+                                                    return (
+                                                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2 bg-slate-50 rounded-lg">
+                                                                    <Clock className="h-4 w-4 text-emerald-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Timing</p>
+                                                                    <span className="font-bold text-slate-800">Cancel before {rule.daysBefore} days</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="text-right">
+                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Refund</p>
+                                                                    <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
+                                                                </div>
+                                                                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100">
+                                                                    ₹{Math.round(amount).toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {/* Final catch-all if last rule > 0 days */}
+                                                {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0) && (
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50 rounded-2xl border border-red-100 shadow-sm gap-4 opacity-80">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-white rounded-lg">
+                                                                <XCircle className="h-4 w-4 text-red-600" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Condition</p>
+                                                                <span className="font-bold text-red-800 whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Refund</p>
+                                                                <span className="text-red-700 font-black text-lg">0% back</span>
+                                                            </div>
+                                                            <div className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black border border-red-200 uppercase tracking-tighter">
+                                                                Non-refundable
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 font-medium px-4 flex items-center gap-2">
+                                            <AlertCircle className="h-3 w-3" />
+                                            * Estimated refund amounts are based on the base package price (₹{(session.price_per_person || 0).toLocaleString()} x {travelers.adults + travelers.children} travelers). Taxes and service fees may not be refundable.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 bg-red-50/50 border border-red-100 rounded-[2.5rem] max-w-3xl">
+                                        <div className="p-4 bg-red-100 rounded-2xl text-red-600 shadow-inner">
+                                            <XCircle className="h-8 w-8" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-red-900 text-2xl font-display mb-1">Non-Cancellable</h4>
+                                            <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
 
                             {/* Footer Confidence Boost - Redesigned */}
                             {true && (

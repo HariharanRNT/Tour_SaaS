@@ -1,0 +1,164 @@
+# 📦 Tour SaaS - Customer Notification Templates
+
+## 1. ✅ Booking Confirmation
+
+**Subject:** Booking Confirmed - {{packageName}}
+
+**Message:**
+Hi {{customerName}},
+
+Your booking has been successfully confirmed! 🎉
+
+**Booking Details:**
+- Reference ID: {{referenceId}}
+- Package: {{packageName}}
+- Travel Date: {{travelDate}}
+- Travelers: {{travelers}}
+- Total Amount: ₹{{totalAmount}}
+
+We’re excited to have you onboard. For any assistance, feel free to contact us.
+
+---
+
+## 2. 📄 Invoice / Payment Receipt
+
+**Subject:** Payment Receipt - {{referenceId}}
+
+**Message:**
+Hi {{customerName}},
+
+Thank you for your payment. Please find your invoice details below:
+
+**Payment Details:**
+- Reference ID: {{referenceId}}
+- Amount Paid: ₹{{totalAmount}}
+- Payment Method: {{paymentMethod}}
+- Date: {{paymentDate}}
+
+📎 Invoice PDF is attached with this email.
+
+---
+
+## 3. 🧾 Itinerary Details
+
+**Subject:** Your Travel Itinerary - {{packageName}}
+
+**Message:**
+Hi {{customerName}},
+
+Here’s your complete travel itinerary:
+
+**Trip Summary:**
+{{itinerarySummary}}
+
+**Inclusions:**
+- Hotel Stay
+- Transfers
+- Activities (as per plan)
+
+Please review and let us know if you have any questions.
+
+---
+
+## 4. ⏳ Booking Status Update
+
+**Subject:** Booking Update - {{referenceId}}
+
+**Message:**
+Hi {{customerName}},
+
+Your booking status has been updated:
+
+**Status:** {{bookingStatus}}
+
+We will keep you informed about further updates.
+
+---
+
+## 5. 📅 Trip Reminder (7 Days Before)
+
+**Subject:** Upcoming Trip Reminder - {{packageName}}
+
+**Message:**
+Hi {{customerName}},
+
+Your trip is coming up soon! ✈️
+
+**Travel Date:** {{travelDate}}
+
+**Checklist:**
+- Carry valid ID proof
+- Keep booking confirmation handy
+- Pack essentials
+
+Get ready for an amazing experience!
+
+---
+
+## 6. ⏰ Final Reminder (1 Day Before)
+
+**Subject:** यात्रा Reminder - Tomorrow is Your Trip!
+
+**Message:**
+Hi {{customerName}},
+
+Just a quick reminder that your trip starts tomorrow!
+
+**Important Info:**
+- Reporting Time: {{reportingTime}}
+- Pickup Location: {{pickupLocation}}
+
+Wishing you a safe and happy journey! 🌍
+
+---
+
+## 7. 📞 Pre-Travel Assistance
+
+**Subject:** Travel Assistance Details - {{packageName}}
+
+**Message:**
+Hi {{customerName}},
+
+Here are your travel assistance details:
+
+- Driver Name: {{driverName}}
+- Contact Number: {{driverContact}}
+- Hotel Check-in: {{hotelDetails}}
+
+Feel free to reach out if you need any help.
+
+---
+
+## 8. 🚨 Real-Time Alert
+
+**Subject:** Important Update - {{referenceId}}
+
+**Message:**
+Hi {{customerName}},
+
+There is an important update regarding your trip:
+
+{{alertMessage}}
+
+We apologize for any inconvenience caused and appreciate your understanding.
+
+---
+
+## 9. ⭐ Feedback Request
+
+**Subject:** Share Your Experience
+
+**Message:**
+Hi {{customerName}},
+
+We hope you had a wonderful trip! 😊
+
+Please take a moment to share your feedback:
+
+⭐ Rate your experience  
+💬 Leave a review  
+
+Your feedback helps us improve our services.
+
+---
+

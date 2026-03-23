@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchAdminNotifications, markNotificationAsRead } from '@/lib/api'
+import { 
+    fetchAdminNotifications, 
+    markNotificationAsRead,
+    fetchAgentNotifications,
+    markAgentNotificationAsRead
+} from '@/lib/api'
 import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
@@ -18,8 +23,7 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 interface AdminHeaderProps {
     onMenuClick?: () => void
@@ -49,17 +53,20 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const userRole = getUserRole()
 
     const queryClient = useQueryClient()
+    const isAdmin = userRole === 'admin' || userRole === 'ADMIN'
+    const isAgent = userRole === 'agent' || userRole === 'AGENT'
+
     const { data: notifications = [] } = useQuery({
-        queryKey: ['admin-notifications'],
-        queryFn: fetchAdminNotifications,
-        enabled: userRole === 'admin' || userRole === 'ADMIN',
+        queryKey: [isAdmin ? 'admin-notifications' : 'agent-notifications'],
+        queryFn: isAdmin ? fetchAdminNotifications : fetchAgentNotifications,
+        enabled: (isAdmin || isAgent),
         refetchInterval: 30000 // Poll every 30 seconds
     })
 
     const markAsReadMutation = useMutation({
-        mutationFn: markNotificationAsRead,
+        mutationFn: isAdmin ? markNotificationAsRead : markAgentNotificationAsRead,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-notifications'] })
+            queryClient.invalidateQueries({ queryKey: [isAdmin ? 'admin-notifications' : 'agent-notifications'] })
         }
     })
 
@@ -87,7 +94,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     }
 
     // Determine branding based on role
-    const isAgent = userRole === 'agent'
     const logoImage = null
     const logoText = 'TourSaaS'
 
@@ -154,8 +160,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border-indigo-100 shadow-2xl glass-card">
-                        <div className="p-4 border-b border-indigo-50 bg-indigo-50/30 flex items-center justify-between">
+                    <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden shadow-2xl glass-popover">
+                        <div className="p-4 border-b border-white/20 bg-white/5 flex items-center justify-between backdrop-blur-md">
                             <DropdownMenuLabel className="font-bold text-slate-800">Notifications</DropdownMenuLabel>
                             {unreadCount > 0 && (
                                 <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-orange-200">
@@ -170,13 +176,13 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                                     <p className="text-sm">No notifications yet</p>
                                 </div>
                             ) : (
-                                <div className="divide-y divide-indigo-50">
+                                <div className="divide-y divide-white/10">
                                     {notifications.map((notification: any) => (
                                         <DropdownMenuItem 
                                             key={notification.id}
                                             className={cn(
-                                                "p-4 cursor-pointer focus:bg-indigo-50/50 flex flex-col items-start gap-1 transition-colors",
-                                                !notification.is_read && "bg-indigo-50/30"
+                                                "p-4 cursor-pointer flex flex-col items-start gap-1 glass-popover-item",
+                                                !notification.is_read && "bg-white/10"
                                             )}
                                             onClick={() => {
                                                 if (!notification.is_read) {
@@ -184,6 +190,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                                                 }
                                                 if (notification.type === 'agent_registration') {
                                                     router.push('/admin/agents?status=pending')
+                                                } else if (notification.type === 'success' && notification.title.includes('Booking')) {
+                                                    router.push(isAgent ? '/agent/bookings' : '/admin/reports')
                                                 }
                                             }}
                                         >
@@ -203,9 +211,10 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             )}
                         </ScrollArea>
                         <DropdownMenuSeparator />
-                        <div className="p-2">
-                             <Button variant="ghost" className="w-full text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl py-4" onClick={() => router.push('/admin/reports')}>
-                                View All Activity
+                        <div className="p-2 border-t border-white/10">
+                             <Button variant="ghost" className="w-full text-xs font-bold text-[var(--primary)] hover:bg-white/10 rounded-xl py-4" 
+                                onClick={() => router.push(isAgent ? '/agent/bookings' : '/admin/reports')}>
+                                {isAgent ? 'View All Bookings' : 'View All Activity'}
                              </Button>
                         </div>
                     </DropdownMenuContent>
@@ -232,19 +241,19 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         </Button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end" className="w-56 glass-popover">
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="glass-popover-item">
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem className="glass-popover-item">
                             <Settings className="mr-2 h-4 w-4" />
                             <span>Settings</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                        <DropdownMenuSeparator className="bg-white/10" />
+                        <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-400 glass-popover-item">
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>

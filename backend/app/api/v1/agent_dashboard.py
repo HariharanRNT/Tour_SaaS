@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import Package, Booking, User, UserRole, Subscription
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
+from app.services.notification_service import NotificationService
 
 router = APIRouter()
 
@@ -134,6 +135,15 @@ async def get_agent_dashboard_stats(
         rev_query = apply_date_filter(rev_query, Booking.created_at)
         res = await db.execute(rev_query)
         total_revenue = res.scalar() or 0
+
+        # Cancellations (Scoped to Agent)
+        cancel_query = select(func.count(Booking.id)).where(
+            Booking.agent_id == current_agent.id,
+            Booking.status == 'cancelled'
+        )
+        cancel_query = apply_date_filter(cancel_query, Booking.created_at)
+        res = await db.execute(cancel_query)
+        cancelled_bookings = res.scalar() or 0
 
         # Today's Bookings (Real-time)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -264,6 +274,38 @@ async def get_agent_dashboard_stats(
         if subscription:
              # We found an active/trial plan
              is_plan_active = True
+             
+             # Check for expiry (within 3 days)
+             try:
+                 expiry_date = subscription.end_date
+                 if isinstance(expiry_date, str):
+                     expiry_date = datetime.strptime(expiry_date, "%Y-%m-%d").date()
+                 
+                 days_left = (expiry_date - now.date()).days
+                 
+                 if 0 <= days_left <= 3:
+                     # Check if we already notified recently to avoid spamming every refresh
+                     # We search for any unread subscription warnings created in the last 24h
+                     from sqlalchemy import and_
+                     check_stmt = select(Notification).where(
+                         and_(
+                             Notification.user_id == current_agent.id,
+                             Notification.type == "warning",
+                             Notification.title == "Subscription Expiry Warning",
+                             Notification.created_at >= (now - timedelta(days=1))
+                         )
+                     )
+                     check_res = await db.execute(check_stmt)
+                     existing_note = check_res.scalar_one_or_none()
+                     
+                     if not existing_note:
+                         await NotificationService.notify_subscription_expiry(
+                             db=db,
+                             agent_id=current_agent.id,
+                             days_left=days_left
+                         )
+             except Exception as sub_err:
+                 print(f"Error checking sub expiry notification: {sub_err}")
         else:
              # Fallback check: maybe the latest is 'upcoming' but we want to know?
              # Actually, if there is no active/trial, then they are restricted.
@@ -282,6 +324,7 @@ async def get_agent_dashboard_stats(
             "activeBookings": active_bookings,
             "pendingBookings": pending_bookings,
             "todayBookings": today_bookings,
+            "cancelledBookings": cancelled_bookings,
             "totalRevenue": float(total_revenue) if total_revenue else 0,
             
             # Recent Bookings

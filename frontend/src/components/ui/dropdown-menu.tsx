@@ -63,5 +63,4 @@ export {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
-}
+    DropdownMenuSeparator }

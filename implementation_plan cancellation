@@ -1,0 +1,318 @@
+# Package Cancellation & Refund System — Implementation Plan (Rev 3)
+
+Adds agent-defined cancellation policies, customer cancel flow, Razorpay refund, and cancellation email.
+
+---
+
+## Critical Design Decisions
+
+> [!IMPORTANT]
+> **Multi-tenant Razorpay:** Keys always resolved as `booking → package → creator (agent) → razorpay_settings`.
+
+> [!IMPORTANT]
+> **Idempotency:** `BookingRefund.booking_id` unique constraint + `SELECT FOR UPDATE` row lock prevents double-refund.
+
+> [!IMPORTANT]
+> **Payment selection:** Always use `next((p for p in reversed(booking.payments) if p.status == "succeeded"), None)`. Never `payments[-1]`.
+
+> [!IMPORTANT]
+> **Transaction safety:** All DB writes wrapped in `try/except` with `await db.rollback()` on failure — Razorpay refund is called INSIDE the same try block so any failure rolls back DB.
+
+> [!IMPORTANT]
+> **Timezone:** All date math uses `datetime.now(timezone("Asia/Kolkata")).date()`.
+
+---
+
+## Proposed Changes
+
+---
+
+### 1. Backend — Data Model
+
+#### [MODIFY] [\_\_init\_\_.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py)
+
+**[Package](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/page.tsx#45-55) additions:**
+```python
+cancellation_enabled = Column(Boolean, default=False)
+cancellation_rules   = Column(JSON, default=list)  # pre-sorted descending daysBefore
+```
+
+**[Booking](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#396-426) additions:**
+```python
+refund_amount = Column(Numeric(10,2), nullable=True)
+cancelled_at  = Column(DateTime(timezone=True), nullable=True)
+```
+
+**New `BookingRefund` model:**
+```python
+class BookingRefund(Base):
+    __tablename__ = "booking_refunds"
+    id                  = Column(UUID, primary_key=True, default=uuid.uuid4)
+    booking_id          = Column(UUID, ForeignKey("bookings.id"), unique=True)  # idempotency
+    razorpay_payment_id = Column(String, nullable=True)
+    razorpay_refund_id  = Column(String, nullable=True)
+    refund_amount       = Column(Numeric(10,2), nullable=False)
+    refund_percentage   = Column(Numeric(5,2), nullable=True)
+    days_before         = Column(Integer, nullable=True)
+    # 4 states: initiated → succeeded | failed | pending (manual retry)
+    status              = Column(String, default="initiated")
+    failure_reason      = Column(Text, nullable=True)
+    created_at          = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
+    booking             = relationship("Booking", back_populates="refund")
+```
+Add `refund = relationship("BookingRefund", back_populates="booking", uselist=False)` to [Booking](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#396-426).
+
+#### [NEW] Alembic migration `add_cancellation_and_booking_refund`
+
+---
+
+### 2. Backend — Schemas
+
+#### [MODIFY] [packages.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py)
+- New `CancellationRule`: `daysBefore: int (≥0)`, `refundPercentage: float (0–100)`.
+- Add `cancellation_enabled: bool = False`, `cancellation_rules: List[CancellationRule] = []` to [PackageBase](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#17-46), [PackageUpdate](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#52-80), [PackageResponse](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas/packages.py#193-223).
+
+#### [MODIFY] [schemas.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/schemas.py)
+- Add `refund_amount: Optional[Decimal]`, `cancelled_at: Optional[datetime]` to `BookingResponse` / `BookingWithPackageResponse`.
+- New `CancelPreviewResponse`:
+  ```python
+  { cancellation_enabled, days_before, paid_amount,
+    refund_amount, refund_percentage, message }
+  ```
+- New `CancelActionResponse` returned by `POST /cancel`:
+  ```python
+  { booking_id, refund_amount, refund_percentage,
+    days_before, refund_status, message }
+  ```
+
+---
+
+### 3. Backend — Cancellation Service
+
+#### [NEW] `cancellation_service.py`
+
+**Key patterns:**
+
+```python
+import logging
+from pytz import timezone as tz
+
+logger = logging.getLogger(__name__)
+
+def calculate_refund(booking, rules: list) -> dict:
+    india_today = datetime.now(tz("Asia/Kolkata")).date()
+    days_before = (booking.travel_date - india_today).days
+    paid = sum(float(p.amount) for p in booking.payments if p.status == "succeeded")
+
+    if days_before < 0:
+        logger.info(f"[{booking.id}] Travel date passed — no refund")
+        return {"refund_amount": 0, "refund_percentage": 0, "days_before": days_before, "paid_amount": paid}
+
+    # Rules stored pre-sorted (descending daysBefore)
+    applicable = next((r for r in rules if days_before >= r["daysBefore"]), None)
+    pct = applicable["refundPercentage"] if applicable else 0
+    amount = round(paid * pct / 100, 2)
+    logger.info(f"[{booking.id}] days_before={days_before}, rule_pct={pct}%, refund={amount}")
+    return {"refund_amount": amount, "refund_percentage": pct, "days_before": days_before, "paid_amount": paid}
+
+
+async def process_cancellation(booking_id, db) -> dict:
+    # 1. Lock row to prevent race conditions
+    stmt = select(Booking).where(Booking.id == booking_id).with_for_update().options(
+        selectinload(Booking.payments), selectinload(Booking.package).selectinload(Package.creator)
+    )
+    result = await db.execute(stmt)
+    booking = result.scalar_one_or_none()
+    if not booking:
+        raise ValueError("Booking not found")
+
+    # 2. Idempotency guards
+    if booking.status == BookingStatus.CANCELLED:
+        raise ValueError("Booking is already cancelled")
+    india_today = datetime.now(tz("Asia/Kolkata")).date()
+    if booking.travel_date < india_today:
+        raise ValueError("Travel date has already passed")
+
+    try:
+        # 3. Calculate refund
+        rules = booking.package.cancellation_rules or []
+        calc  = calculate_refund(booking, rules)
+
+        # 4. Find the latest succeeded payment
+        succeeded = next((p for p in reversed(booking.payments) if p.status == "succeeded"), None)
+        payment_id  = succeeded.razorpay_payment_id if succeeded else None
+
+        # 5. Resolve agent Razorpay keys
+        creator  = booking.package.creator
+        rp_cfg   = creator.agent_profile.razorpay_settings if creator and creator.agent_profile else None
+        rp_refund_id = None
+        refund_status = "pending"
+        failure_reason = None
+
+        if calc["refund_amount"] > 0 and payment_id and rp_cfg:
+            try:
+                result = RazorpayService.refund_payment(
+                    payment_id=payment_id,
+                    amount_paise=int(calc["refund_amount"] * 100),
+                    key_id=decrypt(rp_cfg.key_id),
+                    key_secret=decrypt(rp_cfg.key_secret)
+                )
+                rp_refund_id  = result.get("id")
+                refund_status = "succeeded" if rp_refund_id else "failed"
+                logger.info(f"[{booking.id}] Razorpay refund {refund_status}: {rp_refund_id}")
+            except Exception as e:
+                refund_status  = "pending"
+                failure_reason = str(e)
+                logger.error(f"[{booking.id}] Razorpay refund failed: {e}")
+
+        # 6. Persist refund record
+        refund_record = BookingRefund(
+            booking_id=booking.id,
+            razorpay_payment_id=payment_id,
+            razorpay_refund_id=rp_refund_id,
+            refund_amount=calc["refund_amount"],
+            refund_percentage=calc["refund_percentage"],
+            days_before=calc["days_before"],
+            status=refund_status,
+            failure_reason=failure_reason
+        )
+        db.add(refund_record)
+
+        # 7. Update booking
+        booking.status        = BookingStatus.CANCELLED
+        booking.refund_amount = calc["refund_amount"]
+        booking.cancelled_at  = datetime.now(tz("Asia/Kolkata"))
+
+        await db.commit()
+
+        return {**calc, "refund_status": refund_status, "failure_reason": failure_reason}
+
+    except Exception:
+        await db.rollback()
+        raise
+```
+
+---
+
+### 4. Backend — Agent Package Endpoints
+
+#### [MODIFY] [agent_packages.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/agent_packages.py)
+
+Rule validation (called in create & update):
+```python
+def validate_and_sort_rules(rules: list) -> list:
+    for r in rules:
+        if not (0 <= r["refundPercentage"] <= 100):
+            raise HTTPException(400, "refundPercentage must be 0–100")
+    days = [r["daysBefore"] for r in rules]
+    if len(days) != len(set(days)):
+        raise HTTPException(400, "Duplicate daysBefore values")
+    sorted_rules = sorted(rules, key=lambda x: -x["daysBefore"])
+    if rules != sorted_rules:
+        raise HTTPException(400, "Rules must be in descending daysBefore order")
+    # Auto fallback: if enabled but no rules, add 0% rule
+    return sorted_rules or [{"daysBefore": 0, "refundPercentage": 0}]
+```
+Persist `cancellation_enabled` and validated rules as JSON.
+
+---
+
+### 5. Backend — Booking Endpoints
+
+#### [MODIFY] [bookings.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/bookings.py)
+
+```
+GET  /bookings/{id}/cancel-preview  →  CancelPreviewResponse   (read-only)
+POST /bookings/{id}/cancel          →  CancelActionResponse    (replaces old PUT)
+```
+
+- **preview**: loads payments + package rules → `calculate_refund()` → returns enriched response including `message`.
+- **cancel**: calls `process_cancellation()` → calls `send_cancellation_confirmation()` → returns `CancelActionResponse`.
+
+---
+
+### 6. Backend — Razorpay Service
+
+#### [MODIFY] [razorpay_service.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/services/razorpay_service.py)
+```python
+@staticmethod
+def refund_payment(payment_id: str, amount_paise: int, key_id: str, key_secret: str) -> dict:
+    if "pay_mock" in payment_id or "mock" in key_id:
+        return {"id": f"rfnd_mock_{int(time.time())}"}
+    client = razorpay.Client(auth=(key_id, key_secret))
+    return client.payment.refund(payment_id, {"amount": amount_paise})
+```
+
+---
+
+### 7. Backend — Email Notification
+
+#### [MODIFY] [customer_notification_service.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/services/customer_notification_service.py)
+```python
+@staticmethod
+async def send_cancellation_confirmation(booking, refund_amount: float, refund_status: str):
+    refund_note = ("5–7 business days" if refund_status == "succeeded"
+                   else "Being processed manually — contact support if not received in 7 days")
+    data = {
+        "customer_name": ..., "package_name": ..., "travel_date": ...,
+        "refund_amount": refund_amount, "refund_status": refund_status, "refund_note": refund_note
+    }
+    await cls._send_notification(booking.user.email, "booking_cancellation", data, agent_user)
+```
+Add `booking_cancellation` template to `customer_email_templates.py`.
+
+---
+
+### 8. Frontend — Agent Package Form
+
+#### [MODIFY] [new/page.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx)
+- Extend [PackageFormData](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/agent/packages/new/page.tsx#29-55): `cancellation_enabled`, `cancellation_rules`.
+- UI section in Step 1 (after GST): toggle + rule builder table with inline validation.
+- Auto-add `{daysBefore: 0, refundPercentage: 0}` default row when toggle is turned on with no rules.
+
+---
+
+### 9. Frontend — Plan-Trip Policy Display
+
+#### [MODIFY] [BuildTripClient.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/plan-trip/[slug]/BuildTripClient.tsx)
+- Render "Cancellation Policy" card only when `cancellation_enabled`.
+- List rules; highlight 0% row with ❌ Non-Refundable in red.
+
+---
+
+### 10. Frontend — Customer Cancel Flow
+
+#### [MODIFY] [bookings/page.tsx](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/app/bookings/page.tsx)
+- "Cancel Booking" button visible when [status](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#136-141) is not `cancelled`/`completed` and travel date is future.
+- Dialog copy (trust-building):
+  > *"You will receive ₹5,000 (50% refund) — based on cancellation 5 days before travel."*
+- After cancel: if `refund_status === "pending"` show:
+  > *"Refund is being processed manually. You will be notified."*
+
+#### [MODIFY] [lib/api.ts](file:///d:/Hariharan/G-Project/RNT_Tour/frontend/src/lib/api.ts)
+- Add `bookingsAPI.getCancelPreview(id)`.
+- Update `bookingsAPI.cancel(id)` to `POST`.
+
+---
+
+### 11. Future: Razorpay Webhook
+
+> [!NOTE]
+> `refund.processed` / `refund.failed` webhook to update `BookingRefund.status` will be added to [webhooks.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/webhooks.py) in a separate task.
+
+---
+
+## Verification Plan
+
+| Scenario | Expected |
+|---|---|
+| Rules out of order | 400 — "descending order" |
+| Duplicate daysBefore | 400 — "duplicate values" |
+| Cancel 10 days before | 80% of paid amount |
+| Cancel 5 days before | 50% of paid amount |
+| Cancel 1 day before | 0% |
+| Cancel after travel date | 400 — "travel date passed" |
+| Cancel twice | 400 — "already cancelled" |
+| Razorpay API failure | CANCELLED + refund_status = pending |
+| No succeeded payment | CANCELLED + refund_amount = 0 |

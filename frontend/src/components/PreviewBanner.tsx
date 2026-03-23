@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Eye, CheckCircle, ArrowLeft } from 'lucide-react'
 import axios from 'axios'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 
 export function PreviewBanner() {

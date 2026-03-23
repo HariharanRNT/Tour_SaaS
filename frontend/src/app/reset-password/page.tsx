@@ -10,7 +10,7 @@ import { authAPI } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Plane, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, ShieldAlert } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 function ResetPasswordForm() {
     const router = useRouter()

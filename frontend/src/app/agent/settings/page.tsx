@@ -27,7 +27,7 @@ import {
     ExternalLink,
     RefreshCw
 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     fetchAgentSettings,
@@ -36,6 +36,31 @@ import {
     updateAgentSettingsRazorpay,
     testSmtpSettings
 } from '@/lib/api'
+import { cn } from '@/lib/utils'
+
+const SettingsSkeleton = () => (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-pulse">
+        <div className="space-y-6">
+            <div className="flex flex-col gap-4">
+                <div className="h-4 w-40 bg-slate-200/50 rounded-full" />
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-3">
+                        <div className="h-12 w-64 bg-slate-200/50 rounded-xl" />
+                        <div className="h-4 w-[80%] bg-slate-200/50 rounded-full" />
+                    </div>
+                    <div className="flex gap-3 shrink-0">
+                        <div className="h-10 w-24 bg-slate-200/50 rounded-full" />
+                        <div className="h-10 w-40 bg-slate-200/50 rounded-full" />
+                    </div>
+                </div>
+            </div>
+            <div className="h-14 w-full bg-white/30 backdrop-blur-md rounded-full border border-white/20" />
+        </div>
+        {[1, 2, 3].map((i) => (
+            <div key={i} className="h-96 w-full bg-white/30 backdrop-blur-[40px] border border-white/20 rounded-[32px] shadow-sm" />
+        ))}
+    </div>
+)
 
 export default function AgentSettingsPage() {
     const router = useRouter()
@@ -109,8 +134,7 @@ export default function AgentSettingsPage() {
 
     const { data: settingsData, isLoading } = useQuery({
         queryKey: ['agent-settings'],
-        queryFn: fetchAgentSettings,
-    })
+        queryFn: fetchAgentSettings })
 
     useEffect(() => {
         if (settingsData) {
@@ -269,13 +293,10 @@ export default function AgentSettingsPage() {
         }
     }
 
-    if (isLoading) {
+    if (isLoading || !originalSettings) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-[var(--primary)]" />
-                    <p className="text-sm font-medium text-gray-500 animate-pulse">Loading settings...</p>
-                </div>
+            <div className="min-h-screen">
+                <SettingsSkeleton />
             </div>
         )
     }
@@ -400,21 +421,21 @@ export default function AgentSettingsPage() {
 
                 <div className="grid gap-8 pb-12">
                     {/* General Settings */}
-                    <Card id="general-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
-                        <CardHeader className="pb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
+                    <Card id="general-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                        <CardHeader className="pb-6 pt-8 px-8">
+                            <div className="flex items-center gap-5">
+                                <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <Globe className="h-6 w-6" />
                                 </div>
-                                <div className="space-y-1">
-                                    <CardTitle className="text-xl font-bold text-slate-900">General Configuration</CardTitle>
-                                    <CardDescription className="text-sm font-medium text-slate-500">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight">General Configuration</CardTitle>
+                                    <CardDescription className="text-sm font-semibold text-slate-500/80">
                                         Configure basic agency settings and system preferences.
                                     </CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="space-y-6 pt-2">
+                        <CardContent className="space-y-8 px-8 pb-8 pt-2">
                             <div className="grid gap-3 max-w-md">
                                 <Label htmlFor="currency" className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     Default Currency <span className="text-red-500">*</span>
@@ -473,43 +494,48 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* SMTP Settings */}
-                    <Card id="email-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
-                        <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
+                    <Card id="email-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                        <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
+                            <div className="flex items-center gap-5">
+                                <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <Mail className="h-6 w-6" />
                                 </div>
-                                <div className="space-y-1">
-                                    <CardTitle className="text-xl font-bold text-slate-900">Email Configuration (SMTP)</CardTitle>
-                                    <CardDescription className="text-sm font-medium text-slate-500">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight">Email Configuration (SMTP)</CardTitle>
+                                    <CardDescription className="text-sm font-semibold text-slate-500/80">
                                         Set your own service to send professional automated confirmations.
                                     </CardDescription>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${smtp.host ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-transparent text-slate-500 border-slate-200'
-                                    }`}>
-                                    <div className={`h-1.5 w-1.5 rounded-full ${smtp.host ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-400'}`} />
+                            <div className="flex flex-col items-end gap-3 shrink-0">
+                                <div className={cn(
+                                    "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm",
+                                    smtp.host ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                                )}>
+                                    <div className={cn(
+                                        "h-1.5 w-1.5 rounded-full",
+                                        smtp.host ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-400"
+                                    )} />
                                     {smtp.host ? 'Connected' : 'Not Configured'}
                                 </div>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="font-bold border-slate-200 hover:bg-transparent text-slate-700 h-9 px-4 rounded-lg shadow-sm"
+                                    className="font-bold border-white/40 bg-white/30 hover:bg-white/50 text-slate-700 h-10 px-6 rounded-xl shadow-sm transition-all active:scale-95"
                                     onClick={testSmtpConnection}
                                     disabled={testingSmtp || !smtp.host}
                                 >
                                     {testingSmtp ? (
                                         <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                                     ) : (
-                                        <CheckCircle className="h-4 w-4 mr-2 text-emerald-500" />
+                                        <CheckCircle className="h-4 w-4 mr-2 text-emerald-500 font-bold" />
                                     )}
                                     Test Connection
                                 </Button>
                             </div>
                         </CardHeader>
-                        <Separator className="bg-slate-100" />
-                        <CardContent className="space-y-8 pt-8">
+                        <Separator className="bg-white/10" />
+                        <CardContent className="space-y-8 px-8 pb-8 pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                 <div className="md:col-span-9 space-y-2">
                                     <Label htmlFor="smtp_host" className="text-sm font-bold text-slate-700 flex items-center gap-2">
@@ -643,37 +669,45 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* Razorpay Settings */}
-                    <Card id="payment-section" className="glass-panel shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden scroll-mt-24 rounded-2xl">
-                        <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
+                    <Card id="payment-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                        <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
+                            <div className="flex items-center gap-5">
+                                <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <CreditCard className="h-6 w-6" />
                                 </div>
-                                <div className="space-y-1">
-                                    <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
                                         Payment Gateway (Razorpay)
                                     </CardTitle>
-                                    <CardDescription className="text-sm font-medium text-slate-500">
+                                    <CardDescription className="text-sm font-semibold text-slate-500/80">
                                         Configure your Razorpay account to receive payments directly into your account.
                                     </CardDescription>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${razorpay.key_id ? 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-[0_2px_10px_rgba(16,185,129,0.05)]' : 'bg-transparent text-slate-500 border-slate-200'
-                                    }`}>
-                                    <div className={`h-1.5 w-1.5 rounded-full ${razorpay.key_id ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-400'}`} />
+                            <div className="flex flex-col items-end gap-3 shrink-0">
+                                <div className={cn(
+                                    "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm",
+                                    razorpay.key_id ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                                )}>
+                                    <div className={cn(
+                                        "h-1.5 w-1.5 rounded-full",
+                                        razorpay.key_id ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-400"
+                                    )} />
                                     {razorpay.key_id ? 'Active Gateway' : 'Inactive'}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-transparent pr-2 pl-3 py-1 rounded-lg border border-slate-100">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/40 px-3 py-1.5 rounded-lg border border-white/40 shadow-sm">
                                     Mode:
-                                    <span className={razorpay.key_id?.startsWith('rzp_test') ? 'text-amber-600' : 'text-blue-600'}>
+                                    <span className={cn(
+                                        "ml-1",
+                                        razorpay.key_id?.startsWith('rzp_test') ? 'text-amber-600' : 'text-blue-600'
+                                    )}>
                                         {razorpay.key_id?.startsWith('rzp_test') ? 'TEST MODE' : 'LIVE MODE'}
                                     </span>
                                 </div>
                             </div>
                         </CardHeader>
-                        <Separator className="bg-slate-100" />
-                        <CardContent className="space-y-8 pt-8">
+                        <Separator className="bg-white/10" />
+                        <CardContent className="space-y-8 px-8 pb-8 pt-8">
                             <div className="grid grid-cols-1 gap-8">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">

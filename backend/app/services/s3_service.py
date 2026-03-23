@@ -70,5 +70,44 @@ class S3Service:
             logger.error(f"Unknown Upload Error: {e}")
             raise HTTPException(status_code=500, detail=f"Upload Failed: {str(e)}")
 
+    async def generate_presigned_url(self, file_name: str, content_type: str, folder: str = "packages") -> dict:
+        """
+        Generate a presigned URL for direct upload to S3
+        """
+        if not self.s3_client:
+            raise HTTPException(status_code=500, detail="S3 service not configured")
+        
+        try:
+            # Generate unique filename
+            file_extension = os.path.splitext(file_name)[1]
+            unique_filename = f"{folder}/{uuid.uuid4()}{file_extension}"
+            
+            # Generate the presigned URL for PUT operation
+            presigned_url = self.s3_client.generate_presigned_url(
+                ClientMethod='put_object',
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': unique_filename,
+                    'ContentType': content_type
+                },
+                ExpiresIn=3600  # URL expires in 1 hour
+            )
+            
+            # Construct final public URL
+            file_url = f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{unique_filename}"
+            
+            return {
+                "upload_url": presigned_url,
+                "file_url": file_url,
+                "key": unique_filename
+            }
+            
+        except ClientError as e:
+            logger.error(f"S3 Presigned URL Error: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate presigned URL: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unknown Presigned URL Error: {e}")
+            raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+
 # Singleton instance
 s3_service = S3Service()

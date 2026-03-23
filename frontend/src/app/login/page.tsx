@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowLeft, Clock, MapPin, Compass, Globe, Wind, Check, Copy, Key, ChevronRight, ShieldCheck, Plane } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGoogleLogin } from '@react-oauth/google'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 48 48">

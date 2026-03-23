@@ -10,9 +10,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole
-from app.schemas import BookingCreate, BookingResponse, BookingWithPackageResponse
+from app.schemas import (
+    BookingCreate, BookingResponse, BookingWithPackageResponse,
+    CancelPreviewResponse, CancelActionResponse
+)
 from app.api.deps import get_current_user, get_current_admin
 from app.core.exceptions import NotFoundException, BadRequestException
+from app.services import cancellation_service
 
 router = APIRouter()
 
@@ -237,38 +241,98 @@ async def create_booking(
         raise HTTPException(status_code=500, detail=f"Booking Creation Failed: {str(e)}")
 
 
-@router.put("/{booking_id}/cancel", response_model=BookingResponse)
+@router.get("/{booking_id}/cancel-preview", response_model=CancelPreviewResponse)
+async def cancel_booking_preview(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Preview refund amount before confirming cancellation.
+    Read-only — no DB changes.
+    """
+    query = select(Booking).where(Booking.id == booking_id).options(
+        selectinload(Booking.payments),
+        selectinload(Booking.package)
+    )
+    result = await db.execute(query)
+    booking = result.scalar_one_or_none()
+
+    if not booking:
+        raise NotFoundException("Booking not found")
+    if booking.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if booking.status == BookingStatus.CANCELLED:
+        raise BadRequestException("Booking is already cancelled")
+    if booking.status == BookingStatus.COMPLETED:
+        raise BadRequestException("Cannot cancel a completed booking")
+
+    package = booking.package
+    rules = (package.cancellation_rules or []) if package else []
+    calc = cancellation_service.calculate_refund(booking, rules)
+
+    return CancelPreviewResponse(
+        cancellation_enabled=bool(package and package.cancellation_enabled),
+        days_before=calc["days_before"],
+        paid_amount=calc["paid_amount"],
+        refund_amount=calc["refund_amount"],
+        refund_percentage=calc["refund_percentage"],
+        message=calc["message"],
+    )
+
+
+@router.post("/{booking_id}/cancel", response_model=CancelActionResponse)
 async def cancel_booking(
     booking_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Cancel a booking"""
-    result = await db.execute(select(Booking).where(Booking.id == booking_id))
-    booking = result.scalar_one_or_none()
-    
-    if not booking:
+    """
+    Cancel a booking and trigger Razorpay refund if applicable.
+    Uses SELECT FOR UPDATE + single transaction for safety.
+    """
+    # Quick ownership check before locking
+    pre_check = await db.execute(select(Booking.user_id, Booking.status).where(Booking.id == booking_id))
+    row = pre_check.first()
+    if not row:
         raise NotFoundException("Booking not found")
-    
-    # Check if user owns this booking
-    if booking.user_id != current_user.id:
+    if row[0] != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to cancel this booking")
-    
-    # Check if booking can be cancelled
-    if booking.status == BookingStatus.CANCELLED:
-        raise BadRequestException("Booking is already cancelled")
-    
-    if booking.status == BookingStatus.COMPLETED:
-        raise BadRequestException("Cannot cancel completed booking")
-    
-    # Update booking status
-    booking.status = BookingStatus.CANCELLED
-    
-    await db.commit()
-    await db.refresh(booking)
-    
-    return BookingResponse.model_validate(booking)
+    if row[1] == BookingStatus.COMPLETED:
+        raise BadRequestException("Cannot cancel a completed booking")
 
+    try:
+        result = await cancellation_service.process_cancellation(
+            booking_id=booking_id,
+            db=db,
+        )
+    except ValueError as e:
+        raise BadRequestException(str(e))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Cancel booking failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Cancellation failed: {str(e)}")
+
+    # Send cancellation email (non-blocking failure)
+    try:
+        from app.services.customer_notification_service import CustomerNotificationService
+        query = select(Booking).where(Booking.id == booking_id).options(
+            selectinload(Booking.user),
+            selectinload(Booking.package)
+        )
+        notif_result = await db.execute(query)
+        booking_for_email = notif_result.scalar_one_or_none()
+        if booking_for_email:
+            await CustomerNotificationService.send_cancellation_confirmation(
+                booking=booking_for_email,
+                refund_amount=result["refund_amount"],
+                refund_status=result["refund_status"],
+            )
+    except Exception as email_err:
+        import logging
+        logging.getLogger(__name__).warning(f"Cancellation email failed (non-fatal): {email_err}")
+
+    return CancelActionResponse(**result)
 
 @router.get("/admin/all", response_model=List[BookingWithPackageResponse])
 async def list_all_bookings(

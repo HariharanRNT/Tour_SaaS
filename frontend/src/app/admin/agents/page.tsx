@@ -25,8 +25,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+    TableRow } from '@/components/ui/table'
 import {
     Dialog,
     DialogContent,
@@ -34,21 +33,18 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog'
+    DialogTrigger } from '@/components/ui/dialog'
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion'
+    AccordionTrigger } from '@/components/ui/accordion'
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+    SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
     DropdownMenu,
@@ -56,8 +52,7 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
     Pagination,
@@ -66,10 +61,9 @@ import {
     PaginationItem,
     PaginationLink,
     PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination'
-import { Plus, Search, UserCheck, UserX, Shield, Trash2, Check, X, Eye, EyeOff, ChevronDown, Filter, MoreVertical, ArrowUpDown, Download, TrendingUp, Users, UserPlus, Calendar } from 'lucide-react'
-import { toast } from 'react-toastify'
+    PaginationPrevious } from '@/components/ui/pagination'
+import { Plus, Search, UserCheck, UserX, Shield, Trash2, Check, X, Eye, EyeOff, ChevronDown, Filter, MoreVertical, ArrowUpDown, Download, TrendingUp, Users, UserPlus, Calendar, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { Country, State, City } from 'country-state-city'
@@ -118,23 +112,20 @@ export default function AdminAgentsPage() {
     // Queries
     const { data: agents = [], isLoading: loading } = useQuery({
         queryKey: ['agents', statusFilter],
-        queryFn: () => fetchAgents(statusFilter),
-    })
+        queryFn: () => fetchAgents(statusFilter) })
 
     // Mutations
     const approveMutation = useMutation({
         mutationFn: approveAgent,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
-        },
-    })
+        } })
 
     const rejectMutation = useMutation({
         mutationFn: ({ id, reason }: { id: string, reason: string }) => rejectAgent(id, reason),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
-        },
-    })
+        } })
 
     const createMutation = useMutation({
         mutationFn: createAgent,
@@ -150,31 +141,27 @@ export default function AdminAgentsPage() {
             setCountryStates(State.getStatesOfCountry('IN'))
             setStateCities([])
             setFormTouched(false)
-        },
-    })
+        } })
 
     const statusMutation = useMutation({
         mutationFn: ({ id, is_active }: { id: string, is_active: boolean }) => apiUpdateAgentStatus(id, is_active),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
-        },
-    })
+        } })
 
     const deleteMutation = useMutation({
         mutationFn: apiDeleteAgent,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
             setAgentToDelete(null)
-        },
-    })
+        } })
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: string, data: any }) => apiUpdateAgent(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
             setIsEditOpen(false)
-        },
-    })
+        } })
 
     const bulkDeleteMutation = useMutation({
         mutationFn: bulkDeleteAgents,
@@ -339,8 +326,7 @@ export default function AdminAgentsPage() {
             company_legal_name: newAgent.company_legal_name || null,
             business_address: newAgent.business_address || null,
             city: newAgent.city || null,
-            domain: newAgent.domain || null,
-        }
+            domain: newAgent.domain || null }
         createMutation.mutate(payload)
     }
 
@@ -408,8 +394,7 @@ export default function AdminAgentsPage() {
             company_legal_name: editForm.company_legal_name || null,
             business_address: editForm.business_address || null,
             city: editForm.city || null,
-            domain: editForm.domain || null,
-        }
+            domain: editForm.domain || null }
 
         updateMutation.mutate({ id: agentToEdit.id, data: payload })
     }
@@ -595,21 +580,26 @@ export default function AdminAgentsPage() {
 
                             </DialogTrigger>
 
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl">Add New Agent</DialogTitle>
-                                    <DialogDescription>
-                                        Create a new agent account. They will be able to log in immediately.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleCreateAgent} className="space-y-8">
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                                <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Add New <span className="text-orange-600">Agent</span></DialogTitle>
+                                        <DialogDescription className="text-slate-500 font-medium mt-2">
+                                            Create a new agent account. They will be able to log in immediately.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                </div>
+                                <form onSubmit={handleCreateAgent}>
+                                    <div className="p-8 space-y-8">
                                     {/* Collapsible Sections */}
                                     <Accordion type="multiple" defaultValue={[]} className="space-y-4">
                                         {/* Agency Details */}
-                                        <AccordionItem value="agency" className="border rounded-lg px-6 bg-purple-50/50 border-purple-100">
-                                            <AccordionTrigger className="hover:no-underline py-4">
-                                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                                    <Shield className="h-5 w-5 text-purple-600" />
+                                        <AccordionItem value="agency" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                            <AccordionTrigger className="hover:no-underline py-5">
+                                                <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-data-[state=open]:bg-orange-600 transition-colors duration-300">
+                                                        <Shield className="h-5 w-5 text-orange-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                                    </div>
                                                     Agency Details
                                                 </h3>
                                             </AccordionTrigger>
@@ -736,10 +726,12 @@ export default function AdminAgentsPage() {
                                         </AccordionItem>
 
                                         {/* Personal Details */}
-                                        <AccordionItem value="personal" className="border rounded-lg px-6 glass-card border-blue-100">
-                                            <AccordionTrigger className="hover:no-underline py-4">
-                                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                                    <Shield className="h-5 w-5 text-blue-600" />
+                                        <AccordionItem value="personal" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                            <AccordionTrigger className="hover:no-underline py-5">
+                                                <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-data-[state=open]:bg-blue-600 transition-colors duration-300">
+                                                        <Users className="h-5 w-5 text-blue-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                                    </div>
                                                     Contact Details
                                                 </h3>
                                             </AccordionTrigger>
@@ -868,10 +860,12 @@ export default function AdminAgentsPage() {
                                         </AccordionItem>
 
                                         {/* Financial Details */}
-                                        <AccordionItem value="financial" className="border rounded-lg px-6 bg-green-50/50 border-green-100">
-                                            <AccordionTrigger className="hover:no-underline py-4">
-                                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                                    <Shield className="h-5 w-5 text-green-600" />
+                                        <AccordionItem value="financial" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                            <AccordionTrigger className="hover:no-underline py-5">
+                                                <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-data-[state=open]:bg-emerald-600 transition-colors duration-300">
+                                                        <TrendingUp className="h-5 w-5 text-emerald-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                                    </div>
                                                     Financial Details (Optional)
                                                 </h3>
                                             </AccordionTrigger>
@@ -921,23 +915,24 @@ export default function AdminAgentsPage() {
                                             </AccordionContent>
                                         </AccordionItem>
                                     </Accordion>
+                                    </div>
 
                                     {/* Sticky Footer */}
-                                    <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-4 bg-white border-t shadow-lg flex justify-end gap-3">
+                                    <div className="sticky bottom-0 bg-white/40 backdrop-blur-3xl px-8 py-5 border-t border-white/10 flex justify-end gap-3 z-20">
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="ghost"
                                             onClick={() => setIsCreateOpen(false)}
-                                            className="min-w-24"
+                                            className="min-w-28 h-12 rounded-xl text-slate-500 font-bold hover:bg-slate-50"
                                         >
                                             Cancel
                                         </Button>
                                         <Button
                                             type="submit"
                                             disabled={createMutation.isPending}
-                                            className="min-w-32"
+                                            className="min-w-40 h-12 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 text-white font-black shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all"
                                         >
-                                            {createMutation.isPending ? 'Creating...' : '✓ Create Agent'}
+                                            {createMutation.isPending ? 'Creating Agent...' : '✓ Create Agent'}
                                         </Button>
                                     </div>
                                 </form>
@@ -1370,15 +1365,15 @@ export default function AdminAgentsPage() {
                                                                             <MoreVertical className="h-5 w-5" />
                                                                         </Button>
                                                                     </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end" className="w-[220px] rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] border-[#F1F5F9] p-2">
-                                                                        <DropdownMenuLabel className="font-bold text-[10px] text-[#94A3B8] uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
+                                                                    <DropdownMenuContent align="end" className="w-[220px] p-2 glass-popover">
+                                                                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-400 uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
                                                                         <DropdownMenuItem onClick={() => {
                                                                             if (agent.approval_status === 'pending') {
                                                                                 handleApprove(agent.id);
                                                                             } else {
                                                                                 toggleStatus(agent);
                                                                             }
-                                                                        }} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        }} className="glass-popover-item">
                                                                             {agent.approval_status === 'pending' ? (
                                                                                 <>
                                                                                     <Check className="mr-2.5 h-[16px] w-[16px] text-green-600" />
@@ -1397,23 +1392,23 @@ export default function AdminAgentsPage() {
                                                                             )}
                                                                         </DropdownMenuItem>
                                                                         {agent.approval_status === 'pending' && (
-                                                                            <DropdownMenuItem onClick={() => handleReject(agent.id)} className="px-[14px] py-[10px] font-medium text-[14px] text-red-600 rounded-[8px] hover:bg-red-50 hover:text-red-700 transition-all duration-150 cursor-pointer">
+                                                                            <DropdownMenuItem onClick={() => handleReject(agent.id)} className="glass-popover-item text-red-600 focus:text-red-700">
                                                                                 <X className="mr-2.5 h-[16px] w-[16px]" />
                                                                                 <span>Reject Registration</span>
                                                                             </DropdownMenuItem>
                                                                         )}
-                                                                        <DropdownMenuItem onClick={() => handleEditClick(agent)} className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        <DropdownMenuItem onClick={() => handleEditClick(agent)} className="glass-popover-item">
                                                                             <Check className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
                                                                             <span>Edit Agent Details</span>
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuItem className="px-[14px] py-[10px] font-medium text-[14px] text-[#374151] rounded-[8px] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-all duration-150 cursor-pointer">
+                                                                        <DropdownMenuItem className="glass-popover-item">
                                                                             <Shield className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
                                                                             <span>Modify Permissions</span>
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuSeparator className="my-1 bg-[#F1F5F9]" />
+                                                                        <DropdownMenuSeparator className="my-1 bg-white/10" />
                                                                         <DropdownMenuItem
                                                                             onClick={() => handleDeleteClick(agent)}
-                                                                            className="px-[14px] py-[10px] font-medium text-[14px] text-[#EF4444] rounded-[8px] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-all duration-150 cursor-pointer"
+                                                                            className="glass-popover-item text-red-600 focus:text-red-700"
                                                                         >
                                                                             <Trash2 className="mr-2.5 h-[16px] w-[16px]" />
                                                                             <span>Permanent Delete</span>
@@ -1487,21 +1482,26 @@ export default function AdminAgentsPage() {
 
                 {/* Edit Agent Dialog */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle className="text-2xl">Edit Agent Details</DialogTitle>
-                            <DialogDescription>
-                                Update agent profile, agency details, and financial information.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleUpdateAgent} className="space-y-8">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                        <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
+                            <DialogHeader>
+                                <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Edit Agent <span className="text-orange-600">Details</span></DialogTitle>
+                                <DialogDescription className="text-slate-500 font-medium mt-2">
+                                    Update agent profile, agency details, and financial information.
+                                </DialogDescription>
+                            </DialogHeader>
+                        </div>
+                        <form onSubmit={handleUpdateAgent}>
+                            <div className="p-8 space-y-8">
                             {/* Collapsible Sections */}
                             <Accordion type="multiple" defaultValue={['agency', 'personal']} className="space-y-4">
                                 {/* Agency Details */}
-                                <AccordionItem value="agency" className="border rounded-lg px-6 bg-purple-50/50 border-purple-100">
-                                    <AccordionTrigger className="hover:no-underline py-4">
-                                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                                            <Shield className="h-5 w-5 text-purple-600" />
+                                <AccordionItem value="agency" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                    <AccordionTrigger className="hover:no-underline py-5">
+                                        <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-data-[state=open]:bg-orange-600 transition-colors duration-300">
+                                                <Shield className="h-5 w-5 text-orange-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                            </div>
                                             Agency Details
                                         </h3>
                                     </AccordionTrigger>
@@ -1598,12 +1598,13 @@ export default function AdminAgentsPage() {
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
-
-                                {/* Personal Details */}
-                                <AccordionItem value="personal" className="border rounded-lg px-6 bg-blue-50/50 border-blue-100">
-                                    <AccordionTrigger className="hover:no-underline py-4">
-                                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                                            <Shield className="h-5 w-5 text-blue-600" />
+                                {/* Contact Details */}
+                                <AccordionItem value="personal" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                    <AccordionTrigger className="hover:no-underline py-5">
+                                        <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-data-[state=open]:bg-blue-600 transition-colors duration-300">
+                                                <Users className="h-5 w-5 text-blue-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                            </div>
                                             Contact Details
                                         </h3>
                                     </AccordionTrigger>
@@ -1660,11 +1661,13 @@ export default function AdminAgentsPage() {
                                 </AccordionItem>
 
                                 {/* Financial Details */}
-                                <AccordionItem value="financial" className="border rounded-lg px-6 bg-green-50/50 border-green-100">
-                                    <AccordionTrigger className="hover:no-underline py-4">
-                                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                                            <Shield className="h-5 w-5 text-green-600" />
-                                            Financial Details
+                                <AccordionItem value="financial" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                    <AccordionTrigger className="hover:no-underline py-5">
+                                        <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-data-[state=open]:bg-emerald-600 transition-colors duration-300">
+                                                <TrendingUp className="h-5 w-5 text-emerald-600 group-data-[state=open]:text-white transition-colors duration-300" />
+                                            </div>
+                                            Financial Details (Optional)
                                         </h3>
                                     </AccordionTrigger>
                                     <AccordionContent className="space-y-4 pb-4 px-1">
@@ -1698,27 +1701,27 @@ export default function AdminAgentsPage() {
                                                 />
                                             </div>
                                         </div>
-
                                     </AccordionContent>
                                 </AccordionItem>
                             </Accordion>
+                            </div>
 
                             {/* Sticky Footer */}
-                            <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-4 bg-white border-t shadow-lg flex justify-end gap-3">
+                            <div className="sticky bottom-0 bg-white/40 backdrop-blur-3xl px-8 py-5 border-t border-white/10 flex justify-end gap-3 z-20">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="ghost"
                                     onClick={() => setIsEditOpen(false)}
-                                    className="min-w-24"
+                                    className="min-w-28 h-12 rounded-xl text-slate-500 font-bold hover:bg-slate-50"
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="min-w-32"
                                     disabled={updateMutation.isPending}
+                                    className="min-w-40 h-12 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 text-white font-black shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all"
                                 >
-                                    {updateMutation.isPending ? 'Updating...' : 'Save Changes'}
+                                    {updateMutation.isPending ? 'Updating...' : '✓ Save Changes'}
                                 </Button>
                             </div>
                         </form>
@@ -1727,39 +1730,82 @@ export default function AdminAgentsPage() {
 
                 {/* Delete Confirmation Dialog */}
                 <Dialog open={!!agentToDelete} onOpenChange={() => setAgentToDelete(null)}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Delete Agent</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to delete {agentToDelete?.first_name} {agentToDelete?.last_name}? This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setAgentToDelete(null)}>Cancel</Button>
-                            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
-                                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                    <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px]">
+                        <div className="p-8">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center border border-rose-100/50 shadow-sm transition-transform duration-500 hover:rotate-12">
+                                    <AlertTriangle className="h-6 w-6 text-rose-500" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-black text-slate-800 tracking-tight uppercase">Delete Agent</DialogTitle>
+                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                        Irreversible Action
+                                    </DialogDescription>
+                                </div>
+                            </div>
+                            
+                            <p className="text-slate-600 font-medium leading-relaxed">
+                                Are you sure you want to delete <span className="text-slate-900 font-black">{agentToDelete?.first_name} {agentToDelete?.last_name}</span>? This action cannot be undone and all associated data will be lost.
+                            </p>
+                        </div>
+                        
+                        <div className="bg-slate-50/50 backdrop-blur-md px-8 py-6 flex justify-end gap-3 border-t border-white/20">
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => setAgentToDelete(null)}
+                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                            >
+                                Cancel
                             </Button>
-                        </DialogFooter>
+                            <Button 
+                                variant="destructive" 
+                                onClick={confirmDelete} 
+                                disabled={deleteMutation.isPending}
+                                className="h-11 px-8 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20 uppercase tracking-widest text-[11px]"
+                            >
+                                {deleteMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
+                            </Button>
+                        </div>
                     </DialogContent>
                 </Dialog>
 
                 {/* Bulk Delete Confirmation Dialog */}
                 <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Delete {selectedAgents.size} Agent{selectedAgents.size > 1 ? 's' : ''}?</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to delete {selectedAgents.size} selected agent{selectedAgents.size > 1 ? 's' : ''}? This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)}>
+                    <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px]">
+                        <div className="p-8">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center border border-rose-100/50 shadow-sm transition-transform duration-500 hover:rotate-12">
+                                    <AlertTriangle className="h-6 w-6 text-rose-500" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-black text-slate-800 tracking-tight uppercase">Bulk Delete</DialogTitle>
+                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                        Multiple Records
+                                    </DialogDescription>
+                                </div>
+                            </div>
+                            
+                            <p className="text-slate-600 font-medium leading-relaxed">
+                                Are you sure you want to delete <span className="text-slate-900 font-black">{selectedAgents.size}</span> selected agents? This action is permanent and cannot be reversed.
+                            </p>
+                        </div>
+                        
+                        <div className="bg-slate-50/50 backdrop-blur-md px-8 py-6 flex justify-end gap-3 border-t border-white/20">
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => setShowBulkDeleteDialog(false)}
+                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                            >
                                 Cancel
                             </Button>
-                            <Button variant="destructive" onClick={handleBulkDelete}>
-                                Delete {selectedAgents.size} Agent{selectedAgents.size > 1 ? 's' : ''}
+                            <Button 
+                                variant="destructive" 
+                                onClick={handleBulkDelete}
+                                className="h-11 px-8 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20 uppercase tracking-widest text-[11px]"
+                            >
+                                Delete {selectedAgents.size} Agents
                             </Button>
-                        </DialogFooter>
+                        </div>
                     </DialogContent>
                 </Dialog>
             </div>

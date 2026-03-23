@@ -5,9 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 export const api = axios.create({
     baseURL: `${API_URL}/api/v1`,
     headers: {
-        'Content-Type': 'application/json',
-    },
-})
+        'Content-Type': 'application/json' } })
 
 // Add auth token and domain to requests
 api.interceptors.request.use((config) => {
@@ -55,8 +53,7 @@ export const authAPI = {
         params.append('password', password)
 
         const response = await api.post('/auth/login', params, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        })
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
         return response.data
     },
 
@@ -115,8 +112,7 @@ export const authAPI = {
     verifyLoginOTP: async (email: string, otp: string) => {
         const response = await api.post('/auth/verify-login-otp', { email, otp })
         return response.data
-    },
-}
+    } }
 
 // Packages API
 export const packagesAPI = {
@@ -136,8 +132,7 @@ export const packagesAPI = {
     getById: async (id: string) => {
         const response = await api.get(`/packages/${id}`)
         return response.data
-    },
-}
+    } }
 
 // Flat named exports as requested
 export const fetchDashboardStats = async (filter_type: string = 'ALL') => {
@@ -308,17 +303,20 @@ export const bookingsAPI = {
     },
 
     cancel: async (id: string) => {
-        const response = await api.put(`/bookings/${id}/cancel`)
+        const response = await api.post(`/bookings/${id}/cancel`)
+        return response.data
+    },
+
+    getCancelPreview: async (id: string) => {
+        const response = await api.get(`/bookings/${id}/cancel-preview`)
         return response.data
     },
 
     downloadInvoice: async (id: string) => {
         const response = await api.get(`/bookings/${id}/invoice`, {
-            responseType: 'blob',
-        })
+            responseType: 'blob' })
         return response.data
-    },
-}
+    } }
 
 // Payments API
 export const paymentsAPI = {
@@ -334,8 +332,7 @@ export const paymentsAPI = {
     }) => {
         const response = await api.post('/payments/verify', data)
         return response.data
-    },
-}
+    } }
 
 // Tours API (Amadeus Integration)
 export const toursAPI = {
@@ -525,6 +522,22 @@ export const markNotificationAsRead = async (id: string) => {
 
 export const deleteNotification = async (id: string) => {
     const response = await api.delete(`/admin/notifications/${id}`)
+    return response.data
+}
+
+// Agent Notifications API
+export const fetchAgentNotifications = async () => {
+    const response = await api.get('/agent/notifications')
+    return response.data
+}
+
+export const markAgentNotificationAsRead = async (id: string) => {
+    const response = await api.patch(`/agent/notifications/${id}/read`)
+    return response.data
+}
+
+export const deleteAgentNotification = async (id: string) => {
+    const response = await api.delete(`/agent/notifications/${id}`)
     return response.data
 }
 

@@ -775,6 +775,27 @@
   .react-tel-input .country-list .country.highlight .dial-code {
     @apply !text-white/80;
   }
+
+  /* Glass Popover / Dropdown */
+  .glass-popover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .glass-popover-item {
+    @apply transition-all duration-200;
+  }
+
+  .glass-popover-item:hover,
+  .glass-popover-item:focus {
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(8px) !important;
+  }
 }
 
 

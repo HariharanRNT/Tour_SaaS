@@ -13,8 +13,7 @@ import {
     LineChart,
     Line,
     Area,
-    AreaChart,
-} from 'recharts'
+    AreaChart } from 'recharts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 

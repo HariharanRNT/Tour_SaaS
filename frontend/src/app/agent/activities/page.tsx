@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,7 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
+    DialogTitle } from '@/components/ui/dialog'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,14 +23,12 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+    AlertDialogTitle } from "@/components/ui/alert-dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2 } from 'lucide-react'
 import { activitiesAPI } from '@/lib/api'
@@ -41,8 +38,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+    SelectValue } from "@/components/ui/select"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface DestinationSummary {
@@ -507,8 +503,7 @@ export default function ActivitiesMasterPage() {
                             width: '38px', height: '38px', borderRadius: '50%',
                             background: 'rgba(255,255,255,0.35)',
                             backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255,255,255,0.5)',
-                        }}
+                            border: '1px solid rgba(255,255,255,0.5)' }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.boxShadow = '0 0 10px var(--primary-glow)';
                             if (e.currentTarget.firstChild) (e.currentTarget.firstChild as HTMLElement).style.transform = 'rotate(90deg)';

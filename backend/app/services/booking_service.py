@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import uuid
 
-from app.models import Booking, BookingCustomization, Package, ItineraryItem
+from app.models import Booking, BookingCustomization, Package, ItineraryItem, User
 from app.services.package_service import PackageService
+from app.services.notification_service import NotificationService
 
 
 class BookingService:
@@ -72,6 +73,24 @@ class BookingService:
         await self.db.commit()
         await self.db.refresh(booking)
         
+        # Trigger Notification for Agent
+        try:
+            # Get customer name
+            stmt = select(User).where(User.id == user_id)
+            res = await self.db.execute(stmt)
+            customer = res.scalar_one_or_none()
+            customer_name = f"{customer.first_name} {customer.last_name}" if customer else "A customer"
+            
+            await NotificationService.notify_new_booking(
+                db=self.db,
+                agent_id=package.agent_id,
+                customer_name=customer_name,
+                package_title=package.title
+            )
+        except Exception as e:
+            # Don't fail the booking if notification fails
+            print(f"Failed to send booking notification: {e}")
+            
         return booking
     
     async def get_booking_with_customizations(

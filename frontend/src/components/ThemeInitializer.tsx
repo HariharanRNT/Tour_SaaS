@@ -76,11 +76,11 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     try { apply(JSON.parse(cachedTheme)); } catch(e) {}
                 }
 
-                // 3. Background Sync (Step 2: fetch latest from DB)
+                // 3. Background Sync (Only if initial settings are missing)
                 const metaAgent = document.querySelector('meta[name="agent-id"]');
                 const agentId = metaAgent ? metaAgent.content : null;
                 
-                if (agentId) {
+                if (agentId && !init) {
                     const API_URL = '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}';
                     fetch(API_URL + '/api/v1/agent/settings/public', {
                          headers: { 

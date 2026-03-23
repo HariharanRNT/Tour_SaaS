@@ -46,27 +46,24 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+    DialogFooter } from "@/components/ui/dialog"
 import {
     Popover,
     PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
+    PopoverTrigger } from "@/components/ui/popover"
 import { PremiumCalendar } from "@/components/ui/premium-calendar"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
@@ -247,14 +244,14 @@ export default function AgentBookingsPage() {
                                     Export Records
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-white/50 backdrop-blur-2xl bg-white/80 shadow-2xl">
+                            <DropdownMenuContent align="end" className="w-56 p-2 glass-popover">
                                 <DropdownMenuLabel className="text-[10px] uppercase font-black text-slate-400 px-3 py-2">Choose Format</DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-slate-100" />
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
+                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                     <FileText className="h-4 w-4 mr-3 text-red-500" />
                                     <span className="font-bold">Export as PDF</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
+                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                     <FileSpreadsheet className="h-4 w-4 mr-3 text-green-600" />
                                     <span className="font-bold">Export for Excel</span>
                                 </DropdownMenuItem>
@@ -558,15 +555,15 @@ export default function AgentBookingsPage() {
                                             <MoreHorizontal className="h-5 w-5" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-52 p-2 rounded-2xl border-white/50 backdrop-blur-2xl bg-white/80 shadow-2xl">
-                                        <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
+                                    <DropdownMenuContent align="end" className="w-52 p-2 glass-popover">
+                                        <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                             <Info className="h-4 w-4 mr-3" /> <span className="font-bold">View Full Details</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 focus:bg-[var(--primary)]/10 focus:text-[var(--primary)]">
+                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                             <Share className="h-4 w-4 mr-3" /> <span className="font-bold">Share Itinerary</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuSeparator className="bg-slate-100" />
-                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 text-red-600 focus:bg-red-50 focus:text-red-700">
+                                        <DropdownMenuSeparator className="bg-white/10" />
+                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
                                             <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lock, Mail, Eye, EyeOff, Check, AlertCircle, Copy, Key, Lightbulb, Loader2 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
 export default function AdminLoginPage() {
@@ -46,12 +46,10 @@ export default function AdminLoginPage() {
             const response = await fetch('http://localhost:8000/api/v1/auth/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+                    'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     'username': email,
-                    'password': password,
-                })
+                    'password': password })
             })
 
             const data = await response.json()

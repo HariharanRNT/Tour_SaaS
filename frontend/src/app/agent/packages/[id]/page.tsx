@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, MapPin, Calendar } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 interface Package {
     id: string

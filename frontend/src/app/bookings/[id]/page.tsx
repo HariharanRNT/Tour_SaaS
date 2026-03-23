@@ -37,13 +37,12 @@ import {
     Copy,
     AlertCircle
 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function BookingDetailsPage() {
     const params = useParams()
@@ -535,6 +534,62 @@ export default function BookingDetailsPage() {
 
 
 
+
+                        {/* Cancellation Policy */}
+                        <Card className="glass-panel border-0 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-white/10 border-b border-white/10 pb-4">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <XCircle className="h-5 w-5 text-red-500" /> Cancellation Policy
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 space-y-4">
+                                {booking.package?.cancellation_enabled ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 text-emerald-600 mb-2">
+                                            <CheckCircle className="h-4 w-4" />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Cancellable Package</span>
+                                        </div>
+                                        {booking.package.cancellation_rules?.map((rule, idx) => {
+                                            const refundAmount = (rule.refundPercentage / 100) * booking.total_amount;
+                                            return (
+                                                <div key={idx} className="flex justify-between items-center p-3 bg-white/40 rounded-lg border border-white/10">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">If cancelled</span>
+                                                        <span className="text-sm font-bold text-gray-800">{rule.daysBefore}+ Days Before</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-sm font-black text-emerald-700">{rule.refundPercentage}% Refund</span>
+                                                        <p className="text-[10px] text-emerald-600 font-bold">≈ {formatCurrency(refundAmount)}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 0 && 
+                                         booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 && (
+                                            <div className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100/50">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-red-400 font-bold uppercase tracking-tighter">If cancelled</span>
+                                                    <span className="text-sm font-bold text-red-800">Less than {booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore} Days</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-sm font-black text-red-700">No Refund</span>
+                                                    <p className="text-[10px] text-red-600 font-bold">Non-refundable</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-gray-400 italic mt-2">
+                                            * Refund amounts are calculated based on your total booking value of {formatCurrency(booking.total_amount)}.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-red-50/50 border border-red-100 rounded-xl p-4 text-center">
+                                        <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+                                        <h4 className="font-bold text-red-900 text-sm">Non-Cancellable</h4>
+                                        <p className="text-xs text-red-700 mt-1">This package is non-refundable once booked.</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
                         {/* Need Help Section */}
                         <Card className="glass-panel border-0 shadow-sm">

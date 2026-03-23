@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { themes } from '@/lib/themes';
 import { useTheme } from '@/context/ThemeContext';
+import { EmailTemplatePicker } from '@/components/agent/EmailTemplatePicker';
 import {
     Check, Palette, Sparkles, Wand2, Eye, Save, ExternalLink,
     RefreshCw, Upload, Link as LinkIcon, Home, Map, Package,
@@ -12,7 +14,7 @@ import {
     Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella, Gift,
     Award, Zap, CheckCircle, Headphones, Wallet, Coffee, Luggage,
     Ticket, Navigation, Flag, Search, CheckCircle2, Info, ArrowRight,
-    Trees, Palmtree, MapPin
+    Trees, Palmtree, MapPin, Mail, Moon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
+import { compressImage, uploadToS3 } from '@/lib/image-upload-utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CUSTOM_THEME_STORAGE_KEY = 'agent_custom_theme';
@@ -68,8 +71,7 @@ const DEFAULT_CARD_STYLE: CardAppearance = {
     titleColor: 'dark',
     layout: 'top',
     iconColor: 'follow-theme',
-    customIconColor: '#F97316',
-};
+    customIconColor: '#F97316' };
 const ICON_OPTIONS = [
     'Plane', 'Globe', 'Users', 'Clock', 'Shield', 'Star', 'Heart', 'Map',
     'Camera', 'Car', 'Hotel', 'Compass', 'Sun', 'Mountain', 'Waves', 'Umbrella',
@@ -137,6 +139,7 @@ interface HomepageSettings {
     primaryBtnText: string; secondaryBtnText: string; backgroundImageUrl: string;
     navbar_logo_image: string;
     badgeText: string; showAiBadge: boolean;
+    agency_name?: string;
 }
 const DEFAULT_HOMEPAGE: HomepageSettings = {
     headline1: 'Adventure Awaits—', headline2: 'Tailored Just for You',
@@ -144,8 +147,7 @@ const DEFAULT_HOMEPAGE: HomepageSettings = {
     primaryBtnText: 'Start Your Journey', secondaryBtnText: 'See Sample Itinerary',
     backgroundImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
     navbar_logo_image: 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png',
-    badgeText: 'AI-Powered Trip Planning', showAiBadge: true,
-};
+    badgeText: 'AI-Powered Trip Planning', showAiBadge: true };
 
 interface PageSettings {
     // Plan Trip
@@ -236,8 +238,7 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     show_support_badge: true,
     show_flexible_badge: true,
     modal_cta_text: 'Start Planning Journey',
-    package_cta_text: 'Book Now',
-};
+    package_cta_text: 'Book Now' };
 
 // ─── Tab Definitions ─────────────────────────────────────────────────────────
 const TABS = [
@@ -247,6 +248,7 @@ const TABS = [
     { id: 'itinerary', icon: <ClipboardList className="h-4 w-4" />, label: 'Itinerary', count: 4 },
     { id: 'cart', icon: <ShoppingCart className="h-4 w-4" />, label: 'Cart', count: 3 },
     { id: 'uistyle', icon: <Sliders className="h-4 w-4" />, label: 'UI Style', count: 5 },
+    { id: 'email', icon: <Mail className="h-4 w-4" />, label: 'Email', count: 3 },
 ] as const;
 type TabId = typeof TABS[number]['id'];
 
@@ -278,6 +280,16 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
     );
 }
 
+const MOCK_BOOKING_PREVIEW = {
+    customerName: 'Alex Thompson',
+    referenceId: 'RT-77829-XP',
+    packageName: 'Luxury Santorini & Mykonos Escape',
+    travelDate: 'June 15, 2026',
+    travelers: 2,
+    totalAmount: 4850.00,
+    itinerarySummary: '7 Days of island hopping, private catamaran sunset cruise, and boutique caldera-view stays.'
+};
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function AgentThemeSettingsPage() {
     const { activeTheme, setActiveTheme } = useTheme();
@@ -296,6 +308,10 @@ export default function AgentThemeSettingsPage() {
     const [cardStyle, setCardStyle] = useState('glass');
     const [density, setDensity] = useState('spacious');
     const [fontPairing, setFontPairing] = useState('serif-sans');
+
+    // Email state
+    const [defaultEmailTheme, setDefaultEmailTheme] = useState('classic');
+    const [defaultEmailMessage, setDefaultEmailMessage] = useState('');
 
     // Homepage state
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
@@ -319,8 +335,7 @@ export default function AgentThemeSettingsPage() {
         Camera, Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella,
         Gift, Award, Zap, CheckCircle, Headphones, Wallet, Coffee,
         Package, Luggage, Ticket, Navigation, Flag, Search, Sparkles,
-        Sliders: Sliders, CheckCircle2: CheckCircle2,
-    };
+        Sliders: Sliders, CheckCircle2: CheckCircle2 };
     const getIconCmp = (name: string) => ICON_MAP[name] || Sparkles;
 
     const updateCard = (idx: number, field: keyof FeatureCard, value: any) =>
@@ -351,8 +366,7 @@ export default function AgentThemeSettingsPage() {
             iconStyle: updates.iconStyle ?? iconStyle,
             cardStyle: updates.cardStyle ?? cardStyle,
             density: updates.density ?? density,
-            fontPairing: updates.fontPairing ?? fontPairing,
-        };
+            fontPairing: updates.fontPairing ?? fontPairing };
         if (updates.buttonShape !== undefined) setButtonShape(updates.buttonShape);
         if (updates.iconStyle !== undefined) setIconStyle(updates.iconStyle);
         if (updates.cardStyle !== undefined) setCardStyle(updates.cardStyle);
@@ -360,7 +374,7 @@ export default function AgentThemeSettingsPage() {
         if (updates.fontPairing !== undefined) setFontPairing(updates.fontPairing);
         applyBodyClasses(next.buttonShape, next.iconStyle, next.cardStyle, next.density, next.fontPairing);
         localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
-        toast.success('UI style updated!', { position: 'bottom-right', autoClose: 1500, hideProgressBar: true });
+        toast.success('UI style updated!', { position: 'bottom-right' });
     };
 
     // Mount: restore all settings
@@ -392,6 +406,9 @@ export default function AgentThemeSettingsPage() {
                 });
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.agency_name) {
+                        setHpSettings(prev => ({ ...prev, agency_name: data.agency_name }));
+                    }
                     if (data.homepage_settings) {
                         const hs = data.homepage_settings;
                         if (hs.headline1) setHpSettings(prev => ({ ...prev, ...hs }));
@@ -425,6 +442,12 @@ export default function AgentThemeSettingsPage() {
                                 font_family: hs.font_family || hs.fontFamily || 'Inter, sans-serif',
                                 font_size: hs.font_size || hs.fontSize || '16px'
                             }));
+                        }
+                        if (hs.default_email_theme) {
+                            setDefaultEmailTheme(hs.default_email_theme);
+                        }
+                        if (hs.default_email_message) {
+                            setDefaultEmailMessage(hs.default_email_message);
                         }
                     }
                 }
@@ -462,9 +485,7 @@ export default function AgentThemeSettingsPage() {
                         secondaryColor: t.primaryLight,
                         // Legacy support
                         primary_color: t.primary,
-                        secondary_color: t.primaryLight,
-                    }),
-                });
+                        secondary_color: t.primaryLight }) });
                 
                 // Also update local pageSettings so they are in sync
                 setPageSettings(prev => ({
@@ -480,7 +501,7 @@ export default function AgentThemeSettingsPage() {
             }
         }
 
-        toast.success('Theme updated!', { position: 'bottom-right', autoClose: 2000, hideProgressBar: true });
+        toast.success('Theme updated!', { position: 'bottom-right' });
     };
     const handleApplyCustomTheme = async () => {
         const root = document.documentElement;
@@ -502,8 +523,7 @@ export default function AgentThemeSettingsPage() {
         setPageSettings(prev => ({
             ...prev,
             primary_color: customColors.primary,
-            secondary_color: customColors.secondary,
-        }));
+            secondary_color: customColors.secondary }));
 
         // PERSIST TO BACKEND IMMEDIATELY (Aligning with Design File)
         try {
@@ -529,14 +549,12 @@ export default function AgentThemeSettingsPage() {
                     primary_color: customColors.primary,
                     secondary_color: customColors.secondary,
                     nav_bg: customColors.navbarSettings.bgColor,
-                    button_color: customColors.buttonStyle.bgColor,
-                }),
-            });
+                    button_color: customColors.buttonStyle.bgColor }) });
             if (res.ok) {
                 // Update the combined agentTheme cache
                 const data = await res.json();
                 localStorage.setItem('agentTheme', JSON.stringify(data.settings));
-                toast.success('Custom theme saved to cloud!', { position: 'bottom-right', autoClose: 2000, hideProgressBar: true });
+                toast.success('Custom theme saved to cloud!', { position: 'bottom-right' });
             }
         } catch (err) {
             console.error("Failed to persist custom theme:", err);
@@ -561,33 +579,53 @@ export default function AgentThemeSettingsPage() {
                 },
                 body: JSON.stringify({
                     primary_color: '#F97316', // Default Orange
-                    secondary_color: '#FB923C',
-                }),
-            });
+                    secondary_color: '#FB923C' }) });
         } catch {}
 
-        toast.info('Restored to default theme', { position: 'bottom-right', autoClose: 2000, hideProgressBar: true });
+        toast.info('Restored to default theme', { position: 'bottom-right' });
     };
 
     // Homepage handlers
     const hpField = (field: keyof HomepageSettings, value: any) => setHpSettings(prev => ({ ...prev, [field]: value }));
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { toast.error('Max file size is 5MB'); return; }
         setImageUploading(true);
-        const toastId = toast.loading('Uploading image to S3…');
+        const toastId = toast.loading('Optimizing and uploading background image...');
         try {
-            const formData = new FormData(); formData.append('file', file);
-            const token = localStorage.getItem('token') || '';
-            const res = await fetch('http://localhost:8000/api/v1/upload?folder=homepage', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
+            // 1. Compress image
+            const compressedFile = await compressImage(file, {
+                maxWidthOrHeight: 1920,
+                initialQuality: 0.8
             });
-            if (!res.ok) { const err = await res.json().catch(() => ({ detail: 'Upload failed' })); throw new Error(err.detail || 'Upload failed'); }
-            const data = await res.json();
-            hpField('backgroundImageUrl', data.url);
-            toast.update(toastId, { render: 'Image uploaded to S3 ✓', type: 'success', isLoading: false, autoClose: 2000 });
+
+            // 2. Get presigned URL
+            const token = localStorage.getItem('token') || '';
+            const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    file_name: compressedFile.name,
+                    content_type: compressedFile.type,
+                    folder: 'homepage'
+                })
+            });
+
+            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+            const { upload_url, file_url } = await presignedRes.json();
+
+            // 3. Direct upload to S3
+            const success = await uploadToS3(compressedFile, upload_url);
+            if (!success) throw new Error('S3 upload failed');
+
+            // 4. Update state
+            hpField('backgroundImageUrl', file_url);
+            toast.success('Background image updated! ✓', { id: toastId });
         } catch (err: any) {
-            toast.update(toastId, { render: err.message || 'Upload failed', type: 'error', isLoading: false, autoClose: 3000 });
+            console.error(err);
+            toast.error(err.message || 'Upload failed', { id: toastId });
         } finally {
             setImageUploading(false);
             if (fileRef.current) fileRef.current.value = '';
@@ -599,30 +637,44 @@ export default function AgentThemeSettingsPage() {
         if (!file) return;
 
         setLogoUploading(true);
-        const toastId = toast.loading('Uploading logo to S3...');
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folder', 'logos');
+        const toastId = toast.loading('Optimizing and uploading logo...');
 
         try {
-            const token = localStorage.getItem('token') || '';
-            const res = await fetch('http://localhost:8000/api/v1/upload', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData,
+            // 1. Compress image (Logo usually smaller, but let's stick to 1920 max or maybe smaller?)
+            // For logo, we might want smaller dimensions, but 1920 is a safe max.
+            const compressedFile = await compressImage(file, {
+                maxWidthOrHeight: 800, // Logos don't need to be 1920
+                initialQuality: 0.8
             });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({ detail: 'Upload failed' }));
-                throw new Error(data.detail || 'Upload failed');
-            }
+            // 2. Get presigned URL
+            const token = localStorage.getItem('token') || '';
+            const presignedRes = await fetch('http://localhost:8000/api/v1/upload/presigned-url', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    file_name: compressedFile.name,
+                    content_type: compressedFile.type,
+                    folder: 'logos'
+                })
+            });
 
-            const data = await res.json();
-            hpField('navbar_logo_image', data.url);
-            toast.update(toastId, { render: 'Logo updated successfully ✓', type: 'success', isLoading: false, autoClose: 2000 });
+            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+            const { upload_url, file_url } = await presignedRes.json();
+
+            // 3. Direct upload to S3
+            const success = await uploadToS3(compressedFile, upload_url);
+            if (!success) throw new Error('S3 upload failed');
+
+            // 4. Update state
+            hpField('navbar_logo_image', file_url);
+            toast.success('Logo updated successfully ✓', { id: toastId });
         } catch (err: any) {
-            toast.update(toastId, { render: err.message || 'Logo upload failed', type: 'error', isLoading: false, autoClose: 3000 });
+            console.error(err);
+            toast.error(err.message || 'Logo upload failed', { id: toastId });
         } finally {
             setLogoUploading(false);
             if (logoRef.current) logoRef.current.value = '';
@@ -642,13 +694,15 @@ export default function AgentThemeSettingsPage() {
             navbar_logo_image: hpSettings.navbar_logo_image || DEFAULT_HOMEPAGE.navbar_logo_image,
             badgeText: hpSettings.badgeText.trim() || DEFAULT_HOMEPAGE.badgeText,
             showAiBadge: hpSettings.showAiBadge,
-        };
+            agency_name: hpSettings.agency_name };
 
         const fullPayload = {
             ...heroData,
             feature_cards: featureCards,
             wcu_cards: wcuCards,
-            card_appearance: cardAppearance
+            card_appearance: cardAppearance,
+            default_email_theme: defaultEmailTheme,
+            default_email_message: defaultEmailMessage
         };
 
         console.log("Saving Homepage Payload:", fullPayload);
@@ -667,8 +721,7 @@ export default function AgentThemeSettingsPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(fullPayload),
-            });
+                body: JSON.stringify(fullPayload) });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
                 throw new Error(err.detail || 'Save failed');
@@ -676,11 +729,11 @@ export default function AgentThemeSettingsPage() {
         } catch (err: any) {
             toast.error(`Backend save failed: ${err.message}. Changes saved locally only.`);
         } finally {
-            toast.success('Homepage settings saved!', { position: 'bottom-right', autoClose: 2000, hideProgressBar: true });
+            toast.success('Homepage settings saved!', { position: 'bottom-right' });
             setHpSaving(false);
         }
     };
-    const handleResetHomepage = () => { setHpSettings(DEFAULT_HOMEPAGE); localStorage.removeItem(HOMEPAGE_SETTINGS_KEY); toast.info('Reset to defaults', { position: 'bottom-right', autoClose: 1500, hideProgressBar: true }); };
+    const handleResetHomepage = () => { setHpSettings(DEFAULT_HOMEPAGE); localStorage.removeItem(HOMEPAGE_SETTINGS_KEY); toast.info('Reset to defaults', { position: 'bottom-right' }); };
 
     // Page settings handler
     const pgField = (field: keyof PageSettings, value: any) => setPageSettings(prev => ({ ...prev, [field]: value }));
@@ -690,26 +743,31 @@ export default function AgentThemeSettingsPage() {
         
         try {
             const token = localStorage.getItem('token') || '';
+            const payload = {
+                ...pageSettings,
+                default_email_theme: defaultEmailTheme,
+                default_email_message: defaultEmailMessage
+            };
+            
             const res = await fetch('http://localhost:8000/api/v1/agent/settings/homepage', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(pageSettings),
-            });
+                body: JSON.stringify(payload) });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
                 throw new Error(err.detail || 'Save failed');
             }
-            toast.success('Settings saved to cloud!', { position: 'bottom-right', autoClose: 2000, hideProgressBar: true });
+            toast.success('Settings saved to cloud!', { position: 'bottom-right' });
         } catch (err: any) {
             toast.error(`Cloud save failed: ${err.message}. Saved locally only.`);
         } finally {
             setPageSaving(false);
         }
     };
-    const handleResetPageSettings = () => { setPageSettings(DEFAULT_PAGE_SETTINGS); localStorage.removeItem(PAGE_SETTINGS_KEY); toast.info('Reset to defaults', { position: 'bottom-right', autoClose: 1500, hideProgressBar: true }); };
+    const handleResetPageSettings = () => { setPageSettings(DEFAULT_PAGE_SETTINGS); localStorage.removeItem(PAGE_SETTINGS_KEY); toast.info('Reset to defaults', { position: 'bottom-right' }); };
 
     // ── Render Tabs ────────────────────────────────────────────────────────────
     const renderThemeTab = () => (
@@ -836,6 +894,19 @@ export default function AgentThemeSettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Primary Button <span className="font-normal text-slate-400">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                     <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Secondary Button <span className="font-normal text-slate-400">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                </div>
+            </SectionCard>
+
+            <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
+                <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-600">Company / Agency Name</Label>
+                    <Input 
+                        value={hpSettings.agency_name || ''} 
+                        onChange={e => hpField('agency_name', e.target.value)} 
+                        placeholder="e.g. Dream Travels" 
+                        className="h-10 rounded-xl glass-input w-full max-w-md" 
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
                 </div>
             </SectionCard>
 
@@ -1111,8 +1182,7 @@ export default function AgentThemeSettingsPage() {
                                         border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
                                         borderTop: cardAppearance.border === 'top-accent' ? '3px solid var(--primary)' : undefined,
                                         boxShadow: cardAppearance.border === 'glow' ? '0 0 15px var(--primary-glow)' : undefined,
-                                        transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined,
-                                    }}>
+                                        transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined }}>
                                         {cardAppearance.layout !== 'minimal' && (
                                             <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
                                                 <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-white' : 'text-[var(--primary)]'}`} />
@@ -1329,8 +1399,7 @@ export default function AgentThemeSettingsPage() {
                                     borderRadius: opt.r,
                                     background: opt.key === 'underline' ? 'transparent' : 'var(--primary)',
                                     borderBottom: opt.key === 'underline' ? '2px solid var(--primary)' : undefined,
-                                    color: opt.key === 'underline' ? 'var(--primary)' : 'white',
-                                }}>Book Now</span>
+                                    color: opt.key === 'underline' ? 'var(--primary)' : 'white' }}>Book Now</span>
                                 <span className="text-[10px] font-bold text-slate-500">{opt.label}</span>
                             </button>
                         ))}
@@ -1417,8 +1486,41 @@ export default function AgentThemeSettingsPage() {
         </div>
     );
 
+    const renderEmailTab = () => (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+            <SectionCard icon={<Mail className="h-5 w-5" />} title="Custom Message content" subtitle="Personalize the message your customers see in their confirmation email">
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-600 uppercase tracking-widest">Email Body Message</Label>
+                    <Textarea 
+                        value={defaultEmailMessage}
+                        onChange={(e) => setDefaultEmailMessage(e.target.value)}
+                        placeholder="e.g. It is our privilege to confirm your passage for {package_name}..."
+                        className="glass-input rounded-2xl min-h-[120px] text-sm p-4"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                        <strong>Available Placeholders:</strong> <code className="text-[var(--primary)]">{`{package_name}`}</code>, <code className="text-[var(--primary)]">{`{customer_name}`}</code>, <code className="text-[var(--primary)]">{`{reference_id}`}</code>, <code className="text-[var(--primary)]">{`{agency_name}`}</code>, <code className="text-[var(--primary)]">{`{travel_date}`}</code>. 
+                        Placeholders will be automatically replaced with actual booking details.
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium italic mt-1">
+                        Leave empty to use the theme's default message. Use \n for new lines.
+                    </p>
+                </div>
+            </SectionCard>
+
+            <div className="bg-white/30 backdrop-blur-md rounded-[48px] border border-white/40 p-10 shadow-2xl">
+                <EmailTemplatePicker 
+                    bookingData={MOCK_BOOKING_PREVIEW}
+                    initialTheme={defaultEmailTheme}
+                    onThemeChange={(theme) => setDefaultEmailTheme(theme)}
+                    customMessage={defaultEmailMessage}
+                    showSendButton={false}
+                />
+            </div>
+        </div>
+    );
+
     // Tabs that have a save/reset bar
-    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart'];
+    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'email'];
 
     const handleSave = () => {
         if (activeTab === 'homepage') { handleSaveHomepage(); return; }
@@ -1445,7 +1547,8 @@ export default function AgentThemeSettingsPage() {
                             {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
                             {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
                             {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
-                            {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
+                             {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
+                             {activeTab === 'email' && 'Set the default visual style for booking confirmation emails'}
                         </p>
                     </div>
 
@@ -1485,7 +1588,8 @@ export default function AgentThemeSettingsPage() {
                         {activeTab === 'plantrip' && renderPlanTripTab()}
                         {activeTab === 'itinerary' && renderItineraryTab()}
                         {activeTab === 'cart' && renderCartTab()}
-                        {activeTab === 'uistyle' && renderUiStyleTab()}
+                         {activeTab === 'uistyle' && renderUiStyleTab()}
+                         {activeTab === 'email' && renderEmailTab()}
                     </div>
                 </div>
 

@@ -141,12 +141,10 @@ function PremiumCalendar({
                     day_today: "day-today", // Handled in CSS
                     day_outside: "text-[#B48060]/40 opacity-50",
                     day_disabled: "opacity-30 cursor-not-allowed",
-                    ...classNames,
-                }}
+                    ...classNames }}
                 components={{
                     IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-                    IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-                }}
+                    IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" /> }}
                 modifiers={{
                     weekend: { dayOfWeek: [0, 6] }
                 }}

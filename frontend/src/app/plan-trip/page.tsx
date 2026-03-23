@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PremiumCalendar } from '@/components/ui/premium-calendar'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
 import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane, Trees, Palmtree, Compass, Camera, Sparkles } from 'lucide-react'
-import { toast } from "react-toastify"
+import { toast } from 'sonner'
 import Image from 'next/image'
 
 // Types

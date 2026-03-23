@@ -11,8 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import {
     Popover,
     PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
+    PopoverTrigger } from "@/components/ui/popover"
 
 interface DatePickerWithRangeProps {
     className?: string
@@ -23,8 +22,7 @@ interface DatePickerWithRangeProps {
 export function DatePickerWithRange({
     className,
     date,
-    setDate,
-}: DatePickerWithRangeProps) {
+    setDate }: DatePickerWithRangeProps) {
     const [open, setOpen] = React.useState(false)
     const [tempDate, setTempDate] = React.useState<DateRange | undefined>(date)
 
@@ -164,8 +162,7 @@ export function DatePickerWithRange({
                                 day_disabled: "text-[#94A3B8] opacity-20",
                                 day_range_middle:
                                     "aria-selected:bg-gradient-to-r aria-selected:from-[#F97316]/20 aria-selected:to-[#FF8E53]/20 aria-selected:backdrop-blur-[2px] aria-selected:text-[#F97316] aria-selected:font-black rounded-none", // Range middle - glassy gradient
-                                day_hidden: "invisible",
-                            }}
+                                day_hidden: "invisible" }}
                         />
                     </div>
 

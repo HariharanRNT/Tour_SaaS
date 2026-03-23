@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,24 +14,21 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+    TableRow } from '@/components/ui/table'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
+    DialogTitle } from '@/components/ui/dialog'
 import {
     Pagination,
     PaginationContent,
@@ -39,9 +36,9 @@ import {
     PaginationItem,
     PaginationLink,
     PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
+    PaginationPrevious } from "@/components/ui/pagination"
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
 
@@ -209,21 +206,19 @@ export default function AgentPackagesPage() {
     const StatusBadge = ({ status }: { status: string }) => {
         const lowerStatus = status.toLowerCase()
         const styles: Record<string, string> = {
-            published: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/30',
-            draft: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/30',
-            archived: 'bg-transparent text-slate-700 border-slate-200 ring-slate-500/30',
-        }
+            published: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 ring-emerald-500/10',
+            draft: 'bg-amber-500/10 text-amber-600 border-amber-500/20 ring-amber-500/10',
+            archived: 'bg-slate-500/10 text-slate-600 border-slate-500/20 ring-slate-500/10' }
 
         const dots: Record<string, string> = {
-            published: 'bg-emerald-500',
-            draft: 'bg-amber-500',
-            archived: 'bg-transparent0',
-        }
+            published: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]',
+            draft: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
+            archived: 'bg-slate-400' }
 
         return (
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ring-4 ring-opacity-20 ${styles[lowerStatus] || 'bg-transparent text-gray-700 border-gray-200'}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${styles[lowerStatus] || 'bg-gray-500/10 text-gray-600 border-gray-500/20'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${dots[lowerStatus] || 'bg-gray-400'}`}></span>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {status}
             </div>
         )
     }
@@ -288,8 +283,8 @@ export default function AgentPackagesPage() {
 
             {/* Content */}
             <div className="container mx-auto px-4 py-8">
-                <Card className="glass-panel shadow-xl overflow-hidden rounded-[20px]">
-                    <CardHeader className="border-b border-white/30 pb-4">
+                <Card className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden rounded-[32px]">
+                    <CardHeader className="border-b border-white/10 pb-6 px-8 pt-8">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -383,8 +378,8 @@ export default function AgentPackagesPage() {
                                 {/* Desktop View */}
                                 <div className="hidden md:block overflow-x-auto">
                                     <Table>
-                                        <TableHeader className="bg-white/30">
-                                            <TableRow className="hover:bg-transparent border-b border-white/30">
+                                        <TableHeader className="bg-white/40 backdrop-blur-md">
+                                            <TableRow className="hover:bg-transparent border-b border-white/10">
                                                 <TableHead className="w-12 pl-6">
                                                     <Checkbox
                                                         checked={packages.length > 0 && selectedPackages.length === packages.length}
@@ -429,11 +424,10 @@ export default function AgentPackagesPage() {
                                             {packages.map((pkg: any, index: number) => (
                                                 <TableRow
                                                     key={pkg.id}
-                                                    className={`
-                                                        group transition-all duration-200 hover:shadow-sm hover:border-white/40
-                                                        ${selectedPackages.includes(pkg.id) ? 'bg-[rgba(255,255,255,0.15)]' : 'bg-transparent'} hover:bg-[rgba(255,255,255,0.15)]
-                                                    `}
-                                                    style={{ borderBottom: '1px solid rgba(255,255,255,0.30)' }}
+                                                    className={cn(
+                                                        "group transition-all duration-300 hover:bg-white/40 border-b border-white/10",
+                                                        selectedPackages.includes(pkg.id) ? "bg-white/50" : "bg-transparent"
+                                                    )}
                                                 >
                                                     <TableCell className="pl-6">
                                                         <Checkbox
@@ -494,14 +488,14 @@ export default function AgentPackagesPage() {
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 shadow-xl border-gray-100 rounded-xl p-1">
                                                                     <DropdownMenuItem
-                                                                        className="rounded-lg focus:bg-indigo-50 focus:text-indigo-700 py-2.5 px-3 cursor-pointer"
+                                                                        className="glass-popover-item"
                                                                         onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                     >
                                                                         <Edit className="mr-2 h-4 w-4 text-indigo-500" />
                                                                         <span className="font-medium">Edit Package</span>
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem
-                                                                        className="rounded-lg focus:bg-transparent py-2.5 px-3 cursor-pointer"
+                                                                        className="glass-popover-item"
                                                                         onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}
                                                                     >
                                                                         <Eye className="mr-2 h-4 w-4 text-gray-500" />
@@ -509,7 +503,7 @@ export default function AgentPackagesPage() {
                                                                     </DropdownMenuItem>
                                                                     <div className="h-px bg-gray-100 my-1" />
                                                                     <DropdownMenuItem
-                                                                        className="rounded-lg focus:bg-amber-50 focus:text-amber-700 py-2.5 px-3 cursor-pointer"
+                                                                        className="glass-popover-item"
                                                                         onClick={() => handleToggleStatus(pkg.id, pkg.status)}
                                                                     >
                                                                         {pkg.status.toLowerCase() === 'published' ? (
@@ -526,7 +520,7 @@ export default function AgentPackagesPage() {
                                                                     </DropdownMenuItem>
                                                                     <div className="h-px bg-gray-100 my-1" />
                                                                     <DropdownMenuItem
-                                                                        className="rounded-lg focus:bg-red-50 focus:text-red-700 group/delete py-2.5 px-3 cursor-pointer"
+                                                                        className="group/delete glass-popover-item text-red-600 focus:text-red-400"
                                                                         onClick={() => handleDeleteClick(pkg.id)}
                                                                     >
                                                                         <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
@@ -545,7 +539,10 @@ export default function AgentPackagesPage() {
                                 {/* Mobile View (Cards) */}
                                 <div className="md:hidden grid gap-4 p-4">
                                     {packages.map((pkg: any) => (
-                                        <div key={pkg.id} className={`glass-card rounded-2xl p-4 transition-all duration-300 ${selectedPackages.includes(pkg.id) ? 'ring-2 ring-violet-500' : ''}`}>
+                                        <div key={pkg.id} className={cn(
+                                            "bg-white/60 backdrop-blur-[30px] border border-white/20 rounded-[24px] p-5 transition-all duration-300 shadow-lg hover:shadow-xl",
+                                            selectedPackages.includes(pkg.id) ? "ring-2 ring-indigo-500 bg-white/80" : ""
+                                        )}>
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
                                                     <Checkbox

@@ -7,6 +7,11 @@ from uuid import UUID
 from decimal import Decimal
 
 
+# Cancellation Rule Schema
+class CancellationRule(BaseModel):
+    daysBefore: int = Field(..., ge=0)
+    refundPercentage: float = Field(..., ge=0, le=100)
+
 # Package Itinerary Schemas
 class PackageItineraryItemResponse(BaseModel):
     id: UUID
@@ -54,6 +59,9 @@ class PackageWithItineraryResponse(BaseModel):
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
     itinerary_by_day: List[PackageDayItinerary]
+    # Cancellation Policy
+    cancellation_enabled: bool = False
+    cancellation_rules: List[CancellationRule] = []
     
     class Config:
         from_attributes = True

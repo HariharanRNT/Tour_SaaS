@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPackagesSimple, deletePackageSimple, updatePackageStatus } from '@/lib/api'
@@ -15,14 +15,12 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+    TableRow } from '@/components/ui/table'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye } from 'lucide-react'
 
 interface Package {
@@ -43,8 +41,7 @@ export default function AdminPackagesPage() {
 
     const { data: packages = [], isLoading } = useQuery({
         queryKey: ['packages', statusFilter],
-        queryFn: fetchPackagesSimple,
-    })
+        queryFn: fetchPackagesSimple })
 
     const deleteMutation = useMutation({
         mutationFn: deletePackageSimple,

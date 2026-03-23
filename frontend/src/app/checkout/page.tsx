@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { Country, State, City } from 'country-state-city'
@@ -453,7 +453,6 @@ function CheckoutContent() {
                         email: contactEmail || "test@example.com",
                         contact: contactPhone || "9999999999"
                     },
-                    theme: { color: "#3399cc" },
                     modal: {
                         ondismiss: function () {
                             setStep('DETAILS') // Reset button state

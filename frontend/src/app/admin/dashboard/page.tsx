@@ -91,8 +91,7 @@ export default function AdminDashboard() {
 
     const { data: apiStats } = useQuery({
         queryKey: ['dashboard-stats', dateFilter],
-        queryFn: () => fetchDashboardStats(dateFilter),
-    })
+        queryFn: () => fetchDashboardStats(dateFilter) })
 
     const stats = { ...INITIAL_STATS, ...apiStats }
 

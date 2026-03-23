@@ -517,6 +517,34 @@ async def get_package(
     return PackageResponse.model_validate(package)
 
 
+@router.get("/{package_id}/itinerary-pdf")
+async def get_package_itinerary_pdf(
+    package_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """Download package itinerary as PDF"""
+    from fastapi import Response
+    from app.services.itinerary_pdf_service import ItineraryPdfService
+    
+    query = select(Package).where(Package.id == package_id).options(
+        selectinload(Package.itinerary_items)
+    )
+    result = await db.execute(query)
+    package = result.scalar_one_or_none()
+    
+    if not package:
+        raise NotFoundException("Package not found")
+        
+    pdf_bytes = ItineraryPdfService.generate_itinerary_pdf(package)
+    if not pdf_bytes:
+        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+         
+    # Return as file download
+    headers = {
+        'Content-Disposition': f'attachment; filename="Itinerary_{package.slug}.pdf"'
+    }
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+
 @router.post("", response_model=PackageResponse, status_code=status.HTTP_201_CREATED)
 async def create_package(
     package_data: PackageCreate,

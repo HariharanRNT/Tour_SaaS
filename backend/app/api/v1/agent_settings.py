@@ -58,6 +58,7 @@ async def get_agent_settings(
     rp_settings = res_rp.scalar_one_or_none()
     
     return {
+        "agency_name": agent.agency_name,
         "currency": agent.currency,
         "gst_applicable": agent.gst_applicable,
         "gst_inclusive": agent.gst_inclusive,
@@ -322,6 +323,10 @@ async def update_homepage_settings(
             current_settings[key] = value
             
     agent.homepage_settings = current_settings
+    
+    # Update agency_name if provided
+    if getattr(settings_in, 'agency_name', None) is not None:
+        agent.agency_name = settings_in.agency_name
     # EXPLICITLY mark as modified to ensure SQLAlchemy detects the change in the dict
     flag_modified(agent, "homepage_settings")
     

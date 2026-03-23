@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { themes, Theme } from '@/lib/themes';
 
@@ -12,7 +12,9 @@ const CUSTOM_THEME_KEY = 'agent_custom_theme';
 interface ThemeContextType {
     activeTheme: string;
     setActiveTheme: (theme: string) => void;
-    themeData: Theme;
+    themeData: any;
+    isLoading: boolean;
+    publicSettings: any;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -27,6 +29,9 @@ export function ThemeProvider({
 }) {
     const pathname = usePathname();
     const [activeTheme, setActiveThemeState] = useState<string>('default');
+    const [isLoading, setIsLoading] = useState(true);
+    const [publicSettings, setPublicSettings] = useState<any>(initialSettings || null);
+    const hasSynced = useRef(false);
 
     // Determine if we are on an exempt path
     const isExemptPath = pathname?.startsWith('/admin') || pathname === '/register/agent';
@@ -70,6 +75,13 @@ export function ThemeProvider({
         if (s.font_size || s.fontSize) root.style.setProperty('--font-size', s.font_size || s.fontSize);
     };
 
+    const setActiveTheme = (theme: string) => {
+        if (themes[theme] || theme === 'custom' || theme === 'default') {
+            setActiveThemeState(theme);
+            localStorage.setItem(SHARED_THEME_KEY, theme);
+        }
+    };
+
     useEffect(() => {
         if (isExemptPath) {
             console.log('ThemeProvider: Exempt path detected, enforcing default theme');
@@ -103,6 +115,8 @@ export function ThemeProvider({
 
         // 3. Background API Sync
         const syncThemeWithAPI = async () => {
+            if (hasSynced.current) return;
+            
             try {
                 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
                 const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
@@ -114,21 +128,32 @@ export function ThemeProvider({
 
                 if (res.ok) {
                     const data = await res.json();
+                    hasSynced.current = true; // Mark as synced successfully or at least attempted
+                    
                     if (data.homepage_settings && !isExemptPath) {
                         const hs = data.homepage_settings;
                         
                         // Check if we need to update localStorage
                         const currentLocal = localStorage.getItem(PAGE_SETTINGS_KEY);
                         if (JSON.stringify(hs) !== currentLocal) {
-                            localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(hs));
+                            try {
+                                localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(hs));
+                            } catch (e) {
+                                console.warn("Failed to save theme settings to localStorage (quota exceeded)", e);
+                            }
                             
                             // If user is on 'default' or has NO local theme, the server settings ARE the theme
                             if (activeTheme === 'default' || !savedTheme) {
                                 applyColors(hs);
-                                if (hs.activeTheme) setActiveThemeState(hs.activeTheme);
+                                if (hs.activeTheme && hs.activeTheme !== activeTheme) {
+                                    setActiveTheme(hs.activeTheme); // Use setActiveTheme to update localStorage too!
+                                }
                             }
                         }
                     }
+                    
+                    // Always update publicSettings state with freshest data from sync
+                    setPublicSettings(data);
                 }
             } catch (err) {
                 console.error("Theme background sync failed", err);
@@ -138,12 +163,12 @@ export function ThemeProvider({
         syncThemeWithAPI();
     }, [activeTheme, initialSettings, isExemptPath]);
 
-    const setActiveTheme = (theme: string) => {
-        if (themes[theme] || theme === 'custom') {
-            setActiveThemeState(theme);
-            localStorage.setItem(SHARED_THEME_KEY, theme);
+    useEffect(() => {
+        // Stop loading once we have some theme state (even if default)
+        if (activeTheme) {
+            setIsLoading(false);
         }
-    };
+    }, [activeTheme]);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -215,7 +240,9 @@ export function ThemeProvider({
         <ThemeContext.Provider value={{
             activeTheme,
             setActiveTheme,
-            themeData: getThemeData()
+            themeData: getThemeData(),
+            isLoading,
+            publicSettings
         }}>
             {children}
         </ThemeContext.Provider>

@@ -763,7 +763,16 @@ async def update_trip_session(
         
         query = text("""
             UPDATE trip_planning_sessions
-            SET itinerary = :itin, flight_details = :flight_details, updated_at = NOW(),
+            SET itinerary = :itin, 
+                flight_details = :flight_details,
+                destination = COALESCE(:destination, destination),
+                duration_days = COALESCE(:duration_days, duration_days),
+                duration_nights = COALESCE(:duration_nights, duration_nights),
+                start_date = COALESCE(:start_date, start_date),
+                travelers = COALESCE(:travelers, travelers),
+                preferences = COALESCE(:preferences, preferences),
+                matched_package_id = COALESCE(:package_id, matched_package_id),
+                updated_at = NOW(),
                 user_id = COALESCE(user_id, :user_id)
             WHERE id = :session_id AND status = 'active' AND expires_at > NOW()
             RETURNING id
@@ -772,6 +781,13 @@ async def update_trip_session(
         result = await db.execute(query, {
             "itin": json.dumps(itinerary), 
             "flight_details": json.dumps(flight_details),
+            "destination": payload.destination,
+            "duration_days": payload.duration_days,
+            "duration_nights": payload.duration_nights,
+            "start_date": payload.start_date,
+            "travelers": json.dumps(payload.travelers) if payload.travelers else None,
+            "preferences": json.dumps(payload.preferences) if payload.preferences else None,
+            "package_id": str(payload.package_id) if payload.package_id else None,
             "session_id": str(session_id),
             "user_id": current_user.id if current_user else None
         })

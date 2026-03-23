@@ -67,3 +67,36 @@ class RazorpayService:
         except Exception as e:
             print(f"Razorpay Subscription Cancellation Failed: {e}")
             # Don't raise, just log
+
+    @staticmethod
+    def refund_payment(
+        payment_id: str,
+        amount_paise: int,
+        key_id: str,
+        key_secret: str,
+    ) -> dict:
+        """
+        Trigger a Razorpay refund using agent-specific credentials.
+
+        ALWAYS use the agent's own key_id/key_secret (resolved via
+        booking → package → creator → agent_profile → razorpay_settings).
+        Never use global/platform keys for refunds.
+
+        Args:
+            payment_id:   Razorpay payment ID (e.g. "pay_XXXXX")
+            amount_paise: Refund amount in paise (INR × 100)
+            key_id:       Agent's Razorpay key_id
+            key_secret:   Agent's Razorpay key_secret
+
+        Returns:
+            Razorpay refund response dict (includes "id" = razorpay_refund_id)
+
+        Raises:
+            Exception: propagated to caller so it can set refund_status = 'pending'
+        """
+        # Mock support: if payment_id or key contains "mock", return a fake refund
+        if "pay_mock" in payment_id or "mock" in key_id:
+            return {"id": f"rfnd_mock_{int(time.time())}"}
+
+        client = razorpay.Client(auth=(key_id, key_secret))
+        return client.payment.refund(payment_id, {"amount": amount_paise})

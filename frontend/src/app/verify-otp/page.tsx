@@ -10,7 +10,7 @@ import { authAPI } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Plane, ShieldCheck, ArrowLeft, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { toast } from 'react-toastify'
+import { toast } from 'sonner'
 
 function OTPVerificationForm() {
     const router = useRouter()

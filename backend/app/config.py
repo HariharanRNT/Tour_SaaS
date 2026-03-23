@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     SECRET_KEY: str
     API_V1_PREFIX: str = "/api/v1"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Database
     DATABASE_URL: str
@@ -61,6 +62,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = "arunpandianreshandthosh2022@gmail.com"
     SMTP_PASSWORD: str = "ughyudissonfgngt"
+    SENDGRID_API_KEY: str = ""
     FROM_EMAIL: str = "arunpandianreshandthosh2022@gmail.com"
     FROM_NAME: str = "Tour SaaS"
     

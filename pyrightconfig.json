@@ -1,0 +1,15 @@
+{
+    "extraPaths": [
+        "./backend",
+        "./backend/app"
+    ],
+    "include": [
+        "backend",
+        "run_migration.py"
+    ],
+    "typeCheckingMode": "basic",
+    "reportMissingImports": false,
+    "reportMissingTypeStubs": false,
+    "pythonVersion": "3.12"
+}
+

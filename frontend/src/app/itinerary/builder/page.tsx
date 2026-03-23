@@ -185,8 +185,7 @@ export default function ItineraryBuilderPage() {
                 image_url: activity.images && activity.images.length > 0 ? activity.images[0] : undefined,
                 duration: activity.duration,
                 price_per_person: activity.price_per_person,
-                currency: activity.currency,
-            }]
+                currency: activity.currency }]
         }
 
         return {

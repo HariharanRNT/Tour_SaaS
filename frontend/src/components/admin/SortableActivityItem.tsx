@@ -71,8 +71,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 border: '1px solid rgba(255, 255, 255, 0.35)',
-                borderRadius: '16px',
-            }}
+                borderRadius: '16px' }}
             className={`relative shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group touch-none hover:translate-x-1`}
         >
             {/* Left Color Accent Border */}
@@ -113,6 +112,12 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                             <span className="text-emerald-600">₹</span>
                             {activity.price ? activity.price : 'Included'}
                         </span>
+                        {activity.is_optional && (
+                            <span className="flex items-center gap-1 shadow-sm text-teal-700 font-black tracking-widest text-[9px]" style={{ background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.30)', borderRadius: '100px', padding: '4px 10px' }}>
+                                <span className="text-teal-600">●</span>
+                                OPTIONAL
+                            </span>
+                        )}
                     </div>
 
                     {/* Description */}

@@ -15,8 +15,7 @@ export default function ReportsPage() {
     const [activeTab, setActiveTab] = useState('subscriptions')
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: subDays(new Date(), 30),
-        to: new Date(),
-    })
+        to: new Date() })
 
     return (
         <div className="min-h-screen bg-transparent font-sans">

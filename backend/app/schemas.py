@@ -177,6 +177,7 @@ class AgentRazorpaySettingsResponse(AgentRazorpaySettingsBase):
         from_attributes = True
 
 class AgentSettingsResponse(BaseModel):
+    agency_name: Optional[str] = None
     currency: str = "INR"
     gst_applicable: bool = False
     gst_inclusive: bool = False
@@ -205,6 +206,7 @@ class HomepageCardAppearance(BaseModel):
     customIconColor: str = "#3B82F6"
 
 class HomepageSettingsUpdate(BaseModel):
+    agency_name: Optional[str] = None
     headline1: Optional[str] = None
     headline2: Optional[str] = None
     subheading: Optional[str] = None
@@ -272,6 +274,10 @@ class HomepageSettingsUpdate(BaseModel):
     accent_color: Optional[str] = None
     font_size: Optional[str] = None
     font_family: Optional[str] = None
+    
+    # Email Settings
+    default_email_theme: Optional[str] = None
+    default_email_message: Optional[str] = None
 
 
 class Token(BaseModel):
@@ -359,6 +365,9 @@ class PackageBase(BaseModel):
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
+    # Cancellation Policy
+    cancellation_enabled: bool = False
+    cancellation_rules: List[dict] = []
 
 
 class PackageCreate(PackageBase):
@@ -394,6 +403,9 @@ class PackageUpdate(BaseModel):
     flight_cabin_class: Optional[str] = None
     flight_price_included: Optional[bool] = None
     flight_baggage_note: Optional[str] = None
+    # Cancellation Policy
+    cancellation_enabled: Optional[bool] = None
+    cancellation_rules: Optional[List[dict]] = None
 
 
 class PackageResponse(PackageBase):
@@ -406,7 +418,7 @@ class PackageResponse(PackageBase):
     itinerary_items: List[ItineraryItemResponse] = []
     availability: List[PackageAvailabilityResponse] = []
     
-    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', mode='before')
+    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'cancellation_rules', mode='before')
     @classmethod
     def parse_json_list(cls, v):
         if isinstance(v, str):
@@ -465,6 +477,9 @@ class BookingResponse(BaseModel):
     payment_status: PaymentStatus
     special_requests: Optional[str] = None
     tripjack_booking_id: Optional[str] = None
+    # Cancellation / Refund fields
+    refund_amount: Optional[Decimal] = None
+    cancelled_at: Optional[datetime] = None
     created_at: datetime
     travelers: List[TravelerResponse] = []
     
@@ -478,6 +493,27 @@ class BookingWithPackageResponse(BookingResponse):
     
     class Config:
         from_attributes = True
+
+
+class CancelPreviewResponse(BaseModel):
+    """Read-only preview of what refund a customer would get."""
+    cancellation_enabled: bool
+    days_before: int
+    paid_amount: Decimal
+    refund_amount: Decimal
+    refund_percentage: float
+    message: str
+
+
+class CancelActionResponse(BaseModel):
+    """Response after customer confirms cancellation."""
+    booking_id: UUID4
+    status: str
+    refund_amount: Decimal
+    refund_percentage: float
+    days_before: int
+    refund_status: str   # initiated / succeeded / pending / failed
+    message: str
 
 
 # Payment Schemas
@@ -571,6 +607,13 @@ class FlightDetailsUpdate(BaseModel):
 class TripSessionUpdate(BaseModel):
     itinerary: List[DayScheduleUpdate] = []
     flight_details: Optional[FlightDetailsUpdate] = None
+    destination: Optional[str] = None
+    duration_days: Optional[int] = None
+    duration_nights: Optional[int] = None
+    start_date: Optional[date] = None
+    travelers: Optional[dict] = None
+    preferences: Optional[dict] = None
+    package_id: Optional[UUID4] = None
 
 
 # Subscription Schemas
@@ -623,6 +666,11 @@ class SubscriptionBase(BaseModel):
     start_date: date
     end_date: date
     auto_renew: bool = True
+    
+    @field_validator('auto_renew', mode='before')
+    @classmethod
+    def handle_null_bool(cls, v):
+        return v if v is not None else True
 
 class SubscriptionResponse(SubscriptionBase):
     id: UUID4
@@ -630,6 +678,11 @@ class SubscriptionResponse(SubscriptionBase):
     current_bookings_usage: int
     plan: SubscriptionPlanResponse
     created_at: datetime
+    
+    @field_validator('current_bookings_usage', mode='before')
+    @classmethod
+    def handle_null_usage(cls, v):
+        return v if v is not None else 0
     
     class Config:
         from_attributes = True

@@ -1,10 +1,16 @@
 """Package schemas for API requests and responses"""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
+
+
+class CancellationRule(BaseModel):
+    """Single cancellation rule: if customer cancels >= daysBefore travel, they get refundPercentage."""
+    daysBefore: int = Field(..., ge=0, description="Days before travel date")
+    refundPercentage: float = Field(..., ge=0, le=100, description="Refund % of paid amount")
 
 
 class PackageStatusEnum(str, Enum):
@@ -43,6 +49,9 @@ class PackageBase(BaseModel):
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
+    # Cancellation Policy
+    cancellation_enabled: bool = False
+    cancellation_rules: List[CancellationRule] = []
 
 
 class PackageCreate(PackageBase):
@@ -77,6 +86,9 @@ class PackageUpdate(BaseModel):
     flight_cabin_class: Optional[str] = None
     flight_price_included: Optional[bool] = None
     flight_baggage_note: Optional[str] = None
+    # Cancellation Policy
+    cancellation_enabled: Optional[bool] = None
+    cancellation_rules: Optional[List[CancellationRule]] = None
 
 
 class PackageResponse(PackageBase):

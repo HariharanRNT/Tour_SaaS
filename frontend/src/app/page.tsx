@@ -15,7 +15,7 @@ import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
 import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
-// import { useTheme } from '@/context/ThemeContext'
+import { useTheme } from '@/context/ThemeContext'
 
 interface Destination {
     id: string
@@ -31,23 +31,7 @@ interface Destination {
 
 export default function Home() {
     const router = useRouter()
-    // const { theme, isLoading } = useTheme()
-    const isLoading = false
-    const theme: any = {
-        id: 'default',
-        hero_background_type: 'image',
-        home_hero_image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
-        home_hero_title: null,
-        home_hero_subtitle: null,
-        hero_cta_primary_text: null,
-        hero_cta_secondary_text: null,
-        show_feature_cards: true,
-        feature_cards: [],
-        show_wcu_section: true,
-        wcu_title: null,
-        wcu_accent_title: null,
-        wcu_cards: []
-    }
+    const { themeData: theme, isLoading, publicSettings } = useTheme()
     const [destinations, setDestinations] = useState<Destination[]>([])
     const [destLoading, setDestLoading] = useState(true)
 
@@ -106,47 +90,30 @@ export default function Home() {
             if (savedStyle) setCardAppearance(JSON.parse(savedStyle));
         } catch { /* ignore */ }
 
-        // 2. Load from Public API for accuracy
-        const fetchPublicSettings = async () => {
-            try {
-                // Determine domain for X-Domain header
-                const domain = window.location.hostname;
-                const res = await fetch('http://localhost:8000/api/v1/agent/settings/public', {
-                    headers: { 'X-Domain': domain }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.homepage_settings) {
-                        const hs = data.homepage_settings;
-                        if (hs.headline1) {
-                            setHpSettings({
-                                headline1: hs.headline1,
-                                headline2: hs.headline2 || "",
-                                subheading: hs.subheading || "",
-                                primaryBtnText: hs.primaryBtnText || "See Sample Itinerary",
-                                secondaryBtnText: hs.secondaryBtnText || "Start Your Journey",
-                                backgroundImageUrl: hs.backgroundImageUrl || "",
-                                badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
-                                showAiBadge: hs.showAiBadge !== false,
-                            });
-                        }
-                        if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
-                        if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
-                        if (hs.card_appearance) setCardAppearance(hs.card_appearance);
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch public settings", err);
+        // 2. Load from Public Context for accuracy (Sync local states with centralized data)
+        if (publicSettings?.homepage_settings) {
+            const hs = publicSettings.homepage_settings;
+            if (hs.headline1) {
+                setHpSettings({
+                    headline1: hs.headline1,
+                    headline2: hs.headline2 || "",
+                    subheading: hs.subheading || "",
+                    primaryBtnText: hs.primaryBtnText || "See Sample Itinerary",
+                    secondaryBtnText: hs.secondaryBtnText || "Start Your Journey",
+                    backgroundImageUrl: hs.backgroundImageUrl || "",
+                    badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
+                    showAiBadge: hs.showAiBadge !== false });
             }
-        };
-        fetchPublicSettings();
-    }, [])
+            if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
+            if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
+            if (hs.card_appearance) setCardAppearance(hs.card_appearance);
+        }
+    }, [publicSettings])
 
     const IconMap: Record<string, any> = {
         Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin,
         Camera, Car, Hotel, Compass, Mountain, Waves, Umbrella, Gift, Award, Zap,
-        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Search,
-    };
+        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Search };
 
     const getIcon = (name: string, fallback: any) => {
         const Icon = IconMap[name];
@@ -304,8 +271,7 @@ export default function Home() {
                                         background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))',
                                         boxShadow: '0 10px 30px var(--primary-glow)',
                                         borderRadius: "30px",
-                                        border: 'none',
-                                    }}>
+                                        border: 'none' }}>
                                     {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.primaryBtnText || theme.hero_cta_primary_text || "Start Your Journey")}
                                     <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                 </Button>
