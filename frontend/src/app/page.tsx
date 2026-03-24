@@ -17,23 +17,24 @@ import PackageSearchChat from '@/components/ai/PackageSearchChat'
 import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
 import { useTheme } from '@/context/ThemeContext'
 
-interface Destination {
+interface Package {
     id: string
-    name: string
+    title: string
+    slug: string
+    destination: string
     country: string
     description: string
-    image_url?: string
-    min_price?: number
-    min_duration?: number
-    max_duration?: number
-    pkg_count?: number
+    duration_days: number
+    price_per_person: number
+    feature_image_url?: string
+    view_count: number
 }
 
 export default function Home() {
     const router = useRouter()
     const { themeData: theme, isLoading, publicSettings } = useTheme()
-    const [destinations, setDestinations] = useState<Destination[]>([])
-    const [destLoading, setDestLoading] = useState(true)
+    const [packages, setPackages] = useState<Package[]>([])
+    const [packagesLoading, setPackagesLoading] = useState(true)
 
     const [hpSettings, setHpSettings] = useState<{
         headline1: string;
@@ -146,32 +147,32 @@ export default function Home() {
     }
 
     useEffect(() => {
-        if (isLoading) return; // Wait for theme to load first
+        if (isLoading) return;
 
-        const fetchDestinations = async () => {
+        const fetchPackages = async () => {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch('http://localhost:8000/api/v1/trip-planner/popular-destinations', {
+                const res = await fetch('http://localhost:8000/api/v1/packages?page_size=6', {
                     headers: { 'X-Domain': domain }
                 })
                 if (res.ok) {
                     const data = await res.json()
-                    setDestinations(data)
+                    setPackages(data.packages)
                 }
             } catch (error) {
-                console.error("Failed to fetch popular destinations", error)
+                console.error("Failed to fetch popular packages", error)
             } finally {
-                setDestLoading(false)
+                setPackagesLoading(false)
             }
         }
-        fetchDestinations()
+        fetchPackages()
     }, [isLoading])
 
     const heroBgImage = hpSettings?.backgroundImageUrl ||
         'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop';
     const heroBgStyle = { backgroundImage: `url("${heroBgImage}")` };
 
-    if (destLoading) {
+    if (packagesLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[80vh] w-full bg-white">
                 <div className="relative">
@@ -319,8 +320,8 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* AI-Powered Popular Destinations */}
-            {destinations.length > 0 && (
+            {/* AI-Powered Popular Packages */}
+            {packages.length > 0 && (
                 <section className="py-24 bg-white relative overflow-hidden">
                     {/* Background Decorative Elements */}
                     <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-orange-50 rounded-full blur-[120px] -z-10" />
@@ -335,13 +336,13 @@ export default function Home() {
                                     viewport={{ once: true }}
                                 >
                                     <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-orange-50 font-bold px-4 py-1.5 uppercase tracking-wider text-[10px]">
-                                        Explore the World
+                                        Discover Your Next Adventure
                                     </Badge>
                                     <h2 className="text-4xl md:text-6xl font-black text-slate-900 font-display mb-4 tracking-tight">
-                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[#FF8C00]">Destinations</span>
+                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[#FF8C00]">Packages</span>
                                     </h2>
                                     <p className="text-slate-500 font-medium max-w-xl text-lg opacity-80">
-                                        Join thousands of travelers exploring these top-rated spots this season. AI-curated based on traveler trends.
+                                        Explore our most loved travel packages, handpicked and AI-optimized for the perfect experience.
                                     </p>
                                 </motion.div>
                                 <motion.div
@@ -353,55 +354,54 @@ export default function Home() {
                                         onClick={() => router.push('/plan-trip')}
                                         className="text-[var(--primary)] font-black text-sm tracking-widest uppercase flex items-center gap-2 group hover:gap-3 transition-all"
                                     >
-                                        View All Destinations
+                                        View All Packages
                                         <ArrowRight className="h-4 w-4" />
                                     </button>
                                 </motion.div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {destinations.slice(0, 6).map((dest, idx) => {
+                                {packages.slice(0, 6).map((pkg, idx) => {
                                     const fallbackImages = [
                                         "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
                                         "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
                                         "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?auto=format&fit=crop&q=80&w=2071"
                                     ]
-                                    const cardImage = dest.image_url || fallbackImages[idx % fallbackImages.length]
-                                    const city = dest.name
-                                    const pkgCount = dest.pkg_count || 5
+                                    const cardImage = pkg.feature_image_url || fallbackImages[idx % fallbackImages.length]
+                                    const title = pkg.title
 
                                     return (
                                         <motion.div
-                                            key={city}
+                                            key={pkg.id}
                                             initial={{ opacity: 0, y: 30 }}
                                             whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true }}
                                             transition={{ delay: idx * 0.1 }}
-                                            onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(city)}`)}
+                                            onClick={() => router.push(`/plan-trip/${pkg.slug}?mode=preview`)}
                                             className="relative aspect-[4/5] md:aspect-[4/3] rounded-[32px] overflow-hidden cursor-pointer group shadow-2xl"
                                         >
                                             <img
                                                 src={cardImage}
-                                                alt={city}
+                                                alt={title}
                                                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
 
                                             <div className="absolute top-6 right-6 flex flex-col gap-2">
                                                 <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
-                                                    <span className="text-yellow-400">★</span> 4.8
+                                                    <Clock className="h-3 w-3" /> {pkg.duration_days} Days
                                                 </Badge>
                                                 <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
-                                                    {pkgCount}+ Packages
+                                                    ₹{pkg.price_per_person.toLocaleString()}
                                                 </Badge>
                                             </div>
 
                                             <div className="absolute bottom-8 left-8 right-8">
-                                                <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{dest.country || 'International'}</p>
-                                                <h3 className="text-4xl font-bold text-white mb-4 font-display drop-shadow-lg">{city}</h3>
+                                                <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{pkg.destination}, {pkg.country || 'International'}</p>
+                                                <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2">{title}</h3>
                                                 <div className="relative inline-block group/link">
                                                     <p className="text-white text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
-                                                        Explore now <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
+                                                        Book This Trip <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
                                                     </p>
                                                     <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[var(--primary)] group-hover/link:w-full transition-all duration-300"></div>
                                                 </div>

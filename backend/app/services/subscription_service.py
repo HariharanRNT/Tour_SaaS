@@ -17,7 +17,7 @@ class SubscriptionService:
         """
         stmt = select(Subscription).where(
             Subscription.user_id == user_id,
-            Subscription.status == 'active'
+            Subscription.status.in_(['active', 'halted'])
         ).order_by(
             desc(Subscription.end_date), 
             desc(Subscription.created_at)
@@ -47,10 +47,10 @@ class SubscriptionService:
         4. If upcoming found -> Activate it.
         5. Return the potentially NEW active sub.
         """
-        # Fetch ALL currently active subscriptions to clean up overlapping/expired ones
+        # Fetch ALL currently active or halted subscriptions to clean up overlapping/expired ones
         stmt = select(Subscription).where(
             Subscription.user_id == user_id,
-            Subscription.status == 'active'
+            Subscription.status.in_(['active', 'halted'])
         ).options(selectinload(Subscription.plan)).order_by(desc(Subscription.end_date))
         
         result = await db.execute(stmt)
@@ -62,12 +62,21 @@ class SubscriptionService:
             # Check validity
             is_expired_date = sub.end_date < date.today()
             
+            # Check grace period
+            is_grace_expired = False
+            if sub.status == 'halted':
+                if sub.grace_period_ends_at and sub.grace_period_ends_at.date() < date.today():
+                    is_grace_expired = True
+
             # Check limit (if not unlimited)
             is_limit_reached = False
             if sub.plan.booking_limit != -1:
                 is_limit_reached = sub.current_bookings_usage >= sub.plan.booking_limit
             
-            if is_expired_date or is_limit_reached:
+            if is_grace_expired:
+                print(f"[SubscriptionService] Grace period expired for halted sub {sub.id}. Marking expired.")
+                sub.status = 'expired'
+            elif is_expired_date or is_limit_reached:
                 print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Date={is_expired_date}, Limit={is_limit_reached}")
                 sub.status = 'completed'
             elif best_active is None:

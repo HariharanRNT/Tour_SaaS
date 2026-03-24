@@ -80,13 +80,13 @@ function PlanTripContent() {
     useEffect(() => {
         const dest = searchParams.get('destination')
         const style = searchParams.get('trip_style')
-        
+
         if (dest) {
             setInputValue(dest)
             setSearchQuery(dest)
             setHasSearched(true)
         }
-        
+
         if (style) {
             setFilters(prev => ({ ...prev, trip_styles: [style] }))
             setHasSearched(true)
@@ -1445,7 +1445,8 @@ function PlanTripContent() {
 
             {/* Footer Removed - Using Global Footer with fixed socials */}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .glass-card {
                     background: rgba(255, 255, 255, 0.4);
                     backdrop-filter: blur(16px) saturate(180%);

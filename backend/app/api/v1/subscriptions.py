@@ -500,27 +500,29 @@ async def verify_subscription_payment(
                 secret = settings.RAZORPAY_SUBSCRIPTION_KEY_SECRET
                 msg = f"{verification_data.razorpay_payment_id}|{rzp_subscription_id}"
                 
-                print(f"DEBUG: Verifying Subscription Signature")
-                print(f"DEBUG: Message: {msg}")
+                print(f"DEBUG: Secret: {secret[:5]}...{secret[-2:]}")
+                print(f"DEBUG: Msg: {msg}")
+                print(f"DEBUG: Received Signature: {verification_data.razorpay_signature}")
                 
                 generated_signature = hmac.new(
                     bytes(secret, 'utf-8'),
                     bytes(msg, 'utf-8'),
-                    hashlib.sha256
+                    digestmod=hashlib.sha256
                 ).hexdigest()
+                
+                print(f"DEBUG: Generated Signature: {generated_signature}")
                 
                 if not hmac.compare_digest(generated_signature, verification_data.razorpay_signature):
                      msg_err = f"Subscription Signature mismatch. Generated: {generated_signature}, Received: {verification_data.razorpay_signature}"
                      logger.error(msg_err)
                      print(f"DEBUG: {msg_err}")
-                     raise razorpay.errors.SignatureVerificationError("Invalid payment signature")
+                     raise razorpay.errors.SignatureVerificationError(msg_err)
                      
             else:
                  # Fallback to order verification (standard payment flow)
                  if not rzp_order_id:
                       msg_err = "Missing both razorpay_subscription_id and razorpay_order_id. Cannot verify payment."
                       logger.error(msg_err)
-                      print(f"DEBUG: {msg_err}")
                       raise HTTPException(status_code=400, detail=msg_err)
 
                  client.utility.verify_payment_signature({
@@ -528,8 +530,8 @@ async def verify_subscription_payment(
                     'razorpay_payment_id': verification_data.razorpay_payment_id,
                     'razorpay_signature': verification_data.razorpay_signature
                 })
-    except razorpay.errors.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    except razorpay.errors.SignatureVerificationError as e:
+        raise HTTPException(status_code=400, detail=str(e) or "Invalid payment signature")
 
     # Get Plan for Amount Validation
     stmt = select(SubscriptionPlan).where(SubscriptionPlan.id == sub.plan_id)

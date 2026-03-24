@@ -260,6 +260,37 @@ Warm regards,<br>
 📧 {support_email}<br>
 📞 {support_phone}<br>
 """
+    elif template_type == "refund_confirmed":
+        refund_amount = data.get("refund_amount", "₹0")
+        ref_id = data.get("reference_id", "N/A")
+        subject = f"Refund Processed – {ref_id}"
+        message = f"""
+Hi {customer_name},<br><br>
+
+Great news! 🎉 Your refund has been <b>successfully processed</b>.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+    <p style="margin: 0; font-size: 16px; font-weight: bold; color: #166534;">✅ Refund Completed</p>
+    <p style="margin: 8px 0 0; font-size: 24px; font-weight: bold; color: #15803d;">{refund_amount}</p>
+    <p style="margin: 4px 0 0; font-size: 13px; color: #166534;">Reference: {ref_id}</p>
+</div>
+
+<b>📅 When will you receive it?</b><br><br>
+Your refund will be credited to your original payment method within <b>5–7 business days</b>, depending on your bank's processing time.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<b>ℹ️ Note:</b> If you do not see the refund after 7 business days, please contact your bank or reach out to us with your reference ID.<br><br>
+
+If you have any questions, feel free to contact us.<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b><br>
+📧 {support_email}<br>
+📞 {support_phone}<br>
+"""
     else:
         subject = "Notification"
         message = f"Hi {customer_name},<br><br>You have a new notification concerning your trip."

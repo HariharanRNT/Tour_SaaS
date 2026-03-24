@@ -300,7 +300,30 @@ class CustomerNotificationService:
         )
 
     @staticmethod
-    def _resolve_agent(booking: Booking) -> Optional[User]:
+    async def send_refund_confirmed(booking: "Booking", refund_amount: float):
+        """
+        Sends a 'Refund Confirmed' email when Razorpay webhook confirms refund.processed.
+        This is the SECOND email — the definitive confirmation to the customer.
+        """
+        if not booking.user or not booking.user.email:
+            return
+
+        data = {
+            "customer_name": f"{booking.user.first_name} {booking.user.last_name}",
+            "reference_id": booking.booking_reference,
+            "refund_amount": f"₹{refund_amount:,.2f}",
+        }
+
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        await CustomerNotificationService._send_notification(
+            booking.user.email,
+            "refund_confirmed",
+            data,
+            agent_user
+        )
+
+    @staticmethod
+    def _resolve_agent(booking: "Booking") -> Optional[User]:
         agent_user = booking.agent
         if not agent_user and booking.user and booking.user.customer_profile:
             agent_user = booking.user.customer_profile.agent

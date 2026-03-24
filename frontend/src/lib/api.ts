@@ -292,8 +292,8 @@ export const bookingsAPI = {
         return response.data
     },
 
-    getAgentBookings: async () => {
-        const response = await api.get('/agent/bookings')
+    getAgentBookings: async (params?: any) => {
+        const response = await api.get('/agent/bookings', { params })
         return response.data
     },
 
@@ -539,6 +539,30 @@ export const markAgentNotificationAsRead = async (id: string) => {
 export const deleteAgentNotification = async (id: string) => {
     const response = await api.delete(`/agent/notifications/${id}`)
     return response.data
+}
+
+// Agent Reports API
+export const agentReportsAPI = {
+    getSummary: async (params: { period: string; start_date?: string; end_date?: string }) => {
+        const response = await api.get('/agent/reports/summary', { params })
+        return response.data
+    },
+    getCharts: async (period: string) => {
+        const response = await api.get('/agent/reports/charts', { params: { period } })
+        return response.data
+    },
+    getPackagePerformance: async (params: { 
+        period: string; 
+        start_date?: string; 
+        end_date?: string;
+        page?: number;
+        limit?: number;
+        sort_by?: string;
+        sort_dir?: 'asc' | 'desc';
+    }) => {
+        const response = await api.get('/agent/reports/packages', { params })
+        return response.data
+    }
 }
 
 export default api

@@ -695,6 +695,8 @@ class Subscription(Base):
     razorpay_subscription_id = Column(String, unique=True, index=True, nullable=True)
     razorpay_payment_id = Column(String, nullable=True) # Latest successful payment ID
     
+    grace_period_ends_at = Column(DateTime(timezone=True), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -733,6 +735,30 @@ class Notification(Base):
 
     user = relationship("User", back_populates="notifications")
 
+
+class Settlement(Base):
+    """Tracks Razorpay Settlements"""
+    __tablename__ = "settlements"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    settlement_id = Column(String, unique=True, index=True, nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    utr = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    entity_id = Column(String, nullable=True) # Linked payment/order ID
+    created_at = Column(DateTime(timezone=True), nullable=False) # Copied from Razorpay event
+
+
+class WebhookEvent(Base):
+    """Idempotency tracking for Razorpay Webhooks"""
+    __tablename__ = "webhook_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    razorpay_event_id = Column(String, unique=True, index=True, nullable=False)
+    event_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String, default="processed") # processed, failed, skipped
 
 
 # Agent Settings Models

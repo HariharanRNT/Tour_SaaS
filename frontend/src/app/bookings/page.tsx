@@ -278,12 +278,30 @@ export default function BookingsPage() {
                                                 <div className="text-right">
                                                     <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Total Amount</p>
                                                     <p className="text-2xl font-bold text-blue-600">{formatCurrency(booking.total_amount)}</p>
-                                                    {/* Show refund info on cancelled bookings */}
-                                                    {booking.status === 'cancelled' && (booking as any).refund_amount > 0 && (
-                                                        <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                                                            ₹{Number((booking as any).refund_amount).toLocaleString()} refunded
-                                                        </p>
-                                                    )}
+                                                    {/* Refund Status Badge on cancelled bookings */}
+                                                    {booking.status === 'cancelled' && (booking as any).refund_amount > 0 && (() => {
+                                                        const refundStatus = (booking as any).refund?.status || 'pending'
+                                                        const badgeStyles: Record<string, string> = {
+                                                            succeeded: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+                                                            failed: 'bg-red-100 text-red-700 border-red-300',
+                                                            pending: 'bg-amber-100 text-amber-700 border-amber-300',
+                                                            initiated: 'bg-amber-100 text-amber-700 border-amber-300',
+                                                        }
+                                                        const icons: Record<string, string> = {
+                                                            succeeded: '✅', failed: '❌', pending: '🕐', initiated: '🕐'
+                                                        }
+                                                        const labels: Record<string, string> = {
+                                                            succeeded: 'Refund Success', failed: 'Refund Failed',
+                                                            pending: 'Refund Processing', initiated: 'Processing'
+                                                        }
+                                                        return (
+                                                            <div className={`mt-1 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${badgeStyles[refundStatus] || badgeStyles.pending}`}>
+                                                                <span>{icons[refundStatus] || '🕐'}</span>
+                                                                <span>{labels[refundStatus] || 'Processing'}</span>
+                                                                <span className="opacity-70">· ₹{Number((booking as any).refund_amount).toLocaleString()}</span>
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </div>
                                             </div>
 

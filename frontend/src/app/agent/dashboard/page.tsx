@@ -11,6 +11,7 @@ import {
     Users,
     Calendar,
     TrendingUp,
+    BarChart2,
     Settings,
     Bell,
     ExternalLink,
@@ -792,9 +793,12 @@ export default function AgentDashboard() {
                     </div>
 
                     {/* Desktop View */}
-                    <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+                    <div className="hidden md:grid grid-cols-6 gap-8">
                         {statCards.map((card, index) => (
-                            <TiltCard key={index} className="h-full">
+                            <TiltCard 
+                                key={index} 
+                                className={`h-full ${index < 3 ? 'col-span-2' : 'col-span-3'}`}
+                            >
                                 <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                                     <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
@@ -1214,6 +1218,29 @@ export default function AgentDashboard() {
                                             <CardContent>
                                                     <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
                                                         Configure Settings
+                                                    </Button>
+                                            </CardContent>
+                                        </Link>
+                                    </Card>
+
+                                    {/* Reports & Analytics */}
+                                    <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
+                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
+                                        <Link href="/agent/reports">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <BarChart2 className="h-6 w-6 text-[var(--primary)]" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg text-slate-800">Reports & Analytics</CardTitle>
+                                                        <CardDescription>Revenue, Bookings & Charts</CardDescription>
+                                                    </div>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                        View Reports
                                                     </Button>
                                             </CardContent>
                                         </Link>

@@ -1,0 +1,228 @@
+Full Development Prompt: Customer Page — Plan Trip Page
+
+Project Overview
+Build a modern, responsive travel booking web application called RNT Travel (brand name: TourSaaS). The app uses a warm orange/peach color theme with a switchable Ocean Blue theme. The design language is clean, rounded, glassmorphism-accented, and mobile-friendly.
+
+Tech Stack
+Use Next.js 14+ with TypeScript, Tailwind CSS, and Framer Motion for animations. Use lucide-react for icons. No UI component library — build everything from scratch using Tailwind utility classes.
+
+Global Design Tokens
+Primary accent:     #f97316  (orange)
+Alt accent (blue):  #2563eb
+Background:         #ffffff
+Surface:            #fff9f5
+Border:             #f0ede8
+Text primary:       #1a1a1a
+Text muted:         #888888
+Text hint:          #bbbbbb
+Border radius pill: 9999px
+Border radius card: 20px
+Border radius icon: 14px
+Font:               Inter or system-sans
+
+Component 1 — Navbar
+Layout: horizontal flex, space-between, sticky top-0 z-50
+Container: white background, border-radius 999px, padding 10px 20px
+Border: 1px solid #f0ede8, box-shadow: 0 2px 12px rgba(0,0,0,0.06)
+Margin: 12px auto, max-width 1200px
+
+Left: Logo (circular orange icon + "RNT Travel" in orange, font-weight 500)
+Center: Nav links — "Packages", "Plan Trip" (active = orange pill bg + white text), "My Bookings"
+Right: Theme toggle icon (palette), avatar circle (initials), username text, Logout button
+  — Logout: outlined orange border, orange text, hover fills orange bg
+
+Active link style: background #f97316, color white, border-radius 999px, padding 7px 16px
+Inactive link: transparent bg, color #555, hover background #f5f5f3
+
+Component 2 — Hero Section
+Container: border-radius 24px, overflow hidden, padding 52px 36px 44px
+Background gradient (orange theme):
+  linear-gradient(160deg, #ea580c 0%, #f97316 40%, #fb923c 70%, #fde8d0 100%)
+Background gradient (blue theme):
+  linear-gradient(160deg, #1e3a8a 0%, #2563eb 40%, #3b82f6 70%, #bfdbfe 100%)
+
+1. Social proof badge (top):
+   - Inline flex, frosted glass: background rgba(255,255,255,0.2),
+     border 1px solid rgba(255,255,255,0.3), border-radius 999px
+   - Contains pulsing white dot + "480+ trips planned this week"
+   - Backdrop-filter: blur(6px)
+
+2. Headline:
+   - "Where do you" (line 1) + italic "want" + "to go?" (line 2)
+   - font-size 42px, font-weight 500, color white, line-height 1.2
+   - Italic word has opacity 0.85
+
+3. Subheading:
+   - "Search for a destination, package name, or an experience you love."
+   - font-size 15px, color rgba(255,255,255,0.8)
+
+4. Search Bar (KEY COMPONENT):
+   - Full pill shape: border-radius 999px, background white
+   - Padding: 6px 6px 6px 20px
+   - Box-shadow: 0 4px 24px rgba(0,0,0,0.12)
+   - Max-width: 600px
+   - Internal layout (left to right):
+       [Search icon] [Text input "Search city, country, or package..."]
+       [1px divider] [📅 "Any dates"] [1px divider] [👤 "2 guests"]
+       [Orange pill CTA button "Explore Now"]
+   - CTA button: background #f97316, color white, border-radius 999px,
+     padding 10px 22px, font-weight 500
+   - Input: no border, no outline, flex 1, placeholder color #bbb
+
+5. Category Pills (below search):
+   - Pills: "Adventure", "Beach", "Honeymoon", "Family", "Cultural", "Wildlife"
+   - Style: background rgba(0,0,0,0.35), color white, border-radius 999px
+   - Active: background rgba(255,255,255,0.25)
+   - backdrop-filter blur(4px), border 1px solid rgba(255,255,255,0.1)
+   - Font: 12px, font-weight 500, letter-spacing 0.06em
+
+6. Social Proof Row (bottom):
+   - Stacked avatar circles (overlapping, -6px margin-left each)
+   - Text: "Joined by 2,400+ travelers this month" (number in white bold)
+
+Component 3 — Browse by Trip Style
+Section header:
+  Left: small label "CURATED EXPERIENCES" (11px, orange, uppercase, letter-spacing)
+        + h2 "Browse by Trip Style"
+        + subtitle text
+  Right: Prev/Next arrow buttons (circular, 32px, border 1.5px solid #e5e5e5)
+         Active arrow: background #f97316, white icon
+
+Card grid: 4 columns, gap 12px, responsive (2 cols on mobile)
+
+Each style card:
+  - Background: #fff9f5
+  - Border: 1.5px solid #fde8d0, hover/active: #f97316
+  - Border-radius: 20px, padding 20px 14px 16px
+  - Text-align center
+  - Hover: translateY(-2px), border-color #f97316, background #fff4ec
+  - Active card: same as hover
+
+  Card contents:
+    - Icon box: 44x44px, border-radius 14px, background #fde8d0, emoji icon (20px)
+    - Name: 14px, font-weight 500, color #1a1a1a
+    - Tag: 11px, color #f97316, uppercase, letter-spacing 0.05em
+
+Styles: Adventure 🏔 "For thrill-seekers", Beach 🏖 "Sun, sand & serenity",
+        Honeymoon 💑 "Romantic getaways", Family 👨‍👩‍👧 "Memories for all ages"
+
+Component 4 — Popular Destinations
+Section header:
+  Left: label "TOP PICKS" + h2 "Popular Destinations" + subtitle
+  Right: "View all →" link in orange
+
+Destination card grid: 3 columns, gap 14px (1 col mobile, 2 col tablet)
+
+Each destination card:
+  - Border-radius: 20px, overflow hidden
+  - Hover: translateY(-3px) with transition 0.18s
+
+  Image area (170px tall):
+    - Gradient background (unique per card) + large emoji as placeholder
+    - Top-right badges (stacked vertically):
+        Rating badge: white bg, border-radius 999px, "★ 4.8"
+        Package badge: orange bg, white text, "3+ Packages"
+
+  Card body (below image):
+    - Background white, border 1.5px solid #f0ede8 (no top border)
+    - Border-radius 0 0 20px 20px, padding 14px
+    - City name: 15px, font-weight 500
+    - Country: 12px, color #aaa
+    - Footer row: price (orange, "From ₹8,999") + "Explore →" CTA
+
+Destinations: Agra (🕌, tan gradient), Chennai (🏔, blue gradient), Kochi (🏰, purple gradient)
+
+Component 5 — Theme Switcher
+Persistent UI element (top of page or in navbar):
+  Two buttons: "🟠 Warm Orange" | "🔵 Ocean Blue"
+  Active: filled with respective color, white text
+  Inactive: white bg, gray border
+
+On theme switch:
+  - Update hero gradient (orange ↔ blue)
+  - Update all accent colors (#f97316 ↔ #2563eb)
+  - Update: navbar active pill, search CTA, section labels,
+    card hover borders, footer nl button, logout button border
+  - Use CSS custom properties (--accent) for easy switching:
+      :root { --accent: #f97316; }
+      [data-theme="blue"] { --accent: #2563eb; }
+
+Component 6 — Footer
+Container: background #1a1a1a, border-radius 24px, padding 36px 32px 24px
+
+3-column grid layout:
+
+Column 1 — Brand:
+  - "📍 TOURSAAS" (white, 15px, font-weight 500)
+  - Description text (color #aaa, 13px, line-height 1.6)
+  - Social icon row: 4 circles (32px, bg #2a2a2a, border #333)
+    icons: LinkedIn, X/Twitter, Facebook, YouTube
+    hover: background #f97316 (or accent)
+
+Column 2 — Explore links:
+  - Header: "EXPLORE" (11px, uppercase, color #666, letter-spacing)
+  - Links: Popular Destinations, Special Offers, Trip Stories, Travel Guides
+  - Link style: 13px, color #888, hover color #f97316
+
+Column 3 — Newsletter:
+  - Title: "Weekly Wanderlust" (white, 15px)
+  - Sub: "Get curated travel inspiration every Friday." (12px, #666)
+  - Input row: dark pill container (bg #1a1a1a, border #333)
+      placeholder "your@email.com" + circular orange send button →
+
+Footer bottom bar:
+  - Border-top: 1px solid #2a2a2a, padding-top 16px
+  - Left: "© 2026 TOURSAAS. All rights reserved."
+  - Right: "Back to top ↑" | "Sitemap" | "Cookies"
+  - All: 12px, color #555
+
+Animations (Framer Motion)
+Page load:
+  - Navbar: fade in + slide down (y: -20 → 0, opacity 0 → 1, duration 0.4s)
+  - Hero content: staggered children (each 0.1s delay, y: 20 → 0)
+  - Search bar: scale in (0.95 → 1, opacity 0 → 1)
+
+Scroll:
+  - Section headers: fade up when entering viewport (useInView)
+  - Cards: stagger fade-in (each 0.08s apart)
+
+Hover:
+  - Destination cards: spring translateY(-3px)
+  - Style cards: spring translateY(-2px) + border color transition
+  - Category pills: scale(1.03)
+  - Buttons: scale(0.97) on press (whileTap)
+
+Responsive Breakpoints
+Mobile  (<640px):  1-col grid, smaller hero text (28px), stacked search (vertical)
+Tablet  (640–1024px): 2-col destination grid, 2-col style cards
+Desktop (>1024px): full layout as described above
+
+Navbar mobile: hamburger menu → slide-down drawer with links
+Search mobile: vertical stack (input full width, then CTA button full width)
+
+State Management
+- activeTheme: 'orange' | 'blue'  (stored in localStorage)
+- activeTripStyle: string (selected style card)
+- activeCategoryPill: string (selected pill)
+- searchQuery: string
+- guestCount: number (default 2)
+- selectedDate: string (date picker)
+
+File Structure
+/app
+  /plan-trip
+    page.tsx
+/components
+  Navbar.tsx
+  HeroSection.tsx
+  SearchBar.tsx
+  CategoryPills.tsx
+  TripStyleSection.tsx
+  DestinationGrid.tsx
+  DestinationCard.tsx
+  Footer.tsx
+  ThemeToggle.tsx
+/context
+  ThemeContext.tsx
+/styles
+  globals.css   ← CSS custom properties for theme

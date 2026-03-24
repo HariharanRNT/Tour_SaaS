@@ -59,6 +59,22 @@ class NotificationService:
             db=db,
             user_id=agent_id,
             type="warning",
-            title="Subscription Expiry Warning",
             message=message
+        )
+
+    @staticmethod
+    async def notify_agent_cancellation(
+        db: AsyncSession,
+        agent_id: UUID,
+        booking_reference: str,
+        customer_name: str,
+        package_title: str
+    ):
+        """Trigger a notification when an agent cancels a booking"""
+        await NotificationService.create_notification(
+            db=db,
+            user_id=agent_id,
+            type="warning",
+            title="Booking Cancelled",
+            message=f"You have cancelled booking {booking_reference} ({customer_name}) for '{package_title}'."
         )

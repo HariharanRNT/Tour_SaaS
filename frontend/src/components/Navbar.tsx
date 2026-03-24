@@ -17,7 +17,7 @@ export function Navbar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [userName, setUserName] = useState('')
     const [userRole, setUserRole] = useState('')
-    
+
     // Branding derived from publicSettings
     const agencyName = publicSettings?.agency_name || 'TourSaaS';
     const logoUrl = publicSettings?.homepage_settings?.navbar_logo_image || 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png';
@@ -207,9 +207,9 @@ export function Navbar() {
                 <div className="w-full px-2 md:px-6">
                     <div className="flex h-14 items-center justify-between">
                         <Link href="/" className="flex items-center space-x-2">
-                            <img 
-                                src={logoUrl} 
-                                alt="Agent Logo" 
+                            <img
+                                src={logoUrl}
+                                alt="Agent Logo"
                                 className="h-9 w-9 object-contain"
                             />
                             <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[var(--primary)]'}`}>

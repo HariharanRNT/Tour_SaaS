@@ -530,8 +530,73 @@ export default function BookingDetailsPage() {
                                 </Button>
                             </CardContent>
                         </Card>
+                        {/* Refund Info Card — only shown for cancelled bookings */}
+                        {booking.status === 'cancelled' && (booking as any).refund_amount > 0 && (() => {
+                            const refund = (booking as any).refund
+                            const refundStatus: string = refund?.status || 'pending'
+                            const refundId: string | null = refund?.razorpay_refund_id || null
+                            const refundAmount: number = Number((booking as any).refund_amount)
 
+                            const statusStyles: Record<string, { bg: string; text: string; border: string; label: string; icon: string }> = {
+                                succeeded: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Refund Success', icon: '✅' },
+                                failed: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Refund Failed', icon: '❌' },
+                                pending: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Refund Processing', icon: '🕐' },
+                                initiated: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Processing Refund', icon: '🔄' },
+                            }
+                            const s = statusStyles[refundStatus] || statusStyles.pending
 
+                            return (
+                                <Card className={`glass-panel border shadow-sm overflow-hidden ${s.border}`}>
+                                    <CardHeader className={`${s.bg} border-b ${s.border} pb-4`}>
+                                        <CardTitle className={`text-base flex items-center gap-2 ${s.text}`}>
+                                            <Receipt className="h-4 w-4" /> Refund Status
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-5 space-y-4">
+                                        {/* Status Badge */}
+                                        <div className={`flex items-center justify-between p-3 rounded-xl ${s.bg} border ${s.border}`}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg">{s.icon}</span>
+                                                <div>
+                                                    <p className={`text-sm font-bold ${s.text}`}>{s.label}</p>
+                                                    <p className="text-xs text-gray-500">Booking Reference: {booking.booking_reference}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs text-gray-500 uppercase tracking-wider">Amount</p>
+                                                <p className={`text-lg font-bold ${s.text}`}>₹{refundAmount.toLocaleString('en-IN')}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Razorpay Refund ID */}
+                                        {refundId && (
+                                            <div className="flex justify-between items-center text-xs bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                                                <span className="text-gray-500 font-medium">Refund ID</span>
+                                                <span className="font-mono text-gray-700 text-[11px] bg-white px-1.5 py-0.5 rounded border border-gray-200">{refundId}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Timeline Note */}
+                                        {refundStatus !== 'failed' && (
+                                            <div className="flex gap-2 p-3 bg-blue-50/60 rounded-lg border border-blue-100 text-xs text-blue-700">
+                                                <span className="mt-0.5">📅</span>
+                                                <span>
+                                                    {refundStatus === 'succeeded'
+                                                        ? "Refund processed successfully. Amount will be credited within 5–7 business days."
+                                                        : 'Refund will be credited to your original payment method within 5–7 business days.'}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {refundStatus === 'failed' && (
+                                            <div className="flex gap-2 p-3 bg-red-50 rounded-lg border border-red-100 text-xs text-red-700">
+                                                <span className="mt-0.5">⚠️</span>
+                                                <span>Refund processing failed. Please contact support with your booking reference for assistance.</span>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        })()}
 
 
 

@@ -18,7 +18,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Plan {
@@ -52,7 +53,7 @@ export default function SubscriptionPage() {
     const [activatingId, setActivatingId] = useState<string | null>(null);
     const [successPlan, setSuccessPlan] = useState<Plan | null>(null);
     const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
-    
+
     // Live countdown display for plans expiring within 24 hours
     const [countdownText, setCountdownText] = useState<string>('');
     const countdownRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,7 +101,7 @@ export default function SubscriptionPage() {
             await fetch('http://localhost:8000/api/v1/subscriptions/check-expiry', {
                 method: 'POST',
                 headers
-            }).catch(() => {});
+            }).catch(() => { });
 
             const res = await fetch('http://localhost:8000/api/v1/subscriptions/my-subscription', { headers });
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
@@ -140,7 +141,7 @@ export default function SubscriptionPage() {
         onSuccess: (updatedSub) => {
             queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
             toast.success(`Success! Your ${updatedSub.plan.name} plan is now active.`);
-            
+
             const userStr = localStorage.getItem('user');
             if (userStr) {
                 const user = JSON.parse(userStr);
@@ -798,42 +799,42 @@ export default function SubscriptionPage() {
                                                 <TableHeader>
                                                     <TableRow className="bg-white/40 hover:bg-white/40 border-b border-white/40">
                                                         <TableHead className="w-[200px] font-black text-slate-500 uppercase tracking-widest text-[10px] py-5 pl-6">Feature</TableHead>
-                                                            {plans.map((p: Plan) => (
-                                                                <TableHead key={p.id} className="text-center font-black text-slate-800 uppercase tracking-widest text-[10px] py-5 px-4">{p.name}</TableHead>
-                                                            ))}
+                                                        {plans.map((p: Plan) => (
+                                                            <TableHead key={p.id} className="text-center font-black text-slate-800 uppercase tracking-widest text-[10px] py-5 px-4">{p.name}</TableHead>
+                                                        ))}
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
                                                         <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
-                                                            {plans.map((p: Plan) => (
-                                                                <TableCell key={p.id} className="text-center font-black text-indigo-600 text-[15px] py-4">₹{p.price.toLocaleString()}</TableCell>
-                                                            ))}
+                                                        {plans.map((p: Plan) => (
+                                                            <TableCell key={p.id} className="text-center font-black text-indigo-600 text-[15px] py-4">₹{p.price.toLocaleString()}</TableCell>
+                                                        ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
                                                         <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
-                                                            {plans.map((p: Plan) => (
-                                                                <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
-                                                            ))}
+                                                        {plans.map((p: Plan) => (
+                                                            <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
+                                                        ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
                                                         <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Users Access</TableCell>
-                                                            {plans.map((p: Plan) => (
-                                                                <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.user_limit || 'Varies'}</TableCell>
-                                                            ))}
+                                                        {plans.map((p: Plan) => (
+                                                            <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.user_limit || 'Varies'}</TableCell>
+                                                        ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-0 transition-colors">
                                                         <TableCell className="font-bold text-slate-500 py-5 pl-6 text-[13px]">Support Level</TableCell>
-                                                            {plans.map((p: Plan) => {
-                                                                const theme = getPlanTheme(p.name);
-                                                                return (
-                                                                    <TableCell key={p.id} className="text-center py-5">
-                                                                        <Badge className={cn("font-black text-[9px] py-1 px-3 rounded-full border shadow-sm uppercase tracking-widest", theme.badge, "border-0")}>
-                                                                            {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
-                                                                        </Badge>
-                                                                    </TableCell>
-                                                                )
-                                                            })}
+                                                        {plans.map((p: Plan) => {
+                                                            const theme = getPlanTheme(p.name);
+                                                            return (
+                                                                <TableCell key={p.id} className="text-center py-5">
+                                                                    <Badge className={cn("font-black text-[9px] py-1 px-3 rounded-full border shadow-sm uppercase tracking-widest", theme.badge, "border-0")}>
+                                                                        {p.name.includes('Pro') ? 'Priority' : p.name.includes('Enterprise') ? '24/7 Dedicated' : 'Standard'}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                            )
+                                                        })}
                                                     </TableRow>
                                                 </TableBody>
                                             </Table>
@@ -1022,7 +1023,7 @@ export default function SubscriptionPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                         {paginatedHistory.map((sub: Subscription, i: number) => {
+                                        {paginatedHistory.map((sub: Subscription, i: number) => {
                                             const theme = getPlanTheme(sub.plan.name);
                                             return (
                                                 <tr key={sub.id} className={`hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-white/5'}`}>

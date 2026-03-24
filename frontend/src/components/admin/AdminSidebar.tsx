@@ -20,7 +20,8 @@ import {
     ChevronRight,
     Plane,
     Package,
-    Briefcase
+    Briefcase,
+    BarChart2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -88,11 +89,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 ] : []),
 
                 { icon: Receipt, label: 'Billing & Finance', href: userRole === 'agent' ? '/agent/subscription' : '/admin/billing' },
-
-                // More Admin Specific Items
-                ...(userRole !== 'agent' ? [
-                    { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
-                ] : []),
+                
+                { icon: BarChart2, label: 'Reports', href: userRole === 'agent' ? '/agent/reports' : '/admin/reports' },
 
                 { icon: Settings, label: 'Settings', href: userRole === 'agent' ? '/agent/settings' : '/admin/settings' },
             ]

@@ -9,7 +9,7 @@ from app.api.v1 import (
     admin_simple, trip_planner, agent_packages, admin_agents, 
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
-    reports, webhooks, activities
+    reports, webhooks, activities, agent_reports
 )
 import traceback
 import logging
@@ -111,6 +111,7 @@ app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", t
 app.include_router(webhooks.router, prefix=f"{settings.API_V1_PREFIX}/webhooks", tags=["Webhooks"])
 # app.include_router(theme.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Agent - Theme"])
 app.include_router(activities.router, prefix=f"{settings.API_V1_PREFIX}/activities", tags=["Activities"])
+app.include_router(agent_reports.router, prefix=f"{settings.API_V1_PREFIX}/agent/reports", tags=["Agent - Reports"])
 
 
 @app.get("/")

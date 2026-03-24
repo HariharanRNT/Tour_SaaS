@@ -85,6 +85,7 @@ export default function AgentBookingsPage() {
         queryFn: async () => {
             const data = await bookingsAPI.getAgentBookings()
             if (Array.isArray(data)) return data
+            if (data.items && Array.isArray(data.items)) return data.items
             if (data.bookings && Array.isArray(data.bookings)) return data.bookings
             return []
         }

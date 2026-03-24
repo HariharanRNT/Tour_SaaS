@@ -40,7 +40,8 @@ async def list_user_bookings(
             selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.package).selectinload(Package.availability),
             selectinload(Booking.package).selectinload(Package.dest_metadata),
-            selectinload(Booking.travelers)
+            selectinload(Booking.travelers),
+            selectinload(Booking.refund)
         )
         result = await db.execute(query)
         bookings = result.scalars().all()
@@ -64,7 +65,8 @@ async def get_booking(
         selectinload(Booking.package).selectinload(Package.itinerary_items),
         selectinload(Booking.package).selectinload(Package.availability),
         selectinload(Booking.package).selectinload(Package.dest_metadata),
-        selectinload(Booking.travelers)
+        selectinload(Booking.travelers),
+        selectinload(Booking.refund)
     )
     result = await db.execute(query)
     booking = result.scalar_one_or_none()
@@ -292,11 +294,11 @@ async def cancel_booking(
     Uses SELECT FOR UPDATE + single transaction for safety.
     """
     # Quick ownership check before locking
-    pre_check = await db.execute(select(Booking.user_id, Booking.status).where(Booking.id == booking_id))
+    pre_check = await db.execute(select(Booking.user_id, Booking.status, Booking.agent_id).where(Booking.id == booking_id))
     row = pre_check.first()
     if not row:
         raise NotFoundException("Booking not found")
-    if row[0] != current_user.id:
+    if row[0] != current_user.id and row[2] != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to cancel this booking")
     if row[1] == BookingStatus.COMPLETED:
         raise BadRequestException("Cannot cancel a completed booking")
@@ -328,9 +330,21 @@ async def cancel_booking(
                 refund_amount=result["refund_amount"],
                 refund_status=result["refund_status"],
             )
+            
+            # Send Agent Notification if the agent caused it
+            if row[2] == current_user.id:
+                from app.services.notification_service import NotificationService
+                await NotificationService.notify_agent_cancellation(
+                    db=db,
+                    agent_id=row[2],
+                    booking_reference=booking_for_email.booking_reference,
+                    customer_name=f"{booking_for_email.user.first_name} {booking_for_email.user.last_name}",
+                    package_title=booking_for_email.package.title
+                )
+
     except Exception as email_err:
         import logging
-        logging.getLogger(__name__).warning(f"Cancellation email failed (non-fatal): {email_err}")
+        logging.getLogger(__name__).warning(f"Cancellation email/notification failed (non-fatal): {email_err}")
 
     return CancelActionResponse(**result)
 

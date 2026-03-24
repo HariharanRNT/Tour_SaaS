@@ -487,9 +487,21 @@ class BookingResponse(BaseModel):
         from_attributes = True
 
 
+class RefundInfo(BaseModel):
+    """Summary of refund details for a cancelled booking."""
+    status: str  # initiated, pending, succeeded, failed
+    refund_amount: Decimal
+    razorpay_refund_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class BookingWithPackageResponse(BookingResponse):
     package: Optional[PackageResponse] = None
     user: Optional[UserResponse] = None
+    refund: Optional[RefundInfo] = None  # Populated from BookingRefund relationship
     
     class Config:
         from_attributes = True
