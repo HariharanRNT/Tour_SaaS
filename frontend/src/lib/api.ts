@@ -9,7 +9,13 @@ export const api = axios.create({
 
 // Add auth token and domain to requests
 api.interceptors.request.use((config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    
+    // Sanity check: If token is string "null" or "undefined", treat as null
+    if (token === 'null' || token === 'undefined') {
+        token = null
+    }
+
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
     }
@@ -314,9 +320,20 @@ export const bookingsAPI = {
 
     downloadInvoice: async (id: string) => {
         const response = await api.get(`/bookings/${id}/invoice`, {
-            responseType: 'blob' })
+            responseType: 'blob'
+        })
         return response.data
-    } }
+    },
+
+    confirm: async (id: string, data: {
+        razorpay_order_id: string
+        razorpay_payment_id: string
+        razorpay_signature: string
+    }) => {
+        const response = await api.post(`/bookings/${id}/confirm`, data)
+        return response.data
+    }
+}
 
 // Payments API
 export const paymentsAPI = {
@@ -418,6 +435,10 @@ export const bookingsCustomAPI = {
 export const tripPlannerAPI = {
     getUserSessions: async () => {
         const response = await api.get('/trip-planner/user-sessions')
+        return response.data
+    },
+    getSession: async (sessionId: string) => {
+        const response = await api.get(`/trip-planner/session/${sessionId}`)
         return response.data
     },
     deleteSession: async (sessionId: string) => {
@@ -547,8 +568,8 @@ export const agentReportsAPI = {
         const response = await api.get('/agent/reports/summary', { params })
         return response.data
     },
-    getCharts: async (period: string) => {
-        const response = await api.get('/agent/reports/charts', { params: { period } })
+    getCharts: async (params: { period: string; start_date?: string; end_date?: string }) => {
+        const response = await api.get('/agent/reports/charts', { params })
         return response.data
     },
     getPackagePerformance: async (params: { 
@@ -561,6 +582,10 @@ export const agentReportsAPI = {
         sort_dir?: 'asc' | 'desc';
     }) => {
         const response = await api.get('/agent/reports/packages', { params })
+        return response.data
+    },
+    getFinancialReports: async (params: { period: string; start_date?: string; end_date?: string }) => {
+        const response = await api.get('/agent/reports/financial', { params })
         return response.data
     }
 }

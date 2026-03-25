@@ -7,5 +7,6 @@
     },
     "files.associations": {
         "*.css": "tailwindcss"
-    }
+    },
+    "python.defaultInterpreterPath": "C:\\Users\\santh\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
 }

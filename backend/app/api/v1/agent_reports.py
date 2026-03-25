@@ -15,7 +15,7 @@ router = APIRouter()
 async def get_agent_report_summary(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
-    period: str = Query("all", regex="^(today|week|month|all|custom)$"),
+    period: str = Query("all", regex="^(today|week|month|ytm|all|custom)$"),
     db: AsyncSession = Depends(get_db),
     current_agent: User = Depends(get_current_agent)
 ):
@@ -42,6 +42,12 @@ async def get_agent_report_summary(
             filter_start = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
             prev_end = filter_start
             prev_start = filter_start - timedelta(days=30)
+        elif period == 'ytm':
+            filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            # For YTM, comparing to same period last year
+            prev_start = filter_start - timedelta(days=365)
+            # prev_end would be same relative day last year
+            prev_end = now - timedelta(days=365)
         elif period == 'custom' and start_date:
             filter_start = datetime.fromisoformat(start_date)
             if end_date:
@@ -125,7 +131,9 @@ async def get_agent_report_summary(
 
 @router.get("/charts")
 async def get_agent_report_charts(
-    period: str = Query("week", regex="^(today|week|month|all)$"),
+    period: str = Query("week", regex="^(today|week|month|ytm|all|custom)$"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_agent: User = Depends(get_current_agent)
 ):
@@ -138,14 +146,29 @@ async def get_agent_report_charts(
         bookings = []
         cancellations = []
 
+        filter_start = None
+        filter_end = None
+
         if period == 'today':
-            # Hourly labels for today
-            labels = ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm']
+            filter_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'week':
+            filter_start = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'month':
+            filter_start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'ytm':
+            filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'custom' and start_date:
+            filter_start = datetime.fromisoformat(start_date).replace(tzinfo=timezone.utc)
+            if end_date:
+                filter_end = datetime.fromisoformat(end_date).replace(tzinfo=timezone.utc) + timedelta(days=1)
+
+        if period == 'today':
+            # Hourly labels for today: 00:00 to 23:00
             start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            
-            for hour in range(9, 18): # 9am to 5pm
+            for hour in range(24):
                 h_start = start_of_day + timedelta(hours=hour)
                 h_end = h_start + timedelta(hours=1)
+                labels.append(h_start.strftime('%H:%M'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.id,
@@ -171,19 +194,15 @@ async def get_agent_report_charts(
 
         elif period == 'week':
             # Last 7 days
-            days = []
             for i in range(6, -1, -1):
                 d = (now - timedelta(days=i)).date()
-                days.append(d)
-                labels.append(d.strftime('%a'))
-
-            for d in days:
-                d_start = datetime.combine(d, datetime.min.time())
+                d_start = datetime.combine(d, datetime.min.time(), tzinfo=timezone.utc)
                 d_end = d_start + timedelta(days=1)
+                labels.append(d.strftime('%a'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status.in_(['confirmed', 'completed']),
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -194,7 +213,7 @@ async def get_agent_report_charts(
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status == 'cancelled',
+                    Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -204,57 +223,52 @@ async def get_agent_report_charts(
                 cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
 
         elif period == 'month':
-            # 4 weeks of current month
-            labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
-            start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            
-            for i in range(4):
-                w_start = start_of_month + timedelta(weeks=i)
-                w_end = w_start + timedelta(weeks=1)
+            # Last 30 days (Daily)
+            for i in range(29, -1, -1):
+                d = (now - timedelta(days=i)).date()
+                d_start = datetime.combine(d, datetime.min.time(), tzinfo=timezone.utc)
+                d_end = d_start + timedelta(days=1)
+                labels.append(d.strftime('%d %b'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status.in_(['confirmed', 'completed']),
-                    Booking.created_at >= w_start,
-                    Booking.created_at < w_end
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.created_at >= d_start,
+                    Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.created_at >= w_start,
-                    Booking.created_at < w_end
+                    Booking.created_at >= d_start,
+                    Booking.created_at < d_end
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status == 'cancelled',
-                    Booking.created_at >= w_start,
-                    Booking.created_at < w_end
+                    Booking.status == BookingStatus.CANCELLED,
+                    Booking.created_at >= d_start,
+                    Booking.created_at < d_end
                 )
                 
                 revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
                 bookings.append((await db.execute(book_stmt)).scalar() or 0)
                 cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
 
-        elif period == 'all':
-            # Last 6 months
-            for i in range(5, -1, -1):
-                # Subtract months is tricky, let's use a simple approach
-                first_of_curr_month = now.replace(day=1)
-                target_month = first_of_curr_month
-                for _ in range(i):
-                    target_month = (target_month - timedelta(days=1)).replace(day=1)
-                
-                m_start = target_month.replace(hour=0, minute=0, second=0, microsecond=0)
-                # End is first of next month
-                if m_start.month == 12:
-                    m_end = m_start.replace(year=m_start.year + 1, month=1)
+        elif period == 'ytm' or (period == 'all' and not start_date):
+            # Year-To-Month (YTM): January to current month
+            current_year = now.year
+            current_month = now.month
+            
+            for m in range(1, current_month + 1):
+                m_start = datetime(current_year, m, 1, tzinfo=timezone.utc)
+                if m == 12:
+                    m_end = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc)
                 else:
-                    m_end = m_start.replace(month=m_start.month + 1)
+                    m_end = datetime(current_year, m + 1, 1, tzinfo=timezone.utc)
                 
                 labels.append(m_start.strftime('%b'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status.in_(['confirmed', 'completed']),
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
@@ -265,11 +279,125 @@ async def get_agent_report_charts(
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.id,
-                    Booking.status == 'cancelled',
+                    Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
                 
+                revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
+                bookings.append((await db.execute(book_stmt)).scalar() or 0)
+                cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
+
+        elif period == 'custom' and start_date and end_date:
+            # Custom range auto-detect granularity
+            s = datetime.fromisoformat(start_date).replace(tzinfo=timezone.utc)
+            e = datetime.fromisoformat(end_date).replace(tzinfo=timezone.utc) + timedelta(days=1)
+            delta = e - s
+            
+            if delta.days <= 1:
+                # Hourly
+                for hour in range(24):
+                    h_start = s + timedelta(hours=hour)
+                    h_end = h_start + timedelta(hours=1)
+                    labels.append(h_start.strftime('%H:%M'))
+                    
+                    rev_stmt = select(func.sum(Booking.total_amount)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.created_at >= h_start, 
+                        Booking.created_at < h_end
+                    )
+                    book_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.created_at >= h_start, 
+                        Booking.created_at < h_end
+                    )
+                    cancel_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status == BookingStatus.CANCELLED,
+                        Booking.created_at >= h_start, 
+                        Booking.created_at < h_end
+                    )
+                    
+                    revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
+                    bookings.append((await db.execute(book_stmt)).scalar() or 0)
+                    cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
+            elif delta.days <= 31:
+                # Daily
+                for i in range(delta.days):
+                    d_start = s + timedelta(days=i)
+                    d_end = d_start + timedelta(days=1)
+                    labels.append(d_start.strftime('%d %b'))
+                    
+                    rev_stmt = select(func.sum(Booking.total_amount)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.created_at >= d_start, 
+                        Booking.created_at < d_end
+                    )
+                    book_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.created_at >= d_start, 
+                        Booking.created_at < d_end
+                    )
+                    cancel_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status == BookingStatus.CANCELLED,
+                        Booking.created_at >= d_start, 
+                        Booking.created_at < d_end
+                    )
+                    
+                    revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
+                    bookings.append((await db.execute(book_stmt)).scalar() or 0)
+                    cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
+            else:
+                # Monthly
+                curr = s.replace(day=1)
+                while curr < e:
+                    m_start = curr
+                    if curr.month == 12:
+                        m_end = datetime(curr.year+1, 1, 1, tzinfo=timezone.utc)
+                    else:
+                        m_end = datetime(curr.year, curr.month+1, 1, tzinfo=timezone.utc)
+                    labels.append(m_start.strftime('%b %y'))
+                    
+                    rev_stmt = select(func.sum(Booking.total_amount)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.created_at >= m_start, 
+                        Booking.created_at < m_end
+                    )
+                    book_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.created_at >= m_start, 
+                        Booking.created_at < m_end
+                    )
+                    cancel_stmt = select(func.count(Booking.id)).where(
+                        Booking.agent_id==current_agent.id, 
+                        Booking.status == BookingStatus.CANCELLED,
+                        Booking.created_at >= m_start, 
+                        Booking.created_at < m_end
+                    )
+                    
+                    revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
+                    bookings.append((await db.execute(book_stmt)).scalar() or 0)
+                    cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
+                    curr = m_end
+
+        # Default fallback for 'all' if no start_date and not handled above
+        if not labels:
+             # Full history (6 months fallback or similar)
+            for i in range(5, -1, -1):
+                start = (now - timedelta(days=i*30)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                if start.month == 12:
+                    end = datetime(start.year+1, 1, 1, tzinfo=timezone.utc)
+                else:
+                    end = datetime(start.year, start.month+1, 1, tzinfo=timezone.utc)
+                labels.append(start.strftime('%b %Y'))
+                rev_stmt = select(func.sum(Booking.total_amount)).where(Booking.agent_id==current_agent.id, Booking.created_at >= start, Booking.created_at < end)
+                book_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.id, Booking.created_at >= start, Booking.created_at < end)
+                cancel_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.id, Booking.status == BookingStatus.CANCELLED, Booking.created_at >= start, Booking.created_at < end)
+
                 revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
                 bookings.append((await db.execute(book_stmt)).scalar() or 0)
                 cancellations.append((await db.execute(cancel_stmt)).scalar() or 0)
@@ -280,8 +408,15 @@ async def get_agent_report_charts(
             func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.id,
-            Booking.status.in_(['confirmed', 'completed'])
-        ).group_by(Package.id, Package.title).order_by(desc('revenue')).limit(5)
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
+        )
+
+        if filter_start:
+            pkg_stmt = pkg_stmt.where(Booking.created_at >= filter_start)
+        if filter_end:
+            pkg_stmt = pkg_stmt.where(Booking.created_at < filter_end)
+
+        pkg_stmt = pkg_stmt.group_by(Package.id, Package.title).order_by(desc('revenue')).limit(5)
         
         pkg_result = await db.execute(pkg_stmt)
         packages = [{"name": row[0], "value": float(row[1])} for row in pkg_result]
@@ -289,10 +424,14 @@ async def get_agent_report_charts(
         return {
             "labels": labels,
             "revenue": revenue,
-            "bookings": bookings,
-            "cancellations": cancellations,
+            "bookings": bookings or [0]*len(labels),
+            "cancellations": cancellations or [0]*len(labels),
             "packages": packages
         }
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -300,7 +439,7 @@ async def get_agent_report_charts(
 async def get_agent_package_performance(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
-    period: str = Query("all", regex="^(today|week|month|all|custom)$"),
+    period: str = Query("all", regex="^(today|week|month|ytm|all|custom)$"),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     sort_by: str = Query("revenue"),
@@ -322,6 +461,8 @@ async def get_agent_package_performance(
             filter_start = filter_start.replace(hour=0, minute=0, second=0, microsecond=0)
         elif period == 'month':
             filter_start = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'ytm':
+            filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         elif period == 'custom' and start_date:
             filter_start = datetime.fromisoformat(start_date)
             if end_date:
@@ -351,27 +492,26 @@ async def get_agent_package_performance(
 
         performance_data = []
         for pkg in packages:
-            # Metrics (filtered by current agent)
-            bookings_count_stmt = select(func.count(Booking.id)).where(
-                Booking.package_id == pkg.id,
-                Booking.agent_id == current_agent.id
-            )
+            # Metrics (for this agent's package)
+            # Use a more inclusive approach: any booking for a package owned by the agent
+            base_where = [Booking.package_id == pkg.id]
+            if pkg.created_by != current_agent.id:
+                # If not the creator, only see bookings you specifically made
+                base_where.append(Booking.agent_id == current_agent.id)
+
+            bookings_count_stmt = select(func.count(Booking.id)).where(*base_where)
             if filter_start: 
                 bookings_count_stmt = bookings_count_stmt.where(Booking.created_at >= filter_start)
             
-            bookings_count = (await db.execute(bookings_count_stmt)).scalar() or 0
-            
             revenue_stmt = select(func.sum(Booking.total_amount)).where(
-                Booking.package_id == pkg.id,
-                Booking.agent_id == current_agent.id,
+                *base_where,
                 Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
             )
             if filter_start: revenue_stmt = revenue_stmt.where(Booking.created_at >= filter_start)
             if filter_end: revenue_stmt = revenue_stmt.where(Booking.created_at < filter_end)
             
             cancel_count_stmt = select(func.count(Booking.id)).where(
-                Booking.package_id == pkg.id,
-                Booking.agent_id == current_agent.id,
+                *base_where,
                 Booking.status == BookingStatus.CANCELLED
             )
             if filter_start: cancel_count_stmt = cancel_count_stmt.where(Booking.created_at >= filter_start)
@@ -412,4 +552,110 @@ async def get_agent_package_performance(
             "limit": limit
         }
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/financial")
+async def get_agent_financial_report(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    period: str = Query("all", regex="^(today|week|month|ytm|all|custom)$"),
+    db: AsyncSession = Depends(get_db),
+    current_agent: User = Depends(get_current_agent)
+):
+    """Get financial metrics aggregated by date for the agent"""
+    try:
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        filter_start = None
+        filter_end = None
+
+        if period == 'today':
+            filter_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'week':
+            filter_start = now - timedelta(days=now.weekday())
+            filter_start = filter_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'month':
+            filter_start = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'ytm':
+            filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'custom' and start_date:
+            filter_start = datetime.fromisoformat(start_date).replace(tzinfo=timezone.utc)
+            if end_date:
+                filter_end = datetime.fromisoformat(end_date).replace(tzinfo=timezone.utc) + timedelta(days=1)
+
+        # Base query for bookings
+        query = select(Booking).where(Booking.agent_id == current_agent.id)
+        if filter_start:
+            query = query.where(Booking.created_at >= filter_start)
+        if filter_end:
+            query = query.where(Booking.created_at < filter_end)
+        
+        result = await db.execute(query)
+        bookings = result.scalars().all()
+
+        # Aggregate by date
+        financial_data = {}
+        
+        # Get agent for GST settings
+        from app.models import Agent
+        agent_stmt = select(Agent).where(Agent.user_id == current_agent.id)
+        agent_result = await db.execute(agent_stmt)
+        agent_obj = agent_result.scalar_one_or_none()
+        
+        default_gst = 18.0
+        default_inclusive = False
+        if agent_obj:
+            default_gst = float(agent_obj.gst_percentage or 18.0)
+            default_inclusive = agent_obj.gst_inclusive or False
+
+        for b in bookings:
+            d_str = b.created_at.date().isoformat()
+            if d_str not in financial_data:
+                financial_data[d_str] = {
+                    "date": d_str,
+                    "total_bookings": 0,
+                    "gross_revenue": 0.0,
+                    "discounts": 0.0, # Placeholder
+                    "net_revenue": 0.0,
+                    "refund_amount": 0.0,
+                    "taxes": 0.0,
+                    "final_earnings": 0.0
+                }
+            
+            stats = financial_data[d_str]
+            stats["total_bookings"] += 1
+            
+            if b.status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]:
+                amount = float(b.total_amount)
+                stats["gross_revenue"] += amount
+                
+                # GST Calculation (simulating the breakdown)
+                # If total_amount was inclusive, taxes = total * (gst / (100+gst))
+                # If total_amount was exclusive, total = base + tax -> tax = total - (total / (1 + (gst/100)))
+                # Since we don't store if a specific booking was inclusive/exclusive, we use agent default
+                tax = 0.0
+                if default_inclusive:
+                    tax = amount * (default_gst / (100 + default_gst))
+                else:
+                    tax = amount - (amount / (1 + (default_gst / 100)))
+                
+                stats["taxes"] += tax
+                stats["net_revenue"] += (amount - 0.0) # gross - discounts
+                stats["final_earnings"] += (amount - tax)
+            
+            if b.status == BookingStatus.CANCELLED:
+                stats["refund_amount"] += float(b.refund_amount or 0.0)
+                # Refund doesn't deduct from "gross revenue" of that day usually in these reports, 
+                # but might affect earnings if we want net-net. 
+                # According to example: Final Earnings = Net Revenue - Taxes.
+                # Let's keep it simple as per example.
+
+        # Convert to list and sort by date desc
+        report_list = list(financial_data.values())
+        report_list.sort(key=lambda x: x["date"], reverse=True)
+
+        return report_list
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,0 +1,10 @@
+ID: c1c3bd0b-03d7-4dd0-8651-4dd61886db0d, Type: customer_welcome, Status: failed, Error: 'NoneType' object has no attribute 'send', Created: 2026-03-24 13:37:04.056345+00:00
+ID: 22040102-0f30-4ea2-be22-8a0f981e1445, Type: payment_receipt, Status: failed, Error: 'NoneType' object has no attribute 'send', Created: 2026-03-24 13:19:00.000772+00:00
+ID: b832f9b4-d428-42ea-afd9-66a7ba5169a9, Type: booking_status, Status: failed, Error: 'NoneType' object has no attribute 'send', Created: 2026-03-24 13:18:58.590036+00:00
+ID: 85f339b3-b015-4dae-bb98-b68f0353c39b, Type: itinerary_details, Status: failed, Error: 'NoneType' object has no attribute 'send', Created: 2026-03-24 13:18:58.555423+00:00
+ID: e2957461-05d6-4818-991b-7542df2d73e9, Type: booking_confirmation, Status: sent, Error: None, Created: 2026-03-24 13:18:58.449392+00:00
+ID: ee01be96-e531-4c7b-9c1e-876a6da19139, Type: payment_receipt, Status: pending, Error: None, Created: 2026-03-24 13:11:02.422705+00:00
+ID: acde6a41-8687-4a05-b1ce-1a23a97b0cf5, Type: booking_status, Status: pending, Error: None, Created: 2026-03-24 13:11:00.793293+00:00
+ID: a1b3a4f5-6ebe-4724-900d-958e524a0ff7, Type: itinerary_details, Status: pending, Error: None, Created: 2026-03-24 13:11:00.719410+00:00
+ID: 073f0a28-9f61-43a6-87c9-2c251e777e11, Type: booking_confirmation, Status: pending, Error: None, Created: 2026-03-24 13:11:00.394359+00:00
+ID: c2237a62-f4b0-4f7f-b139-d64cf9c38eb0, Type: booking_confirmation, Status: pending, Error: None, Created: 2026-03-24 13:08:28.544234+00:00

@@ -1,0 +1,30 @@
+ID: 3c0e7280-6c78-472a-8ece-9e9fa97bfe28
+Type: payment_receipt
+Status: pending
+Sent At: None
+Error: None
+--------------------
+ID: e9edcb53-6dfd-4305-8bf1-ccb6274aa6dc
+Type: booking_status
+Status: pending
+Sent At: None
+Error: None
+--------------------
+ID: a69c262d-d501-47ee-a4e6-333a2b5acefe
+Type: itinerary_details
+Status: pending
+Sent At: None
+Error: None
+--------------------
+ID: ee195d1b-62a5-4c71-b0d4-006450de0920
+Type: booking_confirmation
+Status: pending
+Sent At: None
+Error: None
+--------------------
+ID: fa167a2f-0487-4712-9a0a-b34f4b635385
+Type: booking_confirmation
+Status: pending
+Sent At: None
+Error: None
+--------------------

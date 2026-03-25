@@ -92,8 +92,8 @@ export function Navbar() {
                     <Link
                         key={i}
                         href={link.href}
-                        className={`text-sm font-medium transition-all px-4 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-white shadow-md drop-shadow-sm' : 'text-slate-700 hover:text-[var(--primary)] hover:bg-white/40'}`}
-                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))', boxShadow: '0 8px 24px var(--primary-glow)' } : {}}
+                        className={`text-sm font-bold transition-colors duration-200 px-5 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-white' : 'text-[#2C2C2C] hover:text-[var(--primary)] hover:bg-white/40'}`}
+                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { background: 'var(--primary)', boxShadow: '0 4px 16px var(--primary-glow)' } : {}}
                         onClick={() => setIsOpen(false)}
                     >
                         {link.label}
@@ -137,19 +137,19 @@ export function Navbar() {
                 <>
                     <ThemeSwitcher />
                     {userName && (
-                        <div className="flex items-center space-x-2 text-muted-foreground">
+                        <div className="flex items-center space-x-2 text-[#2C2C2C] opacity-80">
                             <User className="h-4 w-4" />
-                            <span className="text-sm">{userName}</span>
+                            <span className="text-sm font-medium">{userName}</span>
                         </div>
                     )}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleLogout}
-                        className="rounded-full border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all px-6 font-black"
-                        style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)' }}
+                        className="rounded-full border-[1.5px] border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all px-6 font-bold"
+                        style={{ background: 'transparent' }}
                     >
-                        <LogOut className="h-4 w-4 mr-2 stroke-[3px]" />
+                        <LogOut className="h-4 w-4 mr-2 stroke-[2px]" />
                         Logout
                     </Button>
                 </>
@@ -178,15 +178,8 @@ export function Navbar() {
     }
 
 
-    const isTransparent = pathname === '/' && !scrolled
-    const navbarStyle = 'light'
-
-    // Base styles for colors based on light/transparent
-    const textClass = isTransparent ? 'text-white' : 'text-slate-800'
-    const bgClass = isTransparent
-        ? 'bg-transparent'
-        : 'glass-navbar'
-    const borderClass = isTransparent ? 'border-transparent' : ''
+    // Global frosted style
+    const textClass = 'text-[#2C2C2C]'
 
     return (
         <div
@@ -194,12 +187,13 @@ export function Navbar() {
             style={{ paddingTop: scrolled ? '8px' : '16px', paddingBottom: scrolled ? '6px' : '10px' }}
         >
             <nav
-                className={`pointer-events-auto flex w-full max-w-4xl transition-all duration-500 ${scrolled ? 'shadow-[0_12px_40px_rgba(0,0,0,0.12)]' : 'shadow-[0_8px_32px_rgba(0,0,0,0.08)]'}`}
+                className={`pointer-events-auto flex w-full max-w-4xl transition-all duration-300`}
                 style={{
-                    background: isTransparent ? 'rgba(255,255,255,0.15)' : 'var(--nav-bg, rgba(255,255,255,1))',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: scrolled ? '1px solid rgba(255,122,69,0.15)' : '1px solid rgba(255,255,255,0.35)',
+                    background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
                     borderRadius: '999px',
                     padding: scrolled ? '2px 6px' : '4px 8px'
                 }}
@@ -212,7 +206,7 @@ export function Navbar() {
                                 alt="Agent Logo"
                                 className="h-9 w-9 object-contain"
                             />
-                            <span className={`text-xl font-bold font-display ${textClass === 'text-white' ? 'text-white' : 'text-[var(--primary)]'}`}>
+                            <span className={`text-xl font-bold font-display text-[#2C2C2C]`}>
                                 {agencyName}
                             </span>
                         </Link>

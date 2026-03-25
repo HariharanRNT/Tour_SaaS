@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Dialog,
     DialogContent,
@@ -46,6 +47,7 @@ interface DestinationSummary {
     country: string
     image_url?: string
     description?: string
+    is_popular?: boolean
     activity_count: number
     package_count: number
 }
@@ -63,6 +65,7 @@ export default function ActivitiesMasterPage() {
     const [newCityCountry, setNewCityCountry] = useState('')
     const [newCityImage, setNewCityImage] = useState('')
     const [isUploading, setIsUploading] = useState(false)
+    const [isPopular, setIsPopular] = useState(true)
 
     // Edit State
     const [isEditing, setIsEditing] = useState(false)
@@ -142,7 +145,8 @@ export default function ActivitiesMasterPage() {
         saveMetadataMutation.mutate({
             name: newCityName.trim(),
             country: newCityCountry.trim() || 'Unknown',
-            image_url: newCityImage
+            image_url: newCityImage,
+            is_popular: isPopular
         })
     }
 
@@ -150,6 +154,7 @@ export default function ActivitiesMasterPage() {
         setNewCityName(dest.name)
         setNewCityCountry(dest.country)
         setNewCityImage(dest.image_url || '')
+        setIsPopular(dest.is_popular ?? true)
         setEditingDestOriginalName(dest.name)
         setIsEditing(true)
         setIsNewDestModalOpen(true)
@@ -360,6 +365,11 @@ export default function ActivitiesMasterPage() {
                                                             <span className="mx-2 opacity-30">|</span>
                                                             {dest.package_count} {dest.package_count === 1 ? 'Package' : 'Packages'}
                                                         </div>
+                                                        {dest.is_popular && (
+                                                            <div className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-amber-300 bg-amber-50 text-amber-700 text-[10px] uppercase tracking-widest shadow-sm">
+                                                                🔥 Popular
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Row 4: MANAGE LIBRARY → link pinned to bottom — 32px height */}
@@ -456,6 +466,7 @@ export default function ActivitiesMasterPage() {
                     setIsEditing(false);
                     setNewCityName('');
                     setNewCityImage('');
+                    setIsPopular(true);
                 }
             }}>
                 <DialogContent
@@ -643,6 +654,13 @@ export default function ActivitiesMasterPage() {
                                         className="pl-11 h-10 text-[11px] font-semibold bg-white/30 backdrop-blur-md border-white/40 rounded-xl focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/50 transition-all"
                                     />
                                 </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 pt-2">
+                                <Checkbox id="is-popular" checked={isPopular} onCheckedChange={(checked) => setIsPopular(checked as boolean)} />
+                                <label htmlFor="is-popular" className="text-sm font-semibold text-[#3A1A08] cursor-pointer">
+                                    Show in Popular Destinations (Plan Trip Page)
+                                </label>
                             </div>
                         </div>
 

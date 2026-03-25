@@ -463,6 +463,7 @@ class BookingCreate(BaseModel):
     number_of_travelers: int = Field(..., ge=1)
     travelers: List[TravelerBase]
     special_requests: Optional[str] = None
+    customer_id: Optional[UUID4] = None
 
 
 class BookingResponse(BaseModel):

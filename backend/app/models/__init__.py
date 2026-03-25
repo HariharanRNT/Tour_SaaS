@@ -16,35 +16,35 @@ from app.database import Base
 
 # Enums
 class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    AGENT = "agent"
-    CUSTOMER = "customer"
+    ADMIN = "ADMIN"
+    AGENT = "AGENT"
+    CUSTOMER = "CUSTOMER"
 
 
 class ApprovalStatus(str, enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 
 class PackageStatus(str, enum.Enum):
-    DRAFT = "draft"
-    PUBLISHED = "published"
-    ARCHIVED = "archived"
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
 
 
 class BookingStatus(str, enum.Enum):
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    CANCELLED = "cancelled"
-    COMPLETED = "completed"
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    CANCELLED = "CANCELLED"
+    COMPLETED = "COMPLETED"
 
 
 class PaymentStatus(str, enum.Enum):
-    PENDING = "pending"
-    SUCCEEDED = "succeeded"
-    FAILED = "failed"
-    REFUNDED = "refunded"
+    PENDING = "PENDING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
 
 
 # Helper function to generate UUID as string
@@ -734,6 +734,21 @@ class Notification(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="notifications")
+
+class NotificationLog(Base):
+    """Tracks the status of automated email/sms sent to users"""
+    __tablename__ = "notification_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    booking_id = Column(UUID(as_uuid=True), ForeignKey("bookings.id", ondelete="CASCADE"), nullable=True)
+    type = Column(String, nullable=False) # e.g. 'booking_confirmation', 'payment_receipt'
+    status = Column(String, default="pending") # pending, sent, failed
+    error = Column(Text, nullable=True)
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationship to booking if applicable
+    booking = relationship("Booking")
 
 
 class Settlement(Base):

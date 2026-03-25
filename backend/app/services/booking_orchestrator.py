@@ -168,6 +168,25 @@ class BookingOrchestrator:
                 if fetched_payment['currency'] != 'INR':
                     raise HTTPException(status_code=400, detail="Invalid currency")
 
+                # D. Capture Customer Email for Notifications (Important for Agent-initiated bookings)
+                customer_email = fetched_payment.get('email')
+                if customer_email:
+                    import json
+                    meta = {}
+                    if booking.special_requests:
+                        try:
+                            meta = json.loads(booking.special_requests)
+                        except:
+                            meta = {"original_text": booking.special_requests}
+                    
+                    meta['customer_payment_email'] = customer_email
+                    # Also capture phone if available
+                    if fetched_payment.get('contact'):
+                        meta['customer_payment_phone'] = fetched_payment.get('contact')
+                        
+                    booking.special_requests = json.dumps(meta)
+                    logger.info(f"Captured customer email from payment: {customer_email}")
+
             except Exception as e:
                  logger.error(f"Deep payment verification failed: {e}")
                  # Decide: Block or Log? For secure flow, we MUST Block.
@@ -192,39 +211,30 @@ class BookingOrchestrator:
 
     async def _send_confirmation_email(self, booking: Booking):
         """
-        Sends all immediate customer notifications using the Customer Notification System
+        Sends a consolidated customer notification using the Customer Notification System
         """
         from app.services.customer_notification_service import CustomerNotificationService
         
         try:
-            logger.info(f"Triggering immediate customer notifications for booking {booking.booking_reference}")
+            logger.info(f"Triggering consolidated customer notification for booking {booking.booking_reference}")
             
-            # 1. Booking Confirmation
-            await CustomerNotificationService.send_booking_confirmation(booking)
-            
-            # 2. Itinerary Details
-            await CustomerNotificationService.send_itinerary_details(booking)
-            
-            # 3. Booking Status Update
-            await CustomerNotificationService.send_booking_status_update(booking)
-            
-            # 4. Payment Receipt (if paid)
-            from app.models import PaymentStatus
-            
-            # Check for multiple formats of the enum returned by SQLAlchemy
+            # Resolve payment details for the receipt section
+            payment_details = None
             status_str = str(booking.payment_status).lower()
             is_paid = "succeeded" in status_str or "captured" in status_str or booking.payment_status == PaymentStatus.SUCCEEDED
+            
             if is_paid:
                 payment_details = {
                     "amount": float(booking.total_amount),
                     "method": "Online Payment",
                     "date": booking.updated_at.strftime("%Y-%m-%d") if booking.updated_at else datetime.utcnow().strftime("%Y-%m-%d")
                 }
-                await CustomerNotificationService.send_payment_receipt(booking, payment_details)
-            else:
-                logger.info(f"Booking {booking.booking_reference} is not paid ({booking.payment_status}), skipping payment receipt.")
+
+            # Send single consolidated email with Invoice and Itinerary
+            await CustomerNotificationService.send_booking_success_consolidated(booking, payment_details)
+            
         except Exception as e:
-            logger.error(f"Error in _send_confirmation_email: {e}")
+            logger.error(f"Error in _send_confirmation_email (consolidated): {e}")
 
     async def _send_agent_notification_email(self, booking: Booking):
         """

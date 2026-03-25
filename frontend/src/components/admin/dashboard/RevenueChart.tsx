@@ -17,16 +17,52 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: any[], weeklyData?: any[], dailyData?: any[] }) {
+const CustomTooltip = ({ active, payload, label, activeTab, chartData }: any) => {
+    if (active && payload && payload.length) {
+        const currentVal = payload[0].value;
+        const currentIndex = chartData.findIndex((d: any) => d.name === label);
+        let percentChange = null;
+        if (currentIndex > 0) {
+            const valKey = activeTab === 'revenue' ? 'revenue' : (activeTab === 'bookings' ? 'subscriptions' : 'subscriptions');
+            const prevVal = chartData[currentIndex - 1][valKey];
+            if (prevVal && prevVal !== 0) {
+                percentChange = (((currentVal - prevVal) / prevVal) * 100).toFixed(1);
+            }
+        }
+
+        return (
+            <div className="bg-white/95 backdrop-blur-xl border border-indigo-100 p-4 rounded-2xl shadow-2xl">
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">{label}</p>
+                <div className="flex items-end gap-3">
+                    <p className="text-xl font-black text-slate-800">
+                        {activeTab === 'revenue' ? `₹${currentVal.toLocaleString()}` : currentVal.toLocaleString()}
+                    </p>
+                    {percentChange !== null && (
+                        <span className={cn(
+                            "text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center mb-1",
+                            parseFloat(percentChange) >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                        )}>
+                            {parseFloat(percentChange) >= 0 ? '↑' : '↓'} {Math.abs(parseFloat(percentChange))}%
+                        </span>
+                    )}
+                </div>
+                <p className="text-[9px] font-bold text-slate-400 mt-1 italic uppercase">{activeTab} Stream</p>
+            </div>
+        );
+    }
+    return null;
+};
+
+export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = [] }: { data: any[], ytmData?: any[], weeklyData?: any[], dailyData?: any[] }) {
     const [mounted, setMounted] = useState(false)
-    const [period, setPeriod] = useState<'monthly' | 'weekly' | 'daily'>('monthly')
+    const [period, setPeriod] = useState<'ytm' | 'monthly' | 'weekly' | 'daily'>('ytm')
     const [activeTab, setActiveTab] = useState('revenue')
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    const chartData = period === 'monthly' ? data : period === 'weekly' ? weeklyData : dailyData
+    const chartData = period === 'ytm' ? ytmData : period === 'monthly' ? data : period === 'weekly' ? weeklyData : dailyData
 
     if (!mounted) {
         return (
@@ -61,11 +97,12 @@ export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: 
                 </TabsList>
 
                 <div className="flex items-center gap-3">
-                    <Select value={period} onValueChange={(v: 'monthly' | 'weekly' | 'daily') => setPeriod(v)}>
+                    <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
                         <SelectTrigger className="w-[160px] h-12 bg-slate-50 border-transparent rounded-2xl font-bold text-slate-700 shadow-sm hover:shadow-md transition-all">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-indigo-50 shadow-xl">
+                            <SelectItem value="ytm" className="font-medium italic">YTM (Year-To-Month)</SelectItem>
                             <SelectItem value="monthly" className="font-medium">Monthly View</SelectItem>
                             <SelectItem value="weekly" className="font-medium">Weekly View</SelectItem>
                             <SelectItem value="daily" className="font-medium">Daily View</SelectItem>
@@ -74,14 +111,13 @@ export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: 
                 </div>
             </div>
 
-            {/* SaaS Analytics Summary Bar */}
             <div className="grid grid-cols-3 gap-4 px-2 py-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
                 <div className="text-center border-r border-indigo-100 last:border-0">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total {activeTab}</p>
                     <p className="text-xl font-black text-slate-800">
                         {activeTab === 'revenue'
                             ? `₹${chartData.reduce((acc: any, curr: any) => acc + (curr.revenue || 0), 0).toLocaleString()}`
-                            : chartData.reduce((acc: any, curr: any) => acc + (curr[activeTab] || curr.bookings || 0), 0)
+                            : chartData.reduce((acc: any, curr: any) => acc + (curr[activeTab] || curr.subscriptions || curr.bookings || 0), 0)
                         }
                     </p>
                 </div>
@@ -106,86 +142,35 @@ export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: 
                     <TabsContent value="revenue" className="mt-0 outline-none">
                         <div className="h-[350px] w-full pt-4">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#FF6B2B" stopOpacity={0.8} />
-                                            <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.1} />
-                                        </linearGradient>
-                                        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#FF6B2B" stopOpacity={0.3} />
-                                            <stop offset="100%" stopColor="#FF6B2B" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#94A3B8"
-                                        fontSize={10}
-                                        fontWeight={800}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={15}
-                                        className="uppercase tracking-widest"
-                                    />
-                                    <YAxis
-                                        stroke="#94A3B8"
-                                        fontSize={10}
-                                        fontWeight={800}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: 'rgba(255, 107, 43, 0.05)', radius: 10 }}
-                                        content={({ active, payload, label }) => {
-                                            if (active && payload && payload.length) {
-                                                const currentVal = payload[0].value;
-                                                const currentIndex = chartData.findIndex(d => d.name === label);
-                                                let percentChange = null;
-                                                if (currentIndex > 0) {
-                                                    const prevVal = chartData[currentIndex - 1].revenue;
-                                                    percentChange = (((currentVal - prevVal) / prevVal) * 100).toFixed(1);
-                                                }
-
-                                                return (
-                                                    <div className="bg-white/90 backdrop-blur-xl border border-orange-100 p-4 rounded-2xl shadow-2xl">
-                                                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2">{label}</p>
-                                                        <div className="flex items-end gap-3">
-                                                            <p className="text-xl font-black text-slate-800">₹{currentVal.toLocaleString()}</p>
-                                                            {percentChange !== null && (
-                                                                <span className={cn(
-                                                                    "text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center mb-1",
-                                                                    parseFloat(percentChange) >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                                                                )}>
-                                                                    {parseFloat(percentChange) >= 0 ? '↑' : '↓'} {Math.abs(parseFloat(percentChange))}%
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-[9px] font-bold text-slate-400 mt-1 italic uppercase">Total Revenue Stream</p>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
-                                    {/* Area Overlay for flow */}
-                                    <Area
-                                        type="monotone"
-                                        dataKey="revenue"
-                                        stroke="none"
-                                        fill="url(#areaGradient)"
-                                        fillOpacity={1}
-                                    />
-                                    <Bar
-                                        dataKey="revenue"
-                                        fill="url(#revenueGradient)"
-                                        radius={[12, 12, 0, 0]}
-                                        barSize={period === 'monthly' ? 45 : period === 'weekly' ? 30 : 50}
-                                        minPointSize={5} // Ensure minimal visibility for zero data
-                                        animationDuration={2000}
-                                    />
-                                </BarChart>
+                                {period === 'ytm' ? (
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="ytmRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#FF6B2B" stopOpacity={0.4}/>
+                                                <stop offset="95%" stopColor="#FF6B2B" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
+                                        <Tooltip content={<CustomTooltip activeTab="revenue" chartData={chartData} />} />
+                                        <Area type="monotone" dataKey="revenue" stroke="#FF6B2B" strokeWidth={4} fillOpacity={1} fill="url(#ytmRevenueGradient)" />
+                                    </AreaChart>
+                                ) : (
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#FF6B2B" stopOpacity={0.8} />
+                                                <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.1} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
+                                        <Tooltip content={<CustomTooltip activeTab="revenue" chartData={chartData} />} />
+                                        <Bar dataKey="revenue" fill="url(#revenueGradient)" radius={[12, 12, 0, 0]} barSize={period === 'monthly' ? 45 : period === 'weekly' ? 30 : 50} minPointSize={1} />
+                                    </BarChart>
+                                )}
                             </ResponsiveContainer>
                         </div>
                     </TabsContent>
@@ -193,53 +178,35 @@ export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: 
                     <TabsContent value="bookings" className="mt-0 outline-none">
                         <div className="h-[350px] w-full pt-4">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="bookingsGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#8B5CF6" stopOpacity={1} />
-                                            <stop offset="100%" stopColor="#C084FC" stopOpacity={1} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#64748B"
-                                        fontSize={12}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={15}
-                                    />
-                                    <YAxis
-                                        stroke="#64748B"
-                                        fontSize={12}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: '#F8FAFF' }}
-                                        contentStyle={{
-                                            backgroundColor: '#FFFFFF',
-                                            borderRadius: '16px',
-                                            border: 'none',
-                                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                                            padding: '12px 16px'
-                                        }}
-                                        itemStyle={{ fontWeight: 800, fontSize: '14px', color: '#1E293B' }}
-                                        labelStyle={{ fontWeight: 900, marginBottom: '4px', color: '#8B5CF6', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                                        formatter={(value: any) => [value, 'Total Bookings']}
-                                    />
-                                    <Bar
-                                        dataKey="bookings"
-                                        fill="#FF6B2B"
-                                        fillOpacity={0.8}
-                                        radius={[8, 8, 0, 0]}
-                                        barSize={period === 'monthly' ? 40 : period === 'weekly' ? 25 : 45}
-                                        minPointSize={5} // Ensure minimal visibility for zero data
-                                        animationDuration={1500}
-                                    />
-                                </BarChart>
+                                {period === 'ytm' ? (
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="ytmBookingsGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4}/>
+                                                <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
+                                        <Tooltip content={<CustomTooltip activeTab="bookings" chartData={chartData} />} />
+                                        <Area type="monotone" dataKey="subscriptions" stroke="#6366F1" strokeWidth={4} fillOpacity={1} fill="url(#ytmBookingsGradient)" />
+                                    </AreaChart>
+                                ) : (
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="bookingsGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                                                <stop offset="100%" stopColor="#C084FC" stopOpacity={0.1} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
+                                        <Tooltip content={<CustomTooltip activeTab="bookings" chartData={chartData} />} />
+                                        <Bar dataKey="subscriptions" fill="url(#bookingsGradient)" radius={[12, 12, 0, 0]} barSize={period === 'monthly' ? 45 : period === 'weekly' ? 30 : 50} minPointSize={1} />
+                                    </BarChart>
+                                )}
                             </ResponsiveContainer>
                         </div>
                     </TabsContent>
@@ -249,45 +216,10 @@ export function RevenueChart({ data, weeklyData = [], dailyData = [] }: { data: 
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#64748B"
-                                        fontSize={12}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={15}
-                                    />
-                                    <YAxis
-                                        stroke="#64748B"
-                                        fontSize={12}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        allowDecimals={false}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#FFFFFF',
-                                            borderRadius: '16px',
-                                            border: 'none',
-                                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                                            padding: '12px 16px'
-                                        }}
-                                        itemStyle={{ fontWeight: 800, fontSize: '14px', color: '#1E293B' }}
-                                        labelStyle={{ fontWeight: 900, marginBottom: '4px', color: '#8B5CF6', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                                        formatter={(value: any) => [value, 'New Subscriptions']}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="subscriptions"
-                                        name="New Subscriptions"
-                                        stroke="#8B5CF6"
-                                        strokeWidth={4}
-                                        dot={{ r: 6, fill: '#8B5CF6', strokeWidth: 3, stroke: '#fff' }}
-                                        activeDot={{ r: 8, fill: '#8B5CF6', strokeWidth: 0 }}
-                                        animationDuration={1500}
-                                    />
+                                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                    <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip content={<CustomTooltip activeTab="subscriptions" chartData={chartData} />} />
+                                    <Line type="monotone" dataKey="subscriptions" stroke="#8B5CF6" strokeWidth={4} dot={{ r: 4, fill: '#8B5CF6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>

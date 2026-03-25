@@ -29,8 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const initAuth = async () => {
-            const token = localStorage.getItem('token')
+            let token = localStorage.getItem('token')
             const storedUser = localStorage.getItem('user')
+
+            // Sanity check: Clear if somehow set to string "null"
+            if (token === 'null' || token === 'undefined') {
+                localStorage.removeItem('token')
+                localStorage.removeItem('user')
+                token = null
+            }
 
             if (token && storedUser) {
                 try {

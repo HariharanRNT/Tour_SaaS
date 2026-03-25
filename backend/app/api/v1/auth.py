@@ -67,19 +67,41 @@ async def register(
         
         await db.commit()
         
+        # Trigger Welcome Email (Async background task via CustomerNotificationService)
+        try:
+            from app.services.customer_notification_service import CustomerNotificationService
+            # Fetch agent if id was resolved earlier
+            agent_user = None
+            if agent_user_id:
+                agent_res = await db.execute(select(User).where(User.id == agent_user_id))
+                agent_user = agent_res.scalar_one_or_none()
+            
+            await CustomerNotificationService.send_registration_welcome(user, agent_user)
+        except Exception as e:
+            logger.error(f"Failed to trigger welcome email: {e}")
+        
         # Re-fetch user with profiles loaded to prevent MissingGreenlet error on property access
         # db.refresh(user) only reloads attributes, not relationships
         from sqlalchemy.orm import selectinload
         stmt = select(User).where(User.id == user.id).options(
             selectinload(User.admin_profile),
             selectinload(User.agent_profile),
-            selectinload(User.customer_profile)
+            selectinload(User.customer_profile).selectinload(Customer.agent)
         )
         result = await db.execute(stmt)
         user = result.scalar_one()
         
         # Create access token
         access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
+        
+        # 4. Create and send registration welcome email (using assigned agent's SMTP)
+        try:
+            from app.services.customer_notification_service import CustomerNotificationService
+            await CustomerNotificationService.send_registration_welcome(user)
+        except Exception as e:
+            logger.error(f"Failed to send welcome email: {e}")
+            # Non-blocking failure
+            pass
         
         return Token(
             access_token=access_token,

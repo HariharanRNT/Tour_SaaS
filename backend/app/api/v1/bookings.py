@@ -190,7 +190,10 @@ async def create_booking(
         booking = Booking(
             booking_reference=booking_reference,
             package_id=package.id,
-            user_id=current_user.id,
+            user_id=(
+                booking_data.customer_id if (current_user.role == UserRole.AGENT and booking_data.customer_id) 
+                else current_user.id
+            ),
             booking_date=date.today(), # Fix: Explicitly set booking_date
             travel_date=booking_data.travel_date,
             number_of_travelers=booking_data.number_of_travelers,

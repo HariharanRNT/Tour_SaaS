@@ -250,89 +250,94 @@ async def get_dashboard_stats(
         # 9. Monthly Trends (Last 6 Months)
         six_months_ago = datetime.utcnow() - timedelta(days=180)
         
+        # 10. YTM Trends (From Jan 1st of current year)
+        jan_1st = datetime(now.year, 1, 1)
+        
         # Fetch bookings for last 6 months
         # booking_trend_stmt = select(Booking.created_at, Booking.total_amount).where(
         #     Booking.created_at >= six_months_ago,
         #     Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
         # )
 
-        # Fetch subscription payments for last 6 months
-        booking_trend_stmt = select(Payment.created_at, Payment.amount).where(
-            Payment.created_at >= six_months_ago,
+        # Fetch subscription payments for trends (covering both 6-month and YTM)
+        trend_payments_stmt = select(Payment.created_at, Payment.amount).where(
+            Payment.created_at >= min(six_months_ago, jan_1st),
             Payment.status == PaymentStatus.SUCCEEDED,
             Payment.subscription_id != None  # Only subscription payments
         )
-        result = await db.execute(booking_trend_stmt)
-        bookings_data = result.all()
+        result = await db.execute(trend_payments_stmt)
+        all_trend_payments = result.all()
         
-        # Fetch subscriptions for last 6 months
-        sub_trend_stmt = select(Subscription.created_at).where(
-            Subscription.created_at >= six_months_ago,
+        # Fetch subscriptions for trends
+        trend_subs_stmt = select(Subscription.created_at).where(
+            Subscription.created_at >= min(six_months_ago, jan_1st),
             Subscription.status == 'active' 
         )
-        result = await db.execute(sub_trend_stmt)
-        subs_data = result.all()
+        result = await db.execute(trend_subs_stmt)
+        all_trend_subs = result.all()
         
-        # Aggregate in Python
-        trends = {}
-        # Initialize last 6 months
+        # Aggregate Monthly Trends (Last 6 Months)
+        monthly_trends_map = {}
         for i in range(5, -1, -1):
             date = datetime.utcnow() - timedelta(days=i*30)
             key = date.strftime("%Y-%m")
-            trends[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
+            monthly_trends_map[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
 
-        def get_month_key(dt):
-            return dt.strftime("%Y-%m")
-
-        for b in bookings_data:
-            key = get_month_key(b[0])
-            if key in trends:
-                trends[key]["revenue"] += float(b[1] or 0)
+        for b in all_trend_payments:
+            key = b[0].strftime("%Y-%m")
+            if key in monthly_trends_map:
+                monthly_trends_map[key]["revenue"] += float(b[1] or 0)
         
-        for s in subs_data:
-            key = get_month_key(s[0])
-            if key in trends:
-                trends[key]["subscriptions"] += 1
+        for s in all_trend_subs:
+            key = s[0].strftime("%Y-%m")
+            if key in monthly_trends_map:
+                monthly_trends_map[key]["subscriptions"] += 1
                 
-        monthly_trends = list(trends.values())
+        monthly_trends = list(monthly_trends_map.values())
 
-        # 10. Weekly Trends (Last 6 Weeks)
-        # We can reuse the 6-month data which covers 6 weeks entirely
-        # Just need to filter and aggregate correctly in Python
+        # Aggregate YTM Trends (Jan 1st to Current Month)
+        ytm_trends_map = {}
+        for m in range(1, now.month + 1):
+            date = datetime(now.year, m, 1)
+            key = date.strftime("%Y-%m")
+            ytm_trends_map[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
+
+        for b in all_trend_payments:
+            key = b[0].strftime("%Y-%m")
+            if key in ytm_trends_map:
+                ytm_trends_map[key]["revenue"] += float(b[1] or 0)
         
+        for s in all_trend_subs:
+            key = s[0].strftime("%Y-%m")
+            if key in ytm_trends_map:
+                ytm_trends_map[key]["subscriptions"] += 1
+        
+        ytm_trends = list(ytm_trends_map.values())
+
+        # 11. Weekly Trends (Last 6 Weeks)
         six_weeks_ago = datetime.utcnow() - timedelta(weeks=6)
         weekly_stats = {}
         
         # Initialize last 6 weeks
-        # Start from current week, go back 5 weeks
         current_week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday()) # Start of this week (Monday)
         
         for i in range(5, -1, -1):
             week_start = current_week_start - timedelta(weeks=i)
-            # Format: 'Nov 12' or 'Week 45'
-            # Let's use 'Week of Mon' -> 'Nov 12'
             key = week_start.strftime("%Y-%W") # Internal key
             label = week_start.strftime("%b %d") # Display label
             weekly_stats[key] = {"name": label, "revenue": 0, "subscriptions": 0, "sort_date": week_start}
 
-        def get_week_key(dt):
-             # Python's %W starts Monday. 
-             # Adjust dt to start of its week to match our keys?
-             # simpler: dt.strftime("%Y-%W")
-             return dt.strftime("%Y-%W")
-
-        for b in bookings_data:
-            # Normalize to naive UTC for comparison if timezone aware
+        for b in all_trend_payments:
             b_date = b[0].replace(tzinfo=None) if b[0] and b[0].tzinfo else b[0]
             if b_date and b_date >= six_weeks_ago:
-                key = get_week_key(b_date)
+                key = b_date.strftime("%Y-%W")
                 if key in weekly_stats:
                     weekly_stats[key]["revenue"] += float(b[1] or 0)
         
-        for s in subs_data:
+        for s in all_trend_subs:
             s_date = s[0].replace(tzinfo=None) if s[0] and s[0].tzinfo else s[0]
             if s_date and s_date >= six_weeks_ago:
-                key = get_week_key(s_date)
+                key = s_date.strftime("%Y-%W")
                 if key in weekly_stats:
                     weekly_stats[key]["subscriptions"] += 1
         
@@ -399,6 +404,7 @@ async def get_dashboard_stats(
             "subscriptionsNearingExpiry": subscriptions_nearing_expiry,
             "expiryDetails": expiry_details,
             "monthlyTrends": monthly_trends, 
+            "ytmTrends": ytm_trends,
             "weeklyTrends": weekly_trends,
             "agents": {
                 "total": total_agents,

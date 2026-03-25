@@ -32,14 +32,42 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
     const [lastName, setLastName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
 
+    // New OTP states
+    const [requireOtp, setRequireOtp] = useState(false)
+    const [otp, setOtp] = useState('')
+    const [otpError, setOtpError] = useState('')
+    const [resendCooldown, setResendCooldown] = useState(0)
+    const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null)
+
     // Reset state when modal opens/closes
     useEffect(() => {
         if (!isOpen) {
             setError('')
+            setOtpError('')
             setLoading(false)
+            setRequireOtp(false)
+            setOtp('')
+            setOtpExpiresAt(null)
+            setResendCooldown(0)
             // Optional: reset fields if desired
         }
     }, [isOpen])
+
+    useEffect(() => {
+        if (resendCooldown > 0) {
+            const t = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+            return () => clearTimeout(t)
+        }
+    }, [resendCooldown])
+
+    useEffect(() => {
+        if (otpExpiresAt) {
+            const t = setInterval(() => {
+                if (Math.max(0, otpExpiresAt - Date.now()) === 0) clearInterval(t)
+            }, 1000)
+            return () => clearInterval(t)
+        }
+    }, [otpExpiresAt])
 
     // Close on ESC
     useEffect(() => {
@@ -61,10 +89,49 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
         setLoading(true)
         try {
             const response = await authAPI.login(email, password)
-            authLogin(response.access_token, response.user)
-            onSuccess()
+            if (response.require_otp) {
+                setRequireOtp(true)
+                setOtpExpiresAt(Date.now() + (response.expires_in || 300) * 1000)
+                setResendCooldown(60)
+            } else {
+                authLogin(response.access_token, response.user)
+                onSuccess()
+            }
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Invalid email or password')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setOtpError('')
+        if (otp.length !== 6) return setOtpError('Please enter a 6-digit OTP')
+        
+        setLoading(true)
+        try {
+            const data = await authAPI.verifyLoginOTP(email, otp)
+            authLogin(data.access_token, data.user)
+            onSuccess()
+        } catch (err: any) {
+            setOtpError(err.response?.data?.detail || 'Invalid or expired OTP')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleResendOTP = async () => {
+        if (resendCooldown > 0) return
+        setOtpError('')
+        setLoading(true)
+        try {
+            const response = await authAPI.sendLoginOTP(email, password)
+            setOtpExpiresAt(Date.now() + response.expires_in * 1000)
+            setResendCooldown(60)
+            setOtp('')
+        } catch (err: any) {
+            setOtpError(err.response?.data?.detail || 'Failed to resend OTP')
         } finally {
             setLoading(false)
         }
@@ -117,6 +184,14 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
         { label: 'Match', valid: password === confirmPassword && password.length > 0 }
     ]
 
+    const getTimeRemaining = () => {
+        if (!otpExpiresAt) return '5:00'
+        const remaining = Math.max(0, otpExpiresAt - Date.now())
+        const minutes = Math.floor(remaining / 60000)
+        const seconds = Math.floor((remaining % 60000) / 1000)
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`
+    }
+
     if (!isOpen) return null
 
     return (
@@ -155,39 +230,90 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex p-1 bg-white/10 rounded-2xl mb-8 border border-white/10">
-                        {(['login', 'register'] as Tab[]).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => { setActiveTab(tab); setError(''); }}
-                                className={cn(
-                                    "flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
-                                    activeTab === tab
-                                        ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md"
-                                        : "text-white/60 hover:text-white hover:bg-white/5"
-                                )}
-                            >
-                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </button>
-                        ))}
-                    </div>
+                    {!requireOtp && (
+                        <div className="flex p-1 bg-white/10 rounded-2xl mb-8 border border-white/10">
+                            {(['login', 'register'] as Tab[]).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => { setActiveTab(tab); setError(''); }}
+                                    className={cn(
+                                        "flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                        activeTab === tab
+                                            ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md"
+                                            : "text-white/60 hover:text-white hover:bg-white/5"
+                                    )}
+                                >
+                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, x: activeTab === 'login' ? -20 : 20 }}
+                            key={requireOtp ? 'otp' : activeTab}
+                            initial={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? -20 : 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: activeTab === 'login' ? 20 : -20 }}
+                            exit={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? 20 : -20 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {error && (
+                            {(error || otpError) && (
                                 <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-100 text-xs animate-shake">
                                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                                    <span>{error}</span>
+                                    <span>{error || otpError}</span>
                                 </div>
                             )}
 
-                            <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
+                            {requireOtp ? (
+                                <form onSubmit={handleVerifyOTP} className="space-y-4">
+                                    <div className="text-center mb-6">
+                                        <p className="text-sm text-white/80">Enter the verification code sent to <strong className="text-white">{email}</strong></p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">6-Digit Code</label>
+                                        <div className="relative group">
+                                            <Input
+                                                value={otp}
+                                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                className="bg-white/10 border-white/20 text-white rounded-xl h-14 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
+                                                placeholder="••••••"
+                                                required
+                                            />
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-[#FFB347]" />
+                                        </div>
+                                    </div>
+                                    
+                                    <Button
+                                        type="submit"
+                                        disabled={loading || otp.length !== 6}
+                                        className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#FFB347] hover:from-[#ff591c] hover:to-[#ffa830] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(255,107,53,0.3)] transition-all hover:-translate-y-0.5"
+                                    >
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
+                                    </Button>
+
+                                    <div className="text-center mt-6 flex flex-col items-center gap-2">
+                                        <p className="text-sm text-white/70">
+                                            Didn&apos;t receive code?
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={handleResendOTP}
+                                            disabled={resendCooldown > 0 || loading}
+                                            className="text-[#FFB347] font-bold text-sm hover:underline disabled:opacity-50 disabled:hover:no-underline flex items-center justify-center gap-2"
+                                        >
+                                            {resendCooldown > 0 ? (
+                                                `Resend in ${resendCooldown}s`
+                                            ) : (
+                                                'Resend OTP'
+                                            )}
+                                        </button>
+                                        <div className="text-[10px] text-white/40 font-mono tracking-wider mt-2 bg-black/20 px-3 py-1 rounded-full">
+                                            Code valid for: {getTimeRemaining()}
+                                        </div>
+                                    </div>
+                                </form>
+                            ) : (
+                                <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
                                 {activeTab === 'register' && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5 peer">
@@ -316,6 +442,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                     )}
                                 </Button>
                             </form>
+                            )}
                         </motion.div>
                     </AnimatePresence>
 

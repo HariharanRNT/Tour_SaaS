@@ -4,7 +4,7 @@ from sqlalchemy import select, func, extract, case, desc, asc, text
 from typing import Optional, List
 from datetime import datetime
 from app.database import get_db
-from app.models import Subscription, SubscriptionPlan, Booking, Package, User, Agent, Payment, PaymentStatus
+from app.models import Subscription, SubscriptionPlan, Booking, Package, User, Agent, Payment, PaymentStatus, BookingStatus
 from app.api.deps import get_current_admin
 
 router = APIRouter()
@@ -336,19 +336,19 @@ async def get_booking_summary(
     total = (await db.execute(total_query)).scalar() or 0
     
     completed = (await db.execute(
-        total_query.filter(Booking.status == 'completed')
+        total_query.filter(Booking.status == BookingStatus.COMPLETED)
     )).scalar() or 0
     
     upcoming = (await db.execute(
-        total_query.filter(Booking.status == 'confirmed')
+        total_query.filter(Booking.status == BookingStatus.CONFIRMED)
     )).scalar() or 0
     
     cancelled = (await db.execute(
-        total_query.filter(Booking.status == 'cancelled')
+        total_query.filter(Booking.status == BookingStatus.CANCELLED)
     )).scalar() or 0
     
     pending = (await db.execute(
-        total_query.filter(Booking.status == 'pending')
+        total_query.filter(Booking.status == BookingStatus.PENDING)
     )).scalar() or 0
     
     return {
@@ -371,8 +371,8 @@ async def get_bookings_by_agent(
         Agent.last_name,
         User.email,
         func.count(Booking.id).label('total_bookings'),
-        func.sum(case((Booking.status == 'completed', 1), else_=0)).label('completed'),
-        func.sum(case((Booking.status == 'cancelled', 1), else_=0)).label('cancelled')
+        func.sum(case((Booking.status == BookingStatus.COMPLETED, 1), else_=0)).label('completed'),
+        func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)).label('cancelled')
     ).join(Booking, Booking.agent_id == Agent.user_id)\
      .join(User, User.id == Agent.user_id)\
      .group_by(Agent.id, Agent.first_name, Agent.last_name, User.email)
@@ -404,8 +404,8 @@ async def get_bookings_by_package(
         Package.id,
         Package.title,
         total_bookings_col,
-        func.sum(case((Booking.status == 'completed', 1), else_=0)).label('completed'),
-        func.sum(case((Booking.status == 'cancelled', 1), else_=0)).label('cancelled')
+        func.sum(case((Booking.status == BookingStatus.COMPLETED, 1), else_=0)).label('completed'),
+        func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)).label('cancelled')
     ).join(Booking, Booking.package_id == Package.id)\
      .group_by(Package.id, Package.title)\
      .order_by(desc(total_bookings_col))\
@@ -433,7 +433,7 @@ async def get_booking_conversion(
     """Get booking conversion rates"""
     total = (await db.execute(select(func.count(Booking.id)))).scalar() or 0
     completed = (await db.execute(
-        select(func.count(Booking.id)).filter(Booking.status == 'completed')
+        select(func.count(Booking.id)).filter(Booking.status == BookingStatus.COMPLETED)
     )).scalar() or 0
     
     return {

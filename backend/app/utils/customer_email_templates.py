@@ -260,6 +260,65 @@ Warm regards,<br>
 📧 {support_email}<br>
 📞 {support_phone}<br>
 """
+    elif template_type == "customer_welcome":
+        subject = f"Welcome to {agency_name}!"
+        message = f"""
+Hi {customer_name},<br><br>
+
+Welcome to <b>{agency_name}</b>! We’re thrilled to have you with us. 🎉<br><br>
+
+Your account has been successfully created. You can now explore our tour packages, plan your trips, and manage your bookings directly from your dashboard.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<b>🚀 What can you do next?</b><br><br>
+<ul>
+    <li><b>Explore Packages:</b> Discover curated travel experiences.</li>
+    <li><b>Plan Your Trip:</b> Customize your itinerary with our AI assistant.</li>
+    <li><b>Manage Bookings:</b> Keep track of all your travel plans in one place.</li>
+</ul><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+If you have any questions or need a hand getting started, our team is always here to help.<br><br>
+
+Happy travels! 🌍<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b><br>
+📧 {support_email}<br>
+📞 {support_phone}<br>
+"""
+    elif template_type == "customer_welcome":
+        subject = f"Welcome to {agency_name}!"
+        message = f"""
+Hi {customer_name},<br><br>
+
+Welcome to <b>{agency_name}</b>! 🎉<br><br>
+
+We’re thrilled to have you join our travel community. Whether you're planning your next big adventure or just exploring, we're here to help you every step of the way.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<b>🌐 Explore Your Dashboard</b><br>
+Log in to your account to:<br>
+<ul>
+    <li>View and manage your bookings</li>
+    <li>Download travel documents & itineraries</li>
+    <li>Discover personalized travel recommendations</li>
+</ul><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+If you have any questions, feel free to reach out to us at {support_email}.<br><br>
+
+Happy travels!<br><br>
+
+Warm regards,<br>
+<b>{agency_name} Team</b><br>
+📧 {support_email}<br>
+📞 {support_phone}<br>
+"""
     elif template_type == "refund_confirmed":
         refund_amount = data.get("refund_amount", "₹0")
         ref_id = data.get("reference_id", "N/A")
@@ -290,6 +349,47 @@ Warm regards,<br>
 <b>{agency_name} Team</b><br>
 📧 {support_email}<br>
 📞 {support_phone}<br>
+"""
+    elif template_type == "booking_success_consolidated":
+        subject = f"Booking Confirmed! Your Trip to {package_name} is All Set 🎉"
+        message = f"""
+<div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="color: #0f172a; margin-bottom: 8px;">Booking Confirmed!</h1>
+    <p style="color: #64748b; font-size: 16px; margin-top: 0;">Hi {customer_name}, your adventure is ready to begin.</p>
+</div>
+
+<div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+    <h3 style="margin-top: 0; color: #0f172a; font-size: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Trip Summary</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px 0; color: #64748b;">Booking Reference:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; color: #0f172a;">{ref_id}</td></tr>
+        <tr><td style="padding: 8px 0; color: #64748b;">Destination:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; color: #0f172a;">{package_name}</td></tr>
+        <tr><td style="padding: 8px 0; color: #64748b;">Travel Date:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; color: #0f172a;">{travel_date}</td></tr>
+        <tr><td style="padding: 8px 0; color: #64748b;">Travelers:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; color: #0f172a;">{travelers} Adults</td></tr>
+    </table>
+</div>
+
+<div style="background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #bbf7d0;">
+    <h3 style="margin-top: 0; color: #166534; font-size: 18px; border-bottom: 1px solid #bbf7d0; padding-bottom: 12px;">Payment Received</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px 0; color: #166534;">Amount Paid:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; color: #15803d; font-size: 20px;">₹{total_amount}</td></tr>
+        <tr><td style="padding: 8px 0; color: #166534;">Payment Method:</td><td style="padding: 8px 0; text-align: right; color: #166534;">{payment_method}</td></tr>
+    </table>
+</div>
+
+<div style="padding: 0 10px; margin-bottom: 24px;">
+    <h3 style="color: #0f172a; font-size: 18px;">What's Included?</h3>
+    <p style="color: #475569; line-height: 1.6;">We have attached your <b>Official Invoice</b> and <b>Detailed Itinerary</b> to this email. Please keep them handy during your travels.</p>
+    <ul style="color: #475569; padding-left: 20px;">
+        <li>Day-wise sightseeing and activities</li>
+        <li>Hotel and transfer details</li>
+        <li>Price breakdown and tax information</li>
+    </ul>
+</div>
+
+<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+    <p style="color: #64748b; font-size: 14px;">If you have any questions, our support team at <b>{agency_name}</b> is here to help.</p>
+    <p style="color: #0f172a; font-weight: bold;">📧 {support_email} | 📞 {support_phone}</p>
+</div>
 """
     else:
         subject = "Notification"

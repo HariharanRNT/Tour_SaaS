@@ -10,11 +10,10 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     @staticmethod
-    async def send_email(to_email: str, subject: str, body: str, attachment_bytes: bytes = None, attachment_filename: str = None, smtp_config: dict = None):
+    async def send_email(to_email: str, subject: str, body: str, attachments: list = None, smtp_config: dict = None):
         """
-        Sends an email with an optional attachment.
-        If smtp_config is provided, uses those credentials (SMTP). 
-        Otherwise checks settings.EMAIL_PROVIDER.
+        Sends an email with optional multiple attachments.
+        attachments: list of dicts like {"bytes": b"", "filename": ""}
         """
         # 1. Determine Provider
         provider = (settings.EMAIL_PROVIDER or "smtp").lower()
@@ -24,12 +23,12 @@ class EmailService:
             provider = "smtp"
 
         if provider == "sendgrid" and settings.SENDGRID_API_KEY:
-            return await EmailService._send_via_sendgrid(to_email, subject, body, attachment_bytes, attachment_filename)
+            return await EmailService._send_via_sendgrid(to_email, subject, body, attachments)
         else:
-            return await EmailService._send_via_smtp(to_email, subject, body, attachment_bytes, attachment_filename, smtp_config)
+            return await EmailService._send_via_smtp(to_email, subject, body, attachments, smtp_config)
 
     @staticmethod
-    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachment_bytes: bytes = None, attachment_filename: str = None):
+    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachments: list = None):
         import sendgrid
         from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType, Disposition
         import base64
@@ -42,15 +41,19 @@ class EmailService:
         content = Content("text/html", body)
         mail = Mail(from_email, to_email_obj, subject, content)
 
-        if attachment_bytes and attachment_filename:
-            encoded_file = base64.b64encode(attachment_bytes).decode()
-            attachedFile = Attachment(
-                FileContent(encoded_file),
-                FileName(attachment_filename),
-                FileType('application/pdf'),
-                Disposition('attachment')
-            )
-            mail.add_attachment(attachedFile)
+        if attachments:
+            for attach in attachments:
+                a_bytes = attach.get("bytes")
+                a_filename = attach.get("filename")
+                if a_bytes and a_filename:
+                    encoded_file = base64.b64encode(a_bytes).decode()
+                    attachedFile = Attachment(
+                        FileContent(encoded_file),
+                        FileName(a_filename),
+                        FileType('application/pdf'),
+                        Disposition('attachment')
+                    )
+                    mail.add_attachment(attachedFile)
 
         try:
             response = sg.send(mail)
@@ -65,8 +68,8 @@ class EmailService:
             return False
 
     @staticmethod
-    async def _send_via_smtp(to_email, subject, body, attachment_bytes, attachment_filename, smtp_config=None):
-        """Sends email via SMTP with attachment support using robust MIMEMultipart structure"""
+    async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None):
+        """Sends email via SMTP with multiple attachment support"""
         
         # Determine SMTP settings (Agent vs System)
         if smtp_config:
@@ -119,14 +122,18 @@ class EmailService:
         
         message.attach(msg_body)
 
-        if attachment_bytes and attachment_filename:
-            logger.info(f"Attaching file {attachment_filename} ({len(attachment_bytes)} bytes)")
-            part = MIMEApplication(attachment_bytes, _subtype="pdf")
-            part.add_header('Content-Disposition', 'attachment', filename=attachment_filename)
-            message.attach(part)
+        if attachments:
+            for attach in attachments:
+                a_bytes = attach.get("bytes")
+                a_filename = attach.get("filename")
+                if a_bytes and a_filename:
+                    logger.info(f"Attaching file {a_filename} ({len(a_bytes)} bytes)")
+                    part = MIMEApplication(a_bytes, _subtype="pdf")
+                    part.add_header('Content-Disposition', 'attachment', filename=a_filename)
+                    message.attach(part)
 
         try:
-            logger.info(f"Attempting to send email to {to_email} via SMTP ({host}:{port}, use_tls={use_tls}, start_tls={start_tls})")
+            logger.info(f"Attempting to send email to {to_email} via SMTP ({host}:{port}, user={user}, use_tls={use_tls}, start_tls={start_tls})")
             
             # Ensure message is sent
             await aiosmtplib.send(
@@ -140,7 +147,9 @@ class EmailService:
                 timeout=20
             )
             logger.info(f"Email sent successfully to {to_email} via SMTP")
+            print(f"DEBUG EMAIL: Sent successfully to {to_email}")
             return True
         except Exception as e:
             logger.error(f"Failed to send email via SMTP: {e}", exc_info=True)
+            print(f"DEBUG EMAIL ERROR: {e}")
             return False

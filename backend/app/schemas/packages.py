@@ -15,9 +15,9 @@ class CancellationRule(BaseModel):
 
 class PackageStatusEnum(str, Enum):
     """Package status enum for API"""
-    DRAFT = "draft"
-    PUBLISHED = "published"
-    ARCHIVED = "archived"
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
 
 
 class PackageBase(BaseModel):

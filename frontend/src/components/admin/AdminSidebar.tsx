@@ -106,10 +106,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 className
             )}
             style={{
-                background: 'var(--sidebar-bg)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                borderRightColor: 'rgba(255,255,255,0.12)' }}
+                background: 'rgba(255, 255, 255, 0.35)',
+                backdropFilter: 'blur(32px)',
+                WebkitBackdropFilter: 'blur(32px)',
+                borderRight: '1px solid rgba(255, 250, 245, 0.2)' }}
         >
             {/* Subtle inner glow on right edge */}
             <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--primary-light)]/40 to-transparent" />
@@ -118,15 +118,16 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
             <div className="h-20 flex px-5 items-center justify-between border-b border-white/30 shrink-0">
                 {!collapsed && (
                     <div className="flex-1 flex flex-col min-w-0 pr-2">
-                        <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.10)' }}>
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--primary)' }}>
+                        <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-white/40 shadow-xl transition-all hover:scale-[1.02] relative group" style={{ background: 'linear-gradient(135deg, #FF8C5A, #E06830)', boxShadow: '0 4px 15px rgba(224, 104, 48, 0.35)' }}>
+                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white/20 backdrop-blur-sm shadow-inner">
                                 <Briefcase className="w-5 h-5 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <span className="font-bold text-white tracking-tight leading-tight block truncate text-[15px]">
+                                <span className="font-bold text-white tracking-tight leading-tight block truncate text-[14px]">
                                     {userRole === 'agent' ? 'Agent Portal' : 'Admin Portal'}
                                 </span>
-                                <span className="text-[10px] uppercase tracking-wider text-slate-300 font-medium block truncate">
+                                <span className="text-[9px] uppercase tracking-widest text-white/80 font-black block truncate">
                                     Tour Operations
                                 </span>
                             </div>
@@ -137,8 +138,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 {collapsed && (
                     <div className="w-full flex justify-center">
                         <div className="relative group">
-                            <div className="absolute inset-0 bg-[var(--primary)] blur-lg opacity-30 group-hover:opacity-50 transition-opacity rounded-xl" />
-                            <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-2.5 rounded-xl relative group-hover:scale-105 transition-transform duration-300">
+                            <div className="absolute inset-0 bg-[#FF8C5A] blur-lg opacity-40 group-hover:opacity-60 transition-opacity rounded-xl" />
+                            <div className="bg-gradient-to-br from-[#FF8C5A] to-[#E06830] p-2.5 rounded-xl border border-white/20 relative group-hover:scale-110 transition-transform duration-300 shadow-xl">
                                 <Plane className="h-5 w-5 text-white" />
                             </div>
                         </div>
@@ -171,19 +172,19 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
-                                            "flex items-center text-[14px] transition-all duration-200 relative group gap-[10px]",
+                                            "flex items-center text-[13px] transition-all duration-300 relative group gap-[12px]",
                                             isActive
                                                 ? "text-white"
-                                                : "hover:bg-white/10 hover:text-white",
-                                            collapsed ? "justify-center p-3 rounded-xl mx-3 my-1" : "px-[16px] py-[10px] rounded-[10px] mx-3 my-1"
+                                                : "hover:bg-white/5 hover:text-white",
+                                            collapsed ? "justify-center p-3 rounded-xl mx-3 my-1.5" : "px-[16px] py-[10.5px] rounded-full mx-3 my-1.5"
                                         )}
                                         style={isActive ? {
                                             color: '#ffffff',
-                                            background: 'linear-gradient(135deg, var(--primary), var(--gradient-mid))',
-                                            borderLeft: collapsed ? 'none' : '3px solid rgba(255,255,255,0.80)',
-                                            fontWeight: 600,
-                                            boxShadow: '0 4px 16px var(--primary-glow)' } : {
-                                            color: 'rgba(255, 255, 255, 0.70)',
+                                            background: 'linear-gradient(135deg, rgba(255, 140, 90, 0.25), rgba(255, 179, 138, 0.15))',
+                                            border: '1px solid rgba(255, 140, 90, 0.3)',
+                                            fontWeight: 700,
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' } : {
+                                            color: 'rgba(60, 40, 30, 0.65)',
                                             fontWeight: 500 }}
                                         title={collapsed ? item.label : undefined}
                                     >
@@ -192,24 +193,33 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                             className={cn(
                                                 "h-5 w-5 transition-all duration-300 flex-shrink-0",
                                                 isActive
-                                                    ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] scale-110"
+                                                    ? "text-[#FF8C5A] drop-shadow-[0_0_8px_rgba(255,140,90,0.4)] scale-110"
                                                     : "group-hover:text-white group-hover:scale-110"
                                             )}
                                             style={isActive ? {
-                                                fill: 'rgba(255, 255, 255, 0.2)', // Subtle fill for active outline icons
-                                                strokeWidth: 2.5 // Thicker for active state
+                                                strokeWidth: 2.5
                                             } : {
-                                                color: 'rgba(255,255,255,0.60)',
-                                                strokeWidth: 2 // Standard outline for inactive
+                                                color: 'rgba(255,255,255,0.50)',
+                                                strokeWidth: 2
                                             }}
                                         />
 
-                                        {/* Label */}
-                                        {!collapsed && <span>{item.label}</span>}
+                                        {/* Label & Indicator */}
+                                        {!collapsed && (
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <div className={cn(
+                                                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                                    isActive 
+                                                        ? "bg-[#FF8C5A] shadow-[0_0_8px_rgba(255,140,90,0.8)] scale-125" 
+                                                        : "bg-black/10"
+                                                )} />
+                                                <span className="tracking-tight">{item.label}</span>
+                                            </div>
+                                        )}
 
                                         {/* Hover glow bubble for inactive */}
                                         {!isActive && (
-                                            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/10 pointer-events-none" />
+                                            <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[#FF8C5A]/5 pointer-events-none border border-transparent group-hover:border-[#FF8C5A]/10" />
                                         )}
                                     </Link>
                                 )

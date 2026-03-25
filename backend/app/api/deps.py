@@ -58,9 +58,20 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     
     if user is None:
+        print(f"DEBUG AUTH: User not found in database for ID: {user_id}")
+        # Verify if UUID format issue?
+        try:
+             import uuid
+             u_uuid = uuid.UUID(user_id)
+             print(f"DEBUG AUTH: Valid UUID format: {u_uuid}")
+        except:
+             print(f"DEBUG AUTH: INVALID UUID format for ID: {user_id}")
         raise credentials_exception
     
+    print(f"DEBUG AUTH: User found: {user.email}")
+    
     if not user.is_active:
+        print(f"DEBUG AUTH: User {user.email} is inactive")
         raise HTTPException(status_code=400, detail="Inactive user")
     
     return user

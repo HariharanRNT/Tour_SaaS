@@ -377,7 +377,7 @@ export default function Home() {
                                             whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true }}
                                             transition={{ delay: idx * 0.1 }}
-                                            onClick={() => router.push(`/plan-trip/${pkg.slug}?mode=preview`)}
+                                            onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(pkg.destination)}&packageId=${pkg.id}&openPopup=true`)}
                                             className="relative aspect-[4/5] md:aspect-[4/3] rounded-[32px] overflow-hidden cursor-pointer group shadow-2xl"
                                         >
                                             <img

@@ -75,6 +75,18 @@ function PlanTripContent() {
     const [searching, setSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [inputValue, setInputValue] = useState('')
+    const [placeholderText, setPlaceholderText] = useState('Try Chennai...')
+
+    // Cycle placeholders
+    useEffect(() => {
+        const placeholders = ['Try Chennai...', 'Try Kochi...', 'Try Manali...', 'Search an experience you love...']
+        let i = 0
+        const interval = setInterval(() => {
+            i = (i + 1) % placeholders.length
+            setPlaceholderText(placeholders[i])
+        }, 2500)
+        return () => clearInterval(interval)
+    }, [])
 
     // Read destination and style from URL
     useEffect(() => {
@@ -92,6 +104,7 @@ function PlanTripContent() {
             setHasSearched(true)
         }
     }, [searchParams])
+
     const [suggestions, setSuggestions] = useState<{ label: string, value: string, type: string }[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -402,6 +415,21 @@ function PlanTripContent() {
         setSelectedPackageForBooking(pkg);
         setIsBookingModalOpen(true);
     }
+
+    // Handle auto-open for popular packages from home page
+    const [autoOpenAttempted, setAutoOpenAttempted] = useState(false)
+    useEffect(() => {
+        const pkgId = searchParams.get('packageId')
+        const openPopup = searchParams.get('openPopup') === 'true'
+
+        if (pkgId && openPopup && !autoOpenAttempted && packages.length > 0 && !searching) {
+            const pkg = packages.find(p => p.id === pkgId)
+            if (pkg) {
+                handleContinueToBook(pkg)
+                setAutoOpenAttempted(true)
+            }
+        }
+    }, [searchParams, packages, searching, autoOpenAttempted, handleContinueToBook])
 
     // Sub-components
     const FilterPanel = () => {
@@ -744,18 +772,18 @@ function PlanTripContent() {
                     <div className="relative overflow-visible flex items-center justify-center min-h-[70vh] md:min-h-[80vh] -mt-16 noise-overlay">
                         <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=2021&q=80")` }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#EA6E28]/30 via-transparent to-transparent mix-blend-multiply" />
-                            <div className="absolute inset-0 bg-black/20" />
+                            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%)' }} />
+                            <div className="absolute inset-0 mix-blend-overlay" style={{ background: 'var(--primary)', opacity: 0.10 }} />
                         </motion.div>
 
                         <div className="container mx-auto px-4 relative z-10 text-center space-y-8 w-full max-w-5xl pt-24 md:pt-16">
                             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pt-8">
-                                <h1 className="text-4xl md:text-7xl font-bold font-display text-white leading-[1.1] drop-shadow-2xl mb-6 tracking-tight">
+                                <h1 className="text-4xl md:text-[72px] font-bold font-display text-white leading-[1.1] drop-shadow-2xl mb-6 tracking-tight" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
                                     Where do you <br />
-                                    <span className="shimmer-text italic font-medium !text-inherit">want</span> to go?
+                                    <span className="italic font-medium" style={{ color: 'var(--primary-light)' }}>want</span> to go?
                                 </h1>
-                                <p className="text-lg md:text-xl text-blue-50 font-light drop-shadow-lg max-w-2xl mx-auto opacity-90">
-                                    Search for a destination, package name, or an experience you love.
+                                <p className="text-lg md:text-xl text-white font-light max-w-2xl mx-auto" style={{ opacity: 0.8, textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
+                                    Search for a destination, package name, or an experience you love
                                 </p>
                             </motion.div>
 
@@ -766,14 +794,14 @@ function PlanTripContent() {
                                 className="relative z-40 max-w-4xl mx-auto w-full"
                                 ref={searchRef}
                             >
-                                <div className="glass-search p-2 md:p-3 shadow-[0_20px_50px_var(--primary-glow)] rounded-full focus-within:ring-[4px] focus-within:ring-[var(--primary)]/30 transition-all duration-300">
-                                    <div className="bg-white/95 rounded-full overflow-hidden p-1.5 flex flex-col md:flex-row items-center gap-2 relative shadow-[inset_0_0_0_2px_transparent] focus-within:shadow-[inset_0_0_0_2px_var(--primary-glow)] transition-shadow">
+                                <div className="p-2 md:p-3 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderRadius: '9999px', boxShadow: '0 8px 40px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.95)' }}>
+                                    <div className="bg-transparent rounded-full overflow-hidden flex flex-col md:flex-row items-center gap-2 relative transition-shadow">
                                         <div className="flex-1 flex items-center px-6 py-2 group w-full h-[52px] md:h-[64px]">
-                                            <Search className="h-5 w-5 text-[var(--primary)] mr-3 group-focus-within:scale-110 transition-transform" />
+                                            <Search className="h-5 w-5 mr-3 group-focus-within:scale-110 transition-transform" style={{ color: 'var(--primary)' }} />
                                             <input
                                                 type="text"
-                                                placeholder="Search city, country, or package..."
-                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-gray-900 font-bold placeholder:text-gray-400 text-lg"
+                                                placeholder={placeholderText}
+                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-gray-900 font-bold placeholder:text-gray-400 text-lg transition-all duration-500"
                                                 value={inputValue}
                                                 onChange={(e) => {
                                                     setInputValue(e.target.value)
@@ -786,7 +814,8 @@ function PlanTripContent() {
                                         </div>
                                         <Button
                                             onClick={() => handleSearchSubmit()}
-                                            className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white px-10 py-6 md:py-7 rounded-full text-lg font-black shadow-[0_4px_20px_var(--primary-glow)] transition-all active:scale-95 w-full md:w-auto hover:shadow-[0_4px_30px_var(--primary-glow)] h-[52px] md:h-[64px] flex items-center shrink-0"
+                                            className="text-white px-10 py-6 md:py-7 rounded-full text-lg font-black transition-transform duration-200 active:scale-95 w-full md:w-auto h-[52px] md:h-[64px] flex items-center shrink-0 hover:-translate-y-[1px]"
+                                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary))', boxShadow: '0 6px 24px var(--primary-glow)' }}
                                         >
                                             Explore Now
                                         </Button>
@@ -828,13 +857,21 @@ function PlanTripContent() {
                                 {!(showSuggestions || inputValue.length > 0) && (
                                     <div className="space-y-6">
                                         <div className="mt-8 flex flex-wrap justify-center gap-3">
-                                            {['Adventure', 'Beach', 'Honeymoon', 'Family'].map((tag: string) => (
+                                            {[
+                                                { label: 'Adventure', icon: '🏔' },
+                                                { label: 'Beach', icon: '🏖' },
+                                                { label: 'Honeymoon', icon: '💑' },
+                                                { label: 'Family', icon: '👨‍👩‍👧' }
+                                            ].map((tag) => (
                                                 <button
-                                                    key={tag}
-                                                    onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(tag)}`)}
-                                                    className="px-8 py-3 rounded-full border border-white/40 bg-black/80 backdrop-blur-xl text-white font-black text-xs hover:bg-[var(--primary)] transition-all hover:-translate-y-1 shadow-2xl tracking-[0.1em] uppercase ring-1 ring-white/20"
+                                                    key={tag.label}
+                                                    onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(tag.label)}`)}
+                                                    className="px-6 py-2.5 rounded-full text-white font-bold text-sm transition-all hover:-translate-y-[2px] tracking-[0.05em] flex items-center gap-2 group border-[1px]"
+                                                    style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', borderColor: 'rgba(255,255,255,0.35)' }}
+                                                    onMouseOver={(e) => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                                                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
                                                 >
-                                                    {tag}
+                                                    <span className="text-base">{tag.icon}</span> {tag.label}
                                                 </button>
                                             ))}
                                         </div>
@@ -844,18 +881,19 @@ function PlanTripContent() {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 1, duration: 1 }}
-                                            className="flex items-center justify-center gap-3 text-white/80 text-sm font-medium"
+                                            className="flex items-center justify-center gap-4 text-white font-medium mx-auto w-max"
+                                            style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', borderRadius: '50px', padding: '8px 20px', border: '1px solid rgba(255,255,255,0.2)' }}
                                         >
                                             <div className="flex -space-x-2">
                                                 {[1, 2, 3].map(i => (
-                                                    <div key={i} className="w-6 h-6 rounded-full border-2 border-[var(--primary)] bg-orange-200 overflow-hidden">
-                                                        <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" className="w-full h-full object-cover" />
+                                                    <div key={i} className="w-7 h-7 rounded-full border-[2px] border-white overflow-hidden shadow-sm">
+                                                        <img src={`https://i.pravatar.cc/100?img=${i + 14}`} alt="user" className="w-full h-full object-cover" />
                                                     </div>
                                                 ))}
                                             </div>
-                                            <p className="drop-shadow-sm flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                                <span className="font-bold text-white">480+</span> trips planned this week
+                                            <p className="flex items-center gap-2 text-sm">
+                                                <span className="font-bold" style={{ color: 'var(--primary-light)' }}>480+</span> trips planned this week
+                                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)] ml-1" />
                                             </p>
                                         </motion.div>
                                     </div>
@@ -870,11 +908,12 @@ function PlanTripContent() {
                     {/* Content Section */}
                     <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <section className="relative py-12 px-8 bg-white/10 backdrop-blur-md rounded-[48px] shadow-[inset_0_4px_40px_var(--primary-glow)] border border-white/20">
+                        <div className="w-full h-20 bg-gradient-to-b from-transparent to-[var(--primary-soft)] opacity-20 pointer-events-none mt-4 -mb-12" />
+                        <section className="relative py-12 px-8 rounded-[28px] border border-[var(--primary)]/15" style={{ background: 'linear-gradient(160deg, var(--primary-soft) 0%, transparent 100%)' }}>
                             <div className="container mx-auto max-w-7xl">
-                                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                     <div>
-                                        <h2 className="text-2xl font-bold text-[#5C2500] font-display mb-2">
+                                        <h2 className="text-[34px] font-semibold text-[#1A1A1A] font-display mb-2 leading-tight">
                                             Browse by Trip Style
                                         </h2>
                                         <p className="text-sm text-[#8B5030] font-medium opacity-80 max-w-xl">
@@ -882,10 +921,10 @@ function PlanTripContent() {
                                         </p>
                                     </div>
                                     <div className="hidden md:flex gap-3">
-                                        <button className="w-9 h-9 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--primary-glow)' }}>
                                             <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
                                         </button>
-                                        <button className="w-9 h-9 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:bg-[#E85B1A] transition-all shadow-lg hover:scale-105 active:scale-95 group">
+                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--primary-glow)' }}>
                                             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </div>
@@ -893,10 +932,10 @@ function PlanTripContent() {
 
                                 <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:grid md:grid-cols-4 gap-6 scrollbar-hide snap-x">
                                     {[
-                                        { title: 'Adventure', icon_name: 'Mountain', description: 'For the thrill-seekers' },
-                                        { title: 'Beach', icon_name: 'Waves', description: 'Sun, sand and serenity' },
-                                        { title: 'Honeymoon', icon_name: 'Heart', description: 'Romantic getaways' },
-                                        { title: 'Family', icon_name: 'Users', description: 'Memories for all ages' }
+                                        { title: 'Adventure', icon_name: 'Mountain', description: 'For the thrill-seekers', bg: '#FFF4EE', iconBg: '#FFE8DC' },
+                                        { title: 'Beach', icon_name: 'Waves', description: 'Sun, sand and serenity', bg: '#EEF8FF', iconBg: '#DAEFFE' },
+                                        { title: 'Honeymoon', icon_name: 'Heart', description: 'Romantic getaways', bg: '#FFF0F5', iconBg: '#FFE0EC' },
+                                        { title: 'Family', icon_name: 'Users', description: 'Memories for all ages', bg: '#F0FAF4', iconBg: '#D8F3E4' }
                                     ].map((item: any) => {
                                         const IconComponent = (() => {
                                             switch (item.icon_name) {
@@ -917,13 +956,14 @@ function PlanTripContent() {
                                             <div
                                                 key={item.title}
                                                 onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(item.title)}`)}
-                                                className="min-w-[220px] md:min-w-0 glass-trip-card p-4 text-center cursor-pointer flex flex-col items-center group transition-all duration-500 hover:shadow-[0_20px_40px_var(--primary-glow)] snap-start"
+                                                className="min-w-[220px] md:min-w-0 p-6 rounded-3xl text-center cursor-pointer flex flex-col items-center group transition-all duration-300 hover:-translate-y-[6px] snap-start border-b-[3px] border-transparent hover:border-[var(--primary)] hover:shadow-[0_12px_32px_var(--primary-glow)]"
+                                                style={{ backgroundColor: item.bg }}
                                             >
-                                                <div className="w-10 h-10 bg-[var(--primary-soft)]/60 rounded-xl flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:bg-[var(--primary)]/10 transition-all duration-500 ring-1 ring-orange-100 group-hover:ring-orange-200">
-                                                    <IconComponent className="h-5 w-5 text-[var(--primary)]" />
+                                                <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mb-5 transition-colors duration-300 group-hover:brightness-95" style={{ backgroundColor: item.iconBg }}>
+                                                    <IconComponent className="h-6 w-6" style={{ color: 'var(--primary)' }} />
                                                 </div>
-                                                <h3 className="text-base font-bold text-[#6B3010] tracking-tight mb-1">{item.title}</h3>
-                                                <p className="text-xs font-medium text-[#8B5030]/60 uppercase tracking-widest">{item.description}</p>
+                                                <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight mb-2">{item.title}</h3>
+                                                <p className="text-xs font-bold text-[#8B5030]/50 uppercase tracking-widest">{item.description}</p>
                                             </div>
                                         );
                                     })}
@@ -934,23 +974,23 @@ function PlanTripContent() {
                         {/* Popular Destinations */}
                         {popularDestinations.length >= 0 && (
                             <section className="pt-8 pb-12 container mx-auto max-w-7xl">
-                                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0">
+                                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0 mt-12">
                                     <div>
-                                        <h2 className="text-3xl md:text-5xl font-bold text-[#5C2500] font-display mb-4">
+                                        <h2 className="text-[48px] md:text-[52px] font-bold text-[#1A1A1A] font-display mb-3 leading-tight">
                                             Popular Destinations
                                         </h2>
-                                        <p className="text-[#8B5030] font-medium opacity-80 max-w-xl">
+                                        <p className="text-[15px] text-[#6B6B6B] font-medium max-w-[520px]">
                                             Join thousands of travelers exploring these top-rated spots this season.
                                         </p>
                                     </div>
-                                    <button className="text-[var(--primary)] font-bold text-sm tracking-widest uppercase flex items-center gap-2 group">
+                                    <button className="text-[var(--primary)] font-bold text-sm tracking-widest uppercase flex items-center gap-2 group hover:underline transition-all hover:underline-offset-4">
                                         View All Destinations
                                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4 md:px-0">
-                                    {popularDestinations.slice(0, 6).map((dest, idx) => {
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 px-4 md:px-0">
+                                    {popularDestinations.slice(0, 5).map((dest, idx) => {
                                         // Fallback Unsplash images when no package image is set
                                         const fallbackImages = [
                                             "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
@@ -960,37 +1000,40 @@ function PlanTripContent() {
                                         const cardImage = dest.image_url || fallbackImages[idx % fallbackImages.length]
                                         const city = dest.name
                                         const pkgCount = dest.pkg_count || 1
+                                        const colSpan = idx < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
+
                                         return (
                                             <div
                                                 key={city}
                                                 onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(city)}`)}
-                                                className="relative aspect-[4/3] rounded-[40px] overflow-hidden cursor-pointer group shadow-2xl border border-white/20"
+                                                className={`relative aspect-[4/3] rounded-[20px] overflow-hidden cursor-pointer group shadow-lg ${colSpan}`}
                                             >
                                                 <Image
                                                     src={cardImage}
                                                     alt={city}
                                                     fill
                                                     unoptimized={!!dest.image_url}
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-500 will-change-transform"
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                                                <div className="absolute inset-0 transition-opacity duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)' }} />
 
-                                                <div className="absolute top-6 right-6 flex flex-col gap-2">
-                                                    <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
+                                                <div className="absolute top-4 right-4 flex flex-col gap-2">
+                                                    <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold px-3 py-1 flex items-center gap-1.5 rounded-full shadow-sm">
                                                         <span className="text-yellow-400">★</span> 4.8
                                                     </Badge>
-                                                    <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
+                                                    <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full shadow-sm" style={{ boxShadow: '0 2px 8px var(--primary-glow)' }}>
                                                         {pkgCount}+ Packages
                                                     </Badge>
                                                 </div>
 
-                                                <div className="absolute bottom-8 left-8 right-8">
-                                                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-3 font-display drop-shadow-lg">{city}</h3>
-                                                    <div className="relative inline-block group/link">
-                                                        <p className="text-blue-50 text-sm font-bold flex items-center gap-2 uppercase tracking-widest opacity-90 group-hover:opacity-100">
-                                                            Explore packages
-                                                        </p>
-                                                        <div className="absolute -bottom-1 left-0 w-8 h-[2px] bg-[var(--primary)] group-hover/link:w-full transition-all duration-300"></div>
+                                                <div className="absolute bottom-6 left-6 right-6 flex flex-col items-start overflow-hidden">
+                                                    <h3 className="font-bold text-white font-display leading-tight mb-2 transition-transform duration-300 group-hover:-translate-y-1" style={{ fontSize: '28px', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                                                        {city}
+                                                    </h3>
+                                                    <div className="translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out flex items-center h-8">
+                                                        <span className="bg-[var(--primary)] text-white px-5 py-2 rounded-full font-bold text-sm tracking-wide shadow-lg flex items-center gap-2">
+                                                            EXPLORE PACKAGES <ArrowRight className="h-4 w-4" />
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1000,12 +1043,8 @@ function PlanTripContent() {
                             </section>
                         )}
 
-                        {/* Footer Wave Transition */}
-                        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform rotate-180 translate-y-[99%] z-[5]">
-                            <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(110%+1.3px)] h-[70px] fill-[#1A0D05]">
-                                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,-1.14,1200,0.43V0Z" className="shape-fill"></path>
-                            </svg>
-                        </div>
+                        {/* Footer Gradient Buffer Strip - replaces harsh wave */}
+                        <div className="absolute bottom-0 left-0 w-full h-[80px]" style={{ background: 'linear-gradient(to bottom, transparent, #111111)' }} />
                     </div>
                 </>
             )}

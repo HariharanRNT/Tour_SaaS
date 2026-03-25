@@ -666,12 +666,12 @@
 
   /* Glass Select Dropdowns */
   .glass-select-content {
-    background: rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
     border-radius: 16px;
-    box-shadow: 0 8px 32px var(--primary-glow);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1) !important;
   }
 
   @keyframes selectFadeDown {
@@ -697,14 +697,17 @@
   }
   
   .glass-select-item[data-highlighted] {
-    background-color: var(--primary-glow) !important;
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(10px);
     color: var(--primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
   }
 
   .glass-select-item[data-state="checked"] {
-    background-color: var(--primary-glow) !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
     color: var(--primary) !important;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .glass-select-viewport::-webkit-scrollbar {

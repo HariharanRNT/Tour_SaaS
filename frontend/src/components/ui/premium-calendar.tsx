@@ -35,15 +35,15 @@ function PremiumCalendar({
     }
 
     return (
-        <div className={cn("p-4 glass-calendar-container", className)}>
+        <div className={cn("p-3 glass-calendar-container", className)}>
             <style jsx global>{`
         .glass-calendar-container {
-          background: rgba(255, 255, 255, 0.1) !important;
-          backdrop-filter: blur(25px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.2) !important;
-          border-radius: 32px;
-          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+          background: rgba(255, 255, 255, 0.65) !important;
+          backdrop-filter: blur(20px) saturate(160%) !important;
+          -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+          border: 1px solid rgba(255, 255, 255, 0.5) !important;
+          border-radius: 24px;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
           width: fit-content;
           position: relative;
           overflow: hidden;
@@ -89,9 +89,9 @@ function PremiumCalendar({
            background: var(--primary-glow);
         }
 
-        /* Valid selectable zone highlight */
+        /* Valid selectable zone highlight - removed orange tint */
         .rdp-day:not(.rdp-day_disabled):not(.rdp-day_outside) {
-            background-color: var(--primary-glow);
+            background-color: transparent;
         }
         
         .rdp-day_selected {
@@ -121,26 +121,26 @@ function PremiumCalendar({
                 disabled={isDateDisabled}
                 className={cn(mode_type === "upcoming" ? "mode-upcoming" : "mode-completed")}
                 classNames={{
-                    months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                    month: "space-y-4",
-                    caption: "flex justify-center pt-1 relative items-center mb-4",
-                    caption_label: "text-base font-black text-[#4A2B1D]",
+                    months: "flex flex-col sm:flex-row space-y-3 sm:space-x-4 sm:space-y-0",
+                    month: "space-y-3",
+                    caption: "flex justify-center pt-0 relative items-center mb-2",
+                    caption_label: "text-[13.5px] font-black text-slate-800",
                     nav: "space-x-1 flex items-center",
-                    nav_button: "h-8 w-8 bg-white/20 backdrop-blur-md border border-white/30 p-0 rounded-full flex items-center justify-center text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all",
-                    nav_button_previous: "absolute left-1",
-                    nav_button_next: "absolute right-1",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex mb-2",
-                    head_cell: "text-[var(--primary-glow)] text-[11px] font-semibold uppercase tracking-widest text-center w-9 py-2 border-b border-white/20",
-                    row: "flex w-full mt-1",
-                    cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                    nav_button: "h-7 w-7 bg-white/40 backdrop-blur-md border border-white/50 p-0 rounded-full flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-all shadow-sm",
+                    nav_button_previous: "absolute left-0.5",
+                    nav_button_next: "absolute right-0.5",
+                    table: "w-full border-collapse space-y-0.5",
+                    head_row: "flex mb-1.5",
+                    head_cell: "text-slate-400 text-[10px] font-bold uppercase tracking-widest text-center w-8 py-1.5 border-b border-white/20",
+                    row: "flex w-full mt-0.5",
+                    cell: "h-8 w-8 text-center text-[12.5px] p-0 relative focus-within:relative focus-within:z-20",
                     day: cn(
-                        "h-9 w-9 p-0 font-medium text-[#2D1A0E] rounded-full hover:bg-[var(--primary-glow)] transition-all flex items-center justify-center"
+                        "h-8 w-8 p-0 font-bold text-slate-700 rounded-full hover:bg-orange-500/10 hover:text-orange-600 transition-all flex items-center justify-center"
                     ),
                     day_selected: "day-selected", // Handled in CSS
                     day_today: "day-today", // Handled in CSS
-                    day_outside: "text-[#B48060]/40 opacity-50",
-                    day_disabled: "opacity-30 cursor-not-allowed",
+                    day_outside: "text-slate-400 opacity-30",
+                    day_disabled: "opacity-20 cursor-not-allowed",
                     ...classNames }}
                 components={{
                     IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
@@ -152,31 +152,31 @@ function PremiumCalendar({
             />
 
             {/* Footer / Legend / Controls */}
-            <div className="mt-6 pt-6 border-t border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-4">
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-[var(--primary)]" />
-                            <span className="text-[10px] font-bold text-[#4A2B1D]/60 uppercase tracking-wider">Available</span>
+            <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex gap-3">
+                        <div className="flex items-center gap-1">
+                            <div className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
+                            <span className="text-[9px] font-bold text-[#4A2B1D]/60 uppercase tracking-wider">Available</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-slate-400" />
-                            <span className="text-[10px] font-bold text-[#4A2B1D]/60 uppercase tracking-wider">Restricted</span>
+                        <div className="flex items-center gap-1">
+                            <div className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                            <span className="text-[9px] font-bold text-[#4A2B1D]/60 uppercase tracking-wider">Restricted</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-2">
                     <Button
                         variant="ghost"
                         onClick={onClear}
-                        className="flex-1 h-9 rounded-full text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] font-black text-[10px] uppercase tracking-widest border border-[var(--primary)]/20"
+                        className="flex-1 h-8 rounded-full text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] font-black text-[9px] uppercase tracking-widest border border-[var(--primary)]/20"
                     >
                         Clear Selection
                     </Button>
                     <Button
                         onClick={onToday}
-                        className="flex-1 h-9 rounded-full bg-[var(--primary)] text-white hover:bg-[var(--primary)] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20"
+                        className="flex-1 h-8 rounded-full bg-[var(--primary)] text-white hover:bg-[var(--primary)] font-black text-[9px] uppercase tracking-widest shadow-lg shadow-orange-500/20"
                     >
                         Jump to Today
                     </Button>

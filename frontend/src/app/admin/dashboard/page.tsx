@@ -48,6 +48,7 @@ const INITIAL_STATS = {
         cancelledBookings: 0
     },
     monthlyTrends: [],
+    ytmTrends: [],
     weeklyTrends: [],
     dailyTrends: [
         { name: 'Mon', revenue: 120, bookings: 2 },
@@ -303,7 +304,7 @@ export default function AdminDashboard() {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-10 z-10 relative">
-                                <RevenueChart data={stats.monthlyTrends} weeklyData={stats.weeklyTrends} dailyData={stats.dailyTrends} />
+                                <RevenueChart data={stats.monthlyTrends} ytmData={stats.ytmTrends} weeklyData={stats.weeklyTrends} dailyData={stats.dailyTrends} />
                             </CardContent>
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-orange-100/10 blur-[150px] pointer-events-none rounded-full" />
                         </Card>

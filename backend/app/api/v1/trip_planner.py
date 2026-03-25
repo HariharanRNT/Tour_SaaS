@@ -175,7 +175,7 @@ async def get_popular_destinations(
         return []
 
     # 3. Enrich with Destination table data if available
-    pd_stmt = select(Destination).where(Destination.is_active == True)
+    pd_stmt = select(Destination)
     pd_result = await db.execute(pd_stmt)
     pd_data = {dest.name.lower(): dest for dest in pd_result.scalars().all()}
 
@@ -225,6 +225,9 @@ async def get_popular_destinations(
         
         # Check for match in master popular_destinations table
         master_match = pd_data.get(lookup_key)
+        
+        if master_match and (not master_match.is_popular or not master_match.is_active):
+            continue
         
         destination_data = {
             "name": dest_name,

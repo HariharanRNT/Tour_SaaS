@@ -20,6 +20,7 @@ import { TravelerForm, Traveler } from "@/components/booking/traveler-form"
 import { MockPaymentModal } from "@/components/booking/mock-payment-modal"
 import { FlightBookingDetails } from "@/components/booking/flight-booking-details"
 import { ShieldCheck, RotateCcw, Lock, ChevronDown, ChevronUp } from 'lucide-react'
+import { api, bookingsAPI, paymentsAPI, tripPlannerAPI } from '@/lib/api'
 
 // Razorpay Type Definition
 declare global {
@@ -110,28 +111,14 @@ function CheckoutContent() {
 
     const handlePaymentSuccess = async (response: any, bookingId: string) => {
         try {
-            const token = localStorage.getItem('token')
             // 4. Confirm Booking (Backend Orchestrator)
-            const confirmRes = await fetch(`http://localhost:8000/api/v1/bookings/${bookingId}/confirm`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature
-                })
+            const responseData = await bookingsAPI.confirm(bookingId, {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
             })
 
-            if (!confirmRes.ok) {
-                const err = await confirmRes.json()
-                throw new Error(err.detail || "Booking confirmation failed")
-            }
-
-            const bookingData = await confirmRes.json()
-            setConfirmedBooking(bookingData)
+            setConfirmedBooking(responseData)
             setStep('SUCCESS')
             setShowMockModal(false)
             toast.success("Booking Confirmed!")
@@ -147,29 +134,14 @@ function CheckoutContent() {
 
 
     // Load Session & Settings
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (!sessionId) return;
 
         const fetchSession = async () => {
             try {
-                // Fetch trip plan session with X-Domain header to ensure correct agent context
-                const headers: Record<string, string> = {
-                    'Content-Type': 'application/json'
-                }
-
-                if (typeof window !== 'undefined') {
-                    headers['X-Domain'] = window.location.hostname
-                }
-
-                const res = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
-                    headers
-                })
-                if (!res.ok) throw new Error("Failed to load session")
-                const data = await res.json()
+                const data = await tripPlannerAPI.getSession(sessionId)
                 setSessionData(data)
 
-                // Set GST Settings from session data
                 if (data.gst_percentage !== undefined) {
                     setGstSettings({
                         inclusive: data.gst_inclusive,
@@ -177,10 +149,10 @@ function CheckoutContent() {
                     })
                 }
 
-                // Initialize Travelers
                 const initialTravelers: Traveler[] = []
                 const adults = data.travelers?.adults || 1
                 const children = data.travelers?.children || 0
+                const infants = data.travelers?.infants || 0
 
                 for (let i = 0; i < adults; i++) {
                     initialTravelers.push({
@@ -210,7 +182,6 @@ function CheckoutContent() {
                         type: 'CHILD'
                     })
                 }
-                const infants = data.travelers?.infants || 0
                 for (let i = 0; i < infants; i++) {
                     initialTravelers.push({
                         id: uuidv4(),
@@ -227,15 +198,12 @@ function CheckoutContent() {
                 }
                 setTravelers(initialTravelers)
 
-                // Calculate Total
                 const count = adults + children
                 const basePrice = data.price_per_person || 18000
                 const flightPrice = data.flight_details?.price || 0
-
-                // Initial calculation (refreshed by effect below)
                 setTotalAmount((basePrice + flightPrice) * count)
-
             } catch (e) {
+                console.error("Load session failed", e)
                 toast.error("Could not load trip details")
             } finally {
                 setLoading(false)
@@ -250,7 +218,6 @@ function CheckoutContent() {
         script.async = true;
         document.body.appendChild(script);
 
-        // Load states for default country (India)
         setCountryStates(State.getStatesOfCountry('IN'))
     }, [sessionId])
 
@@ -369,75 +336,37 @@ function CheckoutContent() {
                         email: contactEmail,
                         phone: contactPhone,
                         address: contactAddress,
-                        city: contactCity, // These will be names from the dropdown
+                        city: contactCity,
                         state: contactState,
                         country: Country.getCountryByCode(contactCountry)?.name || contactCountry
                     }
                 })
             }
 
-            // ... (rest of existing logic) ...
-
-
             // 1. Create Booking
-            const bookingRes = await fetch('http://localhost:8000/api/v1/bookings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(bookingPayload)
-            })
-
-            if (!bookingRes.ok) {
-                const errData = await bookingRes.json()
-                throw new Error(errData.detail || "Failed to create booking")
-            }
-            const booking = await bookingRes.json()
+            const booking = await bookingsAPI.create(bookingPayload)
             setCurrentBookingId(booking.id)
 
             // 2. Review Flight 
             try {
-                const reviewRes = await fetch(`http://localhost:8000/api/v1/bookings/${booking.id}/review-flight`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-                if (!reviewRes.ok) {
-                    const err = await reviewRes.json()
-                    throw new Error(err.detail || "Flight price changed or unavailable")
-                }
-                const reviewData = await reviewRes.json()
-                console.log("Flight Review Success:", reviewData)
-
+                const reviewData = await api.post(`/bookings/${booking.id}/review-flight`)
+                console.log("Flight Review Success:", reviewData.data)
             } catch (err: any) {
                 console.error("Flight Review Failed:", err)
-                toast.error(`Flight validation failed: ${err.message}`)
+                toast.error(`Flight validation failed: ${err.response?.data?.detail || err.message}`)
                 setStep('DETAILS')
                 return
             }
 
             // 3. Create Payment Order
-            const orderRes = await fetch('http://localhost:8000/api/v1/payments/create-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ booking_id: booking.id })
-            })
-
-            if (!orderRes.ok) throw new Error("Failed to create payment order")
-            const orderData = await orderRes.json()
+            const orderData = await paymentsAPI.createOrder(booking.id)
             setCurrentOrder(orderData)
 
             // 4. Prompt Payment (Mock or Real)
-            // Logic similar to Subscription Page: check if key is default/test-mock
             if (orderData.key_id === 'rzp_test_1234567890' || orderData.key_id.includes('1234567890')) {
-                // Use Mock Modal for dummy keys
                 console.log("Using Mock Payment Modal for Test Key")
                 setShowMockModal(true)
             } else {
-                // Use Real Razorpay
                 const options = {
                     key: orderData.key_id,
                     amount: orderData.amount,
@@ -455,11 +384,11 @@ function CheckoutContent() {
                     },
                     modal: {
                         ondismiss: function () {
-                            setStep('DETAILS') // Reset button state
+                            setStep('DETAILS')
                         }
                     }
                 };
-                const rzp1 = new window.Razorpay(options);
+                const rzp1 = new (window as any).Razorpay(options);
                 rzp1.open();
             }
 

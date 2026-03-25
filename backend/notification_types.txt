@@ -1,0 +1,4 @@
+payment_receipt
+booking_status
+booking_confirmation
+itinerary_details
