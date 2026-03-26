@@ -1,0 +1,224 @@
+﻿2026-03-25 17:24:46,299 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-03-25 17:24:46,299 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-03-25 17:24:46,301 INFO sqlalchemy.engine.Engine select current_schema()
+2026-03-25 17:24:46,301 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-03-25 17:24:46,302 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-03-25 17:24:46,302 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-03-25 17:24:46,303 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:46,329 INFO sqlalchemy.engine.Engine SELECT bookings.id, bookings.booking_reference, bookings.package_id, bookings.user_id, bookings.agent_id, bookings.booking_date, bookings.travel_date, bookings.number_of_travelers, bookings.total_amount, bookings.status, bookings.payment_status, bookings.special_requests, bookings.tripjack_booking_id, bookings.flight_origin, bookings.flight_fare, bookings.flight_details, bookings.refund_amount, bookings.cancelled_at, bookings.created_at, bookings.updated_at 
+FROM bookings 
+WHERE bookings.id = $1::UUID
+2026-03-25 17:24:46,329 INFO sqlalchemy.engine.Engine [generated in 0.00016s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'),)
+2026-03-25 17:24:46,344 INFO sqlalchemy.engine.Engine SELECT packages.id AS packages_id, packages.title AS packages_title, packages.slug AS packages_slug, packages.description AS packages_description, packages.destination AS packages_destination, packages.duration_days AS packages_duration_days, packages.duration_nights AS packages_duration_nights, packages.trip_style AS packages_trip_style, packages.category AS packages_category, packages.price_per_person AS packages_price_per_person, packages.max_group_size AS packages_max_group_size, packages.included_items AS packages_included_items, packages.excluded_items AS packages_excluded_items, packages.status AS packages_status, packages.created_by AS packages_created_by, packages.country AS packages_country, packages.is_public AS packages_is_public, packages.package_mode AS packages_package_mode, packages.destinations AS packages_destinations, packages.activities AS packages_activities, packages.is_template AS packages_is_template, packages.template_destination AS packages_template_destination, packages.template_max_days AS packages_template_max_days, packages.is_popular_destination AS packages_is_popular_destination, packages.feature_image_url AS packages_feature_image_url, packages.view_count AS packages_view_count, packages.created_at AS packages_created_at, packages.updated_at AS packages_updated_at, packages.gst_applicable AS packages_gst_applicable, packages.gst_percentage AS packages_gst_percentage, packages.gst_mode AS packages_gst_mode, packages.cancellation_enabled AS packages_cancellation_enabled, packages.cancellation_rules AS packages_cancellation_rules, packages.meta_title AS packages_meta_title, packages.meta_description AS packages_meta_description, packages.meta_keywords AS packages_meta_keywords, packages.flights_enabled AS packages_flights_enabled, packages.flight_origin_cities AS packages_flight_origin_cities, packages.flight_cabin_class AS packages_flight_cabin_class, packages.flight_price_included AS packages_flight_price_included, packages.flight_baggage_note AS packages_flight_baggage_note 
+FROM packages 
+WHERE packages.id IN ($1::UUID)
+2026-03-25 17:24:46,344 INFO sqlalchemy.engine.Engine [generated in 0.00020s] (UUID('7d59b6fe-6c53-46ce-bbbe-5beb0a89e400'),)
+2026-03-25 17:24:46,352 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.password_hash AS users_password_hash, users.role AS users_role, users.email_verified AS users_email_verified, users.is_active AS users_is_active, users.approval_status AS users_approval_status, users.created_at AS users_created_at, users.updated_at AS users_updated_at, users.google_id AS users_google_id, users.profile_picture_url AS users_profile_picture_url 
+FROM users 
+WHERE users.id IN ($1::UUID)
+2026-03-25 17:24:46,352 INFO sqlalchemy.engine.Engine [generated in 0.00018s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:46,360 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.password_hash AS users_password_hash, users.role AS users_role, users.email_verified AS users_email_verified, users.is_active AS users_is_active, users.approval_status AS users_approval_status, users.created_at AS users_created_at, users.updated_at AS users_updated_at, users.google_id AS users_google_id, users.profile_picture_url AS users_profile_picture_url 
+FROM users 
+WHERE users.id IN ($1::UUID)
+2026-03-25 17:24:46,360 INFO sqlalchemy.engine.Engine [generated in 0.00039s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:46,363 INFO sqlalchemy.engine.Engine SELECT travelers.booking_id AS travelers_booking_id, travelers.id AS travelers_id, travelers.first_name AS travelers_first_name, travelers.last_name AS travelers_last_name, travelers.date_of_birth AS travelers_date_of_birth, travelers.gender AS travelers_gender, travelers.passport_number AS travelers_passport_number, travelers.nationality AS travelers_nationality, travelers.is_primary AS travelers_is_primary 
+FROM travelers 
+WHERE travelers.booking_id IN ($1::UUID)
+2026-03-25 17:24:46,363 INFO sqlalchemy.engine.Engine [generated in 0.00021s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'),)
+2026-03-25 17:24:46,367 INFO sqlalchemy.engine.Engine SELECT payments.booking_id AS payments_booking_id, payments.id AS payments_id, payments.subscription_id AS payments_subscription_id, payments.razorpay_order_id AS payments_razorpay_order_id, payments.razorpay_payment_id AS payments_razorpay_payment_id, payments.razorpay_signature AS payments_razorpay_signature, payments.amount AS payments_amount, payments.currency AS payments_currency, payments.status AS payments_status, payments.payment_method AS payments_payment_method, payments.created_at AS payments_created_at, payments.updated_at AS payments_updated_at 
+FROM payments 
+WHERE payments.booking_id IN ($1::UUID)
+2026-03-25 17:24:46,367 INFO sqlalchemy.engine.Engine [generated in 0.00018s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'),)
+2026-03-25 17:24:46,369 INFO sqlalchemy.engine.Engine SELECT package_availability.package_id AS package_availability_package_id, package_availability.id AS package_availability_id, package_availability.available_from AS package_availability_available_from, package_availability.available_to AS package_availability_available_to, package_availability.max_bookings AS package_availability_max_bookings, package_availability.current_bookings AS package_availability_current_bookings, package_availability.is_blackout AS package_availability_is_blackout 
+FROM package_availability 
+WHERE package_availability.package_id IN ($1::UUID)
+2026-03-25 17:24:46,369 INFO sqlalchemy.engine.Engine [generated in 0.00016s] (UUID('7d59b6fe-6c53-46ce-bbbe-5beb0a89e400'),)
+2026-03-25 17:24:46,372 INFO sqlalchemy.engine.Engine SELECT admins.user_id AS admins_user_id, admins.id AS admins_id, admins.first_name AS admins_first_name, admins.last_name AS admins_last_name 
+FROM admins 
+WHERE admins.user_id IN ($1::UUID)
+2026-03-25 17:24:46,372 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:46,375 INFO sqlalchemy.engine.Engine SELECT agents.user_id AS agents_user_id, agents.id AS agents_id, agents.first_name AS agents_first_name, agents.last_name AS agents_last_name, agents.phone AS agents_phone, agents.domain AS agents_domain, agents.agency_name AS agents_agency_name, agents.company_legal_name AS agents_company_legal_name, agents.business_address AS agents_business_address, agents.city AS agents_city, agents.state AS agents_state, agents.country AS agents_country, agents.gst_no AS agents_gst_no, agents.tax_id AS agents_tax_id, agents.currency AS agents_currency, agents.commission_type AS agents_commission_type, agents.commission_value AS agents_commission_value, agents.gst_applicable AS agents_gst_applicable, agents.gst_inclusive AS agents_gst_inclusive, agents.gst_percentage AS agents_gst_percentage, agents.smtp_host AS agents_smtp_host, agents.smtp_port AS agents_smtp_port, agents.smtp_user AS agents_smtp_user, agents.smtp_password AS agents_smtp_password, agents.smtp_from_email AS agents_smtp_from_email, agents.homepage_settings AS agents_homepage_settings 
+FROM agents 
+WHERE agents.user_id IN ($1::UUID)
+2026-03-25 17:24:46,375 INFO sqlalchemy.engine.Engine [generated in 0.00019s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:46,378 INFO sqlalchemy.engine.Engine SELECT customers.user_id AS customers_user_id, customers.id AS customers_id, customers.first_name AS customers_first_name, customers.last_name AS customers_last_name, customers.phone AS customers_phone, customers.agent_id AS customers_agent_id 
+FROM customers 
+WHERE customers.user_id IN ($1::UUID)
+2026-03-25 17:24:46,379 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:46,384 INFO sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, subscriptions.id AS subscriptions_id, subscriptions.user_id AS subscriptions_user_id, subscriptions.plan_id AS subscriptions_plan_id, subscriptions.status AS subscriptions_status, subscriptions.start_date AS subscriptions_start_date, subscriptions.end_date AS subscriptions_end_date, subscriptions.current_bookings_usage AS subscriptions_current_bookings_usage, subscriptions.auto_renew AS subscriptions_auto_renew, subscriptions.razorpay_subscription_id AS subscriptions_razorpay_subscription_id, subscriptions.razorpay_payment_id AS subscriptions_razorpay_payment_id, subscriptions.grace_period_ends_at AS subscriptions_grace_period_ends_at, subscriptions.created_at AS subscriptions_created_at, subscriptions.updated_at AS subscriptions_updated_at 
+FROM users AS users_1 JOIN subscriptions ON users_1.id = subscriptions.user_id AND subscriptions.status = $1::VARCHAR 
+WHERE users_1.id IN ($2::UUID) ORDER BY subscriptions.end_date DESC, subscriptions.created_at DESC
+2026-03-25 17:24:46,384 INFO sqlalchemy.engine.Engine [generated in 0.00017s] ('active', UUID('a7909137-dd19-452e-b433-0e4637e44814'))
+2026-03-25 17:24:46,387 INFO sqlalchemy.engine.Engine SELECT admins.user_id AS admins_user_id, admins.id AS admins_id, admins.first_name AS admins_first_name, admins.last_name AS admins_last_name 
+FROM admins 
+WHERE admins.user_id IN ($1::UUID)
+2026-03-25 17:24:46,387 INFO sqlalchemy.engine.Engine [generated in 0.00014s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:46,388 INFO sqlalchemy.engine.Engine SELECT agents.user_id AS agents_user_id, agents.id AS agents_id, agents.first_name AS agents_first_name, agents.last_name AS agents_last_name, agents.phone AS agents_phone, agents.domain AS agents_domain, agents.agency_name AS agents_agency_name, agents.company_legal_name AS agents_company_legal_name, agents.business_address AS agents_business_address, agents.city AS agents_city, agents.state AS agents_state, agents.country AS agents_country, agents.gst_no AS agents_gst_no, agents.tax_id AS agents_tax_id, agents.currency AS agents_currency, agents.commission_type AS agents_commission_type, agents.commission_value AS agents_commission_value, agents.gst_applicable AS agents_gst_applicable, agents.gst_inclusive AS agents_gst_inclusive, agents.gst_percentage AS agents_gst_percentage, agents.smtp_host AS agents_smtp_host, agents.smtp_port AS agents_smtp_port, agents.smtp_user AS agents_smtp_user, agents.smtp_password AS agents_smtp_password, agents.smtp_from_email AS agents_smtp_from_email, agents.homepage_settings AS agents_homepage_settings 
+FROM agents 
+WHERE agents.user_id IN ($1::UUID)
+2026-03-25 17:24:46,388 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:46,400 INFO sqlalchemy.engine.Engine SELECT customers.user_id AS customers_user_id, customers.id AS customers_id, customers.first_name AS customers_first_name, customers.last_name AS customers_last_name, customers.phone AS customers_phone, customers.agent_id AS customers_agent_id 
+FROM customers 
+WHERE customers.user_id IN ($1::UUID)
+2026-03-25 17:24:46,400 INFO sqlalchemy.engine.Engine [generated in 0.00016s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:46,401 INFO sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, subscriptions.id AS subscriptions_id, subscriptions.user_id AS subscriptions_user_id, subscriptions.plan_id AS subscriptions_plan_id, subscriptions.status AS subscriptions_status, subscriptions.start_date AS subscriptions_start_date, subscriptions.end_date AS subscriptions_end_date, subscriptions.current_bookings_usage AS subscriptions_current_bookings_usage, subscriptions.auto_renew AS subscriptions_auto_renew, subscriptions.razorpay_subscription_id AS subscriptions_razorpay_subscription_id, subscriptions.razorpay_payment_id AS subscriptions_razorpay_payment_id, subscriptions.grace_period_ends_at AS subscriptions_grace_period_ends_at, subscriptions.created_at AS subscriptions_created_at, subscriptions.updated_at AS subscriptions_updated_at 
+FROM users AS users_1 JOIN subscriptions ON users_1.id = subscriptions.user_id AND subscriptions.status = $1::VARCHAR 
+WHERE users_1.id IN ($2::UUID) ORDER BY subscriptions.end_date DESC, subscriptions.created_at DESC
+2026-03-25 17:24:46,401 INFO sqlalchemy.engine.Engine [generated in 0.00013s] ('active', UUID('87f499f5-01f0-4499-b9c1-142e387d8994'))
+2026-03-25 17:24:46,403 INFO sqlalchemy.engine.Engine SELECT agent_razorpay_settings.agent_id AS agent_razorpay_settings_agent_id, agent_razorpay_settings.id AS agent_razorpay_settings_id, agent_razorpay_settings.key_id AS agent_razorpay_settings_key_id, agent_razorpay_settings.key_secret AS agent_razorpay_settings_key_secret, agent_razorpay_settings.created_at AS agent_razorpay_settings_created_at, agent_razorpay_settings.updated_at AS agent_razorpay_settings_updated_at 
+FROM agent_razorpay_settings 
+WHERE agent_razorpay_settings.agent_id IN ($1::UUID)
+2026-03-25 17:24:46,403 INFO sqlalchemy.engine.Engine [generated in 0.00012s] (UUID('bb5b7f18-0955-4f31-bf89-7111b5d357dc'),)
+2026-03-25 17:24:46,408 INFO sqlalchemy.engine.Engine SELECT agent_smtp_settings.agent_id AS agent_smtp_settings_agent_id, agent_smtp_settings.id AS agent_smtp_settings_id, agent_smtp_settings.host AS agent_smtp_settings_host, agent_smtp_settings.port AS agent_smtp_settings_port, agent_smtp_settings.username AS agent_smtp_settings_username, agent_smtp_settings.password AS agent_smtp_settings_password, agent_smtp_settings.encryption_type AS agent_smtp_settings_encryption_type, agent_smtp_settings.from_email AS agent_smtp_settings_from_email, agent_smtp_settings.from_name AS agent_smtp_settings_from_name, agent_smtp_settings.created_at AS agent_smtp_settings_created_at, agent_smtp_settings.updated_at AS agent_smtp_settings_updated_at 
+FROM agent_smtp_settings 
+WHERE agent_smtp_settings.agent_id IN ($1::UUID)
+2026-03-25 17:24:46,409 INFO sqlalchemy.engine.Engine [generated in 0.00029s] (UUID('bb5b7f18-0955-4f31-bf89-7111b5d357dc'),)
+--- TESTING SEPARATE BOOKING EMAILS ---
+Booking Ref: BKMCL616250
+Calling _send_confirmation_email (should trigger 3 emails)...
+2026-03-25 17:24:46,587 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:46,589 INFO sqlalchemy.engine.Engine INSERT INTO notification_logs (id, booking_id, type, status, error, sent_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::TIMESTAMP WITH TIME ZONE) RETURNING notification_logs.created_at
+2026-03-25 17:24:46,589 INFO sqlalchemy.engine.Engine [generated in 0.00016s] (UUID('0ae76626-b50d-48d4-9763-06f75217da6b'), '633307d8-88e2-4c39-8021-2abb36417ed6', 'booking_confirmation', 'pending', None, None)
+2026-03-25 17:24:46,592 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:46,596 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:46,597 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.id = $1::UUID
+2026-03-25 17:24:46,597 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('0ae76626-b50d-48d4-9763-06f75217da6b'),)
+2026-03-25 17:24:46,598 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-03-25 17:24:47,220 INFO sqlalchemy.engine.Engine SELECT itinerary_items.id AS itinerary_items_id, itinerary_items.package_id AS itinerary_items_package_id, itinerary_items.day_number AS itinerary_items_day_number, itinerary_items.title AS itinerary_items_title, itinerary_items.description AS itinerary_items_description, itinerary_items.image_url AS itinerary_items_image_url, itinerary_items.activities AS itinerary_items_activities, itinerary_items.meals_included AS itinerary_items_meals_included, itinerary_items.time_slot AS itinerary_items_time_slot, itinerary_items.start_time AS itinerary_items_start_time, itinerary_items.end_time AS itinerary_items_end_time, itinerary_items.is_optional AS itinerary_items_is_optional, itinerary_items.display_order AS itinerary_items_display_order 
+FROM itinerary_items 
+WHERE $1::UUID = itinerary_items.package_id ORDER BY itinerary_items.day_number
+2026-03-25 17:24:47,220 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (UUID('7d59b6fe-6c53-46ce-bbbe-5beb0a89e400'),)
+2026-03-25 17:24:47,231 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:47,231 INFO sqlalchemy.engine.Engine INSERT INTO notification_logs (id, booking_id, type, status, error, sent_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::TIMESTAMP WITH TIME ZONE) RETURNING notification_logs.created_at
+2026-03-25 17:24:47,231 INFO sqlalchemy.engine.Engine [cached since 0.6419s ago] (UUID('1bcc2481-79d8-485a-9c74-167e0380cc18'), '633307d8-88e2-4c39-8021-2abb36417ed6', 'itinerary_details', 'pending', None, None)
+2026-03-25 17:24:47,233 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:47,235 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:47,235 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.id = $1::UUID
+2026-03-25 17:24:47,235 INFO sqlalchemy.engine.Engine [cached since 0.6389s ago] (UUID('1bcc2481-79d8-485a-9c74-167e0380cc18'),)
+2026-03-25 17:24:47,236 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-03-25 17:24:48,539 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,539 INFO sqlalchemy.engine.Engine INSERT INTO notification_logs (id, booking_id, type, status, error, sent_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::TIMESTAMP WITH TIME ZONE) RETURNING notification_logs.created_at
+2026-03-25 17:24:48,540 INFO sqlalchemy.engine.Engine [cached since 1.951s ago] (UUID('45c46c10-fa33-487d-8fd9-d1427ebc3c7a'), '633307d8-88e2-4c39-8021-2abb36417ed6', 'payment_receipt', 'pending', None, None)
+2026-03-25 17:24:48,540 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:48,543 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,543 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.id = $1::UUID
+2026-03-25 17:24:48,543 INFO sqlalchemy.engine.Engine [cached since 1.947s ago] (UUID('45c46c10-fa33-487d-8fd9-d1427ebc3c7a'),)
+2026-03-25 17:24:48,544 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-03-25 17:24:48,546 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:48,547 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,549 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.booking_id = $1::UUID ORDER BY notification_logs.created_at DESC 
+ LIMIT $2::INTEGER
+2026-03-25 17:24:48,549 INFO sqlalchemy.engine.Engine [generated in 0.00012s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'), 5)
+Current logs for booking:
+  - payment_receipt: pending
+  - itinerary_details: pending
+  - booking_confirmation: pending
+  - booking_success_consolidated: sent
+
+--- TESTING CANCELLATION ALERTS ---
+Triggering process_cancellation...
+2026-03-25 17:24:48,551 INFO sqlalchemy.engine.Engine SELECT bookings.id, bookings.booking_reference, bookings.package_id, bookings.user_id, bookings.agent_id, bookings.booking_date, bookings.travel_date, bookings.number_of_travelers, bookings.total_amount, bookings.status, bookings.payment_status, bookings.special_requests, bookings.tripjack_booking_id, bookings.flight_origin, bookings.flight_fare, bookings.flight_details, bookings.refund_amount, bookings.cancelled_at, bookings.created_at, bookings.updated_at 
+FROM bookings 
+WHERE bookings.id = $1::UUID FOR UPDATE
+2026-03-25 17:24:48,551 INFO sqlalchemy.engine.Engine [generated in 0.00014s] ('633307d8-88e2-4c39-8021-2abb36417ed6',)
+2026-03-25 17:24:48,564 INFO sqlalchemy.engine.Engine SELECT packages.id AS packages_id, packages.title AS packages_title, packages.slug AS packages_slug, packages.description AS packages_description, packages.destination AS packages_destination, packages.duration_days AS packages_duration_days, packages.duration_nights AS packages_duration_nights, packages.trip_style AS packages_trip_style, packages.category AS packages_category, packages.price_per_person AS packages_price_per_person, packages.max_group_size AS packages_max_group_size, packages.included_items AS packages_included_items, packages.excluded_items AS packages_excluded_items, packages.status AS packages_status, packages.created_by AS packages_created_by, packages.country AS packages_country, packages.is_public AS packages_is_public, packages.package_mode AS packages_package_mode, packages.destinations AS packages_destinations, packages.activities AS packages_activities, packages.is_template AS packages_is_template, packages.template_destination AS packages_template_destination, packages.template_max_days AS packages_template_max_days, packages.is_popular_destination AS packages_is_popular_destination, packages.feature_image_url AS packages_feature_image_url, packages.view_count AS packages_view_count, packages.created_at AS packages_created_at, packages.updated_at AS packages_updated_at, packages.gst_applicable AS packages_gst_applicable, packages.gst_percentage AS packages_gst_percentage, packages.gst_mode AS packages_gst_mode, packages.cancellation_enabled AS packages_cancellation_enabled, packages.cancellation_rules AS packages_cancellation_rules, packages.meta_title AS packages_meta_title, packages.meta_description AS packages_meta_description, packages.meta_keywords AS packages_meta_keywords, packages.flights_enabled AS packages_flights_enabled, packages.flight_origin_cities AS packages_flight_origin_cities, packages.flight_cabin_class AS packages_flight_cabin_class, packages.flight_price_included AS packages_flight_price_included, packages.flight_baggage_note AS packages_flight_baggage_note 
+FROM packages 
+WHERE packages.id IN ($1::UUID)
+2026-03-25 17:24:48,564 INFO sqlalchemy.engine.Engine [generated in 0.00018s] (UUID('7d59b6fe-6c53-46ce-bbbe-5beb0a89e400'),)
+2026-03-25 17:24:48,571 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.password_hash AS users_password_hash, users.role AS users_role, users.email_verified AS users_email_verified, users.is_active AS users_is_active, users.approval_status AS users_approval_status, users.created_at AS users_created_at, users.updated_at AS users_updated_at, users.google_id AS users_google_id, users.profile_picture_url AS users_profile_picture_url 
+FROM users 
+WHERE users.id IN ($1::UUID)
+2026-03-25 17:24:48,571 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:48,574 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.password_hash AS users_password_hash, users.role AS users_role, users.email_verified AS users_email_verified, users.is_active AS users_is_active, users.approval_status AS users_approval_status, users.created_at AS users_created_at, users.updated_at AS users_updated_at, users.google_id AS users_google_id, users.profile_picture_url AS users_profile_picture_url 
+FROM users 
+WHERE users.id IN ($1::UUID)
+2026-03-25 17:24:48,574 INFO sqlalchemy.engine.Engine [generated in 0.00015s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:48,575 INFO sqlalchemy.engine.Engine SELECT travelers.booking_id AS travelers_booking_id, travelers.id AS travelers_id, travelers.first_name AS travelers_first_name, travelers.last_name AS travelers_last_name, travelers.date_of_birth AS travelers_date_of_birth, travelers.gender AS travelers_gender, travelers.passport_number AS travelers_passport_number, travelers.nationality AS travelers_nationality, travelers.is_primary AS travelers_is_primary 
+FROM travelers 
+WHERE travelers.booking_id IN ($1::UUID)
+2026-03-25 17:24:48,575 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'),)
+2026-03-25 17:24:48,576 INFO sqlalchemy.engine.Engine SELECT payments.booking_id AS payments_booking_id, payments.id AS payments_id, payments.subscription_id AS payments_subscription_id, payments.razorpay_order_id AS payments_razorpay_order_id, payments.razorpay_payment_id AS payments_razorpay_payment_id, payments.razorpay_signature AS payments_razorpay_signature, payments.amount AS payments_amount, payments.currency AS payments_currency, payments.status AS payments_status, payments.payment_method AS payments_payment_method, payments.created_at AS payments_created_at, payments.updated_at AS payments_updated_at 
+FROM payments 
+WHERE payments.booking_id IN ($1::UUID)
+2026-03-25 17:24:48,576 INFO sqlalchemy.engine.Engine [generated in 0.00014s] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'),)
+2026-03-25 17:24:48,580 INFO sqlalchemy.engine.Engine SELECT package_availability.package_id AS package_availability_package_id, package_availability.id AS package_availability_id, package_availability.available_from AS package_availability_available_from, package_availability.available_to AS package_availability_available_to, package_availability.max_bookings AS package_availability_max_bookings, package_availability.current_bookings AS package_availability_current_bookings, package_availability.is_blackout AS package_availability_is_blackout 
+FROM package_availability 
+WHERE package_availability.package_id IN ($1::UUID)
+2026-03-25 17:24:48,580 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (UUID('7d59b6fe-6c53-46ce-bbbe-5beb0a89e400'),)
+2026-03-25 17:24:48,582 INFO sqlalchemy.engine.Engine SELECT admins.user_id AS admins_user_id, admins.id AS admins_id, admins.first_name AS admins_first_name, admins.last_name AS admins_last_name 
+FROM admins 
+WHERE admins.user_id IN ($1::UUID)
+2026-03-25 17:24:48,582 INFO sqlalchemy.engine.Engine [generated in 0.00014s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:48,584 INFO sqlalchemy.engine.Engine SELECT agents.user_id AS agents_user_id, agents.id AS agents_id, agents.first_name AS agents_first_name, agents.last_name AS agents_last_name, agents.phone AS agents_phone, agents.domain AS agents_domain, agents.agency_name AS agents_agency_name, agents.company_legal_name AS agents_company_legal_name, agents.business_address AS agents_business_address, agents.city AS agents_city, agents.state AS agents_state, agents.country AS agents_country, agents.gst_no AS agents_gst_no, agents.tax_id AS agents_tax_id, agents.currency AS agents_currency, agents.commission_type AS agents_commission_type, agents.commission_value AS agents_commission_value, agents.gst_applicable AS agents_gst_applicable, agents.gst_inclusive AS agents_gst_inclusive, agents.gst_percentage AS agents_gst_percentage, agents.smtp_host AS agents_smtp_host, agents.smtp_port AS agents_smtp_port, agents.smtp_user AS agents_smtp_user, agents.smtp_password AS agents_smtp_password, agents.smtp_from_email AS agents_smtp_from_email, agents.homepage_settings AS agents_homepage_settings 
+FROM agents 
+WHERE agents.user_id IN ($1::UUID)
+2026-03-25 17:24:48,584 INFO sqlalchemy.engine.Engine [generated in 0.00014s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:48,586 INFO sqlalchemy.engine.Engine SELECT customers.user_id AS customers_user_id, customers.id AS customers_id, customers.first_name AS customers_first_name, customers.last_name AS customers_last_name, customers.phone AS customers_phone, customers.agent_id AS customers_agent_id 
+FROM customers 
+WHERE customers.user_id IN ($1::UUID)
+2026-03-25 17:24:48,586 INFO sqlalchemy.engine.Engine [generated in 0.00013s] (UUID('a7909137-dd19-452e-b433-0e4637e44814'),)
+2026-03-25 17:24:48,591 INFO sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, subscriptions.id AS subscriptions_id, subscriptions.user_id AS subscriptions_user_id, subscriptions.plan_id AS subscriptions_plan_id, subscriptions.status AS subscriptions_status, subscriptions.start_date AS subscriptions_start_date, subscriptions.end_date AS subscriptions_end_date, subscriptions.current_bookings_usage AS subscriptions_current_bookings_usage, subscriptions.auto_renew AS subscriptions_auto_renew, subscriptions.razorpay_subscription_id AS subscriptions_razorpay_subscription_id, subscriptions.razorpay_payment_id AS subscriptions_razorpay_payment_id, subscriptions.grace_period_ends_at AS subscriptions_grace_period_ends_at, subscriptions.created_at AS subscriptions_created_at, subscriptions.updated_at AS subscriptions_updated_at 
+FROM users AS users_1 JOIN subscriptions ON users_1.id = subscriptions.user_id AND subscriptions.status = $1::VARCHAR 
+WHERE users_1.id IN ($2::UUID) ORDER BY subscriptions.end_date DESC, subscriptions.created_at DESC
+2026-03-25 17:24:48,591 INFO sqlalchemy.engine.Engine [generated in 0.00022s] ('active', UUID('a7909137-dd19-452e-b433-0e4637e44814'))
+2026-03-25 17:24:48,595 INFO sqlalchemy.engine.Engine SELECT admins.user_id AS admins_user_id, admins.id AS admins_id, admins.first_name AS admins_first_name, admins.last_name AS admins_last_name 
+FROM admins 
+WHERE admins.user_id IN ($1::UUID)
+2026-03-25 17:24:48,597 INFO sqlalchemy.engine.Engine [generated in 0.00025s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:48,598 INFO sqlalchemy.engine.Engine SELECT agents.user_id AS agents_user_id, agents.id AS agents_id, agents.first_name AS agents_first_name, agents.last_name AS agents_last_name, agents.phone AS agents_phone, agents.domain AS agents_domain, agents.agency_name AS agents_agency_name, agents.company_legal_name AS agents_company_legal_name, agents.business_address AS agents_business_address, agents.city AS agents_city, agents.state AS agents_state, agents.country AS agents_country, agents.gst_no AS agents_gst_no, agents.tax_id AS agents_tax_id, agents.currency AS agents_currency, agents.commission_type AS agents_commission_type, agents.commission_value AS agents_commission_value, agents.gst_applicable AS agents_gst_applicable, agents.gst_inclusive AS agents_gst_inclusive, agents.gst_percentage AS agents_gst_percentage, agents.smtp_host AS agents_smtp_host, agents.smtp_port AS agents_smtp_port, agents.smtp_user AS agents_smtp_user, agents.smtp_password AS agents_smtp_password, agents.smtp_from_email AS agents_smtp_from_email, agents.homepage_settings AS agents_homepage_settings 
+FROM agents 
+WHERE agents.user_id IN ($1::UUID)
+2026-03-25 17:24:48,598 INFO sqlalchemy.engine.Engine [generated in 0.00014s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:48,610 INFO sqlalchemy.engine.Engine SELECT customers.user_id AS customers_user_id, customers.id AS customers_id, customers.first_name AS customers_first_name, customers.last_name AS customers_last_name, customers.phone AS customers_phone, customers.agent_id AS customers_agent_id 
+FROM customers 
+WHERE customers.user_id IN ($1::UUID)
+2026-03-25 17:24:48,610 INFO sqlalchemy.engine.Engine [generated in 0.00019s] (UUID('87f499f5-01f0-4499-b9c1-142e387d8994'),)
+2026-03-25 17:24:48,612 INFO sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, subscriptions.id AS subscriptions_id, subscriptions.user_id AS subscriptions_user_id, subscriptions.plan_id AS subscriptions_plan_id, subscriptions.status AS subscriptions_status, subscriptions.start_date AS subscriptions_start_date, subscriptions.end_date AS subscriptions_end_date, subscriptions.current_bookings_usage AS subscriptions_current_bookings_usage, subscriptions.auto_renew AS subscriptions_auto_renew, subscriptions.razorpay_subscription_id AS subscriptions_razorpay_subscription_id, subscriptions.razorpay_payment_id AS subscriptions_razorpay_payment_id, subscriptions.grace_period_ends_at AS subscriptions_grace_period_ends_at, subscriptions.created_at AS subscriptions_created_at, subscriptions.updated_at AS subscriptions_updated_at 
+FROM users AS users_1 JOIN subscriptions ON users_1.id = subscriptions.user_id AND subscriptions.status = $1::VARCHAR 
+WHERE users_1.id IN ($2::UUID) ORDER BY subscriptions.end_date DESC, subscriptions.created_at DESC
+2026-03-25 17:24:48,613 INFO sqlalchemy.engine.Engine [generated in 0.00018s] ('active', UUID('87f499f5-01f0-4499-b9c1-142e387d8994'))
+2026-03-25 17:24:48,614 INFO sqlalchemy.engine.Engine SELECT agent_razorpay_settings.agent_id AS agent_razorpay_settings_agent_id, agent_razorpay_settings.id AS agent_razorpay_settings_id, agent_razorpay_settings.key_id AS agent_razorpay_settings_key_id, agent_razorpay_settings.key_secret AS agent_razorpay_settings_key_secret, agent_razorpay_settings.created_at AS agent_razorpay_settings_created_at, agent_razorpay_settings.updated_at AS agent_razorpay_settings_updated_at 
+FROM agent_razorpay_settings 
+WHERE agent_razorpay_settings.agent_id IN ($1::UUID)
+2026-03-25 17:24:48,615 INFO sqlalchemy.engine.Engine [generated in 0.00017s] (UUID('bb5b7f18-0955-4f31-bf89-7111b5d357dc'),)
+2026-03-25 17:24:48,618 INFO sqlalchemy.engine.Engine SELECT agent_smtp_settings.agent_id AS agent_smtp_settings_agent_id, agent_smtp_settings.id AS agent_smtp_settings_id, agent_smtp_settings.host AS agent_smtp_settings_host, agent_smtp_settings.port AS agent_smtp_settings_port, agent_smtp_settings.username AS agent_smtp_settings_username, agent_smtp_settings.password AS agent_smtp_settings_password, agent_smtp_settings.encryption_type AS agent_smtp_settings_encryption_type, agent_smtp_settings.from_email AS agent_smtp_settings_from_email, agent_smtp_settings.from_name AS agent_smtp_settings_from_name, agent_smtp_settings.created_at AS agent_smtp_settings_created_at, agent_smtp_settings.updated_at AS agent_smtp_settings_updated_at 
+FROM agent_smtp_settings 
+WHERE agent_smtp_settings.agent_id IN ($1::UUID)
+2026-03-25 17:24:48,618 INFO sqlalchemy.engine.Engine [generated in 0.00024s] (UUID('bb5b7f18-0955-4f31-bf89-7111b5d357dc'),)
+2026-03-25 17:24:48,622 INFO sqlalchemy.engine.Engine UPDATE bookings SET status=$1::bookingstatus, refund_amount=$2::NUMERIC(10, 2), cancelled_at=$3::TIMESTAMP WITH TIME ZONE, updated_at=now() WHERE bookings.id = $4::UUID
+2026-03-25 17:24:48,622 INFO sqlalchemy.engine.Engine [generated in 0.00013s] ('CANCELLED', Decimal('0.0'), datetime.datetime(2026, 3, 25, 17, 24, 48, 620684, tzinfo=<DstTzInfo 'Asia/Kolkata' IST+5:30:00 STD>), UUID('633307d8-88e2-4c39-8021-2abb36417ed6'))
+2026-03-25 17:24:48,625 INFO sqlalchemy.engine.Engine INSERT INTO booking_refunds (id, booking_id, razorpay_payment_id, razorpay_refund_id, refund_amount, refund_percentage, days_before, status, failure_reason, updated_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::NUMERIC(10, 2), $6::NUMERIC(5, 2), $7::INTEGER, $8::VARCHAR, $9::VARCHAR, $10::TIMESTAMP WITH TIME ZONE) RETURNING booking_refunds.created_at
+2026-03-25 17:24:48,625 INFO sqlalchemy.engine.Engine [generated in 0.00024s] (UUID('78b5e747-cb4f-49e0-936b-e1ab7438b151'), UUID('633307d8-88e2-4c39-8021-2abb36417ed6'), None, None, Decimal('0.0'), Decimal('0.0'), 0, 'succeeded', None, None)
+2026-03-25 17:24:48,627 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:48,630 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,630 INFO sqlalchemy.engine.Engine INSERT INTO notification_logs (id, booking_id, type, status, error, sent_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::TIMESTAMP WITH TIME ZONE) RETURNING notification_logs.created_at
+2026-03-25 17:24:48,630 INFO sqlalchemy.engine.Engine [cached since 2.041s ago] (UUID('d8088a83-781f-4595-bfaf-3b39fd5600fe'), '633307d8-88e2-4c39-8021-2abb36417ed6', 'booking_cancellation', 'pending', None, None)
+2026-03-25 17:24:48,631 INFO sqlalchemy.engine.Engine COMMIT
+2026-03-25 17:24:48,633 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,633 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.id = $1::UUID
+2026-03-25 17:24:48,633 INFO sqlalchemy.engine.Engine [cached since 2.037s ago] (UUID('d8088a83-781f-4595-bfaf-3b39fd5600fe'),)
+2026-03-25 17:24:48,634 INFO sqlalchemy.engine.Engine ROLLBACK
+Cancellation Result: Booking cancelled. No refund is applicable as per the cancellation policy.
+2026-03-25 17:24:48,635 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-03-25 17:24:48,636 INFO sqlalchemy.engine.Engine SELECT notification_logs.id, notification_logs.booking_id, notification_logs.type, notification_logs.status, notification_logs.error, notification_logs.sent_at, notification_logs.created_at 
+FROM notification_logs 
+WHERE notification_logs.booking_id = $1::UUID ORDER BY notification_logs.created_at DESC 
+ LIMIT $2::INTEGER
+2026-03-25 17:24:48,636 INFO sqlalchemy.engine.Engine [cached since 0.08694s ago] (UUID('633307d8-88e2-4c39-8021-2abb36417ed6'), 10)
+Check logs for 'booking_cancellation' and 'agent_cancellation_alert':
+  - booking_cancellation: pending
+  - payment_receipt: pending
+  - itinerary_details: pending
+  - booking_confirmation: pending
+  - booking_success_consolidated: sent
+2026-03-25 17:24:48,637 INFO sqlalchemy.engine.Engine ROLLBACK

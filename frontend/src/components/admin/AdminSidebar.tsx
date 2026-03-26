@@ -80,7 +80,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 ...(userRole === 'agent' ? [
                     { icon: Package, label: 'Manage Packages', href: '/agent/packages' },
                     { icon: Map, label: 'Activity Master', href: '/agent/activities' },
-                    { icon: Calendar, label: 'My Bookings', href: '/agent/bookings' },
+                    { icon: Calendar, label: 'Booking Report', href: '/agent/bookings' },
                 ] : []),
 
                 // Admin Specific Items
@@ -88,9 +88,9 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     { icon: Users, label: 'Agents', href: '/admin/agents' },
                 ] : []),
 
-                { icon: Receipt, label: 'Billing & Finance', href: userRole === 'agent' ? '/agent/subscription' : '/admin/billing' },
-                
-                { icon: BarChart2, label: 'Reports', href: userRole === 'agent' ? '/agent/reports' : '/admin/reports' },
+                { icon: Receipt, label: 'Billing', href: userRole === 'agent' ? '/agent/subscription' : '/admin/billing' },
+
+                { icon: BarChart2, label: 'Finance Reports', href: userRole === 'agent' ? '/agent/reports' : '/admin/reports' },
 
                 { icon: Settings, label: 'Settings', href: userRole === 'agent' ? '/agent/settings' : '/admin/settings' },
             ]
@@ -109,7 +109,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 background: 'rgba(255, 255, 255, 0.35)',
                 backdropFilter: 'blur(32px)',
                 WebkitBackdropFilter: 'blur(32px)',
-                borderRight: '1px solid rgba(255, 250, 245, 0.2)' }}
+                borderRight: '1px solid rgba(255, 250, 245, 0.2)'
+            }}
         >
             {/* Subtle inner glow on right edge */}
             <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--primary-light)]/40 to-transparent" />
@@ -183,9 +184,11 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                             background: 'linear-gradient(135deg, rgba(255, 140, 90, 0.25), rgba(255, 179, 138, 0.15))',
                                             border: '1px solid rgba(255, 140, 90, 0.3)',
                                             fontWeight: 700,
-                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' } : {
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)'
+                                        } : {
                                             color: 'rgba(60, 40, 30, 0.65)',
-                                            fontWeight: 500 }}
+                                            fontWeight: 500
+                                        }}
                                         title={collapsed ? item.label : undefined}
                                     >
                                         {/* Icon */}
@@ -209,8 +212,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                             <div className="flex items-center gap-3 flex-1">
                                                 <div className={cn(
                                                     "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                                                    isActive 
-                                                        ? "bg-[#FF8C5A] shadow-[0_0_8px_rgba(255,140,90,0.8)] scale-125" 
+                                                    isActive
+                                                        ? "bg-[#FF8C5A] shadow-[0_0_8px_rgba(255,140,90,0.8)] scale-125"
                                                         : "bg-black/10"
                                                 )} />
                                                 <span className="tracking-tight">{item.label}</span>

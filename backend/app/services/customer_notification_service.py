@@ -1,6 +1,7 @@
 import logging
+from datetime import datetime
 from typing import Optional, Dict, Any
-from app.models import Booking, User, Agent, NotificationLog
+from app.models import Booking, User, Agent, NotificationLog, UserRole
 from app.services.email_service import EmailService
 from app.utils.customer_email_templates import get_customer_notification_html
 from app.utils.crypto import decrypt_value
@@ -162,6 +163,22 @@ class CustomerNotificationService:
         )
 
     @staticmethod
+    def _resolve_agent(booking: Booking) -> Optional[User]:
+        """
+        Resolves the Agent User for a booking.
+        """
+        # If the booking has an explicit agent_id, use that user
+        if booking.agent:
+            return booking.agent
+            
+        # Fallback: if the package creator is an agent
+        if booking.package and booking.package.creator:
+            if str(booking.package.creator.role).upper() == UserRole.AGENT:
+                return booking.package.creator
+                
+        return None
+
+    @staticmethod
     def _resolve_recipient_info(booking: Booking) -> tuple[str, str]:
         """
         Resolves the best recipient email and name for notifications.
@@ -175,10 +192,11 @@ class CustomerNotificationService:
         
         # 1. Check for Agent fallback
         # If the user is an AGENT, it means they are booking on behalf of someone.
-        is_agent_booking = booking.user and (
-            booking.user.role == "agent" or # String check fallback
-            (hasattr(booking.user.role, 'value') and booking.user.role.value == "agent")
-        )
+        user_role = str(booking.user.role).upper() if booking.user and hasattr(booking.user.role, 'value') else str(booking.user.role).upper() if booking.user else ""
+        
+        is_agent_booking = "AGENT" in user_role
+        
+        logger.info(f"Checking for agent booking: role='{user_role}', is_agent_booking={is_agent_booking}")
         
         if is_agent_booking:
             # Try to find payment email from metadata captured in BookingOrchestrator
@@ -208,6 +226,7 @@ class CustomerNotificationService:
         recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
         
         if not recipient_email:
+            logger.warning(f"Could not resolve recipient email for booking confirmation: {booking.booking_reference}")
             return
 
         # Prepare Data
@@ -237,6 +256,7 @@ class CustomerNotificationService:
         
         recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
+            logger.warning(f"Could not resolve recipient email for payment receipt: {booking.booking_reference}")
             return
 
         data = {
@@ -427,6 +447,42 @@ class CustomerNotificationService:
         )
 
     @staticmethod
+    async def send_cancellation_agent_alert(
+        booking: Booking,
+        refund_amount: float,
+    ):
+        """
+        Sends an alert to the Agent about a customer cancellation.
+        """
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        if not agent_user or not agent_user.email:
+            logger.warning(f"Cannot send agent cancellation alert: Agent email not found for booking {booking.id}")
+            return
+
+        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+
+        data = {
+            "customer_name": customer_name,
+            "reference_id": booking.booking_reference,
+            "package_name": booking.package.title if booking.package else "N/A",
+            "travel_date": str(booking.travel_date),
+            "refund_amount": f"₹{refund_amount:,.2f}" if refund_amount > 0 else "₹0",
+            "cancellation_date": datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+
+        # We send this to the AGENT's email, potentially using system credentials 
+        # because the agent's own SMTP might be for customer-facing only.
+        # But we'll try to use the agent's SMTP if available for consistency.
+        await CustomerNotificationService._send_notification(
+            agent_user.email,
+            "agent_cancellation_alert",
+            data,
+            agent_user, # Try to use agent's own SMTP to send to themselves
+            attachments=None,
+            booking_id=str(booking.id)
+        )
+
+    @staticmethod
     async def send_booking_success_consolidated(booking: Booking, payment_details: Optional[Dict[str, Any]] = None):
         """
         Consolidates Confirmation, Itinerary, and Receipt into a single professional email.
@@ -437,7 +493,10 @@ class CustomerNotificationService:
         
         recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
+            logger.warning(f"ABORTING combined notification for {booking.booking_reference}: No recipient email found.")
             return
+
+        logger.info(f"PREPARING COMBINED NOTIFICATION FOR: {recipient_email} (Ref: {booking.booking_reference})")
 
         # 1. Prepare Data
         data = {

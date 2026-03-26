@@ -13,6 +13,7 @@ interface ReportSectionProps {
     className?: string
     icon?: React.ElementType
     exportData?: any[]
+    onExportFetch?: () => Promise<any[]>
     exportFilename?: string
 }
 
@@ -23,6 +24,7 @@ export default function ReportSection({
     className = "", 
     icon: Icon,
     exportData,
+    onExportFetch,
     exportFilename
 }: ReportSectionProps) {
     return (
@@ -43,9 +45,10 @@ export default function ReportSection({
                         {description && <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{description}</p>}
                     </div>
                 </div>
-                {exportData && (
+                {(exportData || onExportFetch) && (
                     <ExportCSVButton 
-                        data={exportData} 
+                        data={exportData}
+                        onFetch={onExportFetch}
                         filename={exportFilename || `report_${title.toLowerCase().replace(/\s+/g, '_')}`} 
                     />
                 )}

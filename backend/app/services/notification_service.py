@@ -59,6 +59,7 @@ class NotificationService:
             db=db,
             user_id=agent_id,
             type="warning",
+            title="Subscription Expiry Warning",
             message=message
         )
 

@@ -21,7 +21,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models import (
     Agent, Booking, BookingRefund, BookingStatus,
-    Package, PaymentStatus
+    Package, PaymentStatus, User
 )
 from app.services.razorpay_service import RazorpayService
 from app.utils.crypto import decrypt_value
@@ -165,15 +165,16 @@ async def process_cancellation(
 
     Returns enriched cancel result dict.
     """
-    # 1. Lock row — prevents concurrent double-cancellations
     stmt = (
         sa_select(Booking)
         .where(Booking.id == booking_id)
         .with_for_update()
         .options(
             selectinload(Booking.payments),
-            selectinload(Booking.package),
+            selectinload(Booking.package).selectinload(Package.itinerary_items),
             selectinload(Booking.travelers),
+            selectinload(Booking.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+            selectinload(Booking.user)
         )
     )
     result = await db.execute(stmt)
@@ -268,7 +269,7 @@ async def process_cancellation(
             else:
                 failure_reason = "Agent Razorpay credentials not configured"
                 logger.warning(
-                    f"[Booking {booking.id}] No Razorpay config for agent_id={agent_user_id} "
+                    f"[Booking {booking.id}] No Razorpay config for agent_id={package_creator_user_id} "
                     f"— refund marked pending"
                 )
 
@@ -295,6 +296,25 @@ async def process_cancellation(
         booking.cancelled_at = datetime.now(INDIA_TZ)
 
         await db.commit()
+
+        # 8. Trigger Notifications
+        from app.services.customer_notification_service import CustomerNotificationService
+        try:
+            # A. Send confirmation to Customer
+            await CustomerNotificationService.send_cancellation_confirmation(
+                booking=booking,
+                refund_amount=calc["refund_amount"],
+                refund_status=refund_status
+            )
+            
+            # B. Send alert to Agent
+            await CustomerNotificationService.send_cancellation_agent_alert(
+                booking=booking,
+                refund_amount=calc["refund_amount"]
+            )
+            logger.info(f"[Booking {booking.id}] Cancellation notifications triggered.")
+        except Exception as e:
+            logger.error(f"[Booking {booking.id}] Failed to trigger cancellation notifications: {e}")
 
         # Build user-facing message
         if refund_status == "succeeded" and calc["refund_amount"] > 0:

@@ -119,8 +119,8 @@ function LoginContent() {
                 setTimeout(() => {
                     const user = response.user
                     if (nextUrl) router.push(nextUrl)
-                    else if (user?.role === 'admin') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toLowerCase() === 'agent') {
+                    if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                    else if (user?.role?.toUpperCase() === 'AGENT') {
                         const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')
@@ -149,8 +149,8 @@ function LoginContent() {
             setIsSuccess(true)
             setTimeout(() => {
                 if (nextUrl) router.push(nextUrl)
-                else if (data.user.role === 'admin') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                else if (data.user.role?.toLowerCase() === 'agent') {
+                else if (data.user.role.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                else if (data.user.role?.toUpperCase() === 'AGENT') {
                     const hasActiveSub = data.user.has_active_subscription || data.user.subscription_status === 'active';
                     if (hasActiveSub) {
                         router.push('/agent/dashboard')
@@ -196,8 +196,8 @@ function LoginContent() {
                 setTimeout(() => {
                     const user = data.user
                     if (nextUrl) router.push(nextUrl)
-                    else if (user?.role === 'admin') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toLowerCase() === 'agent') {
+                    else if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                    else if (user?.role?.toUpperCase() === 'AGENT') {
                         const hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')

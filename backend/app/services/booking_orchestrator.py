@@ -211,15 +211,20 @@ class BookingOrchestrator:
 
     async def _send_confirmation_email(self, booking: Booking):
         """
-        Sends a consolidated customer notification using the Customer Notification System
+        Sends separate customer notifications: Confirmation, Itinerary, and Receipt.
         """
         from app.services.customer_notification_service import CustomerNotificationService
         
         try:
-            logger.info(f"Triggering consolidated customer notification for booking {booking.booking_reference}")
+            logger.info(f"Triggering separate customer notifications for booking {booking.booking_reference}")
             
-            # Resolve payment details for the receipt section
-            payment_details = None
+            # 1. Booking Confirmation (Base details)
+            await CustomerNotificationService.send_booking_confirmation(booking)
+            
+            # 2. Travel Itinerary (Package details + PDF)
+            await CustomerNotificationService.send_itinerary_details(booking)
+            
+            # 3. Payment Receipt (Invoice PDF - only if paid)
             status_str = str(booking.payment_status).lower()
             is_paid = "succeeded" in status_str or "captured" in status_str or booking.payment_status == PaymentStatus.SUCCEEDED
             
@@ -229,12 +234,10 @@ class BookingOrchestrator:
                     "method": "Online Payment",
                     "date": booking.updated_at.strftime("%Y-%m-%d") if booking.updated_at else datetime.utcnow().strftime("%Y-%m-%d")
                 }
-
-            # Send single consolidated email with Invoice and Itinerary
-            await CustomerNotificationService.send_booking_success_consolidated(booking, payment_details)
+                await CustomerNotificationService.send_payment_receipt(booking, payment_details)
             
         except Exception as e:
-            logger.error(f"Error in _send_confirmation_email (consolidated): {e}")
+            logger.error(f"Error in _send_confirmation_email (separate): {e}")
 
     async def _send_agent_notification_email(self, booking: Booking):
         """

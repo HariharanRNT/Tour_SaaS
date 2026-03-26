@@ -350,6 +350,32 @@ Warm regards,<br>
 📧 {support_email}<br>
 📞 {support_phone}<br>
 """
+    elif template_type == "agent_cancellation_alert":
+        subject = f"ALERT: Booking Cancelled - {ref_id}"
+        message = f"""
+Dear Agent,<br><br>
+
+This is an automated alert to inform you that a booking has been <b>cancelled</b>.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<b>📌 Cancellation Details</b><br><br>
+<ul>
+    <li><b>Customer Name:</b> {customer_name}</li>
+    <li><b>Reference ID:</b> {ref_id}</li>
+    <li><b>Package:</b> {package_name}</li>
+    <li><b>Travel Date:</b> {travel_date}</li>
+    <li><b>Refund Calculated:</b> {data.get('refund_amount', '₹0')}</li>
+    <li><b>Cancellation Date:</b> {data.get('cancellation_date', 'Today')}</li>
+</ul><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+Please review this cancellation in your agent dashboard.<br><br>
+
+Best regards,<br>
+<b>{agency_name} System</b><br>
+"""
     elif template_type == "booking_success_consolidated":
         subject = f"Booking Confirmed! Your Trip to {package_name} is All Set 🎉"
         message = f"""

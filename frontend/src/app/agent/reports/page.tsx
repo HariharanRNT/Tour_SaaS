@@ -18,8 +18,10 @@ import {
     HelpCircle,
     History as HistoryIcon,
     PieChart,
-    Package
+    Package,
+    Search
 } from 'lucide-react'
+import { debounce } from 'lodash'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isBefore, startOfToday } from 'date-fns'
 import {
@@ -40,6 +42,7 @@ import { cn } from "@/lib/utils"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useTheme } from "next-themes"
 import { useQuery } from '@tanstack/react-query'
 import { agentReportsAPI, bookingsAPI } from '@/lib/api'
@@ -83,6 +86,8 @@ export default function ReportsPage() {
     const [customRange, setCustomRange] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined })
     const [bookingListStatus, setBookingListStatus] = useState<string>('all')
     const [bookingListRefundStatus, setBookingListRefundStatus] = useState<string>('all')
+    const [bookingSearch, setBookingSearch] = useState<string>('')
+    const [debouncedSearch, setDebouncedSearch] = useState<string>('')
     const [recentBookingsPage, setRecentBookingsPage] = useState(1)
     const [recentBookingsLimit] = useState(5)
     const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'bookings' | 'financial'>('overview')
@@ -154,12 +159,28 @@ export default function ReportsPage() {
         setPage(1) // Reset to first page on sort
     }
 
+    // Debounced search handler
+    const debouncedSetSearch = useMemo(
+        () => debounce((value: string) => {
+            setDebouncedSearch(value)
+            setRecentBookingsPage(1)
+        }, 500),
+        []
+    )
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            debouncedSetSearch.cancel()
+        }
+    }, [debouncedSetSearch])
+
     useEffect(() => {
         setRecentBookingsPage(1)
     }, [bookingListStatus, bookingListRefundStatus])
 
     const { data: recentBookingsData, isLoading: isRecentBookingsLoading } = useQuery({
-        queryKey: ['agentRecentBookings', activePeriod, customRange, recentBookingsPage, bookingListStatus, bookingListRefundStatus],
+        queryKey: ['agentRecentBookings', activePeriod, customRange, recentBookingsPage, bookingListStatus, bookingListRefundStatus, debouncedSearch],
         queryFn: () => {
             const fromStr = customRange.from ? format(customRange.from, 'yyyy-MM-dd') : ''
             const toStr = customRange.to ? format(customRange.to, 'yyyy-MM-dd') : ''
@@ -169,6 +190,7 @@ export default function ReportsPage() {
                 to_date: toStr || undefined,
                 status: bookingListStatus !== 'all' ? bookingListStatus : undefined,
                 refund_status: bookingListRefundStatus !== 'all' ? bookingListRefundStatus : undefined,
+                booking_reference: debouncedSearch || undefined,
                 skip: (recentBookingsPage - 1) * recentBookingsLimit,
                 limit: recentBookingsLimit
             })
@@ -196,10 +218,20 @@ export default function ReportsPage() {
 
     const accentColor = theme === 'orange' ? '#f97316' : '#2563eb'
 
-    // CSV Data Preparation
-    const packagePerformanceCSV = useMemo(() => {
-        if (!packagePerformance) return []
-        return packagePerformance.map((pkg: any) => ({
+    // CSV Data Fetching Functions
+    const handleFetchAllPackages = async () => {
+        const fromStr = customRange.from ? format(customRange.from, 'yyyy-MM-dd') : ''
+        const toStr = customRange.to ? format(customRange.to, 'yyyy-MM-dd') : ''
+        const response = await agentReportsAPI.getPackagePerformance({
+            period: activePeriod,
+            start_date: fromStr,
+            end_date: toStr,
+            page: 1,
+            limit: 1000, // Large enough for all packages
+            sort_by: sortConfig.key,
+            sort_dir: sortConfig.direction
+        })
+        return response.items.map((pkg: any) => ({
             "Package Name": pkg.name,
             "Duration": pkg.sublabel.split(' • ')[0],
             "Location": pkg.sublabel.split(' • ')[1],
@@ -209,11 +241,22 @@ export default function ReportsPage() {
             "Cancel %": pkg.cancel_pct,
             "Conversion %": pkg.conversion
         }))
-    }, [packagePerformance])
+    }
 
-    const recentBookingsCSV = useMemo(() => {
-        if (!recentBookings) return []
-        return recentBookings.map((bk: any) => ({
+    const handleFetchAllRecentBookings = async () => {
+        const fromStr = customRange.from ? format(customRange.from, 'yyyy-MM-dd') : ''
+        const toStr = customRange.to ? format(customRange.to, 'yyyy-MM-dd') : ''
+        const response = await bookingsAPI.getAgentBookings({
+            period: activePeriod,
+            from_date: fromStr || undefined,
+            to_date: toStr || undefined,
+            status: bookingListStatus !== 'all' ? bookingListStatus : undefined,
+            refund_status: bookingListRefundStatus !== 'all' ? bookingListRefundStatus : undefined,
+            booking_reference: debouncedSearch || undefined,
+            skip: 0,
+            limit: 1000 // Large enough for all bookings
+        })
+        return response.items.map((bk: any) => ({
             "Reference ID": bk.booking_reference,
             "Package Name": bk.package?.title,
             "Customer Name": `${bk.user?.first_name} ${bk.user?.last_name}`,
@@ -224,7 +267,7 @@ export default function ReportsPage() {
             "Refund Amount": bk.refund_amount || 0,
             "Created Date": format(new Date(bk.created_at), 'yyyy-MM-dd')
         }))
-    }, [recentBookings])
+    }
 
     const financialReportsCSV = useMemo(() => {
         if (!financialReports) return []
@@ -440,7 +483,7 @@ export default function ReportsPage() {
                         <BarChart2 className="h-4.5 w-4.5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-[17px] font-bold text-slate-800 tracking-tight">Reports & Analytics</h1>
+                        <h1 className="text-[17px] font-bold text-slate-800 tracking-tight">Finance Reports</h1>
                         <p className="text-[12px] text-slate-500 font-medium">Track revenue, bookings and performance</p>
                     </div>
                 </div>
@@ -482,19 +525,18 @@ export default function ReportsPage() {
             </motion.div>
 
             {/* Filter Bar */}
-            {activeTab !== 'bookings' && (
-                <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="rounded-[20px] p-3 px-5 mb-8 flex items-center gap-4 flex-wrap"
-                    style={{ 
-                        background: 'rgba(255, 255, 255, 0.45)', 
-                        backdropFilter: 'blur(20px)', 
-                        border: '1px solid rgba(255, 255, 255, 0.4)',
-                        boxShadow: '0 8px 32px rgba(200,80,30,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
-                    }}
-                >
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="rounded-[20px] p-3 px-5 mb-8 flex items-center gap-4 flex-wrap"
+                style={{ 
+                    background: 'rgba(255, 255, 255, 0.45)', 
+                    backdropFilter: 'blur(20px)', 
+                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                    boxShadow: '0 8px 32px rgba(200,80,30,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'
+                }}
+            >
                     <div className="flex items-center gap-3">
                         <span className="text-[11px] uppercase tracking-[0.1em] text-slate-400 font-black">Period</span>
                         <div className="flex p-1.5 bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl shadow-inner relative overflow-hidden">
@@ -591,7 +633,6 @@ export default function ReportsPage() {
                         </div>
                     </div>
                 </motion.div>
-            )}
 
             <AnimatePresence mode="wait">
                 {activeTab === 'overview' && (
@@ -711,7 +752,7 @@ export default function ReportsPage() {
                 title="Package Performance" 
                 description="Metric aggregation per tour offer"
                 icon={Package}
-                exportData={packagePerformanceCSV}
+                onExportFetch={handleFetchAllPackages}
                 exportFilename="package_performance"
             >
                 <DataTable 
@@ -769,7 +810,7 @@ export default function ReportsPage() {
                 title="Recent Bookings" 
                 description="Status tracking & refund monitoring"
                 icon={HistoryIcon}
-                exportData={recentBookingsCSV}
+                onExportFetch={handleFetchAllRecentBookings}
                 exportFilename="recent_bookings"
             >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -806,6 +847,22 @@ export default function ReportsPage() {
                             </SelectContent>
                         </Select>
                     </div>
+
+                    <div className="relative w-full md:w-[280px] group">
+                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                        </div>
+                        <Input
+                            type="text"
+                            placeholder="Search Reference #..."
+                            value={bookingSearch}
+                            onChange={(e) => {
+                                setBookingSearch(e.target.value)
+                                debouncedSetSearch(e.target.value)
+                            }}
+                            className="h-10 pl-11 pr-4 w-full text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/30 text-slate-700 shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60 placeholder:text-slate-400 placeholder:font-medium"
+                        />
+                    </div>
                 </div>
 
                 <DataTable 
@@ -822,6 +879,12 @@ export default function ReportsPage() {
                             <div className="flex flex-col">
                                 <span className="text-[13px] font-bold text-slate-800">{bk.user?.first_name} {bk.user?.last_name}</span>
                                 <span className="text-[10px] text-slate-400">{bk.user?.email}</span>
+                            </div>
+                        )},
+                        { header: 'Booking Date', accessor: (bk) => (
+                            <div className="flex flex-col">
+                                <span className="text-[12.5px] font-bold text-slate-700">{format(new Date(bk.created_at), 'dd MMM yyyy')}</span>
+                                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">{format(new Date(bk.created_at), 'HH:mm')}</span>
                             </div>
                         )},
                         { header: 'Investment', accessor: (bk) => `₹${bk.total_amount.toLocaleString()}`, className: 'text-right font-black' },

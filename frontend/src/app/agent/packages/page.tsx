@@ -93,9 +93,10 @@ export default function AgentPackagesPage() {
 
         try {
             const user = JSON.parse(userStr)
-            if (user.role !== 'agent' && user.role !== 'admin') { // Allow admin to view for now if needed, or strict agent
+            const role = user.role?.toUpperCase()
+            if (role !== 'AGENT' && role !== 'ADMIN') { 
                 // For now strict agent or admin. Let's redirect if customer
-                if (user.role === 'customer') {
+                if (role === 'CUSTOMER') {
                     router.push('/')
                 }
             }

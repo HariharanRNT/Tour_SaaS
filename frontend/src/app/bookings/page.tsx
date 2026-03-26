@@ -62,7 +62,7 @@ export default function BookingsPage() {
     const loadBookings = async () => {
         try {
             const data = await bookingsAPI.getAll()
-            setBookings(data)
+            setBookings(data || [])
         } catch {
             toast.error('Failed to load your bookings')
         } finally {

@@ -22,6 +22,9 @@ class PaginatedBookingsResponse(BaseModel):
     items: List[BookingWithPackageResponse]
     total: int
 
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, Query, HTTPException, status
+
 @router.get("/bookings", response_model=PaginatedBookingsResponse)
 async def list_agent_bookings(
     skip: int = 0,
@@ -29,11 +32,49 @@ async def list_agent_bookings(
     status: str = None,
     booking_reference: str = None,
     refund_status: str = None,
+    period: str = Query("all", regex="^(today|week|month|ytm|all|custom)$"),
+    from_date: str = Query(None),
+    to_date: str = Query(None),
     db: AsyncSession = Depends(get_db),
     current_agent: User = Depends(get_current_agent)
 ):
     """List bookings for the current agent's packages"""
     base_stmt = select(Booking).where(Booking.agent_id == current_agent.id)
+    
+    # Date Filtering Logic
+    now = datetime.now(timezone.utc)
+    filter_start = None
+    filter_end = None
+
+    if period == 'today':
+        filter_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'week':
+        # Last 7 days
+        filter_start = (now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'month':
+        # Last 30 days
+        filter_start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'ytm':
+        # Year to Month (Start of current year)
+        filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'custom' and from_date:
+        try:
+            filter_start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+            if not filter_start.tzinfo:
+                filter_start = filter_start.replace(tzinfo=timezone.utc)
+            
+            if to_date:
+                filter_end = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+                if not filter_end.tzinfo:
+                    filter_end = filter_end.replace(tzinfo=timezone.utc)
+                filter_end = filter_end + timedelta(days=1)
+        except ValueError:
+            pass
+
+    if filter_start:
+        base_stmt = base_stmt.where(Booking.created_at >= filter_start)
+    if filter_end:
+        base_stmt = base_stmt.where(Booking.created_at < filter_end)
     
     if status:
         base_stmt = base_stmt.where(Booking.status == BookingStatus(status))
@@ -70,6 +111,7 @@ async def list_agent_bookings(
         "items": [BookingWithPackageResponse.model_validate(b) for b in bookings],
         "total": total
     }
+
 
 
 @router.get("/bookings/{booking_id}", response_model=BookingWithPackageResponse)

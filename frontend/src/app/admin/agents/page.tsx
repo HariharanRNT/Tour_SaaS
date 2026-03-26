@@ -255,26 +255,6 @@ export default function AdminAgentsPage() {
     // Validation states
     const [emailValid, setEmailValid] = useState<boolean | null>(null)
 
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        const userStr = localStorage.getItem('user')
-
-        if (!token || !userStr) {
-            router.push('/admin/login')
-            return
-        }
-
-        try {
-            const user = JSON.parse(userStr)
-            if (user.role !== 'admin') {
-                router.push('/login')
-                return
-            }
-        } catch (e) {
-            router.push('/admin/login')
-            return
-        }
-    }, [router])
 
     // Password strength calculator
     useEffect(() => {

@@ -46,18 +46,21 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogFooter } from "@/components/ui/dialog"
+    DialogFooter
+} from "@/components/ui/dialog"
 import {
     Popover,
     PopoverContent,
-    PopoverTrigger } from "@/components/ui/popover"
+    PopoverTrigger
+} from "@/components/ui/popover"
 import { PremiumCalendar } from "@/components/ui/premium-calendar"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -213,11 +216,11 @@ export default function AgentBookingsPage() {
                                 </Button>
                             </Link>
                             <nav className="text-xs font-bold text-[#B4501E]/60 uppercase tracking-widest flex items-center gap-2">
-                                Agent Portal <ChevronRight className="h-3 w-3" /> Bookings
+                                Agent Portal <ChevronRight className="h-3 w-3" /> Booking Report
                             </nav>
                         </div>
                         <h1 className="text-4xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>
-                            My Bookings
+                            Booking Report
                         </h1>
 
                         {/* Status Strip */}
@@ -564,9 +567,11 @@ export default function AgentBookingsPage() {
                                             <Share className="h-4 w-4 mr-3" /> <span className="font-bold">Share Itinerary</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="bg-white/10" />
-                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
-                                            <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
-                                        </DropdownMenuItem>
+                                        {booking.status !== 'cancelled' && (
+                                            <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)} className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
+                                                <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
+                                            </DropdownMenuItem>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -1008,14 +1013,16 @@ export default function AgentBookingsPage() {
                             </Button>
 
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => handleCancelBooking(booking.id)}
-                                    disabled={cancelMutation.isPending}
-                                    className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest"
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" /> {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
-                                </Button>
+                                {booking.status !== 'cancelled' && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => handleCancelBooking(booking.id)}
+                                        disabled={cancelMutation.isPending}
+                                        className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest"
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" /> {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
+                                    </Button>
+                                )}
                                 <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
                                     <Edit className="h-4 w-4 mr-2" /> Modify Trip
                                 </Button>

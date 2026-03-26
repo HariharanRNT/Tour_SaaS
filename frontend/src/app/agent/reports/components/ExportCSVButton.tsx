@@ -6,18 +6,35 @@ import { Download } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface ExportCSVButtonProps {
-    data: any[]
+    data?: any[]
+    onFetch?: () => Promise<any[]>
     filename: string
     className?: string
 }
 
-export default function ExportCSVButton({ data, filename, className = "" }: ExportCSVButtonProps) {
-    const handleExport = () => {
-        if (!data || data.length === 0) return
+export default function ExportCSVButton({ data, onFetch, filename, className = "" }: ExportCSVButtonProps) {
+    const [loading, setLoading] = React.useState(false)
+
+    const handleExport = async () => {
+        let exportData = data
+        
+        if (onFetch) {
+            setLoading(true)
+            try {
+                exportData = await onFetch()
+            } catch (error) {
+                console.error("Export fetch failed:", error)
+                return
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        if (!exportData || exportData.length === 0) return
 
         // Generic CSV conversion
-        const headers = Object.keys(data[0]).join(",")
-        const rows = data.map(row => 
+        const headers = Object.keys(exportData[0]).join(",")
+        const rows = exportData.map(row => 
             Object.values(row).map(val => {
                 // Handle escaping commas and quotes
                 const s = String(val)
@@ -40,14 +57,17 @@ export default function ExportCSVButton({ data, filename, className = "" }: Expo
         document.body.removeChild(link)
     }
 
+    const isDisabled = loading || (!onFetch && (!data || data.length === 0))
+
     return (
         <Button 
             variant="ghost" 
             onClick={handleExport}
-            disabled={!data || data.length === 0}
+            disabled={isDisabled}
             className={`gap-2 bg-white/50 border border-white/60 hover:bg-white/80 rounded-[12px] px-4 py-2 text-[12px] font-semibold text-slate-700 transition-all hover:shadow-md h-9 ${className}`}
         >
-            <Download className="h-3.5 w-3.5" /> Export CSV
+            <Download className={`h-3.5 w-3.5 ${loading ? 'animate-bounce' : ''}`} /> 
+            {loading ? 'Fetching...' : 'Export CSV'}
         </Button>
     )
 }

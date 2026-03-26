@@ -318,37 +318,6 @@ async def cancel_booking(
         logging.getLogger(__name__).error(f"Cancel booking failed: {e}")
         raise HTTPException(status_code=500, detail=f"Cancellation failed: {str(e)}")
 
-    # Send cancellation email (non-blocking failure)
-    try:
-        from app.services.customer_notification_service import CustomerNotificationService
-        query = select(Booking).where(Booking.id == booking_id).options(
-            selectinload(Booking.user),
-            selectinload(Booking.package)
-        )
-        notif_result = await db.execute(query)
-        booking_for_email = notif_result.scalar_one_or_none()
-        if booking_for_email:
-            await CustomerNotificationService.send_cancellation_confirmation(
-                booking=booking_for_email,
-                refund_amount=result["refund_amount"],
-                refund_status=result["refund_status"],
-            )
-            
-            # Send Agent Notification if the agent caused it
-            if row[2] == current_user.id:
-                from app.services.notification_service import NotificationService
-                await NotificationService.notify_agent_cancellation(
-                    db=db,
-                    agent_id=row[2],
-                    booking_reference=booking_for_email.booking_reference,
-                    customer_name=f"{booking_for_email.user.first_name} {booking_for_email.user.last_name}",
-                    package_title=booking_for_email.package.title
-                )
-
-    except Exception as email_err:
-        import logging
-        logging.getLogger(__name__).warning(f"Cancellation email/notification failed (non-fatal): {email_err}")
-
     return CancelActionResponse(**result)
 
 @router.get("/admin/all", response_model=List[BookingWithPackageResponse])

@@ -33,9 +33,35 @@ api.interceptors.request.use((config) => {
     return config
 })
 
-// Add response interceptor to handle 401s
+// Recursive helper to normalize status-related fields to lowercase
+const normalizeStatus = (data: any): any => {
+    if (Array.isArray(data)) {
+        return data.map(normalizeStatus)
+    } else if (data !== null && typeof data === 'object') {
+        const normalized: any = {}
+        const statusFields = ['status', 'refund_status', 'payment_status', 'shipping_status', 'payout_status']
+        for (const key in data) {
+            if (statusFields.includes(key) && typeof data[key] === 'string') {
+                normalized[key] = data[key].toLowerCase()
+            } else if (typeof data[key] === 'object') {
+                normalized[key] = normalizeStatus(data[key])
+            } else {
+                normalized[key] = data[key]
+            }
+        }
+        return normalized
+    }
+    return data
+}
+
+// Add response interceptor to handle 401s and normalize statuses
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (response.data) {
+            response.data = normalizeStatus(response.data)
+        }
+        return response
+    },
     (error) => {
         if (error.response?.status === 401) {
             if (typeof window !== 'undefined') {

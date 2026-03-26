@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
             }
 
             // Verify admin role
-            if (data.user.role !== 'admin') {
+            if (data.user.role.toUpperCase() !== 'ADMIN') {
                 throw new Error('Access denied: Admin privileges required')
             }
 

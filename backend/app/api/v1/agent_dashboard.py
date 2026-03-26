@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole, Subscription
+from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
@@ -72,7 +72,7 @@ async def get_agent_dashboard_stats(
         # We need to apply filter to creation date, AND check status.
         pub_query = select(func.count(Package.id)).where(
             Package.created_by == current_agent.id,
-            Package.status == 'published'
+            Package.status == PackageStatus.PUBLISHED
         )
         pub_query = apply_date_filter(pub_query, Package.created_at)
         res = await db.execute(pub_query)
@@ -81,7 +81,7 @@ async def get_agent_dashboard_stats(
         # Drafts
         draft_query = select(func.count(Package.id)).where(
             Package.created_by == current_agent.id,
-            Package.status == 'draft'
+            Package.status == PackageStatus.DRAFT
         )
         draft_query = apply_date_filter(draft_query, Package.created_at)
         res = await db.execute(draft_query)
@@ -110,7 +110,7 @@ async def get_agent_dashboard_stats(
         # Active (Confirmed or Pending) AND Upcoming Trip
         active_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status.in_(['confirmed', 'pending']),
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
         active_query = apply_date_filter(active_query, Booking.created_at)
@@ -120,7 +120,7 @@ async def get_agent_dashboard_stats(
         # Pending Only AND Upcoming Trip
         pending_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status == 'pending',
+            Booking.status == BookingStatus.PENDING,
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
         pending_query = apply_date_filter(pending_query, Booking.created_at)
@@ -130,7 +130,7 @@ async def get_agent_dashboard_stats(
         # Revenue (Confirmed/Completed)
         rev_query = select(func.sum(Booking.total_amount)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status.in_(['confirmed', 'completed'])
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
         )
         rev_query = apply_date_filter(rev_query, Booking.created_at)
         res = await db.execute(rev_query)
@@ -139,7 +139,7 @@ async def get_agent_dashboard_stats(
         # Cancellations (Scoped to Agent)
         cancel_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.id,
-            Booking.status == 'cancelled'
+            Booking.status == BookingStatus.CANCELLED
         )
         cancel_query = apply_date_filter(cancel_query, Booking.created_at)
         res = await db.execute(cancel_query)
@@ -231,7 +231,7 @@ async def get_agent_dashboard_stats(
         upcoming_bookings_stmt = select(Booking).where(
             Booking.agent_id == current_agent.id,
             Booking.travel_date >= now.date(),
-            Booking.status.notin_(['cancelled', 'completed'])
+            Booking.status.notin_([BookingStatus.CANCELLED, BookingStatus.COMPLETED])
         ).order_by(asc(Booking.travel_date)).limit(5).options(
             selectinload(Booking.travelers),
             selectinload(Booking.package).selectinload(Package.images),
@@ -246,7 +246,7 @@ async def get_agent_dashboard_stats(
 
         completed_bookings_stmt = select(Booking).where(
             Booking.agent_id == current_agent.id,
-            (Booking.travel_date < now.date()) | (Booking.status.in_(['cancelled', 'completed']))
+            (Booking.travel_date < now.date()) | (Booking.status.in_([BookingStatus.CANCELLED, BookingStatus.COMPLETED]))
         ).order_by(desc(Booking.travel_date)).limit(5).options(
             selectinload(Booking.travelers),
             selectinload(Booking.package).selectinload(Package.images),
