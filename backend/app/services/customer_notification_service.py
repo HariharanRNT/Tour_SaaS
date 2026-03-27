@@ -83,13 +83,56 @@ class CustomerNotificationService:
             support_email = agent_user.email
             support_phone = agent_user.phone if hasattr(agent_user, 'phone') and agent_user.phone else "N/A"
             
-        data["support_email"] = support_email
-        data["support_phone"] = support_phone
+        # Standardize and add agent info
+        data["agency_name"] = agent_user.agency_name or "TourSaaS"
+        data["agent_email"] = agent_user.email
+        data["agent_phone"] = agent_user.phone or ""
+        
+        # Add aliases for common variables to support different shell naming preferences
+        if "reference_id" in data and "booking_reference" not in data:
+            data["booking_reference"] = data["reference_id"]
+        if "total_amount" in data and "amount_paid" not in data:
+            data["amount_paid"] = data["total_amount"]
+        if "total_amount" in data and "total_amount_formatted" not in data:
+            data["total_amount_formatted"] = f"₹{float(data['total_amount']):,.2f}"
 
         # Resolve SMTP Config and Email Content
         smtp_config = CustomerNotificationService.get_agent_smtp_config(agent_user)
-        subject, html_body = get_customer_notification_html(template_type, data)
-
+        
+        # Check for Custom Template in Agent Settings
+        custom_template = None
+        if agent_user and agent_user.agent_profile and agent_user.agent_profile.homepage_settings:
+            email_templates = agent_user.agent_profile.homepage_settings.get("email_templates", {})
+            custom_template = email_templates.get(template_type)
+            
+        if custom_template:
+            from app.utils.template_renderer import render_template
+            logger.info(f"Using custom template for {template_type} (Agent: {agent_user.email})")
+            html_body = render_template(custom_template, data, template_type=template_type)
+            # Default subjects for custom templates if not provided in data
+            subject_map = {
+                "booking_confirmation": f"Booking Confirmed - {data.get('package_name', 'Your Package')}",
+                "payment_receipt": f"Payment Receipt - {data.get('reference_id', 'N/A')}",
+                "travel_itinerary": f"Your Travel Itinerary - {data.get('package_name', 'Your Package')}",
+                "booking_invoice": f"Booking Invoice - {data.get('reference_id', 'N/A')}",
+                "booking_cancellation": f"Booking Cancelled - {data.get('reference_id', 'N/A')}",
+                "trip_reminder": f"Upcoming Trip Reminder - {data.get('package_name', 'Your Package')}",
+                "trip_reminder_1d": f"Trip Reminder: Tomorrow! - {data.get('package_name', 'Your Package')}"
+            }
+            subject = data.get("subject") or subject_map.get(template_type, "Notification")
+        else:
+            from app.utils.template_renderer import render_template
+            from app.utils.customer_email_templates import get_customer_notification_template_config, get_customer_notification_html_content
+            
+            # 1. Get the template configuration (subject and HTML content)
+            template_config = get_customer_notification_template_config(template_type, data)
+            
+            # 2. Get the HTML content
+            html_content = template_config.get("html_content") or get_customer_notification_html_content(template_type)
+            
+            # 3. Render template with data
+            html_body = render_template(html_content, data, template_type=template_type)
+            subject = template_config.get("subject")
         
         # Create a pending NotificationLog entry synchronously to pass to Celery
         try:
@@ -307,21 +350,23 @@ class CustomerNotificationService:
 
     @staticmethod
     async def send_itinerary_details(booking: Booking):
-        """Sends Itinerary Details using Customer_notification.txt template 3"""
+        """Sends Itinerary Details using 'travel_itinerary' template"""
         from app.services.itinerary_pdf_service import ItineraryPdfService
         recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
-
+    
         # Build a simple itinerary summary from the package
         itinerary_summary = f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {booking.package.destination}"
-
+    
         data = {
             "customer_name": customer_name,
             "package_name": booking.package.title,
-            "itinerary_summary": itinerary_summary
+            "itinerary_summary": itinerary_summary,
+            "reference_id": booking.booking_reference,
+            "travel_date": str(booking.travel_date)
         }
-
+    
         # Generate Itinerary PDF
         itinerary_pdf_bytes = None
         itinerary_filename = None
@@ -331,15 +376,55 @@ class CustomerNotificationService:
                 itinerary_filename = f"Itinerary_{booking.booking_reference}.pdf"
         except Exception as e:
             logger.error(f"Failed to generate itinerary PDF for booking {booking.id}: {e}")
-
+    
         agent_user = CustomerNotificationService._resolve_agent(booking)
         attachments = []
         if itinerary_pdf_bytes:
             attachments.append({"bytes": itinerary_pdf_bytes, "filename": itinerary_filename})
-
+    
         await CustomerNotificationService._send_notification(
             recipient_email,
-            "itinerary_details",
+            "travel_itinerary",
+            data,
+            agent_user,
+            attachments=attachments,
+            booking_id=str(booking.id)
+        )
+    
+    @staticmethod
+    async def send_booking_invoice(booking: Booking):
+        """Sends Booking Invoice using 'booking_invoice' template (Pre-payment)"""
+        from app.services.invoice_service import InvoiceService
+        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        if not recipient_email:
+            return
+    
+        data = {
+            "customer_name": customer_name,
+            "package_name": booking.package.title,
+            "reference_id": booking.booking_reference,
+            "total_amount": float(booking.total_amount),
+            "travel_date": str(booking.travel_date)
+        }
+    
+        # Generate Invoice PDF
+        invoice_pdf_bytes = None
+        invoice_filename = None
+        try:
+            invoice_pdf_bytes = InvoiceService.generate_booking_invoice_pdf(booking, booking.user)
+            if invoice_pdf_bytes:
+                invoice_filename = f"Invoice_{booking.booking_reference}.pdf"
+        except Exception as e:
+            logger.error(f"Failed to generate invoice PDF for booking {booking.id}: {e}")
+    
+        agent_user = CustomerNotificationService._resolve_agent(booking)
+        attachments = []
+        if invoice_pdf_bytes:
+            attachments.append({"bytes": invoice_pdf_bytes, "filename": invoice_filename})
+    
+        await CustomerNotificationService._send_notification(
+            recipient_email,
+            "booking_invoice",
             data,
             agent_user,
             attachments=attachments,

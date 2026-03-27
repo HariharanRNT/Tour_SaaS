@@ -3,7 +3,7 @@ from typing import List
 from uuid import UUID
 import random
 import string
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -89,6 +89,23 @@ async def create_booking(
 ):
     """Create a new booking"""
     try:
+        # B-03: Idempotency check — prevent duplicate bookings within 60 seconds
+        window_start = datetime.now(timezone.utc) - timedelta(seconds=60)
+        dup_result = await db.execute(
+            select(Booking).where(
+                Booking.user_id == current_user.id,
+                Booking.package_id == booking_data.package_id,
+                Booking.travel_date == booking_data.travel_date,
+                Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
+                Booking.created_at >= window_start,
+            )
+        )
+        if dup_result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=409,
+                detail="A duplicate booking was detected. Please wait a moment before trying again."
+            )
+
         # Get package
         result = await db.execute(select(Package).where(Package.id == booking_data.package_id))
         package = result.scalar_one_or_none()
@@ -121,14 +138,20 @@ async def create_booking(
             subscription = await SubscriptionService.check_and_auto_activate(subscription_user_id, db)
             
             if not subscription:
-                raise HTTPException(status_code=403, detail="Your agent needs an active subscription to accept bookings.")
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail="Agent plan is not active"
+                )
                 
             # If we have a subscription, we still need to check if the *current* booking pushes it over limit
             # (The service check handled "already full", but we double check for the incremental booking)
             plan = subscription.plan
             if plan.booking_limit != -1 and subscription.current_bookings_usage >= plan.booking_limit:
                  # This case implies no upcoming plan was available to activate, or the new one is also full (unlikely)
-                 raise HTTPException(status_code=403, detail=f"Booking limit reached for your agent's plan.")
+                 raise HTTPException(
+                     status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                     detail="Booking limit reached for your agent's plan."
+                 )
                  
             # Increment usage (will be committed with booking)
             subscription.current_bookings_usage += 1

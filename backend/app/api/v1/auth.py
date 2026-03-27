@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.models import User, UserRole, Customer, Agent
+from app.models import User, UserRole, Customer, Agent, SubUser
 from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse, GoogleLoginRequest, AgentRegistration
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.exceptions import ConflictException, UnauthorizedException
@@ -32,7 +32,7 @@ async def register(
         existing_user = result.scalar_one_or_none()
         
         if existing_user:
-            raise ConflictException("Email already registered")
+            raise ConflictException("this email has already registered")
         
         # Use domain from URL context (header)
         registration_domain = domain
@@ -127,7 +127,7 @@ async def register_agent(
     # Check if user already exists
     result = await db.execute(select(User).where(User.email == agent_data.email))
     if result.scalar_one_or_none():
-        raise ConflictException("Email already registered")
+        raise ConflictException("this email has already registered")
     
     # Create User (Auth)
     user = User(
@@ -188,6 +188,21 @@ async def register_agent(
     )
     result = await db.execute(stmt)
     user = result.scalar_one()
+
+    # Trigger Agent Registration Emails
+    try:
+        from app.services.agent_notification_service import AgentNotificationService
+        # Send to Agent
+        await AgentNotificationService.send_registration_received_email(user)
+        
+        # Send to Admins
+        admin_stmt = select(User).where(User.role == UserRole.ADMIN)
+        admin_result = await db.execute(admin_stmt)
+        admins = admin_result.scalars().all()
+        await AgentNotificationService.send_admin_registration_request_email(user, admins)
+    except Exception as e:
+        logger.error(f"Failed to trigger agent registration emails: {e}")
+        # Non-blocking
     
     return UserResponse.model_validate(user)
 
@@ -207,8 +222,10 @@ async def login(
     # 1. Find user by email
     stmt = select(User).where(User.email == form_data.username).options(
         selectinload(User.admin_profile),
-        selectinload(User.agent_profile),
-        selectinload(User.customer_profile),
+        selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
+        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
@@ -227,7 +244,15 @@ async def login(
         raise HTTPException(status_code=400, detail="Account is inactive")
 
     # 3. Handle Role-Based Logic
-    if user.role == UserRole.AGENT:
+    if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
+        # Identify the relevant profiles for notification/SMTP
+        agent_profile = None
+        if user.role == UserRole.AGENT:
+            agent_profile = user.agent_profile
+        else:
+            # Sub-user inherits parent agent's profile for branding/SMTP
+            if user.sub_user_profile and user.sub_user_profile.agent:
+                agent_profile = user.sub_user_profile.agent.agent_profile
         # Check rate limiting
         if not await OTPService.check_login_rate_limit(user.email):
             logger.warning(f"Agent login OTP rate limit exceeded for: {user.email}")
@@ -266,8 +291,7 @@ async def login(
             )
         
         # Send OTP email
-        agent_profile = user.agent_profile
-        agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+        agent_name = f"{user.first_name} {user.last_name}" if user.first_name else "Agent Staff"
         
         subject = "Your Login OTP for RNT Tour"
         body = f"""
@@ -582,8 +606,9 @@ async def send_login_otp(
     # 1. Find user by email
     stmt = select(User).where(User.email == data.email).options(
         selectinload(User.admin_profile),
-        selectinload(User.agent_profile),
-        selectinload(User.customer_profile)
+        selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
     )
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
@@ -595,8 +620,8 @@ async def send_login_otp(
         logger.warning(f"❌ User not found for email: {data.email}")
         raise UnauthorizedException("Invalid email or password")
     
-    # 2. Verify user role (Allow Agent and Customer)
-    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER]:
+    # 2. Verify user role (Allow Agent, Customer, and Sub-User)
+    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:
         logger.warning(f"❌ User {data.email} is not permitted for OTP login. Role: {user.role}")
         raise UnauthorizedException("Invalid email or password")
     
@@ -680,15 +705,21 @@ async def send_login_otp(
         </div>
         """
     else:    
-        agent_profile = user.agent_profile
-        agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
+        # Resolve agent profile for branding/SMTP (Parent agent if SUB_USER)
+        agent_profile = None
+        if user.role == UserRole.AGENT:
+            agent_profile = user.agent_profile
+        elif user.role == UserRole.SUB_USER and user.sub_user_profile and user.sub_user_profile.agent:
+            agent_profile = user.sub_user_profile.agent.agent_profile
+
+        agent_name = f"{user.first_name} {user.last_name}" if user.first_name else "Agent Staff"
         
         subject = "Your Login OTP for RNT Tour"
         body = f"""
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
             <p>Hello {agent_name},</p>
-            <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+            <p>You requested to resend the login OTP. Use the code below to complete your login. This OTP is valid for 5 minutes.</p>
             <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
                 {otp}
             </div>
@@ -734,7 +765,7 @@ async def verify_login_otp(
     data: VerifyLoginOTPRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify OTP and complete login for Agent or Customer"""
+    """Verify OTP and complete login for Agent, Customer, or Sub-User"""
     from sqlalchemy.orm import selectinload
     from app.services.otp_service import OTPService
     
@@ -750,8 +781,10 @@ async def verify_login_otp(
     # 2. Find user by email
     stmt = select(User).where(User.email == data.email).options(
         selectinload(User.admin_profile),
-        selectinload(User.agent_profile),
-        selectinload(User.customer_profile),
+        selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
+        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
@@ -761,7 +794,7 @@ async def verify_login_otp(
         raise HTTPException(status_code=404, detail="User not found")
     
     # 3. Verify allowed roles
-    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER]:
+    if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # 4. Check if user is active
@@ -771,14 +804,25 @@ async def verify_login_otp(
     # 5. Delete OTP from Redis
     await OTPService.delete_login_otp(data.email)
     
-    # 6. Create access token
-    access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
+    # 6. Build JWT payload
+    token_data: dict = {"sub": str(user.id), "role": user.role.value}
+
+    # For SUB_USER — embed parent agent_id and permissions in the token
+    if user.role == UserRole.SUB_USER and user.sub_user_profile:
+        sub_user = user.sub_user_profile
+        token_data["agent_id"] = str(sub_user.agent_id)
+        token_data["permissions"] = user.permissions
+        token_data["role_label"] = sub_user.role_label
+    
+    # 7. Create access token
+    access_token = create_access_token(data=token_data)
     
     return Token(
         access_token=access_token,
         token_type="bearer",
         user=UserResponse.model_validate(user)
     )
+
 
 
 @router.get("/me", response_model=UserResponse)

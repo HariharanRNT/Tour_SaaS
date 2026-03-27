@@ -1,0 +1,3 @@
+Email: test_4bf97c08_domain_with_protocol@example.com
+Created at: 2026-03-26 11:07:03.759999+00:00
+Status: ApprovalStatus.PENDING

@@ -10,7 +10,7 @@ from app.schemas.activities import (
     DestinationSummary, PaginatedDestinationResponse,
     DestinationCreate, DestinationUpdate
 )
-from app.api.deps import get_current_active_user
+from app.api.deps import get_current_agent, check_permission
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def get_activities(
     city: Optional[str] = None,
     category: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_agent)
 ):
     """
     Get all activities. 
@@ -28,7 +28,7 @@ async def get_activities(
     stmt = select(Activity).options(selectinload(Activity.images)).where(
         or_(
             Activity.agent_id == None,
-            Activity.agent_id == current_user.id
+            Activity.agent_id == current_user.agent_id
         )
     )
     
@@ -46,7 +46,7 @@ async def get_activities(
 async def create_activity(
     activity_in: ActivityCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "edit"))
 ):
     """
     Create a new activity.
@@ -55,7 +55,7 @@ async def create_activity(
     activity_data = activity_in.model_dump(exclude={"images"})
     db_activity = Activity(
         **activity_data,
-        agent_id=current_user.id if current_user.role != UserRole.ADMIN else None
+        agent_id=current_user.agent_id if current_user.role != UserRole.ADMIN else None
     )
     db.add(db_activity)
     await db.flush() # Get activity ID
@@ -81,7 +81,7 @@ async def get_destinations(
     page: int = Query(1, ge=1),
     limit: int = Query(8, ge=1),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_agent)
 ):
     """
     Get all unique destinations and their activity counts with pagination.
@@ -92,7 +92,7 @@ async def get_destinations(
         .where(
             or_(
                 Activity.agent_id == None,
-                Activity.agent_id == current_user.id
+                Activity.agent_id == current_user.agent_id
             )
         )
         .group_by(Activity.destination_city)
@@ -119,7 +119,7 @@ async def get_destinations(
         .where(
             or_(
                 Activity.agent_id == None,
-                Activity.agent_id == current_user.id
+                Activity.agent_id == current_user.agent_id
             )
         )
         .group_by(
@@ -176,13 +176,11 @@ async def get_destinations(
 async def update_destination_metadata(
     metadata: DestinationCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "edit"))
 ):
     """
     Create or update destination metadata (image, description, etc.)
     """
-    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.AGENT:
-        raise HTTPException(status_code=403, detail="Not authorized")
 
     # Check if exists
     stmt = select(Destination).where(Destination.name == metadata.name)
@@ -252,13 +250,11 @@ async def update_destination(
     old_name: str,
     metadata: DestinationUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "edit"))
 ):
     """
     Update destination metadata and handle renaming across the system.
     """
-    if current_user.role != UserRole.ADMIN and current_user.role != UserRole.AGENT:
-        raise HTTPException(status_code=403, detail="Not authorized")
 
     # Check if exists
     stmt = select(Destination).where(Destination.name == old_name)
@@ -333,7 +329,7 @@ async def update_destination(
 async def get_activity(
     activity_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_agent)
 ):
     stmt = select(Activity).where(Activity.id == activity_id)
     result = await db.execute(stmt)
@@ -342,7 +338,7 @@ async def get_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
         
-    if activity.agent_id and activity.agent_id != current_user.id and current_user.role != UserRole.ADMIN:
+    if activity.agent_id and activity.agent_id != current_user.agent_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this activity")
         
     return activity
@@ -353,7 +349,7 @@ async def update_activity(
     activity_id: str,
     activity_in: ActivityUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "edit"))
 ):
     stmt = select(Activity).options(selectinload(Activity.images)).where(Activity.id == activity_id)
     result = await db.execute(stmt)
@@ -362,7 +358,7 @@ async def update_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
         
-    if activity.agent_id != current_user.id and current_user.role != UserRole.ADMIN:
+    if activity.agent_id != current_user.agent_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this activity")
         
     update_data = activity_in.model_dump(exclude_unset=True, exclude={"images"})
@@ -394,7 +390,7 @@ async def update_activity(
 async def delete_activity(
     activity_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "full"))
 ):
     stmt = select(Activity).where(Activity.id == activity_id)
     result = await db.execute(stmt)
@@ -403,7 +399,7 @@ async def delete_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
         
-    if activity.agent_id != current_user.id and current_user.role != UserRole.ADMIN:
+    if activity.agent_id != current_user.agent_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this activity")
         
     await db.delete(activity)
@@ -415,12 +411,12 @@ async def delete_activity(
 async def delete_destination_activities(
     city: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_permission("activities", "full"))
 ):
     """Delete all activities for a specific destination city owned by the current user."""
     stmt = delete(Activity).where(
         Activity.destination_city == city,
-        Activity.agent_id == current_user.id
+        Activity.agent_id == current_user.agent_id
     )
     
     # Special handling for Admin if needed

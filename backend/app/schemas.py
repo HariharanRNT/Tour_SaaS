@@ -1,5 +1,7 @@
 """Pydantic schemas for API request/response models"""
 import json
+import re
+import html
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Union
@@ -7,12 +9,53 @@ from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator
 from app.models import UserRole, PackageStatus, BookingStatus, PaymentStatus, ApprovalStatus
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Input Sanitization Helpers (B-01 XSS / B-02 SQLi)
+# ──────────────────────────────────────────────────────────────────────────────
+_HTML_TAG_RE = re.compile(r'<[^>]+>')
+_SQL_PATTERN = re.compile(
+    r"(--|;|\bDROP\b|\bTABLE\b|\bINSERT\b|\bDELETE\b|\bUPDATE\b|\bSELECT\b|\bUNION\b|'\\ *OR|xp_)",
+    re.IGNORECASE
+)
+_PHONE_RE = re.compile(r'^\+?[\d\s\-().]{7,15}$')
+
+
+def strip_xss(value: str) -> str:
+    """Strip HTML tags and unescape entities to prevent XSS persistence."""
+    if value is None:
+        return value
+    cleaned = _HTML_TAG_RE.sub('', value)
+    cleaned = html.unescape(cleaned)
+    return cleaned.strip()
+
+
+def reject_sql(value: str, field_name: str = 'field') -> str:
+    """Raise ValueError if value contains obvious SQL injection patterns."""
+    if value and _SQL_PATTERN.search(value):
+        raise ValueError(f"{field_name} contains invalid characters or reserved keywords.")
+    return value
+
+
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
-    first_name: str
-    last_name: str
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
+
+    @field_validator('first_name', 'last_name', mode='before')
+    @classmethod
+    def sanitize_name(cls, v):
+        if not isinstance(v, str):
+            return v
+        return strip_xss(v).strip()
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is None:
+            return v
+        return str(v).strip()
 
 
 class UserCreate(UserBase):
@@ -32,6 +75,25 @@ class UserCreate(UserBase):
     commission_type: Optional[str] = "percentage"
     commission_value: Optional[Decimal] = 0.0
     approval_status: Optional[ApprovalStatus] = ApprovalStatus.APPROVED
+
+    @field_validator('first_name', 'last_name', mode='before')
+    @classmethod
+    def validate_names_strict(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError('Field cannot be empty or whitespace only.')
+        v = strip_xss(v)
+        reject_sql(v, 'name')
+        return v.strip()
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone_strict(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip()
+        if not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits.')
+        return v
 
 
 class UserUpdate(BaseModel):
@@ -62,23 +124,70 @@ class UserUpdate(BaseModel):
 
 class AgentRegistration(BaseModel):
     # Agency Details
-    agency_name: str
-    company_legal_name: str
-    domain: str
-    business_address: str
-    country: str
-    state: str
-    city: str
+    agency_name: str = Field(..., min_length=1, max_length=200)
+    company_legal_name: str = Field(..., min_length=1, max_length=200)
+    domain: str = Field(..., min_length=1, max_length=100)
+    business_address: str = Field(..., min_length=1, max_length=500)
+    country: str = Field(..., min_length=1, max_length=100)
+    state: str = Field(..., min_length=1, max_length=100)
+    city: str = Field(..., min_length=1, max_length=100)
     
     # Contact Details
-    first_name: str
-    last_name: str
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     phone: str
     
     # Credentials
-    password: str = Field(..., min_length=8)
-    confirm_password: str = Field(..., min_length=8)
+    password: str = Field(..., min_length=8, max_length=128)
+    confirm_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator(
+        'agency_name', 'company_legal_name', 'business_address',
+        'country', 'state', 'city', 'first_name', 'last_name',
+        mode='before'
+    )
+    @classmethod
+    def sanitize_text_fields(cls, v):
+        """B-01/B-02/B-08: Strip XSS, reject SQLi, reject whitespace-only."""
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'field')
+        if not v.strip():
+            raise ValueError('Field cannot be empty or contain only whitespace.')
+        return v
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone(cls, v):
+        """B-05: Validate phone number format."""
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        v = str(v).strip()
+        if not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits and may include +, spaces, dashes, or parentheses.')
+        return v
+
+    @field_validator('domain', mode='before')
+    @classmethod
+    def validate_domain(cls, v):
+        """B-06: Validate domain format — no spaces, auto-strip protocol."""
+        if not isinstance(v, str):
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError('Domain cannot be empty.')
+        if ' ' in v:
+            raise ValueError('Domain cannot contain spaces.')
+        
+        # Auto-strip protocol if provided
+        v = re.sub(r'^https?://', '', v, flags=re.IGNORECASE)
+        
+        domain_re = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-\.]{0,253}[a-zA-Z0-9]$')
+        if not domain_re.match(v):
+            raise ValueError('Domain must be a valid hostname (e.g., myagency.com).')
+        return v
 
     @field_validator('confirm_password')
     @classmethod
@@ -121,6 +230,11 @@ class UserResponse(UserBase):
     has_active_subscription: bool = False
     subscription_status: Optional[str] = None
     subscription_end_date: Optional[date] = None
+    
+    # Sub-User Fields
+    permissions: Optional[List[dict]] = None
+    agent_id: Optional[UUID4] = None
+    sub_user_id: Optional[UUID4] = None
     
     created_at: datetime
     
@@ -278,6 +392,7 @@ class HomepageSettingsUpdate(BaseModel):
     # Email Settings
     default_email_theme: Optional[str] = None
     default_email_message: Optional[str] = None
+    email_templates: Optional[dict] = None
 
 
 class Token(BaseModel):
@@ -441,13 +556,41 @@ class PackageListResponse(BaseModel):
 
 # Booking Schemas
 class TravelerBase(BaseModel):
-    first_name: str
-    last_name: str
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     date_of_birth: date
-    gender: str
-    passport_number: Optional[str] = None
-    nationality: str
+    gender: str = Field(..., min_length=1, max_length=20)
+    passport_number: Optional[str] = Field(None, max_length=50)
+    nationality: str = Field(..., min_length=1, max_length=100)
     is_primary: bool = False
+
+    @field_validator('first_name', 'last_name', 'nationality', mode='before')
+    @classmethod
+    def sanitize_traveler_text(cls, v):
+        """B-01/B-02/B-08: Strip XSS, reject SQLi, reject whitespace-only."""
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'traveler field')
+        if not v.strip():
+            raise ValueError('Field cannot be empty or contain only whitespace.')
+        return v
+
+    @field_validator('date_of_birth', mode='before')
+    @classmethod
+    def validate_dob(cls, v):
+        """B-07: Traveler DOB must be in the past and not more than 120 years ago."""
+        if isinstance(v, str):
+            try:
+                v = date.fromisoformat(v)
+            except ValueError:
+                raise ValueError('Invalid date format. Use YYYY-MM-DD.')
+        today = date.today()
+        if v >= today:
+            raise ValueError('Date of birth must be in the past.')
+        if (today - v).days > 120 * 365:
+            raise ValueError('Date of birth cannot be more than 120 years ago.')
+        return v
 
 
 class TravelerResponse(TravelerBase):
@@ -460,10 +603,20 @@ class TravelerResponse(TravelerBase):
 class BookingCreate(BaseModel):
     package_id: UUID4
     travel_date: date
-    number_of_travelers: int = Field(..., ge=1)
+    number_of_travelers: int = Field(..., ge=1, le=50)
     travelers: List[TravelerBase]
-    special_requests: Optional[str] = None
+    special_requests: Optional[str] = Field(None, max_length=2000)
     customer_id: Optional[UUID4] = None
+
+    @field_validator('special_requests', mode='before')
+    @classmethod
+    def sanitize_special_requests(cls, v):
+        """B-01/B-02: Strip XSS from special requests field."""
+        if v is None:
+            return v
+        v = strip_xss(str(v))
+        reject_sql(v, 'special_requests')
+        return v
 
 
 class BookingResponse(BaseModel):
@@ -789,3 +942,65 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ─── Sub-User Schemas ─────────────────────────────────────────────────────────
+
+class SubUserPermissionIn(BaseModel):
+    module: str  # dashboard | packages | activities | bookings | billing | finance_reports | settings
+    access_level: str = "view"  # view | edit | full
+
+
+class SubUserPermissionOut(SubUserPermissionIn):
+    id: UUID4
+
+    class Config:
+        from_attributes = True
+
+
+class SubUserCreate(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    phone: Optional[str] = None
+    role_label: str = "Custom"  # Package Manager | Finance Manager | Report Viewer | Custom
+    permissions: List[SubUserPermissionIn] = []
+
+    @field_validator('first_name', 'last_name', mode='before')
+    @classmethod
+    def sanitize_name(cls, v):
+        if not isinstance(v, str):
+            return v
+        return strip_xss(v).strip()
+
+
+class SubUserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    role_label: Optional[str] = None
+    permissions: Optional[List[SubUserPermissionIn]] = None
+
+
+class SubUserResponse(BaseModel):
+    id: UUID4
+    user_id: UUID4
+    agent_id: UUID4
+    role_label: str
+    is_active: bool
+    created_at: datetime
+    # Flattened from the linked User record
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    phone: Optional[str] = None
+    permissions: List[SubUserPermissionOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class SubUserListResponse(BaseModel):
+    sub_users: List[SubUserResponse]
+    total: int
+

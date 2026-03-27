@@ -1,0 +1,76 @@
+﻿
+--- Testing: Invalid Email Format (No Domain) ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'email']: value is not a valid email address: An email address must have an @-sign. (value_error)
+
+--- Testing: Invalid Email Format (No Name) ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'email']: value is not a valid email address: An email address cannot have a period immediately after the @-sign. (value_error)
+
+--- Testing: Invalid Email Format (No TLD) ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'email']: value is not a valid email address: The part after the @-sign is not valid. It should have a period. (value_error)
+
+--- Testing: Invalid Email Format (Double Dot) ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'email']: value is not a valid email address: An email address cannot have two periods in a row. (value_error)
+
+--- Testing: Domain with Spaces ---
+Status Code: 201
+Response: {
+  "email": "test_6dcc7882_domain_with_spaces@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "2c4bc4b1-b654-4257-a64d-b11c0701e884",
+  "role": "AGENT",
+  "domain": "not a domain",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:07:01.253265Z"
+}
+
+--- Testing: Domain with Protocol ---
+Status Code: 201
+Response: {
+  "email": "test_4bf97c08_domain_with_protocol@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "c76df379-acd9-425d-a9eb-8236ca20af53",
+  "role": "AGENT",
+  "domain": "http://domain.com",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:07:03.759999Z"
+}

@@ -19,6 +19,7 @@ class UserRole(str, enum.Enum):
     ADMIN = "ADMIN"
     AGENT = "AGENT"
     CUSTOMER = "CUSTOMER"
+    SUB_USER = "SUB_USER"
 
 
 class ApprovalStatus(str, enum.Enum):
@@ -74,7 +75,7 @@ class User(Base):
     # Proxy Properties
     @property
     def profile(self):
-        return self.admin_profile or self.agent_profile or self.customer_profile
+        return self.admin_profile or self.agent_profile or self.customer_profile or self.sub_user_profile
         
     @property
     def first_name(self):
@@ -94,6 +95,9 @@ class User(Base):
 
     @property
     def agent_id(self):
+        if self.role == UserRole.AGENT:
+            return self.id
+        # Fallback to profile (for Customer or SubUser)
         return getattr(self.profile, 'agent_id', None) if self.profile else None
 
     # Agent Specific Proxies
@@ -146,12 +150,38 @@ class User(Base):
         return self.subscription.end_date
 
     @property
+    def sub_user_id(self):
+        return self.sub_user_profile.id if self.sub_user_profile else None
+
+    @property
+    def permissions(self):
+        # We might have attached them in deps.py
+        if hasattr(self, '_sub_user_permissions'):
+            return self._sub_user_permissions
+        # Otherwise load from database
+        try:
+            if self.role == UserRole.SUB_USER and self.sub_user_profile and self.sub_user_profile.permissions:
+                return [
+                    {"module": p.module, "access_level": p.access_level}
+                    for p in self.sub_user_profile.permissions
+                ]
+        except Exception:
+            # Fallback if permissions are not loaded and session is closed
+            pass
+        return []
+
+    @property
     def has_active_subscription(self):
-        if not self.subscription or self.subscription.status != 'active':
+        # Target the user themselves, or their parent agent if they are a sub-user
+        target = self
+        if self.role == UserRole.SUB_USER and self.sub_user_profile and self.sub_user_profile.agent:
+            target = self.sub_user_profile.agent
+            
+        if not target.subscription or target.subscription.status != 'active':
             return False
         
         from datetime import date
-        return self.subscription.end_date >= date.today()
+        return target.subscription.end_date >= date.today()
     
     # Relationships
     subscription = relationship(
@@ -174,6 +204,7 @@ class User(Base):
     # Subscription & Billing Relationships
     invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    sub_user_profile = relationship("SubUser", back_populates="user", uselist=False, cascade="all, delete-orphan", foreign_keys="SubUser.user_id", lazy="selectin")
 
 
 class Admin(Base):
@@ -833,3 +864,46 @@ class UserOTP(Base):
 # class AgentTheme(Base):
 #     __tablename__ = "agent_themes"
 # ... (rest of the class)
+
+
+class SubUser(Base):
+    """
+    Sub-users created by an Agent to delegate access.
+    They share the same login page; their dashboard is filtered by permissions.
+    """
+    __tablename__ = "sub_users"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # The auth User record for this sub-user
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    # The parent agent whose data this sub-user can access
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Human-readable role preset label
+    role_label = Column(String(64), default="Custom")  # Package Manager | Finance Manager | Report Viewer | Custom
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], lazy="selectin")
+    agent = relationship("User", foreign_keys=[agent_id], lazy="selectin")
+    permissions = relationship("SubUserPermission", back_populates="sub_user", cascade="all, delete-orphan", lazy="selectin")
+
+
+class SubUserPermission(Base):
+    """
+    Per-module access grants for a SubUser.
+    module: dashboard | packages | activities | bookings | billing | finance_reports | settings
+    access_level: view | edit | full
+    """
+    __tablename__ = "sub_user_permissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sub_user_id = Column(UUID(as_uuid=True), ForeignKey("sub_users.id", ondelete="CASCADE"), nullable=False, index=True)
+    module = Column(String(64), nullable=False)
+    access_level = Column(String(16), default="view")  # view | edit | full
+
+    __table_args__ = (UniqueConstraint("sub_user_id", "module", name="uq_subuser_module"),)
+
+    # Relationships
+    sub_user = relationship("SubUser", back_populates="permissions")

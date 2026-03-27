@@ -1,0 +1,11 @@
+Total NotificationLogs: 93
+ID: 30bad4ff-93cb-4a3e-8712-0ba0cf9268e6 | Type: payment_receipt | Status: sent | Created: 2026-03-27 06:13:48.377633+00:00 | Error: None
+ID: cb7f6f1d-0dc1-40ab-895e-991636f30120 | Type: travel_itinerary | Status: sent | Created: 2026-03-27 06:13:46.618819+00:00 | Error: None
+ID: 3c0a62bb-c5ce-4ef2-b26f-d931eac77b49 | Type: booking_confirmation | Status: sent | Created: 2026-03-27 06:13:46.128366+00:00 | Error: None
+ID: 2dfc2602-02a5-4699-b3da-b565bd92113b | Type: payment_receipt | Status: sent | Created: 2026-03-27 05:16:12.527534+00:00 | Error: None
+ID: 8e6bd791-7bb2-4639-aa92-4d7401db55e8 | Type: travel_itinerary | Status: sent | Created: 2026-03-27 05:16:10.769392+00:00 | Error: None
+ID: d66cdb3d-b6ea-485f-8022-cd05be02c55b | Type: booking_confirmation | Status: sent | Created: 2026-03-27 05:16:10.372128+00:00 | Error: None
+ID: 9ff0a586-bc70-4273-9659-9fcda989fb10 | Type: payment_receipt | Status: sent | Created: 2026-03-26 13:49:21.612837+00:00 | Error: None
+ID: 6a6d733e-dc0a-4541-a3b4-74e4f79ecea8 | Type: travel_itinerary | Status: sent | Created: 2026-03-26 13:49:18.803122+00:00 | Error: None
+ID: 29bad231-e744-4467-a925-686846a93d87 | Type: booking_confirmation | Status: sent | Created: 2026-03-26 13:49:18.389746+00:00 | Error: None
+ID: 9dbacb98-6073-4cf1-a22c-6f0c935bf4fc | Type: customer_welcome | Status: sent | Created: 2026-03-26 11:44:06.114053+00:00 | Error: None

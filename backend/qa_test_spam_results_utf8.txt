@@ -1,0 +1,12 @@
+﻿
+--- Testing: Rapid Submission Spam (5 requests simultaneously) ---
+Request 1: Status 201
+  - Booking Ref: BKAUH084786
+Request 2: Status 201
+  - Booking Ref: BKZNF883044
+Request 3: Status 201
+  - Booking Ref: BKKFJ187653
+Request 4: Status 201
+  - Booking Ref: BKKUA031986
+Request 5: Status 201
+  - Booking Ref: BKMAG159164

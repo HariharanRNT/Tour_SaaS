@@ -1,0 +1,35 @@
+﻿
+--- Testing: Traveler Count Mismatch (Req 2, Prov 1) ---
+Status Code: 403
+Response: {
+  "detail": "No agent associated with this account. Cannot make bookings."
+}
+
+--- Testing: Zero Travelers ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'number_of_travelers']: Input should be greater than or equal to 1 (greater_than_equal)
+
+--- Testing: Past Travel Date ---
+Status Code: 400
+Response: {
+  "detail": "Travel date must be in the future"
+}
+
+--- Testing: XSS/SQLi in Special Requests ---
+Status Code: 403
+Response: {
+  "detail": "No agent associated with this account. Cannot make bookings."
+}
+
+--- Testing: Overflow Traveler Names ---
+Status Code: 403
+Response: {
+  "detail": "No agent associated with this account. Cannot make bookings."
+}
+
+--- Testing: Future DOB ---
+Status Code: 403
+Response: {
+  "detail": "No agent associated with this account. Cannot make bookings."
+}

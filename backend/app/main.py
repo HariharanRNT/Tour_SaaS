@@ -1,7 +1,14 @@
-"""Main FastAPI application - Force Reload v4"""
+"""Main FastAPI application"""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+# Initialize Limiter
+limiter = Limiter(key_func=get_remote_address)
+
 from app.config import settings
 from app.api.v1 import (
     auth, packages, bookings, payments, tours, flights, templates, 
@@ -9,7 +16,7 @@ from app.api.v1 import (
     admin_simple, trip_planner, agent_packages, admin_agents, 
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
-    reports, webhooks, activities, agent_reports
+    reports, webhooks, activities, agent_reports, agent_subusers
 )
 import traceback
 import logging
@@ -33,6 +40,8 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -82,6 +91,8 @@ if not os.path.exists(static_dir):
     os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+# Limiter already initialized above
+
 # Include routers
 app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Authentication"])
 app.include_router(bookings.router, prefix=f"{settings.API_V1_PREFIX}/bookings", tags=["Bookings"])
@@ -112,6 +123,7 @@ app.include_router(webhooks.router, prefix=f"{settings.API_V1_PREFIX}/webhooks",
 # app.include_router(theme.router, prefix=f"{settings.API_V1_PREFIX}", tags=["Agent - Theme"])
 app.include_router(activities.router, prefix=f"{settings.API_V1_PREFIX}/activities", tags=["Activities"])
 app.include_router(agent_reports.router, prefix=f"{settings.API_V1_PREFIX}/agent/reports", tags=["Agent - Reports"])
+app.include_router(agent_subusers.router, prefix=f"{settings.API_V1_PREFIX}/agent/sub-users", tags=["Agent - Sub-Users"])
 
 
 @app.get("/")

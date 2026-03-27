@@ -1,0 +1,308 @@
+﻿
+--- Testing: Empty Agency Name ---
+Status Code: 201
+Response: {
+  "email": "test_168cfc36_empty_agency_name@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "d98b4ae9-a4ae-4f5a-b067-11ec06f39c87",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:23.080986Z"
+}
+
+--- Testing: Spaces Agency Name ---
+Status Code: 201
+Response: {
+  "email": "test_8b835d27_spaces_agency_name@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "040c006e-a781-4f43-8688-5537bb8fd545",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "   ",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:27.592379Z"
+}
+
+--- Testing: Overflow Agency Name ---
+Status Code: 201
+Response: {
+  "email": "test_09ddffad_overflow_agency_name@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "10dbf5ec-accd-4bad-916f-c7ea25cd3822",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:30.031036Z"
+}
+
+--- Testing: SQLi Agency Name ---
+Status Code: 201
+Response: {
+  "email": "test_5734befc_sqli_agency_name@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "317dc919-f6c7-4f55-b952-f4a8b97b0faf",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "' OR '1'='1;--",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:32.317288Z"
+}
+
+--- Testing: XSS Agency Name ---
+Status Code: 201
+Response: {
+  "email": "test_2305e11c_xss_agency_name@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "f73cd85f-33fa-49c1-a801-625f802be106",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "<script>alert(1)</script>",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:34.594329Z"
+}
+
+--- Testing: Invalid Email Format ---
+Status Code: 201
+Response: {
+  "email": "test_264b1d49_invalid_email_format@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "834d4961-1a63-415e-8872-7fd4cf75f7de",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:36.869057Z"
+}
+
+--- Testing: Overflow Email ---
+Status Code: 201
+Response: {
+  "email": "test_c4c6f2de_overflow_email@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "1d51c3c4-f07c-4c38-a365-bb212ea5d038",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:39.130528Z"
+}
+
+--- Testing: Short Phone ---
+Status Code: 201
+Response: {
+  "email": "test_52f029ce_short_phone@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "123",
+  "id": "da4d8944-72b5-4f39-9982-b92b70b66a35",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:41.404378Z"
+}
+
+--- Testing: Alpha Phone ---
+Status Code: 201
+Response: {
+  "email": "test_0726039b_alpha_phone@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "not-a-number",
+  "id": "e8e73164-c9ab-47af-ba5a-a77c8463f187",
+  "role": "AGENT",
+  "domain": "test.local",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:43.692373Z"
+}
+
+--- Testing: Empty Domain ---
+Status Code: 201
+Response: {
+  "email": "test_1999d55a_empty_domain@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "70cb4049-8137-44b0-b9da-6627c826d664",
+  "role": "AGENT",
+  "domain": "",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:45.937077Z"
+}
+
+--- Testing: Invalid Domain Format ---
+Status Code: 201
+Response: {
+  "email": "test_eaa28a62_invalid_domain_format@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "9876543210",
+  "id": "a795cfce-b381-4984-9b68-1fd80891aff5",
+  "role": "AGENT",
+  "domain": "invalid_domain",
+  "agency_name": "Test Agency",
+  "company_legal_name": "Test Company",
+  "business_address": "123 Test St",
+  "city": "Chennai",
+  "state": "Tamil Nadu",
+  "country": "India",
+  "gst_no": null,
+  "commission_type": "percentage",
+  "commission_value": "0.0",
+  "approval_status": "PENDING",
+  "email_verified": false,
+  "is_active": false,
+  "has_active_subscription": false,
+  "subscription_status": null,
+  "subscription_end_date": null,
+  "created_at": "2026-03-26T11:05:48.209239Z"
+}

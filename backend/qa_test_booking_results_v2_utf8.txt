@@ -1,0 +1,110 @@
+﻿
+--- Testing: Traveler Count Mismatch (Req 2, Prov 1) ---
+Status Code: 400
+Response: {
+  "detail": "Number of travelers does not match travelers list"
+}
+
+--- Testing: Zero Travelers ---
+Status Code: 422
+Validation Errors:
+  - ['body', 'number_of_travelers']: Input should be greater than or equal to 1 (greater_than_equal)
+
+--- Testing: Past Travel Date ---
+Status Code: 400
+Response: {
+  "detail": "Travel date must be in the future"
+}
+
+--- Testing: XSS/SQLi in Special Requests ---
+Status Code: 201
+Response: {
+  "id": "ee803d7d-7495-42d6-8b8d-be4d83f101e9",
+  "booking_reference": "BKDKJ018830",
+  "package_id": "0c953b71-7d9d-43c3-bf8d-3e9a8de3b677",
+  "user_id": "556bf488-231d-4112-9893-e6dc05667d89",
+  "travel_date": "2026-04-25",
+  "number_of_travelers": 1,
+  "total_amount": "1180.0",
+  "status": "PENDING",
+  "payment_status": "PENDING",
+  "special_requests": "<script>alert('XSS')</script> ' OR 1=1--",
+  "tripjack_booking_id": null,
+  "refund_amount": null,
+  "cancelled_at": null,
+  "created_at": "2026-03-26T11:23:24.190557Z",
+  "travelers": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "date_of_birth": "1998-11-08",
+      "gender": "Male",
+      "passport_number": null,
+      "nationality": "Indian",
+      "is_primary": true,
+      "id": "99a4494b-fdfb-40a5-ab79-da15b012427a"
+    }
+  ]
+}
+
+--- Testing: Overflow Traveler Names ---
+Status Code: 201
+Response: {
+  "id": "69b43f93-7271-4a07-86cd-67ea4529d9de",
+  "booking_reference": "BKEAR783057",
+  "package_id": "0c953b71-7d9d-43c3-bf8d-3e9a8de3b677",
+  "user_id": "556bf488-231d-4112-9893-e6dc05667d89",
+  "travel_date": "2026-04-25",
+  "number_of_travelers": 1,
+  "total_amount": "1180.0",
+  "status": "PENDING",
+  "payment_status": "PENDING",
+  "special_requests": null,
+  "tripjack_booking_id": null,
+  "refund_amount": null,
+  "cancelled_at": null,
+  "created_at": "2026-03-26T11:23:26.348391Z",
+  "travelers": [
+    {
+      "first_name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "last_name": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "date_of_birth": "1998-11-08",
+      "gender": "Male",
+      "passport_number": null,
+      "nationality": "Indian",
+      "is_primary": true,
+      "id": "68a15523-66fd-4a95-a2ee-f3e0befb71eb"
+    }
+  ]
+}
+
+--- Testing: Future DOB ---
+Status Code: 201
+Response: {
+  "id": "d4cc884a-6bdc-489d-a284-6f25ef632b4b",
+  "booking_reference": "BKKTM654257",
+  "package_id": "0c953b71-7d9d-43c3-bf8d-3e9a8de3b677",
+  "user_id": "556bf488-231d-4112-9893-e6dc05667d89",
+  "travel_date": "2026-04-25",
+  "number_of_travelers": 1,
+  "total_amount": "1180.0",
+  "status": "PENDING",
+  "payment_status": "PENDING",
+  "special_requests": null,
+  "tripjack_booking_id": null,
+  "refund_amount": null,
+  "cancelled_at": null,
+  "created_at": "2026-03-26T11:23:28.488458Z",
+  "travelers": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "date_of_birth": "2026-03-27",
+      "gender": "Male",
+      "passport_number": null,
+      "nationality": "Indian",
+      "is_primary": true,
+      "id": "d00a00b0-9cdf-447e-963b-c5024192ba21"
+    }
+  ]
+}

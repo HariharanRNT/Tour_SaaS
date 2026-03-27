@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import Booking, User, BookingStatus, Package, BookingRefund
-from app.api.deps import get_current_agent
+from app.api.deps import get_current_agent, check_permission
 from app.schemas import BookingResponse, BookingWithPackageResponse
 from pydantic import BaseModel
 import logging
@@ -36,10 +36,10 @@ async def list_agent_bookings(
     from_date: str = Query(None),
     to_date: str = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("bookings", "view"))
 ):
     """List bookings for the current agent's packages"""
-    base_stmt = select(Booking).where(Booking.agent_id == current_agent.id)
+    base_stmt = select(Booking).where(Booking.agent_id == current_agent.agent_id)
     
     # Date Filtering Logic
     now = datetime.now(timezone.utc)
@@ -118,12 +118,12 @@ async def list_agent_bookings(
 async def get_agent_booking(
     booking_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("bookings", "view"))
 ):
     """Get booking details if owned by agent"""
     stmt = select(Booking).where(
         Booking.id == booking_id,
-        Booking.agent_id == current_agent.id
+        Booking.agent_id == current_agent.agent_id
     ).options(
         selectinload(Booking.package).options(
             selectinload(Package.images),
@@ -151,12 +151,12 @@ async def update_booking_status(
     booking_id: UUID,
     status: str,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("bookings", "edit"))
 ):
     """Update booking status"""
     stmt = select(Booking).where(
         Booking.id == booking_id,
-        Booking.agent_id == current_agent.id
+        Booking.agent_id == current_agent.agent_id
     )
     result = await db.execute(stmt)
     booking = result.scalar_one_or_none()

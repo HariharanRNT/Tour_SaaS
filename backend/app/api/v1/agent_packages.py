@@ -17,7 +17,7 @@ from app.schemas.packages import (
     PaginatedPackageResponse
 )
 from app.schemas.packages import PackageImageResponse
-from app.api.deps import get_current_agent
+from app.api.deps import get_current_agent, check_permission
 from app.services.cancellation_service import validate_and_sort_rules
 from sqlalchemy import select, delete
 from fastapi import File, UploadFile
@@ -58,7 +58,7 @@ async def list_agent_packages(
     skip = (page - 1) * limit
     
     # Base query
-    stmt = select(Package).where(Package.created_by == current_agent.id)
+    stmt = select(Package).where(Package.created_by == current_agent.agent_id)
     
     if status_filter and status_filter != 'all':
         stmt = stmt.where(Package.status == PackageStatus(status_filter))
@@ -101,7 +101,7 @@ async def list_agent_packages(
 async def create_agent_package(
     package_data: PackageCreate,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Create a new package for the agent"""
     import logging
@@ -109,7 +109,7 @@ async def create_agent_package(
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"Creating package for agent {current_agent.id}: {package_data.dict()}")
+        logger.info(f"Creating package for agent {current_agent.agent_id}: {package_data.dict()}")
         
         # Generate unique slug (and ID manually to allow re-fetching safely)
         package_id = uuid.uuid4()
@@ -134,7 +134,7 @@ async def create_agent_package(
             is_public=package_data.is_public,
             status=PackageStatus.DRAFT,
             is_template=False,
-            created_by=current_agent.id,  # Assign to current agent
+            created_by=current_agent.agent_id,  # Assign to the parent agent/agency
             feature_image_url=package_data.feature_image_url,
             package_mode=package_data.package_mode,
             destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
@@ -192,7 +192,7 @@ async def get_agent_package(
         selectinload(Package.availability)
     ).where(
         Package.id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -211,12 +211,12 @@ async def update_agent_package(
     package_id: UUID,
     package_data: PackageUpdate,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Update package details if owned by agent"""
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -270,13 +270,12 @@ async def update_agent_package(
 async def delete_agent_package(
     package_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "full"))
 ):
     """Delete a package if owned by agent"""
-    # Verify ownership first
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -335,12 +334,12 @@ async def toggle_agent_package_status(
     package_id: UUID,
     new_status: str,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Toggle package publish status if owned by agent"""
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -376,13 +375,13 @@ async def add_agent_itinerary_item(
     package_id: UUID,
     item_data: ItineraryItemCreate,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Add an activity to package itinerary"""
     # Verify ownership
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
@@ -416,7 +415,7 @@ async def update_agent_itinerary_item(
     item_id: UUID,
     item_data: ItineraryItemUpdate,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Update an itinerary item"""
     # Verify ownership implicitly via join or check package first.
@@ -425,7 +424,7 @@ async def update_agent_itinerary_item(
     stmt = select(ItineraryItem).join(Package).where(
         ItineraryItem.id == item_id,
         ItineraryItem.package_id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     item = result.scalar_one_or_none()
@@ -458,14 +457,14 @@ async def delete_agent_itinerary_item(
     package_id: UUID,
     item_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Delete an itinerary item"""
     # Verify ownership
     stmt = select(ItineraryItem).join(Package).where(
         ItineraryItem.id == item_id,
         ItineraryItem.package_id == package_id,
-        Package.created_by == current_agent.id
+        Package.created_by == current_agent.agent_id
     )
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
@@ -484,11 +483,11 @@ async def reorder_agent_itinerary_items(
     package_id: UUID,
     item_orders: List[dict],  # [{"id": "uuid", "display_order": 0}, ...]
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Reorder itinerary items"""
     # Verify package ownership
-    stmt = select(Package).where(Package.id == package_id, Package.created_by == current_agent.id)
+    stmt = select(Package).where(Package.id == package_id, Package.created_by == current_agent.agent_id)
     if not (await db.execute(stmt)).scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Package not found")
 

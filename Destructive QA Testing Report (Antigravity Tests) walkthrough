@@ -1,0 +1,59 @@
+# Destructive QA Testing Report (Antigravity Tests)
+
+Performed aggressive testing of the RNT_Tour application's core APIs (Agent Registration and Booking Creation) to identify vulnerabilities and robustness issues.
+
+## 🛡️ Executive Summary
+
+The application demonstrates strong business logic in the Booking flow (validating traveler counts and future dates). However, it is **critically vulnerable** to input-based attacks (XSS, SQLi, Overflow) and lacks idempotency in the booking process, allowing for rapid submission spamming.
+
+## 🔍 Key Findings
+
+### 1. Input Validation & Sanitization (Critical)
+The backend accepts and persists malicious payloads in almost all text fields.
+- **XSS Vulnerability**: Payloads like `<script>alert('XSS')</script>` are accepted in [agency_name](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/models/__init__.py#100-103) and `special_requests`. If rendered in an admin dashboard without escaping, this will lead to execution.
+- **SQL Injection Risk**: Payloads like `' OR '1'='1;--` are accepted. While SQLAlchemy prevents immediate execution, these strings are dangerous if used in secondary processes or raw queries.
+- **Length Overflow**: The system accepts 2000+ character strings for names and addresses without truncation or error, which can lead to UI breakage or database performance issues.
+
+### 2. Logic Gaps
+- **Future DOB**: The system accepts a traveler's Date of Birth that is in the future (e.g., tomorrow's date).
+- **Format Validation**: Mobile numbers and domains are accepted regardless of format (e.g., "not-a-number" for phone, "invalid domain" for domain).
+
+### 3. Idempotency & Spam (Critical)
+- **Submission Spam**: Sending 5 simultaneous requests for the same booking resulted in **5 unique bookings** with 5 different references. The system does not prevent duplicate bookings for the same user/package/date within a short time window.
+
+---
+
+## 🛠️ Proof of Work
+
+### Agent Registration Tests
+| Input Field | Test Payload | Result | Risk |
+| :--- | :--- | :--- | :--- |
+| Agency Name | `<script>alert(1)</script>` | **ACCEPTED (201)** | Critical XSS |
+| Agency Name | `' OR '1'='1;--` | **ACCEPTED (201)** | SQLi Persistence |
+| Agency Name | "A" * 2000 | **ACCEPTED (201)** | Resource Exhaustion |
+| Phone | "not-a-number" | **ACCEPTED (201)** | Data Integrity |
+| Domain | "http://domain.com" | **ACCEPTED (201)** | Logic Error |
+
+### Booking Creation Tests
+| Scenario | Result | Status |
+| :--- | :--- | :--- |
+| Traveler Count Mismatch | **CAUGHT (400)** | ✅ Robust |
+| Zero Travelers | **CAUGHT (422)** | ✅ Robust |
+| Past Travel Date | **CAUGHT (400)** | ✅ Robust |
+| XSS in Special Requests | **ACCEPTED (201)** | ❌ Vulnerable |
+| Future Date of Birth | **ACCEPTED (201)** | ❌ Vulnerable |
+| Rapid Submission (Spam) | **5 Bookings Created** | ❌ Vulnerable |
+
+---
+
+## 💡 Recommendations
+
+1.  **Strict Sanitization**: Implement a global HTML stripping/sanitization layer for all incoming text fields.
+2.  **Pydantic Constraints**: Add `min_length`, `max_length`, and `regex` patterns to Pydantic schemas (e.g., `PhoneStr`, `DomainStr`).
+3.  **Logical Validation**: Add DOB validation to ensure birth dates are in the past and within a reasonable range (e.g., < 120 years).
+4.  **Idempotency Keys**: Implement idempotency keys or a server-side lock/check (e.g., in Redis) to prevent duplicate bookings for the same user/package/date within 60 seconds.
+
+---
+
+> [!IMPORTANT]
+> All test results were captured via automated scripts ([qa_test_registration_v3.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/qa_test_registration_v3.py), [qa_test_booking_v2.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/qa_test_booking_v2.py), [qa_test_spam.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/qa_test_spam.py)) targeting the backend APIs directly to ensure thorough coverage of data persistence layers.

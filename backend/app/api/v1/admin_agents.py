@@ -1,5 +1,6 @@
 """Admin API endpoints for agent management"""
 
+import logging
 from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +13,8 @@ from app.models import User, UserRole, Agent, Customer
 from app.api.deps import get_current_admin
 from app.core.security import get_password_hash
 from app.schemas import UserCreate, UserResponse, UserUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -65,7 +68,7 @@ async def create_agent(
     if result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered"
+            detail="this email has already registered"
         )
     
     # Create agent user
@@ -171,7 +174,12 @@ async def approve_agent(
     await db.commit()
     await db.refresh(agent)
     
-    # TODO: Send approval email
+    # Trigger approval email
+    try:
+        from app.services.agent_notification_service import AgentNotificationService
+        await AgentNotificationService.send_approval_email(agent)
+    except Exception as e:
+        logger.error(f"Failed to send approval email: {e}")
     
     return UserResponse.model_validate(agent)
 
@@ -202,7 +210,12 @@ async def reject_agent(
     await db.commit()
     await db.refresh(agent)
     
-    # TODO: Send rejection email
+    # Trigger rejection email
+    try:
+        from app.services.agent_notification_service import AgentNotificationService
+        await AgentNotificationService.send_rejection_email(agent)
+    except Exception as e:
+        logger.error(f"Failed to send rejection email: {e}")
     
     return UserResponse.model_validate(agent)
 

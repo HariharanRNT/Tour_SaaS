@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus
+from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, Notification
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
@@ -60,7 +60,7 @@ async def get_agent_dashboard_stats(
         # Packages: Total, Published, Draft (Scoped to Agent)
         # Note: Usually "Total Packages" implies current inventory, but if filtering by date, 
         # it implies "Packages Created in this period". 
-        pkg_base = select(Package.id).where(Package.created_by == current_agent.id)
+        pkg_base = select(Package.id).where(Package.created_by == current_agent.agent_id)
         pkg_base = apply_date_filter(pkg_base, Package.created_at)
         
         # We can run distinct counts or just fetch and count if easier, but independent queries are cleaner.
@@ -71,7 +71,7 @@ async def get_agent_dashboard_stats(
         # Published
         # We need to apply filter to creation date, AND check status.
         pub_query = select(func.count(Package.id)).where(
-            Package.created_by == current_agent.id,
+            Package.created_by == current_agent.agent_id,
             Package.status == PackageStatus.PUBLISHED
         )
         pub_query = apply_date_filter(pub_query, Package.created_at)
@@ -80,7 +80,7 @@ async def get_agent_dashboard_stats(
         
         # Drafts
         draft_query = select(func.count(Package.id)).where(
-            Package.created_by == current_agent.id,
+            Package.created_by == current_agent.agent_id,
             Package.status == PackageStatus.DRAFT
         )
         draft_query = apply_date_filter(draft_query, Package.created_at)
@@ -92,7 +92,7 @@ async def get_agent_dashboard_stats(
         # OR bookings *owned* by agent (assigned). `agent_bookings.py` uses `details.agent_id`.
         # Taking `current_agent.id` as the filter.
         
-        bk_base_query = select(Booking).where(Booking.agent_id == current_agent.id)
+        bk_base_query = select(Booking).where(Booking.agent_id == current_agent.agent_id)
         # Apply filter to booking creation date
         if filter_start:
             bk_base_query = bk_base_query.where(Booking.created_at >= filter_start)
@@ -102,14 +102,14 @@ async def get_agent_dashboard_stats(
         # Execute once implies fetching all rows? Might be heavy. Let's do sums.
         
         # Total Bookings
-        bk_count_query = select(func.count(Booking.id)).where(Booking.agent_id == current_agent.id)
+        bk_count_query = select(func.count(Booking.id)).where(Booking.agent_id == current_agent.agent_id)
         bk_count_query = apply_date_filter(bk_count_query, Booking.created_at)
         res = await db.execute(bk_count_query)
         total_bookings = res.scalar() or 0
         
         # Active (Confirmed or Pending) AND Upcoming Trip
         active_query = select(func.count(Booking.id)).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
@@ -119,7 +119,7 @@ async def get_agent_dashboard_stats(
         
         # Pending Only AND Upcoming Trip
         pending_query = select(func.count(Booking.id)).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.status == BookingStatus.PENDING,
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
@@ -129,7 +129,7 @@ async def get_agent_dashboard_stats(
         
         # Revenue (Confirmed/Completed)
         rev_query = select(func.sum(Booking.total_amount)).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
         )
         rev_query = apply_date_filter(rev_query, Booking.created_at)
@@ -138,7 +138,7 @@ async def get_agent_dashboard_stats(
 
         # Cancellations (Scoped to Agent)
         cancel_query = select(func.count(Booking.id)).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.status == BookingStatus.CANCELLED
         )
         cancel_query = apply_date_filter(cancel_query, Booking.created_at)
@@ -148,7 +148,7 @@ async def get_agent_dashboard_stats(
         # Today's Bookings (Real-time)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_query = select(func.count(Booking.id)).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.created_at >= today_start
         )
         res = await db.execute(today_query)
@@ -164,7 +164,7 @@ async def get_agent_dashboard_stats(
             func.count(Booking.id).label('count'),
             func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.id
+            Booking.agent_id == current_agent.agent_id
         )
         # Apply filter to bookings
         stmt = apply_date_filter(stmt, Booking.created_at)
@@ -196,7 +196,7 @@ async def get_agent_dashboard_stats(
             Package.view_count,
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.id
+            Booking.agent_id == current_agent.agent_id
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(asc('count')).limit(1)
@@ -219,7 +219,7 @@ async def get_agent_dashboard_stats(
             Package.title,
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.id
+            Booking.agent_id == current_agent.agent_id
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title).order_by(desc('count')).limit(5)
@@ -229,7 +229,7 @@ async def get_agent_dashboard_stats(
 
         # 4. Recent Bookings (Upcoming and Completed)
         upcoming_bookings_stmt = select(Booking).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.travel_date >= now.date(),
             Booking.status.notin_([BookingStatus.CANCELLED, BookingStatus.COMPLETED])
         ).order_by(asc(Booking.travel_date)).limit(5).options(
@@ -245,7 +245,7 @@ async def get_agent_dashboard_stats(
         upcoming_list = upcoming_res.scalars().all()
 
         completed_bookings_stmt = select(Booking).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             (Booking.travel_date < now.date()) | (Booking.status.in_([BookingStatus.CANCELLED, BookingStatus.COMPLETED]))
         ).order_by(desc(Booking.travel_date)).limit(5).options(
             selectinload(Booking.travelers),
@@ -266,7 +266,7 @@ async def get_agent_dashboard_stats(
         
         # Fetch active or trial subscription first
         sub_stmt = select(Subscription).where(
-            Subscription.user_id == current_agent.id,
+            Subscription.user_id == current_agent.agent_id,
             Subscription.status.in_(['active', 'trial'])
         ).order_by(desc(Subscription.end_date)).limit(1)
         
@@ -291,7 +291,7 @@ async def get_agent_dashboard_stats(
                      from sqlalchemy import and_
                      check_stmt = select(Notification).where(
                          and_(
-                             Notification.user_id == current_agent.id,
+                             Notification.user_id == current_agent.agent_id,
                              Notification.type == "warning",
                              Notification.title == "Subscription Expiry Warning",
                              Notification.created_at >= (now - timedelta(days=1))
@@ -303,7 +303,7 @@ async def get_agent_dashboard_stats(
                      if not existing_note:
                          await NotificationService.notify_subscription_expiry(
                              db=db,
-                             agent_id=current_agent.id,
+                             agent_id=current_agent.agent_id,
                              days_left=days_left
                          )
              except Exception as sub_err:

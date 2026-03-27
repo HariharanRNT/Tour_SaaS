@@ -1,5 +1,5 @@
 """API dependencies for authentication and database session"""
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,7 +51,8 @@ async def get_current_user(
     query = select(User).where(User.id == user_id).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
-        selectinload(User.customer_profile)
+        selectinload(User.customer_profile),
+        selectinload(User.sub_user_profile)
     )
     
     result = await db.execute(query)
@@ -59,20 +60,18 @@ async def get_current_user(
     
     if user is None:
         print(f"DEBUG AUTH: User not found in database for ID: {user_id}")
-        # Verify if UUID format issue?
-        try:
-             import uuid
-             u_uuid = uuid.UUID(user_id)
-             print(f"DEBUG AUTH: Valid UUID format: {u_uuid}")
-        except:
-             print(f"DEBUG AUTH: INVALID UUID format for ID: {user_id}")
         raise credentials_exception
     
-    print(f"DEBUG AUTH: User found: {user.email}")
-    
     if not user.is_active:
-        print(f"DEBUG AUTH: User {user.email} is inactive")
         raise HTTPException(status_code=400, detail="Inactive user")
+
+    # For SUB_USER: attach permissions and parent agent_id from JWT payload
+    if user.role == UserRole.SUB_USER:
+        permissions = payload.get("permissions", [])
+        parent_agent_id = payload.get("agent_id")
+        # Attach as dynamic attributes so endpoints can inspect them
+        user._sub_user_permissions = permissions
+        user._sub_user_agent_id = parent_agent_id
     
     return user
 
@@ -102,11 +101,12 @@ async def get_current_agent(
     current_user: User = Depends(get_current_user),
     current_domain: str = Depends(get_current_domain)
 ) -> User:
-    """Get current agent user and verify domain ownership"""
-    if current_user.role != UserRole.AGENT:
+    """Get current agent user (or authorized sub-user) and verify domain ownership"""
+    # Allow both AGENT and SUB_USER roles
+    if current_user.role not in [UserRole.AGENT, UserRole.SUB_USER]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Not enough permissions: Agent access required"
         )
     
     # Strict multi-tenancy check
@@ -127,17 +127,15 @@ async def get_optional_current_user(
 ) -> Optional[User]:
     """Get current user if authenticated, None otherwise"""
     if token is None:
-        print("DEBUG DEPS: Token is None")
         return None
     
     try:
-        print(f"DEBUG DEPS: Token received: {token[:10]}...")
         user = await get_current_user(token, db)
-        print(f"DEBUG DEPS: User resolved: {user.email}, Agent ID: {user.agent_id}")
         return user
-    except HTTPException as e:
-        print(f"DEBUG DEPS: HTTPException in optional auth: {e.detail}")
+    except HTTPException:
         return None
+
+
 
 async def get_current_active_superuser(
     current_user: User = Depends(get_current_user),
@@ -151,3 +149,46 @@ async def get_current_active_superuser(
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def check_permission(module: str, required_level: str):
+    """
+    Dependency factory to check if current user has permission for a module/level.
+    Levels: view < edit < full
+    """
+    async def _permission_dependency(
+        current_user: User = Depends(get_current_user)
+    ) -> User:
+        # Admins and primary Agents have full access to everything
+        if current_user.role in [UserRole.ADMIN, UserRole.AGENT]:
+            return current_user
+            
+        if current_user.role == UserRole.SUB_USER:
+            perms = getattr(current_user, "_sub_user_permissions", [])
+            # Find permission for this module
+            module_perm = next((p for p in perms if p.get("module") == module), None)
+            
+            if not module_perm:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied: No permissions for module '{module}'"
+                )
+            
+            level_map = {"view": 1, "edit": 2, "full": 3}
+            user_level = level_map.get(module_perm.get("access_level"), 0)
+            req_level = level_map.get(required_level, 99) # Default high to block unknown
+            
+            if user_level >= req_level:
+                return current_user
+                
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions: '{required_level}' access required for '{module}'"
+            )
+            
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unauthorized role"
+        )
+        
+    return _permission_dependency

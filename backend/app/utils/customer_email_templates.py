@@ -117,7 +117,7 @@ Warm regards,<br>
 📧 {support_email}<br>
 📞 {support_phone}<br>
 """
-    elif template_type == "itinerary_details":
+    elif template_type == "travel_itinerary":
         subject = f"Your Travel Itinerary - {package_name}"
         message = f"""
 Hi {customer_name},<br><br>
@@ -131,6 +131,27 @@ You can also access and download it anytime from your booking dashboard.<br><br>
 We wish you a wonderful journey ahead! 🌍<br><br>
 
 Regards,<br>
+<b>{agency_name} Team</b>
+"""
+    elif template_type == "booking_invoice":
+        subject = f"Booking Invoice - {ref_id}"
+        message = f"""
+Hi {customer_name},<br><br>
+
+Please find your <b>Booking Invoice</b> for the package <b>{package_name}</b> attached to this email.<br><br>
+
+<hr style="border: none; border-top: 1px solid #eee;"><br>
+
+<b>📌 Summary</b><br>
+<ul>
+    <li><b>Reference ID:</b> {ref_id}</li>
+    <li><b>Total Amount:</b> ₹{total_amount}</li>
+    <li><b>Travel Date:</b> {travel_date}</li>
+</ul><br>
+
+If you have already made the payment, please ignore this email. Otherwise, kindly proceed with the payment to confirm your booking.<br><br>
+
+Warm regards,<br>
 <b>{agency_name} Team</b>
 """
     elif template_type == "booking_status":
@@ -435,3 +456,38 @@ Best regards,<br>
     """
     
     return subject, html_body
+
+def get_customer_notification_template_config(template_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Returns a dictionary containing the subject and any other template-specific metadata.
+    """
+    package_name = data.get("package_name", "Your Package")
+    ref_id = data.get("reference_id", "N/A")
+    
+    subject_map = {
+        "booking_confirmation": f"Booking Confirmed - {package_name}",
+        "payment_receipt": f"Payment Receipt - {ref_id}",
+        "travel_itinerary": f"Your Travel Itinerary - {package_name}",
+        "booking_invoice": f"Booking Invoice - {ref_id}",
+        "booking_status": f"Booking Update - {ref_id}",
+        "trip_reminder": "Upcoming Trip Reminder",
+        "booking_cancellation": f"Booking Cancelled – {ref_id}",
+        "customer_welcome": "Welcome to TourSaaS!",
+        "refund_confirmed": f"Refund Processed – {ref_id}",
+        "booking_success_consolidated": f"Booking Confirmed! Your Trip to {package_name} is All Set 🎉"
+    }
+    
+    return {
+        "subject": subject_map.get(template_type, "Notification"),
+        "html_content": None # Placeholder for when we fetch from agent settings
+    }
+
+def get_customer_notification_html_content(template_type: str) -> str:
+    """
+    Returns the default HTML content for a template type.
+    Note: In structured mode, this returns None if we want to fallback to the legacy shell,
+    or we could return the DEFAULT_STRUCTURED_CONTENT here as a dict.
+    For now, returning None forces fallback to the legacy get_customer_notification_html logic
+    unless an agent-specific template is found.
+    """
+    return None

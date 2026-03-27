@@ -1,0 +1,3 @@
+Total Admins: 2
+Admin: admin@globaltours.com
+Admin: testadmin@test.com

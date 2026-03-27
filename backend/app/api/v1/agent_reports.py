@@ -62,7 +62,7 @@ async def get_agent_report_summary(
         async def get_stats(start, end):
             # Revenue
             rev_stmt = select(func.sum(Booking.total_amount)).where(
-                Booking.agent_id == current_agent.id,
+                Booking.agent_id == current_agent.agent_id,
                 Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
             )
             if start: rev_stmt = rev_stmt.where(Booking.created_at >= start)
@@ -70,14 +70,14 @@ async def get_agent_report_summary(
             
             # Bookings
             book_stmt = select(func.count(Booking.id)).where(
-                Booking.agent_id == current_agent.id
+                Booking.agent_id == current_agent.agent_id
             )
             if start: book_stmt = book_stmt.where(Booking.created_at >= start)
             if end: book_stmt = book_stmt.where(Booking.created_at < end)
 
             # Cancellations
             cancel_stmt = select(func.count(Booking.id)).where(
-                Booking.agent_id == current_agent.id,
+                Booking.agent_id == current_agent.agent_id,
                 Booking.status == BookingStatus.CANCELLED
             )
             if start: cancel_stmt = cancel_stmt.where(Booking.created_at >= start)
@@ -85,7 +85,7 @@ async def get_agent_report_summary(
 
             # Refunds
             refund_stmt = select(func.sum(Booking.refund_amount)).where(
-                Booking.agent_id == current_agent.id,
+                Booking.agent_id == current_agent.agent_id,
                 Booking.status == BookingStatus.CANCELLED
             )
             if start: refund_stmt = refund_stmt.where(Booking.created_at >= start)
@@ -171,18 +171,18 @@ async def get_agent_report_charts(
                 labels.append(h_start.strftime('%H:%M'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
@@ -201,18 +201,18 @@ async def get_agent_report_charts(
                 labels.append(d.strftime('%a'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
@@ -231,18 +231,18 @@ async def get_agent_report_charts(
                 labels.append(d.strftime('%d %b'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
@@ -267,18 +267,18 @@ async def get_agent_report_charts(
                 labels.append(m_start.strftime('%b'))
                 
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
                 cancel_stmt = select(func.count(Booking.id)).where(
-                    Booking.agent_id == current_agent.id,
+                    Booking.agent_id == current_agent.agent_id,
                     Booking.status == BookingStatus.CANCELLED,
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
@@ -302,18 +302,18 @@ async def get_agent_report_charts(
                     labels.append(h_start.strftime('%H:%M'))
                     
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
                     cancel_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status == BookingStatus.CANCELLED,
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
@@ -330,18 +330,18 @@ async def get_agent_report_charts(
                     labels.append(d_start.strftime('%d %b'))
                     
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
                     cancel_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status == BookingStatus.CANCELLED,
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
@@ -362,18 +362,18 @@ async def get_agent_report_charts(
                     labels.append(m_start.strftime('%b %y'))
                     
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
                     cancel_stmt = select(func.count(Booking.id)).where(
-                        Booking.agent_id==current_agent.id, 
+                        Booking.agent_id==current_agent.agent_id, 
                         Booking.status == BookingStatus.CANCELLED,
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
@@ -394,9 +394,9 @@ async def get_agent_report_charts(
                 else:
                     end = datetime(start.year, start.month+1, 1, tzinfo=timezone.utc)
                 labels.append(start.strftime('%b %Y'))
-                rev_stmt = select(func.sum(Booking.total_amount)).where(Booking.agent_id==current_agent.id, Booking.created_at >= start, Booking.created_at < end)
-                book_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.id, Booking.created_at >= start, Booking.created_at < end)
-                cancel_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.id, Booking.status == BookingStatus.CANCELLED, Booking.created_at >= start, Booking.created_at < end)
+                rev_stmt = select(func.sum(Booking.total_amount)).where(Booking.agent_id==current_agent.agent_id, Booking.created_at >= start, Booking.created_at < end)
+                book_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.agent_id, Booking.created_at >= start, Booking.created_at < end)
+                cancel_stmt = select(func.count(Booking.id)).where(Booking.agent_id==current_agent.agent_id, Booking.status == BookingStatus.CANCELLED, Booking.created_at >= start, Booking.created_at < end)
 
                 revenue.append(float((await db.execute(rev_stmt)).scalar() or 0))
                 bookings.append((await db.execute(book_stmt)).scalar() or 0)
@@ -407,7 +407,7 @@ async def get_agent_report_charts(
             Package.title,
             func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.id,
+            Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
         )
 
@@ -469,7 +469,7 @@ async def get_agent_package_performance(
                 filter_end = datetime.fromisoformat(end_date) + timedelta(days=1)
 
         # Get total count of packages for the agent
-        count_stmt = select(func.count(Package.id)).where(Package.created_by == current_agent.id)
+        count_stmt = select(func.count(Package.id)).where(Package.created_by == current_agent.agent_id)
         total_count = (await db.execute(count_stmt)).scalar() or 0
 
         # Get all packages for the agent (we need to compute metrics first, then sort)
@@ -481,9 +481,9 @@ async def get_agent_package_performance(
         # Get all packages that the agent has bookings for, or created themselves
         pkg_query = select(Package).where(
             or_(
-                Package.created_by == current_agent.id,
+                Package.created_by == current_agent.agent_id,
                 Package.id.in_(
-                    select(Booking.package_id).where(Booking.agent_id == current_agent.id)
+                    select(Booking.package_id).where(Booking.agent_id == current_agent.agent_id)
                 )
             )
         )
@@ -495,9 +495,9 @@ async def get_agent_package_performance(
             # Metrics (for this agent's package)
             # Use a more inclusive approach: any booking for a package owned by the agent
             base_where = [Booking.package_id == pkg.id]
-            if pkg.created_by != current_agent.id:
+            if pkg.created_by != current_agent.agent_id:
                 # If not the creator, only see bookings you specifically made
-                base_where.append(Booking.agent_id == current_agent.id)
+                base_where.append(Booking.agent_id == current_agent.agent_id)
 
             bookings_count_stmt = select(func.count(Booking.id)).where(*base_where)
             if filter_start: 
@@ -584,7 +584,7 @@ async def get_agent_financial_report(
                 filter_end = datetime.fromisoformat(end_date).replace(tzinfo=timezone.utc) + timedelta(days=1)
 
         # Base query for bookings
-        query = select(Booking).where(Booking.agent_id == current_agent.id)
+        query = select(Booking).where(Booking.agent_id == current_agent.agent_id)
         if filter_start:
             query = query.where(Booking.created_at >= filter_start)
         if filter_end:
@@ -598,7 +598,7 @@ async def get_agent_financial_report(
         
         # Get agent for GST settings
         from app.models import Agent
-        agent_stmt = select(Agent).where(Agent.user_id == current_agent.id)
+        agent_stmt = select(Agent).where(Agent.user_id == current_agent.agent_id)
         agent_result = await db.execute(agent_stmt)
         agent_obj = agent_result.scalar_one_or_none()
         

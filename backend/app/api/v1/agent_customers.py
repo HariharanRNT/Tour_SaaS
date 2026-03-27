@@ -8,7 +8,7 @@ from app.models import User, UserRole, Customer
 from app.schemas import UserCreate, UserResponse
 from app.core.security import get_password_hash
 from app.core.exceptions import ConflictException
-from app.api.deps import get_current_agent
+from app.api.deps import get_current_agent, check_permission
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ router = APIRouter()
 async def create_customer(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("customers", "edit"))
 ):
     """Create a new customer for the agent"""
     # Check if user already exists
@@ -25,7 +25,7 @@ async def create_customer(
     existing_user = result.scalar_one_or_none()
     
     if existing_user:
-        raise ConflictException("Email already registered")
+        raise ConflictException("this email has already registered")
     
     # Create new customer associated with the agent
     user = User(
@@ -43,7 +43,7 @@ async def create_customer(
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         phone=user_data.phone,
-        agent_id=current_agent.id
+        agent_id=current_agent.agent_id
     )
     db.add(customer_profile)
     
@@ -56,12 +56,12 @@ async def create_customer(
 @router.get("", response_model=List[UserResponse])
 async def list_agent_customers(
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("customers", "view"))
 ):
     """List all customers belonging to the agent"""
     from sqlalchemy.orm import selectinload
     query = select(User).join(Customer, User.id == Customer.user_id).where(
-        Customer.agent_id == current_agent.id,
+        Customer.agent_id == current_agent.agent_id,
         User.role == UserRole.CUSTOMER
     ).options(
         selectinload(User.customer_profile),
@@ -80,12 +80,12 @@ async def toggle_customer_status(
     customer_id: str,
     is_active: bool,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("customers", "edit"))
 ):
     """Enable or disable a customer account owned by the agent"""
     query = select(User).join(Customer).where(
         User.id == customer_id,
-        Customer.agent_id == current_agent.id,
+        Customer.agent_id == current_agent.agent_id,
         User.role == UserRole.CUSTOMER
     )
     result = await db.execute(query)
@@ -108,12 +108,12 @@ async def toggle_customer_status(
 async def delete_customer(
     customer_id: str,
     db: AsyncSession = Depends(get_db),
-    current_agent: User = Depends(get_current_agent)
+    current_agent: User = Depends(check_permission("customers", "full"))
 ):
     """Delete a customer account owned by the agent"""
     query = select(User).join(Customer).where(
         User.id == customer_id,
-        Customer.agent_id == current_agent.id,
+        Customer.agent_id == current_agent.agent_id,
         User.role == UserRole.CUSTOMER
     )
     result = await db.execute(query)
