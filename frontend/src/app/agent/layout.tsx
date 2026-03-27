@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { RoleGuard } from "@/components/auth/role-guard"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { AdminHeader } from "@/components/admin/AdminHeader"
+import { useAuth } from '@/context/AuthContext'
 import { SubscriptionGuard } from "@/components/auth/subscription-guard"
 
 
@@ -13,9 +14,10 @@ export default function AgentLayout({
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+    const { user } = useAuth()
 
     return (
-        <RoleGuard allowedRoles={['agent', 'AGENT']}>
+        <RoleGuard allowedRoles={['agent', 'AGENT', 'sub_user', 'SUB_USER']}>
             <SubscriptionGuard>
                 {/* Radial blob overlays add depth on top of the body gradient */}
                 <div className="fixed inset-0 z-0 pointer-events-none">
@@ -45,8 +47,18 @@ export default function AgentLayout({
                             <AdminHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                         </div>
 
-                        {/* Main Content with pt-[70px] to account for fixed header */}
-                        <main className="flex-1 w-full pt-[70px]">
+                        {/* Sub-User Identity Banner */}
+                        {user?.role === 'SUB_USER' && (
+                            <div className="bg-gradient-to-r from-orange-500/20 to-transparent border-b border-orange-500/20 px-6 py-2 flex items-center gap-2 mt-[70px]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-1.5 py-0.5 rounded">Sub-User</span>
+                                <span className="text-sm text-black/70 font-medium">
+                                    Acting on behalf of <span className="text-black font-bold">{user?.agency_name || 'Agent Account'}</span>
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Main Content with pt-[70px] to account for fixed header (pt-0 if sub-user banner handles gap) */}
+                        <main className={`flex-1 w-full ${user?.role === 'SUB_USER' ? 'pt-0' : 'pt-[70px]'}`}>
                             {children}
                         </main>
                     </div>

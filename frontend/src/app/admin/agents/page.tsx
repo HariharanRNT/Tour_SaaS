@@ -40,6 +40,16 @@ import {
     AccordionItem,
     AccordionTrigger } from '@/components/ui/accordion'
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -92,6 +102,8 @@ export default function AdminAgentsPage() {
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>(urlStatus || 'all')
     const [showPassword, setShowPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
+    const [showConflictModal, setShowConflictModal] = useState(false)
+    const [conflictMessage, setConflictMessage] = useState('')
 
     // Sorting state
     const [sortColumn, setSortColumn] = useState<'name' | 'email' | 'created_at' | null>(null)
@@ -141,7 +153,17 @@ export default function AdminAgentsPage() {
             setCountryStates(State.getStatesOfCountry('IN'))
             setStateCities([])
             setFormTouched(false)
-        } })
+            toast.success('Agent created successfully')
+        },
+        onError: (error: any) => {
+            if (error.response?.status === 409) {
+                setConflictMessage(error.response?.data?.detail || 'This email has already registered')
+                setShowConflictModal(true)
+            } else {
+                toast.error(error.response?.data?.detail || error.message || 'Failed to create agent')
+            }
+        }
+    })
 
     const statusMutation = useMutation({
         mutationFn: ({ id, is_active }: { id: string, is_active: boolean }) => apiUpdateAgentStatus(id, is_active),
@@ -161,7 +183,17 @@ export default function AdminAgentsPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
             setIsEditOpen(false)
-        } })
+            toast.success('Agent updated successfully')
+        },
+        onError: (error: any) => {
+            if (error.response?.status === 409) {
+                setConflictMessage(error.response?.data?.detail || 'This email has already registered')
+                setShowConflictModal(true)
+            } else {
+                toast.error(error.response?.data?.detail || error.message || 'Failed to update agent')
+            }
+        }
+    })
 
     const bulkDeleteMutation = useMutation({
         mutationFn: bulkDeleteAgents,
@@ -1789,6 +1821,30 @@ export default function AdminAgentsPage() {
                     </DialogContent>
                 </Dialog>
             </div>
+            {/* Email Conflict Modal */}
+            <AlertDialog open={showConflictModal} onOpenChange={setShowConflictModal}>
+                <AlertDialogContent className="bg-white/90 backdrop-blur-xl border-orange-100 rounded-[32px] p-8 max-w-[400px]">
+                    <AlertDialogHeader className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center">
+                            <AlertTriangle className="h-8 w-8 text-orange-600" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-black text-slate-900 text-center">
+                            Email Already Registered
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 font-bold text-center leading-relaxed">
+                            {conflictMessage}. Please use a different email address.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex flex-col gap-3 sm:flex-col sm:justify-center mt-6">
+                        <AlertDialogAction
+                            onClick={() => setShowConflictModal(false)}
+                            className="w-full h-12 bg-gradient-to-r from-orange-600 to-orange-400 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-500/20"
+                        >
+                            Understood
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

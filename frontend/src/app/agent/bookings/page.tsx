@@ -67,12 +67,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuth } from '@/context/AuthContext'
 
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
 
 export default function AgentBookingsPage() {
     const router = useRouter()
+    const { hasPermission } = useAuth()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
     const [activeTab, setActiveTab] = useState('upcoming')
@@ -567,7 +569,7 @@ export default function AgentBookingsPage() {
                                             <Share className="h-4 w-4 mr-3" /> <span className="font-bold">Share Itinerary</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="bg-white/10" />
-                                        {booking.status !== 'cancelled' && (
+                                        {booking.status !== 'cancelled' && hasPermission('bookings', 'edit') && (
                                             <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)} className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
                                                 <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
                                             </DropdownMenuItem>
@@ -1013,7 +1015,7 @@ export default function AgentBookingsPage() {
                             </Button>
 
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-                                {booking.status !== 'cancelled' && (
+                                {booking.status !== 'cancelled' && hasPermission('bookings', 'edit') && (
                                     <Button
                                         variant="ghost"
                                         onClick={() => handleCancelBooking(booking.id)}
@@ -1023,9 +1025,11 @@ export default function AgentBookingsPage() {
                                         <Trash2 className="h-4 w-4 mr-2" /> {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
                                     </Button>
                                 )}
-                                <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
-                                    <Edit className="h-4 w-4 mr-2" /> Modify Trip
-                                </Button>
+                                {hasPermission('bookings', 'edit') && (
+                                    <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
+                                        <Edit className="h-4 w-4 mr-2" /> Modify Trip
+                                    </Button>
+                                )}
                                 <Button className="h-12 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 transition-all text-[11px] uppercase tracking-widest gap-2">
                                     <Download className="h-4 w-4" /> Download Full Invoice
                                 </Button>

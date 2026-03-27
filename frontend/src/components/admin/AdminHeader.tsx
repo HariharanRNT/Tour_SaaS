@@ -49,12 +49,12 @@ import { Plane } from 'lucide-react'
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter()
     const [userEmail, setUserEmail] = useState('')
-    const [userData, setUserData] = useState<{ first_name?: string; last_name?: string } | null>(null)
+    const [userData, setUserData] = useState<{ first_name?: string; last_name?: string; email?: string; role?: string } | null>(null)
     const userRole = getUserRole()
 
     const queryClient = useQueryClient()
     const isAdmin = userRole === 'admin' || userRole === 'ADMIN'
-    const isAgent = userRole === 'agent' || userRole === 'AGENT'
+    const isAgent = userRole === 'agent' || userRole === 'AGENT' || userRole === 'sub_user' || userRole === 'SUB_USER'
 
     const { data: notifications = [] } = useQuery({
         queryKey: [isAdmin ? 'admin-notifications' : 'agent-notifications'],
@@ -90,7 +90,10 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         localStorage.removeItem('user')
         localStorage.removeItem('isAdmin')
         localStorage.removeItem('adminEmail')
-        router.push(userRole === 'agent' ? '/login' : '/admin/login')
+        
+        // If it was an agent or sub_user, go to agent login, else admin login
+        const isAgentPortal = userRole === 'agent' || userRole === 'AGENT' || userRole === 'sub_user' || userRole === 'SUB_USER'
+        router.push(isAgentPortal ? '/login' : '/admin/login')
     }
 
     // Determine branding based on role
@@ -232,10 +235,11 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             </div>
                             <div className="hidden sm:flex flex-col items-start gap-0.5">
                                 <span className="text-sm font-bold text-gray-800 leading-tight">
-                                    {userRole === 'agent' ? 'Agent' : 'Admin'}
+                                    {(userRole === 'agent' || userRole === 'AGENT') ? 'Agent' : 
+                                     (userRole === 'sub_user' || userRole === 'SUB_USER') ? 'Staff' : 'Admin'}
                                 </span>
                                 <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-md uppercase tracking-wider">
-                                    {userRole || 'Role'}
+                                    {userData?.role === 'SUB_USER' ? 'Sub-User' : (userRole || 'Role')}
                                 </span>
                             </div>
                         </Button>

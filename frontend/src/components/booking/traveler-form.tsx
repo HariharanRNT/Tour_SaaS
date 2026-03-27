@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, Check } from 'lucide-react'
-import { format } from "date-fns"
+import { format, differenceInYears, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 
 export interface Traveler {
@@ -25,11 +25,12 @@ interface TravelerFormProps {
     index: number
     onChange: (index: number, field: keyof Traveler, value: string) => void
     errors?: Record<string, string>
+    travelDate: string
 }
 
 import { FloatingLabelInput } from "@/components/ui/floating-input"
 
-export function TravelerForm({ traveler, index, onChange, errors = {} }: TravelerFormProps) {
+export function TravelerForm({ traveler, index, onChange, errors = {}, travelDate }: TravelerFormProps) {
     // Parse existing DOB or default
     const [y, m, d] = traveler.date_of_birth ? traveler.date_of_birth.split('-') : ['', '', '']
 
@@ -42,21 +43,70 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
         { value: '10', label: 'Oct' }, { value: '11', label: 'Nov' }, { value: '12', label: 'Dec' }
     ]
     const currentYear = new Date().getFullYear()
-    const years = Array.from({ length: 120 }, (_, i) => (currentYear - i).toString())
+    const tripYear = travelDate ? parseISO(travelDate).getFullYear() : currentYear
+
+    let years: string[] = []
+    if (traveler.type === 'INFANT') {
+        // Infant: Age < 2 years on travel date
+        years = Array.from({ length: 3 }, (_, i) => (tripYear - i).toString())
+    } else if (traveler.type === 'CHILD') {
+        // Child: Age >= 2 and < 12 years
+        years = Array.from({ length: 11 }, (_, i) => (tripYear - 2 - i).toString())
+    } else {
+        // Adult: Age >= 12 years
+        years = Array.from({ length: 110 }, (_, i) => (tripYear - 12 - i).toString())
+    }
+
+    const calculateAge = (dob: string, tripDate: string) => {
+        if (!dob || dob.includes('--') || !tripDate) return null
+        try {
+            const birthDate = parseISO(dob)
+            const travelDateObj = parseISO(tripDate)
+            return differenceInYears(travelDateObj, birthDate)
+        } catch (e) {
+            return null
+        }
+    }
+
+    const classifyTraveler = (age: number): 'ADULT' | 'CHILD' | 'INFANT' => {
+        if (age < 2) return 'INFANT'
+        if (age < 12) return 'CHILD'
+        return 'ADULT'
+    }
 
     const handleDateChange = (type: 'day' | 'month' | 'year', val: string) => {
-        let newD = d || '01'
-        let newM = m || '01'
-        let newY = y || '2000'
+        let newD = d
+        let newM = m
+        let newY = y
 
         if (type === 'day') newD = val
         if (type === 'month') newM = val
         if (type === 'year') newY = val
 
-        // Basic validation for days in month could be added here if strictly needed, 
-        // but for now relying on user sanity or basic check logic if we want to be fancy.
-        // Let's just update for now.
-        onChange(index, 'date_of_birth', `${newY}-${newM}-${newD}`)
+        const newDob = `${newY}-${newM}-${newD}`
+        onChange(index, 'date_of_birth', newDob)
+
+        // Auto-classification (only if all parts are present)
+        if (travelDate && newD && newM && newY) {
+            const age = calculateAge(newDob, travelDate)
+            if (age !== null) {
+                const newType = classifyTraveler(age)
+                if (newType !== traveler.type) {
+                    onChange(index, 'type', newType)
+
+                    // Auto-adjust title if needed
+                    if (newType === 'INFANT') {
+                        onChange(index, 'title', 'Infant')
+                    } else if (newType === 'CHILD') {
+                        if (traveler.gender === 'MALE') onChange(index, 'title', 'Mstr')
+                        else onChange(index, 'title', 'Miss')
+                    } else if (newType === 'ADULT') {
+                        if (traveler.gender === 'MALE') onChange(index, 'title', 'Mr')
+                        else onChange(index, 'title', 'Mrs')
+                    }
+                }
+            }
+        }
     }
 
     return (
@@ -172,13 +222,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                     </div>
                 </div>
 
-                {/* Date Selection Dropdowns */}
-                <div className="space-y-1.5 relative z-10">
-                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm">Date of Birth</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1.5 relative z-10 group">
+                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm group-focus-within:text-[var(--primary)] transition-colors">
+                        Date of Birth <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="bg-white/20 p-1 rounded-[16px] border border-white/40 h-14 flex items-center shadow-inner backdrop-blur-sm group-focus-within:border-[var(--primary)] group-focus-within:ring-[3px] group-focus-within:ring-[var(--primary)]/25 transition-all">
                         {/* Day */}
                         <Select value={d} onValueChange={(val) => handleDateChange('day', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
+                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="DD" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
@@ -188,9 +239,11 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                             </SelectContent>
                         </Select>
 
+                        <div className="w-px h-8 bg-white/30 mx-0.5" />
+
                         {/* Month */}
                         <Select value={m} onValueChange={(val) => handleDateChange('month', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
+                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="MMM" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
@@ -200,9 +253,11 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                             </SelectContent>
                         </Select>
 
+                        <div className="w-px h-8 bg-white/30 mx-0.5" />
+
                         {/* Year */}
                         <Select value={y} onValueChange={(val) => handleDateChange('year', val)}>
-                            <SelectTrigger className="h-14 bg-white/25 border-white/40 rounded-[14px] text-[#5C2500] font-bold focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 backdrop-blur-sm">
+                            <SelectTrigger className="flex-[1.2] h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="YYYY" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50 h-[300px]">
@@ -212,6 +267,11 @@ export function TravelerForm({ traveler, index, onChange, errors = {} }: Travele
                             </SelectContent>
                         </Select>
                     </div>
+                    {errors[`dob_age_${index}`] && (
+                        <p className="text-[10px] font-bold text-red-500 mt-1 ml-1 animate-pulse">
+                            {errors[`dob_age_${index}`]}
+                        </p>
+                    )}
                 </div>
             </div>
 

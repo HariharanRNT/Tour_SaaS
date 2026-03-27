@@ -11,14 +11,21 @@ interface User {
     role: string
     has_active_subscription?: boolean
     subscription_status?: string
+    // Sub-User fields
+    permissions?: Array<{ module: string, access_level: string }>
+    agent_id?: string
+    sub_user_id?: string
+    agency_name?: string // Added for sub-user context banner
 }
 
 interface AuthContextType {
     user: User | null
     loading: boolean
+    isSubUser: boolean
     login: (token: string, userData: User) => void
     logout: () => void
     refreshUser: () => Promise<void>
+    hasPermission: (module: string, level: 'view' | 'edit' | 'full') => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -78,8 +85,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    const isSubUser = user?.role?.toUpperCase() === 'SUB_USER'
+
+    const hasPermission = (module: string, requiredLevel: 'view' | 'edit' | 'full'): boolean => {
+        if (!user) return false;
+        
+        const role = user.role?.toUpperCase();
+        // Admins and primary Agents have full access to everything
+        if (role === 'ADMIN' || role === 'AGENT') return true;
+        
+        if (role === 'SUB_USER' && user.permissions) {
+            const modulePerm = user.permissions.find(p => p.module === module);
+            if (!modulePerm) return false;
+            
+            const levelMap = { 'view': 1, 'edit': 2, 'full': 3 };
+            const userLevel = levelMap[modulePerm.access_level as keyof typeof levelMap] || 0;
+            const reqLevel = levelMap[requiredLevel];
+            
+            return userLevel >= reqLevel;
+        }
+        
+        return false;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+        <AuthContext.Provider value={{ user, loading, isSubUser, login, logout, refreshUser, hasPermission }}>
             {children}
         </AuthContext.Provider>
     )

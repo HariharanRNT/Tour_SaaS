@@ -120,7 +120,7 @@ function LoginContent() {
                     const user = response.user
                     if (nextUrl) router.push(nextUrl)
                     if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toUpperCase() === 'AGENT') {
+                    else if (user?.role?.toUpperCase() === 'AGENT' || user?.role?.toUpperCase() === 'SUB_USER') {
                         const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')
@@ -150,7 +150,7 @@ function LoginContent() {
             setTimeout(() => {
                 if (nextUrl) router.push(nextUrl)
                 else if (data.user.role.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                else if (data.user.role?.toUpperCase() === 'AGENT') {
+                else if (data.user.role?.toUpperCase() === 'AGENT' || data.user.role?.toUpperCase() === 'SUB_USER') {
                     const hasActiveSub = data.user.has_active_subscription || data.user.subscription_status === 'active';
                     if (hasActiveSub) {
                         router.push('/agent/dashboard')
@@ -197,7 +197,7 @@ function LoginContent() {
                     const user = data.user
                     if (nextUrl) router.push(nextUrl)
                     else if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toUpperCase() === 'AGENT') {
+                    else if (user?.role?.toUpperCase() === 'AGENT' || user?.role?.toUpperCase() === 'SUB_USER') {
                         const hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')

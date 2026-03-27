@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
+import { motion, AnimatePresence } from 'framer-motion'
+
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
@@ -18,6 +20,7 @@ import { FloatingLabelInput } from "@/components/ui/floating-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TravelerForm, Traveler } from "@/components/booking/traveler-form"
 import { MockPaymentModal } from "@/components/booking/mock-payment-modal"
+import { InactivePlanModal } from "@/components/booking/inactive-plan-modal"
 import { FlightBookingDetails } from "@/components/booking/flight-booking-details"
 import { ShieldCheck, RotateCcw, Lock, ChevronDown, ChevronUp } from 'lucide-react'
 import { api, bookingsAPI, paymentsAPI, tripPlannerAPI } from '@/lib/api'
@@ -47,6 +50,7 @@ function CheckoutContent() {
 
     // Mock Modal State
     const [showMockModal, setShowMockModal] = useState(false)
+    const [showInactivePlanModal, setShowInactivePlanModal] = useState(false)
     const [currentOrder, setCurrentOrder] = useState<any>(null)
     const [currentBookingId, setCurrentBookingId] = useState<string>('')
 
@@ -256,7 +260,7 @@ function CheckoutContent() {
         if (!contactPhone) {
             newErrors.phone = "Mobile number is required"
             isValid = false
-        } else if (contactPhone.length < 10) {
+        } else if (contactPhone.replace(/\D/g, '').length < 10) {
             newErrors.phone = "Invalid mobile number"
             isValid = false
         }
@@ -279,14 +283,39 @@ function CheckoutContent() {
         }
 
         // 2. Validate Travelers
+        const travelDate = sessionData?.start_date || "2024-06-01"
+        const travelDateObj = new Date(travelDate)
+
         travelers.forEach((t, idx) => {
             if (!t.first_name?.trim()) {
                 newErrors[`first_name_${idx}`] = "First Name is required"
                 isValid = false
             }
-            if (!t.last_name?.trim()) {
-                // specific traveler error if needed, usually passed to form
-                // For now, toast general error if desired or inline
+            
+            const dobParts = t.date_of_birth?.split('-') || []
+            const isCompleteDob = dobParts.length === 3 && dobParts.every(p => p.length > 0)
+
+            if (!isCompleteDob) {
+                newErrors[`dob_age_${idx}`] = "Date of Birth is required"
+                isValid = false
+            } else {
+                const birthDate = new Date(t.date_of_birth)
+                let age = travelDateObj.getFullYear() - birthDate.getFullYear()
+                const m = travelDateObj.getMonth() - birthDate.getMonth()
+                if (m < 0 || (m === 0 && travelDateObj.getDate() < birthDate.getDate())) {
+                    age--
+                }
+
+                if (t.type === 'INFANT' && age >= 2) {
+                    newErrors[`dob_age_${idx}`] = "Infant must be under 2 years on travel date"
+                    isValid = false
+                } else if (t.type === 'CHILD' && (age < 2 || age >= 12)) {
+                    newErrors[`dob_age_${idx}`] = "Child must be between 2 and 12 years"
+                    isValid = false
+                } else if (t.type === 'ADULT' && age < 12) {
+                    newErrors[`dob_age_${idx}`] = "Adult must be at least 12 years"
+                    isValid = false
+                }
             }
         })
 
@@ -328,6 +357,7 @@ function CheckoutContent() {
                     gender: t.gender,
                     passport_number: t.passport_number,
                     nationality: t.nationality,
+                    type: t.type,
                     is_primary: travelers.indexOf(t) === 0
                 })),
                 special_requests: JSON.stringify({
@@ -394,7 +424,15 @@ function CheckoutContent() {
 
         } catch (error: any) {
             console.error(error)
-            toast.error(error.message || "Something went wrong")
+            
+            // Handle Inactive Agent Plan (402 Payment Required)
+            if (error.response?.status === 402 || (error.response?.status === 403 && error.response?.data?.detail === "Agent plan is not active")) {
+                setShowInactivePlanModal(true)
+                setStep('DETAILS')
+                return
+            }
+
+            toast.error(error.response?.data?.detail || error.message || "Something went wrong")
             setStep('DETAILS')
         }
     }
@@ -409,7 +447,7 @@ function CheckoutContent() {
 
     if (step === 'SUCCESS') {
         let confirmation = null
-        let contactInfo = { email: 'N/A', phone: 'N/A' } // Default
+        let contactInfo = { email: 'N/A', phone: 'N/A' }
 
         if (confirmedBooking?.special_requests) {
             try {
@@ -423,52 +461,155 @@ function CheckoutContent() {
             }
         }
 
+        const containerVariants: any = {
+            hidden: { opacity: 0, y: 30 },
+            visible: {
+                opacity: 1,
+                y: 0,
+                transition: {
+                    duration: 0.6,
+                    ease: "easeOut",
+                    staggerChildren: 0.1,
+                    delayChildren: 0.4
+                }
+            }
+        }
+
+        const itemVariants = {
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 }
+        }
+
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4">
-                <div className="glass-panel p-8 rounded-2xl shadow-xl max-w-2xl w-full text-center">
-                    <div className="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                        <CheckCircle className="h-10 w-10 text-green-600" />
-                    </div>
-                    <h1 className="text-3xl font-bold mb-2 text-gray-900">Booking Confirmed!</h1>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Your trip is officially booked. We&apos;ve sent the confirmation details to your email.</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
+                {/* Visual background layers for SUCCESS step too */}
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[#FFAC82] to-[#FFF3EC]" />
+                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+                <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
-                    {confirmation ? (
-                        <div className="text-left mb-8">
-                            <FlightBookingDetails
-                                details={confirmation}
-                                travelers={confirmedBooking?.travelers || []}
-                                contactInfo={contactInfo}
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={containerVariants}
+                    className="relative group max-w-lg w-full"
+                >
+                    {/* Main Success Card - Liquid Glass Treatment */}
+                    <div className="relative overflow-hidden p-8 rounded-[28px] border border-white/25 bg-white/10 backdrop-blur-[40px] saturate-[200%] shadow-[0_40px_80px_rgba(0,0,0,0.20)] text-center transition-all">
+                        {/* Top Specular Highlight */}
+                        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                        {/* Liquid Surface Illusion - Inner Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent pointer-events-none" />
+
+
+                        {/* Success Icon Badge */}
+                        <motion.div
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 200,
+                                damping: 15,
+                                delay: 0.4
+                            }}
+                            className="relative w-20 h-20 mx-auto mb-6"
+                        >
+                            {/* Ping Ring Animation */}
+                            <motion.div
+                                initial={{ scale: 1, opacity: 0 }}
+                                animate={{ scale: 2.2, opacity: 0 }}
+                                transition={{
+                                    duration: 1.2,
+                                    ease: "easeOut",
+                                    delay: 0.7
+                                }}
+                                className="absolute inset-0 rounded-full bg-emerald-500/20"
                             />
-                        </div>
-                    ) : (
-                        <Card className="w-full mb-8 border-gray-100 shadow-sm text-left">
-                            <CardHeader className="glass-panel border-b border-white/20 pb-4">
-                                <CardTitle className="text-lg">Booking Summary</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4 pt-4">
-                                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                                    <span className="text-gray-500 text-sm">Booking Reference</span>
-                                    <span className="font-mono font-bold text-lg text-blue-600 tracking-wider text-right">{confirmedBooking?.booking_reference}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 text-sm">Amount Paid</span>
-                                    <span className="font-bold text-xl text-gray-900">₹{confirmedBooking?.total_amount?.toLocaleString()}</span>
-                                </div>
-                                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-3 text-amber-800 text-sm mt-2">
-                                    <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
-                                    <p>Flight confirmation details are pending. Please check &quot;My Bookings&quot; shortly for updates.</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                            
+                            <div className="absolute inset-0 rounded-full border border-white/30 bg-white/15 backdrop-blur-md shadow-[0_0_0_8px_rgba(16,185,129,0.12),0_0_0_16px_rgba(16,185,129,0.06)] flex items-center justify-center">
+                                <Check className="h-10 w-10 text-[#10b981] drop-shadow-[0_2px_4px_rgba(16,185,129,0.3)] stroke-[3px]" />
+                            </div>
+                        </motion.div>
 
-                    <Button
-                        onClick={() => router.push('/bookings')}
-                        className="w-full sm:w-auto h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                    >
-                        View My Bookings
-                    </Button>
-                </div>
+                        <motion.h1
+                            variants={itemVariants}
+                            className="text-[32px] leading-tight font-black mb-3 text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.15)] font-display"
+                        >
+                            Booking Confirmed!
+                        </motion.h1>
+                        
+                        <motion.p
+                            variants={itemVariants}
+                            className="text-white/65 text-base mb-8 max-w-sm mx-auto font-medium"
+                        >
+                            Your trip is officially booked. We&apos;ve sent the confirmation details to your email.
+                        </motion.p>
+
+                        <motion.div variants={itemVariants} className="w-full text-left">
+                            {confirmation ? (
+                                <div className="mb-8">
+                                    <FlightBookingDetails
+                                        details={confirmation}
+                                        travelers={confirmedBooking?.travelers || []}
+                                        contactInfo={contactInfo}
+                                    />
+                                </div>
+                            ) : (
+                                /* Nested Glass Summary Card */
+                                <div className="w-full mb-8 overflow-hidden rounded-[22px] border border-white/12 bg-black/15 backdrop-blur-md">
+                                    <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+                                        <h3 className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-white/50">
+                                            Booking Summary
+                                        </h3>
+                                    </div>
+                                    <div className="p-5 space-y-5">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-white/55 text-sm font-semibold">Booking Reference</span>
+                                            <span className="font-mono bg-white/12 border border-white/20 text-[rgba(255,255,255,0.95)] px-3 py-1.5 rounded-lg text-sm font-bold tracking-wider shadow-sm">
+                                                {confirmedBooking?.booking_reference}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="border-t border-dashed border-white/12 pt-5 flex justify-between items-end">
+                                            <span className="text-white/55 text-sm font-semibold">Amount Paid</span>
+                                            <div className="text-right">
+                                                <span className="text-[28px] font-black text-white leading-none">
+                                                    ₹{confirmedBooking?.total_amount?.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Flight Pending Amber Glass Alert */}
+                                        <div className="mt-4 flex items-start gap-4 p-4 rounded-2xl border border-amber-400/25 bg-amber-400/12 relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                                            <div className="bg-amber-400/20 p-2 rounded-full border border-amber-400/30">
+                                                <AlertCircle className="h-4 w-4 text-amber-400" />
+                                            </div>
+                                            <p className="text-white/75 text-[13px] font-medium leading-relaxed">
+                                                Flight confirmation details are pending. Please check &quot;My Bookings&quot; shortly for updates.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+
+                        <motion.div variants={itemVariants}>
+                            <Button
+                                onClick={() => router.push('/bookings')}
+                                className="group relative overflow-hidden h-12 min-w-[220px] px-10 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_40px_var(--primary-glow)]"
+                                style={{
+                                    background: `linear-gradient(180deg, rgba(255,255,255,0.28) 0%, var(--primary) 35%, color-mix(in srgb, var(--primary) 80%, #000) 100%)`
+                                } as any}
+                            >
+                                <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/30" />
+                                <div className="relative z-10 flex items-center justify-center gap-2 text-white font-bold text-lg tracking-wide">
+                                    View My Bookings
+                                    <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                </div>
+                            </Button>
+                        </motion.div>
+                    </div>
+                </motion.div>
             </div>
         )
     }
@@ -553,6 +694,7 @@ function CheckoutContent() {
                                         index={idx}
                                         onChange={handleTravelerChange}
                                         errors={errors}
+                                        travelDate={sessionData?.start_date || "2024-06-01"}
                                     />
                                 </div>
                             ))}
@@ -868,6 +1010,11 @@ function CheckoutContent() {
                     onSuccess={(response) => handlePaymentSuccess(response, currentBookingId)}
                 />
             )}
+
+            <InactivePlanModal 
+                isOpen={showInactivePlanModal}
+                onClose={() => setShowInactivePlanModal(false)}
+            />
         </div>
     )
 }

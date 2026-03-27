@@ -26,18 +26,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-// Utility to get user role
-function getUserRole(): string | null {
-    if (typeof window === 'undefined') return null
-    try {
-        const user = localStorage.getItem('user')
-        if (!user) return null
-        return JSON.parse(user).role?.toLowerCase() || null
-    } catch {
-        return null
-    }
-}
-
+import { useAuth } from '@/context/AuthContext'
 
 interface SidebarProps {
     className?: string
@@ -46,21 +35,10 @@ interface SidebarProps {
 
 export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     const pathname = usePathname()
+    const { user, logout, isSubUser } = useAuth()
     const [collapsed, setCollapsed] = useState(false)
-    const [userData, setUserData] = useState<{ first_name?: string; last_name?: string; email?: string; role?: string } | null>(null)
 
-    useEffect(() => {
-        const userStr = localStorage.getItem('user')
-        if (userStr) {
-            try {
-                setUserData(JSON.parse(userStr))
-            } catch (e) {
-                console.error("Failed to parse user data", e)
-            }
-        }
-    }, [])
-
-    const userRole = userData?.role?.toLowerCase() || (pathname?.startsWith('/agent') ? 'agent' : 'admin')
+    const userRole = user?.role?.toLowerCase() || (pathname?.startsWith('/agent') ? 'agent' : 'admin')
 
     const toggleSidebar = () => {
         const newCollapsed = !collapsed
@@ -74,26 +52,57 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
         {
             group: 'Primary',
             items: [
-                { icon: LayoutDashboard, label: 'Dashboard', href: userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard' },
+                { 
+                    icon: LayoutDashboard, 
+                    label: 'Dashboard', 
+                    href: userRole === 'admin' ? '/admin/dashboard' : '/agent/dashboard',
+                    module: 'dashboard'
+                },
 
-                // Agent Specific Items
-                ...(userRole === 'agent' ? [
-                    { icon: Package, label: 'Manage Packages', href: '/agent/packages' },
-                    { icon: Map, label: 'Activity Master', href: '/agent/activities' },
-                    { icon: Calendar, label: 'Booking Report', href: '/agent/bookings' },
+                // Agent / Sub-User Specific Items
+                ...(userRole !== 'admin' ? [
+                    { icon: Package, label: 'Manage Packages', href: '/agent/packages', module: 'packages' },
+                    { icon: Map, label: 'Activity Master', href: '/agent/activities', module: 'activities' },
+                    { icon: Calendar, label: 'Booking Report', href: '/agent/bookings', module: 'bookings' },
                 ] : []),
 
                 // Admin Specific Items
-                ...(userRole !== 'agent' ? [
+                ...(userRole === 'admin' ? [
                     { icon: Users, label: 'Agents', href: '/admin/agents' },
                 ] : []),
 
-                { icon: Receipt, label: 'Billing', href: userRole === 'agent' ? '/agent/subscription' : '/admin/billing' },
+                { 
+                    icon: Receipt, 
+                    label: 'Billing', 
+                    href: userRole === 'admin' ? '/admin/billing' : '/agent/subscription',
+                    module: 'billing'
+                },
 
-                { icon: BarChart2, label: 'Finance Reports', href: userRole === 'agent' ? '/agent/reports' : '/admin/reports' },
+                { 
+                    icon: BarChart2, 
+                    label: 'Finance Reports', 
+                    href: userRole === 'admin' ? '/admin/reports' : '/agent/reports',
+                    module: 'finance_reports'
+                },
 
-                { icon: Settings, label: 'Settings', href: userRole === 'agent' ? '/agent/settings' : '/admin/settings' },
-            ]
+                { 
+                    icon: Settings, 
+                    label: 'Settings', 
+                    href: userRole === 'admin' ? '/admin/settings' : '/agent/settings',
+                    module: 'settings'
+                },
+
+                // Sub-Users management
+                ...((userRole === 'agent' && !isSubUser) || (isSubUser && user?.permissions?.some(p => p.module === 'settings')) ? [
+                    { icon: Users, label: 'Sub-Users', href: '/agent/settings/sub-users', module: 'settings' },
+                ] : []),
+            ].filter(item => {
+                // If sub-user, check permissions array
+                if (isSubUser && item.module) {
+                    return user?.permissions?.some(p => p.module === item.module);
+                }
+                return true;
+            })
         }
     ]
 
@@ -268,22 +277,19 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     <div className="flex items-center gap-3 px-3 py-3 mt-1 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-sm hover:bg-white/20 transition-colors">
                         {/* Avatar circle with branded background */}
                         <div className="h-8 w-8 rounded-xl bg-[var(--primary)] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[var(--primary)]/20 flex-shrink-0">
-                            {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || 'A')).toUpperCase()}
+                            {((user?.first_name?.[0] || '') + (user?.last_name?.[0] || 'U')).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-white/90 truncate">
-                                {userData?.first_name || (userRole === 'agent' ? 'Agent' : 'Admin')}
+                                {user?.first_name} {user?.last_name}
                             </p>
-                            <p className="text-xs text-white/60 truncate">
-                                {userData?.email || (userRole === 'agent' ? 'agent@toursaas.com' : 'admin@toursaas.com')}
+                            <p className="text-[10px] text-white/60 truncate uppercase tracking-wider font-bold">
+                                {isSubUser ? `Staff | ${user?.agency_name || 'Agent'}` : (userRole === 'admin' ? 'Administrator' : 'Agent Owner')}
                             </p>
                         </div>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white/60 hover:text-white hover:bg-white/20 rounded-lg flex-shrink-0 transition-colors" onClick={() => {
-                            localStorage.removeItem('token')
-                            localStorage.removeItem('user')
-                            localStorage.removeItem('isAdmin')
-                            localStorage.removeItem('adminEmail')
-                            window.location.href = userRole === 'agent' ? '/login' : '/admin/login'
+                            logout()
+                            window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
                         }}>
                             <LogOut className="h-3.5 w-3.5" />
                         </Button>
@@ -291,11 +297,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 ) : (
                     <div className="flex justify-center mt-1">
                         <Button variant="ghost" size="icon" className="h-9 w-9 text-white/60 hover:text-white hover:bg-white/20 rounded-xl transition-colors" onClick={() => {
-                            localStorage.removeItem('token')
-                            localStorage.removeItem('user')
-                            localStorage.removeItem('isAdmin')
-                            localStorage.removeItem('adminEmail')
-                            window.location.href = userRole === 'agent' ? '/login' : '/admin/login'
+                            logout()
+                            window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
                         }}>
                             <LogOut className="h-4 w-4" />
                         </Button>

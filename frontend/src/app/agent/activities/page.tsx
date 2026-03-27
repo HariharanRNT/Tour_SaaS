@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils'
 import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2 } from 'lucide-react'
 import { activitiesAPI } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/AuthContext'
 import {
     Select,
     SelectContent,
@@ -54,6 +55,7 @@ interface DestinationSummary {
 
 export default function ActivitiesMasterPage() {
     const router = useRouter()
+    const { hasPermission } = useAuth()
     const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -197,20 +199,22 @@ export default function ActivitiesMasterPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Button
-                                onClick={() => {
-                                    setNewCityName('')
-                                    setNewCityCountry('')
-                                    setNewCityImage('')
-                                    setIsEditing(false)
-                                    setIsNewDestModalOpen(true)
-                                }}
-                                className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_30px_var(--primary-glow)]"
-                                style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '50px' }}
-                            >
-                                <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
-                                Add Destination
-                            </Button>
+                            {hasPermission('activities', 'edit') && (
+                                <Button
+                                    onClick={() => {
+                                        setNewCityName('')
+                                        setNewCityCountry('')
+                                        setNewCityImage('')
+                                        setIsEditing(false)
+                                        setIsNewDestModalOpen(true)
+                                    }}
+                                    className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_30px_var(--primary-glow)]"
+                                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '50px' }}
+                                >
+                                    <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
+                                    Add Destination
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -335,20 +339,24 @@ export default function ActivitiesMasterPage() {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="w-52 p-1.5 rounded-2xl shadow-2xl border-white/50 bg-white/80 backdrop-blur-2xl">
-                                                                <DropdownMenuItem
-                                                                    className="text-slate-600 focus:text-[var(--primary)] focus:bg-orange-50 cursor-pointer rounded-xl h-11 font-bold"
-                                                                    onClick={(e) => { e.stopPropagation(); handleEditDestination(dest); }}
-                                                                >
-                                                                    <Edit className="mr-3 h-4 w-4" />
-                                                                    Edit Destination
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    className="text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer rounded-xl h-11 font-bold"
-                                                                    onClick={(e) => { e.stopPropagation(); confirmDeleteDestination(dest.name, dest.activity_count); }}
-                                                                >
-                                                                    <Trash2 className="mr-3 h-4 w-4" />
-                                                                    Delete Destination
-                                                                </DropdownMenuItem>
+                                                                {hasPermission('activities', 'edit') && (
+                                                                    <DropdownMenuItem
+                                                                        className="text-slate-600 focus:text-[var(--primary)] focus:bg-orange-50 cursor-pointer rounded-xl h-11 font-bold"
+                                                                        onClick={(e) => { e.stopPropagation(); handleEditDestination(dest); }}
+                                                                    >
+                                                                        <Edit className="mr-3 h-4 w-4" />
+                                                                        Edit Destination
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {hasPermission('activities', 'full') && (
+                                                                    <DropdownMenuItem
+                                                                        className="text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer rounded-xl h-11 font-bold"
+                                                                        onClick={(e) => { e.stopPropagation(); confirmDeleteDestination(dest.name, dest.activity_count); }}
+                                                                    >
+                                                                        <Trash2 className="mr-3 h-4 w-4" />
+                                                                        Delete Destination
+                                                                    </DropdownMenuItem>
+                                                                )}
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     </div>

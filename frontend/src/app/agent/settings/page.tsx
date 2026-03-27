@@ -37,6 +37,7 @@ import {
     testSmtpSettings
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 
 const SettingsSkeleton = () => (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-pulse">
@@ -64,6 +65,7 @@ const SettingsSkeleton = () => (
 
 export default function AgentSettingsPage() {
     const router = useRouter()
+    const { hasPermission } = useAuth()
     const queryClient = useQueryClient()
     const [showSmtpPassword, setShowSmtpPassword] = useState(false)
     const [showRazorpaySecret, setShowRazorpaySecret] = useState(false)
@@ -316,23 +318,27 @@ export default function AgentSettingsPage() {
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-amber-700 hover:bg-amber-100 font-semibold"
-                                onClick={discardChanges}
-                            >
-                                Discard
-                            </Button>
-                            <Button
-                                size="sm"
-                                className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-semibold"
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                            >
-                                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                                Save Changes
-                            </Button>
+                            {hasPermission('settings', 'edit') && (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-amber-700 hover:bg-amber-100 font-semibold"
+                                        onClick={discardChanges}
+                                    >
+                                        Discard
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-semibold"
+                                        onClick={handleSubmit}
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                                        Save Changes
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -369,25 +375,27 @@ export default function AgentSettingsPage() {
                                 >
                                     Cancel
                                 </Button>
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={submitting || !isDirty}
-                                    className="min-w-[160px] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary-glow)] font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
-                                    title="Ctrl + S to save"
-                                >
-                                    {submitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="mr-2 h-5 w-5" />
-                                            Save Changes
-                                            <span className="ml-2 px-1.5 py-0.5 bg-[var(--primary)] text-white rounded text-[10px] opacity-90">Ctrl+S</span>
-                                        </>
-                                    )}
-                                </Button>
+                                {hasPermission('settings', 'edit') && (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={submitting || !isDirty}
+                                        className="min-w-[160px] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary-glow)] font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
+                                        title="Ctrl + S to save"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 h-5 w-5" />
+                                                Save Changes
+                                                <span className="ml-2 px-1.5 py-0.5 bg-[var(--primary)] text-white rounded text-[10px] opacity-90">Ctrl+S</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -518,20 +526,22 @@ export default function AgentSettingsPage() {
                                     )} />
                                     {smtp.host ? 'Connected' : 'Not Configured'}
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="font-bold border-white/40 bg-white/30 hover:bg-white/50 text-slate-700 h-10 px-6 rounded-xl shadow-sm transition-all active:scale-95"
-                                    onClick={testSmtpConnection}
-                                    disabled={testingSmtp || !smtp.host}
-                                >
-                                    {testingSmtp ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                                    ) : (
-                                        <CheckCircle className="h-4 w-4 mr-2 text-emerald-500 font-bold" />
-                                    )}
-                                    Test Connection
-                                </Button>
+                                {hasPermission('settings', 'edit') && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="font-bold border-white/40 bg-white/30 hover:bg-white/50 text-slate-700 h-10 px-6 rounded-xl shadow-sm transition-all active:scale-95"
+                                        onClick={testSmtpConnection}
+                                        disabled={testingSmtp || !smtp.host}
+                                    >
+                                        {testingSmtp ? (
+                                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                                        ) : (
+                                            <CheckCircle className="h-4 w-4 mr-2 text-emerald-500 font-bold" />
+                                        )}
+                                        Test Connection
+                                    </Button>
+                                )}
                             </div>
                         </CardHeader>
                         <Separator className="bg-white/10" />

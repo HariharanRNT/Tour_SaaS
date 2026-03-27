@@ -697,7 +697,7 @@ function PlanTripContent() {
     // Parallax Effect
     const { scrollY } = useScroll()
     const y1 = useTransform(scrollY, [0, 500], [0, 150])
-    const opacity = useTransform(scrollY, [0, 300], [1, 0])
+    const opacity = useTransform(scrollY, [0, 300], [1, 1])
 
     // Reusable Search Bar
     const renderSearchBar = (isCompact: boolean) => (
@@ -761,22 +761,20 @@ function PlanTripContent() {
 
     return (
         <div className="min-h-full font-sans pb-20 relative">
-            {/* Ambient Orbs */}
-            <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-[var(--primary)]/40 rounded-full blur-[100px] pointer-events-none z-0" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-[var(--primary-light)]/20 rounded-full blur-[120px] pointer-events-none z-0" />
+
 
 
 
             {!hasSearched && (
                 <>
-                    <div className="relative overflow-visible flex items-center justify-center min-h-[70vh] md:min-h-[80vh] -mt-16 noise-overlay">
-                        <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
+                    <div className="relative overflow-hidden flex items-center justify-center min-h-screen noise-overlay">
+                        <motion.div style={{ opacity }} className="absolute inset-0 z-0">
                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=2021&q=80")` }} />
                             <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%)' }} />
-                            <div className="absolute inset-0 mix-blend-overlay" style={{ background: 'var(--primary)', opacity: 0.10 }} />
+
                         </motion.div>
 
-                        <div className="container mx-auto px-4 relative z-10 text-center space-y-8 w-full max-w-5xl pt-24 md:pt-16">
+                        <div className="container mx-auto px-4 relative z-10 text-center space-y-8 w-full max-w-5xl pt-32 md:pt-40">
                             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pt-8">
                                 <h1 className="text-4xl md:text-[72px] font-bold font-display text-white leading-[1.1] drop-shadow-2xl mb-6 tracking-tight" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
                                     Where do you <br />
@@ -908,7 +906,7 @@ function PlanTripContent() {
                     {/* Content Section */}
                     <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <div className="w-full h-20 bg-gradient-to-b from-transparent to-[var(--primary-soft)] opacity-20 pointer-events-none mt-4 -mb-12" />
+                        <div className="w-full h-20 bg-gradient-to-b from-transparent to-[var(--primary-soft)] opacity-20 pointer-events-none" />
                         <section className="relative py-12 px-8 rounded-[28px] border border-[var(--primary)]/15" style={{ background: 'linear-gradient(160deg, var(--primary-soft) 0%, transparent 100%)' }}>
                             <div className="container mx-auto max-w-7xl">
                                 <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">

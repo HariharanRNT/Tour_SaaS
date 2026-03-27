@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { themes } from '@/lib/themes';
 import { useTheme } from '@/context/ThemeContext';
-import { EmailTemplatePicker } from '@/components/agent/EmailTemplatePicker';
+import EmailTemplateEditor from '@/components/agent/EmailTemplateEditor';
+import { DEFAULT_TEMPLATES } from '@/constants/email-defaults';
 import {
     Check, Palette, Sparkles, Wand2, Eye, Save, ExternalLink,
     RefreshCw, Upload, Link as LinkIcon, Home, Map, Package,
@@ -280,15 +281,6 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
     );
 }
 
-const MOCK_BOOKING_PREVIEW = {
-    customerName: 'Alex Thompson',
-    referenceId: 'RT-77829-XP',
-    packageName: 'Luxury Santorini & Mykonos Escape',
-    travelDate: 'June 15, 2026',
-    travelers: 2,
-    totalAmount: 4850.00,
-    itinerarySummary: '7 Days of island hopping, private catamaran sunset cruise, and boutique caldera-view stays.'
-};
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function AgentThemeSettingsPage() {
@@ -312,6 +304,7 @@ export default function AgentThemeSettingsPage() {
     // Email state
     const [defaultEmailTheme, setDefaultEmailTheme] = useState('classic');
     const [defaultEmailMessage, setDefaultEmailMessage] = useState('');
+    const [emailTemplates, setEmailTemplates] = useState<Record<string, string>>(DEFAULT_TEMPLATES);
 
     // Homepage state
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
@@ -448,6 +441,9 @@ export default function AgentThemeSettingsPage() {
                         }
                         if (hs.default_email_message) {
                             setDefaultEmailMessage(hs.default_email_message);
+                        }
+                        if (hs.email_templates) {
+                            setEmailTemplates(hs.email_templates);
                         }
                     }
                 }
@@ -1488,39 +1484,38 @@ export default function AgentThemeSettingsPage() {
 
     const renderEmailTab = () => (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-            <SectionCard icon={<Mail className="h-5 w-5" />} title="Custom Message content" subtitle="Personalize the message your customers see in their confirmation email">
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-600 uppercase tracking-widest">Email Body Message</Label>
-                    <Textarea 
-                        value={defaultEmailMessage}
-                        onChange={(e) => setDefaultEmailMessage(e.target.value)}
-                        placeholder="e.g. It is our privilege to confirm your passage for {package_name}..."
-                        className="glass-input rounded-2xl min-h-[120px] text-sm p-4"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
-                        <strong>Available Placeholders:</strong> <code className="text-[var(--primary)]">{`{package_name}`}</code>, <code className="text-[var(--primary)]">{`{customer_name}`}</code>, <code className="text-[var(--primary)]">{`{reference_id}`}</code>, <code className="text-[var(--primary)]">{`{agency_name}`}</code>, <code className="text-[var(--primary)]">{`{travel_date}`}</code>. 
-                        Placeholders will be automatically replaced with actual booking details.
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-medium italic mt-1">
-                        Leave empty to use the theme's default message. Use \n for new lines.
-                    </p>
-                </div>
-            </SectionCard>
-
-            <div className="bg-white/30 backdrop-blur-md rounded-[48px] border border-white/40 p-10 shadow-2xl">
-                <EmailTemplatePicker 
-                    bookingData={MOCK_BOOKING_PREVIEW}
-                    initialTheme={defaultEmailTheme}
-                    onThemeChange={(theme) => setDefaultEmailTheme(theme)}
-                    customMessage={defaultEmailMessage}
-                    showSendButton={false}
-                />
+            <div className="bg-white/30 backdrop-blur-md rounded-[48px] border border-white/40 p-1 p-md-10 shadow-2xl overflow-hidden">
+                <EmailTemplateEditor 
+                initialTemplates={emailTemplates}
+                onSave={async (newTemplates) => {
+                    const token = localStorage.getItem('token') || '';
+                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                    
+                    setEmailTemplates(newTemplates);
+                    
+                    const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            email_templates: newTemplates
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.detail || "Failed to save templates");
+                    }
+                }}
+            />
             </div>
         </div>
     );
 
     // Tabs that have a save/reset bar
-    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'email'];
+    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart'];
 
     const handleSave = () => {
         if (activeTab === 'homepage') { handleSaveHomepage(); return; }

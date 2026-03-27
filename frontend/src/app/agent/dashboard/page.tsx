@@ -444,8 +444,9 @@ export default function AgentDashboard() {
 
         try {
             const user = JSON.parse(userStr)
-            if (user.role?.toLowerCase() !== 'agent') {
-                router.push('/packages') // Redirect non-agents
+            const role = user.role?.toLowerCase()
+            if (role !== 'agent' && role !== 'sub_user') {
+                router.push('/packages') // Redirect non-agent staff/owners
                 return
             }
             setAgentName(user.first_name || 'Agent')

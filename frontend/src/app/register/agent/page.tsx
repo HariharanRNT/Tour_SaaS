@@ -28,6 +28,16 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue } from "@/components/ui/select"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const registrationSchema = z.object({
     agency_name: z.string().min(2, 'Agency name is required'),
@@ -58,6 +68,8 @@ export default function AgentRegisterPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
     const [activeStep, setActiveStep] = useState(2) // Defaults to Step 2 (Agency Profile) as per design
+    const [showConflictModal, setShowConflictModal] = useState(false)
+    const [conflictMessage, setConflictMessage] = useState('')
 
     const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm<RegistrationFormValues>({
         resolver: zodResolver(registrationSchema),
@@ -119,9 +131,15 @@ export default function AgentRegisterPage() {
                 body: JSON.stringify(payload)
             })
 
+            const responseData = await response.json()
+
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.detail || 'Registration failed')
+                if (response.status === 409) {
+                    setConflictMessage(responseData.detail || 'this email has already registered')
+                    setShowConflictModal(true)
+                    return
+                }
+                throw new Error(responseData.detail || 'Registration failed')
             }
 
             setSubmitted(true)
@@ -634,6 +652,34 @@ export default function AgentRegisterPage() {
                     </form>
                 </div>
             </div>
+
+            {/* Email Conflict Modal */}
+            <AlertDialog open={showConflictModal} onOpenChange={setShowConflictModal}>
+                <AlertDialogContent className="bg-white/90 backdrop-blur-xl border-orange-100 rounded-[32px] p-8 max-w-[400px]">
+                    <AlertDialogHeader className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center">
+                            <Mail className="h-8 w-8 text-[var(--primary)]" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-[1000] text-slate-900 font-display text-center">
+                            Email Already Registered
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 font-bold text-center leading-relaxed">
+                            {conflictMessage}. Would you like to log in to your existing account instead?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex flex-col gap-3 sm:flex-col sm:justify-center mt-6">
+                        <AlertDialogAction
+                            onClick={() => router.push('/login')}
+                            className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-orange-400 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-500/20"
+                        >
+                            Log In to Portal
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="w-full h-12 border-slate-100 text-slate-400 font-bold rounded-2xl hover:bg-slate-50 transition-colors">
+                            Try Another Email
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

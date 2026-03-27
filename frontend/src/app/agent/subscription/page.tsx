@@ -49,6 +49,18 @@ interface Subscription {
 export default function SubscriptionPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
+
+    // Check if sub-user (they shouldn't be here)
+    useEffect(() => {
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+            const user = JSON.parse(userStr)
+            if (user.role?.toLowerCase() === 'sub_user') {
+                router.push('/agent/dashboard')
+            }
+        }
+    }, [router])
+
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [activatingId, setActivatingId] = useState<string | null>(null);
     const [successPlan, setSuccessPlan] = useState<Plan | null>(null);

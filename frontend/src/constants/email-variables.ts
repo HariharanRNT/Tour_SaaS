@@ -1,0 +1,58 @@
+export const EMAIL_VARIABLES = {
+  booking_confirmation: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Destination", value: "{{destination}}" },
+    { label: "Travel Date", value: "{{travel_date}}" },
+    { label: "Travelers", value: "{{travelers}}" },
+    { label: "Total Amount", value: "{{total_amount}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+    { label: "Support Email", value: "{{support_email}}" },
+    { label: "Support Phone", value: "{{support_phone}}" },
+  ],
+  travel_itinerary: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Destination", value: "{{destination}}" },
+    { label: "Itinerary Summary", value: "{{itinerary_summary}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
+  booking_invoice: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Invoice Number", value: "{{invoice_number}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Total Amount", value: "{{total_amount}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+    { label: "Support Email", value: "{{support_email}}" },
+  ],
+  payment_receipt: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Payment ID", value: "{{payment_id}}" },
+    { label: "Amount Paid", value: "{{amount_paid}}" },
+    { label: "Payment Date", value: "{{payment_date}}" },
+    { label: "Payment Method", value: "{{payment_method}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
+  booking_cancellation: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Package Name", value: "{{package_name}}" },
+    { label: "Cancelled Date", value: "{{cancelled_date}}" },
+    { label: "Refund Amount", value: "{{refund_amount}}" },
+    { label: "Refund Timeline", value: "{{refund_timeline}}" },
+    { label: "Agency Name", value: "{{agency_name}}" },
+  ],
+  trip_reminder: [
+    { label: "Customer Name", value: "{{customer_name}}" },
+    { label: "Destination", value: "{{destination}}" },
+    { label: "Days Until Travel", value: "{{days_until_travel}}" },
+    { label: "Departure Date", value: "{{departure_date}}" },
+    { label: "Booking Reference", value: "{{booking_reference}}" },
+    { label: "Agent Name", value: "{{agent_name}}" },
+    { label: "Agent Contact", value: "{{agent_contact}}" },
+  ],
+};
+
+export type EmailTemplateType = keyof typeof EMAIL_VARIABLES;

@@ -39,7 +39,10 @@ const normalizeStatus = (data: any): any => {
         return data.map(normalizeStatus)
     } else if (data !== null && typeof data === 'object') {
         const normalized: any = {}
-        const statusFields = ['status', 'refund_status', 'payment_status', 'shipping_status', 'payout_status']
+        const statusFields = [
+            'status', 'refund_status', 'payment_status', 'shipping_status', 
+            'payout_status', 'approval_status', 'role'
+        ]
         for (const key in data) {
             if (statusFields.includes(key) && typeof data[key] === 'string') {
                 normalized[key] = data[key].toLowerCase()
@@ -612,6 +615,45 @@ export const agentReportsAPI = {
     },
     getFinancialReports: async (params: { period: string; start_date?: string; end_date?: string }) => {
         const response = await api.get('/agent/reports/financial', { params })
+        return response.data
+    }
+}
+
+// Agent Specific APIs (Sub-Users, Settings, etc.)
+export const agentAPI = {
+    // Sub-Users Management
+    getSubUsers: async () => {
+        const response = await api.get('/agent/sub-users')
+        return response.data
+    },
+    createSubUser: async (data: any) => {
+        const response = await api.post('/agent/sub-users', data)
+        return response.data
+    },
+    getSubUser: async (id: string) => {
+        const response = await api.get(`/agent/sub-users/${id}`)
+        return response.data
+    },
+    updateSubUser: async (id: string, data: any) => {
+        const response = await api.put(`/agent/sub-users/${id}`, data)
+        return response.data
+    },
+    replaceSubUserPermissions: async (id: string, permissions: any[]) => {
+        const response = await api.put(`/agent/sub-users/${id}/permissions`, permissions)
+        return response.data
+    },
+    toggleSubUserStatus: async (id: string, is_active: boolean) => {
+        const response = await api.patch(`/agent/sub-users/${id}/status`, null, {
+            params: { is_active }
+        })
+        return response.data
+    },
+    resetSubUserPassword: async (id: string) => {
+        const response = await api.post(`/agent/sub-users/${id}/reset-password`)
+        return response.data
+    },
+    deleteSubUser: async (id: string) => {
+        const response = await api.delete(`/agent/sub-users/${id}`)
         return response.data
     }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
     BarChart2, 
     Download, 
@@ -47,6 +48,7 @@ import { useTheme } from "next-themes"
 import { useQuery } from '@tanstack/react-query'
 import { agentReportsAPI, bookingsAPI } from '@/lib/api'
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from '@/context/AuthContext'
 import { 
     Popover, 
     PopoverContent, 
@@ -81,6 +83,8 @@ ChartJS.register(
 // Mock data removed in favor of API data
 
 export default function ReportsPage() {
+    const router = useRouter()
+    const { hasPermission } = useAuth()
     const { theme } = useTheme()
     const [activePeriod, setActivePeriod] = useState<'today' | 'week' | 'month' | 'all' | 'custom'>('month')
     const [customRange, setCustomRange] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined })
@@ -91,6 +95,13 @@ export default function ReportsPage() {
     const [recentBookingsPage, setRecentBookingsPage] = useState(1)
     const [recentBookingsLimit] = useState(5)
     const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'bookings' | 'financial'>('overview')
+
+    // Permission Guard
+    useEffect(() => {
+        if (!hasPermission('finance_reports', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [hasPermission, router])
 
     const { data: summary, isLoading: isSummaryLoading } = useQuery({
         queryKey: ['agentReportSummary', activePeriod, customRange],

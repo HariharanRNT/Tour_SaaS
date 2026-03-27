@@ -41,6 +41,7 @@ import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calenda
 import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
 interface Package {
     id: string
@@ -55,6 +56,7 @@ interface Package {
 
 export default function AgentPackagesPage() {
     const router = useRouter()
+    const { hasPermission } = useAuth()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -94,10 +96,12 @@ export default function AgentPackagesPage() {
         try {
             const user = JSON.parse(userStr)
             const role = user.role?.toUpperCase()
-            if (role !== 'AGENT' && role !== 'ADMIN') { 
-                // For now strict agent or admin. Let's redirect if customer
+            if (role !== 'AGENT' && role !== 'ADMIN' && role !== 'SUB_USER') { 
+                // Redirect if customer or other roles that shouldn't be here
                 if (role === 'CUSTOMER') {
                     router.push('/')
+                } else {
+                    router.push('/login')
                 }
             }
         } catch (e) {
@@ -261,14 +265,16 @@ export default function AgentPackagesPage() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
-                            <Button
-                                onClick={() => router.push('/agent/packages/new')}
-                                className="text-white px-6 transition-all hover:-translate-y-0.5 border-none"
-                                style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', boxShadow: '0 6px 20px var(--primary-glow)' }}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Create New Package
-                            </Button>
+                            {hasPermission('packages', 'edit') && (
+                                <Button
+                                    onClick={() => router.push('/agent/packages/new')}
+                                    className="text-white px-6 transition-all hover:-translate-y-0.5 border-none"
+                                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', boxShadow: '0 6px 20px var(--primary-glow)' }}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create New Package
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -367,12 +373,14 @@ export default function AgentPackagesPage() {
                                 <p className="text-gray-500 mt-1 max-w-sm mx-auto">
                                     Get started by creating your first tour package to reach more travelers.
                                 </p>
-                                <Button
-                                    onClick={() => router.push('/agent/packages/new')}
-                                    className="mt-6 bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-full px-8 shadow-lg shadow-[var(--primary-glow)]"
-                                >
-                                    Create First Package
-                                </Button>
+                                {hasPermission('packages', 'edit') && (
+                                    <Button
+                                        onClick={() => router.push('/agent/packages/new')}
+                                        className="mt-6 bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-full px-8 shadow-lg shadow-[var(--primary-glow)]"
+                                    >
+                                        Create First Package
+                                    </Button>
+                                )}
                             </div>
                         ) : (
                             <>
@@ -471,15 +479,17 @@ export default function AgentPackagesPage() {
                                                     </TableCell>
                                                     <TableCell className="py-5 pr-6 text-right">
                                                         <div className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
-                                                                onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
-                                                                title="Edit"
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
+                                                            {hasPermission('packages', 'edit') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
+                                                                    onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
+                                                                    title="Edit"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
@@ -488,13 +498,15 @@ export default function AgentPackagesPage() {
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-56 shadow-xl border-gray-100 rounded-xl p-1">
-                                                                    <DropdownMenuItem
-                                                                        className="glass-popover-item"
-                                                                        onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
-                                                                    >
-                                                                        <Edit className="mr-2 h-4 w-4 text-indigo-500" />
-                                                                        <span className="font-medium">Edit Package</span>
-                                                                    </DropdownMenuItem>
+                                                                    {hasPermission('packages', 'edit') && (
+                                                                        <DropdownMenuItem
+                                                                            className="glass-popover-item"
+                                                                            onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
+                                                                        >
+                                                                            <Edit className="mr-2 h-4 w-4 text-indigo-500" />
+                                                                            <span className="font-medium">Edit Package</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
                                                                     <DropdownMenuItem
                                                                         className="glass-popover-item"
                                                                         onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}
@@ -503,30 +515,34 @@ export default function AgentPackagesPage() {
                                                                         Preview Listing
                                                                     </DropdownMenuItem>
                                                                     <div className="h-px bg-gray-100 my-1" />
-                                                                    <DropdownMenuItem
-                                                                        className="glass-popover-item"
-                                                                        onClick={() => handleToggleStatus(pkg.id, pkg.status)}
-                                                                    >
-                                                                        {pkg.status.toLowerCase() === 'published' ? (
-                                                                            <>
-                                                                                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
-                                                                                Unpublish (Draft)
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                                                                                Publish Live
-                                                                            </>
-                                                                        )}
-                                                                    </DropdownMenuItem>
+                                                                    {hasPermission('packages', 'edit') && (
+                                                                        <DropdownMenuItem
+                                                                            className="glass-popover-item"
+                                                                            onClick={() => handleToggleStatus(pkg.id, pkg.status)}
+                                                                        >
+                                                                            {pkg.status.toLowerCase() === 'published' ? (
+                                                                                <>
+                                                                                    <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                                                                                    Unpublish (Draft)
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                                                                    Publish Live
+                                                                                </>
+                                                                            )}
+                                                                        </DropdownMenuItem>
+                                                                    )}
                                                                     <div className="h-px bg-gray-100 my-1" />
-                                                                    <DropdownMenuItem
-                                                                        className="group/delete glass-popover-item text-red-600 focus:text-red-400"
-                                                                        onClick={() => handleDeleteClick(pkg.id)}
-                                                                    >
-                                                                        <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
-                                                                        <span className="text-gray-600 group-hover/delete:text-red-600">Delete Package</span>
-                                                                    </DropdownMenuItem>
+                                                                    {hasPermission('packages', 'full') && (
+                                                                        <DropdownMenuItem
+                                                                            className="group/delete glass-popover-item text-red-600 focus:text-red-400"
+                                                                            onClick={() => handleDeleteClick(pkg.id)}
+                                                                        >
+                                                                            <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
+                                                                            <span className="text-gray-600 group-hover/delete:text-red-600">Delete Package</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         </div>
@@ -566,10 +582,20 @@ export default function AgentPackagesPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}>Edit</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}>Preview</DropdownMenuItem>
+                                                        {hasPermission('packages', 'edit') && (
+                                                            <DropdownMenuItem onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}>
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuItem onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}>
+                                                            Preview
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>Delete</DropdownMenuItem>
+                                                        {hasPermission('packages', 'full') && (
+                                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
@@ -592,14 +618,16 @@ export default function AgentPackagesPage() {
                                                 <div className="font-bold text-lg text-gray-900">
                                                     ₹{pkg.price_per_person.toLocaleString('en-IN')}
                                                 </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => router.push(`/agent/packages/edit/${pkg.id}`)}
-                                                    className="rounded-full text-xs h-8 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30"
-                                                >
-                                                    Manage
-                                                </Button>
+                                                {hasPermission('packages', 'edit') && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
+                                                        className="rounded-full text-xs h-8 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30"
+                                                    >
+                                                        Manage
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -646,15 +674,17 @@ export default function AgentPackagesPage() {
                             <span className="font-medium text-sm border-r border-white/40 pr-4">
                                 {selectedPackages.length} selected
                             </span>
-                            <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
-                                    Cancel
-                                </Button>
-                                <Button variant="destructive" size="sm" className="rounded-full shadow-sm" onClick={handleBulkDelete}>
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Selected
-                                </Button>
-                            </div>
+                             <div className="flex items-center gap-2">
+                                 <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
+                                     Cancel
+                                 </Button>
+                                 {hasPermission('packages', 'full') && (
+                                    <Button variant="destructive" size="sm" className="rounded-full shadow-sm" onClick={handleBulkDelete}>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete Selected
+                                    </Button>
+                                 )}
+                             </div>
                         </div>
                     )}
                 </Card>
