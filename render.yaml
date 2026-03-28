@@ -1,0 +1,91 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Backend Web Service (FastAPI)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: tour-saas-api
+    env: python
+    rootDirectory: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tour-saas-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false # Connect to your Upstash or Render Redis
+      - fromGroup: tour-saas-secrets
+
+  # ---------------------------------------------------------------------------
+  # 2. Celery Worker (Background Tasks)
+  # ---------------------------------------------------------------------------
+  - type: worker
+    name: tour-saas-worker
+    env: python
+    rootDirectory: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tour-saas-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - fromGroup: tour-saas-secrets
+
+  # ---------------------------------------------------------------------------
+  # 3. Celery Beat (Scheduled Tasks)
+  # ---------------------------------------------------------------------------
+  - type: worker
+    name: tour-saas-beat
+    env: python
+    rootDirectory: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.celery_app beat --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tour-saas-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - fromGroup: tour-saas-secrets
+
+  # ---------------------------------------------------------------------------
+  # 4. Frontend Web Service (Next.js)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: tour-saas-frontend
+    env: node
+    rootDirectory: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: tour-saas-api
+          type: web
+          property: host
+      - fromGroup: tour-saas-secrets
+
+# ---------------------------------------------------------------------------
+# Databases
+# ---------------------------------------------------------------------------
+databases:
+  - name: tour-saas-db
+    databaseName: tour_saas
+    user: tour_saas_user
+    plan: free # Change to 'standard' for production
+
+# ---------------------------------------------------------------------------
+# Redis (Optional)
+# ---------------------------------------------------------------------------
+# If you prefer Render Managed Redis over Upstash, uncomment this section:
+# redis:
+#   - name: tour-saas-redis
+#     plan: free
+#     ipAllowList: [] # Only allow internal traffic
