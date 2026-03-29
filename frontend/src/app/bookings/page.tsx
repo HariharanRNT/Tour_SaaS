@@ -408,7 +408,7 @@ export default function BookingsPage() {
 
             {/* ── Cancel Confirmation Dialog ────────────────────────────────── */}
             <Dialog open={!!cancelTarget} onOpenChange={closeCancelDialog}>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-md glass-premium border-0" overlayClass="bg-black/40">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-gray-900">
                             <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -430,33 +430,37 @@ export default function BookingsPage() {
                     {/* Preview loaded */}
                     {preview && !previewLoading && (
                         <div className="space-y-4 py-2">
-                            {/* Refund amount card */}
-                            <div className={`rounded-xl border-2 p-4 text-center ${
+                            {/* Refund amount card with glassmorphism */}
+                            <div className={`rounded-2xl border p-6 text-center transition-all animate-in fade-in zoom-in duration-500 ${
                                 preview.refund_amount > 0
-                                    ? 'border-emerald-200 bg-emerald-50'
-                                    : 'border-red-200 bg-red-50'
+                                    ? 'border-emerald-200/50 bg-emerald-500/10 text-emerald-900'
+                                    : 'border-red-200/50 bg-red-500/10 text-red-900'
                             }`}>
                                 {preview.refund_amount > 0 ? (
                                     <>
-                                        <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                                        <p className="text-2xl font-bold text-emerald-700">
-                                            ₹{preview.refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+                                        </div>
+                                        <p className="text-3xl font-bold tracking-tight text-emerald-700">
+                                            ₹{preview.refund_amount.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                         </p>
-                                        <p className="text-sm font-medium text-emerald-600 mt-1">
+                                        <p className="text-sm font-bold text-emerald-600/80 mt-1 uppercase tracking-wider">
                                             {preview.refund_percentage}% refund
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <XCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
-                                        <p className="text-lg font-bold text-red-700">No Refund</p>
-                                        <p className="text-sm text-red-500 mt-1">Non-refundable as per policy</p>
+                                        <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <XCircle className="h-7 w-7 text-red-500" />
+                                        </div>
+                                        <p className="text-xl font-bold text-red-700">No Refund</p>
+                                        <p className="text-sm font-medium text-red-500/80 mt-1 uppercase tracking-wider">Non-refundable policy</p>
                                     </>
                                 )}
                             </div>
 
-                            {/* Trust-building message */}
-                            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 leading-relaxed border border-gray-100">
+                            {/* Trust-building message with frosted look */}
+                            <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 text-sm text-gray-700 leading-relaxed border border-white/40 shadow-sm shadow-blue-900/5">
                                 {preview.message}
                             </div>
 
@@ -485,7 +489,7 @@ export default function BookingsPage() {
                             variant="outline"
                             onClick={closeCancelDialog}
                             disabled={cancelling}
-                            className="flex-1"
+                            className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-gray-800 backdrop-blur-sm transition-all"
                         >
                             Keep Booking
                         </Button>
@@ -493,7 +497,7 @@ export default function BookingsPage() {
                             variant="destructive"
                             onClick={confirmCancel}
                             disabled={cancelling || previewLoading}
-                            className="flex-1 gap-2"
+                            className="flex-1 gap-2 bg-red-500/90 hover:bg-red-600 transition-all shadow-lg shadow-red-200/50"
                         >
                             {cancelling ? (
                                 <><RefreshCw className="h-4 w-4 animate-spin" /> Cancelling...</>

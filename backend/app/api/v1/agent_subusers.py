@@ -16,6 +16,7 @@ from app.api.deps import get_current_user
 from app.core.security import get_password_hash
 
 import logging
+from app.config import settings
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -186,6 +187,7 @@ async def create_sub_user(
                 "encryption_type": smtp_settings.encryption_type,
             }
 
+        login_url = f"{settings.FRONTEND_URL}/login"
         agency = agent.agency_name or "Your Agency"
         subject = f"Welcome to {agency} – Your Sub-User Account"
         body = f"""
@@ -195,9 +197,14 @@ async def create_sub_user(
             <p>An account has been created for you as a <strong>{data.role_label}</strong> on the {agency} travel portal.</p>
             <p>Use the credentials below to log in:</p>
             <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:16px 0;">
-                <p><strong>Login Email:</strong> {data.email}</p>
-                <p><strong>Temporary Password:</strong> <code style="font-size:18px;letter-spacing:4px;">{temp_password}</code></p>
+                <p style="margin: 4px 0;"><strong>Login Email:</strong> {data.email}</p>
+                <p style="margin: 4px 0;"><strong>Temporary Password:</strong> <code style="font-size:18px;letter-spacing:4px;">{temp_password}</code></p>
             </div>
+            
+            <div style="text-align:center;margin:25px 0;">
+                <a href="{login_url}" style="background-color:#FF8C5A;color:white;padding:12px 30px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Login to Portal</a>
+            </div>
+            
             <p style="color:#64748b;font-size:13px;">You will be asked to change your password upon first login. Do not share these credentials.</p>
             <hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>
             <p style="text-align:center;color:#94a3b8;font-size:12px;">&copy; 2026 {agency}. All rights reserved.</p>
@@ -424,6 +431,7 @@ async def reset_sub_user_password(
                 "encryption_type": smtp_settings.encryption_type,
             }
 
+        login_url = f"{settings.FRONTEND_URL}/login"
         agency = agent.agency_name or "Your Agency"
         subject = f"{agency} – Your Password Has Been Reset"
         body = f"""
@@ -434,6 +442,11 @@ async def reset_sub_user_password(
             <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:16px 0;">
                 <p><strong>New Temporary Password:</strong> <code style="font-size:18px;letter-spacing:4px;">{temp_password}</code></p>
             </div>
+            
+            <div style="text-align:center;margin:25px 0;">
+                <a href="{login_url}" style="background-color:#FF8C5A;color:white;padding:12px 30px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Login to Portal</a>
+            </div>
+            
             <p style="color:#64748b;font-size:13px;">Please log in and update your password immediately. Do not share these credentials.</p>
         </div>
         """

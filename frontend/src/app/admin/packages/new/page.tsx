@@ -115,33 +115,34 @@ export default function CreatePackagePage() {
                 setPackageId(data.id)
             }
 
-            setActiveTab('itinerary')
-            toast.success('Package saved successfully!')
+            setActiveTab('itinerary');
+            toast.success('Package saved successfully!');
         } catch (error) {
-            console.error('Failed to save package:', error)
-            alert(`Failed to save package: ${error}`)
+            console.error('Failed to save package:', error);
+            alert(`Failed to save package: ${error}`);
         } finally {
-            setSaving(false)
+            setSaving(false);
         }
     }
 
     const handlePublish = async () => {
         if (!packageId) {
-            alert('Please save the package first')
-            return
+            alert('Please save the package first');
+            return;
         }
 
         try {
             await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/status?new_status=PUBLISHED`, {
                 method: 'PATCH'
-            })
-            router.push('/admin/packages')
-            toast.success('Package published successfully!')
+            });
+            router.push('/admin/packages');
+            toast.success('Package published successfully!');
         } catch (error) {
-            console.error('Failed to publish:', error)
-            alert('Failed to publish package')
+            console.error('Failed to publish:', error);
+            alert('Failed to publish package');
         }
     }
+
 
     const isBasicInfoValid = () => {
         return formData.title && formData.destination && formData.price_per_person > 0

@@ -376,7 +376,7 @@ async def toggle_agent_package_status(
         )
     
     try:
-        status_enum = PackageStatus(new_status)
+        status_enum = PackageStatus(new_status.upper())
         package.status = status_enum
         
         # Auto-publish if status is set to PUBLISHED

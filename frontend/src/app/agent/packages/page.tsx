@@ -41,7 +41,7 @@ import {
     PaginationNext,
     PaginationPrevious
 } from "@/components/ui/pagination"
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
@@ -123,7 +123,23 @@ export default function AgentPackagesPage() {
             setSelectedPackages(prev => prev.filter(id => id !== deleteId))
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Failed to delete package.')
+            const detail = error?.response?.data?.detail
+            if (detail && detail.toLowerCase().includes('archive')) {
+                toast.error(detail, {
+                    duration: 6000,
+                    action: {
+                        label: 'Archive Instead',
+                        onClick: () => {
+                            if (deleteId) {
+                                statusMutation.mutate({ id: deleteId, new_status: 'ARCHIVED' })
+                                setDeleteId(null)
+                            }
+                        }
+                    }
+                })
+            } else {
+                toast.error(error.message || 'Failed to delete package.')
+            }
         }
     })
 
@@ -163,7 +179,7 @@ export default function AgentPackagesPage() {
     }
 
     const handleToggleStatus = (id: string, currentStatus: string) => {
-        const new_status = currentStatus.toLowerCase() === 'published' ? 'draft' : 'published'
+        const new_status = currentStatus.toUpperCase() === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
         statusMutation.mutate({ id, new_status })
     }
 
@@ -537,13 +553,23 @@ export default function AgentPackagesPage() {
                                                                     )}
                                                                     <div className="h-px bg-gray-100 my-1" />
                                                                     {hasPermission('packages', 'full') && (
-                                                                        <DropdownMenuItem
-                                                                            className="group/delete glass-popover-item text-red-600 focus:text-red-400"
-                                                                            onClick={() => handleDeleteClick(pkg.id)}
-                                                                        >
-                                                                            <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
-                                                                            <span className="text-gray-600 group-hover/delete:text-red-600">Delete Package</span>
-                                                                        </DropdownMenuItem>
+                                                                        <>
+                                                                            <DropdownMenuItem
+                                                                                className="glass-popover-item text-slate-600 focus:text-slate-900"
+                                                                                onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
+                                                                            >
+                                                                                <Archive className="mr-2 h-4 w-4 text-slate-400" />
+                                                                                <span className="font-medium">Archive Package</span>
+                                                                            </DropdownMenuItem>
+
+                                                                            <DropdownMenuItem
+                                                                                className="group/delete glass-popover-item text-red-600 focus:text-red-400"
+                                                                                onClick={() => handleDeleteClick(pkg.id)}
+                                                                            >
+                                                                                <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
+                                                                                <span className="text-gray-600 group-hover/delete:text-red-600">Delete Package</span>
+                                                                            </DropdownMenuItem>
+                                                                        </>
                                                                     )}
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
@@ -692,21 +718,33 @@ export default function AgentPackagesPage() {
                 </Card>
             </div>
 
-            {/* Delete Confirmation Dialog */}
+            {/* Delete Confirmation Dialog with Glassmorphism */}
             <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-                <DialogContent>
+                <DialogContent className="max-w-md glass-premium border-0" overlayClass="bg-black/40">
                     <DialogHeader>
-                        <DialogTitle>Are you sure?</DialogTitle>
-                        <DialogDescription>
-                            This action cannot be undone. This will permanently delete the package.
+                        <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 mx-auto sm:mx-0 transition-transform hover:scale-110">
+                            <AlertTriangle className="h-6 w-6 text-red-500" />
+                        </div>
+                        <DialogTitle className="text-xl font-bold text-gray-900">Are you sure?</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2 leading-relaxed">
+                            This action cannot be undone. This will permanently remove <span className="font-semibold text-gray-900">{packages.find((p: any) => p.id === deleteId)?.title}</span> from your package library.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>
+                    <DialogFooter className="mt-8 gap-3 sm:gap-0">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setDeleteId(null)}
+                            className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-gray-700 backdrop-blur-sm transition-all"
+                        >
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
-                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                        <Button 
+                            variant="destructive" 
+                            onClick={confirmDelete} 
+                            disabled={deleteMutation.isPending}
+                            className="flex-1 bg-red-500/90 hover:bg-red-600 shadow-lg shadow-red-200/50 transition-all"
+                        >
+                            {deleteMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

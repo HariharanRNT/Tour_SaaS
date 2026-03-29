@@ -352,7 +352,7 @@ async def get_public_settings(
     
     if not agent:
         # Fallback ONLY for localhost/development
-        if domain in ['localhost', '127.0.0.1']:
+        if domain in ['localhost', '127.0.0.1', 'rnt.local']:
             # Pick an agent that actually has settings if possible, otherwise just any
             stmt = select(Agent).order_by(Agent.homepage_settings.isnot(None).desc()).limit(1)
             result = await db.execute(stmt)

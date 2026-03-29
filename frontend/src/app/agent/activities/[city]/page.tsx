@@ -296,16 +296,30 @@ export default function CityActivityManager({ params }: { params: { city: string
 
     // --- Left Side Actions ---
 
-    const handleDeleteExisting = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this activity?')) return
-        try {
-            await activitiesAPI.delete(id)
-            toast.success('Activity deleted')
-            loadCityActivities()
-        } catch (error: any) {
-            console.error('Failed to delete activity:', error)
-            toast.error('Failed to delete activity')
-        }
+    const handleDeleteExisting = (id: string) => {
+        const activity = existingActivities.find(a => a.id === id)
+        
+        toast(`Delete ${activity?.name || 'this activity'}?`, {
+            description: 'This action cannot be undone. Permanent removal from itinerary.',
+            action: {
+                label: 'Confirm Delete',
+                onClick: async () => {
+                    try {
+                        await activitiesAPI.delete(id)
+                        toast.success('Activity deleted successfully')
+                        loadCityActivities()
+                    } catch (error: any) {
+                        console.error('Failed to delete activity:', error)
+                        toast.error(error?.response?.data?.detail || 'Failed to delete activity')
+                    }
+                }
+            },
+            cancel: {
+                label: 'Cancel',
+                onClick: () => {}
+            },
+            duration: 5000,
+        })
     }
 
     const getTimeSlotIcon = (slot: string) => {

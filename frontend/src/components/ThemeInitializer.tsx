@@ -14,15 +14,13 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                 const path = window.location.pathname;
 
                 // EXEMPT PATHS: Do not apply agent branding to Admin or Registration
-                if (path.startsWith('/admin') || path === '/register/agent') {
+                if (path.startsWith('/admin') || path.startsWith('/register/agent')) {
                     console.log('ThemeInitializer: Exempt path detected, skipping agent branding');
                     return;
                 }
 
-                const SHARED_THEME_KEY = 'app-theme';
                 const CUSTOM_COLORS_KEY = 'agent_custom_theme';
                 const UI_STYLE_KEY = 'ui-style-settings';
-                const PAGE_SETTINGS_KEY = 'page-settings-v2';
 
                 const body = document.body;
 
@@ -34,16 +32,39 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
                 };
 
+                const hexToHsl = (hex) => {
+                    if (!hex || hex.length < 7) return "24 95% 53%";
+                    let r = parseInt(hex.slice(1, 3), 16) / 255;
+                    let g = parseInt(hex.slice(3, 5), 16) / 255;
+                    let b = parseInt(hex.slice(5, 7), 16) / 255;
+                    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                    let h = 0, s, l = (max + min) / 2;
+                    if (max === min) h = s = 0;
+                    else {
+                        const d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                            case g: h = (b - r) / d + 2; break;
+                            case b: h = (r - g) / d + 4; break;
+                        }
+                        h /= 6;
+                    }
+                    return Math.round(h * 360) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
+                };
+
                 const apply = (s) => {
                     if (!s) return;
                     const r = document.documentElement;
                     
-                    // Direct mappings from Design File & Agent Portal
                     const p = s.primaryColor || s.primary_color || s.primary || '#F97316';
                     const sec = s.secondaryColor || s.secondary_color || s.secondary || '#FB923C';
                     const soft = s.primarySoft || s.glass || hexToRgba(p, 0.45);
+                    const hsl = hexToHsl(p);
                     
                     r.style.setProperty('--primary', p);
+                    r.style.setProperty('--primary-hsl', hsl);
+                    r.style.setProperty('--ring', hsl);
                     r.style.setProperty('--primary-color', p);
                     r.style.setProperty('--primary-light', sec);
                     r.style.setProperty('--secondary-color', sec);
@@ -53,14 +74,7 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     r.style.setProperty('--gradient-mid', sec);
                     
                     if (s.navbarSettings?.bgColor) r.style.setProperty('--navbar-bg', s.navbarSettings.bgColor);
-                    if (s.navbarSettings?.textColor) r.style.setProperty('--navbar-text', s.navbarSettings.textColor);
-                    
-                    if (s.buttonStyle?.bgColor) r.style.setProperty('--button-bg', s.buttonStyle.bgColor);
-                    if (s.buttonStyle?.textColor) r.style.setProperty('--button-text', s.buttonStyle.textColor);
-                    if (s.buttonStyle?.borderRadius) r.style.setProperty('--button-radius', s.buttonStyle.borderRadius);
-
                     if (s.font_family || s.fontFamily) r.style.setProperty('--font-family', s.font_family || s.fontFamily);
-                    if (s.font_size || s.fontSize) r.style.setProperty('--font-size', s.font_size || s.fontSize);
                 };
 
                 // 1. apply initial server settings first (Highest Priority for SSR)
@@ -103,16 +117,27 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     if (customThemeStr) apply(JSON.parse(customThemeStr));
                 } catch(e) {}
 
-                // 5. Load UI Style Classes
+                // 5. Load UI Style Classes (Safe for <head>)
                 const uiStyleStr = localStorage.getItem(UI_STYLE_KEY);
                 if (uiStyleStr) {
-                    const { buttonShape, iconStyle, cardStyle, density, fontPairing } = JSON.parse(uiStyleStr);
-                    const bodyClassList = document.body.classList;
-                    if (buttonShape) bodyClassList.add('btn-' + buttonShape);
-                    if (iconStyle) bodyClassList.add('icon-' + iconStyle);
-                    if (cardStyle) bodyClassList.add('card-' + cardStyle);
-                    if (density) bodyClassList.add('density-' + density);
-                    if (fontPairing) bodyClassList.add('font-' + fontPairing);
+                    try {
+                        const { buttonShape, iconStyle, cardStyle, density, fontPairing } = JSON.parse(uiStyleStr);
+                        const applyClasses = () => {
+                            const b = document.body;
+                            if (b) {
+                                if (buttonShape) b.classList.add('btn-' + buttonShape);
+                                if (iconStyle) b.classList.add('icon-' + iconStyle);
+                                if (cardStyle) b.classList.add('card-' + cardStyle);
+                                if (density) b.classList.add('density-' + density);
+                                if (fontPairing) b.classList.add('font-' + fontPairing);
+                            }
+                        };
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', applyClasses);
+                        } else {
+                            applyClasses();
+                        }
+                    } catch(e) {}
                 }
             } catch (e) {
                 console.warn('Theme initialization failed', e);

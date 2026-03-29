@@ -904,10 +904,9 @@ function PlanTripContent() {
                     </div>
 
                     {/* Content Section */}
-                    <div className="container mx-auto px-4 py-8 space-y-16 max-w-7xl">
+                    <div className="container mx-auto px-4 py-8 space-y-12 max-w-7xl">
                         {/* Browse by Trip Style */}
-                        <div className="w-full h-20 bg-gradient-to-b from-transparent to-[var(--primary-soft)] opacity-20 pointer-events-none" />
-                        <section className="relative py-12 px-8 rounded-[28px] border border-[var(--primary)]/15" style={{ background: 'linear-gradient(160deg, var(--primary-soft) 0%, transparent 100%)' }}>
+                        <section className="relative py-10 px-8 rounded-[28px] border border-[var(--primary)]/15" style={{ background: 'linear-gradient(160deg, var(--primary-soft) 0%, transparent 100%)' }}>
                             <div className="container mx-auto max-w-7xl">
                                 <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                     <div>
@@ -970,8 +969,8 @@ function PlanTripContent() {
 
                         {/* Popular Destinations */}
                         {popularDestinations.length >= 0 && (
-                            <section className="pt-8 pb-12 container mx-auto max-w-7xl">
-                                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0 mt-12">
+                            <section className="pt-0 pb-12 container mx-auto max-w-7xl">
+                                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0 mt-6">
                                     <div>
                                         <h2 className="text-[48px] md:text-[52px] font-bold text-[#1A1A1A] font-display mb-3 leading-tight">
                                             Popular Destinations

@@ -22,27 +22,85 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { headers } from "next/headers";
 
+export const dynamic = 'force-dynamic';
+
 async function getInitialTheme() {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     try {
         const headersList = headers();
         const host = headersList.get('host') || 'localhost';
         const hostname = host.split(':')[0]; // Remove port if present
         
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        
         const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
-            headers: {
-                'X-Domain': hostname
-            },
+            headers: { 'X-Domain': hostname },
             cache: 'no-store'
         });
         
-        if (!res.ok) return null;
+        console.log(`[SSR] Theme fetch status: ${res.status} for ${hostname}`);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`[SSR] Theme fetch failed: ${errorText}`);
+            return null;
+        }
         return await res.json();
     } catch (err) {
-        console.error("Failed to fetch initial theme:", err);
         return null;
     }
+}
+
+function generateThemeStyles(settings: any) {
+    if (!settings) return "";
+
+    const hexToRgba = (hex: string, alpha: number) => {
+        if (!hex || hex.length < 7) return `rgba(0,0,0,${alpha})`;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    };
+
+    const hexToHsl = (hex: string) => {
+        if (!hex || hex.length < 7) return "24 95% 53%";
+        let r = parseInt(hex.slice(1, 3), 16) / 255;
+        let g = parseInt(hex.slice(3, 5), 16) / 255;
+        let b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s, l = (max + min) / 2;
+        if (max === min) h = s = 0;
+        else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+    };
+
+    const p = settings.primaryColor || settings.primary_color || settings.primary || '#F97316';
+    const sec = settings.secondaryColor || settings.secondary_color || settings.secondary || '#FB923C';
+    const soft = settings.primarySoft || settings.glass || hexToRgba(p, 0.45);
+    const hsl = hexToHsl(p);
+
+    return `
+        :root {
+            --primary: ${p};
+            --primary-hsl: ${hsl};
+            --ring: ${hsl};
+            --primary-color: ${p};
+            --primary-light: ${sec};
+            --secondary-color: ${sec};
+            --primary-glow: ${hexToRgba(p, 0.25)};
+            --primary-soft: ${soft};
+            --gradient-start: ${p};
+            --gradient-mid: ${sec};
+            ${settings.font_family ? `--font-family: ${settings.font_family};` : ''}
+        }
+    `.replace(/\s+/g, ' ');
 }
 
 export default async function RootLayout({
@@ -57,9 +115,12 @@ export default async function RootLayout({
         <html lang="en">
             <head>
                 {initialTheme?.id && <meta name="agent-id" content={initialTheme.id} />}
+                <ThemeInitializer initialSettings={homepageSettings} />
+                {homepageSettings && (
+                    <style dangerouslySetInnerHTML={{ __html: generateThemeStyles(homepageSettings) }} />
+                )}
             </head>
             <body className={`${dmSans.className} ${fraunces.variable} ${dmSans.variable} ${inter.variable} ${jakarta.variable} ${sora.variable} ${playfair.variable}`}>
-                <ThemeInitializer initialSettings={homepageSettings} />
                 <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
                     <Providers>
                         <ScrollToTop />
