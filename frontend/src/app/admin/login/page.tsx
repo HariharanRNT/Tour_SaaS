@@ -157,7 +157,7 @@ export default function AdminLoginPage() {
 
                 {/* Right Side: Login Card (60%) */}
                 <div className="w-full lg:w-[55%] flex items-center justify-center p-4 lg:p-12">
-                    <Card className={`glass-panel w-full max-w-[420px] shadow-[0_20px_60px_rgba(255,122,69,0.25)] bg-white/25 backdrop-blur-[25px] border border-white/35 rounded-[28px] p-2 sm:p-4 relative z-10 animate-in fade-in slide-in-from-right-8 duration-[800ms] ${formShake ? 'animate-shake' : ''}`}>
+                    <Card className={`glass-panel w-full max-w-[420px] shadow-[0_20px_60px_rgba(255,122,69,0.25)] bg-white/25 backdrop-blur-[25px] border border-white/35 rounded-[28px] p-2 sm:p-4 relative z-10 animate-in fade-in slide-in-from-right-8 animate-duration-[800ms] ${formShake ? 'animate-shake' : ''}`}>
                         <CardHeader className="space-y-6 pb-8 pt-8 px-4 sm:px-6">
                             <div className="flex flex-col items-center justify-center space-y-6 mb-2">
 

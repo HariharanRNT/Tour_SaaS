@@ -673,7 +673,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             <div className="relative h-[480px] w-full bg-cover bg-center overflow-hidden flex items-center justify-center group shadow-2xl">
                 {/* Background Image & Overlay — Destination-specific */}
                 <div
-                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
+                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform transition-duration-[4s] group-hover:scale-105"
                     style={{
                         backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')` }}
                 />
