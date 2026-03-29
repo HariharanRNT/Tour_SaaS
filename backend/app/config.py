@@ -9,12 +9,12 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
     PORT: int = 8000
-    SECRET_KEY: str
+    SECRET_KEY: str = "your-secret-key-goes-here-change-in-production"
     API_V1_PREFIX: str = "/api/v1"
     FRONTEND_URL: str = "http://localhost:3000"
     
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite+aiosqlite:///./tour_saas.db"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 0
     
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # JWT
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "your-jwt-secret-key-goes-here-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
@@ -41,15 +41,15 @@ class Settings(BaseSettings):
     RAZORPAY_BOOKING_KEY_SECRET: str = "test_secret_key_1234567890"
     
     # Amadeus Tours & Activities API
-    AMADEUS_CLIENT_ID: str
-    AMADEUS_CLIENT_SECRET: str
+    AMADEUS_CLIENT_ID: str = ""
+    AMADEUS_CLIENT_SECRET: str = ""
     AMADEUS_BASE_URL: str = "https://test.api.amadeus.com"
     
     # Geoapify Geocoding API
-    GEOAPIFY_API_KEY: str
+    GEOAPIFY_API_KEY: str = ""
     
     # TripJack Flight API
-    TRIPJACK_API_KEY: str
+    TRIPJACK_API_KEY: str = ""
     TRIPJACK_BASE_URL: str = "https://apitest.tripjack.com"
     
     # Redis Cache
@@ -80,11 +80,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     
     # Google Gemini AI
-    GEMINI_API_KEY: str
+    GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-pro"
     
     # Pexels API
-    PEXELS_API_KEY: str
+    PEXELS_API_KEY: str = ""
     
     class Config:
         env_file = ".env"
