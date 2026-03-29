@@ -15,7 +15,8 @@ celery_app = Celery(
     backend=redis_url,
     include=[
         "app.tasks.email_tasks",
-        "app.tasks.scheduler_tasks"
+        "app.tasks.scheduler_tasks",
+        "app.tasks.pdf_tasks"
     ]
 )
 
@@ -37,3 +38,17 @@ celery_app.conf.update(
     task_track_started=True,
     task_time_limit=3600,
 )
+
+# Startup Cache for Worker
+from celery.signals import worker_process_init
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+import redis.asyncio as redis
+
+@worker_process_init.connect
+def init_cache(**kwargs):
+    """Initialize Redis cache for worker processes"""
+    # Create the redis connection
+    redis_client = redis.from_url(redis_url, encoding="utf8", decode_responses=False)
+    # FastAPICache initialization
+    FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")

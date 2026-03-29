@@ -107,11 +107,20 @@ async def get_package_with_itinerary(
     
     try:
         result = await service.get_package_with_itinerary(package_id)
+        
+        # Fetch agent homepage settings
+        from app.models import Agent
+        from sqlalchemy import select
+        agent_stmt = select(Agent.homepage_settings).where(Agent.user_id == result['package'].created_by)
+        agent_res = await db.execute(agent_stmt)
+        homepage_settings = agent_res.scalar() or {}
+
         return {
             **result['package'].__dict__,
             'feature_image_url': result.get('feature_image_url'),
             'destination_image_url': result.get('destination_image_url'),
-            'itinerary_by_day': result['itinerary_by_day']
+            'itinerary_by_day': result['itinerary_by_day'],
+            'homepage_settings': homepage_settings
         }
     except ValueError as e:
         raise HTTPException(
@@ -129,11 +138,20 @@ async def get_package_with_itinerary_by_slug(
     
     try:
         result = await service.get_package_with_itinerary_by_slug(slug)
+        
+        # Fetch agent homepage settings
+        from app.models import Agent
+        from sqlalchemy import select
+        agent_stmt = select(Agent.homepage_settings).where(Agent.user_id == result['package'].created_by)
+        agent_res = await db.execute(agent_stmt)
+        homepage_settings = agent_res.scalar() or {}
+
         return {
             **result['package'].__dict__,
             'feature_image_url': result.get('feature_image_url'),
             'destination_image_url': result.get('destination_image_url'),
-            'itinerary_by_day': result['itinerary_by_day']
+            'itinerary_by_day': result['itinerary_by_day'],
+            'homepage_settings': homepage_settings
         }
     except ValueError as e:
         raise HTTPException(

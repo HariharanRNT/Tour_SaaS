@@ -62,6 +62,7 @@ class PackageWithItineraryResponse(BaseModel):
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[CancellationRule] = []
+    homepage_settings: Optional[Dict[str, Any]] = None
     
     class Config:
         from_attributes = True

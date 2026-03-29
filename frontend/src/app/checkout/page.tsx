@@ -440,7 +440,7 @@ function CheckoutContent() {
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-transparent">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-[var(--primary)] mb-4" />
             <p className="text-gray-500 font-medium animate-pulse">Preparing your checkout experience...</p>
         </div>
     )
@@ -483,7 +483,7 @@ function CheckoutContent() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
                 {/* Visual background layers for SUCCESS step too */}
-                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[#FFAC82] to-[#FFF3EC]" />
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
                 <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
                 <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
@@ -631,7 +631,7 @@ function CheckoutContent() {
     return (
         <div className="min-h-screen bg-transparent font-sans pb-20 overflow-x-hidden relative">
             {/* Ambient Deep Mesh Background */}
-            <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[#FFAC82] to-[#FFF3EC]" />
+            <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
             {/* Ambient Orbs */}
             <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
             <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
@@ -655,17 +655,17 @@ function CheckoutContent() {
                                 return (
                                     <div key={s.id} className="flex items-center">
                                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden backdrop-blur-md border ${isCurrent ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_16px_var(--primary-glow)]' :
-                                            isCompleted ? 'bg-white/40 border-white/50 text-green-700 shadow-sm' : 'bg-white/20 border-white/30 text-[#8B5030]'
+                                            isCompleted ? 'bg-[var(--primary-soft)] border-[var(--primary)]/20 text-[var(--primary)] shadow-sm' : 'bg-white/20 border-white/30 text-[#8B5030]'
                                             }`}>
                                             {/* Pulse Ring for Current Step */}
                                             {isCurrent && <div className="absolute inset-0 border-[2px] border-white/30 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-50" />}
 
-                                            {isCompleted ? <div className="bg-green-100 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-green-600" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-[var(--primary)]'}`} />}
+                                            {isCompleted ? <div className="bg-[var(--primary)]/20 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-[var(--primary)]" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-[var(--primary)]'}`} />}
                                             <span className={`text-sm font-bold whitespace-nowrap ${isCurrent ? 'drop-shadow-sm' : 'opacity-80'}`}>{s.label}</span>
                                         </div>
                                         {idx < steps.length - 1 && (
                                             <div className="mx-1.5 md:mx-3 h-1 w-6 md:w-10 rounded-full bg-black/5 overflow-hidden relative shadow-inner">
-                                                <div className={`absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[var(--primary)] to-orange-300 transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
+                                                <div className={`absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] transition-all duration-700 ${isCompleted ? 'w-full' : 'w-0'}`} />
                                             </div>
                                         )}
                                     </div>
@@ -703,7 +703,7 @@ function CheckoutContent() {
                         {/* Contact Section */}
                         <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                             <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-orange-100/30 to-white/10 pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary-glow)] to-white/10 pointer-events-none" />
                                 <CardTitle className="text-lg flex items-center gap-2 relative z-10 text-[#3A1A08] font-display">
                                     <span className="bg-[var(--primary)]/10 text-[var(--primary)] p-2 rounded-xl border border-[var(--primary)]/20"><CreditCard className="h-5 w-5" /></span>
                                     Contact Information

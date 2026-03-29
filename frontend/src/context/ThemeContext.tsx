@@ -82,6 +82,7 @@ export function ThemeProvider({
         }
     };
 
+    // 3. Background API Sync
     useEffect(() => {
         if (isExemptPath) {
             console.log('ThemeProvider: Exempt path detected, enforcing default theme');
@@ -109,11 +110,10 @@ export function ThemeProvider({
         }
 
         // 2. apply initial server settings immediately to root variables (Base branding)
-        if (initialSettings && !isExemptPath) {
+        if (initialSettings) {
             applyColors(initialSettings);
         }
 
-        // 3. Background API Sync
         const syncThemeWithAPI = async () => {
             if (hasSynced.current) return;
             
@@ -161,7 +161,8 @@ export function ThemeProvider({
         };
 
         syncThemeWithAPI();
-    }, [activeTheme, initialSettings, isExemptPath]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isExemptPath, JSON.stringify(initialSettings)]);
 
     useEffect(() => {
         // Stop loading once we have some theme state (even if default)
@@ -236,14 +237,16 @@ export function ThemeProvider({
         return themes[activeTheme] || themes.default;
     }
 
+    const contextValue = React.useMemo(() => ({
+        activeTheme,
+        setActiveTheme,
+        themeData: getThemeData(),
+        isLoading,
+        publicSettings
+    }), [activeTheme, isLoading, publicSettings, initialSettings]); // initialSettings included as getThemeData uses it
+
     return (
-        <ThemeContext.Provider value={{
-            activeTheme,
-            setActiveTheme,
-            themeData: getThemeData(),
-            isLoading,
-            publicSettings
-        }}>
+        <ThemeContext.Provider value={contextValue}>
             {children}
         </ThemeContext.Provider>
     );

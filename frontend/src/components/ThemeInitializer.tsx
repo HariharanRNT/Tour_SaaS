@@ -24,7 +24,6 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                 const UI_STYLE_KEY = 'ui-style-settings';
                 const PAGE_SETTINGS_KEY = 'page-settings-v2';
 
-                const root = document.documentElement;
                 const body = document.body;
 
                 const hexToRgba = (hex, alpha) => {

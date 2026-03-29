@@ -14,21 +14,24 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow } from '@/components/ui/table'
+    TableRow
+} from '@/components/ui/table'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogTitle } from '@/components/ui/dialog'
+    DialogTitle
+} from '@/components/ui/dialog'
 import {
     Pagination,
     PaginationContent,
@@ -36,7 +39,8 @@ import {
     PaginationItem,
     PaginationLink,
     PaginationNext,
-    PaginationPrevious } from "@/components/ui/pagination"
+    PaginationPrevious
+} from "@/components/ui/pagination"
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Package, MapPin, Calendar, Filter, Download, Archive, Copy, BarChart, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -96,7 +100,7 @@ export default function AgentPackagesPage() {
         try {
             const user = JSON.parse(userStr)
             const role = user.role?.toUpperCase()
-            if (role !== 'AGENT' && role !== 'ADMIN' && role !== 'SUB_USER') { 
+            if (role !== 'AGENT' && role !== 'ADMIN' && role !== 'SUB_USER') {
                 // Redirect if customer or other roles that shouldn't be here
                 if (role === 'CUSTOMER') {
                     router.push('/')
@@ -213,12 +217,14 @@ export default function AgentPackagesPage() {
         const styles: Record<string, string> = {
             published: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 ring-emerald-500/10',
             draft: 'bg-amber-500/10 text-amber-600 border-amber-500/20 ring-amber-500/10',
-            archived: 'bg-slate-500/10 text-slate-600 border-slate-500/20 ring-slate-500/10' }
+            archived: 'bg-slate-500/10 text-slate-600 border-slate-500/20 ring-slate-500/10'
+        }
 
         const dots: Record<string, string> = {
             published: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]',
             draft: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
-            archived: 'bg-slate-400' }
+            archived: 'bg-slate-400'
+        }
 
         return (
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${styles[lowerStatus] || 'bg-gray-500/10 text-gray-600 border-gray-500/20'}`}>
@@ -230,67 +236,63 @@ export default function AgentPackagesPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Header */}
-            <div className="glass-navbar sticky top-0 z-30 shadow-sm">
-                <div className="container mx-auto px-6 py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            {/* Breadcrumb */}
-                            <nav className="flex items-center text-sm text-gray-500 mb-2">
-                                <span className="hover:text-gray-900 cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
-                                <span className="mx-2">/</span>
-                                <span className="font-medium text-gray-900">Packages</span>
-                            </nav>
+            {/* Content Container */}
+            <div className="container mx-auto px-4 py-8">
+                {/* Page Header Card */}
+                <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex flex-col gap-4">
+                        {/* Breadcrumb */}
+                        <nav className="flex items-center text-sm text-gray-500">
+                            <span 
+                                className="hover:text-gray-900 cursor-pointer transition-colors" 
+                                onClick={() => router.push('/agent/dashboard')}
+                            >
+                                Dashboard
+                            </span>
+                            <span className="mx-2">/</span>
+                            <span className="font-medium text-gray-900">Packages</span>
+                        </nav>
 
-                            {/* Title & Subtitle */}
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
-                                    <Package className="h-6 w-6 text-[var(--primary)]" />
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Agent Package Management</h1>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <p className="text-gray-500 text-sm">Create and manage your tour packages</p>
-                                        <span className="hidden md:inline text-gray-300">•</span>
-                                        <div className="hidden md:flex items-center gap-3 text-sm font-medium text-gray-600">
-                                            <span className="flex items-center gap-1">
-                                                <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                                {totalPackages} Packages
-                                            </span>
-                                        </div>
+                        {/* Title & Subtitle */}
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-[var(--primary)]/10 rounded-xl">
+                                <Package className="h-7 w-7 text-[var(--primary)]" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Agent Package Management</h1>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-gray-500 text-sm">Create and manage your tour packages</p>
+                                    <span className="text-gray-300">•</span>
+                                    <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                                        <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                        {totalPackages} Packages
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-3">
-                            {hasPermission('packages', 'edit') && (
-                                <Button
-                                    onClick={() => router.push('/agent/packages/new')}
-                                    className="text-white px-6 transition-all hover:-translate-y-0.5 border-none"
-                                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', boxShadow: '0 6px 20px var(--primary-glow)' }}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create New Package
-                                </Button>
-                            )}
-                        </div>
                     </div>
 
-                    {/* Mobile Stats (Visible only on small screens) */}
-                    <div className="md:hidden mt-4 pt-4 border-t flex justify-between text-sm">
-                        <div className="flex flex-col items-center">
-                            <span className="font-bold text-gray-900">{totalPackages}</span>
-                            <span className="text-gray-500 text-xs">Total</span>
-                        </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-3">
+                        {hasPermission('packages', 'edit') && (
+                            <Button
+                                onClick={() => router.push('/agent/packages/new')}
+                                className="text-white px-6 py-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
+                                style={{ 
+                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', 
+                                    borderRadius: '12px', 
+                                    boxShadow: '0 6px 20px var(--primary-glow)',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                <Plus className="mr-2 h-5 w-5" />
+                                Create New Package
+                            </Button>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* Content */}
-            <div className="container mx-auto px-4 py-8">
-                <Card className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden rounded-[32px]">
+                <Card className="overflow-hidden">
                     <CardHeader className="border-b border-white/10 pb-6 px-8 pt-8">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
@@ -557,8 +559,8 @@ export default function AgentPackagesPage() {
                                 <div className="md:hidden grid gap-4 p-4">
                                     {packages.map((pkg: any) => (
                                         <div key={pkg.id} className={cn(
-                                            "bg-white/60 backdrop-blur-[30px] border border-white/20 rounded-[24px] p-5 transition-all duration-300 shadow-lg hover:shadow-xl",
-                                            selectedPackages.includes(pkg.id) ? "ring-2 ring-indigo-500 bg-white/80" : ""
+                                            "rounded-[24px] p-5 transition-all duration-300 glass-agent shadow-lg hover:shadow-xl",
+                                            selectedPackages.includes(pkg.id) ? "ring-2 ring-[var(--primary)] bg-white/40" : ""
                                         )}>
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex items-center gap-3">
@@ -674,17 +676,17 @@ export default function AgentPackagesPage() {
                             <span className="font-medium text-sm border-r border-white/40 pr-4">
                                 {selectedPackages.length} selected
                             </span>
-                             <div className="flex items-center gap-2">
-                                 <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
-                                     Cancel
-                                 </Button>
-                                 {hasPermission('packages', 'full') && (
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
+                                    Cancel
+                                </Button>
+                                {hasPermission('packages', 'full') && (
                                     <Button variant="destructive" size="sm" className="rounded-full shadow-sm" onClick={handleBulkDelete}>
                                         <Trash2 className="h-4 w-4 mr-2" />
                                         Delete Selected
                                     </Button>
-                                 )}
-                             </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </Card>

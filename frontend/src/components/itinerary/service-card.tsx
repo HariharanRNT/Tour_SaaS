@@ -44,8 +44,8 @@ export function ServiceCard({
 
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-        selected: 'bg-green-100 text-green-700 border-green-200',
-        confirmed: 'bg-blue-100 text-blue-700 border-blue-200'
+        selected: 'bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]/20',
+        confirmed: 'bg-[var(--primary-glow)] text-[var(--primary)] border-[var(--primary)]/20'
     }
 
     const typeLabels = {
@@ -58,21 +58,21 @@ export function ServiceCard({
         <Card className={`
             overflow-hidden transition-all duration-300 border hover:shadow-lg rounded-2xl
             ${status === 'selected'
-                ? 'bg-gradient-to-br from-green-50 to-white border-green-200 shadow-green-100 ring-1 ring-green-100'
-                : 'bg-white border-gray-100 hover:border-blue-100'
+                ? 'bg-gradient-to-br from-[var(--primary-soft)] to-white border-[var(--primary)]/30 shadow-[var(--primary-glow)] ring-1 ring-[var(--primary)]/10'
+                : 'bg-white border-gray-100 hover:border-[var(--primary)]/20'
             }
         `}>
             <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                     {/* Icon Box */}
-                    <div className={`p-3 rounded-xl transition-colors ${status === 'selected' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-3 rounded-xl transition-colors ${status === 'selected' ? 'bg-[var(--primary-soft)] text-[var(--primary)]' : 'bg-gray-100 text-gray-500'}`}>
                         <Icon className="h-6 w-6" />
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                            <h3 className={`font-bold text-lg ${status === 'selected' ? 'text-green-900' : 'text-gray-900'}`}>{title}</h3>
+                            <h3 className={`font-bold text-lg ${status === 'selected' ? 'text-[var(--primary)]' : 'text-gray-900'}`}>{title}</h3>
                             {price !== undefined && (
                                 <span className="font-bold text-gray-900">
                                     ₹{price.toLocaleString()}
@@ -127,7 +127,7 @@ export function ServiceCard({
                                     disabled={disabled}
                                     className={`
                                         font-medium text-sm hover:bg-white
-                                        ${status === 'selected' ? 'text-green-700 hover:text-green-800' : 'text-blue-600 hover:text-blue-700'}
+                                        ${status === 'selected' ? 'text-[var(--primary)] hover:opacity-80' : 'text-[var(--primary)] hover:opacity-80'}
                                     `}
                                 >
                                     <Edit2 className="h-3.5 w-3.5 mr-1.5" />

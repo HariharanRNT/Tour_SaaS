@@ -19,21 +19,22 @@ export default function AgentLayout({
     return (
         <RoleGuard allowedRoles={['agent', 'AGENT', 'sub_user', 'SUB_USER']}>
             <SubscriptionGuard>
-                {/* Radial blob overlays add depth on top of the body gradient */}
-                <div className="fixed inset-0 z-0 pointer-events-none">
-                    <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-radial from-[var(--primary)]/50 to-transparent rounded-full blur-[100px]" />
-                    <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-gradient-radial from-[var(--primary-light)]/30 to-transparent rounded-full blur-[100px]" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-gradient-radial from-[var(--primary-soft)]/50 to-transparent rounded-full blur-[80px]" />
-                </div>
+                <div className="agent-portal-root min-h-screen relative">
+                    {/* Enhanced Radial blob overlays for better glass contrast */}
+                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                        <div className="absolute top-[-10%] right-[-10%] w-[70%] h-[70%] bg-gradient-radial from-[var(--primary)]/20 to-transparent rounded-full blur-[120px] animate-pulse" />
+                        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-gradient-radial from-[var(--primary-light)]/20 to-transparent rounded-full blur-[100px] animate-blob" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50%] h-[50%] bg-gradient-radial from-[var(--primary-soft)]/20 to-transparent rounded-full blur-[150px] opacity-50" />
+                    </div>
 
-                <div className="flex min-h-[100vh] relative z-10 w-full bg-transparent">
-                    <AdminSidebar
-                        className={isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                        onCollapsedChange={setIsSidebarCollapsed}
-                    />
+                    <div className="flex min-h-[100vh] relative z-10 w-full bg-transparent">
+                        <AdminSidebar
+                            className={isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                            onCollapsedChange={setIsSidebarCollapsed}
+                        />
 
-                    <div
-                        className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
+                        <div
+                            className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
                         style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
                     >
                         {/* Fixed Header */}
@@ -63,13 +64,13 @@ export default function AgentLayout({
                         </main>
                     </div>
 
-                    {/* Mobile Overlay */}
-                    {isSidebarOpen && (
-                        <div
-                            className="fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity"
-                            onClick={() => setIsSidebarOpen(false)}
-                        />
-                    )}
+                        {isSidebarOpen && (
+                            <div
+                                className="fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity"
+                                onClick={() => setIsSidebarOpen(false)}
+                            />
+                        )}
+                    </div>
                 </div>
             </SubscriptionGuard>
         </RoleGuard>

@@ -38,9 +38,9 @@ def reject_sql(value: str, field_name: str = 'field') -> str:
 
 # User Schemas
 class UserBase(BaseModel):
-    email: EmailStr
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = Field(None, min_length=0)
+    last_name: Optional[str] = Field(None, min_length=0)
     phone: Optional[str] = None
 
     @field_validator('first_name', 'last_name', mode='before')
@@ -133,8 +133,8 @@ class AgentRegistration(BaseModel):
     city: str = Field(..., min_length=1, max_length=100)
     
     # Contact Details
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    first_name: str = Field(..., min_length=1)
+    last_name: str = Field(..., min_length=1)
     email: EmailStr
     phone: str
     
@@ -208,8 +208,8 @@ class GoogleLoginRequest(BaseModel):
 
 
 class UserResponse(UserBase):
-    id: UUID4
-    role: UserRole
+    id: Optional[UUID4] = None
+    role: Optional[UserRole] = None
     domain: Optional[str] = None
     
     # Agent Fields (Populated via proxy or flattened)
@@ -222,9 +222,9 @@ class UserResponse(UserBase):
     gst_no: Optional[str] = None
     commission_type: Optional[str] = None
     commission_value: Optional[Decimal] = None
-    approval_status: ApprovalStatus
-    email_verified: bool
-    is_active: bool
+    approval_status: Optional[ApprovalStatus] = ApprovalStatus.PENDING
+    email_verified: bool = False
+    is_active: bool = True
     
     # Subscription Fields
     has_active_subscription: bool = False
@@ -236,7 +236,7 @@ class UserResponse(UserBase):
     agent_id: Optional[UUID4] = None
     sub_user_id: Optional[UUID4] = None
     
-    created_at: datetime
+    created_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -352,6 +352,16 @@ class HomepageSettingsUpdate(BaseModel):
     destinations_subtext: Optional[str] = None
     destinations_link_text: Optional[str] = None
     destinations_cta_text: Optional[str] = None
+    # ITINERARY PAGE THEME (NEW)
+    itinerary_wcu_cards: Optional[List[dict]] = None # [{icon, title, description}]
+    itinerary_card_style: Optional[str] = "glassy" # glassy, minimal, rounded, classic
+    itinerary_summary_card_style: Optional[str] = "glassy" # glassy, minimal, rounded
+    itinerary_why_book_style: Optional[str] = "glassy" # glassy, minimal, rounded
+    itinerary_primary_color: Optional[str] = None
+    itinerary_secondary_color: Optional[str] = None
+    itinerary_font_family: Optional[str] = None
+    itinerary_button_style: Optional[str] = "pill" # pill, rounded, square
+    itinerary_header_colors: Optional[dict] = None # { morning: '', afternoon: '', ... }
     # UI Toggles and other page settings
     show_category_pills: Optional[bool] = None
     show_stat_bar: Optional[bool] = None
@@ -556,13 +566,13 @@ class PackageListResponse(BaseModel):
 
 # Booking Schemas
 class TravelerBase(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    date_of_birth: date
-    gender: str = Field(..., min_length=1, max_length=20)
+    first_name: Optional[str] = Field(None, min_length=0)
+    last_name: Optional[str] = Field(None, min_length=0)
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = Field(None, min_length=0)
     passport_number: Optional[str] = Field(None, max_length=50)
-    nationality: str = Field(..., min_length=1, max_length=100)
-    is_primary: bool = False
+    nationality: Optional[str] = Field(None, min_length=0)
+    is_primary: Optional[bool] = False
 
     @field_validator('first_name', 'last_name', 'nationality', mode='before')
     @classmethod
@@ -620,21 +630,21 @@ class BookingCreate(BaseModel):
 
 
 class BookingResponse(BaseModel):
-    id: UUID4
-    booking_reference: str
+    id: Optional[UUID4] = None
+    booking_reference: Optional[str] = None
     package_id: Optional[UUID4] = None
-    user_id: UUID4
-    travel_date: date
-    number_of_travelers: int
-    total_amount: Decimal
-    status: BookingStatus
-    payment_status: PaymentStatus
+    user_id: Optional[UUID4] = None
+    travel_date: Optional[date] = None
+    number_of_travelers: Optional[int] = 0
+    total_amount: Optional[Decimal] = Decimal('0.00')
+    status: Optional[BookingStatus] = None
+    payment_status: Optional[PaymentStatus] = None
     special_requests: Optional[str] = None
     tripjack_booking_id: Optional[str] = None
     # Cancellation / Refund fields
     refund_amount: Optional[Decimal] = None
     cancelled_at: Optional[datetime] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
     travelers: List[TravelerResponse] = []
     
     class Config:
@@ -959,8 +969,8 @@ class SubUserPermissionOut(SubUserPermissionIn):
 
 
 class SubUserCreate(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
+    first_name: str = Field(..., min_length=1)
+    last_name: str = Field(..., min_length=1)
     email: EmailStr
     phone: Optional[str] = None
     role_label: str = "Custom"  # Package Manager | Finance Manager | Report Viewer | Custom

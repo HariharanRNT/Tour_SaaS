@@ -42,7 +42,7 @@ export function ActivityCard({ activity, onAddToDay, compact = false }: Activity
                     </div>
                 ) : (
                     <div
-                        className="aspect-video bg-gradient-to-r from-blue-400 to-blue-600 rounded-t-lg flex items-center justify-center cursor-pointer"
+                        className="aspect-video bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] rounded-t-lg flex items-center justify-center cursor-pointer"
                         onClick={() => setShowDetails(true)}
                     >
                         <MapPin className="h-16 w-16 text-white opacity-50" />

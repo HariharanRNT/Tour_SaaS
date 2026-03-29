@@ -288,11 +288,11 @@ class Package(Base):
     slug = Column(String, unique=True, index=True, nullable=False)
     description = Column(Text, nullable=False)
     destination = Column(String, nullable=False, index=True)
-    duration_days = Column(Integer, nullable=False)
+    duration_days = Column(Integer, nullable=False, index=True)
     duration_nights = Column(Integer, nullable=False)
     trip_style = Column(String, index=True)
     category = Column(String, index=True, nullable=True) # e.g., Adventure, Honeymoon, etc.
-    price_per_person = Column(Numeric(10, 2), nullable=False)
+    price_per_person = Column(Numeric(10, 2), nullable=False, index=True)
     max_group_size = Column(Integer, default=20)
     included_items = Column(Text, default="[]")  # JSON string
     excluded_items = Column(Text, default="[]")  # JSON string
@@ -317,7 +317,7 @@ class Package(Base):
     feature_image_url = Column(String, nullable=True)
     view_count = Column(Integer, default=0)
     
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # GST Configuration (per-package; NULL = use agent-level defaults from Settings)
@@ -435,12 +435,12 @@ class Booking(Base):
     booking_reference = Column(String, unique=True, index=True, nullable=False)
     package_id = Column(UUID(as_uuid=True), ForeignKey("packages.id"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # Agent who owns this booking
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)  # Agent who owns this booking
     booking_date = Column(Date, nullable=False, default=func.current_date())
-    travel_date = Column(Date, nullable=False)
+    travel_date = Column(Date, nullable=False, index=True)
     number_of_travelers = Column(Integer, nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False)
-    status = Column(SQLEnum(BookingStatus), default=BookingStatus.PENDING, nullable=False)
+    status = Column(SQLEnum(BookingStatus), default=BookingStatus.PENDING, nullable=False, index=True)
     payment_status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
     special_requests = Column(Text, nullable=True)
     tripjack_booking_id = Column(String(50), nullable=True)
@@ -454,7 +454,7 @@ class Booking(Base):
     refund_amount = Column(Numeric(10, 2), nullable=True)
     cancelled_at  = Column(DateTime(timezone=True), nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships

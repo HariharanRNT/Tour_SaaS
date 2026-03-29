@@ -250,7 +250,9 @@ export default function AgentDashboard() {
                 end_date: customEnd
             });
         },
-        enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd)
+        enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd),
+        staleTime: 300000, // 5 minutes
+        refetchOnWindowFocus: false
     })
 
     const stats = {
@@ -603,11 +605,7 @@ export default function AgentDashboard() {
                     {/* Welcome Section */}
                     {/* Welcome Glass Card */}
                     <div
-                        className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-7 py-6 rounded-2xl border border-white/45"
-                        style={{
-                            background: 'rgba(255,255,255,0.15)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)' }}
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-7 py-6 rounded-2xl border border-white/45 glass-agent"
                     >
                         <div className="flex items-center gap-5">
                             <div className="relative group">
@@ -718,11 +716,7 @@ export default function AgentDashboard() {
 
                 {/* Date Filter Controls */}
                 <div
-                    className="flex flex-wrap items-center gap-4 mb-8 p-3 rounded-full border border-white/50 shadow-sm"
-                    style={{
-                        background: 'rgba(255,255,255,0.30)',
-                        backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)' }}
+                    className="flex flex-wrap items-center gap-4 mb-8 p-3 rounded-full border border-white/50 shadow-sm glass-agent"
                 >
                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/60 bg-white/30">
                         <Calendar className="h-4 w-4 text-violet-600" />
@@ -774,7 +768,7 @@ export default function AgentDashboard() {
                             <CarouselContent>
                                 {statCards.map((card, index) => (
                                     <CarouselItem key={index} className="basis-10/12 pl-4">
-                                        <Card className="relative overflow-hidden rounded-[20px] h-full" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
+                                        <Card className="relative overflow-hidden rounded-[20px] h-full">
                                             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`} />
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                                                 <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest font-jakarta">{card.title}</CardTitle>

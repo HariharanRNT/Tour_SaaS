@@ -15,10 +15,14 @@ from app.schemas import (
 import json
 from app.api.deps import get_current_admin, get_optional_current_user, get_current_domain
 from app.core.exceptions import NotFoundException
+from fastapi_cache.decorator import cache
+from fastapi_cache import FastAPICache
+from app.tasks.pdf_tasks import generate_package_pdf_task
 
 router = APIRouter()
 
 @router.get("/config/durations", response_model=List[int])
+@cache(expire=300, namespace="packages")
 async def get_package_durations(
     destination: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
@@ -59,6 +63,7 @@ async def get_package_durations(
 
 
 @router.get("/config/dates", response_model=List[dict])
+@cache(expire=300, namespace="packages")
 async def get_package_dates(
     destination: Optional[str] = None,
     duration_days: Optional[int] = None,
@@ -105,6 +110,7 @@ async def get_package_dates(
 
 
 @router.get("/config/destinations/popular", response_model=List[dict])
+@cache(expire=300, namespace="packages")
 async def get_popular_destinations(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
@@ -172,6 +178,7 @@ async def get_popular_destinations(
 
 
 @router.get("/config/suggestions", response_model=List[dict])
+@cache(expire=300, namespace="packages")
 async def get_destination_suggestions(
     q: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
@@ -237,6 +244,7 @@ async def get_destination_suggestions(
 
 
 @router.get("", response_model=PackageListResponse)
+@cache(expire=300, namespace="packages")
 async def list_packages(
     destination: Optional[str] = None,
     country: Optional[str] = None,
@@ -411,6 +419,7 @@ async def list_packages(
 
 
 @router.get("/cheapest", response_model=dict)
+@cache(expire=300, namespace="packages")
 async def get_cheapest_package(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
@@ -535,7 +544,23 @@ async def get_package_itinerary_pdf(
     if not package:
         raise NotFoundException("Package not found")
         
+    # 1. Try fetching from Redis Cache first
+    try:
+        backend = FastAPICache.get_backend()
+        cache_key = f"pdf:package:{package_id}"
+        cached_pdf = await backend.get(cache_key)
+        if cached_pdf:
+            print(f"DEBUG: Serving PDF for {package_id} from Redis cache")
+            headers = {
+                'Content-Disposition': f'attachment; filename="Itinerary_{package.slug}.pdf"'
+            }
+            return Response(content=cached_pdf, media_type="application/pdf", headers=headers)
+    except Exception as e:
+        print(f"DEBUG: Cache fetch failed: {e}")
+
+    # 2. Fallback to Sync Generation (and trigger async for future)
     pdf_bytes = ItineraryPdfService.generate_itinerary_pdf(package)
+    generate_package_pdf_task.delay(str(package_id))
     if not pdf_bytes:
         raise HTTPException(status_code=500, detail="Failed to generate PDF")
          
@@ -605,6 +630,12 @@ async def create_package(
     await db.commit()
     await db.refresh(package)
     
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package.id))
+    
     return PackageResponse.model_validate(package)
 
 
@@ -635,6 +666,12 @@ async def update_package(
     await db.commit()
     await db.refresh(package)
     
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package.id))
+    
     return PackageResponse.model_validate(package)
 
 
@@ -660,6 +697,16 @@ async def delete_package(
     
     # Delete itinerary items
     await db.execute(delete(ItineraryItem).where(ItineraryItem.package_id == package_id))
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Clear PDF cache
+    try:
+        backend = FastAPICache.get_backend()
+        await backend.delete(f"pdf:package:{package_id}")
+    except:
+        pass
     
     # Delete the package
     await db.delete(package)

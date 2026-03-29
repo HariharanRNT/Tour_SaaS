@@ -21,9 +21,10 @@ from app.api.deps import get_current_agent, check_permission
 from app.services.cancellation_service import validate_and_sort_rules
 from sqlalchemy import select, delete
 from fastapi import File, UploadFile
-import shutil
-import os
 import json
+from fastapi_cache.decorator import cache
+from fastapi_cache import FastAPICache
+from app.tasks.pdf_tasks import generate_package_pdf_task
 
 router = APIRouter()
 
@@ -43,6 +44,7 @@ def _persist_cancellation_rules(enabled: bool, rules: list) -> list:
 
 
 @router.get("/packages", response_model=PaginatedPackageResponse)
+@cache(expire=300, namespace="packages")
 async def list_agent_packages(
     status_filter: Optional[str] = None,
     destination: Optional[str] = None,
@@ -155,6 +157,12 @@ async def create_agent_package(
         
         db.add(new_package)
         await db.commit()
+        
+        # Invalidate cache
+        await FastAPICache.clear(namespace="packages")
+        
+        # Pre-generate PDF in background
+        generate_package_pdf_task.delay(str(package_id))
         # No refresh needed, we know the ID and we want to load relations safely
         
         # Re-fetch with relationships to ensure valid response model
@@ -179,6 +187,7 @@ async def create_agent_package(
 
 
 @router.get("/packages/{package_id}", response_model=PackageResponse)
+@cache(expire=300, namespace="packages")
 async def get_agent_package(
     package_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -252,6 +261,12 @@ async def update_agent_package(
         package.cancellation_rules = _persist_cancellation_rules(enabled, rules_dicts)
     
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
     
     # Re-fetch with relationships to ensure valid response model
     from sqlalchemy.orm import selectinload
@@ -327,6 +342,16 @@ async def delete_agent_package(
     await db.execute(stmt)
     
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Clear PDF cache
+    try:
+        backend = FastAPICache.get_backend()
+        await backend.delete(f"pdf:package:{package_id}")
+    except:
+        pass
 
 
 @router.patch("/packages/{package_id}/status")
@@ -365,6 +390,13 @@ async def toggle_agent_package_status(
         )
         
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
+    
     await db.refresh(package)
     
     return {"status": package.status, "message": f"Package {new_status.lower()}"}
@@ -404,6 +436,13 @@ async def add_agent_itinerary_item(
     
     db.add(new_item)
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
+    
     await db.refresh(new_item)
     
     return new_item
@@ -447,6 +486,13 @@ async def update_agent_itinerary_item(
             setattr(item, field, value)
     
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
+    
     await db.refresh(item)
     
     return item
@@ -476,6 +522,12 @@ async def delete_agent_itinerary_item(
     )
     await db.execute(stmt)
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
 
 
 @router.patch("/packages/{package_id}/itinerary-items/reorder")
@@ -503,5 +555,11 @@ async def reorder_agent_itinerary_items(
             item.display_order = item_order['display_order']
     
     await db.commit()
+    
+    # Invalidate cache
+    await FastAPICache.clear(namespace="packages")
+    
+    # Pre-generate PDF in background
+    generate_package_pdf_task.delay(str(package_id))
     
     return {"message": "Items reordered successfully"}

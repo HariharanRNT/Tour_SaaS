@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from app.config import settings
 
 def get_agent_registration_pending_template(data: Dict[str, Any]) -> str:
     """Template for Agent: Registration Received – Awaiting Approval"""
@@ -57,6 +58,7 @@ def get_admin_new_registration_request_template(data: Dict[str, Any]) -> str:
 def get_agent_approved_template(data: Dict[str, Any]) -> str:
     """Template for Agent: Registration Approved"""
     agent_name = data.get("agent_name", "Agent")
+    login_url = f"{settings.FRONTEND_URL}/auth/login" if hasattr(settings, 'FRONTEND_URL') else "#"
     return f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #dcfce7; border-radius: 12px; overflow: hidden; background: white;">
         <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 30px; text-align: center; color: white;">
@@ -71,7 +73,7 @@ def get_agent_approved_template(data: Dict[str, Any]) -> str:
             </div>
             <p style="line-height: 1.6;">You can now access the application and start setting up your agency profile and tour packages.</p>
             <div style="text-align: center; margin: 30px 0;">
-                <a href="#" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login to Dashboard</a>
+                <a href="{login_url}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login to Dashboard</a>
             </div>
             <p style="line-height: 1.6;">We are excited to have you on board!</p>
             <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; color: #64748b; font-size: 14px;">
@@ -80,6 +82,7 @@ def get_agent_approved_template(data: Dict[str, Any]) -> str:
         </div>
     </div>
     """
+
 
 def get_agent_rejected_template(data: Dict[str, Any]) -> str:
     """Template for Agent: Registration Declined"""

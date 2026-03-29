@@ -728,6 +728,22 @@ async def get_trip_session(
             # Continue without enrichment on error
             pass
 
+    # Fetch Agent for homepage_settings
+    agent_settings = {}
+    if matched_package_id:
+        # Get from package creator
+        agent_stmt = select(Agent.homepage_settings).where(Agent.id == row[15]) # a.id
+        agent_res = await db.execute(agent_stmt)
+        agent_settings = agent_res.scalar() or {}
+    
+    # If domain present, domain agent settings take priority for branding
+    if domain:
+        d_agent_stmt = select(Agent.homepage_settings).where(Agent.domain == domain)
+        d_agent_res = await db.execute(d_agent_stmt)
+        d_agent_settings = d_agent_res.scalar()
+        if d_agent_settings:
+            agent_settings = d_agent_settings
+
     return {
         "session_id": str(row[0]),
         "destination": row[1],
@@ -747,7 +763,8 @@ async def get_trip_session(
         "destination_image_url": row[18],
         "flight_details": flight_details,
         "gst_inclusive": gst_inclusive,
-        "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0
+        "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0,
+        "homepage_settings": agent_settings
     }
 
 

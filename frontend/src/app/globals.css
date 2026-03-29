@@ -740,9 +740,33 @@
   }
 
 
-  /* Glass Close Button */
+  /* GLASSCLOSE BUTTON */
   .glass-close-button {
     @apply rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all p-2 flex items-center justify-center;
+  }
+
+  /* NEW AGENT PORTAL GLASS SYSTEM & GENERAL PREMIUM GLASS */
+  .glass-premium,
+  .glass-agent {
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 24px rgba(255, 180, 160, 0.12) !important;
+    border-radius: 16px !important;
+  }
+
+  .agent-portal-root .bg-card {
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 24px rgba(255, 180, 160, 0.12) !important;
+    border-radius: 24px !important;
+  }
+
+  .agent-portal-root .border {
+    border-color: rgba(255, 255, 255, 0.3) !important;
   }
 
   /* Phone Input Glassmorphism Overrides */
@@ -934,3 +958,180 @@ body.font-playful h3 {
 /* Title Color Styles */
 .cards-title-primary .card-title { color: var(--primary) !important; }
 .cards-title-gradient .card-title { background: linear-gradient(to right, var(--gradient-start), var(--gradient-mid)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  /* Agent Portal Header Card */
+  .page-header-card {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+  }
+
+  /* Agent Portal Tab Navigation */
+  .tab-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-item {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4A2B1D;
+  }
+
+  .tab-item:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .tab-item.active {
+    background: rgba(255, 255, 255, 0.7);
+    color: #c2410c;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 12px rgba(180, 100, 60, 0.1);
+  }
+
+  /* Agent Portal Sidebar Styles */
+  .sidebar {
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
+  }
+
+  /* Inactive Nav Items */
+  .nav-item svg,
+  .nav-item .icon {
+    color: #7c3010 !important;
+    opacity: 1 !important;
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 1.8 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .nav-item .nav-label {
+    color: #92400e !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+  }
+
+  /* Active Nav Items */
+  .nav-item.active {
+    background: var(--primary-glow) !important;
+    border-radius: 10px !important;
+  }
+
+  .nav-item.active svg,
+  .nav-item.active .icon {
+    color: var(--primary) !important;
+    opacity: 1 !important;
+  }
+
+  .nav-item.active .nav-label {
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+  }
+
+  /* Dot Indicator */
+  .nav-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background: var(--primary) !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Sidebar Header */
+  .sidebar-header {
+    background: var(--primary) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .sidebar-header:hover {
+    filter: brightness(1.05) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .sidebar-header .title {
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+  }
+
+  .sidebar-header .subtitle {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+  }
+
+  .sidebar-header svg {
+    color: #ffffff !important;
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Bottom User Section */
+  .sidebar-user {
+    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .sidebar-user .user-avatar {
+    background: var(--primary) !important;
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2) !important;
+  }
+
+  .sidebar-user .user-name {
+    color: #7c3010 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+  }
+
+  .sidebar-user .user-role {
+    color: #92400e !important;
+    font-size: 11px !important;
+    margin: 0 !important;
+  }

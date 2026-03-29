@@ -17,6 +17,7 @@ from app.schemas import (
 from app.api.deps import get_current_user, get_current_admin
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.services import cancellation_service
+from fastapi_cache import FastAPICache
 
 router = APIRouter()
 
@@ -247,6 +248,9 @@ async def create_booking(
         
         await db.commit()
         
+        # Invalidate dashboard cache
+        await FastAPICache.clear(namespace="dashboard")
+        
         # Reload booking with relationships for Pydantic validation
         # We need to explicitly load relationships to avoid MissingGreenlet error in async context
         query = select(Booking).where(Booking.id == booking.id).options(
@@ -341,6 +345,9 @@ async def cancel_booking(
         logging.getLogger(__name__).error(f"Cancel booking failed: {e}")
         raise HTTPException(status_code=500, detail=f"Cancellation failed: {str(e)}")
 
+    # Invalidate dashboard cache
+    await FastAPICache.clear(namespace="dashboard")
+
     return CancelActionResponse(**result)
 
 @router.get("/admin/all", response_model=List[BookingWithPackageResponse])
@@ -416,6 +423,10 @@ async def confirm_booking(
             payment_verification=payment_data,
             traveler_info=traveler_info
         )
+        
+        # Invalidate dashboard cache
+        await FastAPICache.clear(namespace="dashboard")
+        
         return BookingResponse.model_validate(confirmed_booking)
 
     except Exception as e:

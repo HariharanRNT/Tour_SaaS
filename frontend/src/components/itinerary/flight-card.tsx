@@ -127,9 +127,9 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                             {/* Start Dot */}
                             <div className="absolute left-0 w-2.5 h-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"></div>
                             {/* Plane Icon */}
-                            <div className="absolute left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-1.5 rounded-full border border-white/40 shadow-sm z-10">
-                                <Plane className="h-3.5 w-3.5 text-[var(--primary)] rotate-90" />
-                            </div>
+                                <div className="absolute left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md p-1.5 rounded-full border border-[var(--primary)]/20 shadow-sm z-10">
+                                    <Plane className="h-3.5 w-3.5 text-[var(--primary)] rotate-90" />
+                                </div>
                             {/* End Dot */}
                             <div className="absolute right-0 w-2.5 h-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"></div>
                         </div>

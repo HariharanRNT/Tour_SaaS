@@ -9,13 +9,14 @@ import { Badge } from '@/components/ui/badge'
 import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
     Globe, Users, Clock, Star, Heart, Luggage, Compass, Search,
     Camera, Car, Hotel, Mountain, Waves, Umbrella, Gift, Award, Zap,
-    CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Palmtree, ChevronRight
+    CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map as MapIcon, Palmtree, ChevronRight
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
 import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
 import { useTheme } from '@/context/ThemeContext'
+import Image from 'next/image'
 
 interface Package {
     id: string
@@ -114,7 +115,7 @@ export default function Home() {
     const IconMap: Record<string, any> = {
         Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin,
         Camera, Car, Hotel, Compass, Mountain, Waves, Umbrella, Gift, Award, Zap,
-        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map, Search };
+        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map: MapIcon, Search };
 
     const getIcon = (name: string, fallback: any) => {
         const Icon = IconMap[name];
@@ -190,10 +191,15 @@ export default function Home() {
             <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden -mt-16">
 
                 {/* Background with Overlay */}
-                <div
-                    className={`absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed`}
-                    style={heroBgStyle}
-                >
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src={heroBgImage}
+                        alt="Hero Background"
+                        fill
+                        priority
+                        className="object-cover bg-fixed"
+                        sizes="100vw"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/20 mix-blend-multiply" />
                     <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, var(--primary-glow), rgba(255,180,100,0.2))' }} />
                 </div>
@@ -380,10 +386,12 @@ export default function Home() {
                                             onClick={() => router.push(`/plan-trip?destination=${encodeURIComponent(pkg.destination)}&packageId=${pkg.id}&openPopup=true`)}
                                             className="relative aspect-[4/5] md:aspect-[4/3] rounded-[32px] overflow-hidden cursor-pointer group shadow-2xl"
                                         >
-                                            <img
+                                            <Image
                                                 src={cardImage}
                                                 alt={title}
-                                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                                fill
+                                                className="absolute inset-0 object-cover group-hover:scale-110 transition-transform duration-1000"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
 

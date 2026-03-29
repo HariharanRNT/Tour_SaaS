@@ -87,13 +87,13 @@ export const authAPI = {
         params.append('username', email)
         params.append('password', password)
 
-        const response = await api.post('/auth/login', params, {
+        const response = await api.post('/auth/login/', params, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
         return response.data
     },
 
     googleLogin: async (token: string, role: string = 'customer') => {
-        const response = await api.post('/auth/google-login', { token, role })
+        const response = await api.post('/auth/google-login/', { token, role })
         return response.data
     },
 
@@ -104,27 +104,27 @@ export const authAPI = {
         last_name: string
         phone?: string
     }) => {
-        const response = await api.post('/auth/register', data)
+        const response = await api.post('/auth/register/', data)
         return response.data
     },
 
     getCurrentUser: async () => {
-        const response = await api.get('/auth/me')
+        const response = await api.get('/auth/me/')
         return response.data
     },
 
     getPublicAgentInfo: async () => {
-        const response = await api.get('/auth/agent-info')
+        const response = await api.get('/auth/agent-info/')
         return response.data
     },
 
     forgotPassword: async (email: string) => {
-        const response = await api.post('/auth/forgot-password', { email })
+        const response = await api.post('/auth/forgot-password/', { email })
         return response.data
     },
 
     verifyOTP: async (email: string, otp: string) => {
-        const response = await api.post('/auth/verify-otp', { email, otp })
+        const response = await api.post('/auth/verify-otp/', { email, otp })
         return response.data
     },
 
@@ -134,18 +134,18 @@ export const authAPI = {
         new_password: string
         confirm_password: string
     }) => {
-        const response = await api.post('/auth/reset-password', data)
+        const response = await api.post('/auth/reset-password/', data)
         return response.data
     },
 
     // Agent Login OTP Methods
     sendLoginOTP: async (email: string, password: string) => {
-        const response = await api.post('/auth/send-login-otp', { email, password })
+        const response = await api.post('/auth/send-login-otp/', { email, password })
         return response.data
     },
 
     verifyLoginOTP: async (email: string, otp: string) => {
-        const response = await api.post('/auth/verify-login-otp', { email, otp })
+        const response = await api.post('/auth/verify-login-otp/', { email, otp })
         return response.data
     } }
 
@@ -160,18 +160,18 @@ export const packagesAPI = {
         page?: number
         page_size?: number
     }) => {
-        const response = await api.get('/packages', { params })
+        const response = await api.get('/packages/', { params })
         return response.data
     },
 
     getById: async (id: string) => {
-        const response = await api.get(`/packages/${id}`)
+        const response = await api.get(`/packages/${id}/`)
         return response.data
     } }
 
 // Flat named exports as requested
 export const fetchDashboardStats = async (filter_type: string = 'ALL') => {
-    const response = await api.get('/admin-simple/dashboard-stats', {
+    const response = await api.get('/admin-simple/dashboard-stats/', {
         params: { filter_type }
     })
     return response.data
@@ -179,64 +179,64 @@ export const fetchDashboardStats = async (filter_type: string = 'ALL') => {
 
 export const fetchAgents = async (status: string = 'all') => {
     const params = status !== 'all' ? { status } : {}
-    const response = await api.get('/admin/agents', { params })
+    const response = await api.get('/admin/agents/', { params })
     return response.data
 }
 
 export const createAgent = async (data: any) => {
-    const response = await api.post('/admin/agents', data)
+    const response = await api.post('/admin/agents/', data)
     return response.data
 }
 
 export const updateAgent = async (id: string, data: any) => {
-    const response = await api.put(`/admin/agents/${id}`, data)
+    const response = await api.put(`/admin/agents/${id}/`, data)
     return response.data
 }
 
 export const deleteAgent = async (id: string) => {
-    const response = await api.delete(`/admin/agents/${id}`)
+    const response = await api.delete(`/admin/agents/${id}/`)
     return response.data
 }
 
 export const approveAgent = async (id: string) => {
-    const response = await api.patch(`/admin/agents/${id}/approve`)
+    const response = await api.patch(`/admin/agents/${id}/approve/`)
     return response.data
 }
 
 export const rejectAgent = async (id: string, reason: string = "") => {
-    const response = await api.patch(`/admin/agents/${id}/reject`, { reason })
+    const response = await api.patch(`/admin/agents/${id}/reject/`, { reason })
     return response.data
 }
 
 export const updateAgentStatus = async (id: string, is_active: boolean) => {
-    const response = await api.patch(`/admin/agents/${id}/status`, null, {
+    const response = await api.patch(`/admin/agents/${id}/status/`, null, {
         params: { is_active }
     })
     return response.data
 }
 
 export const bulkDeleteAgents = async (ids: string[]) => {
-    const response = await api.post('/admin/agents/bulk-delete', { ids });
+    const response = await api.post('/admin/agents/bulk-delete/', { ids });
     return response.data;
 };
 
 export const bulkUpdateAgentsStatus = async (ids: string[], is_active: boolean) => {
-    const response = await api.post('/admin/agents/bulk-status', { ids, is_active });
+    const response = await api.post('/admin/agents/bulk-status/', { ids, is_active });
     return response.data;
 };
 
 export const fetchPackagesSimple = async () => {
-    const response = await api.get('/admin-simple/packages-simple')
+    const response = await api.get('/admin-simple/packages-simple/')
     return response.data
 }
 
 export const deletePackageSimple = async (id: string) => {
-    const response = await api.delete(`/admin-simple/packages-simple/${id}`)
+    const response = await api.delete(`/admin-simple/packages-simple/${id}/`)
     return response.data
 }
 
 export const updatePackageStatus = async (id: string, new_status: string) => {
-    const response = await api.patch(`/admin/packages/${id}/status`, null, {
+    const response = await api.patch(`/admin/packages/${id}/status/`, null, {
         params: { new_status }
     })
     return response.data
@@ -244,60 +244,60 @@ export const updatePackageStatus = async (id: string, new_status: string) => {
 
 // Agent Packages API
 export const fetchAgentPackages = async (params: any) => {
-    const response = await api.get('/agent/packages', { params })
+    const response = await api.get('/agent/packages/', { params })
     return response.data
 }
 
 export const deleteAgentPackage = async (id: string) => {
-    const response = await api.delete(`/agent/packages/${id}`)
+    const response = await api.delete(`/agent/packages/${id}/`)
     return response.data
 }
 
 export const updateAgentPackageStatus = async (id: string, new_status: string) => {
-    const response = await api.patch(`/agent/packages/${id}/status`, null, {
+    const response = await api.patch(`/agent/packages/${id}/status/`, null, {
         params: { new_status }
     })
     return response.data
 }
 
 export const fetchAgentDashboardStats = async (params: any) => {
-    const response = await api.get('/agent-dashboard/stats', { params })
+    const response = await api.get('/agent-dashboard/stats/', { params })
     return response.data
 }
 
 // AI Assistant API
 export const sendAIChatMessage = async (data: { message: string, conversation_id: string | null }) => {
-    const response = await api.post('/ai-assistant/chat', data)
+    const response = await api.post('/ai-assistant/chat/', data)
     return response.data
 }
 
 export const generateAIPackage = async (conversation_id: string) => {
-    const response = await api.post('/ai-assistant/generate-package', { conversation_id })
+    const response = await api.post('/ai-assistant/generate-package/', { conversation_id })
     return response.data
 }
 
 export const fetchAdminPlans = async () => {
-    const response = await api.get('/subscriptions/admin/plans')
+    const response = await api.get('/subscriptions/admin/plans/')
     return response.data
 }
 
 export const fetchAdminSubscriptions = async () => {
-    const response = await api.get('/subscriptions/admin/subscriptions')
+    const response = await api.get('/subscriptions/admin/subscriptions/')
     return response.data
 }
 
 export const createSubscriptionPlan = async (data: any) => {
-    const response = await api.post('/subscriptions/plans', data)
+    const response = await api.post('/subscriptions/plans/', data)
     return response.data
 }
 
 export const updateSubscriptionPlan = async (id: string, data: any) => {
-    const response = await api.put(`/subscriptions/plans/${id}`, data)
+    const response = await api.put(`/subscriptions/plans/${id}/`, data)
     return response.data
 }
 
 export const deleteSubscriptionPlan = async (id: string) => {
-    const response = await api.delete(`/subscriptions/plans/${id}`)
+    const response = await api.delete(`/subscriptions/plans/${id}/`)
     return response.data
 }
 
@@ -318,37 +318,37 @@ export const bookingsAPI = {
         }>
         special_requests?: string
     }) => {
-        const response = await api.post('/bookings', data)
+        const response = await api.post('/bookings/', data)
         return response.data
     },
 
     getAll: async () => {
-        const response = await api.get('/bookings')
+        const response = await api.get('/bookings/')
         return response.data
     },
 
     getAgentBookings: async (params?: any) => {
-        const response = await api.get('/agent/bookings', { params })
+        const response = await api.get('/agent/bookings/', { params })
         return response.data
     },
 
     getById: async (id: string) => {
-        const response = await api.get(`/bookings/${id}`)
+        const response = await api.get(`/bookings/${id}/`)
         return response.data
     },
 
     cancel: async (id: string) => {
-        const response = await api.post(`/bookings/${id}/cancel`)
+        const response = await api.post(`/bookings/${id}/cancel/`)
         return response.data
     },
 
     getCancelPreview: async (id: string) => {
-        const response = await api.get(`/bookings/${id}/cancel-preview`)
+        const response = await api.get(`/bookings/${id}/cancel-preview/`)
         return response.data
     },
 
     downloadInvoice: async (id: string) => {
-        const response = await api.get(`/bookings/${id}/invoice`, {
+        const response = await api.get(`/bookings/${id}/invoice/`, {
             responseType: 'blob'
         })
         return response.data
@@ -359,7 +359,7 @@ export const bookingsAPI = {
         razorpay_payment_id: string
         razorpay_signature: string
     }) => {
-        const response = await api.post(`/bookings/${id}/confirm`, data)
+        const response = await api.post(`/bookings/${id}/confirm/`, data)
         return response.data
     }
 }
@@ -367,7 +367,7 @@ export const bookingsAPI = {
 // Payments API
 export const paymentsAPI = {
     createOrder: async (booking_id: string) => {
-        const response = await api.post('/payments/create-order', { booking_id })
+        const response = await api.post('/payments/create-order/', { booking_id })
         return response.data
     },
 
@@ -376,21 +376,21 @@ export const paymentsAPI = {
         razorpay_payment_id: string
         razorpay_signature: string
     }) => {
-        const response = await api.post('/payments/verify', data)
+        const response = await api.post('/payments/verify/', data)
         return response.data
     } }
 
 // Tours API (Amadeus Integration)
 export const toursAPI = {
     search: async (destination: string, radius: number = 50) => {
-        const response = await api.get('/tours/search', {
+        const response = await api.get('/tours/search/', {
             params: { destination, radius }
         })
         return response.data
     },
 
     getActivityDetails: async (activityId: string) => {
-        const response = await api.get(`/tours/activity/${activityId}`)
+        const response = await api.get(`/tours/activity/${activityId}/`)
         return response.data
     }
 }
@@ -398,12 +398,12 @@ export const toursAPI = {
 // Flights API (TripJack Integration)
 export const flightsAPI = {
     search: async (params: any) => {
-        const response = await api.get('/flights/search', { params })
+        const response = await api.get('/flights/search/', { params })
         return response.data
     },
 
     searchAirports: async (query: string) => {
-        const response = await api.get('/flights/airports/search', {
+        const response = await api.get('/flights/airports/search/', {
             params: { query }
         })
         return response.data
@@ -420,7 +420,7 @@ export const packagesEnhancedAPI = {
         }
 
         const response = await fetch(
-            `${API_URL}/api/v1/packages/search?destination=${encodeURIComponent(destination)}&limit=${limit}`,
+            `${API_URL}/api/v1/packages/search/?destination=${encodeURIComponent(destination)}&limit=${limit}`,
             { headers }
         )
         if (!response.ok) throw new Error('Failed to search packages')
@@ -428,13 +428,13 @@ export const packagesEnhancedAPI = {
     },
 
     getWithItinerary: async (packageId: string) => {
-        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary`)
+        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary/`)
         if (!response.ok) throw new Error('Failed to fetch package details')
         return response.json()
     },
 
     addItineraryItem: async (packageId: string, itemData: any, token: string) => {
-        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary-items`, {
+        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary-items/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -450,12 +450,12 @@ export const packagesEnhancedAPI = {
 // Custom Bookings API
 export const bookingsCustomAPI = {
     createWithCustomizations: async (bookingData: any) => {
-        const response = await api.post('/bookings-custom', bookingData)
+        const response = await api.post('/bookings-custom/', bookingData)
         return response.data
     },
 
     getWithCustomizations: async (bookingId: string) => {
-        const response = await api.get(`/bookings-custom/${bookingId}`)
+        const response = await api.get(`/bookings-custom/${bookingId}/`)
         return response.data
     }
 }
@@ -463,15 +463,15 @@ export const bookingsCustomAPI = {
 // Trip Planner API
 export const tripPlannerAPI = {
     getUserSessions: async () => {
-        const response = await api.get('/trip-planner/user-sessions')
+        const response = await api.get('/trip-planner/user-sessions/')
         return response.data
     },
     getSession: async (sessionId: string) => {
-        const response = await api.get(`/trip-planner/session/${sessionId}`)
+        const response = await api.get(`/trip-planner/session/${sessionId}/`)
         return response.data
     },
     deleteSession: async (sessionId: string) => {
-        const response = await api.delete(`/trip-planner/session/${sessionId}`)
+        const response = await api.delete(`/trip-planner/session/${sessionId}/`)
         return response.data
     }
 }
@@ -479,37 +479,37 @@ export const tripPlannerAPI = {
 // Activities API
 export const activitiesAPI = {
     getAll: async (params?: { city?: string; category?: string; search?: string }) => {
-        const response = await api.get('/activities', { params })
+        const response = await api.get('/activities/', { params })
         return response.data
     },
 
     getDestinations: async (params?: { page?: number; limit?: number; search?: string }) => {
-        const response = await api.get('/activities/destinations', { params })
+        const response = await api.get('/activities/destinations/', { params })
         return response.data
     },
 
     create: async (data: any) => {
-        const response = await api.post('/activities', data)
+        const response = await api.post('/activities/', data)
         return response.data
     },
 
     getById: async (id: string) => {
-        const response = await api.get(`/activities/${id}`)
+        const response = await api.get(`/activities/${id}/`)
         return response.data
     },
 
     update: async (id: string, data: any) => {
-        const response = await api.put(`/activities/${id}`, data)
+        const response = await api.put(`/activities/${id}/`, data)
         return response.data
     },
 
     delete: async (id: string) => {
-        const response = await api.delete(`/activities/${id}`)
+        const response = await api.delete(`/activities/${id}/`)
         return response.data
     },
 
     deleteDestination: async (city: string) => {
-        const response = await api.delete(`/activities/destination/${city}`)
+        const response = await api.delete(`/activities/destination/${city}/`)
         return response.data
     },
 
@@ -519,7 +519,7 @@ export const activitiesAPI = {
         image_url?: string
         description?: string
     }) => {
-        const response = await api.post('/activities/destinations/metadata', data)
+        const response = await api.post('/activities/destinations/metadata/', data)
         return response.data
     },
 
@@ -536,22 +536,22 @@ export const activitiesAPI = {
 
 // Agent Settings API
 export const fetchAgentSettings = async () => {
-    const response = await api.get('/agent/settings')
+    const response = await api.get('/agent/settings/')
     return response.data
 }
 
 export const updateAgentSettingsGeneral = async (data: any) => {
-    const response = await api.put('/agent/settings/general', data)
+    const response = await api.put('/agent/settings/general/', data)
     return response.data
 }
 
 export const updateAgentSettingsSmtp = async (data: any) => {
-    const response = await api.put('/agent/settings/smtp', data)
+    const response = await api.put('/agent/settings/smtp/', data)
     return response.data
 }
 
 export const updateAgentSettingsRazorpay = async (data: any) => {
-    const response = await api.put('/agent/settings/razorpay', data)
+    const response = await api.put('/agent/settings/razorpay/', data)
     return response.data
 }
 
@@ -561,33 +561,33 @@ export const testSmtpSettings = async (data: any) => {
 }
 
 export const fetchAdminNotifications = async () => {
-    const response = await api.get('/admin/notifications')
+    const response = await api.get('/admin/notifications/')
     return response.data
 }
 
 export const markNotificationAsRead = async (id: string) => {
-    const response = await api.patch(`/admin/notifications/${id}/read`)
+    const response = await api.patch(`/admin/notifications/${id}/read/`)
     return response.data
 }
 
 export const deleteNotification = async (id: string) => {
-    const response = await api.delete(`/admin/notifications/${id}`)
+    const response = await api.delete(`/admin/notifications/${id}/`)
     return response.data
 }
 
 // Agent Notifications API
 export const fetchAgentNotifications = async () => {
-    const response = await api.get('/agent/notifications')
+    const response = await api.get('/agent/notifications/')
     return response.data
 }
 
 export const markAgentNotificationAsRead = async (id: string) => {
-    const response = await api.patch(`/agent/notifications/${id}/read`)
+    const response = await api.patch(`/agent/notifications/${id}/read/`)
     return response.data
 }
 
 export const deleteAgentNotification = async (id: string) => {
-    const response = await api.delete(`/agent/notifications/${id}`)
+    const response = await api.delete(`/agent/notifications/${id}/`)
     return response.data
 }
 
@@ -623,37 +623,37 @@ export const agentReportsAPI = {
 export const agentAPI = {
     // Sub-Users Management
     getSubUsers: async () => {
-        const response = await api.get('/agent/sub-users')
+        const response = await api.get('/agent/sub-users/')
         return response.data
     },
     createSubUser: async (data: any) => {
-        const response = await api.post('/agent/sub-users', data)
+        const response = await api.post('/agent/sub-users/', data)
         return response.data
     },
     getSubUser: async (id: string) => {
-        const response = await api.get(`/agent/sub-users/${id}`)
+        const response = await api.get(`/agent/sub-users/${id}/`)
         return response.data
     },
     updateSubUser: async (id: string, data: any) => {
-        const response = await api.put(`/agent/sub-users/${id}`, data)
+        const response = await api.put(`/agent/sub-users/${id}/`, data)
         return response.data
     },
     replaceSubUserPermissions: async (id: string, permissions: any[]) => {
-        const response = await api.put(`/agent/sub-users/${id}/permissions`, permissions)
+        const response = await api.put(`/agent/sub-users/${id}/permissions/`, permissions)
         return response.data
     },
     toggleSubUserStatus: async (id: string, is_active: boolean) => {
-        const response = await api.patch(`/agent/sub-users/${id}/status`, null, {
+        const response = await api.patch(`/agent/sub-users/${id}/status/`, null, {
             params: { is_active }
         })
         return response.data
     },
     resetSubUserPassword: async (id: string) => {
-        const response = await api.post(`/agent/sub-users/${id}/reset-password`)
+        const response = await api.post(`/agent/sub-users/${id}/reset-password/`)
         return response.data
     },
     deleteSubUser: async (id: string) => {
-        const response = await api.delete(`/agent/sub-users/${id}`)
+        const response = await api.delete(`/agent/sub-users/${id}/`)
         return response.data
     }
 }

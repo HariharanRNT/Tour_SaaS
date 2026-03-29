@@ -429,7 +429,7 @@ export default function AgentSettingsPage() {
 
                 <div className="grid gap-8 pb-12">
                     {/* General Settings */}
-                    <Card id="general-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                    <Card id="general-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
                         <CardHeader className="pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
@@ -502,7 +502,7 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* SMTP Settings */}
-                    <Card id="email-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                    <Card id="email-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
@@ -679,7 +679,7 @@ export default function AgentSettingsPage() {
                     </Card>
 
                     {/* Razorpay Settings */}
-                    <Card id="payment-section" className="bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden scroll-mt-24 rounded-[32px] transition-all duration-500 hover:shadow-[0_48px_80px_-16px_rgba(0,0,0,0.12)]">
+                    <Card id="payment-section" className="glass-agent overflow-hidden scroll-mt-24 transition-all duration-500">
                         <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 pt-8 px-8">
                             <div className="flex items-center gap-5">
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">

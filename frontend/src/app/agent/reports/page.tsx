@@ -38,7 +38,9 @@ import {
     Filler,
     ChartOptions
 } from 'chart.js'
-import { Line, Bar } from 'react-chartjs-2'
+import dynamic from 'next/dynamic'
+const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), { ssr: false })
+const Bar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Bar), { ssr: false })
 import { cn } from "@/lib/utils"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"

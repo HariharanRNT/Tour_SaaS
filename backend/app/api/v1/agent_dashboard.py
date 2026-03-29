@@ -11,10 +11,12 @@ from app.models import Package, Booking, User, UserRole, Subscription, PackageSt
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
 @router.get("/stats")
+@cache(expire=3600, namespace="dashboard")
 async def get_agent_dashboard_stats(
     filter_type: str = "ALL",
     start_date: str = None,

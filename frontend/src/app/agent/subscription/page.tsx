@@ -521,7 +521,7 @@ export default function SubscriptionPage() {
                             <h2 className="text-lg font-bold text-gray-900">Current Subscription</h2>
                         </div>
 
-                        <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-lg border border-white/50 overflow-hidden relative rounded-3xl">
+                        <Card className="glass-agent border-0 overflow-hidden relative">
                             {/* Decorative background element */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -1023,7 +1023,7 @@ export default function SubscriptionPage() {
                                 </Button>
                             </div>
                         </div>
-                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div className="glass-agent overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
                                     <thead className="bg-transparent border-b border-gray-100 text-gray-500 font-medium">

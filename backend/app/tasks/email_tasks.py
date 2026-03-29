@@ -26,6 +26,7 @@ async def _execute_email_send(
     notification_log_id: Optional[str]
 ):
     from app.database import engine
+    logger.info(f"Executing email send to {to_email} with subject: {subject}")
     try:
         # 1. Send the email
         success = await EmailService.send_email(
@@ -38,6 +39,7 @@ async def _execute_email_send(
         
         # 2. Update log based on success
         if success:
+            logger.info(f"Email successfully sent to {to_email}")
             if notification_log_id:
                 await _update_notification_log(
                     notification_log_id, 
@@ -47,6 +49,7 @@ async def _execute_email_send(
         else:
             # If EmailService returned False (e.g. SMTP config missing or send failed)
             error_msg = "EmailService.send_email returned False (check SMTP/provider logs)"
+            logger.error(f"Failed to send email to {to_email}: {error_msg}")
             if notification_log_id:
                 await _update_notification_log(
                     notification_log_id, 
@@ -55,7 +58,7 @@ async def _execute_email_send(
                 )
             raise Exception(error_msg)
     except Exception as e:
-        logger.error(f"Error in _execute_email_send: {e}", exc_info=True)
+        logger.error(f"Error in _execute_email_send to {to_email}: {e}", exc_info=True)
         # update log as failed
         if notification_log_id:
             await _update_notification_log(
@@ -67,8 +70,11 @@ async def _execute_email_send(
     finally:
         # IMPORTANT: Dispose of the engine to close connections while loop is alive
         # This prevents 'Event loop is closed' / 'NoneType' errors on Windows
-        await engine.dispose()
-        logger.info("Engine disposed successfully in Celery worker.")
+        try:
+            await engine.dispose()
+            logger.debug("Engine disposed successfully in Celery worker.")
+        except Exception as e:
+            logger.error(f"Error disposing engine: {e}")
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_email_task(
@@ -86,7 +92,7 @@ def send_email_task(
     Celery task to send an email asynchronously.
     Updates the NotificationLog status to 'sent' or 'failed'.
     """
-    logger.info(f"Starting email task to {to_email}")
+    logger.info(f"Starting email task to {to_email} (LogID: {notification_log_id})")
     
     import base64
     attachments = []
@@ -115,9 +121,9 @@ def send_email_task(
             to_email, subject, html_body, smtp_config, 
             attachments, notification_log_id
         ))
-        logger.info(f"Email task completed for {to_email}")
+        logger.info(f"Async email work completed for {to_email}")
     except Exception as exc:
-        logger.error(f"Email task failed for {to_email}: {exc}")
+        logger.error(f"Email task execution failed for {to_email}: {exc}")
         # Retry the task
         raise self.retry(exc=exc)
 
@@ -128,16 +134,26 @@ async def _update_notification_log(log_id_str: str, status: str, error: Optional
     from datetime import datetime, timezone
     import uuid
     
-    log_uuid = uuid.UUID(log_id_str)
-    
-    async with AsyncSessionLocal() as session:
-        updates = {
-            "status": status,
-            "error": error
-        }
-        if status == "sent":
-             updates["sent_at"] = datetime.now(timezone.utc)
-             
-        stmt = update(NotificationLog).where(NotificationLog.id == log_uuid).values(**updates)
-        await session.execute(stmt)
-        await session.commit()
+    if not log_id_str:
+        return
+        
+    try:
+        log_uuid = uuid.UUID(log_id_str)
+        
+        logger.debug(f"Updating NotificationLog {log_id_str} to status: {status}")
+        
+        async with AsyncSessionLocal() as session:
+            updates = {
+                "status": status,
+                "error": error
+            }
+            if status == "sent":
+                 updates["sent_at"] = datetime.now(timezone.utc)
+                 
+            stmt = update(NotificationLog).where(NotificationLog.id == log_uuid).values(**updates)
+            await session.execute(stmt)
+            await session.commit()
+            logger.info(f"NotificationLog {log_id_str} updated to {status}")
+    except Exception as e:
+        logger.error(f"Failed to update NotificationLog {log_id_str}: {e}")
+

@@ -951,14 +951,13 @@ function PlanTripContent() {
                                         })();
 
                                         return (
-                                            <div
+                                             <div
                                                 key={item.title}
                                                 onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(item.title)}`)}
-                                                className="min-w-[220px] md:min-w-0 p-6 rounded-3xl text-center cursor-pointer flex flex-col items-center group transition-all duration-300 hover:-translate-y-[6px] snap-start border-b-[3px] border-transparent hover:border-[var(--primary)] hover:shadow-[0_12px_32px_var(--primary-glow)]"
-                                                style={{ backgroundColor: item.bg }}
+                                                className="glass-agent min-w-[220px] md:min-w-0 p-8 text-center cursor-pointer flex flex-col items-center group transition-all duration-300 hover:-translate-y-[8px] snap-start border-b-[4px] border-transparent hover:border-[var(--primary)] hover:shadow-[0_20px_40px_rgba(255,180,160,0.2)]"
                                             >
-                                                <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mb-5 transition-colors duration-300 group-hover:brightness-95" style={{ backgroundColor: item.iconBg }}>
-                                                    <IconComponent className="h-6 w-6" style={{ color: 'var(--primary)' }} />
+                                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 bg-white/40 group-hover:bg-white/60 group-hover:scale-110 shadow-sm border border-white/20">
+                                                    <IconComponent className="h-7 w-7 text-[var(--primary)]" />
                                                 </div>
                                                 <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight mb-2">{item.title}</h3>
                                                 <p className="text-xs font-bold text-[#8B5030]/50 uppercase tracking-widest">{item.description}</p>

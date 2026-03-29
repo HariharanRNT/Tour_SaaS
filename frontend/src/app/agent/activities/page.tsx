@@ -15,7 +15,8 @@ import {
     DialogDescription,
     DialogFooter,
     DialogHeader,
-    DialogTitle } from '@/components/ui/dialog'
+    DialogTitle
+} from '@/components/ui/dialog'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,12 +25,14 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle } from "@/components/ui/alert-dialog"
+    AlertDialogTitle
+} from "@/components/ui/alert-dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2 } from 'lucide-react'
 import { activitiesAPI } from '@/lib/api'
@@ -40,7 +43,8 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue } from "@/components/ui/select"
+    SelectValue
+} from "@/components/ui/select"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface DestinationSummary {
@@ -88,7 +92,9 @@ export default function ActivitiesMasterPage() {
                 destinations: data.destinations || data || [],
                 totalCount: data.total_count || (Array.isArray(data) ? data.length : 0)
             }
-        }
+        },
+        staleTime: 300000, // 5 minutes
+        refetchOnWindowFocus: false
     })
 
     const destinations = destinationsData?.destinations || []
@@ -173,55 +179,55 @@ export default function ActivitiesMasterPage() {
 
     return (
         <div className="min-h-screen bg-transparent">
-            {/* Header */}
-            <div className="relative sticky top-0 z-30 shadow-sm transition-all duration-300" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255, 255, 255, 0.30)' }}>
-                <div className="container mx-auto px-6 py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <nav className="flex items-center text-sm font-medium text-slate-500/80 mb-2">
-                                <span className="hover:text-amber-800 cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
-                                <span className="mx-2">/</span>
-                                <span className="text-amber-900/70">Destinations Library</span>
-                            </nav>
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-gradient-to-br from-orange-100 to-amber-50 rounded-2xl shadow-inner border border-white/60">
-                                    <MapPin className="h-6 w-6 text-[var(--primary)]" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#4A2B1D' }}>
-                                        Destinations Library
-                                    </h1>
-                                    <p className="text-[#8B5E34] text-sm mt-1 font-medium bg-white/40 px-3 py-1 rounded-full border border-white/50 backdrop-blur-md inline-block shadow-sm">
-                                        Manage all destinations and their activities
-                                    </p>
-                                </div>
+            {/* Content Container */}
+            <div className="container mx-auto px-4 py-8">
+                {/* Modern Page Header Card */}
+                <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex flex-col gap-4">
+                        {/* Breadcrumb */}
+                        <nav className="flex items-center text-[13px] font-medium text-[#92400e]/80">
+                            <span className="hover:text-[#92400e] cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
+                            <span className="mx-2">/</span>
+                            <span className="text-[#92400e]">Destinations Library</span>
+                        </nav>
+
+                        {/* Title & Badge */}
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-gradient-to-br from-orange-100 to-amber-50 rounded-2xl shadow-inner border border-white/60">
+                                <MapPin className="h-6 w-6 text-[var(--primary)]" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#4A2B1D' }}>
+                                    Destinations Library
+                                </h1>
+                                <p className="mt-1.5 text-[#8B5E34] text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
+                                    Manage all destinations and their activities
+                                </p>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="flex items-center gap-3">
-                            {hasPermission('activities', 'edit') && (
-                                <Button
-                                    onClick={() => {
-                                        setNewCityName('')
-                                        setNewCityCountry('')
-                                        setNewCityImage('')
-                                        setIsEditing(false)
-                                        setIsNewDestModalOpen(true)
-                                    }}
-                                    className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_30px_var(--primary-glow)]"
-                                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '50px' }}
-                                >
-                                    <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
-                                    Add Destination
-                                </Button>
-                            )}
-                        </div>
+                    {/* Action Button */}
+                    <div className="flex items-center">
+                        {hasPermission('activities', 'edit') && (
+                            <Button
+                                onClick={() => {
+                                    setNewCityName('')
+                                    setNewCityCountry('')
+                                    setNewCityImage('')
+                                    setIsEditing(false)
+                                    setIsNewDestModalOpen(true)
+                                }}
+                                className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_30px_var(--primary-glow)]"
+                                style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '50px' }}
+                            >
+                                <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
+                                Add Destination
+                            </Button>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* Content */}
-            <div className="container mx-auto px-4 py-8">
                 {/* Summary Bar */}
                 <div className="flex flex-wrap items-center gap-6 mb-8 p-4 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: '40px', boxShadow: '0 8px 32px var(--primary-glow)' }}>
                     <div className="flex-1 min-w-[200px] flex items-center justify-center gap-5 bg-white/30 px-6 py-4 rounded-[32px] border border-white/50 shadow-sm transition-transform hover:scale-[1.02]">
@@ -522,7 +528,8 @@ export default function ActivitiesMasterPage() {
                             width: '38px', height: '38px', borderRadius: '50%',
                             background: 'rgba(255,255,255,0.35)',
                             backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255,255,255,0.5)' }}
+                            border: '1px solid rgba(255,255,255,0.5)'
+                        }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.boxShadow = '0 0 10px var(--primary-glow)';
                             if (e.currentTarget.firstChild) (e.currentTarget.firstChild as HTMLElement).style.transform = 'rotate(90deg)';
@@ -729,8 +736,8 @@ export default function ActivitiesMasterPage() {
                                     animation: 'shimmerPulse 3s infinite'
                                 }}></span>
                                 <span className="relative z-10">
-                                    {saveMetadataMutation.isPending 
-                                        ? (isEditing ? 'Updating...' : 'Creating...') 
+                                    {saveMetadataMutation.isPending
+                                        ? (isEditing ? 'Updating...' : 'Creating...')
                                         : (isEditing ? 'Save Changes' : 'Continue')}
                                 </span>
                             </Button>

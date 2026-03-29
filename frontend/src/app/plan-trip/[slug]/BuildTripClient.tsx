@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle } from 'lucide-react'
+import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { formatDate, cn } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -135,7 +135,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     // GST Settings State
     const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
 
-    // Removed standalone fetchSettings useEffect as data is now provided by session endpoint
+    // Itinerary Theme State
 
     // Flight Filters State
     const [filters, setFilters] = useState<FlightFilterState>({
@@ -627,7 +627,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+                    <Loader2 className="h-12 w-12 animate-spin text-[var(--primary)]" />
                     <p className="text-gray-500 font-medium">Building your itinerary...</p>
                 </div>
             </div>
@@ -693,7 +693,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         {/* Destination Tag — replaces floating pin */}
                         <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
                             <div className="inline-flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/20 shadow-sm">
-                                <span className="text-orange-300 text-[11px]">📍</span>
+                                <span className="text-[var(--primary-light)] text-[11px]">📍</span>
                                 <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.destination}, {session.country || 'India'}</span>
                             </div>
 
@@ -745,7 +745,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg" style={{ background: 'rgba(255,245,235,0.18)', backdropFilter: 'blur(16px)' }}>
                                 <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
                                     <Wallet className="h-4 w-4 text-white" />
                                 </div>
@@ -755,7 +754,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         {session.price_per_person ? `₹${session.price_per_person.toLocaleString()}` : session.budget_tier ? `${session.budget_tier} Tier` : 'Custom'}
                                     </p>
                                 </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -788,19 +786,19 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         <div className="lg:col-span-8 xl:col-span-9 space-y-8 min-w-0">
 
                             {/* AI Summary Banner */}
-                            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(200,80,20,0.1)] border border-orange-100/50 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-var(--primary-soft) rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_var(--primary-glow)] border border-[var(--primary)]/10 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary-soft)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
                                 <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
                                     <div className="shrink-0">
-                                        <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[#F4A261] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
+                                        <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
                                             <Sparkles className="h-9 w-9 animate-pulse" />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <h3 className="text-3xl font-bold text-[#C2440A] font-display">
+                                        <h3 className="text-3xl font-bold text-[var(--primary)] font-display">
                                             Your Personalized AI Itinerary
                                         </h3>
-                                        <p className="text-[#6B3010] leading-relaxed text-lg max-w-2xl">
+                                        <p className="text-slate-600 leading-relaxed text-lg max-w-2xl">
                                             We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[var(--primary)]">{session.destination}</span> based on your love for <span className="font-bold text-[var(--primary)]">{session.trip_type}</span> experiences.
                                         </p>
                                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
@@ -819,36 +817,36 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                            {/* Trip Overview Cards */}
-                            <section>
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
-                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {[
-                                        { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
-                                        { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
-                                        { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
-                                        { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
-                                    ].map((item, i) => (
-                                        <div key={i} className="group relative bg-white/60 backdrop-blur-md rounded-[2rem] p-6 border border-orange-100/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 overflow-hidden cursor-default">
-                                            {/* Hover glow */}
-                                            <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
-
-                                            <div className="relative z-10">
-                                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center mb-5 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                                                    {item.icon}
-                                                </div>
-                                                <h3 className="font-bold text-[#3A1A08] text-xl mb-1">{item.label}</h3>
-                                                <p className="text-sm text-[#A0501E] font-medium opacity-70">{item.desc}</p>
-                                                <p className="text-[11px] text-[#A0501E]/50 font-semibold mt-1.5">{item.detail}</p>
-                                            </div>
+                                    {/* Trip Overview Cards */}
+                                    <section>
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="h-10 w-1.5 rounded-full bg-[var(--itinerary-primary,var(--primary))]" />
+                                            <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
                                         </div>
-                                    ))}
-                                </div>
-                            </section>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                            {[
+                                                { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
+                                                { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
+                                                { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
+                                                { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
+                                            ].map((item, i) => (
+                                                <div key={i} className="group relative transition-all duration-500 overflow-hidden cursor-default p-6 bg-white/60 backdrop-blur-md rounded-[2rem] border border-white/20 shadow-sm hover:shadow-xl hover:-translate-y-2">
+                                                    {/* Hover glow */}
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
+
+                                                    <div className="relative z-10">
+                                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center mb-5 text-white shadow-lg shadow-[var(--primary)]/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                                                            {item.icon}
+                                                        </div>
+                                                        <h3 className="font-bold text-slate-800 text-xl mb-1">{item.label}</h3>
+                                                        <p className="text-sm text-slate-600 font-medium opacity-70">{item.desc}</p>
+                                                        <p className="text-[11px] text-slate-400 font-semibold mt-1.5">{item.detail}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
 
                             <div className="border-t border-gray-100"></div>
 
@@ -1120,10 +1118,10 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             </div>
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[#FB923C] rounded-lg shadow-sm">
+                                                    <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-lg shadow-sm">
                                                         <Plane className="h-4 w-4 text-white" />
                                                     </div>
-                                                    <h3 className="font-black text-[#3A1A08] uppercase tracking-widest text-sm">Onward Journey</h3>
+                                                    <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Onward Journey</h3>
                                                 </div>
                                                 <div className="text-xs font-bold text-slate-500 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
                                                     Direct Flight Only
@@ -1153,8 +1151,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             {/* Cancellation Policy Section */}
                             <section className="pt-16 pb-8 border-t border-gray-100">
                                 <div className="flex items-center gap-4 mb-8">
-                                    <div className="h-10 w-1.5 rounded-full bg-orange-500" />
-                                    <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Cancellation Policy</h2>
+                                    <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
+                                    <h2 className="text-3xl font-bold text-slate-900 font-display">Cancellation Policy</h2>
                                 </div>
 
                                 {session.cancellation_enabled ? (
@@ -1239,34 +1237,37 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             {true && (
                                 <div className="pt-16 pb-8" style={{ backgroundColor: 'transparent' }}>
                                     <div className="text-center mb-12">
-                                        <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A0501E]/60 mb-2">
+                                        <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-2">
                                             Peace of Mind
                                         </h3>
-                                        <h2 className="text-3xl font-bold text-[#3A1A08] font-display">
+                                        <h2 className="text-3xl font-bold text-slate-900 font-display">
                                             {"Why book with RNT Tour?"}
                                         </h2>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        {[
-                                            { title: "Verified & Secure", desc: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck", color: "var(--primary)", bgColor: "var(--primary-glow)" },
-                                            { title: "Flexible & Transparent", desc: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle", color: "var(--primary)", bgColor: "var(--primary-glow)" },
-                                            { title: "24/7 Expert Support", desc: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones", color: "var(--primary)", bgColor: "var(--primary-glow)" }
-                                        ].map((card, idx) => {
-                                            const IconComponent = idx === 0 ? ShieldCheck : idx === 1 ? CheckCircle : Headphones;
-
+                                        {([
+                                            { title: "Verified & Secure", description: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck" },
+                                            { title: "Flexible & Transparent", description: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle" },
+                                            { title: "24/7 Expert Support", description: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones" }
+                                        ]).map((card: any, idx: number) => {
+                                            const Icons: Record<string, any> = {
+                                                ShieldCheck, CheckCircle, Headphones, Map: MapIcon, Users, Clock, Shield, Star, Heart, Camera, Car, Globe, Plane
+                                            };
+                                            const IconComponent = Icons[card.icon] || ShieldCheck;
+                                            
                                             return (
                                                 <div
                                                     key={idx}
-                                                    className="flex flex-col items-center text-center gap-6 group p-8 rounded-[2rem] transition-all duration-500 bg-white/40 backdrop-blur-sm border border-orange-100/30 hover:shadow-xl hover:-translate-y-1"
+                                                    className="flex flex-col items-center text-center gap-6 group p-8 transition-all duration-500 bg-white/40 backdrop-blur-sm border border-white/30 rounded-[2rem] hover:shadow-xl hover:-translate-y-1"
                                                 >
                                                     <div
-                                                        className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[var(--primary)] to-[#F4A261] text-white"
+                                                        className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white"
                                                     >
                                                         <IconComponent className="h-8 w-8" />
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-bold text-[#3A1A08] text-xl mb-2 font-display">{card.title}</h4>
-                                                        <p className="text-sm text-[#6B3010]/70 leading-relaxed">{card.desc}</p>
+                                                        <h4 className="font-bold text-slate-900 text-xl mb-2 font-display">{card.title}</h4>
+                                                        <p className="text-sm text-slate-600 leading-relaxed">{card.description || card.desc}</p>
                                                     </div>
                                                 </div>
                                             );
@@ -1302,8 +1303,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         onCheckout={handleCheckout}
                                         disabled={mode === 'preview'}
                                         gstSettings={gstSettings || undefined}
-                                        priceColor={'#FF7A45'}
-                                        ctaColor={'#FF7A45'}
                                     />
                                 </div>
                             </div>
@@ -1337,10 +1336,10 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
                                 })()}
                             </span>
-                            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
+                            <Button variant="link" size="sm" className="h-auto p-0 text-[var(--primary)] text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
                         </div>
                     </div>
-                    <Button onClick={handleCheckout} className="bg-blue-600 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-blue-500/20">
+                    <Button onClick={handleCheckout} className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--primary-glow)]">
                         Book Now
                     </Button>
                 </div>
@@ -1352,26 +1351,26 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             <DialogTitle>Trip Summary</DialogTitle>
                         </div>
                         <div className="p-4 bg-transparent min-h-[50vh]">
-                            <TripCart
-                                basePrice={session.price_per_person || 18000}
-                                travelers={travelers}
-                                duration={{ days: session.duration_days, nights: session.duration_nights }}
-                                services={[
-                                    ...(selectedOnwardFlight ? [{
-                                        name: 'Onward Flight',
-                                        price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
-                                    }] : []),
-                                    ...(selectedReturnFlight ? [{
-                                        name: 'Return Flight',
-                                        price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
-                                    }] : []),
-                                    ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                    ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                ]}
-                                onCheckout={handleCheckout}
-                                disabled={mode === 'preview'}
-                                gstSettings={gstSettings || undefined}
-                            />
+                                    <TripCart
+                                        basePrice={session.price_per_person || 18000}
+                                        travelers={travelers}
+                                        duration={{ days: session.duration_days, nights: session.duration_nights }}
+                                        services={[
+                                            ...(selectedOnwardFlight ? [{
+                                                name: 'Onward Flight',
+                                                price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                            }] : []),
+                                            ...(selectedReturnFlight ? [{
+                                                name: 'Return Flight',
+                                                price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                            }] : []),
+                                            ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                            ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                        ]}
+                                        onCheckout={handleCheckout}
+                                        disabled={mode === 'preview'}
+                                        gstSettings={gstSettings || undefined}
+                                    />
                         </div>
                     </DialogContent>
                 </Dialog>

@@ -9,7 +9,7 @@ import EmailTemplateEditor from '@/components/agent/EmailTemplateEditor';
 import { DEFAULT_TEMPLATES } from '@/constants/email-defaults';
 import {
     Check, Palette, Sparkles, Wand2, Eye, Save, ExternalLink,
-    RefreshCw, Upload, Link as LinkIcon, Home, Map, Package,
+    RefreshCw, Upload, Link as LinkIcon, Home, Map as MapIcon, Package,
     ClipboardList, ShoppingCart, Sliders, RotateCcw, Bell, X,
     Plane, Globe, Users, Clock, Shield, Star, Heart, Camera,
     Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella, Gift,
@@ -72,7 +72,8 @@ const DEFAULT_CARD_STYLE: CardAppearance = {
     titleColor: 'dark',
     layout: 'top',
     iconColor: 'follow-theme',
-    customIconColor: '#F97316' };
+    customIconColor: '#F97316'
+};
 const ICON_OPTIONS = [
     'Plane', 'Globe', 'Users', 'Clock', 'Shield', 'Star', 'Heart', 'Map',
     'Camera', 'Car', 'Hotel', 'Compass', 'Sun', 'Mountain', 'Waves', 'Umbrella',
@@ -80,10 +81,10 @@ const ICON_OPTIONS = [
     'Package', 'Luggage', 'Ticket', 'Navigation', 'Flag', 'Search', 'Sparkles',
 ];
 
-interface CustomThemeColors { 
-    primary: string; 
-    secondary: string; 
-    glass: string; 
+interface CustomThemeColors {
+    primary: string;
+    secondary: string;
+    glass: string;
     // Nested structure for Design File alignment
     navbarSettings: {
         bgColor: string;
@@ -100,9 +101,9 @@ interface CustomThemeColors {
     font_size: string;
 }
 
-const DEFAULT_CUSTOM: CustomThemeColors = { 
-    primary: '#14b8a6', 
-    secondary: '#2dd4bf', 
+const DEFAULT_CUSTOM: CustomThemeColors = {
+    primary: '#14b8a6',
+    secondary: '#2dd4bf',
     glass: '#ccfbf1',
     navbarSettings: {
         bgColor: '',
@@ -148,7 +149,8 @@ const DEFAULT_HOMEPAGE: HomepageSettings = {
     primaryBtnText: 'Start Your Journey', secondaryBtnText: 'See Sample Itinerary',
     backgroundImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
     navbar_logo_image: 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png',
-    badgeText: 'AI-Powered Trip Planning', showAiBadge: true };
+    badgeText: 'AI-Powered Trip Planning', showAiBadge: true
+};
 
 interface PageSettings {
     // Plan Trip
@@ -196,6 +198,16 @@ interface PageSettings {
     show_flexible_badge: boolean;
     modal_cta_text: string;
     package_cta_text: string;
+
+    // Itinerary Theme (New)
+    itinerary_card_style: string;
+    itinerary_summary_card_style: string;
+    itinerary_why_book_style: string;
+    itinerary_primary_color: string;
+    itinerary_secondary_color: string;
+    itinerary_font_family: string;
+    itinerary_button_style: string;
+    itinerary_wcu_cards: FeatureCard[];
 }
 
 const DEFAULT_PAGE_SETTINGS: PageSettings = {
@@ -239,13 +251,24 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     show_support_badge: true,
     show_flexible_badge: true,
     modal_cta_text: 'Start Planning Journey',
-    package_cta_text: 'Book Now' };
+    package_cta_text: 'Book Now',
+
+    // Itinerary Theme (New)
+    itinerary_card_style: 'glassy',
+    itinerary_summary_card_style: 'glassy',
+    itinerary_why_book_style: 'glassy',
+    itinerary_primary_color: '',
+    itinerary_secondary_color: '',
+    itinerary_font_family: 'Inter, sans-serif',
+    itinerary_button_style: 'pill',
+    itinerary_wcu_cards: [...DEFAULT_WCU_CARDS].slice(0, 3) // Default to 3 cards
+};
 
 // ─── Tab Definitions ─────────────────────────────────────────────────────────
 const TABS = [
     { id: 'theme', icon: <Palette className="h-4 w-4" />, label: 'Theme', count: 2 },
     { id: 'homepage', icon: <Home className="h-4 w-4" />, label: 'Homepage', count: 3 },
-    { id: 'plantrip', icon: <Map className="h-4 w-4" />, label: 'Plan Trip', count: 3 },
+    { id: 'plantrip', icon: <MapIcon className="h-4 w-4" />, label: 'Plan Trip', count: 3 },
     { id: 'itinerary', icon: <ClipboardList className="h-4 w-4" />, label: 'Itinerary', count: 4 },
     { id: 'cart', icon: <ShoppingCart className="h-4 w-4" />, label: 'Cart', count: 3 },
     { id: 'uistyle', icon: <Sliders className="h-4 w-4" />, label: 'UI Style', count: 5 },
@@ -324,11 +347,12 @@ export default function AgentThemeSettingsPage() {
     const [iconSearch, setIconSearch] = useState('');
 
     const ICON_MAP: Record<string, React.ElementType> = {
-        Plane, Globe, Users, Clock, Shield, Star, Heart, Map,
+        Plane, Globe, Users, Clock, Shield, Star, Heart, Map: MapIcon,
         Camera, Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella,
         Gift, Award, Zap, CheckCircle, Headphones, Wallet, Coffee,
         Package, Luggage, Ticket, Navigation, Flag, Search, Sparkles,
-        Sliders: Sliders, CheckCircle2: CheckCircle2 };
+        Sliders: Sliders, CheckCircle2: CheckCircle2
+    };
     const getIconCmp = (name: string) => ICON_MAP[name] || Sparkles;
 
     const updateCard = (idx: number, field: keyof FeatureCard, value: any) =>
@@ -359,7 +383,8 @@ export default function AgentThemeSettingsPage() {
             iconStyle: updates.iconStyle ?? iconStyle,
             cardStyle: updates.cardStyle ?? cardStyle,
             density: updates.density ?? density,
-            fontPairing: updates.fontPairing ?? fontPairing };
+            fontPairing: updates.fontPairing ?? fontPairing
+        };
         if (updates.buttonShape !== undefined) setButtonShape(updates.buttonShape);
         if (updates.iconStyle !== undefined) setIconStyle(updates.iconStyle);
         if (updates.cardStyle !== undefined) setCardStyle(updates.cardStyle);
@@ -408,7 +433,7 @@ export default function AgentThemeSettingsPage() {
                         if (hs.feature_cards) setFeatureCards(hs.feature_cards);
                         if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
                         if (hs.card_appearance) setCardAppearance(hs.card_appearance);
-                        
+
                         // Populate pageSettings from backend
                         setPageSettings(prev => ({
                             ...prev,
@@ -459,9 +484,9 @@ export default function AgentThemeSettingsPage() {
     // Theme handlers
     const handleThemeChange = async (key: string) => {
         if (key === 'custom') { setShowCustomEditor(true); return; }
-        setActiveTheme(key); 
+        setActiveTheme(key);
         setShowCustomEditor(false);
-        
+
         // If it's a preset theme, we should also save those colors to the "cloud" 
         // as the baseline branding for customers
         const t = themes[key];
@@ -481,8 +506,10 @@ export default function AgentThemeSettingsPage() {
                         secondaryColor: t.primaryLight,
                         // Legacy support
                         primary_color: t.primary,
-                        secondary_color: t.primaryLight }) });
-                
+                        secondary_color: t.primaryLight
+                    })
+                });
+
                 // Also update local pageSettings so they are in sync
                 setPageSettings(prev => ({
                     ...prev,
@@ -502,7 +529,7 @@ export default function AgentThemeSettingsPage() {
     const handleApplyCustomTheme = async () => {
         const root = document.documentElement;
         const glassColor = customColors.secondary + '20'; // Standardize glass color
-        
+
         root.style.setProperty('--primary', customColors.primary);
         root.style.setProperty('--primary-light', customColors.secondary);
         root.style.setProperty('--primary-soft', customColors.glass);
@@ -510,16 +537,17 @@ export default function AgentThemeSettingsPage() {
         root.style.setProperty('--gradient-start', customColors.primary);
         root.style.setProperty('--gradient-mid', customColors.secondary);
         root.style.setProperty('--gradient-end', customColors.glass);
-        
+
         localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(customColors));
         localStorage.setItem('app-theme', 'custom');
         setActiveTheme('custom');
-        
+
         // Sync to pageSettings so "Save Changes" works too
         setPageSettings(prev => ({
             ...prev,
             primary_color: customColors.primary,
-            secondary_color: customColors.secondary }));
+            secondary_color: customColors.secondary
+        }));
 
         // PERSIST TO BACKEND IMMEDIATELY (Aligning with Design File)
         try {
@@ -545,7 +573,9 @@ export default function AgentThemeSettingsPage() {
                     primary_color: customColors.primary,
                     secondary_color: customColors.secondary,
                     nav_bg: customColors.navbarSettings.bgColor,
-                    button_color: customColors.buttonStyle.bgColor }) });
+                    button_color: customColors.buttonStyle.bgColor
+                })
+            });
             if (res.ok) {
                 // Update the combined agentTheme cache
                 const data = await res.json();
@@ -559,10 +589,10 @@ export default function AgentThemeSettingsPage() {
 
     const handleRestoreDefault = async () => {
         localStorage.removeItem(CUSTOM_THEME_STORAGE_KEY);
-        setActiveTheme('default'); 
-        setShowCustomEditor(false); 
+        setActiveTheme('default');
+        setShowCustomEditor(false);
         setCustomColors(DEFAULT_CUSTOM);
-        
+
         // Reset in backend too
         try {
             const token = localStorage.getItem('token') || '';
@@ -575,8 +605,10 @@ export default function AgentThemeSettingsPage() {
                 },
                 body: JSON.stringify({
                     primary_color: '#F97316', // Default Orange
-                    secondary_color: '#FB923C' }) });
-        } catch {}
+                    secondary_color: '#FB923C'
+                })
+            });
+        } catch { }
 
         toast.info('Restored to default theme', { position: 'bottom-right' });
     };
@@ -598,7 +630,7 @@ export default function AgentThemeSettingsPage() {
             const token = localStorage.getItem('token') || '';
             const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
@@ -647,7 +679,7 @@ export default function AgentThemeSettingsPage() {
             const token = localStorage.getItem('token') || '';
             const presignedRes = await fetch('http://localhost:8000/api/v1/upload/presigned-url', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
@@ -690,7 +722,8 @@ export default function AgentThemeSettingsPage() {
             navbar_logo_image: hpSettings.navbar_logo_image || DEFAULT_HOMEPAGE.navbar_logo_image,
             badgeText: hpSettings.badgeText.trim() || DEFAULT_HOMEPAGE.badgeText,
             showAiBadge: hpSettings.showAiBadge,
-            agency_name: hpSettings.agency_name };
+            agency_name: hpSettings.agency_name
+        };
 
         const fullPayload = {
             ...heroData,
@@ -717,7 +750,8 @@ export default function AgentThemeSettingsPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(fullPayload) });
+                body: JSON.stringify(fullPayload)
+            });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
                 throw new Error(err.detail || 'Save failed');
@@ -736,7 +770,7 @@ export default function AgentThemeSettingsPage() {
     const handleSavePageSettings = async () => {
         setPageSaving(true);
         localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(pageSettings));
-        
+
         try {
             const token = localStorage.getItem('token') || '';
             const payload = {
@@ -744,14 +778,15 @@ export default function AgentThemeSettingsPage() {
                 default_email_theme: defaultEmailTheme,
                 default_email_message: defaultEmailMessage
             };
-            
+
             const res = await fetch('http://localhost:8000/api/v1/agent/settings/homepage', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(payload) });
+                body: JSON.stringify(payload)
+            });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
                 throw new Error(err.detail || 'Save failed');
@@ -793,9 +828,9 @@ export default function AgentThemeSettingsPage() {
             {showCustomEditor && (
                 <SectionCard icon={<Wand2 className="h-5 w-5" />} title="Custom Theme Builder" subtitle="Pick your own colors and apply instantly">
                     <div className="space-y-3">
-                        {( [
-                            ['primary', 'Primary Color', 'Highlights & active states', 'primary'], 
-                            ['secondary', 'Accent Color', 'Gradients & hover effects', 'secondary'], 
+                        {([
+                            ['primary', 'Primary Color', 'Highlights & active states', 'primary'],
+                            ['secondary', 'Accent Color', 'Gradients & hover effects', 'secondary'],
                             ['nav_bg', 'Navbar Background', 'Navigation bar fill color', 'navbarSettings.bgColor'],
                             ['nav_text', 'Navbar Text', 'Color for links and brand name', 'navbarSettings.textColor'],
                             ['button_bg', 'Button Color', 'Global button background color', 'buttonStyle.bgColor'],
@@ -812,7 +847,7 @@ export default function AgentThemeSettingsPage() {
                                 }
                                 return (customColors as any)[p] || '';
                             };
-                            
+
                             // Helper to set nested value
                             const setValue = (p: string, val: string) => {
                                 setCustomColors(prev => {
@@ -836,9 +871,9 @@ export default function AgentThemeSettingsPage() {
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs font-mono text-slate-400 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
                                         {isText ? (
-                                            <Input 
-                                                value={currentVal} 
-                                                onChange={e => setValue(path, e.target.value)} 
+                                            <Input
+                                                value={currentVal}
+                                                onChange={e => setValue(path, e.target.value)}
                                                 className="w-24 h-8 text-xs rounded-lg glass-input px-2"
                                                 placeholder="e.g. 10px"
                                             />
@@ -896,11 +931,11 @@ export default function AgentThemeSettingsPage() {
             <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
                 <div className="space-y-1">
                     <Label className="text-xs font-bold text-slate-600">Company / Agency Name</Label>
-                    <Input 
-                        value={hpSettings.agency_name || ''} 
-                        onChange={e => hpField('agency_name', e.target.value)} 
-                        placeholder="e.g. Dream Travels" 
-                        className="h-10 rounded-xl glass-input w-full max-w-md" 
+                    <Input
+                        value={hpSettings.agency_name || ''}
+                        onChange={e => hpField('agency_name', e.target.value)}
+                        placeholder="e.g. Dream Travels"
+                        className="h-10 rounded-xl glass-input w-full max-w-md"
                     />
                     <p className="text-xs text-slate-500 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
                 </div>
@@ -1178,7 +1213,8 @@ export default function AgentThemeSettingsPage() {
                                         border: cardAppearance.border === 'primary' ? '1px solid var(--primary-light)' : cardAppearance.border === 'subtle' ? '1px solid rgba(0,0,0,0.05)' : '1px solid transparent',
                                         borderTop: cardAppearance.border === 'top-accent' ? '3px solid var(--primary)' : undefined,
                                         boxShadow: cardAppearance.border === 'glow' ? '0 0 15px var(--primary-glow)' : undefined,
-                                        transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined }}>
+                                        transform: cardAppearance.hover === 'lift' ? 'translateY(-2px)' : undefined
+                                    }}>
                                         {cardAppearance.layout !== 'minimal' && (
                                             <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
                                                 <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-white' : 'text-[var(--primary)]'}`} />
@@ -1200,7 +1236,7 @@ export default function AgentThemeSettingsPage() {
 
     const renderPlanTripTab = () => (
         <div className="space-y-5">
-            <SectionCard icon={<Map className="h-5 w-5" />} title="Hero Section" subtitle="Customize the top banner and search bar">
+            <SectionCard icon={<MapIcon className="h-5 w-5" />} title="Hero Section" subtitle="Customize the top banner and search bar">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <Label className="text-xs font-bold text-slate-600">Main Heading</Label>
@@ -1336,6 +1372,63 @@ export default function AgentThemeSettingsPage() {
 
     const renderItineraryTab = () => (
         <div className="space-y-5">
+            <SectionCard icon={<Palette className="h-5 w-5" />} title="Itinerary Page Theme" subtitle="Modernize the look and feel of your customer-facing itinerary">
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase">Card Style</Label>
+                        <div className="grid grid-cols-4 gap-2">
+                            {(['glassy', 'minimal', 'rounded', 'classic'] as const).map(s => (
+                                <button key={s} onClick={() => pgField('itinerary_card_style', s)}
+                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${pageSettings.itinerary_card_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                    <div className={`w-full h-8 rounded-lg border border-slate-200 ${s === 'glassy' ? 'bg-white/40 backdrop-blur-sm' : s === 'minimal' ? 'bg-white border-slate-100 shadow-sm' : s === 'rounded' ? 'bg-white rounded-xl' : 'bg-slate-50'}`} />
+                                    <span className="text-[10px] font-bold text-slate-600 capitalize">{s}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-slate-600">Primary Theme Color</Label>
+                            <div className="flex items-center gap-2">
+                                <div className="relative cursor-pointer">
+                                    <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_primary_color || customColors.primary }} />
+                                    <input type="color" value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                </div>
+                                <Input value={pageSettings.itinerary_primary_color || customColors.primary} onChange={e => pgField('itinerary_primary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-slate-600">Secondary Color</Label>
+                            <div className="flex items-center gap-2">
+                                <div className="relative cursor-pointer">
+                                    <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_secondary_color || customColors.secondary }} />
+                                    <input type="color" value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                </div>
+                                <Input value={pageSettings.itinerary_secondary_color || customColors.secondary} onChange={e => pgField('itinerary_secondary_color', e.target.value)} className="h-10 rounded-xl glass-input flex-1 text-sm font-mono uppercase" placeholder="#HEX" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase">Button & Font Style</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['pill', 'rounded', 'square'] as const).map(s => (
+                                    <button key={s} onClick={() => pgField('itinerary_button_style', s)}
+                                        className={`p-2 rounded-xl border-2 transition-all text-[10px] font-bold ${pageSettings.itinerary_button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}>
+                                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="space-y-1">
+                                <Input value={pageSettings.itinerary_font_family} onChange={e => pgField('itinerary_font_family', e.target.value)} className="h-10 rounded-xl glass-input text-xs" placeholder="Font Family (e.g. Inter, sans-serif)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </SectionCard>
+
             <SectionCard icon={<ClipboardList className="h-5 w-5" />} title="Hero Section" subtitle="The top banner on the itinerary detail page">
                 <ToggleSwitch checked={pageSettings.show_ai_optimized_badge} onChange={v => pgField('show_ai_optimized_badge', v)} label="Show 'AI Optimized' badge" />
                 {pageSettings.show_ai_optimized_badge && <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Badge Text</Label><Input value={pageSettings.ai_optimized_text} onChange={e => pgField('ai_optimized_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
@@ -1349,6 +1442,62 @@ export default function AgentThemeSettingsPage() {
             </SectionCard>
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Activity Cards" subtitle="Control what appears on activity cards in the itinerary">
                 <ToggleSwitch checked={pageSettings.show_activity_images} onChange={v => pgField('show_activity_images', v)} label="Show activity images" />
+            </SectionCard>
+
+            <SectionCard icon={<Award className="h-5 w-5" />} title="'Why Book' Cards" subtitle="Customize the trust cards shown on the itinerary page">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {pageSettings.itinerary_wcu_cards.map((card, idx) => (
+                        <div key={idx} className="p-4 glass-trip-card space-y-3 relative group">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest opacity-60">Card {idx + 1}</span>
+                                <div className="flex gap-1">
+                                    {ICON_OPTIONS.slice(0, 10).map(iconName => {
+                                        const IconComp = {
+                                            Plane, Globe, Users, Clock, Shield, Star, Heart, Map: MapIcon, Camera, Car
+                                        }[iconName] as any;
+                                        return (
+                                            <button
+                                                key={iconName}
+                                                onClick={() => {
+                                                    const newCards = [...pageSettings.itinerary_wcu_cards];
+                                                    newCards[idx] = { ...newCards[idx], icon: iconName };
+                                                    pgField('itinerary_wcu_cards', newCards);
+                                                }}
+                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                            >
+                                                {IconComp && <IconComp className="h-3 w-3" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-slate-500">Title</Label>
+                                <Input
+                                    value={card.title}
+                                    onChange={e => {
+                                        const newCards = [...pageSettings.itinerary_wcu_cards];
+                                        newCards[idx] = { ...newCards[idx], title: e.target.value };
+                                        pgField('itinerary_wcu_cards', newCards);
+                                    }}
+                                    className="h-8 text-xs rounded-lg glass-input"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-slate-500">Description</Label>
+                                <Textarea
+                                    value={card.description}
+                                    onChange={e => {
+                                        const newCards = [...pageSettings.itinerary_wcu_cards];
+                                        newCards[idx] = { ...newCards[idx], description: e.target.value };
+                                        pgField('itinerary_wcu_cards', newCards);
+                                    }}
+                                    className="text-xs rounded-lg glass-input min-h-[60px] resize-none"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </SectionCard>
         </div>
     );
@@ -1395,7 +1544,8 @@ export default function AgentThemeSettingsPage() {
                                     borderRadius: opt.r,
                                     background: opt.key === 'underline' ? 'transparent' : 'var(--primary)',
                                     borderBottom: opt.key === 'underline' ? '2px solid var(--primary)' : undefined,
-                                    color: opt.key === 'underline' ? 'var(--primary)' : 'white' }}>Book Now</span>
+                                    color: opt.key === 'underline' ? 'var(--primary)' : 'white'
+                                }}>Book Now</span>
                                 <span className="text-[10px] font-bold text-slate-500">{opt.label}</span>
                             </button>
                         ))}
@@ -1484,32 +1634,32 @@ export default function AgentThemeSettingsPage() {
 
     const renderEmailTab = () => (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-            <div className="bg-white/30 backdrop-blur-md rounded-[48px] border border-white/40 p-1 p-md-10 shadow-2xl overflow-hidden">
-                <EmailTemplateEditor 
-                initialTemplates={emailTemplates}
-                onSave={async (newTemplates) => {
-                    const token = localStorage.getItem('token') || '';
-                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                    
-                    setEmailTemplates(newTemplates);
-                    
-                    const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            email_templates: newTemplates
-                        })
-                    });
-                    
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.detail || "Failed to save templates");
-                    }
-                }}
-            />
+            <div className="bg-white/10 backdrop-blur-xl rounded-[48px] border border-white/20 p-4 md:p-10 shadow-2xl shadow-black/20 overflow-hidden relative">
+                <EmailTemplateEditor
+                    initialTemplates={emailTemplates}
+                    onSave={async (newTemplates) => {
+                        const token = localStorage.getItem('token') || '';
+                        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+                        setEmailTemplates(newTemplates);
+
+                        const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                email_templates: newTemplates
+                            })
+                        });
+
+                        if (!res.ok) {
+                            const err = await res.json();
+                            throw new Error(err.detail || "Failed to save templates");
+                        }
+                    }}
+                />
             </div>
         </div>
     );
@@ -1527,64 +1677,62 @@ export default function AgentThemeSettingsPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-[calc(100vh-80px)] bg-slate-50/30">
-            {/* ── Header & Tab Navigation ─────────────────────────────────────── */}
-            <div className="px-6 pt-6 pb-0 border-b border-white/20 bg-white/40 backdrop-blur-md sticky top-[70px] z-30">
-                <div className="max-w-5xl mx-auto">
-                    <div className="mb-4">
-                        <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-                            <span className="text-[var(--primary)]">{TABS.find(t => t.id === activeTab)?.icon}</span>
-                            {TABS.find(t => t.id === activeTab)?.label}
-                        </h1>
-                        <p className="text-sm text-slate-500 mt-1">
-                            {activeTab === 'theme' && 'Choose colors and build your brand identity'}
-                            {activeTab === 'homepage' && 'What customers see when they land on your homepage'}
-                            {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
-                            {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
-                            {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
-                             {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
-                             {activeTab === 'email' && 'Set the default visual style for booking confirmation emails'}
-                        </p>
-                    </div>
-
-                    {/* Horizontal Scrollable Tabs */}
-                    <div className="flex items-center gap-2 overflow-x-auto mb-6 pb-2 scrollbar-hide -mx-1 px-1">
-                        {TABS.map(tab => {
-                            const active = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as TabId)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap border-2 ${active
-                                        ? 'bg-[var(--primary-glow)] border-[var(--primary)] text-[var(--primary)] shadow-sm'
-                                        : 'bg-white/50 border-transparent text-slate-500 hover:text-slate-800 hover:bg-white/80'
-                                    }`}
-                                >
-                                    <span>{tab.icon}</span>
-                                    <span>{tab.label}</span>
-                                    {tab.count > 0 && (
-                                        <span className={`text-[10px] rounded-full px-1.5 py-0.5 ${active ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                            {tab.count}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
+        <div className="flex flex-col min-h-screen bg-transparent">
             {/* ── Main Content Area ────────────────────────────────────────────── */}
-            <main className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex-1 overflow-y-auto px-6 py-2 pb-24">
-                    <div className="max-w-5xl mx-auto">
+            <main className="flex-1 overflow-y-auto px-6 py-8 pb-24">
+                <div className="max-w-5xl mx-auto">
+                    {/* Modern Page Header Card */}
+                    <div className="page-header-card flex-col items-start gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+                                <span className="text-[var(--primary)]">{TABS.find(t => t.id === activeTab)?.icon}</span>
+                                {TABS.find(t => t.id === activeTab)?.label}
+                            </h1>
+                            <p className="text-[#8B5E34] text-sm mt-1.5 font-medium">
+                                {activeTab === 'theme' && 'Choose colors and build your brand identity'}
+                                {activeTab === 'homepage' && 'What customers see when they land on your homepage'}
+                                {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
+                                {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
+                                {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
+                                {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
+                                {activeTab === 'email' && 'Set the default visual style for booking confirmation emails'}
+                            </p>
+                        </div>
+
+                        {/* Horizontal Scrollable Tabs */}
+                        <div className="tab-bar w-full">
+                            {TABS.map(tab => {
+                                const active = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as TabId)}
+                                        className={cn("tab-item", active && "active")}
+                                    >
+                                        <span className="opacity-70">{tab.icon}</span>
+                                        <span>{tab.label}</span>
+                                        {tab.count > 0 && (
+                                            <span className={cn(
+                                                "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-all",
+                                                active ? "bg-[var(--primary)] text-white" : "bg-slate-200/50 text-slate-500"
+                                            )}>
+                                                {tab.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="w-full">
                         {activeTab === 'theme' && renderThemeTab()}
                         {activeTab === 'homepage' && renderHomepageTab()}
                         {activeTab === 'plantrip' && renderPlanTripTab()}
                         {activeTab === 'itinerary' && renderItineraryTab()}
                         {activeTab === 'cart' && renderCartTab()}
-                         {activeTab === 'uistyle' && renderUiStyleTab()}
-                         {activeTab === 'email' && renderEmailTab()}
+                        {activeTab === 'uistyle' && renderUiStyleTab()}
+                        {activeTab === 'email' && renderEmailTab()}
                     </div>
                 </div>
 

@@ -13,6 +13,7 @@ from app.api.deps import get_current_agent, check_permission
 from app.schemas import BookingResponse, BookingWithPackageResponse
 from pydantic import BaseModel
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -104,13 +105,33 @@ async def list_agent_bookings(
         selectinload(Booking.refund)
     )
     
-    result = await db.execute(stmt)
-    bookings = result.scalars().all()
-    
-    return {
-        "items": [BookingWithPackageResponse.model_validate(b) for b in bookings],
-        "total": total
-    }
+    try:
+        result = await db.execute(stmt)
+        bookings = result.scalars().all()
+        
+        items = []
+        for b in bookings:
+            try:
+                items.append(BookingWithPackageResponse.model_validate(b))
+            except Exception as ve:
+                logger.error(f"Validation failed for booking {b.id}: {ve}")
+                # Try to identify why
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Validation failed for booking {b.id}: {str(ve)}"
+                )
+
+        return {
+            "items": items,
+            "total": total
+        }
+    except Exception as e:
+        logger.error(f"Error in list_agent_bookings: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 

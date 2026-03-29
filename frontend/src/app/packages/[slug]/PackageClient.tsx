@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
+import Image from 'next/image'
 
 interface Activity {
     id: string
@@ -55,12 +56,12 @@ interface PackageDetail {
 }
 
 const timeSlotConfig = {
-    full_day: { icon: Calendar, label: 'Full Day', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
-    morning: { icon: Sun, label: 'Morning', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-    half_day: { icon: Clock, label: 'Half Day', color: 'text-teal-600', bgColor: 'bg-teal-50' },
-    afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    evening: { icon: Sunset, label: 'Evening', color: 'text-[var(--primary)]', bgColor: 'bg-orange-50' },
-    night: { icon: Moon, label: 'Night', color: 'text-purple-600', bgColor: 'bg-purple-50' }
+    full_day: { icon: Calendar, label: 'Full Day', color: 'text-[var(--primary)]', bgColor: 'bg-[var(--primary)]/10' },
+    morning: { icon: Sun, label: 'Morning', color: 'text-slate-600', bgColor: 'bg-slate-50' },
+    half_day: { icon: Clock, label: 'Half Day', color: 'text-slate-600', bgColor: 'bg-slate-50' },
+    afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-slate-600', bgColor: 'bg-slate-50' },
+    evening: { icon: Sunset, label: 'Evening', color: 'text-slate-600', bgColor: 'bg-slate-50' },
+    night: { icon: Moon, label: 'Night', color: 'text-slate-600', bgColor: 'bg-slate-50' }
 }
 
 export default function PackageDetailPage() {
@@ -175,8 +176,8 @@ export default function PackageDetailPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    <p className="mt-4 text-gray-600">Loading package details...</p>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
+                    <p className="mt-4 text-gray-500 font-medium">Loading package details...</p>
                 </div>
             </div>
         )
@@ -199,7 +200,7 @@ export default function PackageDetailPage() {
     return (
         <div className="min-h-screen">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
+            <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white py-8">
                 <div className="container mx-auto px-4">
                     <Button
                         variant="ghost"
@@ -218,22 +219,22 @@ export default function PackageDetailPage() {
                             </Badge>
                             <h1 className="text-4xl font-bold mb-2">{packageData.title}</h1>
                             {packageData.category && (
-                                <p className="text-blue-100">{packageData.category} Tour</p>
+                                <p className="text-white/80">{packageData.category} Tour</p>
                             )}
                         </div>
                         <div className="text-right">
-                            <p className="text-blue-100 text-sm">Starting from</p>
+                            <p className="text-white/80 text-sm">Starting from</p>
                             <p className="text-4xl font-bold">
                                 {packageData && gstSettings && !gstSettings.inclusive
                                     ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                     : `₹${packageData?.price_per_person.toLocaleString()}`
                                 }
                             </p>
-                            <p className="text-blue-100 text-sm">per person {gstSettings && !gstSettings.inclusive ? '(inc. GST)' : ''}</p>
+                            <p className="text-white/80 text-sm">per person {gstSettings && !gstSettings.inclusive ? '(inc. GST)' : ''}</p>
                         </div>
                     </div>
 
-                    <div className="flex gap-6 mt-6 text-blue-100">
+                    <div className="flex gap-6 mt-6 text-white/90">
                         <div className="flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
                             <span>{packageData.duration_days} days / {packageData.duration_nights} nights</span>
@@ -387,7 +388,7 @@ export default function PackageDetailPage() {
                                         <div className="flex items-center justify-between py-3 border-b">
                                             <span className="text-gray-600">Total Price</span>
                                             <div className="text-right">
-                                                <span className="text-2xl font-bold text-blue-600 block">
+                                                <span className="text-2xl font-bold text-[var(--primary)] block">
                                                     ₹{calculateTotal().toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                                 </span>
                                                 {gstSettings && !gstSettings.inclusive && (
@@ -398,7 +399,7 @@ export default function PackageDetailPage() {
 
                                         <Button
                                             variant="outline"
-                                            className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                                            className="w-full text-[var(--primary)] border-[var(--primary-glow)] hover:bg-[var(--primary-glow)]"
                                             onClick={() => setBookingConfirmed(false)}
                                         >
                                             Modify Booking
@@ -409,7 +410,7 @@ export default function PackageDetailPage() {
                                         <div className="flex items-center justify-between py-3 border-b">
                                             <span className="text-gray-600">Price per person</span>
                                             <div className="text-right">
-                                                <span className="text-2xl font-bold text-blue-600 block">
+                                                <span className="text-2xl font-bold text-[var(--primary)] block">
                                                     {packageData && gstSettings && !gstSettings.inclusive
                                                         ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                                         : `₹${packageData?.price_per_person.toLocaleString()}`
@@ -464,21 +465,23 @@ export default function PackageDetailPage() {
 
                     <div className="flex flex-col h-full max-h-[90vh]">
                         {/* Modal Header with Package Info */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b border-white/50 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                        <div className="bg-gradient-to-br from-[var(--primary-glow)] to-indigo-50/30 p-6 border-b border-white/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
 
                             <div className="flex gap-4 relative z-10">
                                 {packageData?.itinerary_by_day?.[0]?.morning?.[0]?.image_url ? (
-                                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-sm shrink-0">
-                                        <img
+                                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-sm shrink-0 relative">
+                                        <Image
                                             src={packageData.itinerary_by_day[0].morning[0].image_url}
                                             alt={packageData.title}
-                                            className="w-full h-full object-cover"
+                                            fill
+                                            className="object-cover"
+                                            sizes="80px"
                                         />
                                     </div>
                                 ) : (
                                     <div className="w-20 h-20 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                                        <MapPin className="h-8 w-8 text-blue-500" />
+                                        <MapPin className="h-8 w-8 text-[var(--primary)]" />
                                     </div>
                                 )}
                                 <div className="flex flex-col justify-center">
@@ -502,7 +505,7 @@ export default function PackageDetailPage() {
                             {/* Date Selection */}
                             <div className="space-y-3">
                                 <Label htmlFor="travel-date" className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-blue-600" />
+                                    <Calendar className="h-4 w-4 text-[var(--primary)]" />
                                     Date of Travel
                                 </Label>
                                 <Input
@@ -562,7 +565,7 @@ export default function PackageDetailPage() {
                             {/* Travelers Selection */}
                             <div className="space-y-3">
                                 <Label className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-blue-600" />
+                                    <Users className="h-4 w-4 text-[var(--primary)]" />
                                     Travelers
                                 </Label>
                                 <div className="glass-card rounded-xl p-4 space-y-3 border-white/60">
@@ -605,7 +608,7 @@ export default function PackageDetailPage() {
                                         <p className="text-sm text-gray-400 italic">Fill details to see price</p>
                                     ) : (
                                         <div className="flex items-baseline gap-2">
-                                            <span className="text-3xl font-bold text-blue-600">
+                                            <span className="text-3xl font-bold text-[var(--primary)]">
                                                 ₹{calculateTotal().toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </span>
                                         </div>
@@ -616,7 +619,7 @@ export default function PackageDetailPage() {
                                         {travelers.adults + travelers.children} × ₹{packageData?.price_per_person.toLocaleString()}
                                     </p>
                                     {gstSettings && !gstSettings.inclusive && (
-                                        <p className="text-xs text-blue-600 font-medium">+ {gstSettings.percentage}% GST</p>
+                                        <p className="text-xs text-[var(--primary)] font-medium">+ {gstSettings.percentage}% GST</p>
                                     )}
                                 </div>
                             </div>

@@ -92,7 +92,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                     <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white z-20">
                         <div className="flex flex-wrap gap-2 mb-3">
                             {activity.category && (
-                                <Badge className="bg-blue-600/90 hover:bg-blue-600 text-white border-none backdrop-blur-sm">
+                                <Badge className="bg-[var(--primary)] text-white border-none backdrop-blur-sm">
                                     {activity.category}
                                 </Badge>
                             )}
@@ -116,7 +116,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                         {/* Quick Info Bar - Sticky within scroll view usually, but placed at top here */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-100 border-b border-slate-200">
                             <div className="bg-white p-4 flex items-center gap-3 justify-center md:justify-start">
-                                <div className="p-2 rounded-full bg-blue-50 text-blue-600">
+                                <div className="p-2 rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
                                     <Clock className="h-4 w-4" />
                                 </div>
                                 <div>
@@ -232,7 +232,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                                 <button
                                                     key={idx}
                                                     onClick={() => setCurrentImageIndex(idx)}
-                                                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === idx ? 'border-blue-500 ring-1 ring-blue-500' : 'border-transparent hover:border-blue-300'}`}
+                                                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === idx ? 'border-[var(--primary)] ring-1 ring-[var(--primary)]' : 'border-transparent hover:border-[var(--primary)]/30'}`}
                                                 >
                                                     <Image src={img} alt={`Thumb ${idx}`} fill className="object-cover" />
                                                 </button>

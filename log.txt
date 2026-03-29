@@ -1,0 +1,41 @@
+Traceback (most recent call last):
+  File "D:\Hariharan\G-Project\RNT_Tour\test_bookings.py", line 9, in <module>
+    from app.database import AsyncSessionLocal
+  File "D:\Hariharan\G-Project\RNT_Tour\backend\app\database.py", line 4, in <module>
+    from app.config import settings
+  File "D:\Hariharan\G-Project\RNT_Tour\backend\app\config.py", line 94, in <module>
+    settings = Settings()
+               ^^^^^^^^^^
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\pydantic_settings\main.py", line 71, in __init__
+    super().__init__(
+  File "C:\Users\santh\AppData\Local\Programs\Python\Python312\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 9 validation errors for Settings
+SECRET_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+DATABASE_URL
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+JWT_SECRET_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+AMADEUS_CLIENT_ID
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+AMADEUS_CLIENT_SECRET
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+GEOAPIFY_API_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+TRIPJACK_API_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+GEMINI_API_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+PEXELS_API_KEY
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing

@@ -83,12 +83,6 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                         Revenue
                     </TabsTrigger>
                     <TabsTrigger
-                        value="bookings"
-                        className="rounded-xl px-6 font-bold data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all"
-                    >
-                        Bookings
-                    </TabsTrigger>
-                    <TabsTrigger
                         value="subscriptions"
                         className="rounded-xl px-6 font-bold data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all"
                     >
@@ -123,7 +117,24 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                 </div>
                 <div className="text-center border-r border-indigo-100 last:border-0">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Growth</p>
-                    <p className="text-xl font-black text-emerald-600">+12.4%</p>
+                    <p className={cn(
+                        "text-xl font-black",
+                        (() => {
+                            const valKey = activeTab === 'revenue' ? 'revenue' : 'subscriptions';
+                            const first = chartData[0]?.[valKey] || 0;
+                            const last = chartData[chartData.length - 1]?.[valKey] || 0;
+                            const growth = first > 0 ? ((last - first) / first * 100) : (last > 0 ? 100 : 0);
+                            return growth >= 0 ? "text-emerald-600" : "text-rose-600";
+                        })()
+                    )}>
+                        {(() => {
+                            const valKey = activeTab === 'revenue' ? 'revenue' : 'subscriptions';
+                            const first = chartData[0]?.[valKey] || 0;
+                            const last = chartData[chartData.length - 1]?.[valKey] || 0;
+                            const growth = first > 0 ? ((last - first) / first * 100) : (last > 0 ? 100 : 0);
+                            return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+                        })()}
+                    </p>
                 </div>
                 <div className="text-center last:border-0">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Highest Point</p>
@@ -175,41 +186,6 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="bookings" className="mt-0 outline-none">
-                        <div className="h-[350px] w-full pt-4">
-                            <ResponsiveContainer width="100%" height="100%">
-                                {period === 'ytm' ? (
-                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="ytmBookingsGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4}/>
-                                                <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
-                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
-                                        <Tooltip content={<CustomTooltip activeTab="bookings" chartData={chartData} />} />
-                                        <Area type="monotone" dataKey="subscriptions" stroke="#6366F1" strokeWidth={4} fillOpacity={1} fill="url(#ytmBookingsGradient)" />
-                                    </AreaChart>
-                                ) : (
-                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="bookingsGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.8} />
-                                                <stop offset="100%" stopColor="#C084FC" stopOpacity={0.1} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
-                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
-                                        <Tooltip content={<CustomTooltip activeTab="bookings" chartData={chartData} />} />
-                                        <Bar dataKey="subscriptions" fill="url(#bookingsGradient)" radius={[12, 12, 0, 0]} barSize={period === 'monthly' ? 45 : period === 'weekly' ? 30 : 50} minPointSize={1} />
-                                    </BarChart>
-                                )}
-                            </ResponsiveContainer>
-                        </div>
-                    </TabsContent>
 
                     <TabsContent value="subscriptions" className="mt-0 outline-none">
                         <div className="h-[350px] w-full pt-4">

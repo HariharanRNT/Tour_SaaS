@@ -89,7 +89,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     // Minimal reset + custom styles for editable elements
     const styledHtml = `
       <style>
-        body { margin: 0; padding: 20px; background: #f1f5f9; display: flex; justify-content: center; }
+        body { margin: 0; padding: 20px; background: rgba(255, 255, 255, 0.05); display: flex; justify-content: center; }
         [data-edit] { 
           position: relative; 
           outline: none; 
@@ -211,9 +211,9 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[850px] border border-white/20 rounded-[32px] overflow-hidden bg-slate-950/40 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="flex flex-col min-h-[900px] h-[calc(100vh-160px)] border border-white/30 rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-3xl shadow-[0_32px_128px_-12px_rgba(0,0,0,0.3)] animate-in fade-in slide-in-from-bottom-8 duration-1000 relative">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-6 border-b border-white/10 bg-white/5">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-8 border-b border-white/10 bg-white/10 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
             <MousePointer2 className="w-6 h-6 text-blue-400" />
@@ -252,7 +252,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-72 border-r border-white/10 bg-white/5 overflow-y-auto hidden md:block">
+        <div className="w-72 border-r border-white/10 bg-white/10 backdrop-blur-md overflow-y-auto hidden md:block">
           <div className="p-4 space-y-2">
             <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-4 mb-4">Email Types</h3>
             {TEMPLATE_OPTIONS.map((opt) => (
@@ -305,7 +305,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         </div>
 
         {/* Preview Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-slate-900/30">
+        <div className="flex-1 flex flex-col min-w-0 bg-white/5 backdrop-blur-sm">
           <div className="flex items-center justify-between p-4 border-b border-white/5">
             <div className="flex items-center gap-4">
                 <div className="flex p-1.5 bg-slate-950/50 rounded-xl border border-white/10">
@@ -333,17 +333,17 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-              <div className="flex justify-center h-full">
+              <div className="flex justify-center">
                 <div 
-                    className={`bg-white rounded-[24px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-500 border border-white/10 ${
-                    previewMode === "mobile" ? "w-[375px]" : "w-full max-w-[700px]"
+                    className={`bg-white/20 backdrop-blur-2xl rounded-[32px] shadow-[0_48px_100px_-24px_rgba(0,0,0,0.5)] transition-all duration-700 border border-white/30 p-2 md:p-6 mb-8 ${
+                    previewMode === "mobile" ? "w-[375px]" : "w-full max-w-[750px]"
                     }`}
                 >
                     <iframe
                         ref={iframeRef}
                         title="Template Editor"
-                        className="w-full h-full border-none bg-white"
-                        style={{ height: '1000px' }}
+                        className="w-full border-none bg-white rounded-2xl shadow-xl"
+                        style={{ height: '1400px' }}
                     />
                 </div>
               </div>

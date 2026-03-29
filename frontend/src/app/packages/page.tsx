@@ -117,10 +117,10 @@ export default function MultiStepPackageSearch() {
     return (
         <div className="min-h-screen bg-transparent">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-8">
+            <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white py-8">
                 <div className="container mx-auto px-4">
                     <h1 className="text-3xl font-bold">Find Your Perfect Package</h1>
-                    <p className="text-blue-100 mt-2">Step {currentStep} of 4</p>
+                    <p className="text-white/80 mt-2">Step {currentStep} of 4</p>
                 </div>
             </div>
 
@@ -132,7 +132,7 @@ export default function MultiStepPackageSearch() {
                             <div key={step} className="flex items-center">
                                 <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${step <= currentStep
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-[var(--primary)] text-white'
                                         : 'bg-gray-200 text-gray-500'
                                         }`}
                                 >
@@ -140,7 +140,7 @@ export default function MultiStepPackageSearch() {
                                 </div>
                                 {step < 4 && (
                                     <div
-                                        className={`h-1 w-20 mx-2 ${step < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+                                        className={`h-1 w-20 mx-2 ${step < currentStep ? 'bg-[var(--primary)]' : 'bg-gray-200'
                                             }`}
                                     />
                                 )}
@@ -189,7 +189,7 @@ export default function MultiStepPackageSearch() {
                                         <Badge
                                             key={dest}
                                             variant="secondary"
-                                            className="cursor-pointer hover:bg-blue-100"
+                                            className="cursor-pointer hover:bg-[var(--primary-glow)]"
                                             onClick={() => handleDestinationChipClick(dest)}
                                         >
                                             {dest}
@@ -377,9 +377,9 @@ export default function MultiStepPackageSearch() {
                                                     <MapPin className="h-3 w-3 mr-1" />
                                                     {pkg.destination}
                                                 </Badge>
-                                                <Badge className="bg-green-600">
+                                                <Badge className="bg-[var(--primary)]">
                                                     <span className="mr-0.5">₹</span>
-                                                    {pkg.price_per_person}
+                                                    {pkg.price_per_person.toLocaleString()}
                                                 </Badge>
                                             </div>
                                             <CardTitle className="text-xl">{pkg.title}</CardTitle>

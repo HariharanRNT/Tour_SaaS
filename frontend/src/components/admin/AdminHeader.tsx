@@ -60,7 +60,9 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         queryKey: [isAdmin ? 'admin-notifications' : 'agent-notifications'],
         queryFn: isAdmin ? fetchAdminNotifications : fetchAgentNotifications,
         enabled: (isAdmin || isAgent),
-        refetchInterval: 30000 // Poll every 30 seconds
+        refetchInterval: 30000, // Poll every 30 seconds
+        staleTime: 15000, // Keep data fresh for 15s to prevent refetch on navigation
+        refetchOnWindowFocus: false
     })
 
     const markAsReadMutation = useMutation({
@@ -118,14 +120,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
     return (
         <header
-            className="w-[calc(100%-32px)] mx-4 mt-4 h-[70px] px-6 flex items-center justify-between gap-4 transition-all duration-300 rounded-[24px] z-50 relative"
-            style={{
-                background: 'rgba(255,255,255,0.20)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid var(--primary-light)',
-                boxShadow: '0 8px 32px var(--primary-glow)'
-            }}
+            className="w-[calc(100%-32px)] mx-4 mt-4 h-[70px] px-6 flex items-center justify-between gap-4 transition-all duration-300 rounded-[24px] z-50 relative glass-agent"
         >
 
             <div className="flex items-center gap-4 flex-1">

@@ -5,7 +5,7 @@ services:
   - type: web
     name: tour-saas-api
     env: python
-    rootDir: backend
+    rootDirectory: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -25,7 +25,7 @@ services:
   - type: worker
     name: tour-saas-worker
     env: python
-    rootDir: backend
+    rootDirectory: backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A app.celery_app worker --loglevel=info
     envVars:
@@ -43,7 +43,7 @@ services:
   - type: worker
     name: tour-saas-beat
     env: python
-    rootDir: backend
+    rootDirectory: backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A app.celery_app beat --loglevel=info
     envVars:
@@ -61,7 +61,7 @@ services:
   - type: web
     name: tour-saas-frontend
     env: node
-    rootDir: frontend
+    rootDirectory: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:

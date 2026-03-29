@@ -109,47 +109,38 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     return (
         <aside
             className={cn(
-                "flex flex-col z-[100] border-r",
+                "sidebar flex flex-col z-[100] transition-all duration-300",
                 "fixed top-0 bottom-0 left-0",
                 collapsed ? "w-[70px]" : "w-[260px]",
                 className
             )}
-            style={{
-                background: 'rgba(255, 255, 255, 0.35)',
-                backdropFilter: 'blur(32px)',
-                WebkitBackdropFilter: 'blur(32px)',
-                borderRight: '1px solid rgba(255, 250, 245, 0.2)'
-            }}
         >
-            {/* Subtle inner glow on right edge */}
-            <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[var(--primary-light)]/40 to-transparent" />
-
             {/* Logo Section */}
-            <div className="h-20 flex px-5 items-center justify-between border-b border-white/30 shrink-0">
+            <div className="shrink-0">
                 {!collapsed && (
-                    <div className="flex-1 flex flex-col min-w-0 pr-2">
-                        <Link href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-white/40 shadow-xl transition-all hover:scale-[1.02] relative group" style={{ background: 'linear-gradient(135deg, #FF8C5A, #E06830)', boxShadow: '0 4px 15px rgba(224, 104, 48, 0.35)' }}>
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white/20 backdrop-blur-sm shadow-inner">
-                                <Briefcase className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="font-bold text-white tracking-tight leading-tight block truncate text-[14px]">
-                                    {userRole === 'agent' ? 'Agent Portal' : 'Admin Portal'}
-                                </span>
-                                <span className="text-[9px] uppercase tracking-widest text-white/80 font-black block truncate">
-                                    Tour Operations
-                                </span>
-                            </div>
-                        </Link>
-                    </div>
+                    <Link 
+                        href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} 
+                        className="sidebar-header group"
+                    >
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-white/20 backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform">
+                            <Briefcase className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="title truncate">
+                                {userRole === 'agent' ? 'Agent Portal' : 'Admin Portal'}
+                            </h2>
+                            <p className="subtitle truncate">
+                                Tour Operations
+                            </p>
+                        </div>
+                    </Link>
                 )}
 
                 {collapsed && (
-                    <div className="w-full flex justify-center">
+                    <div className="w-full flex justify-center py-6">
                         <div className="relative group">
-                            <div className="absolute inset-0 bg-[#FF8C5A] blur-lg opacity-40 group-hover:opacity-60 transition-opacity rounded-xl" />
-                            <div className="bg-gradient-to-br from-[#FF8C5A] to-[#E06830] p-2.5 rounded-xl border border-white/20 relative group-hover:scale-110 transition-transform duration-300 shadow-xl">
+                            <div className="absolute inset-0 blur-lg opacity-40 group-hover:opacity-60 transition-opacity rounded-xl" style={{ backgroundColor: 'var(--primary)' }} />
+                            <div className="p-2.5 rounded-xl border border-white/20 relative group-hover:scale-110 transition-transform duration-300 shadow-xl" style={{ backgroundColor: 'var(--primary)' }}>
                                 <Plane className="h-5 w-5 text-white" />
                             </div>
                         </div>
@@ -182,56 +173,29 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
-                                            "flex items-center text-[13px] transition-all duration-300 relative group gap-[12px]",
-                                            isActive
-                                                ? "text-white"
-                                                : "hover:bg-white/5 hover:text-white",
-                                            collapsed ? "justify-center p-3 rounded-xl mx-3 my-1.5" : "px-[16px] py-[10.5px] rounded-full mx-3 my-1.5"
+                                            "nav-item flex items-center transition-all duration-300 relative group gap-[12px]",
+                                            isActive && "active",
+                                            collapsed ? "justify-center p-3 mx-3 my-1.5" : "px-[16px] py-[10.5px] mx-3 my-1.5"
                                         )}
-                                        style={isActive ? {
-                                            color: '#ffffff',
-                                            background: 'linear-gradient(135deg, rgba(255, 140, 90, 0.25), rgba(255, 179, 138, 0.15))',
-                                            border: '1px solid rgba(255, 140, 90, 0.3)',
-                                            fontWeight: 700,
-                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)'
-                                        } : {
-                                            color: 'rgba(60, 40, 30, 0.65)',
-                                            fontWeight: 500
-                                        }}
                                         title={collapsed ? item.label : undefined}
                                     >
                                         {/* Icon */}
                                         <item.icon
                                             className={cn(
-                                                "h-5 w-5 transition-all duration-300 flex-shrink-0",
-                                                isActive
-                                                    ? "text-[#FF8C5A] drop-shadow-[0_0_8px_rgba(255,140,90,0.4)] scale-110"
-                                                    : "group-hover:text-white group-hover:scale-110"
+                                                "icon transition-all duration-300 flex-shrink-0",
+                                                isActive && "scale-110"
                                             )}
-                                            style={isActive ? {
-                                                strokeWidth: 2.5
-                                            } : {
-                                                color: 'rgba(255,255,255,0.50)',
-                                                strokeWidth: 2
-                                            }}
                                         />
 
                                         {/* Label & Indicator */}
                                         {!collapsed && (
                                             <div className="flex items-center gap-3 flex-1">
                                                 <div className={cn(
-                                                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                                                    isActive
-                                                        ? "bg-[#FF8C5A] shadow-[0_0_8px_rgba(255,140,90,0.8)] scale-125"
-                                                        : "bg-black/10"
+                                                    "nav-dot transition-all duration-300",
+                                                    isActive ? "opacity-100 scale-125" : "opacity-20"
                                                 )} />
-                                                <span className="tracking-tight">{item.label}</span>
+                                                <span className="nav-label tracking-tight">{item.label}</span>
                                             </div>
-                                        )}
-
-                                        {/* Hover glow bubble for inactive */}
-                                        {!isActive && (
-                                            <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[#FF8C5A]/5 pointer-events-none border border-transparent group-hover:border-[#FF8C5A]/10" />
                                         )}
                                     </Link>
                                 )
@@ -258,48 +222,57 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
             </div>
 
             {/* Bottom Actions (Footer Section) */}
-            <div className="p-3 border-t border-white/30 space-y-1 shrink-0 mt-auto">
+            <div className="shrink-0 mt-auto">
                 <Link
                     href="/admin/help"
                     className={cn(
-                        "flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 group hover:bg-white/10",
+                        "nav-item flex items-center px-4 py-2.5 transition-all duration-200 group hover:bg-white/10",
                         collapsed && "justify-center px-0"
                     )}
-                    style={{ color: 'rgba(255,255,255,0.50)', fontSize: '13px' }}
                     title="Help & Support"
                 >
-                    <HelpCircle className={cn("h-4 w-4 transition-colors group-hover:text-white", !collapsed && "mr-2")} style={{ color: 'rgba(255,255,255,0.50)' }} />
-                    {!collapsed && <span>Help & Support</span>}
+                    <HelpCircle className={cn("icon transition-colors group-hover:scale-110", !collapsed && "mr-2")} />
+                    {!collapsed && <span className="nav-label">Help & Support</span>}
                 </Link>
 
                 {/* User Avatar & Name */}
                 {!collapsed ? (
-                    <div className="flex items-center gap-3 px-3 py-3 mt-1 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-sm hover:bg-white/20 transition-colors">
+                    <div className="sidebar-user transform transition-all hover:bg-white/20">
                         {/* Avatar circle with branded background */}
-                        <div className="h-8 w-8 rounded-xl bg-[var(--primary)] flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[var(--primary)]/20 flex-shrink-0">
+                        <div className="user-avatar h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
                             {((user?.first_name?.[0] || '') + (user?.last_name?.[0] || 'U')).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-white/90 truncate">
+                            <p className="user-name truncate">
                                 {user?.first_name} {user?.last_name}
                             </p>
-                            <p className="text-[10px] text-white/60 truncate uppercase tracking-wider font-bold">
+                            <p className="user-role truncate uppercase tracking-wider font-bold">
                                 {isSubUser ? `Staff | ${user?.agency_name || 'Agent'}` : (userRole === 'admin' ? 'Administrator' : 'Agent Owner')}
                             </p>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white/60 hover:text-white hover:bg-white/20 rounded-lg flex-shrink-0 transition-colors" onClick={() => {
-                            logout()
-                            window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
-                        }}>
-                            <LogOut className="h-3.5 w-3.5" />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                                className="h-8 w-8 text-[#92400e] hover:text-[var(--primary)] hover:bg-white/20 rounded-lg shrink-0 transition-colors" 
+                            onClick={() => {
+                                logout()
+                                window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
+                            }}
+                        >
+                            <LogOut className="h-4 w-4" />
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex justify-center mt-1">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-white/60 hover:text-white hover:bg-white/20 rounded-xl transition-colors" onClick={() => {
-                            logout()
-                            window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
-                        }}>
+                    <div className="flex justify-center p-3 border-t border-white/30">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-9 w-9 text-[#92400e] hover:text-[var(--primary)] hover:bg-white/20 rounded-xl transition-all" 
+                            onClick={() => {
+                                logout()
+                                window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
+                            }}
+                        >
                             <LogOut className="h-4 w-4" />
                         </Button>
                     </div>

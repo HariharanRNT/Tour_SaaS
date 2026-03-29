@@ -32,13 +32,18 @@ import { fetchDashboardStats } from '@/lib/api'
 
 const INITIAL_STATS = {
     totalPackages: 0,
-    totalBookings: 128,
-    totalRevenue: 1400,
-    avgOrderValue: 352,
-    conversionRate: 18.4,
-    agents: { total: 5, active: 4, inactive: 1, pending: 2 },
-    activeSubscriptions: 4,
+    totalBookings: 0,
+    totalRevenue: 0,
+    pendingPaymentsValue: 0,
+    avgOrderValue: 0,
+    conversionRate: 0,
+    agents: { total: 0, active: 0, inactive: 0, pending: 0 },
+    activeSubscriptions: 0,
     subscriptionsNearingExpiry: 0,
+    revenueGrowth: 0,
+    agentGrowth: 0,
+    bookingGrowth: 0,
+    changeLabel: "vs last month",
     packageAnalytics: {
         popularDestinations: [],
         agentActivities: []
@@ -50,40 +55,24 @@ const INITIAL_STATS = {
     monthlyTrends: [],
     ytmTrends: [],
     weeklyTrends: [],
-    dailyTrends: [
-        { name: 'Mon', revenue: 120, bookings: 2 },
-        { name: 'Tue', revenue: 340, bookings: 5 },
-        { name: 'Wed', revenue: 210, bookings: 3 },
-        { name: 'Thu', revenue: 450, bookings: 8 },
-        { name: 'Fri', revenue: 380, bookings: 6 },
-        { name: 'Sat', revenue: 520, bookings: 10 },
-        { name: 'Sun', revenue: 480, bookings: 9 },
-    ],
-    leaderboard: [
-        { name: "ABC Travels", revenue: 600, bookings: 32, avatar: "A" },
-        { name: "Global Travels", revenue: 420, bookings: 24, avatar: "G" },
-        { name: "Sky Tours", revenue: 210, bookings: 12, avatar: "S" },
-    ],
-    renewals: [
-        { name: "ABC Travels", date: "Mar 12", daysLeft: 6 },
-        { name: "Sky Tours", date: "Mar 18", daysLeft: 12 },
-        { name: "Travel Hub", date: "Mar 22", daysLeft: 16 },
-    ],
+    dailyTrends: [],
+    leaderboard: [],
+    renewals: [],
     health: {
-        activePlans: 4,
-        expiringSoon: 1,
-        trialUsers: 2,
-        churnRate: 5,
+        activePlans: 0,
+        expiringSoon: 0,
+        trialUsers: 0,
+        churnRate: 0,
         system: [
-            { name: "API Status", status: "Operational", color: "text-emerald-500" },
-            { name: "Payments", status: "Active", color: "text-emerald-500" },
-            { name: "Bookings API", status: "Delay", color: "text-amber-500" },
+            { name: "API Status", status: "Loading...", color: "text-slate-400" },
+            { name: "Payments", status: "Loading...", color: "text-slate-400" },
+            { name: "Bookings API", status: "Loading...", color: "text-slate-400" },
         ]
     },
     sparklines: {
-        revenue: [30, 45, 35, 60, 55, 75, 70],
-        agents: [2, 3, 3, 4, 4, 4, 4],
-        bookings: [10, 15, 8, 20, 18, 25, 22]
+        revenue: [],
+        agents: [],
+        bookings: []
     }
 }
 
@@ -236,8 +225,8 @@ export default function AdminDashboard() {
                     <StatCard
                         title="Total Revenue"
                         value={`₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
-                        change={12}
-                        changeLabel="vs last month"
+                        change={stats.revenueGrowth}
+                        changeLabel={stats.changeLabel}
                         secondMetric={`Avg booking: ₹${stats.avgOrderValue}`}
                         icon={DollarSign}
                         colorClass="bg-emerald-500"
@@ -248,8 +237,8 @@ export default function AdminDashboard() {
                     <StatCard
                         title="Active Agents"
                         value={stats.agents.active}
-                        change={5}
-                        changeLabel="new this week"
+                        change={stats.agentGrowth}
+                        changeLabel={stats.changeLabel}
                         secondMetric={`${stats.agents.pending} pending approvals`}
                         icon={Users}
                         colorClass="bg-blue-500"
@@ -274,7 +263,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
                     {[
                         { label: 'Total Bookings', value: stats.totalBookings, color: 'text-indigo-600', borderColor: 'border-l-indigo-500' },
-                        { label: 'Pending Payments', value: `₹2.1k`, color: 'text-amber-600', borderColor: 'border-l-amber-500' },
+                        { label: 'Pending Payments', value: `₹${(stats.pendingPaymentsValue / 1000).toFixed(1)}k`, color: 'text-amber-600', borderColor: 'border-l-amber-500' },
                         { label: 'Active Plans', value: stats.activeSubscriptions, color: 'text-emerald-600', borderColor: 'border-l-emerald-500' },
                         { label: 'Conversion Rate', value: `${stats.conversionRate}%`, color: 'text-rose-600', borderColor: 'border-l-rose-500' },
                     ].map((pill, i) => (
