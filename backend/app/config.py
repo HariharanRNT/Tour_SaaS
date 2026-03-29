@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Tour SaaS API"
     APP_ENV: str = "development"
     DEBUG: bool = True
+    PORT: int = 8000
     SECRET_KEY: str
     API_V1_PREFIX: str = "/api/v1"
     FRONTEND_URL: str = "http://localhost:3000"
@@ -92,3 +93,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Post-processing for production
+if settings.APP_ENV == "production":
+    settings.DEBUG = False

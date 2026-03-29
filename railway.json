@@ -1,0 +1,42 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": {
+    "api": {
+      "name": "tour-saas-api",
+      "source": {
+        "root": "backend"
+      },
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+      "healthcheck": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 5,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      }
+    },
+    "worker": {
+      "name": "tour-saas-worker",
+      "source": {
+        "root": "backend"
+      },
+      "startCommand": "celery -A app.celery_app worker --loglevel=info"
+    },
+    "beat": {
+      "name": "tour-saas-beat",
+      "source": {
+        "root": "backend"
+      },
+      "startCommand": "celery -A app.celery_app beat --loglevel=info"
+    }
+  }
+}
