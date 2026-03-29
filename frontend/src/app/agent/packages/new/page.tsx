@@ -1917,10 +1917,10 @@ export default function CreatePackagePage() {
 
                                                                         // 4. Update form state
                                                                         updateFormData('feature_image_url', file_url);
-                                                                        toast.update(toastId, { render: 'Image uploaded successfully!', type: 'success', isLoading: false });
+                                                                        toast.success('Image uploaded successfully!', { id: toastId });
                                                                     } catch (err) {
                                                                         console.error(err);
-                                                                        toast.update(toastId, { render: 'Upload failed', type: 'error', isLoading: false });
+                                                                        toast.error('Upload failed', { id: toastId });
                                                                     }
                                                                 }
                                                             }}
