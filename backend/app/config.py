@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "static/uploads"
     
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://agent.local:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://agent.local:3000,https://your-frontend.vercel.app"
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60

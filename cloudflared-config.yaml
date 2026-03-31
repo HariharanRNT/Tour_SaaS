@@ -1,0 +1,18 @@
+# Cloudflare Tunnel Configuration
+# See: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/config-file/
+
+# The tunnel UUID (generated when you create the tunnel)
+# tunnel: <tunnel-id>
+# credentials-file: /etc/cloudflared/<tunnel-id>.json
+
+ingress:
+  # 1. API Backend (FastAPI on Docker)
+  - hostname: api.yourdomain.com
+    service: http://api:8000
+  
+  # 2. Redis Insight (Optional, if you want to monitor Redis)
+  # - hostname: redis.yourdomain.com
+  #   service: http://redis-insight:8001
+
+  # 3. Default catch-all (404)
+  - service: http_status:404

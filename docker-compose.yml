@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Database (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: tour-saas-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tour_saas_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tour_saas_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-tour_saas}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tour_saas_user -d tour_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # 2. Redis (Cache, Broker, Backend)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: tour-saas-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # 3. Backend API (FastAPI)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tour-saas-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tour_saas_user}:${POSTGRES_PASSWORD:-tour_saas_pass}@db:5432/${POSTGRES_DB:-tour_saas}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - APP_ENV=production
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/static:/app/static
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  # ---------------------------------------------------------------------------
+  # 4. Celery Worker (Background Tasks)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tour-saas-worker
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tour_saas_user}:${POSTGRES_PASSWORD:-tour_saas_pass}@db:5432/${POSTGRES_DB:-tour_saas}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    command: celery -A app.celery_app worker --loglevel=info
+
+  # ---------------------------------------------------------------------------
+  # 5. Celery Beat (Scheduled Tasks)
+  # ---------------------------------------------------------------------------
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tour-saas-beat
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tour_saas_user}:${POSTGRES_PASSWORD:-tour_saas_pass}@db:5432/${POSTGRES_DB:-tour_saas}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    command: celery -A app.celery_app beat --loglevel=info
+
+  # ---------------------------------------------------------------------------
+  # 6. Cloudflare Tunnel (Optional, needs tunnel token)
+  # ---------------------------------------------------------------------------
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: tour-saas-tunnel
+  #   restart: always
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  #   command: tunnel --no-autoupdate run
+
+volumes:
+  postgres_data:
