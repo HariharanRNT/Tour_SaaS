@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check, Plane, FileDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { packagesEnhancedAPI } from '@/lib/api'
+import { packagesEnhancedAPI, API_URL } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -92,7 +92,7 @@ export default function PackageDetailPage() {
             const headers: Record<string, string> = {}
             if (token) headers['Authorization'] = `Bearer ${token}`
 
-            const res = await fetch('http://localhost:8000/api/v1/agent/settings', { headers })
+            const res = await fetch(`${API_URL}/api/v1/agent/settings`, { headers })
             if (res.ok) {
                 const data = await res.json()
                 setGstSettings({
@@ -275,8 +275,7 @@ export default function PackageDetailPage() {
                                     variant="outline" 
                                     size="sm"
                                     onClick={() => {
-                                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-                                        window.open(`${apiUrl}/api/v1/packages/${packageData.id}/itinerary-pdf`, '_blank')
+                                        window.open(`${API_URL}/api/v1/packages/${packageData.id}/itinerary-pdf`, '_blank')
                                     }}
                                 >
                                     <FileDown className="mr-2 h-4 w-4" />

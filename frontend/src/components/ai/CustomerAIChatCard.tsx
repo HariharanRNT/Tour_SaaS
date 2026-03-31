@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { API_URL } from "@/lib/api"
 
 interface Message {
     role: 'user' | 'assistant'
@@ -112,7 +113,7 @@ export default function CustomerAIChatCard() {
                 headers['Authorization'] = `Bearer ${token}`
             }
 
-            const response = await fetch('http://localhost:8000/api/v1/ai-assistant/chat', {
+            const response = await fetch(`${API_URL}/api/v1/ai-assistant/chat`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
@@ -173,7 +174,7 @@ export default function CustomerAIChatCard() {
                 preferences: { source: 'ai_chat' }
             }
 
-            const response = await fetch('http://localhost:8000/api/v1/trip-planner/create-session', {
+            const response = await fetch(`${API_URL}/api/v1/trip-planner/create-session`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(payload)

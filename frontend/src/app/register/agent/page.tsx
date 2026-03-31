@@ -19,6 +19,7 @@ import { Country, State, City } from 'country-state-city'
 import { ICountry, IState, ICity } from 'country-state-city'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { API_URL } from '@/lib/api'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -125,7 +126,7 @@ export default function AgentRegisterPage() {
                 state: State.getStateByCodeAndCountry(data.state, data.country)?.name || data.state }
             delete (payload as any).captcha
 
-            const response = await fetch('http://localhost:8000/api/v1/auth/register/agent', {
+            const response = await fetch(`${API_URL}/api/v1/auth/register/agent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

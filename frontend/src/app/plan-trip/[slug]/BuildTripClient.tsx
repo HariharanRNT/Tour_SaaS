@@ -11,7 +11,7 @@ import { getValidImageUrl } from '@/lib/utils/image'
 import { formatDate, cn } from '@/lib/utils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
-import { flightsAPI } from '@/lib/api'
+import { flightsAPI, API_URL } from '@/lib/api'
 import { FlightCard, Flight } from '@/components/itinerary/flight-card'
 import { FlightFilters, FlightFilterState } from '@/components/itinerary/flight-filters'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -307,7 +307,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 headers['X-Domain'] = window.location.hostname
             }
 
-            const response = await fetch(`http://localhost:8000/api/v1/trip-planner/session/${sessionId}`, {
+            const response = await fetch(`${API_URL}/api/v1/trip-planner/session/${sessionId}`, {
                 headers
             })
             if (response.ok) {
@@ -359,7 +359,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     const loadPackagePreview = async (pkgId: string) => {
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/packages/${pkgId}/itinerary`)
+            const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}/itinerary`)
             if (res.ok) {
                 const data = await res.json()
                 // Mock session-like structure for preview
@@ -398,7 +398,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const loadPackagePreviewBySlug = async (pkgSlug: string) => {
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-            const res = await fetch(`http://127.0.0.1:8000/api/v1/packages/slug/${pkgSlug}/itinerary`, {
+            const res = await fetch(`${API_URL}/api/v1/packages/slug/${pkgSlug}/itinerary`, {
                 headers: { 'X-Domain': domain }
             })
             if (res.ok) {
@@ -550,7 +550,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 const headers: Record<string, string> = { 'Content-Type': 'application/json' }
                 if (token) headers['Authorization'] = `Bearer ${token}`
 
-                const createRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/trip-planner/create-session`, {
+                const createRes = await fetch(`${API_URL}/api/v1/trip-planner/create-session`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(createPayload)
@@ -577,7 +577,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' }
             if (token) headers['Authorization'] = `Bearer ${token}`
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/trip-planner/session/${currentSessionId}`, {
+            const response = await fetch(`${API_URL}/api/v1/trip-planner/session/${currentSessionId}`, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify(payload)

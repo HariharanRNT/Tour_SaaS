@@ -19,6 +19,7 @@ import { PassengerCounter } from '@/components/packages/PassengerCounter'
 import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRight, ArrowRight, Loader2, PlayCircle, Image as ImageIcon, CheckCircle2, RotateCcw, ChevronDown, Check, Mountain, Waves, Heart, Sun, Plane, Trees, Palmtree, Compass, Camera, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { API_URL } from '@/lib/api'
 
 // Types
 interface Package {
@@ -161,7 +162,7 @@ function PlanTripContent() {
         const fetchPopularDestinations = async () => {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch('http://localhost:8000/api/v1/trip-planner/popular-destinations', {
+                const res = await fetch(`${API_URL}/api/v1/trip-planner/popular-destinations`, {
                     headers: { 'X-Domain': domain }
                 })
                 if (res.ok) {
@@ -214,7 +215,7 @@ function PlanTripContent() {
 
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-            const res = await fetch(`http://localhost:8000/api/v1/packages/config/suggestions?q=${encodeURIComponent(q)}`, {
+            const res = await fetch(`${API_URL}/api/v1/packages/config/suggestions?q=${encodeURIComponent(q)}`, {
                 headers: { 'X-Domain': domain },
                 signal: controller.signal
             })
@@ -287,7 +288,7 @@ function PlanTripContent() {
             // Sort
             if (sort !== 'recommended') params.append('sort', sort)
 
-            const res = await fetch(`http://localhost:8000/api/v1/packages?${params.toString()}`, {
+            const res = await fetch(`${API_URL}/api/v1/packages?${params.toString()}`, {
                 headers: { 'X-Domain': domain }
             })
 

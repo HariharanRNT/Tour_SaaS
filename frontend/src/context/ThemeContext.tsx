@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { themes, Theme } from '@/lib/themes';
+import { API_URL } from '@/lib/api';
 
 // Single shared key so all portals (agent + customer) stay in sync
 const SHARED_THEME_KEY = 'app-theme';
@@ -146,7 +147,6 @@ export function ThemeProvider({
             if (hasSynced.current) return;
             
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
                 const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
                     cache: 'no-store',
                     headers: {
