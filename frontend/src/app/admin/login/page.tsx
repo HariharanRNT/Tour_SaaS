@@ -1,5 +1,7 @@
 'use client'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,13 +45,15 @@ export default function AdminLoginPage() {
 
         try {
             // Call login API
-            const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+            const response = await fetch(`${API_URL}/api/v1/auth/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded' },
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 body: new URLSearchParams({
                     'username': email,
-                    'password': password })
+                    'password': password
+                })
             })
 
             const data = await response.json()
