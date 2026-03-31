@@ -20,7 +20,7 @@ export default function AdminLayout({
 
     return (
         <RoleGuard allowedRoles={['admin', 'ADMIN']} publicRoutes={['/admin/login']}>
-            <div className="flex bg-transparent min-h-[100vh] font-sans">
+            <div className="flex bg-transparent min-h-[100vh] font-sans admin-panel">
                 <AdminSidebar onCollapsedChange={setIsSidebarCollapsed} />
                 <div
                     className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"

@@ -122,7 +122,11 @@ class CustomerNotificationService:
             subject = data.get("subject") or subject_map.get(template_type, "Notification")
         else:
             from app.utils.template_renderer import render_template
-            from app.utils.customer_email_templates import get_customer_notification_template_config, get_customer_notification_html_content
+            from app.utils.customer_email_templates import (
+                get_customer_notification_template_config, 
+                get_customer_notification_html_content,
+                get_customer_notification_html
+            )
             
             # 1. Get the template configuration (subject and HTML content)
             template_config = get_customer_notification_template_config(template_type, data)
@@ -133,6 +137,15 @@ class CustomerNotificationService:
             # 3. Render template with data
             html_body = render_template(html_content, data, template_type=template_type)
             subject = template_config.get("subject")
+
+            # 4. Fallback to legacy HTML template if still empty body
+            if not html_body:
+                legacy_subject, legacy_html = get_customer_notification_html(template_type, data)
+                if legacy_html:
+                    html_body = legacy_html
+                    # Use legacy subject if modern one is generic/default
+                    if subject == "Notification" or not subject:
+                        subject = legacy_subject
         
         # Create a pending NotificationLog entry synchronously to pass to Celery
         try:
@@ -652,10 +665,4 @@ class CustomerNotificationService:
             booking_id=str(booking.id)
         )
 
-    @staticmethod
-    def _resolve_agent(booking: "Booking") -> Optional[User]:
-        agent_user = booking.agent
-        if not agent_user and booking.user and booking.user.customer_profile:
-            agent_user = booking.user.customer_profile.agent
-        return agent_user
 

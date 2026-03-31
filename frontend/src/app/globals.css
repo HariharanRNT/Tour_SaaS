@@ -76,9 +76,8 @@
     @apply border-border;
   }
 
-  /* Mesh Gradient Background from Design File */
   body {
-    background-color: var(--primary-soft);
+    background-color: var(--page-bg, var(--primary-soft));
     background-image: 
       radial-gradient(at 0% 0%, var(--primary) 0, transparent 60%), 
       radial-gradient(at 100% 100%, var(--primary-light) 0, transparent 60%),
@@ -86,7 +85,8 @@
     background-attachment: fixed;
     /* body already has min-height and overflow-x-hidden from base layer */
     @apply text-foreground;
-    font-family: var(--font-dm-sans), sans-serif;
+    font-family: var(--project-font-family, var(--font-dm-sans)), sans-serif;
+    color: var(--project-font-color, inherit);
   }
 
   .noise-overlay {
@@ -122,10 +122,16 @@
   
   /* Navbar Glass */
   .glass-navbar {
-    background: rgba(255, 237, 213, 0.55);
+    background: var(--navbar-bg, rgba(255, 237, 213, 0.55));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(240, 128, 64, 0.2);
+    color: var(--navbar-text, #0a0a0a);
+  }
+  
+  .glass-navbar a, 
+  .glass-navbar button {
+    color: var(--navbar-text, inherit);
   }
 
   /* Hero Search Bar Glass */
@@ -530,11 +536,11 @@
 
   /* Typography Helpers */
   .font-display {
-    font-family: var(--font-fraunces), serif;
+    font-family: var(--project-font-family, var(--font-fraunces)), serif;
   }
 
   .font-body {
-    font-family: var(--font-dm-sans), sans-serif;
+    font-family: var(--project-font-family, var(--font-dm-sans)), sans-serif;
   }
 
   /* Shimmer effect for editorial accent */
@@ -854,6 +860,22 @@ body.btn-underline .btn {
   box-shadow: none !important;
 }
 
+/* ── Button Global Branding ──────────────────────────────────── */
+button:not([data-ignore-style]):not([class*="ghost"]):not([class*="outline"]):not([class*="link"]),
+.btn:not(.btn-outline):not(.btn-ghost):not(.btn-link),
+.glass-close-button {
+  /* background-color: var(--button-bg, var(--primary)) !important; */
+  /* color: var(--button-text, #ffffff) !important; */
+  /* border-color: var(--button-bg, var(--primary)) !important; */
+}
+
+/* Ensure hover state still feels interactive */
+button:not([data-ignore-style]):not([class*="ghost"]):not([class*="outline"]):not([class*="link"]):hover,
+.btn:not(.btn-outline):not(.btn-ghost):not(.btn-link):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
 /* ── Card Styles ─────────────────────────────────────────── */
 body.card-flat .glass-panel,
 body.card-flat [class*="glass-panel"] {
@@ -1019,7 +1041,7 @@ body.font-playful h3 {
 
   /* Agent Portal Sidebar Styles */
   .sidebar {
-    background: rgba(255, 255, 255, 0.25) !important;
+    background: var(--navbar-bg, rgba(255, 255, 255, 0.25)) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
@@ -1037,7 +1059,7 @@ body.font-playful h3 {
   }
 
   .nav-item .nav-label {
-    color: #92400e !important;
+    color: var(--navbar-text, #92400e) !important;
     font-size: 13px !important;
     font-weight: 400 !important;
   }
@@ -1059,14 +1081,6 @@ body.font-playful h3 {
     font-weight: 600 !important;
   }
 
-  /* Dot Indicator */
-  .nav-dot {
-    width: 6px !important;
-    height: 6px !important;
-    border-radius: 50% !important;
-    background: var(--primary) !important;
-    flex-shrink: 0 !important;
-  }
 
   /* Sidebar Header */
   .sidebar-header {
@@ -1086,7 +1100,7 @@ body.font-playful h3 {
   }
 
   .sidebar-header .title {
-    color: #ffffff !important;
+    color: var(--navbar-text, #ffffff) !important;
     font-size: 14px !important;
     font-weight: 700 !important;
     margin: 0 !important;
@@ -1124,14 +1138,274 @@ body.font-playful h3 {
   }
 
   .sidebar-user .user-name {
-    color: #7c3010 !important;
+    color: var(--navbar-text, #7c3010) !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     margin: 0 !important;
   }
 
   .sidebar-user .user-role {
-    color: #92400e !important;
+    color: var(--navbar-text, #92400e) !important;
     font-size: 11px !important;
     margin: 0 !important;
+    opacity: 0.8;
+  }
+
+  /* Edit Package Page - Glassmorphism System */
+  .edit-package-header-card {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 16px;
+    padding: 20px 28px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+  }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #92400e !important;
+    margin-bottom: 12px;
+    text-decoration: none;
+  }
+
+  /* Title row */
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1c1c1c;
+  }
+
+  /* "Untitled Package" part — muted */
+  .page-title-muted {
+    color: #c4a089;
+    font-weight: 600;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: #92400e;
+    margin-top: 4px;
+  }
+
+  /* Progress stepper card */
+  .stepper-card {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 16px;
+    padding: 20px 28px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Progress badge */
+  .progress-badge {
+    background: var(--theme-primary) !important;
+    color: #ffffff !important;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    display: inline-block;
+  }
+
+  /* Step indicator */
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    position: relative;
+  }
+
+  /* Connector line between steps */
+  .step-item::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 60%;
+    width: 80%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .step-item:last-child::after { display: none; }
+
+  /* Step circle */
+  .step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.25);
+    color: #7c3010;
+  }
+
+  .step-circle.active {
+    background: var(--button-bg, var(--primary)) !important;
+    border-color: var(--button-bg, var(--primary)) !important;
+    color: var(--button-text, #ffffff) !important;
+    box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.15);
+  }
+
+  .step-circle.completed {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
+  }
+
+  .step-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1c1c1c;
+    text-align: center;
+  }
+
+  .step-status {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .step-status.in-progress { color: var(--theme-primary) !important; }
+  .step-status.pending     { color: #92400e !important; }
+  .step-status.completed   { color: #16a34a !important; }
+
+  /* Overview / form card */
+  .overview-form-card {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 16px;
+    padding: 24px 28px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+  }
+
+  .overview-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1c1c1c;
+    margin-bottom: 2px;
+  }
+
+  .overview-card-subtitle {
+    font-size: 12px;
+    color: #92400e;
+    margin-bottom: 20px;
+  }
+
+  /* Form field labels */
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #7c3010;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Form inputs */
+  .field-input {
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.65) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    color: #1c1c1c !important;
+    width: 100%;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+  }
+
+  .field-input:focus {
+    outline: none;
+    border-color: var(--theme-primary) !important;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12) !important;
+  }
+
+  /* Bottom action bar */
+  .bottom-action-bar {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+  }
+
+  .draft-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #16a34a;
+    font-weight: 500;
+  }
+
+  .btn-save-draft {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.65) !important;
+    color: #7c3010 !important;
+    border-radius: 10px !important;
+    padding: 9px 18px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease;
+  }
+
+  .btn-save-draft:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .btn-save-continue {
+    background: var(--button-bg, var(--primary)) !important;
+    color: var(--button-text, #ffffff) !important;
+    border: none !important;
+    border-radius: var(--button-radius, 10px) !important;
+    padding: 9px 20px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+  }
+
+  .btn-save-continue:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
+  }
+
+  .btn-save-continue:active {
+    transform: translateY(0);
   }

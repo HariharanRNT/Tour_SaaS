@@ -74,7 +74,23 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     r.style.setProperty('--gradient-mid', sec);
                     
                     if (s.navbarSettings?.bgColor) r.style.setProperty('--navbar-bg', s.navbarSettings.bgColor);
-                    if (s.font_family || s.fontFamily) r.style.setProperty('--font-family', s.font_family || s.fontFamily);
+                    if (s.navbarSettings?.textColor) r.style.setProperty('--navbar-text', s.navbarSettings.textColor);
+                    
+                    if (s.buttonStyle?.bgColor) r.style.setProperty('--button-bg', s.buttonStyle.bgColor);
+                    if (s.buttonStyle?.textColor) r.style.setProperty('--button-text', s.buttonStyle.textColor);
+                    if (s.buttonStyle?.borderRadius) r.style.setProperty('--button-radius', s.buttonStyle.borderRadius);
+
+                    if (s.bg_color) r.style.setProperty('--page-bg', s.bg_color);
+                    if (s.accent_color) r.style.setProperty('--accent-color', s.accent_color);
+
+                    if (s.font_family || s.fontFamily) {
+                        const ff = s.font_family || s.fontFamily;
+                        r.style.setProperty('--font-family', ff);
+                        r.style.setProperty('--project-font-family', ff);
+                    }
+                    if (s.font_color || s.fontColor) {
+                        r.style.setProperty('--project-font-color', s.font_color || s.fontColor);
+                    }
                 };
 
                 // 1. apply initial server settings first (Highest Priority for SSR)
@@ -125,6 +141,13 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                         const applyClasses = () => {
                             const b = document.body;
                             if (b) {
+                                if (path.startsWith('/admin')) {
+                                    b.classList.remove('is-branded');
+                                    b.classList.add('admin-panel');
+                                    return;
+                                }
+                                
+                                b.classList.add('is-branded');
                                 if (buttonShape) b.classList.add('btn-' + buttonShape);
                                 if (iconStyle) b.classList.add('icon-' + iconStyle);
                                 if (cardStyle) b.classList.add('card-' + cardStyle);

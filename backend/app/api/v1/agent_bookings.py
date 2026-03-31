@@ -197,6 +197,14 @@ async def update_booking_status(
         )
     
     await db.commit()
+    
+    # Invalidate dashboard cache
+    try:
+        from fastapi_cache import FastAPICache
+        await FastAPICache.clear(namespace="dashboard")
+    except:
+        pass
+        
     await db.refresh(booking)
     
     return BookingResponse.model_validate(booking)

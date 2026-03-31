@@ -189,20 +189,52 @@ async def verify_payment(
     payment.razorpay_signature = verification_data.razorpay_signature
     payment.status = PaymentStatus.SUCCEEDED
     
-    # Update booking status
-    result = await db.execute(select(Booking).where(Booking.id == payment.booking_id))
-    booking = result.scalar_one_or_none()
+    # 4. Process Confirmation via Orchestrator (Robust & Consistent)
+    from app.services.booking_orchestrator import BookingOrchestrator
+    from app.services.tripjack_adapter import TripJackAdapter
     
-    if booking:
-        booking.payment_status = PaymentStatus.SUCCEEDED
-        booking.status = BookingStatus.CONFIRMED
-    
-    await db.commit()
-    
-    return MessageResponse(
-        message="Payment verified successfully",
-        detail=f"Booking {booking.booking_reference} confirmed"
+    tripjack = TripJackAdapter(
+        api_key=settings.TRIPJACK_API_KEY, 
+        base_url=settings.TRIPJACK_BASE_URL
     )
+    orchestrator = BookingOrchestrator(db, tripjack)
+    
+    # We need to fetch traveler info if we want to book flights here too.
+    # If travelers aren't loaded, orchestrator.process_checkout will handle it 
+    # but we might need to pass them or let it fetch them.
+    # In bookings.py confirm_booking, we pass traveler_info.
+    # Here we don't have it in the request body. 
+    # But BookingOrchestrator.process_checkout (the one I refactored) 
+    # now calls finalize_booking which can reconstruct traveler info from DB.
+    
+    # Actually, I'll update process_checkout to be more flexible too.
+    
+    try:
+        payment_data = {
+            "razorpay_order_id": verification_data.razorpay_order_id,
+            "razorpay_payment_id": verification_data.razorpay_payment_id,
+            "razorpay_signature": verification_data.razorpay_signature
+        }
+        
+        # We can pass empty list for travelers if we want orchestrator to fetch from DB
+        # or I can update process_checkout to make traveler_info optional.
+        confirmed_booking = await orchestrator.process_checkout(
+            booking_id=booking.id,
+            payment_verification=payment_data,
+            traveler_info=[] # Orchestrator will fetch from DB in finalize_booking if needed
+        )
+        
+        from fastapi_cache import FastAPICache
+        await FastAPICache.clear(namespace="dashboard")
+        
+        return MessageResponse(
+            message="Payment verified successfully",
+            detail=f"Booking {confirmed_booking.booking_reference} confirmed"
+        )
+        
+    except Exception as e:
+        logger.error(f"Orchestration failed during verify_payment: {e}")
+        raise HTTPException(status_code=500, detail=f"Booking confirmation failed: {str(e)}")
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)

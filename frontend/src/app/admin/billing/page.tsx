@@ -701,7 +701,7 @@ export default function AdminBillingPage() {
 
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogContent className="max-w-[560px] p-0 overflow-hidden glass-premium border-0">
-                        <div className="bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#6D28D9] px-[28px] pt-[28px] pb-[32px] text-white relative min-h-[110px]">
+                        <div className="bg-gradient-to-br from-[#FF6B2B] via-[#FF8E53] to-[#FF5A1F] px-[28px] pt-[28px] pb-[32px] text-white relative min-h-[110px]">
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4 opacity-10">
                                 <Sparkles className="h-20 w-20" />
@@ -732,7 +732,7 @@ export default function AdminBillingPage() {
                                     <Input
                                         value={newPlan.name}
                                         onChange={e => setNewPlan({ ...newPlan, name: e.target.value })}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
                                         placeholder="e.g. Pro Plan"
                                     />
                                 </div>
@@ -740,7 +740,7 @@ export default function AdminBillingPage() {
                                 {/* Pricing */}
                                 <div className="space-y-[4px]">
                                     <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Pricing (INR)</Label>
-                                    <div className="flex h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#6366F1] focus-within:ring-[3px] focus-within:ring-[rgba(99,102,241,0.12)] transition-all duration-200 overflow-hidden">
+                                    <div className="flex h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#FF6B2B] focus-within:ring-[3px] focus-within:ring-[rgba(255,107,43,0.12)] transition-all duration-200 overflow-hidden">
                                         <div className="flex items-center justify-center bg-[#F1F5F9] border-r-[1.5px] border-[#E2E8F0] px-[12px]">
                                             <span className="text-[13px] font-semibold text-[#64748B]">₹</span>
                                         </div>
@@ -761,7 +761,7 @@ export default function AdminBillingPage() {
                                         type="number"
                                         value={newPlan.booking_limit}
                                         onChange={e => setNewPlan({ ...newPlan, booking_limit: e.target.value })}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
                                         placeholder="Enter limit (0 = unlimited)"
                                     />
                                 </div>
@@ -770,7 +770,7 @@ export default function AdminBillingPage() {
                                 <div className="space-y-[4px]">
                                     <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Billing Cycle</Label>
                                     <Select value={newPlan.billing_cycle} onValueChange={v => setNewPlan({ ...newPlan, billing_cycle: v })}>
-                                        <SelectTrigger className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.12)] px-3 font-normal text-[14px] text-[#0F172A] transition-all duration-200">
+                                        <SelectTrigger className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] px-3 font-normal text-[14px] text-[#0F172A] transition-all duration-200">
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-3.5 w-3.5 text-[#94A3B8]" />
                                                 <SelectValue />
@@ -780,7 +780,7 @@ export default function AdminBillingPage() {
                                             <SelectItem value="monthly" className="rounded-[8px] font-medium">Monthly</SelectItem>
                                             <SelectItem value="quarterly" className="rounded-[8px] font-medium">Quarterly</SelectItem>
                                             <SelectItem value="yearly" className="rounded-[8px] font-medium">Yearly</SelectItem>
-                                            <SelectItem value="custom" className="rounded-[8px] font-medium text-indigo-600">Custom Days</SelectItem>
+                                            <SelectItem value="custom" className="rounded-[8px] font-medium text-[#FF6B2B]">Custom Days</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -793,7 +793,7 @@ export default function AdminBillingPage() {
                                         type="number"
                                         value={newPlan.duration_days}
                                         onChange={e => setNewPlan({ ...newPlan, duration_days: e.target.value })}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
                                         placeholder="e.g. 15"
                                     />
                                 </div>
@@ -805,7 +805,7 @@ export default function AdminBillingPage() {
                                 <Textarea
                                     value={newPlan.features}
                                     onChange={e => setNewPlan({ ...newPlan, features: e.target.value })}
-                                    className="min-h-[100px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#6366F1] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.12)] font-normal text-[13px] text-[#0F172A] p-[12px] resize-none leading-[1.6] transition-all duration-200"
+                                    className="min-h-[100px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[13px] text-[#0F172A] p-[12px] resize-none leading-[1.6] transition-all duration-200"
                                     placeholder={`Feature 1
 Feature 2
 Feature 3`}
@@ -839,7 +839,7 @@ Feature 3`}
                                     onClick={() => setNewPlan({ ...newPlan, is_active: !newPlan.is_active })}
                                     className={cn(
                                         "w-[44px] h-[24px] rounded-full cursor-pointer transition-all duration-200 relative flex items-center",
-                                        newPlan.is_active ? "bg-[#6366F1]" : "bg-[#E2E8F0]"
+                                        newPlan.is_active ? "bg-[#FF6B2B]" : "bg-[#E2E8F0]"
                                     )}
                                 >
                                     <motion.div
@@ -866,7 +866,7 @@ Feature 3`}
                                     <Button
                                         onClick={handleSavePlan}
                                         disabled={createMutation.isPending || updateMutation.isPending}
-                                        className="rounded-[12px] bg-[#4F46E5] hover:bg-[#4338CA] text-white px-[24px] h-[46px] font-[700] text-[13px] transition-all duration-200 shadow-md flex items-center gap-2"
+                                        className="rounded-[12px] bg-[#FF6B2B] hover:bg-[#FF5A1F] text-white px-[24px] h-[46px] font-[700] text-[13px] transition-all duration-200 shadow-md flex items-center gap-2"
                                     >
                                         {(createMutation.isPending || updateMutation.isPending) ? (
                                             <>

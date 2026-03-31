@@ -224,23 +224,20 @@ export default function Home() {
                     </motion.div>
                 </div>
 
-                {/* AI Badge - Upper Right */}
-                {(hpSettings?.showAiBadge !== false) && (
-                <div className="absolute top-6 right-6 z-20 hidden md:block">
-                    <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 px-4 py-2 rounded-full flex items-center gap-2 shadow-xl animate-in fade-in slide-in-from-top-4 duration-1000">
-                        <Sparkles className="h-4 w-4 text-amber-300" />
-                        <span className="font-semibold tracking-wide shadow-black drop-shadow-md">{hpSettings?.badgeText || 'AI-Powered Trip Planning'}</span>
-                    </Badge>
-                </div>
-                )}
-
-                <div className="container mx-auto px-4 relative z-10 py-20">
+                {/* AI Badge Moved After Header / Above Headline */}
+                <div className="container mx-auto px-4 relative z-10 pt-16">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="max-w-5xl mx-auto text-center p-6 md:p-8 relative mb-4"
+                        className="max-w-5xl mx-auto text-center p-6 md:p-8 relative mb-0"
                     >
+                        {(hpSettings?.showAiBadge !== false) && (
+                            <Badge className="mb-6 bg-white/15 backdrop-blur-md border-white/25 text-white hover:bg-white/25 px-6 py-2.5 rounded-full inline-flex items-center gap-2.5 shadow-xl ring-1 ring-white/10 group transition-all duration-300">
+                                <Sparkles className="h-4 w-4 text-amber-300 group-hover:scale-125 transition-transform" />
+                                <span className="font-bold tracking-widest text-[11px] uppercase drop-shadow-sm">{hpSettings?.badgeText || 'AI-Powered Trip Planning'}</span>
+                            </Badge>
+                        )}
                         <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.05] text-white drop-shadow-md" style={{ color: "var(--heading, white)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                             {isLoading ? (
                                 <span className="h-20 w-3/4 bg-white/10 rounded-2xl animate-pulse mx-auto block" />

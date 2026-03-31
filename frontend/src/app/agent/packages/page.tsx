@@ -116,13 +116,39 @@ export default function AgentPackagesPage() {
     // Mutations
     const deleteMutation = useMutation({
         mutationFn: deleteAgentPackage,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
+        onMutate: async (id: string) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: ['agent-packages'] })
+
+            // Snapshot the previous value
+            const previousPackages = queryClient.getQueryData(['agent-packages'])
+
+            // Optimistically update to the new value
+            queryClient.setQueriesData({ queryKey: ['agent-packages'] }, (oldData: any) => {
+                if (!oldData || !oldData.items) return oldData
+                return {
+                    ...oldData,
+                    items: oldData.items.filter((pkg: any) => pkg.id !== id),
+                    total: Math.max(0, (oldData.total || 0) - 1)
+                }
+            })
+
+            // Return a context object with the snapshotted value
+            return { previousPackages }
+        },
+        onSuccess: async () => {
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            await queryClient.resetQueries({ queryKey: ['agent-dashboard-stats'] })
             toast.success('Your package has been deleted.')
             setDeleteId(null)
             setSelectedPackages(prev => prev.filter(id => id !== deleteId))
         },
-        onError: (error: any) => {
+        onError: (error: any, id: string, context: any) => {
+            // Rollback on error
+            if (context?.previousPackages) {
+                queryClient.setQueryData(['agent-packages'], context.previousPackages)
+            }
+            
             const detail = error?.response?.data?.detail
             if (detail && detail.toLowerCase().includes('archive')) {
                 toast.error(detail, {
@@ -130,8 +156,8 @@ export default function AgentPackagesPage() {
                     action: {
                         label: 'Archive Instead',
                         onClick: () => {
-                            if (deleteId) {
-                                statusMutation.mutate({ id: deleteId, new_status: 'ARCHIVED' })
+                            if (id) {
+                                statusMutation.mutate({ id: id, new_status: 'ARCHIVED' })
                                 setDeleteId(null)
                             }
                         }
@@ -145,11 +171,31 @@ export default function AgentPackagesPage() {
 
     const statusMutation = useMutation({
         mutationFn: ({ id, new_status }: { id: string, new_status: string }) => updateAgentPackageStatus(id, new_status),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
+        onMutate: async ({ id, new_status }) => {
+            await queryClient.cancelQueries({ queryKey: ['agent-packages'] })
+            const previousPackages = queryClient.getQueryData(['agent-packages'])
+
+            queryClient.setQueriesData({ queryKey: ['agent-packages'] }, (oldData: any) => {
+                if (!oldData || !oldData.items) return oldData
+                return {
+                    ...oldData,
+                    items: oldData.items.map((pkg: any) => 
+                        pkg.id === id ? { ...pkg, status: new_status.toLowerCase() } : pkg
+                    )
+                }
+            })
+
+            return { previousPackages }
+        },
+        onSuccess: async () => {
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            await queryClient.resetQueries({ queryKey: ['agent-dashboard-stats'] })
             toast.success('Status updated successfully')
         },
-        onError: (error: any) => {
+        onError: (error: any, variables, context) => {
+            if (context?.previousPackages) {
+                queryClient.setQueryData(['agent-packages'], context.previousPackages)
+            }
             toast.error(error.message || 'Failed to update status')
         }
     })
@@ -158,12 +204,31 @@ export default function AgentPackagesPage() {
         mutationFn: async (ids: string[]) => {
             return Promise.all(ids.map(id => deleteAgentPackage(id)))
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['agent-packages'] })
-            toast.success(`${selectedPackages.length} packages deleted successfully`)
+        onMutate: async (ids: string[]) => {
+            await queryClient.cancelQueries({ queryKey: ['agent-packages'] })
+            const previousPackages = queryClient.getQueryData(['agent-packages'])
+
+            queryClient.setQueriesData({ queryKey: ['agent-packages'] }, (oldData: any) => {
+                if (!oldData || !oldData.items) return oldData
+                return {
+                    ...oldData,
+                    items: oldData.items.filter((pkg: any) => !ids.includes(pkg.id)),
+                    total: Math.max(0, (oldData.total || 0) - ids.length)
+                }
+            })
+
+            return { previousPackages }
+        },
+        onSuccess: async () => {
+            await queryClient.resetQueries({ queryKey: ['agent-packages'] })
+            await queryClient.resetQueries({ queryKey: ['agent-dashboard-stats'] })
+            toast.success('Packages deleted successfully')
             setSelectedPackages([])
         },
-        onError: () => {
+        onError: (error, ids, context) => {
+            if (context?.previousPackages) {
+                queryClient.setQueryData(['agent-packages'], context.previousPackages)
+            }
             toast.error('Failed to delete some packages')
         }
     })

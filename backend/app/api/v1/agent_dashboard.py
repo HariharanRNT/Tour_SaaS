@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, Notification
+from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, PaymentStatus, Notification
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
@@ -16,7 +16,6 @@ from fastapi_cache.decorator import cache
 router = APIRouter()
 
 @router.get("/stats")
-@cache(expire=3600, namespace="dashboard")
 async def get_agent_dashboard_stats(
     filter_type: str = "ALL",
     start_date: str = None,
@@ -103,8 +102,12 @@ async def get_agent_dashboard_stats(
             
         # Execute once implies fetching all rows? Might be heavy. Let's do sums.
         
-        # Total Bookings
-        bk_count_query = select(func.count(Booking.id)).where(Booking.agent_id == current_agent.agent_id)
+        # Total Bookings (Only Successful/Confirmed)
+        bk_count_query = select(func.count(Booking.id)).where(
+            Booking.agent_id == current_agent.agent_id,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
+        )
         bk_count_query = apply_date_filter(bk_count_query, Booking.created_at)
         res = await db.execute(bk_count_query)
         total_bookings = res.scalar() or 0
@@ -112,7 +115,8 @@ async def get_agent_dashboard_stats(
         # Active (Confirmed or Pending) AND Upcoming Trip
         active_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING]),
+            Booking.status == BookingStatus.CONFIRMED,
+            Booking.payment_status == PaymentStatus.SUCCEEDED,
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
         active_query = apply_date_filter(active_query, Booking.created_at)
@@ -129,10 +133,10 @@ async def get_agent_dashboard_stats(
         res = await db.execute(pending_query)
         pending_bookings = res.scalar() or 0
         
-        # Revenue (Confirmed/Completed)
         rev_query = select(func.sum(Booking.total_amount)).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
         rev_query = apply_date_filter(rev_query, Booking.created_at)
         res = await db.execute(rev_query)
@@ -151,7 +155,9 @@ async def get_agent_dashboard_stats(
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.created_at >= today_start
+            Booking.created_at >= today_start,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
         res = await db.execute(today_query)
         today_bookings = res.scalar() or 0
@@ -166,7 +172,9 @@ async def get_agent_dashboard_stats(
             func.count(Booking.id).label('count'),
             func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.agent_id
+            Booking.agent_id == current_agent.agent_id,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
         # Apply filter to bookings
         stmt = apply_date_filter(stmt, Booking.created_at)
@@ -198,7 +206,9 @@ async def get_agent_dashboard_stats(
             Package.view_count,
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.agent_id
+            Booking.agent_id == current_agent.agent_id,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(asc('count')).limit(1)
@@ -221,7 +231,9 @@ async def get_agent_dashboard_stats(
             Package.title,
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
-            Booking.agent_id == current_agent.agent_id
+            Booking.agent_id == current_agent.agent_id,
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title).order_by(desc('count')).limit(5)

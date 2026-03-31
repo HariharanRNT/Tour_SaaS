@@ -251,8 +251,7 @@ export default function AgentDashboard() {
             });
         },
         enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd),
-        staleTime: 300000, // 5 minutes
-        refetchOnWindowFocus: false
+        staleTime: 10000, 
     })
 
     const stats = {
@@ -625,11 +624,11 @@ export default function AgentDashboard() {
                                     </span>
                                 </h1>
                                 <div className="flex items-center gap-3 mt-1.5 text-sm font-medium">
-                                    <span className="text-slate-500">Here's what's happening today:</span>
+                                    <span className="">Here's what's happening today:</span>
                                     <div className="hidden sm:flex items-center gap-2">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
                                             ? "bg-orange-50 text-[#F59E0B] border-orange-100"
-                                            : "bg-transparent text-slate-500 border-slate-100"
+                                            : "bg-transparent  border-slate-100"
                                             }`}>
                                             {stats.todayBookings > 0 && (
                                                 <span className="relative flex h-2 w-2">
@@ -771,7 +770,7 @@ export default function AgentDashboard() {
                                         <Card className="relative overflow-hidden rounded-[20px] h-full">
                                             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`} />
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                                <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
+                                                <CardTitle className="text-xs font-bold  uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
                                                 <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2 rounded-xl shadow-md ${card.shadowColor}`}>
                                                     <card.icon className="h-4 w-4 text-white" />
                                                 </div>
@@ -797,7 +796,7 @@ export default function AgentDashboard() {
                                 <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                                     <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                        <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
+                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
                                         <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2.5 rounded-xl shadow-lg ${card.shadowColor} group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300`}>
                                             <card.icon className="h-5 w-5 text-white" />
                                         </div>
@@ -1043,7 +1042,7 @@ export default function AgentDashboard() {
                                                         </h4>
                                                         <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                                                    <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><Users className="h-3 w-3" /> {bk.number_of_travelers}</span>
                                                         <span className="flex items-center gap-1 opacity-80"><Clock className="h-3 w-3" /> {format(new Date(bk.travel_date), 'dd MMM')}</span>
                                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tighter ${bk.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
@@ -1056,7 +1055,7 @@ export default function AgentDashboard() {
                                         </Card>
                                     ))
                                 ) : (
-                                    <div className="py-12 rounded-2xl text-center text-slate-500 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.40)', borderRadius: '16px' }}>
+                                    <div className="py-12 rounded-2xl text-center  text-xs font-medium" style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.40)', borderRadius: '16px' }}>
                                         No upcoming bookings
                                     </div>
                                 )}
@@ -1083,7 +1082,7 @@ export default function AgentDashboard() {
                                                         </h4>
                                                         <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                                                    <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><CheckCircle className="h-3 w-3" /> Done</span>
                                                         <span className="flex items-center gap-1 opacity-80"><Clock className="h-3 w-3" /> {format(new Date(bk.travel_date), 'dd MMM')}</span>
                                                         <span className="font-bold text-slate-900 ml-auto">₹{(bk.total_amount || 0).toLocaleString()}</span>
@@ -1093,7 +1092,7 @@ export default function AgentDashboard() {
                                         </Card>
                                     ))
                                 ) : (
-                                    <div className="py-12 text-center text-slate-500 text-xs font-medium" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: '16px' }}>
+                                    <div className="py-12 text-center  text-xs font-medium" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: '16px' }}>
                                         No booking history
                                     </div>
                                 )}
@@ -1271,7 +1270,7 @@ export default function AgentDashboard() {
                             <span className="absolute bottom-1 w-1 h-1 bg-indigo-600 rounded-full" />
                         </Button>
                         <Link href="/agent/settings">
-                            <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2 text-slate-500 hover:text-indigo-600 transition-colors">
+                            <Button variant="ghost" className="flex flex-col items-center gap-1 h-auto py-2  hover:text-indigo-600 transition-colors">
                                 <Settings className="h-5 w-5" />
                                 <span className="text-[10px] font-medium">Settings</span>
                             </Button>

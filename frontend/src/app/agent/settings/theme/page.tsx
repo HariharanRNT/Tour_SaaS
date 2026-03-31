@@ -99,6 +99,7 @@ interface CustomThemeColors {
     bg_color: string;
     font_family: string;
     font_size: string;
+    font_color: string;
 }
 
 const DEFAULT_CUSTOM: CustomThemeColors = {
@@ -116,8 +117,9 @@ const DEFAULT_CUSTOM: CustomThemeColors = {
     },
     bg_color: '',
     accent_color: '',
-    font_family: 'Inter, sans-serif',
-    font_size: '16px'
+    font_family: 'var(--font-inter)',
+    font_size: '16px',
+    font_color: '#1e293b'
 };
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -323,6 +325,8 @@ export default function AgentThemeSettingsPage() {
     const [cardStyle, setCardStyle] = useState('glass');
     const [density, setDensity] = useState('spacious');
     const [fontPairing, setFontPairing] = useState('serif-sans');
+    const [fontFamily, setFontFamily] = useState('var(--font-inter)');
+    const [fontColor, setFontColor] = useState('#1e293b');
 
     // Email state
     const [defaultEmailTheme, setDefaultEmailTheme] = useState('classic');
@@ -377,20 +381,31 @@ export default function AgentThemeSettingsPage() {
         b.add(`btn-${btn}`, `icon-${icon}`, `card-${card}`, `density-${dens}`, `font-${font}`);
     };
 
-    const saveUiStyle = (updates: Partial<{ buttonShape: string; iconStyle: string; cardStyle: string; density: string; fontPairing: string }>) => {
+    const saveUiStyle = (updates: Partial<{ buttonShape: string; iconStyle: string; cardStyle: string; density: string; fontPairing: string; font_family: string; font_color: string }>) => {
         const next = {
             buttonShape: updates.buttonShape ?? buttonShape,
             iconStyle: updates.iconStyle ?? iconStyle,
             cardStyle: updates.cardStyle ?? cardStyle,
             density: updates.density ?? density,
-            fontPairing: updates.fontPairing ?? fontPairing
+            fontPairing: updates.fontPairing ?? fontPairing,
+            font_family: updates.font_family ?? fontFamily,
+            font_color: updates.font_color ?? fontColor
         };
         if (updates.buttonShape !== undefined) setButtonShape(updates.buttonShape);
         if (updates.iconStyle !== undefined) setIconStyle(updates.iconStyle);
         if (updates.cardStyle !== undefined) setCardStyle(updates.cardStyle);
         if (updates.density !== undefined) setDensity(updates.density);
         if (updates.fontPairing !== undefined) setFontPairing(updates.fontPairing);
+        if (updates.font_family !== undefined) setFontFamily(updates.font_family);
+        if (updates.font_color !== undefined) setFontColor(updates.font_color);
+
         applyBodyClasses(next.buttonShape, next.iconStyle, next.cardStyle, next.density, next.fontPairing);
+        
+        // Apply font variables immediately to root for preview
+        const root = document.documentElement;
+        if (next.font_family) root.style.setProperty('--project-font-family', next.font_family);
+        if (next.font_color) root.style.setProperty('--project-font-color', next.font_color);
+
         localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
         toast.success('UI style updated!', { position: 'bottom-right' });
     };
@@ -410,6 +425,8 @@ export default function AgentThemeSettingsPage() {
                 const u = JSON.parse(s);
                 setButtonShape(u.buttonShape || 'pill'); setIconStyle(u.iconStyle || 'filled-circle');
                 setCardStyle(u.cardStyle || 'glass'); setDensity(u.density || 'spacious'); setFontPairing(u.fontPairing || 'serif-sans');
+                setFontFamily(u.font_family || 'var(--font-inter)');
+                setFontColor(u.font_color || '#1e293b');
                 applyBodyClasses(u.buttonShape || 'pill', u.iconStyle || 'filled-circle', u.cardStyle || 'glass', u.density || 'spacious', u.fontPairing || 'serif-sans');
             } else { applyBodyClasses('pill', 'filled-circle', 'glass', 'spacious', 'serif-sans'); }
         } catch { }
@@ -470,6 +487,15 @@ export default function AgentThemeSettingsPage() {
                         if (hs.email_templates) {
                             setEmailTemplates(hs.email_templates);
                         }
+
+                        // Update UI Style specific states
+                        if (hs.buttonShape) setButtonShape(hs.buttonShape);
+                        if (hs.iconStyle) setIconStyle(hs.iconStyle);
+                        if (hs.cardStyle) setCardStyle(hs.cardStyle);
+                        if (hs.density) setDensity(hs.density);
+                        if (hs.fontPairing) setFontPairing(hs.fontPairing);
+                        if (hs.font_family || hs.fontFamily) setFontFamily(hs.font_family || hs.fontFamily);
+                        if (hs.font_color || hs.fontColor) setFontColor(hs.font_color || hs.fontColor);
                     }
                 }
             } catch (err) {
@@ -775,6 +801,13 @@ export default function AgentThemeSettingsPage() {
             const token = localStorage.getItem('token') || '';
             const payload = {
                 ...pageSettings,
+                buttonShape,
+                iconStyle,
+                cardStyle,
+                density,
+                fontPairing,
+                font_family: fontFamily,
+                font_color: fontColor,
                 default_email_theme: defaultEmailTheme,
                 default_email_message: defaultEmailMessage
             };
@@ -1610,22 +1643,109 @@ export default function AgentThemeSettingsPage() {
                     </div>
                 </div>
 
-                {/* Font Pairing */}
-                <div className="space-y-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Typography</p>
-                    <div className="flex flex-wrap gap-2">
-                        {([
-                            { key: 'serif-sans', label: 'Serif Display', fs: { fontFamily: 'Georgia,serif', fontStyle: 'italic' as const, fontWeight: 700 } },
-                            { key: 'all-sans', label: 'Modern Sans', fs: { fontFamily: 'Inter,sans-serif', fontWeight: 700 } },
-                            { key: 'bold-slab', label: 'Bold Slab', fs: { fontFamily: 'Plus Jakarta Sans,sans-serif', fontWeight: 900, letterSpacing: '-0.02em' } },
-                            { key: 'playful', label: 'Playful', fs: { fontFamily: 'Nunito,Poppins,sans-serif', fontWeight: 800 } },
-                        ] as { key: string; label: string; fs: React.CSSProperties }[]).map(opt => (
-                            <button key={opt.key} onClick={() => saveUiStyle({ fontPairing: opt.key })}
-                                className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-2xl border-2 min-w-[120px] transition-all ${fontPairing === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                <span className="text-sm leading-snug text-slate-800" style={opt.fs}>Explore the World</span>
-                                <span className="text-[10px] font-bold text-slate-400">{opt.label}</span>
-                            </button>
-                        ))}
+                {/* Font Theme Selector */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Font Theme</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                                {( [
+                                    { label: 'Modern Sans', value: 'var(--font-inter)', preview: 'The quick brown fox' },
+                                    { label: 'Classic Serif', value: 'var(--font-playfair)', preview: 'The quick brown fox' },
+                                    { label: 'Mono Tech', value: 'var(--font-mono)', preview: 'The quick brown fox' },
+                                    { label: 'Elegant Script', value: 'var(--font-script)', preview: 'The quick brown fox' },
+                                    { label: 'Rounded Friendly', value: 'var(--font-rounded)', preview: 'The quick brown fox' },
+                                ] as const).map((opt) => (
+                                    <button 
+                                        key={opt.value} 
+                                        onClick={() => saveUiStyle({ font_family: opt.value })}
+                                        className={cn(
+                                            "flex flex-col items-start gap-1 px-4 py-3 rounded-2xl border-2 transition-all min-w-[140px]",
+                                            fontFamily === opt.value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-100 bg-white hover:border-slate-200"
+                                        )}
+                                    >
+                                        <span className="text-sm font-medium text-slate-900" style={{ fontFamily: opt.value }}>{opt.preview}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">{opt.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Primary Font Color</p>
+                                <div className="flex flex-wrap gap-3 items-center">
+                                    <div className="relative group">
+                                        <input 
+                                            type="color" 
+                                            value={fontColor} 
+                                            onChange={(e) => saveUiStyle({ font_color: e.target.value })}
+                                            className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
+                                        />
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                                    </div>
+                                    
+                                    <div className="h-6 w-px bg-slate-200 mx-1" />
+
+                                    {( [
+                                        { name: 'Midnight Black', value: '#1e293b' },
+                                        { name: 'Slate Gray', value: '#475569' },
+                                        { name: 'Ocean Blue', value: '#1e40af' },
+                                        { name: 'Warm Crimson', value: '#991b1b' },
+                                        { name: 'Forest Green', value: '#166534' }
+                                    ] as const).map((color) => (
+                                        <button 
+                                            key={color.value}
+                                            onClick={() => saveUiStyle({ font_color: color.value })}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
+                                                fontColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
+                                            )}
+                                            style={{ backgroundColor: color.value }}
+                                            title={color.name}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Live Preview Panel */}
+                        <div className="relative">
+                            <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-white text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
+                                <Eye className="h-3 w-3" /> LIVE PREVIEW
+                            </div>
+                            <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden" 
+                                 style={{ 
+                                     fontFamily: 'var(--project-font-family, sans-serif)',
+                                     color: 'var(--project-font-color, inherit)'
+                                 }}>
+                                <div className="space-y-1">
+                                    <h3 className="text-2xl font-medium leading-tight">Majestic Maldives</h3>
+                                    <p className="text-sm opacity-80 font-medium">Escape to paradise with our curated getaway.</p>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                    <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
+                                        5D / 4N
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
+                                        Best Seller
+                                    </div>
+                                </div>
+
+                                <p className="text-xs leading-relaxed opacity-70 italic">
+                                    "The most incredible experience of my life. Every detail was handled with care and sophistication."
+                                </p>
+
+                                <div className="pt-2 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-wider">Starts from</p>
+                                        <p className="text-lg font-black">$1,250</p>
+                                    </div>
+                                    <button className="px-5 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-bold shadow-lg shadow-[var(--primary-glow)]">
+                                        Book Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </SectionCard>
@@ -1665,7 +1785,7 @@ export default function AgentThemeSettingsPage() {
     );
 
     // Tabs that have a save/reset bar
-    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart'];
+    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'uistyle'];
 
     const handleSave = () => {
         if (activeTab === 'homepage') { handleSaveHomepage(); return; }

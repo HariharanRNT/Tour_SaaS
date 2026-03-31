@@ -38,8 +38,12 @@ export function ThemeProvider({
 
     // Helper to apply root variables
     const applyColors = (s: any) => {
-        const root = document.documentElement;
-        if (!s) return;
+        const root = document.body;
+        if (!root || !s) return;
+
+        if (!isExemptPath) {
+            root.classList.add('is-branded');
+        }
 
         const hexToRgba = (hex: string, alpha: number) => {
             if (!hex || hex.length < 7) return `rgba(0,0,0,${alpha})`;
@@ -60,6 +64,9 @@ export function ThemeProvider({
         if (s.buttonStyle?.textColor) root.style.setProperty('--button-text', s.buttonStyle.textColor);
         if (s.buttonStyle?.borderRadius) root.style.setProperty('--button-radius', s.buttonStyle.borderRadius);
 
+        if (s.bg_color) root.style.setProperty('--page-bg', s.bg_color);
+        if (s.accent_color) root.style.setProperty('--accent-color', s.accent_color);
+
         // Backward compatibility / Legacy mappings
         const p = s.primaryColor || s.primary_color || s.primary || '#F97316';
         const sec = s.secondaryColor || s.secondary_color || s.secondary || '#FB923C';
@@ -71,8 +78,15 @@ export function ThemeProvider({
         root.style.setProperty('--gradient-start', p);
         root.style.setProperty('--gradient-mid', sec);
 
-        if (s.font_family || s.fontFamily) root.style.setProperty('--font-family', s.font_family || s.fontFamily);
+        if (s.font_family || s.fontFamily) {
+            const ff = s.font_family || s.fontFamily;
+            root.style.setProperty('--font-family', ff);
+            root.style.setProperty('--project-font-family', ff);
+        }
         if (s.font_size || s.fontSize) root.style.setProperty('--font-size', s.font_size || s.fontSize);
+        if (s.font_color || s.fontColor) {
+            root.style.setProperty('--project-font-color', s.font_color || s.fontColor);
+        }
     };
 
     const setActiveTheme = (theme: string) => {
@@ -84,19 +98,33 @@ export function ThemeProvider({
 
     // 3. Background API Sync
     useEffect(() => {
+        const body = document.body;
         if (isExemptPath) {
             console.log('ThemeProvider: Exempt path detected, enforcing default theme');
             setActiveThemeState('default');
-            // Remove any potential root variables applied by ThemeInitializer
-            const root = document.documentElement;
-            root.style.removeProperty('--primary-color');
-            root.style.removeProperty('--secondary-color');
-            root.style.removeProperty('--navbar-bg');
-            root.style.removeProperty('--navbar-text');
-            root.style.removeProperty('--button-bg');
-            root.style.removeProperty('--button-text');
-            root.style.removeProperty('--button-radius');
+            if (body) {
+                body.classList.remove('is-branded');
+                body.classList.add('admin-panel');
+                
+                // Clear any potential body variables
+                body.style.removeProperty('--primary-color');
+                body.style.removeProperty('--secondary-color');
+                body.style.removeProperty('--navbar-bg');
+                body.style.removeProperty('--navbar-text');
+                body.style.removeProperty('--button-bg');
+                body.style.removeProperty('--button-text');
+                body.style.removeProperty('--button-radius');
+                body.style.removeProperty('--page-bg');
+                body.style.removeProperty('--accent-color');
+                body.style.removeProperty('--project-font-family');
+                body.style.removeProperty('--project-font-color');
+            }
             return;
+        }
+
+        if (body) {
+            body.classList.add('is-branded');
+            body.classList.remove('admin-panel');
         }
 
         // 1. Initial LocalSync (Instant for returning users)

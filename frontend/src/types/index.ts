@@ -30,6 +30,22 @@ export interface Package {
     availability: PackageAvailability[]
     cancellation_enabled?: boolean
     cancellation_rules?: Array<{ daysBefore: number; refundPercentage: number }>
+    flights_enabled?: boolean
+    flight_origin_cities?: string[]
+    flight_cabin_class?: string
+    flight_price_included?: boolean
+    flight_baggage_note?: string
+    country?: string
+    is_public?: boolean
+    package_mode?: 'single' | 'multi'
+    destinations?: Array<{ city: string; country: string; days: number }>
+    activities?: string[]
+    feature_image_url?: string
+    gst_applicable?: boolean
+    gst_percentage?: number
+    gst_mode?: 'inclusive' | 'exclusive'
+    trip_style?: string
+    trip_styles?: string[]
 }
 
 export interface PackageImage {
@@ -69,9 +85,30 @@ export interface Booking {
     payment_status: 'pending' | 'succeeded' | 'failed' | 'refunded'
     special_requests?: string
     created_at: string
+    booking_date?: string
     travelers: Traveler[]
     package?: Package
     user?: User
+    refund_amount?: number
+    cancelled_at?: string
+    flight_origin?: string
+    flight_fare?: number
+    flight_details?: string
+    refund?: BookingRefund
+}
+
+export interface BookingRefund {
+    id: string
+    booking_id: string
+    razorpay_payment_id?: string
+    razorpay_refund_id?: string
+    refund_amount: number
+    refund_percentage?: number
+    days_before?: number
+    status: 'initiated' | 'succeeded' | 'failed' | 'pending'
+    failure_reason?: string
+    created_at: string
+    updated_at: string
 }
 
 export interface Traveler {

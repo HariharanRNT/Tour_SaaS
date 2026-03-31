@@ -39,8 +39,8 @@ def reject_sql(value: str, field_name: str = 'field') -> str:
 # User Schemas
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
-    first_name: Optional[str] = Field(None, min_length=0)
-    last_name: Optional[str] = Field(None, min_length=0)
+    first_name: Optional[str] = Field(None, min_length=0, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=0, max_length=100)
     phone: Optional[str] = None
 
     @field_validator('first_name', 'last_name', mode='before')
@@ -48,32 +48,39 @@ class UserBase(BaseModel):
     def sanitize_name(cls, v):
         if not isinstance(v, str):
             return v
-        return strip_xss(v).strip()
+        v = strip_xss(v).strip()
+        reject_sql(v, 'name')
+        return v
 
     @field_validator('phone', mode='before')
     @classmethod
     def validate_phone(cls, v):
         if v is None:
             return v
-        return str(v).strip()
+        v = str(v).strip()
+        if v and not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits.')
+        return v
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
-    domain: Optional[str] = None
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    password: str = Field(..., min_length=8, max_length=128)
+    domain: Optional[str] = Field(None, max_length=100)
     
     # Agent Specific
-    agency_name: Optional[str] = None
-    company_legal_name: Optional[str] = None
-    business_address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    country: Optional[str] = None
-    gst_no: Optional[str] = None
-    tax_id: Optional[str] = None
-    currency: Optional[str] = "INR"
+    agency_name: Optional[str] = Field(None, max_length=200)
+    company_legal_name: Optional[str] = Field(None, max_length=200)
+    business_address: Optional[str] = Field(None, max_length=500)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
+    gst_no: Optional[str] = Field(None, max_length=20)
+    tax_id: Optional[str] = Field(None, max_length=50)
+    currency: Optional[str] = Field("INR", min_length=3, max_length=3)
     commission_type: Optional[str] = "percentage"
-    commission_value: Optional[Decimal] = 0.0
+    commission_value: Optional[Decimal] = Field(0.0, ge=0)
     approval_status: Optional[ApprovalStatus] = ApprovalStatus.APPROVED
 
     @field_validator('first_name', 'last_name', mode='before')
@@ -98,28 +105,51 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     # Personal
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = None
     
     # Agency
-    agency_name: Optional[str] = None
-    company_legal_name: Optional[str] = None
-    domain: Optional[str] = None
-    business_address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    country: Optional[str] = None
+    agency_name: Optional[str] = Field(None, max_length=200)
+    company_legal_name: Optional[str] = Field(None, max_length=200)
+    domain: Optional[str] = Field(None, max_length=100)
+    business_address: Optional[str] = Field(None, max_length=500)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
     
     # Financial
-    gst_no: Optional[str] = None
-    tax_id: Optional[str] = None
-    currency: Optional[str] = None
+    gst_no: Optional[str] = Field(None, max_length=20)
+    tax_id: Optional[str] = Field(None, max_length=50)
+    currency: Optional[str] = Field(None, min_length=3, max_length=3)
     commission_type: Optional[str] = None
-    commission_value: Optional[Decimal] = None
+    commission_value: Optional[Decimal] = Field(None, ge=0)
     
     # Status
     is_active: Optional[bool] = None
+
+    @field_validator(
+        'first_name', 'last_name', 'agency_name', 'company_legal_name', 
+        'business_address', 'city', 'state', 'country', 'domain',
+        mode='before'
+    )
+    @classmethod
+    def sanitize_all_text(cls, v):
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v).strip()
+        reject_sql(v, 'field')
+        return v
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone_update(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip()
+        if v and not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits.')
+        return v
 
 
 class AgentRegistration(BaseModel):
@@ -253,10 +283,10 @@ class AgentSMTPSettingsBase(BaseModel):
     encryption_type: str = "tls"
 
 class AgentGeneralSettingsUpdate(BaseModel):
-    currency: Optional[str] = "INR"
+    currency: Optional[str] = Field("INR", min_length=3, max_length=3)
     gst_applicable: Optional[bool] = False
     gst_inclusive: Optional[bool] = False
-    gst_percentage: Optional[Decimal] = Decimal("18.00")
+    gst_percentage: Optional[Decimal] = Field(Decimal("18.00"), ge=0, le=100)
 
 class AgentSMTPSettingsCreate(AgentSMTPSettingsBase):
     pass
@@ -320,15 +350,15 @@ class HomepageCardAppearance(BaseModel):
     customIconColor: str = "#3B82F6"
 
 class HomepageSettingsUpdate(BaseModel):
-    agency_name: Optional[str] = None
-    headline1: Optional[str] = None
-    headline2: Optional[str] = None
-    subheading: Optional[str] = None
-    primaryBtnText: Optional[str] = None
-    secondaryBtnText: Optional[str] = None
+    agency_name: Optional[str] = Field(None, max_length=200)
+    headline1: Optional[str] = Field(None, max_length=200)
+    headline2: Optional[str] = Field(None, max_length=200)
+    subheading: Optional[str] = Field(None, max_length=500)
+    primaryBtnText: Optional[str] = Field(None, max_length=50)
+    secondaryBtnText: Optional[str] = Field(None, max_length=50)
     backgroundImageUrl: Optional[str] = None
     navbar_logo_image: Optional[str] = None
-    badgeText: Optional[str] = None
+    badgeText: Optional[str] = Field(None, max_length=100)
     showAiBadge: Optional[bool] = None
     feature_cards: Optional[List[dict]] = None
     wcu_cards: Optional[List[dict]] = None
@@ -339,19 +369,19 @@ class HomepageSettingsUpdate(BaseModel):
     secondaryColor: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
-    plan_trip_heading: Optional[str] = None
-    plan_trip_italic: Optional[str] = None
-    plan_trip_subheading: Optional[str] = None
-    plan_trip_placeholder: Optional[str] = None
-    plan_trip_button_text: Optional[str] = None
-    plan_trip_stats_text: Optional[str] = None
+    plan_trip_heading: Optional[str] = Field(None, max_length=200)
+    plan_trip_italic: Optional[str] = Field(None, max_length=200)
+    plan_trip_subheading: Optional[str] = Field(None, max_length=500)
+    plan_trip_placeholder: Optional[str] = Field(None, max_length=100)
+    plan_trip_button_text: Optional[str] = Field(None, max_length=50)
+    plan_trip_stats_text: Optional[str] = Field(None, max_length=200)
     plan_trip_categories: Optional[List[str]] = None
-    plan_trip_section_heading: Optional[str] = None
-    plan_trip_section_subtext: Optional[str] = None
-    destinations_heading: Optional[str] = None
-    destinations_subtext: Optional[str] = None
-    destinations_link_text: Optional[str] = None
-    destinations_cta_text: Optional[str] = None
+    plan_trip_section_heading: Optional[str] = Field(None, max_length=200)
+    plan_trip_section_subtext: Optional[str] = Field(None, max_length=500)
+    destinations_heading: Optional[str] = Field(None, max_length=200)
+    destinations_subtext: Optional[str] = Field(None, max_length=500)
+    destinations_link_text: Optional[str] = Field(None, max_length=100)
+    destinations_cta_text: Optional[str] = Field(None, max_length=100)
     # ITINERARY PAGE THEME (NEW)
     itinerary_wcu_cards: Optional[List[dict]] = None # [{icon, title, description}]
     itinerary_card_style: Optional[str] = "glassy" # glassy, minimal, rounded, classic
@@ -365,44 +395,70 @@ class HomepageSettingsUpdate(BaseModel):
     # UI Toggles and other page settings
     show_category_pills: Optional[bool] = None
     show_stat_bar: Optional[bool] = None
-    packages_title: Optional[str] = None
-    packages_subtitle: Optional[str] = None
+    packages_title: Optional[str] = Field(None, max_length=200)
+    packages_subtitle: Optional[str] = Field(None, max_length=500)
     show_best_seller_badge: Optional[bool] = None
     show_top_rated_badge: Optional[bool] = None
     show_wishlist: Optional[bool] = None
     show_ai_optimized_badge: Optional[bool] = None
-    ai_optimized_text: Optional[str] = None
-    morning_label: Optional[str] = None
-    afternoon_label: Optional[str] = None
-    evening_label: Optional[str] = None
-    night_label: Optional[str] = None
+    ai_optimized_text: Optional[str] = Field(None, max_length=100)
+    morning_label: Optional[str] = Field(None, max_length=50)
+    afternoon_label: Optional[str] = Field(None, max_length=50)
+    evening_label: Optional[str] = Field(None, max_length=50)
+    night_label: Optional[str] = Field(None, max_length=50)
     show_activity_images: Optional[bool] = None
-    cart_summary_title: Optional[str] = None
-    cart_cta_text: Optional[str] = None
+    cart_summary_title: Optional[str] = Field(None, max_length=100)
+    cart_cta_text: Optional[str] = Field(None, max_length=100)
     show_gst_breakdown: Optional[bool] = None
     show_per_person: Optional[bool] = None
     show_verified_badge: Optional[bool] = None
     show_support_badge: Optional[bool] = None
     show_flexible_badge: Optional[bool] = None
-    modal_cta_text: Optional[str] = None
-    package_cta_text: Optional[str] = None
+    modal_cta_text: Optional[str] = Field(None, max_length=100)
+    package_cta_text: Optional[str] = Field(None, max_length=100)
     # Design File Alignment
     buttonStyle: Optional[dict] = None
     navbarSettings: Optional[dict] = None
     layoutChoices: Optional[dict] = None
     
-    # Audit requested color variables (legacy compatibility items)
-    nav_bg: Optional[str] = None
-    button_color: Optional[str] = None
-    bg_color: Optional[str] = None
-    accent_color: Optional[str] = None
-    font_size: Optional[str] = None
+    # Global Style Settings
     font_family: Optional[str] = None
+    font_color: Optional[str] = None
     
     # Email Settings
     default_email_theme: Optional[str] = None
     default_email_message: Optional[str] = None
     email_templates: Optional[dict] = None
+
+    @field_validator(
+        'agency_name', 'headline1', 'headline2', 'subheading', 
+        'primaryBtnText', 'secondaryBtnText', 'badgeText',
+        'plan_trip_heading', 'plan_trip_italic', 'plan_trip_subheading',
+        'plan_trip_placeholder', 'plan_trip_button_text', 'plan_trip_stats_text',
+        'plan_trip_section_heading', 'plan_trip_section_subtext',
+        'destinations_heading', 'destinations_subtext', 'destinations_link_text',
+        'destinations_cta_text', 'packages_title', 'packages_subtitle',
+        'ai_optimized_text', 'morning_label', 'afternoon_label', 
+        'evening_label', 'night_label', 'cart_summary_title', 
+        'cart_cta_text', 'modal_cta_text', 'package_cta_text',
+        mode='before'
+    )
+    @classmethod
+    def sanitize_homepage_text(cls, v):
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v).strip()
+        reject_sql(v, 'field')
+        return v
+
+    @field_validator('backgroundImageUrl', 'navbar_logo_image', mode='before')
+    @classmethod
+    def validate_urls(cls, v):
+        if not v or not isinstance(v, str):
+            return v
+        if not re.match(r'^https?://', v, re.IGNORECASE) and not v.startswith('data:image/'):
+             raise ValueError('Invalid URL format. Must be http/https or data URL.')
+        return v
 
 
 class Token(BaseModel):
@@ -453,8 +509,15 @@ class ItineraryItemResponse(ItineraryItemBase):
 class PackageAvailabilityBase(BaseModel):
     available_from: date
     available_to: date
-    max_bookings: int = 10
+    max_bookings: int = Field(10, ge=0)
     is_blackout: bool = False
+
+    @field_validator('available_to')
+    @classmethod
+    def validate_date_range(cls, v, info):
+        if 'available_from' in info.data and v < info.data['available_from']:
+            raise ValueError('available_to must be after or same as available_from')
+        return v
 
 
 class PackageAvailabilityResponse(PackageAvailabilityBase):
@@ -466,15 +529,15 @@ class PackageAvailabilityResponse(PackageAvailabilityBase):
 
 
 class PackageBase(BaseModel):
-    title: str
-    description: str
-    destination: str
-    country: Optional[str] = None
-    duration_days: int
-    duration_nights: int
-    trip_style: Optional[str] = None
-    price_per_person: Decimal
-    max_group_size: int = 20
+    title: str = Field(..., min_length=0, max_length=200)
+    description: str = Field(..., min_length=0, max_length=5000)
+    destination: str = Field(..., min_length=0, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
+    duration_days: int = Field(..., ge=1)
+    duration_nights: int = Field(..., ge=0)
+    trip_style: Optional[str] = Field(None, max_length=50)
+    price_per_person: Decimal = Field(..., ge=0)
+    max_group_size: int = Field(20, ge=1)
     included_items: List[str] = []
     excluded_items: List[str] = []
     package_mode: str = "single"
@@ -489,29 +552,42 @@ class PackageBase(BaseModel):
     flight_origin_cities: List[str] = []
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
-    flight_baggage_note: Optional[str] = None
+    flight_baggage_note: Optional[str] = Field(None, max_length=500)
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[dict] = []
 
+    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @classmethod
+    def sanitize_package_text(cls, v):
+        """B-01/B-02/B-08: Strip XSS, reject SQLi. Empty strings allowed for legacy read compatibility."""
+        if v is None or not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'field')
+        return v.strip()
+
 
 class PackageCreate(PackageBase):
-    country: str  # Mandatory on creation
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1, max_length=5000)
+    destination: str = Field(..., min_length=1, max_length=100)
+    country: str = Field(..., min_length=1, max_length=100)
     is_public: bool = True
     itinerary_items: List[ItineraryItemBase] = []
     availability: List[PackageAvailabilityBase] = []
 
 
 class PackageUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    destination: Optional[str] = None
-    country: Optional[str] = None
-    duration_days: Optional[int] = None
-    duration_nights: Optional[int] = None
-    trip_style: Optional[str] = None
-    price_per_person: Optional[Decimal] = None
-    max_group_size: Optional[int] = None
+    title: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    destination: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
+    duration_days: Optional[int] = Field(None, ge=1)
+    duration_nights: Optional[int] = Field(None, ge=0)
+    trip_style: Optional[str] = Field(None, max_length=50)
+    price_per_person: Optional[Decimal] = Field(None, ge=0)
+    max_group_size: Optional[int] = Field(None, ge=1)
     included_items: Optional[List[str]] = None
     excluded_items: Optional[List[str]] = None
     package_mode: Optional[str] = None
@@ -527,10 +603,23 @@ class PackageUpdate(BaseModel):
     flight_origin_cities: Optional[List[str]] = None
     flight_cabin_class: Optional[str] = None
     flight_price_included: Optional[bool] = None
-    flight_baggage_note: Optional[str] = None
+    flight_baggage_note: Optional[str] = Field(None, max_length=500)
     # Cancellation Policy
     cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[dict]] = None
+
+    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @classmethod
+    def sanitize_update_text(cls, v):
+        if v is None or not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'field')
+        # Update fields can be empty if they were meant to be cleared, 
+        # but usually we want at least 1 char if provided.
+        if v is not None and not v.strip():
+             return None # Or allow? For now, if provided, must be valid.
+        return v.strip()
 
 
 class PackageResponse(PackageBase):
@@ -577,14 +666,12 @@ class TravelerBase(BaseModel):
     @field_validator('first_name', 'last_name', 'nationality', mode='before')
     @classmethod
     def sanitize_traveler_text(cls, v):
-        """B-01/B-02/B-08: Strip XSS, reject SQLi, reject whitespace-only."""
+        """B-01/B-02/B-08: Strip XSS, reject SQLi. Empty strings allowed for legacy read compatibility."""
         if not isinstance(v, str):
             return v
         v = strip_xss(v)
         reject_sql(v, 'traveler field')
-        if not v.strip():
-            raise ValueError('Field cannot be empty or contain only whitespace.')
-        return v
+        return v.strip()
 
     @field_validator('date_of_birth', mode='before')
     @classmethod
@@ -733,18 +820,27 @@ class MessageResponse(BaseModel):
 # Trip Planner Schemas
 class ActivityUpdate(BaseModel):
     id: Optional[str] = None
-    title: str = Field(..., max_length=200)
-    description: Optional[str] = None
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
     image_url: Optional[Union[str, List[str]]] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
-    price: Optional[float] = None
-    currency: Optional[str] = "INR"
+    price: Optional[float] = Field(None, ge=0)
+    currency: Optional[str] = Field("INR", min_length=3, max_length=3)
     activities: Optional[List[str]] = []
     meals_included: Optional[List[str]] = []
-    display_order: int = 0
-    rating: Optional[float] = None
-    location: Optional[str] = None
+    display_order: int = Field(0, ge=0)
+    rating: Optional[float] = Field(None, ge=0, le=5)
+    location: Optional[str] = Field(None, max_length=200)
+
+    @field_validator('title', 'description', 'location', mode='before')
+    @classmethod
+    def sanitize_activity_text(cls, v):
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v).strip()
+        reject_sql(v, 'field')
+        return v
 
 class DayScheduleUpdate(BaseModel):
     day_number: int
@@ -969,11 +1065,11 @@ class SubUserPermissionOut(SubUserPermissionIn):
 
 
 class SubUserCreate(BaseModel):
-    first_name: str = Field(..., min_length=1)
-    last_name: str = Field(..., min_length=1)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     phone: Optional[str] = None
-    role_label: str = "Custom"  # Package Manager | Finance Manager | Report Viewer | Custom
+    role_label: str = Field("Custom", max_length=100)
     permissions: List[SubUserPermissionIn] = []
 
     @field_validator('first_name', 'last_name', mode='before')
@@ -981,7 +1077,19 @@ class SubUserCreate(BaseModel):
     def sanitize_name(cls, v):
         if not isinstance(v, str):
             return v
-        return strip_xss(v).strip()
+        v = strip_xss(v).strip()
+        reject_sql(v, 'name')
+        return v
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip()
+        if v and not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits.')
+        return v
 
 
 class SubUserUpdate(BaseModel):

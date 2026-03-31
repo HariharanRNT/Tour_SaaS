@@ -490,7 +490,7 @@ export default function ActivitiesMasterPage() {
                         backdropFilter: 'blur(18px)',
                         WebkitBackdropFilter: 'blur(18px)'
                     }}
-                    className="sm:max-w-[425px] p-0 border-0 animate-custom-modal"
+                    className="sm:max-w-[400px] p-0 border-0 animate-custom-modal max-h-[90vh] overflow-y-auto overflow-x-hidden scrollbar-hide"
                     style={{
                         background: 'rgba(255, 255, 255, 0.28)',
                         backdropFilter: 'blur(28px)',
@@ -523,9 +523,9 @@ export default function ActivitiesMasterPage() {
                     <button
                         type="button"
                         onClick={() => setIsNewDestModalOpen(false)}
-                        className="absolute top-5 right-5 z-20 flex items-center justify-center transition-all duration-250 hover:-translate-y-0.5"
+                        className="absolute top-4 right-4 z-20 flex items-center justify-center transition-all duration-250 hover:-translate-y-0.5"
                         style={{
-                            width: '38px', height: '38px', borderRadius: '50%',
+                            width: '32px', height: '32px', borderRadius: '50%',
                             background: 'rgba(255,255,255,0.35)',
                             backdropFilter: 'blur(12px)',
                             border: '1px solid rgba(255,255,255,0.5)'
@@ -542,11 +542,11 @@ export default function ActivitiesMasterPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3A1A08', transition: 'transform 0.25s ease' }}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
 
-                    <div className="px-8 pt-6 pb-2 text-center">
-                        <div className="mx-auto w-12 h-12 mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(255, 122, 69, 0.15)', boxShadow: '0 0 20px rgba(255, 122, 69, 0.2)' }}>
-                            <MapPin className="h-6 w-6 text-[var(--primary)]" />
+                    <div className="px-6 pt-5 pb-2 text-center">
+                        <div className="mx-auto w-10 h-10 mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(255, 122, 69, 0.15)', boxShadow: '0 0 20px rgba(255, 122, 69, 0.2)' }}>
+                            <MapPin className="h-5 w-5 text-[var(--primary)]" />
                         </div>
-                        <DialogTitle style={{ fontFamily: "'Playfair Display', serif", color: '#3A1A08', fontSize: '26px', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '12px' }}>
+                        <DialogTitle style={{ fontFamily: "'Playfair Display', serif", color: '#3A1A08', fontSize: '22px', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '8px' }}>
                             {isEditing ? 'Edit Destination' : 'New Destination'}
                         </DialogTitle>
                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>
@@ -555,8 +555,8 @@ export default function ActivitiesMasterPage() {
                         </DialogDescription>
                     </div>
 
-                    <form onSubmit={handleCreateNewDestination} className="px-8 pb-8">
-                        <div className="space-y-4 mb-6 text-left">
+                    <form onSubmit={handleCreateNewDestination} className="px-6 pb-6">
+                        <div className="space-y-3 mb-5 text-left">
                             <div className="space-y-2">
                                 <label htmlFor="destination-name" style={{ color: 'var(--primary-glow)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
                                     Destination
@@ -571,8 +571,8 @@ export default function ActivitiesMasterPage() {
                                         background: 'rgba(255,255,255,0.45)',
                                         backdropFilter: 'blur(14px)',
                                         border: '1px solid rgba(255,255,255,0.6)',
-                                        borderRadius: '18px',
-                                        padding: '10px 16px',
+                                        borderRadius: '16px',
+                                        padding: '8px 14px',
                                         height: 'auto',
                                         boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5)'
                                     }}
@@ -595,7 +595,7 @@ export default function ActivitiesMasterPage() {
 
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer group",
+                                        "border-2 border-dashed rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer group h-44 flex items-center justify-center",
                                         newCityImage ? "border-[var(--primary)]/50 bg-[var(--primary)]/5" : "border-white/40 bg-white/10 hover:border-[var(--primary)]/40 hover:bg-white/20"
                                     )}
                                     onClick={() => document.getElementById('dest-upload')?.click()}
@@ -606,7 +606,7 @@ export default function ActivitiesMasterPage() {
                                             <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to S3...</p>
                                         </div>
                                     ) : newCityImage ? (
-                                        <div className="relative aspect-video rounded-xl overflow-hidden border border-white/60 shadow-lg">
+                                        <div className="relative w-full h-full rounded-xl overflow-hidden border border-white/60 shadow-lg">
                                             <img src={newCityImage} alt="Preview" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                 <div className="p-2 bg-white/90 rounded-full text-[var(--primary)] shadow-xl">
@@ -673,24 +673,24 @@ export default function ActivitiesMasterPage() {
 
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox id="is-popular" checked={isPopular} onCheckedChange={(checked) => setIsPopular(checked as boolean)} />
-                                <label htmlFor="is-popular" className="text-sm font-semibold text-[#3A1A08] cursor-pointer">
-                                    Show in Popular Destinations (Plan Trip Page)
+                                <label htmlFor="is-popular" className="text-xs font-semibold text-[#3A1A08] cursor-pointer">
+                                    Show in Popular Destinations
                                 </label>
                             </div>
                         </div>
 
-                        <div className="flex gap-4 pt-4">
+                        <div className="flex gap-3 pt-2">
                             <Button
                                 type="button"
                                 onClick={() => setIsNewDestModalOpen(false)}
                                 className="flex-1 transition-all duration-250"
                                 style={{
-                                    height: '46px',
+                                    height: '40px',
                                     background: 'rgba(255,255,255,0.25)',
                                     backdropFilter: 'blur(10px)',
                                     border: '1px solid rgba(255,255,255,0.4)',
                                     color: 'rgba(58,26,8,0.8)',
-                                    borderRadius: '30px',
+                                    borderRadius: '20px',
                                     fontWeight: 600,
                                     transform: 'translateY(0)'
                                 }}
@@ -709,9 +709,9 @@ export default function ActivitiesMasterPage() {
                                 type="submit"
                                 className="flex-1 transition-all duration-300 border-0 relative overflow-hidden group"
                                 style={{
-                                    height: '46px',
+                                    height: '40px',
                                     background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-                                    borderRadius: '30px',
+                                    borderRadius: '20px',
                                     color: 'white',
                                     fontWeight: 600,
                                     boxShadow: '0 8px 25px rgba(255,122,69,0.35)',

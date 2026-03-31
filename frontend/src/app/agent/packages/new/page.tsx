@@ -784,7 +784,8 @@ export default function CreatePackagePage() {
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
                                                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
-                                                left: formData.package_mode === 'single' ? '4px' : 'calc(50%)' }}
+                                                left: formData.package_mode === 'single' ? '4px' : 'calc(50%)'
+                                            }}
                                         />
 
                                         {/* Single Option */}
@@ -1234,7 +1235,8 @@ export default function CreatePackagePage() {
                                                         className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                         style={{
                                                             borderRadius: '50px',
-                                                            transition: 'background 0.2s' }}
+                                                            transition: 'background 0.2s'
+                                                        }}
                                                         onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
@@ -1264,7 +1266,8 @@ export default function CreatePackagePage() {
                                                         className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                         style={{
                                                             borderRadius: '50px',
-                                                            transition: 'background 0.2s' }}
+                                                            transition: 'background 0.2s'
+                                                        }}
                                                         onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
                                                         onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
@@ -1364,13 +1367,11 @@ export default function CreatePackagePage() {
                                                 : prev.cancellation_rules
                                         }))
                                     }}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${
-                                        formData.cancellation_enabled ? 'bg-emerald-500' : 'bg-gray-300'
-                                    }`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${formData.cancellation_enabled ? 'bg-emerald-500' : 'bg-gray-300'
+                                        }`}
                                 >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
-                                        formData.cancellation_enabled ? 'translate-x-6' : 'translate-x-1'
-                                    }`} />
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${formData.cancellation_enabled ? 'translate-x-6' : 'translate-x-1'
+                                        }`} />
                                 </button>
                             </div>
 
@@ -1468,125 +1469,128 @@ export default function CreatePackagePage() {
                                 </div>
                             </div>
                             <CardContent className="p-6">
-                                    {/* Header row with label, counter pill, Clear All */}
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <Label
-                                            className={cn(
-                                                "text-xs font-semibold uppercase tracking-wider transition-colors",
-                                                tripStyleError ? "text-red-500" : "text-gray-700"
-                                            )}
-                                        >
-                                            TRIP STYLE <span className="text-red-500">*</span>
-                                        </Label>
-
-                                        {/* Live counter pill */}
-                                        {formData.trip_styles.length > 0 && (
-                                            <span
-                                                className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
-                                                style={{
-                                                    background: 'rgba(255,107,43,0.15)',
-                                                    border: '1px solid rgba(255,107,43,0.40)',
-                                                    color: 'var(--primary)' }}
-                                            >
-                                                {formData.trip_styles.length} selected
-                                            </span>
-                                        )}
-
-                                        {/* Clear all — shows when 2+ selected */}
-                                        {formData.trip_styles.length >= 2 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => ({ ...prev, trip_styles: [] }))
-                                                    setTripStyleError(false)
-                                                }}
-                                                className="text-[10px] font-semibold transition-colors"
-                                                style={{ color: 'rgba(255,107,43,0.70)' }}
-                                                onMouseEnter={e => { e.currentTarget.style.color = 'var(--primary)' }}
-                                                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,107,43,0.70)' }}
-                                            >
-                                                Clear all
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <p className="text-[11px] text-gray-500 -mt-1">Who is this package designed for? Select all that apply.</p>
-
-                                    {/* Validation error border flash */}
-                                    <div
+                                {/* Header row with label, counter pill, Clear All */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Label
                                         className={cn(
-                                            "grid grid-cols-2 lg:grid-cols-3 gap-3 rounded-2xl transition-all duration-300",
-                                            tripStyleError ? "ring-2 ring-red-400/60 ring-offset-1 p-1" : ""
+                                            "text-xs font-semibold uppercase tracking-wider transition-colors",
+                                            tripStyleError ? "text-red-500" : "text-gray-700"
                                         )}
                                     >
-                                        {TRIP_STYLES.map((style, index) => {
-                                            const isSelected = formData.trip_styles.includes(style.id)
-                                            return (
-                                                <div
-                                                    key={style.id}
-                                                    onClick={() => toggleTripStyle(style.id)}
-                                                    className={cn(
-                                                        "glass-style-card relative cursor-pointer p-4 flex flex-col items-center justify-center gap-3 fade-up-enter group",
-                                                        isSelected ? "active" : ""
-                                                    )}
-                                                    style={{
-                                                        animationDelay: `${index * 50}ms`,
-                                                        transition: 'transform 150ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease',
-                                                        ...(isSelected ? {
-                                                            background: 'var(--primary-glow)',
-                                                            border: '2px solid var(--primary)',
-                                                            borderRadius: '16px',
-                                                            boxShadow: '0 8px 24px var(--primary-glow)' } : {
-                                                            background: 'rgba(255,255,255,0.18)',
-                                                            border: '1px solid rgba(255,255,255,0.35)',
-                                                            borderRadius: '16px' })
-                                                    }}
-                                                >
-                                                    {/* Orange checkmark badge */}
-                                                    {isSelected && (
-                                                        <div
-                                                            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-150"
-                                                            style={{ background: 'var(--primary)', flexShrink: 0 }}
-                                                        >
-                                                            <Check className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />
-                                                        </div>
-                                                    )}
+                                        TRIP STYLE <span className="text-red-500">*</span>
+                                    </Label>
 
-                                                    {/* Animated hover outline */}
-                                                    <div className={cn(
-                                                        "absolute inset-0 rounded-2xl border-2 transition-all duration-300 pointer-events-none",
-                                                        isSelected ? "border-[var(--primary)] opacity-100 scale-100" : "border-transparent opacity-0 scale-95 group-hover:border-[var(--primary)]/30 group-hover:scale-100 group-hover:opacity-100"
-                                                    )} />
-
-                                                    {/* Icon */}
-                                                    <span className={cn(
-                                                        "text-3xl transition-all duration-500",
-                                                        isSelected
-                                                            ? "scale-[1.15] drop-shadow-md filter-none transform-gpu"
-                                                            : "opacity-55 grayscale sepia-[.3] hue-rotate-[-30deg] group-hover:scale-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:sepia-0 group-hover:drop-shadow-sm"
-                                                    )}>
-                                                        {style.icon}
-                                                    </span>
-
-                                                    {/* Label */}
-                                                    <span className={cn(
-                                                        "text-xs font-bold text-center tracking-wide transition-colors z-10",
-                                                        isSelected ? "text-[var(--primary)] font-semibold" : "text-[rgba(80,40,10,0.70)] group-hover:text-[var(--primary)]"
-                                                    )}>
-                                                        {style.label}
-                                                    </span>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-
-                                    {/* Validation tooltip */}
-                                    {tripStyleError && (
-                                        <p className="text-[11px] text-red-500 flex items-center gap-1.5 mt-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            Please select at least one trip style
-                                        </p>
+                                    {/* Live counter pill */}
+                                    {formData.trip_styles.length > 0 && (
+                                        <span
+                                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                                            style={{
+                                                background: 'rgba(255,107,43,0.15)',
+                                                border: '1px solid rgba(255,107,43,0.40)',
+                                                color: 'var(--primary)'
+                                            }}
+                                        >
+                                            {formData.trip_styles.length} selected
+                                        </span>
                                     )}
+
+                                    {/* Clear all — shows when 2+ selected */}
+                                    {formData.trip_styles.length >= 2 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData(prev => ({ ...prev, trip_styles: [] }))
+                                                setTripStyleError(false)
+                                            }}
+                                            className="text-[10px] font-semibold transition-colors"
+                                            style={{ color: 'rgba(255,107,43,0.70)' }}
+                                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--primary)' }}
+                                            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,107,43,0.70)' }}
+                                        >
+                                            Clear all
+                                        </button>
+                                    )}
+                                </div>
+
+                                <p className="text-[11px] text-gray-500 -mt-1">Who is this package designed for? Select all that apply.</p>
+
+                                {/* Validation error border flash */}
+                                <div
+                                    className={cn(
+                                        "grid grid-cols-2 lg:grid-cols-3 gap-3 rounded-2xl transition-all duration-300",
+                                        tripStyleError ? "ring-2 ring-red-400/60 ring-offset-1 p-1" : ""
+                                    )}
+                                >
+                                    {TRIP_STYLES.map((style, index) => {
+                                        const isSelected = formData.trip_styles.includes(style.id)
+                                        return (
+                                            <div
+                                                key={style.id}
+                                                onClick={() => toggleTripStyle(style.id)}
+                                                className={cn(
+                                                    "glass-style-card relative cursor-pointer p-4 flex flex-col items-center justify-center gap-3 fade-up-enter group",
+                                                    isSelected ? "active" : ""
+                                                )}
+                                                style={{
+                                                    animationDelay: `${index * 50}ms`,
+                                                    transition: 'transform 150ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease',
+                                                    ...(isSelected ? {
+                                                        background: 'var(--primary-glow)',
+                                                        border: '2px solid var(--primary)',
+                                                        borderRadius: '16px',
+                                                        boxShadow: '0 8px 24px var(--primary-glow)'
+                                                    } : {
+                                                        background: 'rgba(255,255,255,0.18)',
+                                                        border: '1px solid rgba(255,255,255,0.35)',
+                                                        borderRadius: '16px'
+                                                    })
+                                                }}
+                                            >
+                                                {/* Orange checkmark badge */}
+                                                {isSelected && (
+                                                    <div
+                                                        className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-150"
+                                                        style={{ background: 'var(--primary)', flexShrink: 0 }}
+                                                    >
+                                                        <Check className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />
+                                                    </div>
+                                                )}
+
+                                                {/* Animated hover outline */}
+                                                <div className={cn(
+                                                    "absolute inset-0 rounded-2xl border-2 transition-all duration-300 pointer-events-none",
+                                                    isSelected ? "border-[var(--primary)] opacity-100 scale-100" : "border-transparent opacity-0 scale-95 group-hover:border-[var(--primary)]/30 group-hover:scale-100 group-hover:opacity-100"
+                                                )} />
+
+                                                {/* Icon */}
+                                                <span className={cn(
+                                                    "text-3xl transition-all duration-500",
+                                                    isSelected
+                                                        ? "scale-[1.15] drop-shadow-md filter-none transform-gpu"
+                                                        : "opacity-55 grayscale sepia-[.3] hue-rotate-[-30deg] group-hover:scale-110 group-hover:grayscale-0 group-hover:opacity-100 group-hover:sepia-0 group-hover:drop-shadow-sm"
+                                                )}>
+                                                    {style.icon}
+                                                </span>
+
+                                                {/* Label */}
+                                                <span className={cn(
+                                                    "text-xs font-bold text-center tracking-wide transition-colors z-10",
+                                                    isSelected ? "text-[var(--primary)] font-semibold" : "text-[rgba(80,40,10,0.70)] group-hover:text-[var(--primary)]"
+                                                )}>
+                                                    {style.label}
+                                                </span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                {/* Validation tooltip */}
+                                {tripStyleError && (
+                                    <p className="text-[11px] text-red-500 flex items-center gap-1.5 mt-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        Please select at least one trip style
+                                    </p>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -1618,8 +1622,8 @@ export default function CreatePackagePage() {
                                                     variant="outline"
                                                     className={cn(
                                                         "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
-                                                        isSelected 
-                                                            ? "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-transparent shadow-indigo-200/50" 
+                                                        isSelected
+                                                            ? "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-transparent shadow-indigo-200/50"
                                                             : "bg-white/10 backdrop-blur-md text-[#2D1A0E] border-white/40 hover:bg-white/20 hover:border-indigo-300 hover:text-indigo-600"
                                                     )}
                                                     onClick={() => toggleActivity(activity.id)}
@@ -1897,7 +1901,7 @@ export default function CreatePackagePage() {
                                                                         const token = localStorage.getItem('token');
                                                                         const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
                                                                             method: 'POST',
-                                                                            headers: { 
+                                                                            headers: {
                                                                                 'Authorization': `Bearer ${token}`,
                                                                                 'Content-Type': 'application/json'
                                                                             },

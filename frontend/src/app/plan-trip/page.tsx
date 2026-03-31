@@ -401,7 +401,7 @@ function PlanTripContent() {
 
         if (chips.length > 0) {
             return (
-                <div className="flex flex-wrap items-center gap-4 mb-4 mt-2">
+                <div className="flex flex-wrap items-center gap-4 mb-8 mt-4">
                     {chips}
                     <button onClick={clearAllFilters} className="text-[11px] font-bold text-[var(--primary)] hover:underline px-2 transition-all">Clear All</button>
                 </div>
@@ -950,7 +950,7 @@ function PlanTripContent() {
                                         })();
 
                                         return (
-                                             <div
+                                            <div
                                                 key={item.title}
                                                 onClick={() => router.push(`/plan-trip?trip_style=${encodeURIComponent(item.title)}`)}
                                                 className="glass-agent min-w-[220px] md:min-w-0 p-8 text-center cursor-pointer flex flex-col items-center group transition-all duration-300 hover:-translate-y-[8px] snap-start border-b-[4px] border-transparent hover:border-[var(--primary)] hover:shadow-[0_20px_40px_rgba(255,180,160,0.2)]"
@@ -1050,7 +1050,7 @@ function PlanTripContent() {
                 {hasSearched && (
                     <motion.div
                         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-                        className="container mx-auto px-4 mt-8 pb-16"
+                        className="container mx-auto px-4 mt-28 pb-16 relative z-10"
                     >
                         {/* RESULTS CONTEXT SECTION - Alternate BG */}
                         <div className="relative -mx-4 px-4 py-8 bg-white/30 backdrop-blur-sm rounded-t-[48px] border-t border-orange-100">
@@ -1067,7 +1067,7 @@ function PlanTripContent() {
                                 <div className="flex-1 min-w-0">
                                     {/* Context Header & Mobile Filter Trigger */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[80px] px-6 border border-white/20 shadow-[0_4px_24px_var(--primary-glow)] flex-1 flex flex-col justify-center relative overflow-hidden">
+                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[90px] pt-4 px-6 border border-white/20 shadow-[0_4px_24px_var(--primary-glow)] flex-1 flex flex-col justify-center relative overflow-hidden">
                                             {/* faint texture overlay */}
                                             <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
@@ -1159,7 +1159,7 @@ function PlanTripContent() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px]">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] items-stretch grid-auto-rows-[1fr]">
                                             {packages.map((pkg, idx) => (
                                                 <motion.div
                                                     key={pkg.id}
@@ -1229,45 +1229,47 @@ function PlanTripContent() {
                                                         </div>
 
                                                         {/* Content */}
-                                                        <div className="p-5 flex flex-col flex-1 cursor-pointer bg-transparent" onClick={() => handleContinueToBook(pkg)}>
-                                                            <div className="flex items-start justify-between gap-3 mb-2">
-                                                                <h3 className="font-bold text-[#3A1A08] text-xl line-clamp-3 leading-tight transition-colors font-display min-h-[72px]">
-                                                                    {pkg.title}
-                                                                </h3>
-                                                            </div>
+                                                        <div className="p-5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between min-h-[160px]" onClick={() => handleContinueToBook(pkg)}>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-start justify-between gap-3 mb-2">
+                                                                    <h3 className="font-bold text-[#3A1A08] text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[3rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                                                                        {pkg.title}
+                                                                    </h3>
+                                                                </div>
 
-                                                            {/* Destination Route */}
-                                                            <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
-                                                                <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-                                                                {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
-                                                                    <span className="truncate">
-                                                                        {pkg.destinations.map(d => d.city).join(' → ')}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span>{pkg.destination} · {pkg.country || "Asia"}</span>
-                                                                )}
-                                                            </div>
+                                                                {/* Destination Route */}
+                                                                <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
+                                                                    <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+                                                                    {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
+                                                                        <span className="truncate">
+                                                                            {pkg.destinations.map(d => d.city).join(' → ')}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span>{pkg.destination} · {pkg.country || "Asia"}</span>
+                                                                    )}
+                                                                </div>
 
-                                                            {/* Tags */}
-                                                            <div className="flex flex-wrap gap-2 mb-3 max-h-[80px] overflow-hidden">
-                                                                {pkg.trip_style && (
-                                                                    <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
-                                                                        {pkg.trip_style}
-                                                                    </Badge>
-                                                                )}
-                                                                {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
-                                                                    typeof act === 'string' ? ( // Handle JSON string edge cases if any
-                                                                        <Badge key={idx} variant="outline" className="text-[#8B5030] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
-                                                                            <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
-                                                                            {act.replace(/["\[\]]/g, '')}
+                                                                {/* Tags */}
+                                                                <div className="flex flex-wrap gap-2 mb-3 min-h-[28px] items-center">
+                                                                    {pkg.trip_style && (
+                                                                        <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                                                                            {pkg.trip_style}
                                                                         </Badge>
-                                                                    ) : null
-                                                                ))}
+                                                                    )}
+                                                                    {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
+                                                                        typeof act === 'string' ? ( // Handle JSON string edge cases if any
+                                                                            <Badge key={idx} variant="outline" className="text-[#8B5030] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
+                                                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
+                                                                                {act.replace(/["\[\]]/g, '')}
+                                                                            </Badge>
+                                                                        ) : null
+                                                                    ))}
+                                                                </div>
                                                             </div>
 
                                                             {/* Rating & Group info (Mocked for now since not in schema) */}
-                                                            <div className="flex items-center gap-3 text-sm font-medium text-[#8B5030]/80 mb-2 mt-auto">
+                                                            <div className="flex items-center gap-3 text-sm font-medium text-[#8B5030]/80 mt-auto pt-2">
                                                                 <span className="flex items-center gap-1">
                                                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FFB347] to-[#FF8C00] font-bold text-lg">★</span>
                                                                     4.5

@@ -44,12 +44,12 @@ async def get_agent_settings(
     agent_profile = await get_agent_profile_by_id(db, agent_id)
     
     # SMTP
-    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_id)
+    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
     res_smtp = await db.execute(stmt_smtp)
     smtp_settings = res_smtp.scalar_one_or_none()
     
     # Razorpay
-    stmt_rp = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_id)
+    stmt_rp = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_profile.id)
     res_rp = await db.execute(stmt_rp)
     rp_settings = res_rp.scalar_one_or_none()
     
@@ -94,11 +94,11 @@ async def update_general_settings(
     await db.refresh(agent_profile)
     
     # Reload other settings for full response
-    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_id)
+    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
     res_smtp = await db.execute(stmt_smtp)
     smtp_settings = res_smtp.scalar_one_or_none()
     
-    stmt_rp = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_id)
+    stmt_rp = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_profile.id)
     res_rp = await db.execute(stmt_rp)
     rp_settings = res_rp.scalar_one_or_none()
     
@@ -125,9 +125,10 @@ async def update_smtp_settings(
     Update or create SMTP settings.
     """
     agent_id = agent_user.agent_id
+    agent_profile = await get_agent_profile_by_id(db, agent_id)
 
     # Check if exists
-    stmt = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_id)
+    stmt = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
     result = await db.execute(stmt)
     smtp_settings = result.scalar_one_or_none()
     
@@ -137,7 +138,7 @@ async def update_smtp_settings(
             raise HTTPException(status_code=400, detail="Password is required for initial setup")
             
         smtp_settings = AgentSMTPSettings(
-            agent_id=agent_id,
+            agent_id=agent_profile.id,
             host=settings_in.host,
             port=settings_in.port,
             username=settings_in.username,
@@ -175,6 +176,7 @@ async def test_smtp_connection(
     Test SMTP configuration by sending a test email to the agent's email.
     """
     agent_id = agent_user.agent_id
+    agent_profile = await get_agent_profile_by_id(db, agent_id)
     
     # 1. Determine password to use
     password_to_use = settings_in.password
@@ -184,8 +186,8 @@ async def test_smtp_connection(
     if not password_to_use:
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Password empty in test request for agent {agent_id}. Attempting fallback to DB.")
-        stmt = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_id)
+        logger.info(f"Password empty in test request for agent {agent_profile.id}. Attempting fallback to DB.")
+        stmt = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
         result = await db.execute(stmt)
         saved_settings = result.scalar_one_or_none()
         
@@ -261,9 +263,10 @@ async def update_razorpay_settings(
     Update or create Razorpay settings.
     """
     agent_id = agent_user.agent_id
+    agent_profile = await get_agent_profile_by_id(db, agent_id)
 
     # Check if exists
-    stmt = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_id)
+    stmt = select(AgentRazorpaySettings).where(AgentRazorpaySettings.agent_id == agent_profile.id)
     result = await db.execute(stmt)
     rp_settings = result.scalar_one_or_none()
     
@@ -273,7 +276,7 @@ async def update_razorpay_settings(
             raise HTTPException(status_code=400, detail="Key Secret is required for initial setup")
             
         rp_settings = AgentRazorpaySettings(
-            agent_id=agent_id,
+            agent_id=agent_profile.id,
             key_id=settings_in.key_id,
             key_secret=encrypt_value(settings_in.key_secret)
         )
@@ -432,7 +435,7 @@ async def send_test_email(
     # 4. Resolve SMTP
     # Try to use agent's own SMTP if configured
     smtp_config = None
-    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_id)
+    stmt_smtp = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
     res_smtp = await db.execute(stmt_smtp)
     saved_smtp = res_smtp.scalar_one_or_none()
     

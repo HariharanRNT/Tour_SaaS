@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Fraunces, DM_Sans, Sora, Playfair_Display } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Fraunces, DM_Sans, Sora, Playfair_Display, JetBrains_Mono, Dancing_Script, Quicksand } from "next/font/google";
 import "./globals.css";
 import { MainLayout } from "@/components/MainLayout";
 import { Toaster } from 'sonner';
@@ -10,6 +10,9 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: '--font-fraunces', dis
 const dmSans = DM_Sans({ subsets: ["latin"], variable: '--font-dm-sans', display: 'swap' });
 const sora = Sora({ subsets: ["latin"], variable: '--font-sora', display: 'swap' });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: '--font-playfair', display: 'swap' });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: '--font-mono', display: 'swap' });
+const script = Dancing_Script({ subsets: ["latin"], weight: ['400', '500', '600', '700'], variable: '--font-script', display: 'swap' });
+const rounded = Quicksand({ subsets: ["latin"], variable: '--font-rounded', display: 'swap' });
 
 export const metadata: Metadata = {
     title: "TourSaaS - Book Your Dream Vacation",
@@ -87,7 +90,7 @@ function generateThemeStyles(settings: any) {
     const hsl = hexToHsl(p);
 
     return `
-        :root {
+        body.is-branded {
             --primary: ${p};
             --primary-hsl: ${hsl};
             --ring: ${hsl};
@@ -98,7 +101,23 @@ function generateThemeStyles(settings: any) {
             --primary-soft: ${soft};
             --gradient-start: ${p};
             --gradient-mid: ${sec};
+            
+            /* Navbar Settings */
+            --navbar-bg: ${settings.navbarSettings?.bgColor || 'rgba(255, 237, 213, 0.55)'};
+            --navbar-text: ${settings.navbarSettings?.textColor || '#0a0a0a'};
+            
+            /* Button Settings */
+            --button-bg: ${settings.buttonStyle?.bgColor || p};
+            --button-text: ${settings.buttonStyle?.textColor || '#ffffff'};
+            --button-radius: ${settings.buttonStyle?.borderRadius || '0.75rem'};
+            
+            /* Page Settings */
+            --page-bg: ${settings.bg_color || 'transparent'};
+            --accent-color: ${settings.accent_color || p};
+
             ${settings.font_family ? `--font-family: ${settings.font_family};` : ''}
+            ${settings.font_family ? `--project-font-family: ${settings.font_family};` : ''}
+            ${settings.font_color ? `--project-font-color: ${settings.font_color};` : ''}
         }
     `.replace(/\s+/g, ' ');
 }
@@ -112,7 +131,7 @@ export default async function RootLayout({
     const homepageSettings = initialTheme?.homepage_settings || null;
 
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${dmSans.variable} ${inter.variable} ${jakarta.variable} ${sora.variable} ${playfair.variable} ${mono.variable} ${script.variable} ${rounded.variable}`}>
             <head>
                 {initialTheme?.id && <meta name="agent-id" content={initialTheme.id} />}
                 <ThemeInitializer initialSettings={homepageSettings} />
@@ -120,7 +139,7 @@ export default async function RootLayout({
                     <style dangerouslySetInnerHTML={{ __html: generateThemeStyles(homepageSettings) }} />
                 )}
             </head>
-            <body className={`${dmSans.className} ${fraunces.variable} ${dmSans.variable} ${inter.variable} ${jakarta.variable} ${sora.variable} ${playfair.variable}`}>
+            <body className={`${dmSans.className} antialiased`}>
                 <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
                     <Providers>
                         <ScrollToTop />

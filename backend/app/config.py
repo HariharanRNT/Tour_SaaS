@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-goes-here-change-in-production"
     API_V1_PREFIX: str = "/api/v1"
     FRONTEND_URL: str = "http://localhost:3000"
+    API_URL: str = "http://localhost:8000"
     
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./tour_saas.db"
@@ -72,6 +73,10 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
     S3_BUCKET_NAME: str = ""
+    
+    # Storage
+    USE_S3: bool = False  # Set to True if S3 is properly configured
+    UPLOAD_DIR: str = "static/uploads"
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://agent.local:3000"

@@ -21,6 +21,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/context/AuthContext';
 
 interface Plan {
     id: string;
@@ -49,6 +50,7 @@ interface Subscription {
 export default function SubscriptionPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { refreshUser } = useAuth();
 
     // Check if sub-user (they shouldn't be here)
     useEffect(() => {
@@ -150,8 +152,12 @@ export default function SubscriptionPage() {
             }
             return res.json();
         },
-        onSuccess: (updatedSub) => {
+        onSuccess: async (updatedSub) => {
             queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+            
+            // Refresh global auth state to update SubscriptionGuard
+            await refreshUser();
+            
             toast.success(`Success! Your ${updatedSub.plan.name} plan is now active.`);
 
             const userStr = localStorage.getItem('user');
@@ -306,7 +312,7 @@ export default function SubscriptionPage() {
         });
     };
 
-    const handleSuccess = (plan: Plan, message?: string) => {
+    const handleSuccess = async (plan: Plan, message?: string) => {
         setSuccessPlan(plan);
         if (message) {
             toast.success(message);
@@ -316,6 +322,12 @@ export default function SubscriptionPage() {
 
         // Update local user data and redirect
         const userStr = localStorage.getItem('user');
+        // Refresh global auth state to update SubscriptionGuard
+        await refreshUser();
+
+        // Invalidate queries to update billing UI
+        queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+
         if (userStr) {
             const user = JSON.parse(userStr);
             user.has_active_subscription = true;

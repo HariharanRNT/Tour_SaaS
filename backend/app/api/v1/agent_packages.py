@@ -44,7 +44,6 @@ def _persist_cancellation_rules(enabled: bool, rules: list) -> list:
 
 
 @router.get("/packages", response_model=PaginatedPackageResponse)
-@cache(expire=300, namespace="packages")
 async def list_agent_packages(
     status_filter: Optional[str] = None,
     destination: Optional[str] = None,
@@ -160,6 +159,7 @@ async def create_agent_package(
         
         # Invalidate cache
         await FastAPICache.clear(namespace="packages")
+        await FastAPICache.clear(namespace="dashboard")
         
         # Pre-generate PDF in background
         generate_package_pdf_task.delay(str(package_id))
@@ -264,6 +264,7 @@ async def update_agent_package(
     
     # Invalidate cache
     await FastAPICache.clear(namespace="packages")
+    await FastAPICache.clear(namespace="dashboard")
     
     # Pre-generate PDF in background
     generate_package_pdf_task.delay(str(package_id))
@@ -345,6 +346,7 @@ async def delete_agent_package(
     
     # Invalidate cache
     await FastAPICache.clear(namespace="packages")
+    await FastAPICache.clear(namespace="dashboard")
     
     # Clear PDF cache
     try:
@@ -393,6 +395,7 @@ async def toggle_agent_package_status(
     
     # Invalidate cache
     await FastAPICache.clear(namespace="packages")
+    await FastAPICache.clear(namespace="dashboard")
     
     # Pre-generate PDF in background
     generate_package_pdf_task.delay(str(package_id))

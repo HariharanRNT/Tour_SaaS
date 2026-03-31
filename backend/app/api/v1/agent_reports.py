@@ -63,14 +63,17 @@ async def get_agent_report_summary(
             # Revenue
             rev_stmt = select(func.sum(Booking.total_amount)).where(
                 Booking.agent_id == current_agent.agent_id,
-                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                Booking.payment_status == PaymentStatus.SUCCEEDED
             )
             if start: rev_stmt = rev_stmt.where(Booking.created_at >= start)
             if end: rev_stmt = rev_stmt.where(Booking.created_at < end)
             
             # Bookings
             book_stmt = select(func.count(Booking.id)).where(
-                Booking.agent_id == current_agent.agent_id
+                Booking.agent_id == current_agent.agent_id, 
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                Booking.payment_status == PaymentStatus.SUCCEEDED
             )
             if start: book_stmt = book_stmt.where(Booking.created_at >= start)
             if end: book_stmt = book_stmt.where(Booking.created_at < end)
@@ -173,11 +176,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= h_start,
                     Booking.created_at < h_end
                 )
@@ -203,11 +209,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -233,11 +242,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= d_start,
                     Booking.created_at < d_end
                 )
@@ -269,11 +281,14 @@ async def get_agent_report_charts(
                 rev_stmt = select(func.sum(Booking.total_amount)).where(
                     Booking.agent_id == current_agent.agent_id,
                     Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
                 book_stmt = select(func.count(Booking.id)).where(
                     Booking.agent_id == current_agent.agent_id,
+                    Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                    Booking.payment_status == PaymentStatus.SUCCEEDED,
                     Booking.created_at >= m_start,
                     Booking.created_at < m_end
                 )
@@ -304,11 +319,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= h_start, 
                         Booking.created_at < h_end
                     )
@@ -332,11 +350,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= d_start, 
                         Booking.created_at < d_end
                     )
@@ -364,11 +385,14 @@ async def get_agent_report_charts(
                     rev_stmt = select(func.sum(Booking.total_amount)).where(
                         Booking.agent_id==current_agent.agent_id, 
                         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
                     book_stmt = select(func.count(Booking.id)).where(
                         Booking.agent_id==current_agent.agent_id, 
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
                         Booking.created_at >= m_start, 
                         Booking.created_at < m_end
                     )
@@ -408,7 +432,8 @@ async def get_agent_report_charts(
             func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+            Booking.payment_status == PaymentStatus.SUCCEEDED
         )
 
         if filter_start:
@@ -478,8 +503,53 @@ async def get_agent_package_performance(
         # For now, we'll fetch all agent packages, compute metrics, then slice for pagination.
         # In a very large scale system, these metrics would be pre-calculated/cached.
         
-        # Get all packages that the agent has bookings for, or created themselves
-        pkg_query = select(Package).where(
+        # Optimized single query to fetch all metrics for all relevant packages
+        stmt = select(
+            Package,
+            func.count(Booking.id).label('total_bookings'),
+            func.sum(
+                case(
+                    (and_(
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
+                        or_(
+                            Package.created_by == current_agent.agent_id,
+                            Booking.agent_id == current_agent.agent_id
+                        )
+                    ), Booking.total_amount),
+                    else_=0
+                )
+            ).label('revenue'),
+            func.sum(
+                case(
+                    (and_(
+                        Booking.status == BookingStatus.CANCELLED,
+                        or_(
+                            Package.created_by == current_agent.agent_id,
+                            Booking.agent_id == current_agent.agent_id
+                        )
+                    ), 1),
+                    else_=0
+                )
+            ).label('cancellations'),
+            # We also need a specific count of bookings that "count" for this agent
+            # to calculate cancel_pct and conversion correctly.
+            func.count(
+                case(
+                    (and_(
+                        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
+                        Booking.payment_status == PaymentStatus.SUCCEEDED,
+                        or_(
+                            Package.created_by == current_agent.agent_id,
+                            Booking.agent_id == current_agent.agent_id
+                        )
+                    ), Booking.id),
+                    else_=None
+                )
+            ).label('relevant_bookings_count')
+        ).outerjoin(
+            Booking, Package.id == Booking.package_id
+        ).where(
             or_(
                 Package.created_by == current_agent.agent_id,
                 Package.id.in_(
@@ -487,39 +557,23 @@ async def get_agent_package_performance(
                 )
             )
         )
-        pkg_result = await db.execute(pkg_query)
-        packages = pkg_result.scalars().all()
+
+        if filter_start:
+            stmt = stmt.where(or_(Booking.created_at >= filter_start, Booking.id == None))
+        if filter_end:
+            stmt = stmt.where(or_(Booking.created_at < filter_end, Booking.id == None))
+
+        stmt = stmt.group_by(Package.id)
+
+        result = await db.execute(stmt)
+        rows = result.all()
 
         performance_data = []
-        for pkg in packages:
-            # Metrics (for this agent's package)
-            # Use a more inclusive approach: any booking for a package owned by the agent
-            base_where = [Booking.package_id == pkg.id]
-            if pkg.created_by != current_agent.agent_id:
-                # If not the creator, only see bookings you specifically made
-                base_where.append(Booking.agent_id == current_agent.agent_id)
-
-            bookings_count_stmt = select(func.count(Booking.id)).where(*base_where)
-            if filter_start: 
-                bookings_count_stmt = bookings_count_stmt.where(Booking.created_at >= filter_start)
-            
-            revenue_stmt = select(func.sum(Booking.total_amount)).where(
-                *base_where,
-                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED])
-            )
-            if filter_start: revenue_stmt = revenue_stmt.where(Booking.created_at >= filter_start)
-            if filter_end: revenue_stmt = revenue_stmt.where(Booking.created_at < filter_end)
-            
-            cancel_count_stmt = select(func.count(Booking.id)).where(
-                *base_where,
-                Booking.status == BookingStatus.CANCELLED
-            )
-            if filter_start: cancel_count_stmt = cancel_count_stmt.where(Booking.created_at >= filter_start)
-            if filter_end: cancel_count_stmt = cancel_count_stmt.where(Booking.created_at < filter_end)
-
-            bookings_count = (await db.execute(bookings_count_stmt)).scalar() or 0
-            revenue = (await db.execute(revenue_stmt)).scalar() or 0
-            cancel_count = (await db.execute(cancel_count_stmt)).scalar() or 0
+        for row in rows:
+            pkg = row[0]
+            bookings_count = row.relevant_bookings_count or 0
+            revenue = row.revenue or 0
+            cancel_count = row.cancellations or 0
 
             cancel_pct = (cancel_count / bookings_count * 100) if bookings_count > 0 else 0
             conversion = (bookings_count / pkg.view_count * 100) if (pkg.view_count or 0) > 0 else 0
@@ -623,9 +677,8 @@ async def get_agent_financial_report(
                 }
             
             stats = financial_data[d_str]
-            stats["total_bookings"] += 1
-            
-            if b.status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]:
+            if b.status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] and b.payment_status == PaymentStatus.SUCCEEDED:
+                stats["total_bookings"] += 1
                 amount = float(b.total_amount)
                 stats["gross_revenue"] += amount
                 

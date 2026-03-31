@@ -92,8 +92,14 @@ export function Navbar() {
                     <Link
                         key={i}
                         href={link.href}
-                        className={`text-sm font-bold transition-colors duration-200 px-5 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-white' : 'text-[#2C2C2C] hover:text-[var(--primary)] hover:bg-white/40'}`}
-                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { background: 'var(--primary)', boxShadow: '0 4px 16px var(--primary-glow)' } : {}}
+                        className={`text-sm font-bold transition-colors duration-200 px-5 py-2 rounded-full ${pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? 'text-slate-900' : 'text-[#2C2C2C] hover:text-[var(--primary)] hover:bg-white/40'}`}
+                        style={pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href)) ? { 
+                            background: 'rgba(0,0,0,0.08)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(0,0,0,0.05)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
+                        } : {}}
                         onClick={() => setIsOpen(false)}
                     >
                         {link.label}
@@ -228,7 +234,7 @@ export function Navbar() {
 
                     {/* Mobile Menu Dropdown */}
                     {isOpen && (
-                        <div className={`md:hidden mt-2 py-4 rounded-3xl border-t border-white/20 space-y-4 flex flex-col px-6 bg-white/80 backdrop-blur-3xl shadow-xl`}>
+                        <div className={`md:hidden mt-2 py-4 rounded-3xl border-t border-white/20 space-y-4 flex flex-col px-6 bg-white/95 backdrop-blur-3xl shadow-xl animate-in slide-in-from-top-2 duration-300`}>
                             <NavLinks />
                             <div className="pt-4 border-t border-gray-200 flex flex-col gap-3 items-start">
                                 <AuthButtons />

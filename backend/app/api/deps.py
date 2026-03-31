@@ -52,7 +52,8 @@ async def get_current_user(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
         selectinload(User.customer_profile),
-        selectinload(User.sub_user_profile)
+        selectinload(User.sub_user_profile),
+        selectinload(User.subscription)
     )
     
     result = await db.execute(query)

@@ -38,7 +38,7 @@ class BookingOrchestrator:
         traveler_info: List[Dict[str, Any]]
     ) -> Booking:
         """
-        Main choreography for checkout
+        Main choreography for checkout (frontend-initiated)
         """
         # 1. Retrieve Booking
         booking = await self._get_booking(booking_id)
@@ -49,42 +49,96 @@ class BookingOrchestrator:
         if booking.payment_status != PaymentStatus.SUCCEEDED:
             await self._verify_payment(booking, payment_verification)
         
-        # 3. Handle Flight Booking (if flight info exists)
-        # Note: We store flight metadata in special_requests or a new column normally.
-        # For now assuming flight details are in booking.special_requests JSON for MVP
-        flight_booking_details = None
-        if booking.special_requests and "flight_details" in str(booking.special_requests):
-             # Logic to extract flight info and book
-             try:
-                 import json
-                 requests = json.loads(booking.special_requests)
-                 flight_booking_details = await self._book_flight_component(booking, traveler_info)
+        # 3. Finalize Booking (Flight, Package, Emails)
+        return await self.finalize_booking(booking, traveler_info)
 
-                 # Update requests with booking confirmation details
+    async def confirm_from_webhook(self, booking_id: UUID, razorpay_payment_id: str) -> Booking:
+        """
+        Finalize booking from webhook trigger (after signature verified)
+        """
+        booking = await self._get_booking(booking_id)
+        if not booking:
+            logger.error(f"Webhook: Booking {booking_id} not found")
+            return None
+            
+        if booking.status == BookingStatus.CONFIRMED:
+            logger.info(f"Webhook: Booking {booking_id} already confirmed")
+            return booking
+
+        # Update Payment Status
+        booking.payment_status = PaymentStatus.SUCCEEDED
+        
+        # Update associated Payment record
+        stmt = select(Payment).where(Payment.booking_id == booking.id).order_by(Payment.created_at.desc())
+        result = await self.db.execute(stmt)
+        payment_record = result.scalars().first()
+        if payment_record:
+            payment_record.status = PaymentStatus.SUCCEEDED
+            payment_record.razorpay_payment_id = razorpay_payment_id
+            await self.db.flush()
+
+        # traveler_info reconstruction moved to finalize_booking
+        return await self.finalize_booking(booking, None)
+
+    async def finalize_booking(self, booking: Booking, traveler_info: List[Dict[str, Any]] = None) -> Booking:
+        """
+        Internal method to handle flight booking, status update, and notifications.
+        Idempotent: skips steps if already done.
+        """
+        if booking.status == BookingStatus.CONFIRMED:
+            return booking
+
+        # 0. Reconstruct traveler info if not provided
+        if not traveler_info:
+            traveler_info = []
+            for t in booking.travelers:
+                traveler_info.append({
+                    "first_name": t.first_name,
+                    "last_name": t.last_name,
+                    "dob": t.date_of_birth.strftime("%Y-%m-%d") if t.date_of_birth else None,
+                    "gender": t.gender,
+                    "passport_number": t.passport_number,
+                    "nationality": t.nationality,
+                    "type": "ADULT" # Traveler model doesn't have type; defaulting to ADULT
+                })
+        import json
+        requests = {}
+        if booking.special_requests:
+            try:
+                requests = json.loads(booking.special_requests)
+            except:
+                pass
+
+        if "flight_details" in str(booking.special_requests) and "flight_booking_confirmation" not in str(booking.special_requests):
+             try:
+                 flight_booking_details = await self._book_flight_component(booking, traveler_info)
                  if flight_booking_details:
                      requests['flight_booking_confirmation'] = flight_booking_details
                      booking.special_requests = json.dumps(requests)
-
              except Exception as e:
-                 logger.error(f"Flight booking failed: {e}")
-                 # Refund logic would go here
-                 raise HTTPException(status_code=500, detail=f"Flight booking failed: {str(e)}")
+                 logger.error(f"Flight booking failed during finalization: {e}")
+                 # Should we fail the whole booking? For now, log and continue as the payment was successful.
+                 # The agent can manually fix flight issues.
 
-        # 4. Finalize Booking (Package)
+        # 2. Finalize Status
         booking.status = BookingStatus.CONFIRMED
         booking.updated_at = datetime.utcnow()
         await self.db.commit()
-        # await self.db.refresh(booking) # Keep relationships loaded
+        await self.db.refresh(booking)
         
-
+        # 2.5 Invalidate Dashboard Cache
+        try:
+            from fastapi_cache import FastAPICache
+            await FastAPICache.clear(namespace="dashboard")
+        except Exception as e:
+            logger.error(f"Failed to clear dashboard cache: {e}")
         
-        # 5. Send Confirmation Email (Async/Fire-and-forget)
+        # 3. Send Notifications
         try:
             await self._send_confirmation_email(booking)
         except Exception as e:
             logger.error(f"Failed to send confirmation email: {e}")
             
-        # 6. Send Agent Notification Email
         try:
             await self._send_agent_notification_email(booking)
         except Exception as e:

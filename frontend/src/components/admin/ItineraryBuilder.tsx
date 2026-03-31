@@ -1235,7 +1235,6 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 backdrop-blur-[8px] flex items-end sm:items-center justify-center z-[110] p-0 sm:p-4"
-                            style={{ background: 'rgba(140,50,0,0.60)' }}
                         >
                             <motion.div
                                 initial={{ y: "100%", opacity: 0 }}

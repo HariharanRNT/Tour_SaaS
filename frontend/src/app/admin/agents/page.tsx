@@ -310,16 +310,29 @@ export default function AdminAgentsPage() {
         setEmailValid(emailRegex.test(newAgent.email))
     }, [newAgent.email])
 
+    // Confirmation Dialog State
+    const [confirmAction, setConfirmAction] = useState<{
+        id: string;
+        type: 'approve' | 'reject' | 'activate' | 'deactivate';
+        agentName: string;
+    } | null>(null);
+
     const handleApprove = async (id: string) => {
         approveMutation.mutate(id, {
-            onSuccess: () => toast.success('Agent approved successfully'),
+            onSuccess: () => {
+                toast.success('Agent approved successfully');
+                setConfirmAction(null);
+            },
             onError: (error: any) => toast.error(error.message)
         })
     }
 
     const handleReject = async (id: string, reason: string = "") => {
         rejectMutation.mutate({ id, reason }, {
-            onSuccess: () => toast.success('Agent rejected'),
+            onSuccess: () => {
+                toast.success('Agent rejected');
+                setConfirmAction(null);
+            },
             onError: (error: any) => toast.error(error.message)
         })
     }
@@ -342,9 +355,12 @@ export default function AdminAgentsPage() {
         createMutation.mutate(payload)
     }
 
-    const toggleStatus = async (agent: Agent) => {
-        statusMutation.mutate({ id: agent.id, is_active: !agent.is_active }, {
-            onSuccess: () => toast.success(`Agent ${!agent.is_active ? 'activated' : 'deactivated'} successfully`),
+    const toggleStatus = async (agentId: string, is_active: boolean) => {
+        statusMutation.mutate({ id: agentId, is_active }, {
+            onSuccess: () => {
+                toast.success(`Agent ${is_active ? 'activated' : 'deactivated'} successfully`);
+                setConfirmAction(null);
+            },
             onError: () => toast.error('Failed to update status')
         })
     }
@@ -1340,7 +1356,11 @@ export default function AdminAgentsPage() {
                                                                             title="Approve"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                handleApprove(agent.id);
+                                                                                setConfirmAction({ 
+                                                                                    id: agent.id, 
+                                                                                    type: 'approve', 
+                                                                                    agentName: `${agent.first_name} ${agent.last_name}` 
+                                                                                });
                                                                             }}
                                                                         >
                                                                             <Check className="h-4 w-4" />
@@ -1352,7 +1372,11 @@ export default function AdminAgentsPage() {
                                                                             title="Reject"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                handleReject(agent.id);
+                                                                                setConfirmAction({ 
+                                                                                    id: agent.id, 
+                                                                                    type: 'reject', 
+                                                                                    agentName: `${agent.first_name} ${agent.last_name}` 
+                                                                                });
                                                                             }}
                                                                         >
                                                                             <X className="h-4 w-4" />
@@ -1365,7 +1389,11 @@ export default function AdminAgentsPage() {
                                                                         className="h-10 w-10 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all duration-300"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            toggleStatus(agent);
+                                                                            setConfirmAction({ 
+                                                                                id: agent.id, 
+                                                                                type: agent.is_active ? 'deactivate' : 'activate', 
+                                                                                agentName: `${agent.first_name} ${agent.last_name}` 
+                                                                            });
                                                                         }}
                                                                     >
                                                                         {agent.is_active ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
@@ -1380,11 +1408,11 @@ export default function AdminAgentsPage() {
                                                                     <DropdownMenuContent align="end" className="w-[220px] p-2 glass-popover">
                                                                         <DropdownMenuLabel className="font-bold text-[10px] text-slate-400 uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
                                                                         <DropdownMenuItem onClick={() => {
-                                                                            if (agent.approval_status === 'pending') {
-                                                                                handleApprove(agent.id);
-                                                                            } else {
-                                                                                toggleStatus(agent);
-                                                                            }
+                                                                            setConfirmAction({ 
+                                                                                id: agent.id, 
+                                                                                type: agent.approval_status === 'pending' ? 'approve' : (agent.is_active ? 'deactivate' : 'activate'), 
+                                                                                agentName: `${agent.first_name} ${agent.last_name}` 
+                                                                            });
                                                                         }} className="glass-popover-item">
                                                                             {agent.approval_status === 'pending' ? (
                                                                                 <>
@@ -1404,7 +1432,13 @@ export default function AdminAgentsPage() {
                                                                             )}
                                                                         </DropdownMenuItem>
                                                                         {agent.approval_status === 'pending' && (
-                                                                            <DropdownMenuItem onClick={() => handleReject(agent.id)} className="glass-popover-item text-red-600 focus:text-red-700">
+                                                                            <DropdownMenuItem onClick={() => {
+                                                                                setConfirmAction({ 
+                                                                                    id: agent.id, 
+                                                                                    type: 'reject', 
+                                                                                    agentName: `${agent.first_name} ${agent.last_name}` 
+                                                                                });
+                                                                            }} className="glass-popover-item text-red-600 focus:text-red-700">
                                                                                 <X className="mr-2.5 h-[16px] w-[16px]" />
                                                                                 <span>Reject Registration</span>
                                                                             </DropdownMenuItem>
@@ -1821,6 +1855,73 @@ export default function AdminAgentsPage() {
                     </DialogContent>
                 </Dialog>
             </div>
+                {/* Action Confirmation Dialog */}
+                <Dialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
+                    <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px]">
+                        <div className="p-8">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className={cn(
+                                    "w-12 h-12 rounded-2xl flex items-center justify-center border shadow-sm transition-transform duration-500 hover:rotate-12",
+                                    confirmAction?.type === 'reject' || confirmAction?.type === 'deactivate' 
+                                        ? "bg-rose-50 border-rose-100/50" 
+                                        : "bg-emerald-50 border-emerald-100/50"
+                                )}>
+                                    {confirmAction?.type === 'approve' || confirmAction?.type === 'activate' ? (
+                                        <Check className="h-6 w-6 text-emerald-500" />
+                                    ) : confirmAction?.type === 'reject' ? (
+                                        <X className="h-6 w-6 text-rose-500" />
+                                    ) : (
+                                        <UserX className="h-6 w-6 text-rose-500" />
+                                    )}
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-black text-slate-800 tracking-tight uppercase">
+                                        {confirmAction?.type === 'approve' && 'Approve Agent'}
+                                        {confirmAction?.type === 'reject' && 'Reject Agent'}
+                                        {confirmAction?.type === 'activate' && 'Activate Agent'}
+                                        {confirmAction?.type === 'deactivate' && 'Deactivate Agent'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                        Confirmation Required
+                                    </DialogDescription>
+                                </div>
+                            </div>
+                            
+                            <p className="text-slate-600 font-medium leading-relaxed">
+                                Are you sure you want to <span className="font-bold">{confirmAction?.type}</span> agent <span className="text-slate-900 font-black">{confirmAction?.agentName}</span>?
+                            </p>
+                        </div>
+                        
+                        <div className="bg-slate-50/50 backdrop-blur-md px-8 py-6 flex justify-end gap-3 border-t border-white/20">
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => setConfirmAction(null)}
+                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    if (!confirmAction) return;
+                                    if (confirmAction.type === 'approve') handleApprove(confirmAction.id);
+                                    else if (confirmAction.type === 'reject') handleReject(confirmAction.id);
+                                    else if (confirmAction.type === 'activate') toggleStatus(confirmAction.id, true);
+                                    else if (confirmAction.type === 'deactivate') toggleStatus(confirmAction.id, false);
+                                }} 
+                                disabled={approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending}
+                                className={cn(
+                                    "h-11 px-8 rounded-xl text-white font-black shadow-lg uppercase tracking-widest text-[11px]",
+                                    confirmAction?.type === 'reject' || confirmAction?.type === 'deactivate'
+                                        ? "bg-rose-500 hover:bg-rose-600 shadow-rose-500/20"
+                                        : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                                )}
+                            >
+                                {approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending ? 'Processing...' : 'Confirm'}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
             {/* Email Conflict Modal */}
             <AlertDialog open={showConflictModal} onOpenChange={setShowConflictModal}>
                 <AlertDialogContent className="bg-white/90 backdrop-blur-xl border-orange-100 rounded-[32px] p-8 max-w-[400px]">

@@ -27,8 +27,8 @@ const config: Config = {
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
                 primary: {
-                    DEFAULT: "hsl(var(--primary-hsl))",
-                    foreground: "hsl(var(--primary-foreground))",
+                    DEFAULT: "var(--button-bg, hsl(var(--primary-hsl)))",
+                    foreground: "var(--button-text, hsl(var(--primary-foreground)))",
                 },
                 secondary: {
                     DEFAULT: "hsl(var(--secondary))",
@@ -72,12 +72,12 @@ const config: Config = {
                     200: "var(--primary-soft)",
                     300: "var(--primary-light)",
                     400: "var(--primary-light)",
-                    500: "var(--primary)",
-                    600: "var(--primary)",
-                    700: "var(--primary)",
-                    800: "var(--primary)",
-                    900: "var(--primary)",
-                    950: "var(--primary)",
+                    500: "var(--button-bg, var(--primary))",
+                    600: "var(--button-bg, var(--primary))",
+                    700: "var(--button-bg, var(--primary))",
+                    800: "var(--button-bg, var(--primary))",
+                    900: "var(--button-bg, var(--primary))",
+                    950: "var(--button-bg, var(--primary))",
                 }
             },
             borderRadius: {

@@ -190,10 +190,6 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                                         {/* Label & Indicator */}
                                         {!collapsed && (
                                             <div className="flex items-center gap-3 flex-1">
-                                                <div className={cn(
-                                                    "nav-dot transition-all duration-300",
-                                                    isActive ? "opacity-100 scale-125" : "opacity-20"
-                                                )} />
                                                 <span className="nav-label tracking-tight">{item.label}</span>
                                             </div>
                                         )}

@@ -95,7 +95,9 @@ async def handle_razorpay_webhook(
         elif event_type == 'settlement.processed':
             await _handle_settlement_processed(event['payload'], db)
             
-        # 3. MARK AS PROCESSED
+        # Payment/Order Events (New)
+        elif event_type in ['payment.captured', 'order.paid']:
+            await _handle_payment_captured(event['payload'], db)
         if webhook_event:
             webhook_event.status = "processed"
             await db.commit()
@@ -301,3 +303,54 @@ async def _handle_settlement_processed(payload: dict, db: AsyncSession):
         db.add(settlement)
         await db.commit()
         logger.info(f"[Settlement] {settlement_id} recorded for {amount} INR. (Accounting only)")
+
+async def _handle_payment_captured(payload: dict, db: AsyncSession):
+    """
+    Handle payment.captured or order.paid: Confirm the associated booking.
+    """
+    entity = payload.get("payment", {}).get("entity") or payload.get("order", {}).get("entity")
+    if not entity:
+        logger.warning("No payment or order entity found in webhook payload")
+        return
+
+    payment_id = entity.get("id") if "pay_" in entity.get("id", "") else None
+    order_id = entity.get("order_id") or (entity.get("id") if "order_" in entity.get("id", "") else None)
+    notes = entity.get("notes", {})
+    booking_id_str = notes.get("booking_id")
+
+    if not booking_id_str and order_id:
+        from app.models import Payment as PaymentModel
+        stmt = select(PaymentModel).where(PaymentModel.razorpay_order_id == order_id)
+        res = await db.execute(stmt)
+        pm = res.scalar_one_or_none()
+        if pm:
+            booking_id_str = str(pm.booking_id)
+
+    if not booking_id_str:
+        logger.warning(f"Could not find booking_id for payment {payment_id} / order {order_id}")
+        return
+
+    from uuid import UUID
+    from app.services.booking_orchestrator import BookingOrchestrator
+    from app.services.tripjack_adapter import TripJackAdapter
+    
+    try:
+        booking_id = UUID(booking_id_str)
+        
+        # Initialize Orchestrator
+        tripjack = TripJackAdapter(
+            api_key=settings.TRIPJACK_API_KEY, 
+            base_url=settings.TRIPJACK_BASE_URL
+        )
+        orchestrator = BookingOrchestrator(db, tripjack)
+        
+        # Confirm
+        await orchestrator.confirm_from_webhook(booking_id, payment_id or "webhook_verified")
+        # Invalidate dashboard cache
+        from fastapi_cache import FastAPICache
+        await FastAPICache.clear(namespace="dashboard")
+        
+        logger.info(f"[Webhook] Successfully processed booking {booking_id}")
+        
+    except Exception as e:
+        logger.error(f"[Webhook] Failed to confirm booking {booking_id_str}: {e}")
