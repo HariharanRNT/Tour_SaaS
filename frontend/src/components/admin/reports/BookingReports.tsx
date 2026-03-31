@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
+import { API_URL } from '@/lib/api'
 
 interface BookingReportsProps {
     dateRange: DateRange | undefined
@@ -39,10 +40,10 @@ export default function BookingReports({ dateRange }: BookingReportsProps) {
             }
 
             const [summaryRes, agentRes, packageRes, conversionRes] = await Promise.all([
-                fetch(`http://localhost:8000/api/v1/reports/bookings/summary?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/bookings/by-agent?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/bookings/by-package?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/bookings/conversion?${queryParams}`, { headers })
+                fetch(`${API_URL}/api/v1/reports/bookings/summary?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/bookings/by-agent?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/bookings/by-package?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/bookings/conversion?${queryParams}`, { headers })
             ])
 
             if (summaryRes.ok) setSummary(await summaryRes.json())

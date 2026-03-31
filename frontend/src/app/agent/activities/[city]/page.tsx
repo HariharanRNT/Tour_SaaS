@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { activitiesAPI } from '@/lib/api'
+import { activitiesAPI, API_URL } from '@/lib/api'
 import { Activity, ActivityCreate, TimeSlotPreference } from '@/types/activities'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { getValidImageUrl } from '@/lib/utils/image'
@@ -116,9 +116,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                 const token = localStorage.getItem('token')
                 if (!token) throw new Error('Not authenticated')
 
-                const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-                const API_URL = `${API_BASE}/api/v1/upload`
-                const res = await fetch(API_URL, {
+                const uploadUrl = `${API_URL}/api/v1/upload`
+                const res = await fetch(uploadUrl, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

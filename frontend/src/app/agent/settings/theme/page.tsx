@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { compressImage, uploadToS3 } from '@/lib/image-upload-utils';
+import { API_URL } from '@/lib/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CUSTOM_THEME_STORAGE_KEY = 'agent_custom_theme';
@@ -436,7 +437,7 @@ export default function AgentThemeSettingsPage() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const res = await fetch('http://localhost:8000/api/v1/agent/settings', {
+                const res = await fetch(`${API_URL}/api/v1/agent/settings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -519,7 +520,6 @@ export default function AgentThemeSettingsPage() {
         if (t) {
             try {
                 const token = localStorage.getItem('token') || '';
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
                 await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
                     method: 'PUT',
                     headers: {
@@ -578,7 +578,6 @@ export default function AgentThemeSettingsPage() {
         // PERSIST TO BACKEND IMMEDIATELY (Aligning with Design File)
         try {
             const token = localStorage.getItem('token') || '';
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
             const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
                 method: 'PUT',
                 headers: {
@@ -622,7 +621,6 @@ export default function AgentThemeSettingsPage() {
         // Reset in backend too
         try {
             const token = localStorage.getItem('token') || '';
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
             await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
                 method: 'PUT',
                 headers: {
@@ -654,7 +652,7 @@ export default function AgentThemeSettingsPage() {
 
             // 2. Get presigned URL
             const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
+            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -703,7 +701,7 @@ export default function AgentThemeSettingsPage() {
 
             // 2. Get presigned URL
             const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch('http://localhost:8000/api/v1/upload/presigned-url', {
+            const presignedRes = await fetch(`${API_URL}/api/v1/upload/presigned-url`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -770,7 +768,7 @@ export default function AgentThemeSettingsPage() {
 
         try {
             const token = localStorage.getItem('token') || '';
-            const res = await fetch('http://localhost:8000/api/v1/agent/settings/homepage', {
+            const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -812,7 +810,7 @@ export default function AgentThemeSettingsPage() {
                 default_email_message: defaultEmailMessage
             };
 
-            const res = await fetch('http://localhost:8000/api/v1/agent/settings/homepage', {
+            const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1759,7 +1757,6 @@ export default function AgentThemeSettingsPage() {
                     initialTemplates={emailTemplates}
                     onSave={async (newTemplates) => {
                         const token = localStorage.getItem('token') || '';
-                        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
                         setEmailTemplates(newTemplates);
 

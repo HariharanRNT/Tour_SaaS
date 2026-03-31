@@ -1,12 +1,15 @@
 'use client'
 
+import { API_URL } from '@/lib/api'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
+import {
+    Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
     Globe, Users, Clock, Star, Heart, Luggage, Compass, Search,
     Camera, Car, Hotel, Mountain, Waves, Umbrella, Gift, Award, Zap,
     CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map as MapIcon, Palmtree, ChevronRight
@@ -104,7 +107,8 @@ export default function Home() {
                     secondaryBtnText: hs.secondaryBtnText || "Start Your Journey",
                     backgroundImageUrl: hs.backgroundImageUrl || "",
                     badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
-                    showAiBadge: hs.showAiBadge !== false });
+                    showAiBadge: hs.showAiBadge !== false
+                });
             }
             if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
             if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
@@ -115,7 +119,8 @@ export default function Home() {
     const IconMap: Record<string, any> = {
         Sparkles, Sliders, CheckCircle2, Globe, Users, Clock, Shield, Star, Heart, Luggage, Plane, MapPin,
         Camera, Car, Hotel, Compass, Mountain, Waves, Umbrella, Gift, Award, Zap,
-        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map: MapIcon, Search };
+        CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map: MapIcon, Search
+    };
 
     const getIcon = (name: string, fallback: any) => {
         const Icon = IconMap[name];
@@ -134,7 +139,7 @@ export default function Home() {
 
     const handleSampleItinerary = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/v1/packages/cheapest')
+            const res = await fetch(`${API_URL}/api/v1/packages/cheapest`)
             if (res.ok) {
                 const data = await res.json()
                 router.push(`/plan-trip/${data.slug}?mode=preview`)
@@ -153,7 +158,7 @@ export default function Home() {
         const fetchPackages = async () => {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch('http://localhost:8000/api/v1/packages?page_size=6', {
+                const res = await fetch(`${API_URL}/api/v1/packages?page_size=6`, {
                     headers: { 'X-Domain': domain }
                 })
                 if (res.ok) {
@@ -275,7 +280,8 @@ export default function Home() {
                                         background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))',
                                         boxShadow: '0 10px 30px var(--primary-glow)',
                                         borderRadius: "30px",
-                                        border: 'none' }}>
+                                        border: 'none'
+                                    }}>
                                     {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.primaryBtnText || theme.hero_cta_primary_text || "Start Your Journey")}
                                     <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                 </Button>
@@ -290,8 +296,8 @@ export default function Home() {
                             ${cardAppearance ? `cards-icon-${cardAppearance.iconStyle} cards-bg-${cardAppearance.background} cards-border-${cardAppearance.border} cards-hover-${cardAppearance.hover} cards-layout-${cardAppearance.layout} cards-title-${cardAppearance.titleColor}` : ''}`}>
                             {(agentFeatureCards && agentFeatureCards.length > 0 ? agentFeatureCards : (theme.feature_cards && theme.feature_cards.length > 0 ? theme.feature_cards : [
                                 { icon: 'Sparkles', title: 'Smart Recommendations', description: 'Tailored trips based on your unique preferences' },
-                                { icon: 'Sliders',  title: 'Customize Everything',  description: 'Full control to adjust dates, activities, and stays' },
-                                { icon: 'CheckCircle2', title: 'Instant Booking',   description: 'Save your plan and book securely when ready' },
+                                { icon: 'Sliders', title: 'Customize Everything', description: 'Full control to adjust dates, activities, and stays' },
+                                { icon: 'CheckCircle2', title: 'Instant Booking', description: 'Save your plan and book securely when ready' },
                             ])).map((card: any, idx: number) => (
                                 <motion.div
                                     key={idx}
@@ -309,7 +315,7 @@ export default function Home() {
                                     } : { borderRadius: "20px" }}
                                 >
                                     <div className="relative z-10 flex flex-col items-center">
-                                        <div className="card-icon-container w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_var(--primary-glow)] transition-all duration-300" 
+                                        <div className="card-icon-container w-[48px] h-[48px] rounded-[12px] flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-[0_10px_40px_var(--primary-glow)] transition-all duration-300"
                                             style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(card.icon, <Sparkles className="h-6 w-6 text-white" />)}
                                         </div>
@@ -329,7 +335,7 @@ export default function Home() {
                     {/* Background Decorative Elements */}
                     <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-orange-50 rounded-full blur-[120px] -z-10" />
                     <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-blue-50 rounded-full blur-[100px] -z-10" />
-                    
+
                     <div className="container mx-auto px-4">
                         <div className="max-w-7xl mx-auto">
                             <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0">
@@ -353,7 +359,7 @@ export default function Home() {
                                     whileInView={{ opacity: 1, x: 0 }}
                                     viewport={{ once: true }}
                                 >
-                                    <button 
+                                    <button
                                         onClick={() => router.push('/plan-trip')}
                                         className="text-[var(--primary)] font-black text-sm tracking-widest uppercase flex items-center gap-2 group hover:gap-3 transition-all"
                                     >
@@ -475,7 +481,7 @@ export default function Home() {
                                             boxShadow: "0 10px 40px -10px var(--primary-glow)"
                                         } : { borderRadius: "20px" }}
                                     >
-                                        <div className="card-icon-container w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500" 
+                                        <div className="card-icon-container w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500"
                                             style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(feature.icon, <Globe className="h-8 w-8 text-white" />)}
                                         </div>

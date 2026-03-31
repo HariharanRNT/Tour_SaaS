@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import BuildTripClient from './BuildTripClient'
 import { Metadata, ResolvingMetadata } from 'next'
 import { cookies } from 'next/headers'
+import { API_URL } from '@/lib/api'
 
 type Props = {
     params: { slug: string }
@@ -13,7 +14,6 @@ export async function generateMetadata(
     parent: ResolvingMetadata
 ): Promise<Metadata> {
     const { slug } = params
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
     // Default fallback metadata
     let title = 'Plan Your Dream Vacation | TourSaaS'
@@ -23,7 +23,6 @@ export async function generateMetadata(
 
     try {
         // Fetch package data by slug for SEO metadata
-        // We use the new slug endpoint or filter the packages list
         const res = await fetch(`${API_URL}/api/v1/packages/slug/${slug}`, {
             next: { revalidate: 60 } // Cache for 1 minute
         });

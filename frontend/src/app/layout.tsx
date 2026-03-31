@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { API_URL } from "@/lib/api";
 import { Inter, Plus_Jakarta_Sans, Fraunces, DM_Sans, Sora, Playfair_Display, JetBrains_Mono, Dancing_Script, Quicksand } from "next/font/google";
 import "./globals.css";
 import { MainLayout } from "@/components/MainLayout";
@@ -28,7 +29,6 @@ import { headers } from "next/headers";
 export const dynamic = 'force-dynamic';
 
 async function getInitialTheme() {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     try {
         const headersList = headers();
         const host = headersList.get('host') || 'localhost';

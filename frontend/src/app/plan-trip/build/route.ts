@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { API_URL } from '@/lib/api'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
@@ -10,8 +11,7 @@ export async function GET(request: Request) {
 
         if (isUUID) {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-                const res = await fetch(`${apiUrl}/api/v1/trip-planner/session/${sessionId}`, {
+                const res = await fetch(`${API_URL}/api/v1/trip-planner/session/${sessionId}`, {
                     cache: 'no-store'
                 })
 

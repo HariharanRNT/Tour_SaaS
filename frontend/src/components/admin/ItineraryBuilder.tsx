@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, Clock, BarChart3, ListChecks, Utensils, Car, Map, MapPin, MoreVertical, Copy as CopyIcon, RotateCcw, Target, FileText, Image as ImageIcon, Bold, Italic, List, Smile, Zap, ArrowRight, Upload, Link, X, Settings, CheckCircle2, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { getValidImageUrl } from '@/lib/utils/image'
+import { API_URL } from '@/lib/api'
 import {
     DndContext,
     closestCenter,
@@ -309,7 +310,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
         try {
             // First, check if there are already activities in the database
-            const checkResponse = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
+            const checkResponse = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}`)
             if (checkResponse.ok) {
                 const packageData = await checkResponse.json()
                 const existingActivities = packageData.itinerary_by_day || []
@@ -360,7 +361,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                             }
 
                             const response = await fetch(
-                                `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`,
+                                `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`,
                                 {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -487,7 +488,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
             // Fall back to loading from API if no AI data or if AI data failed
             console.log('[ItineraryBuilder] Loading itinerary from API for packageId:', packageId)
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
+                const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}`)
                 const data = await response.json()
 
                 // Organize activities by day
@@ -525,8 +526,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
         setLoading(true)
         try {
             const url = editingId
-                ? `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${editingId}`
-                : `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`
+                ? `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${editingId}`
+                : `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`
 
             const method = editingId ? 'PATCH' : 'POST'
 
@@ -600,7 +601,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                 })
             }, 200)
 
-            const response = await fetch('http://localhost:8000/api/v1/upload', {
+            const response = await fetch(`${API_URL}/api/v1/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -689,7 +690,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
         if (!confirm('Delete this activity?')) return
 
         try {
-            await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${activityId}`, {
+            await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${activityId}`, {
                 method: 'DELETE'
             })
             loadItinerary()
@@ -775,7 +776,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                 }
 
                 try {
-                    const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`, {
+                    const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -846,7 +847,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                         }))
 
                         await Promise.all(updates.map(update =>
-                            fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${update.id}`, {
+                            fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${update.id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ display_order: update.display_order })

@@ -91,7 +91,7 @@ import {
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchAgentDashboardStats, sendAIChatMessage, generateAIPackage as generateAIPackageApi } from '@/lib/api'
+import { fetchAgentDashboardStats, sendAIChatMessage, generateAIPackage as generateAIPackageApi, API_URL } from '@/lib/api'
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
 import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
 
@@ -229,7 +229,6 @@ const TiltCard = ({ children, className }: { children: React.ReactNode, classNam
 
 export default function AgentDashboard() {
     const router = useRouter()
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     const [agentName, setAgentName] = useState('')
     const [agentLastName, setAgentLastName] = useState('')
     const [dateFilter, setDateFilter] = useState('ALL')

@@ -19,6 +19,7 @@ import {
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
+import { API_URL } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
@@ -154,7 +155,7 @@ export default function CreatePackagePage() {
 
         const applyAgentGstDefaults = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/v1/agent/settings', {
+                const res = await fetch(`${API_URL}/api/v1/agent/settings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                 if (!res.ok) return
@@ -259,7 +260,7 @@ export default function CreatePackagePage() {
         setLoading(true)
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages/${id}`, {
+            const response = await fetch(`${API_URL}/api/v1/agent/packages/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -277,7 +278,7 @@ export default function CreatePackagePage() {
                 if (gstNeverSet && token) {
                     // Package GST was never explicitly set — fetch agent defaults from Settings
                     try {
-                        const settingsRes = await fetch('http://localhost:8000/api/v1/agent/settings', {
+                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         })
                         if (settingsRes.ok) {
@@ -292,7 +293,7 @@ export default function CreatePackagePage() {
                     // Package has own GST config — fetch agent settings just for visibility control
                     try {
                         const token2 = localStorage.getItem('token')
-                        const settingsRes = await fetch('http://localhost:8000/api/v1/agent/settings', {
+                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings`, {
                             headers: { 'Authorization': `Bearer ${token2 || ''}` }
                         })
                         if (settingsRes.ok) {
@@ -494,8 +495,8 @@ export default function CreatePackagePage() {
         setSaving(true)
         try {
             const url = packageId
-                ? `http://localhost:8000/api/v1/agent/packages/${packageId}`
-                : 'http://localhost:8000/api/v1/agent/packages'
+                ? `${API_URL}/api/v1/agent/packages/${packageId}`
+                : `${API_URL}/api/v1/agent/packages`
 
             const method = packageId ? 'PUT' : 'POST'
             const token = localStorage.getItem('token')
@@ -572,7 +573,7 @@ export default function CreatePackagePage() {
 
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages/${packageId}/status?new_status=published`, {
+            const response = await fetch(`${API_URL}/api/v1/agent/packages/${packageId}/status?new_status=published`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`

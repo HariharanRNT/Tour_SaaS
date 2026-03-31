@@ -7,6 +7,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
+import { API_URL } from '@/lib/api'
 
 interface RevenueReportsProps {
     dateRange: DateRange | undefined
@@ -38,11 +39,11 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
             }
 
             const [summaryRes, trendsRes, agentRes, planRes, paymentRes] = await Promise.all([
-                fetch(`http://localhost:8000/api/v1/reports/revenue/summary?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/revenue/trends?period=month${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/revenue/by-agent?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/revenue/by-plan?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/revenue/payment-status?${queryParams}`, { headers })
+                fetch(`${API_URL}/api/v1/reports/revenue/summary?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/revenue/trends?period=month${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/revenue/by-agent?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/revenue/by-plan?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/revenue/payment-status?${queryParams}`, { headers })
             ])
 
             if (summaryRes.ok) setSummary(await summaryRes.json())

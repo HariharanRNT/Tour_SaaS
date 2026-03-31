@@ -1,4 +1,4 @@
-'use client'
+import { API_URL } from '@/lib/api'
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
@@ -81,7 +81,8 @@ export default function PackageDetailPage() {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
+            // const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`)
+            const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}`)
 
             if (!response.ok) {
                 throw new Error('Failed to load package')
@@ -147,8 +148,8 @@ export default function PackageDetailPage() {
         setSaving(true)
         try {
             const url = isEditing
-                ? `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${formData.id}`
-                : `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`
+                ? `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${formData.id}`
+                : `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items`
 
             const method = isEditing ? 'PATCH' : 'POST'
 
@@ -180,7 +181,7 @@ export default function PackageDetailPage() {
 
         setIsDeleting(true)
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${deleteId}`, {
+            const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${deleteId}`, {
                 method: 'DELETE'
             })
 

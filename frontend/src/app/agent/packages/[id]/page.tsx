@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, MapPin, Calendar } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { toast } from 'sonner'
+import { API_URL } from '@/lib/api'
 
 interface Package {
     id: string
@@ -45,7 +46,7 @@ export default function PackageDetailPage() {
         setError(null)
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`http://localhost:8000/api/v1/agent/packages/${packageId}`, {
+            const response = await fetch(`${API_URL}/api/v1/agent/packages/${packageId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

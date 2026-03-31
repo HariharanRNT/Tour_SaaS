@@ -1,5 +1,7 @@
 'use client';
 
+import { API_URL } from '@/lib/api';
+
 /**
  * ThemeInitializer
  * 
@@ -110,8 +112,8 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                 const agentId = metaAgent ? metaAgent.content : null;
                 
                 if (agentId && !init) {
-                    const API_URL = '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}';
-                    fetch(API_URL + '/api/v1/agent/settings/public', {
+                    const apiUrl = '${API_URL}';
+                    fetch(apiUrl + '/api/v1/agent/settings/public', {
                          headers: { 
                             'X-Agent-ID': agentId,
                             'X-Domain': window.location.hostname

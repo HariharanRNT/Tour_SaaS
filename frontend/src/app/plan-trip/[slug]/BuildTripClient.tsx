@@ -865,8 +865,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             // Handling both TripSession (has package_id) and Package modes (has id)
                                             const pkgId = session?.package_id || session?.id || packageId;
                                             if (pkgId) {
-                                                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                                                window.open(`${apiUrl}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
+                                                window.open(`${API_URL}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
                                             } else {
                                                 alert("Could not locate the package ID required for the PDF.");
                                             }

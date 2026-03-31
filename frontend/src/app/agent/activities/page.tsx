@@ -31,13 +31,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
-import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2 } from 'lucide-react'
-import { activitiesAPI } from '@/lib/api'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/context/AuthContext'
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     Select,
     SelectContent,
@@ -45,6 +40,11 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select"
+import { cn } from '@/lib/utils'
+import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2, MoreVertical } from 'lucide-react'
+import { activitiesAPI, API_URL } from '@/lib/api'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface DestinationSummary {
@@ -638,7 +638,7 @@ export default function ActivitiesMasterPage() {
                                                 formData.append('file', file)
 
                                                 const token = localStorage.getItem('token')
-                                                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/upload?folder=destinations`, {
+                                                const response = await fetch(`${API_URL}/api/v1/upload?folder=destinations`, {
                                                     method: 'POST',
                                                     headers: { 'Authorization': `Bearer ${token}` },
                                                     body: formData

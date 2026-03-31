@@ -7,6 +7,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
+import { API_URL } from '@/lib/api'
 
 interface SubscriptionReportsProps {
     dateRange: DateRange | undefined
@@ -38,10 +39,10 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
 
             // Fetch all subscription reports
             const [summaryRes, trendsRes, plansRes, renewalsRes] = await Promise.all([
-                fetch(`http://localhost:8000/api/v1/reports/subscriptions/summary?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/subscriptions/trends?period=month${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/subscriptions/plans?${queryParams}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/reports/subscriptions/renewals?${queryParams}`, { headers })
+                fetch(`${API_URL}/api/v1/reports/subscriptions/summary?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/trends?period=month${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/plans?${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/renewals?${queryParams}`, { headers })
             ])
 
             if (summaryRes.ok) setSummary(await summaryRes.json())

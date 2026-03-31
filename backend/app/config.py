@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-goes-here-change-in-production"
     API_V1_PREFIX: str = "/api/v1"
     FRONTEND_URL: str = "http://localhost:3000"
-    API_URL: str = "http://localhost:8000"
+    # API_URL: str = "http://localhost:8000"
+    API_URL: str = "https://angels-miniature-restricted-lending.trycloudflare.com"
+
     
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./tour_saas.db"

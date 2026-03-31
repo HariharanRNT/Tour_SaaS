@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
+import { API_URL } from '@/lib/api';
 
 interface Plan {
     id: string;
@@ -81,7 +82,7 @@ export default function SubscriptionPage() {
     const { data: plans = [], isLoading: plansLoading } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: async () => {
-            const res = await fetch('http://localhost:8000/api/v1/subscriptions/plans');
+            const res = await fetch(`${API_URL}/api/v1/subscriptions/plans`);
             if (!res.ok) throw new Error('Failed to fetch plans');
             const rawPlans = await res.json();
             return rawPlans.map((p: any) => {
@@ -112,12 +113,12 @@ export default function SubscriptionPage() {
             const headers = { 'Authorization': `Bearer ${token}` };
 
             // Check expiry first
-            await fetch('http://localhost:8000/api/v1/subscriptions/check-expiry', {
+            await fetch(`${API_URL}/api/v1/subscriptions/check-expiry`, {
                 method: 'POST',
                 headers
             }).catch(() => { });
 
-            const res = await fetch('http://localhost:8000/api/v1/subscriptions/my-subscription', { headers });
+            const res = await fetch(`${API_URL}/api/v1/subscriptions/my-subscription`, { headers });
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
             const subs: Subscription[] = await res.json();
 
@@ -142,7 +143,7 @@ export default function SubscriptionPage() {
     const activateMutation = useMutation({
         mutationFn: async (subId: string) => {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8000/api/v1/subscriptions/${subId}/activate`, {
+            const res = await fetch(`${API_URL}/api/v1/subscriptions/${subId}/activate`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -346,7 +347,7 @@ export default function SubscriptionPage() {
 
         try {
             // 1. Create Order / Subscription
-            const orderRes = await fetch('http://localhost:8000/api/v1/subscriptions/purchase?plan_id=' + plan.id, {
+            const orderRes = await fetch(`${API_URL}/api/v1/subscriptions/purchase?plan_id=` + plan.id, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -370,7 +371,7 @@ export default function SubscriptionPage() {
                     confirmText: "Simulate Payment",
                     action: async () => {
                         try {
-                            const verifyRes = await fetch('http://localhost:8000/api/v1/subscriptions/verify', {
+                            const verifyRes = await fetch(`${API_URL}/api/v1/subscriptions/verify`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
@@ -416,7 +417,7 @@ export default function SubscriptionPage() {
                 handler: async function (response: any) {
                     console.log("Razorpay Response:", response);
                     try {
-                        const verifyRes = await fetch('http://localhost:8000/api/v1/subscriptions/verify', {
+                        const verifyRes = await fetch(`${API_URL}/api/v1/subscriptions/verify`, {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${token}`,

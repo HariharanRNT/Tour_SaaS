@@ -1,5 +1,6 @@
 'use client'
 
+import { API_URL } from '@/lib/api'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -54,7 +55,8 @@ export default function CreatePackagePage() {
     const loadPackageData = async (id: string) => {
         setLoading(true)
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${id}`)
+            // const response = await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${id}`)
+            const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${id}`)
             if (!response.ok) {
                 throw new Error('Failed to load package')
             }
@@ -93,8 +95,8 @@ export default function CreatePackagePage() {
         setSaving(true)
         try {
             const url = packageId
-                ? `http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}`
-                : 'http://localhost:8000/api/v1/admin-simple/packages-simple'
+                ? `${API_URL}/api/v1/admin-simple/packages-simple/${packageId}`
+                : `${API_URL}/api/v1/admin-simple/packages-simple`
 
             const method = packageId ? 'PATCH' : 'POST'
 
@@ -132,7 +134,8 @@ export default function CreatePackagePage() {
         }
 
         try {
-            await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/status?new_status=PUBLISHED`, {
+            // await fetch(`http://localhost:8000/api/v1/admin-simple/packages-simple/${packageId}/status?new_status=PUBLISHED`, {
+            await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/status?new_status=PUBLISHED`, {
                 method: 'PATCH'
             });
             router.push('/admin/packages');
