@@ -1,3 +1,5 @@
+"use client"
+
 import { API_URL } from '@/lib/api'
 
 import { useState, useEffect } from 'react'
