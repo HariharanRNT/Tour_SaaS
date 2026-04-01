@@ -34,7 +34,9 @@ interface Package {
     view_count: number
 }
 
-export default function Home() {
+export default function Home({ searchParams }: { searchParams: { site?: string } }) {
+    const site = searchParams.site || 'default';
+
     const router = useRouter()
     const { themeData: theme, isLoading, publicSettings } = useTheme()
     const [packages, setPackages] = useState<Package[]>([])
@@ -192,6 +194,16 @@ export default function Home() {
 
     return (
         <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
+            {/* Multi-tenant site identifier banner */}
+            <div className={`p-3 text-center transition-all duration-300 font-bold tracking-tight shadow-sm border-b
+                ${site === 'site1' ? 'bg-blue-600 text-white border-blue-400' :
+                site === 'site2' ? 'bg-emerald-600 text-white border-emerald-400' :
+                'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                {site === 'site1' && <div className="flex items-center justify-center gap-2"><Globe className="h-4 w-4" /> Site 1 UI</div>}
+                {site === 'site2' && <div className="flex items-center justify-center gap-2"><MapPin className="h-4 w-4" /> Site 2 UI</div>}
+                {site === 'default' && <div className="opacity-70">Default Site</div>}
+            </div>
+
             {/* Modernized Hero Section */}
             <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden -mt-16">
 
