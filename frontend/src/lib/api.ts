@@ -1,16 +1,18 @@
 import axios from 'axios'
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
     baseURL: `${API_URL}/api/v1`,
     headers: {
-        'Content-Type': 'application/json' } })
+        'Content-Type': 'application/json'
+    }
+})
 
 // Add auth token and domain to requests
 api.interceptors.request.use((config) => {
     let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    
+
     // Sanity check: If token is string "null" or "undefined", treat as null
     if (token === 'null' || token === 'undefined') {
         token = null
@@ -40,7 +42,7 @@ const normalizeStatus = (data: any): any => {
     } else if (data !== null && typeof data === 'object') {
         const normalized: any = {}
         const statusFields = [
-            'status', 'refund_status', 'payment_status', 'shipping_status', 
+            'status', 'refund_status', 'payment_status', 'shipping_status',
             'payout_status', 'approval_status', 'role'
         ]
         for (const key in data) {
@@ -88,7 +90,8 @@ export const authAPI = {
         params.append('password', password)
 
         const response = await api.post('/auth/login/', params, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
         return response.data
     },
 
@@ -147,7 +150,8 @@ export const authAPI = {
     verifyLoginOTP: async (email: string, otp: string) => {
         const response = await api.post('/auth/verify-login-otp/', { email, otp })
         return response.data
-    } }
+    }
+}
 
 // Packages API
 export const packagesAPI = {
@@ -167,7 +171,8 @@ export const packagesAPI = {
     getById: async (id: string) => {
         const response = await api.get(`/packages/${id}/`)
         return response.data
-    } }
+    }
+}
 
 // Flat named exports as requested
 export const fetchDashboardStats = async (filter_type: string = 'ALL') => {
@@ -378,7 +383,8 @@ export const paymentsAPI = {
     }) => {
         const response = await api.post('/payments/verify/', data)
         return response.data
-    } }
+    }
+}
 
 // Tours API (Amadeus Integration)
 export const toursAPI = {
@@ -601,9 +607,9 @@ export const agentReportsAPI = {
         const response = await api.get('/agent/reports/charts', { params })
         return response.data
     },
-    getPackagePerformance: async (params: { 
-        period: string; 
-        start_date?: string; 
+    getPackagePerformance: async (params: {
+        period: string;
+        start_date?: string;
         end_date?: string;
         page?: number;
         limit?: number;
