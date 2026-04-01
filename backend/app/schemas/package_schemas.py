@@ -11,6 +11,7 @@ from decimal import Decimal
 class CancellationRule(BaseModel):
     daysBefore: int = Field(..., ge=0)
     refundPercentage: float = Field(..., ge=0, le=100)
+    fareType: Optional[str] = Field(None)
 
 # Package Itinerary Schemas
 class PackageItineraryItemResponse(BaseModel):

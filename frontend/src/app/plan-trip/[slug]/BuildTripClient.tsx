@@ -1165,7 +1165,31 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             </div>
                                             <div className="grid gap-4">
                                                 {session.cancellation_rules?.map((rule: any, idx: number) => {
-                                                    const amount = ((rule.refundPercentage / 100) * (session.price_per_person || 0) * (travelers.adults + travelers.children));
+                                                    const baseFare = (session.price_per_person || 0) * (travelers.adults + travelers.children);
+                                                    const gstApplicable = !!gstSettings;
+                                                    let gstAmount = 0;
+                                                    let realBase = baseFare;
+
+                                                    if (gstApplicable) {
+                                                        if (gstSettings.inclusive) {
+                                                            realBase = baseFare / (1 + gstSettings.percentage / 100);
+                                                            gstAmount = baseFare - realBase;
+                                                        } else {
+                                                            gstAmount = (baseFare * gstSettings.percentage) / 100;
+                                                        }
+                                                    }
+
+                                                    let amount = 0;
+                                                    if (rule.refundPercentage > 0) {
+                                                        if (!gstApplicable) {
+                                                            amount = (rule.refundPercentage / 100) * realBase;
+                                                        } else if (rule.fareType === 'base_fare') {
+                                                            amount = (rule.refundPercentage / 100) * realBase;
+                                                        } else {
+                                                            amount = (rule.refundPercentage / 100) * (realBase + gstAmount);
+                                                        }
+                                                    }
+
                                                     return (
                                                         <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
                                                             <div className="flex items-center gap-3">
@@ -1178,19 +1202,24 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <div className="text-right">
+                                                                <div className="text-right flex flex-col items-end">
                                                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Refund</p>
                                                                     <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
+                                                                    {gstApplicable && rule.refundPercentage > 0 && (
+                                                                        <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
+                                                                            {rule.fareType === 'base_fare' ? '(Base only)' : '(Base + GST)'}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-                                                                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100">
+                                                                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100 min-w-[80px] text-center">
                                                                     ₹{Math.round(amount).toLocaleString()}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     );
                                                 })}
-                                                {/* Final catch-all if last rule > 0 days */}
-                                                {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0) && (
+                                                {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
+                                                {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
                                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50 rounded-2xl border border-red-100 shadow-sm gap-4 opacity-80">
                                                         <div className="flex items-center gap-3">
                                                             <div className="p-2 bg-white rounded-lg">
@@ -1214,9 +1243,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                 )}
                                             </div>
                                         </div>
-                                        <p className="text-[11px] text-slate-400 font-medium px-4 flex items-center gap-2">
-                                            <AlertCircle className="h-3 w-3" />
-                                            * Estimated refund amounts are based on the base package price (₹{(session.price_per_person || 0).toLocaleString()} x {travelers.adults + travelers.children} travelers). Taxes and service fees may not be refundable.
+                                        <p className="text-[11px] text-slate-400 font-medium px-4 flex items-start gap-2 max-w-2xl">
+                                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                            <span>
+                                                * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
+                                            </span>
                                         </p>
                                     </div>
                                 ) : (

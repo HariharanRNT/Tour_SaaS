@@ -42,12 +42,21 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
     Rules must already be stored in **descending** daysBefore order
     (enforced by validate_and_sort_rules on save).
 
+    Refund logic (GST-aware):
+      - If gst_applicable = False OR fareType = 'total_fare' OR fareType is absent:
+            refund = (refundPercentage / 100) x totalAmountPaid
+      - If gst_applicable = True AND fareType = 'base_fare':
+            baseFare = totalAmountPaid / (1 + gstPercentage / 100)
+            refund = (refundPercentage / 100) x baseFare
+            # GST portion is forfeited entirely — not included in refund
+
     Returns:
         {
             days_before:       int,
             paid_amount:       float,
             refund_amount:     float,
             refund_percentage: float,
+            fare_type:         str | None,
             message:           str
         }
     """
@@ -75,6 +84,7 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
             "paid_amount": paid,
             "refund_amount": 0.0,
             "refund_percentage": 0.0,
+            "fare_type": None,
             "message": "Cannot cancel — travel date has already passed.",
         }
 
@@ -84,6 +94,7 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
             "paid_amount": paid,
             "refund_amount": 0.0,
             "refund_percentage": 0.0,
+            "fare_type": None,
             "message": "No refund — cancellation policy not configured for this package.",
         }
 
@@ -93,7 +104,33 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
         (r for r in rules if days_before >= r["daysBefore"]), None
     )
     pct = float(applicable["refundPercentage"]) if applicable else 0.0
-    amount = round(paid * pct / 100, 2)
+    fare_type = (applicable or {}).get("fareType", None)
+
+    # --- GST-aware refund calculation ---
+    package = booking.package
+    gst_applicable = bool(getattr(package, "gst_applicable", False))
+    gst_percentage = float(getattr(package, "gst_percentage", 0) or 0)
+
+    if gst_applicable and fare_type == "base_fare":
+        # Refund applies to base fare only — GST portion is forfeited entirely.
+        # The customer always paid the total (base + GST).
+        # Back-calculate base fare: baseFare = totalPaid / (1 + gstPct/100)
+        if gst_percentage > 0:
+            base_fare = paid / (1 + gst_percentage / 100)
+        else:
+            base_fare = paid  # 0% GST edge case — identical result either way
+        amount = round(base_fare * pct / 100, 2)
+        logger.info(
+            f"[Booking {booking.id}] fare_type=base_fare → base_fare=₹{base_fare:.2f}, "
+            f"refund=₹{amount} ({pct}% of base)"
+        )
+    else:
+        # total_fare, absent fareType, or GST not applicable → flat % of total paid
+        amount = round(paid * pct / 100, 2)
+        logger.info(
+            f"[Booking {booking.id}] fare_type={fare_type or 'total_fare'} → "
+            f"refund=₹{amount} ({pct}% of total ₹{paid})"
+        )
 
     logger.info(
         f"[Booking {booking.id}] Applicable rule: {applicable} → pct={pct}%, refund=₹{amount}"
@@ -112,6 +149,7 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
         "paid_amount": paid,
         "refund_amount": amount,
         "refund_percentage": pct,
+        "fare_type": fare_type,
         "message": msg,
     }
 
@@ -124,15 +162,22 @@ def validate_and_sort_rules(rules: list) -> list:
     """
     Validate cancellation rules and return them sorted in descending daysBefore order.
     Raises ValueError on validation failure.
+
+    Each rule may include an optional fareType ('total_fare' | 'base_fare') which
+    is preserved as-is — applied during calculate_refund() when gst_applicable=True.
     """
     if not rules:
         # Auto-fallback: explicit 0%-refund rule so policy is clear
         return [{"daysBefore": 0, "refundPercentage": 0}]
 
+    valid_fare_types = {"total_fare", "base_fare", None}
     for r in rules:
         pct = r.get("refundPercentage", -1)
         if not (0 <= float(pct) <= 100):
             raise ValueError(f"refundPercentage must be 0–100, got {pct}")
+        ft = r.get("fareType", None)
+        if ft not in valid_fare_types:
+            raise ValueError(f"fareType must be 'total_fare', 'base_fare', or absent — got '{ft}'")
 
     days_list = [r["daysBefore"] for r in rules]
     if len(days_list) != len(set(days_list)):

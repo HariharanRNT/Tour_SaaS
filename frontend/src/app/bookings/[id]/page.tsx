@@ -62,8 +62,11 @@ export default function BookingDetailsPage() {
         paid_amount: number;
         refund_amount: number;
         refund_percentage: number;
+        fare_type: string | null;
         message: string;
     } | null>(null)
+
+    const [gstSettings, setGstSettings] = useState({ inclusive: false, percentage: 18 })
 
     useEffect(() => {
         if (params.id) {
@@ -75,6 +78,18 @@ export default function BookingDetailsPage() {
         try {
             const data = await bookingsAPI.getById(id)
             setBooking(data)
+            
+            // Fetch agent GST settings as fallback
+            try {
+                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                const res = await fetch('/api/v1/agent-settings/public', { headers: { 'X-Domain': domain }})
+                if (res.ok) {
+                    const settings = await res.json()
+                    setGstSettings({ inclusive: settings.gst_inclusive, percentage: settings.gst_percentage })
+                }
+            } catch (e) {
+                console.error("Failed to load fallback GST settings", e)
+            }
         } catch (error) {
             console.error("Failed to load booking details", error)
             toast.error("Failed to load booking details")
@@ -792,23 +807,42 @@ export default function BookingDetailsPage() {
                                             <CheckCircle className="h-4 w-4" />
                                             <span className="text-xs font-bold uppercase tracking-wider">Cancellable Package</span>
                                         </div>
-                                        {booking.package.cancellation_rules?.map((rule, idx) => {
-                                            const refundAmount = (rule.refundPercentage / 100) * booking.total_amount;
+                                        {booking.package.cancellation_rules?.map((rule: any, idx: number) => {
+                                            let refundAmount = (rule.refundPercentage / 100) * booking.total_amount;
+                                            
+                                            const isGstApplicable = booking.package?.gst_applicable !== null && booking.package?.gst_applicable !== undefined 
+                                                ? booking.package.gst_applicable 
+                                                : gstSettings.inclusive;
+                                            
+                                            const activeGstPct = booking.package?.gst_percentage || gstSettings.percentage || 0;
+                                            
+                                            // Handle GST fareType logic if applicable
+                                            if (isGstApplicable && rule.fareType === 'base_fare') {
+                                                const estimatedBase = booking.total_amount / (1 + (activeGstPct / 100));
+                                                refundAmount = (rule.refundPercentage / 100) * estimatedBase;
+                                            }
+
                                             return (
                                                 <div key={idx} className="flex justify-between items-center p-3 bg-white/40 rounded-lg border border-white/10">
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">If cancelled</span>
                                                         <span className="text-sm font-bold text-gray-800">{rule.daysBefore}+ Days Before</span>
                                                     </div>
-                                                    <div className="text-right">
+                                                    <div className="text-right flex flex-col items-end">
                                                         <span className="text-sm font-black text-emerald-700">{rule.refundPercentage}% Refund</span>
-                                                        <p className="text-[10px] text-emerald-600 font-bold">≈ {formatCurrency(refundAmount)}</p>
+                                                        {isGstApplicable && rule.refundPercentage > 0 && (
+                                                            <span className="text-[9px] font-bold text-emerald-600/70 uppercase tracking-tighter -mt-0.5">
+                                                                {rule.fareType === 'base_fare' ? '(Base only)' : '(Base + GST)'}
+                                                            </span>
+                                                        )}
+                                                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">≈ {formatCurrency(refundAmount)}</p>
                                                     </div>
                                                 </div>
                                             );
                                         })}
                                         {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 0 &&
-                                            booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 && (
+                                            booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 &&
+                                            !booking.package.cancellation_rules.some((r: any) => r.refundPercentage === 0) && (
                                                 <div className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100/50">
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-red-400 font-bold uppercase tracking-tighter">If cancelled</span>
@@ -821,7 +855,7 @@ export default function BookingDetailsPage() {
                                                 </div>
                                             )}
                                         <p className="text-[10px] text-gray-400 italic mt-2">
-                                            * Refund amounts are calculated based on your total booking value of {formatCurrency(booking.total_amount)}.
+                                            * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
                                         </p>
                                     </div>
                                 ) : (

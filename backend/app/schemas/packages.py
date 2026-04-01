@@ -11,6 +11,10 @@ class CancellationRule(BaseModel):
     """Single cancellation rule: if customer cancels >= daysBefore travel, they get refundPercentage."""
     daysBefore: int = Field(..., ge=0, description="Days before travel date")
     refundPercentage: float = Field(..., ge=0, le=100, description="Refund % of paid amount")
+    fareType: Optional[str] = Field(
+        None,
+        description="'total_fare' or 'base_fare'. Only used when gst_applicable=true on the package."
+    )
 
 
 class PackageStatusEnum(str, Enum):

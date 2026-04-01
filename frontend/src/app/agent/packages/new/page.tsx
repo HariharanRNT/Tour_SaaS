@@ -54,7 +54,7 @@ interface PackageFormData {
     flight_baggage_note: string
     // Cancellation Policy
     cancellation_enabled: boolean
-    cancellation_rules: { daysBefore: number; refundPercentage: number }[]
+    cancellation_rules: { daysBefore: number; refundPercentage: number; fareType?: 'total_fare' | 'base_fare' }[]
 }
 
 const TRIP_STYLES = [
@@ -328,9 +328,13 @@ export default function CreatePackagePage() {
                     flight_cabin_class: pkg.flight_cabin_class || 'ECONOMY',
                     flight_price_included: pkg.flight_price_included || false,
                     flight_baggage_note: pkg.flight_baggage_note || '',
-                    // Cancellation Policy
+                    // Cancellation Policy — preserve fareType per rule; default absent ones to 'total_fare' when GST is on
                     cancellation_enabled: pkg.cancellation_enabled || false,
-                    cancellation_rules: pkg.cancellation_rules || []
+                    cancellation_rules: (pkg.cancellation_rules || []).map((r: any) => ({
+                        daysBefore: r.daysBefore ?? 0,
+                        refundPercentage: r.refundPercentage ?? 0,
+                        ...(gstApplicable && { fareType: r.fareType || 'total_fare' }),
+                    }))
                 })
                 if (pkg.flight_origin_cities) {
                     setOriginInput(pkg.flight_origin_cities.join(', '))
@@ -501,14 +505,24 @@ export default function CreatePackagePage() {
             const method = packageId ? 'PUT' : 'POST'
             const token = localStorage.getItem('token')
 
+            const sanitisedRules = formData.cancellation_rules.map(r => {
+                if (!agentGstApplicable) {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { fareType: _dropped, ...rest } = r as any
+                    return rest
+                }
+                return { ...r, fareType: r.fareType || 'total_fare' }
+            })
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, cancellation_rules: sanitisedRules })
             })
+
 
             if (!response.ok) {
                 const errorData = await response.json()
@@ -1153,10 +1167,13 @@ export default function CreatePackagePage() {
                                             <span className="text-gray-500 font-bold">₹</span>
                                         </div>
                                         <Input
-                                            type="number"
-                                            min="0"
-                                            value={formData.price_per_person}
-                                            onChange={(e) => updateFormData('price_per_person', parseFloat(e.target.value))}
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={formData.price_per_person as any}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                updateFormData('price_per_person', val === '' ? '' as any : Number(val));
+                                            }}
                                             className={cn("glass-input pl-8 h-12 font-mono font-medium text-lg", getInputStyle(formData.price_per_person, true))}
                                         />
                                         {formData.price_per_person > 0 && (
@@ -1194,9 +1211,13 @@ export default function CreatePackagePage() {
                                                     ))}
                                                     <div className="relative w-32">
                                                         <Input
-                                                            type="number" min="0" max="100" step="0.01"
-                                                            value={formData.gst_percentage}
-                                                            onChange={(e) => updateFormData('gst_percentage', parseFloat(e.target.value) || 0)}
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            value={formData.gst_percentage as any}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                updateFormData('gst_percentage', val === '' ? '' as any : Number(val));
+                                                            }}
                                                             className="glass-input h-11 pr-8 text-sm font-bold text-center"
                                                         />
                                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold pointer-events-none">%</span>
@@ -1354,76 +1375,142 @@ export default function CreatePackagePage() {
                                         <p className="text-xs text-gray-500">Define refund rules based on days before travel</p>
                                     </div>
                                 </div>
-                                {/* Toggle */}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const next = !formData.cancellation_enabled
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            cancellation_enabled: next,
-                                            // Auto-add default rule when enabling with empty list
-                                            cancellation_rules: next && prev.cancellation_rules.length === 0
-                                                ? [{ daysBefore: 0, refundPercentage: 0 }]
-                                                : prev.cancellation_rules
-                                        }))
-                                    }}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${formData.cancellation_enabled ? 'bg-emerald-500' : 'bg-gray-300'
-                                        }`}
-                                >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${formData.cancellation_enabled ? 'translate-x-6' : 'translate-x-1'
-                                        }`} />
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    {/* GST context badge */}
+                                    {agentGstApplicable !== null && (
+                                        <span className={cn(
+                                            "text-[10px] font-bold px-2.5 py-1 rounded-full border",
+                                            agentGstApplicable
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                : "bg-slate-50 text-slate-500 border-slate-200"
+                                        )}>
+                                            GST {agentGstApplicable ? 'Applicable' : 'Not Applicable'}
+                                        </span>
+                                    )}
+                                    {/* Toggle */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const next = !formData.cancellation_enabled
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                cancellation_enabled: next,
+                                                cancellation_rules: next && prev.cancellation_rules.length === 0
+                                                    ? [agentGstApplicable
+                                                        ? { daysBefore: 0, refundPercentage: 0, fareType: 'total_fare' as const }
+                                                        : { daysBefore: 0, refundPercentage: 0 }]
+                                                    : prev.cancellation_rules
+                                            }))
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${formData.cancellation_enabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${formData.cancellation_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
                             </div>
 
                             {formData.cancellation_enabled && (
                                 <CardContent className="p-6 space-y-4">
                                     <p className="text-xs text-gray-500">
-                                        Rules are matched by <b>days before travel</b>. List them in <b>descending</b> order (largest daysBefore first). Refund % applies to the amount paid.
+                                        Rules are matched by <b>days before travel</b>. List them in <b>descending</b> order (largest daysBefore first).
+                                        {agentGstApplicable && <span className="ml-1">Refund % applies to the <b>Fare Type</b> selected per rule.</span>}
+                                        {!agentGstApplicable && <span className="ml-1">Refund % applies to the total amount paid.</span>}
                                     </p>
+
+                                    {/* Column headers */}
+                                    <div className={cn(
+                                        "grid gap-3 px-4",
+                                        agentGstApplicable ? "grid-cols-[1fr_1fr_1.4fr_auto]" : "grid-cols-[1fr_1fr_auto]"
+                                    )}>
+                                        <Label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Days Before Travel</Label>
+                                        <Label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Refund %</Label>
+                                        {agentGstApplicable && (
+                                            <div className="flex items-center gap-1">
+                                                <Label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Fare Type</Label>
+                                                <div className="relative group/tooltip">
+                                                    <Info className="w-3 h-3 text-gray-400 cursor-help" />
+                                                    <div className="absolute left-0 bottom-5 z-20 w-64 bg-gray-900 text-white text-[11px] leading-relaxed rounded-lg px-3 py-2 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none shadow-xl">
+                                                        <b>Base Fare</b> excludes GST from refund — GST portion is forfeited.<br />
+                                                        <b>Total Fare</b> refunds both base and GST proportionally.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <span />
+                                    </div>
 
                                     {/* Rule rows */}
                                     <div className="space-y-2">
                                         {formData.cancellation_rules.map((rule, idx) => (
-                                            <div key={idx} className="flex items-center gap-3 bg-white/60 border border-gray-100 rounded-lg px-4 py-3">
-                                                <div className="flex-1">
-                                                    <Label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Days Before Travel</Label>
+                                            <div key={idx} className={cn(
+                                                "grid gap-3 items-end bg-white/60 border border-gray-100 rounded-lg px-4 py-3",
+                                                agentGstApplicable ? "grid-cols-[1fr_1fr_1.4fr_auto]" : "grid-cols-[1fr_1fr_auto]"
+                                            )}>
+                                                {/* Days Before */}
+                                                <div>
                                                     <Input
-                                                        type="number"
-                                                        min={0}
-                                                        value={rule.daysBefore}
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        value={rule.daysBefore as any}
                                                         onChange={(e) => {
+                                                            const val = e.target.value;
                                                             const updated = [...formData.cancellation_rules]
-                                                            updated[idx] = { ...updated[idx], daysBefore: Number(e.target.value) }
+                                                            updated[idx] = { ...updated[idx], daysBefore: val === '' ? '' as any : Number(val) }
                                                             setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                         }}
-                                                        className="mt-1 h-8 text-sm"
+                                                        className="h-8 text-sm"
                                                         placeholder="e.g. 7"
                                                     />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <Label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Refund %</Label>
+                                                {/* Refund % */}
+                                                <div>
                                                     <Input
-                                                        type="number"
-                                                        min={0}
-                                                        max={100}
-                                                        value={rule.refundPercentage}
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        value={rule.refundPercentage as any}
                                                         onChange={(e) => {
+                                                            const val = e.target.value;
                                                             const updated = [...formData.cancellation_rules]
-                                                            updated[idx] = { ...updated[idx], refundPercentage: Number(e.target.value) }
+                                                            updated[idx] = { ...updated[idx], refundPercentage: val === '' ? '' as any : Number(val) }
                                                             setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                         }}
-                                                        className="mt-1 h-8 text-sm"
+                                                        className="h-8 text-sm"
                                                         placeholder="0–100"
                                                     />
                                                 </div>
+                                                {/* Fare Type — only when GST applicable */}
+                                                {agentGstApplicable && (
+                                                    <Select
+                                                        value={rule.fareType || 'total_fare'}
+                                                        onValueChange={(val) => {
+                                                            const updated = [...formData.cancellation_rules]
+                                                            updated[idx] = { ...updated[idx], fareType: val as 'total_fare' | 'base_fare' }
+                                                            setFormData(prev => ({ ...prev, cancellation_rules: updated }))
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-8 text-sm bg-white/80">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="total_fare">
+                                                                <span className="font-medium">Total Fare</span>
+                                                                <span className="text-[10px] text-gray-400 ml-1">(Base + GST)</span>
+                                                            </SelectItem>
+                                                            <SelectItem value="base_fare">
+                                                                <span className="font-medium">Base Fare</span>
+                                                                <span className="text-[10px] text-gray-400 ml-1">(GST forfeited)</span>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                                {/* Delete */}
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         const updated = formData.cancellation_rules.filter((_, i) => i !== idx)
                                                         setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                     }}
-                                                    className="mt-5 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                    className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors self-center"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -1431,7 +1518,7 @@ export default function CreatePackagePage() {
                                         ))}
                                     </div>
 
-                                    {/* Add rule button */}
+                                    {/* Add rule */}
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -1442,7 +1529,9 @@ export default function CreatePackagePage() {
                                                 ...prev,
                                                 cancellation_rules: [
                                                     ...prev.cancellation_rules,
-                                                    { daysBefore: 0, refundPercentage: 0 }
+                                                    agentGstApplicable
+                                                        ? { daysBefore: 0, refundPercentage: 0, fareType: 'total_fare' as const }
+                                                        : { daysBefore: 0, refundPercentage: 0 }
                                                 ]
                                             }))
                                         }}
@@ -1451,12 +1540,20 @@ export default function CreatePackagePage() {
                                     </Button>
 
                                     {/* Example hint */}
-                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
-                                        <b>Example:</b> Cancel 7+ days before → 80% refund | 3–6 days → 50% | &lt;3 days → 0%
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                                        {agentGstApplicable ? (
+                                            <>
+                                                <p><b>Example (GST applicable, Base ₹1,000 + 18% GST = ₹1,180):</b></p>
+                                                <p>Cancel 5+ days → 70% of <b>Total Fare</b> = ₹826 &nbsp;|&nbsp; Cancel 2–4 days → 25% of <b>Base Fare</b> = ₹250 (GST forfeited) &nbsp;|&nbsp; &lt;2 days → No refund</p>
+                                            </>
+                                        ) : (
+                                            <p><b>Example:</b> Cancel 7+ days before → 80% refund | 3–6 days → 50% | &lt;3 days → 0%</p>
+                                        )}
                                     </div>
                                 </CardContent>
                             )}
                         </Card>
+
 
                         {/* Trip Categorization */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
