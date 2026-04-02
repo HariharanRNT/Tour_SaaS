@@ -78,7 +78,7 @@ async def list_agent_bookings(
         base_stmt = base_stmt.where(Booking.created_at < filter_end)
     
     if status:
-        base_stmt = base_stmt.where(Booking.status == BookingStatus(status))
+        base_stmt = base_stmt.where(Booking.status == BookingStatus(status.upper()))
     
     if booking_reference:
         base_stmt = base_stmt.where(Booking.booking_reference.ilike(f"%{booking_reference}%"))
@@ -126,8 +126,13 @@ async def list_agent_bookings(
             "total": total
         }
     except Exception as e:
-        logger.error(f"Error in list_agent_bookings: {e}")
-        logger.error(traceback.format_exc())
+        logger.error(f"Error in list_agent_bookings: {str(e)}")
+        import traceback
+        traceback_str = traceback.format_exc()
+        logger.error(traceback_str)
+        # Also print to stdout for uvicorn logs
+        print(f"ERROR list_agent_bookings: {str(e)}")
+        print(traceback_str)
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
@@ -189,7 +194,7 @@ async def update_booking_status(
         )
         
     try:
-        booking.status = BookingStatus(status)
+        booking.status = BookingStatus(status.upper())
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

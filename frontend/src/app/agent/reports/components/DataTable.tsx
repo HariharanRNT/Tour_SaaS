@@ -36,7 +36,7 @@ export default function DataTable({
                             return (
                                 <th 
                                     key={idx} 
-                                    className={`text-[10px] uppercase tracking-[0.2em] text-slate-400 font-black pb-4 pt-2 px-4 whitespace-nowrap ${onSort && sortKey ? 'cursor-pointer hover:text-orange-600 transition-colors' : ''} ${col.className || ''}`}
+                                    className={`text-[10px] uppercase tracking-[0.2em] text-slate-700 font-black pb-4 pt-2 px-4 whitespace-nowrap ${onSort && sortKey ? 'cursor-pointer hover:text-orange-600 transition-colors' : ''} ${col.className || ''}`}
                                     onClick={() => onSort && sortKey && onSort(sortKey)}
                                 >
                                     <div className="flex items-center gap-1.5">
@@ -58,13 +58,13 @@ export default function DataTable({
                             <td colSpan={columns.length} className="py-12 text-center">
                                 <div className="flex flex-col items-center gap-3">
                                     <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
-                                    <span className="text-[12px] text-slate-400 font-bold uppercase tracking-widest">Loading...</span>
+                                    <span className="text-[12px] text-slate-700 font-bold uppercase tracking-widest">Loading...</span>
                                 </div>
                             </td>
                         </tr>
                     ) : data.length === 0 ? (
                         <tr>
-                            <td colSpan={columns.length} className="py-12 text-center text-slate-400 text-[13px] font-medium">
+                            <td colSpan={columns.length} className="py-12 text-center text-slate-700 text-[13px] font-medium">
                                 {emptyMessage}
                             </td>
                         </tr>

@@ -47,6 +47,10 @@ interface PackageDetail {
     category: string
     max_group_size: number
     itinerary_by_day: DayItinerary[]
+    // GST configuration (per-package)
+    gst_applicable?: boolean | null
+    gst_percentage?: number | null
+    gst_mode?: string | null
     // Flight configuration
     flights_enabled: boolean
     flight_origin_cities: string[]
@@ -95,10 +99,15 @@ export default function PackageDetailPage() {
             const res = await fetch(`${API_URL}/api/v1/agent/settings`, { headers })
             if (res.ok) {
                 const data = await res.json()
-                setGstSettings({
-                    inclusive: data.gst_inclusive,
-                    percentage: data.gst_percentage
-                })
+                // Only store agent-level GST as fallback — package-level config takes priority
+                if (data.gst_applicable) {
+                    setGstSettings({
+                        inclusive: data.gst_inclusive,
+                        percentage: data.gst_percentage
+                    })
+                } else {
+                    setGstSettings(null)  // Agent has GST off — suppress GST
+                }
             }
         } catch (err) {
             console.error("Failed to fetch agent settings", err)
@@ -120,6 +129,29 @@ export default function PackageDetailPage() {
         }
     }
 
+    /**
+     * Resolve the effective GST settings for this package.
+     * Priority: package-level gst_applicable > agent-level fallback
+     *
+     * - package.gst_applicable === false  → no GST at all
+     * - package.gst_applicable === true   → use package's own percentage/mode
+     * - package.gst_applicable === null/undefined → fall back to agent settings
+     */
+    const effectiveGst: { inclusive: boolean; percentage: number } | null = (() => {
+        if (!packageData) return null
+        // Package explicitly disables GST
+        if (packageData.gst_applicable === false) return null
+        // Package has its own GST configuration
+        if (packageData.gst_applicable === true && packageData.gst_percentage) {
+            return {
+                inclusive: packageData.gst_mode === 'inclusive',
+                percentage: packageData.gst_percentage
+            }
+        }
+        // Fall back to agent-level settings
+        return gstSettings
+    })()
+
     const calculateTotal = () => {
         if (!packageData) return 0
         const basePrice = packageData.price_per_person
@@ -127,8 +159,8 @@ export default function PackageDetailPage() {
 
         let subTotal = basePrice * totalTravelers
 
-        if (gstSettings && !gstSettings.inclusive) {
-            subTotal += (subTotal * gstSettings.percentage) / 100
+        if (effectiveGst && !effectiveGst.inclusive) {
+            subTotal += (subTotal * effectiveGst.percentage) / 100
         }
 
         return subTotal
@@ -225,12 +257,12 @@ export default function PackageDetailPage() {
                         <div className="text-right">
                             <p className="text-white/80 text-sm">Starting from</p>
                             <p className="text-4xl font-bold">
-                                {packageData && gstSettings && !gstSettings.inclusive
-                                    ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                {packageData && effectiveGst && !effectiveGst.inclusive
+                                    ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                     : `₹${packageData?.price_per_person.toLocaleString()}`
                                 }
                             </p>
-                            <p className="text-white/80 text-sm">per person {gstSettings && !gstSettings.inclusive ? '(inc. GST)' : ''}</p>
+                            <p className="text-white/80 text-sm">per person {effectiveGst && !effectiveGst.inclusive ? '(inc. GST)' : ''}</p>
                         </div>
                     </div>
 
@@ -390,8 +422,8 @@ export default function PackageDetailPage() {
                                                 <span className="text-2xl font-bold text-[var(--primary)] block">
                                                     ₹{calculateTotal().toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                                 </span>
-                                                {gstSettings && !gstSettings.inclusive && (
-                                                    <span className="text-xs text-gray-400 block">+ GST ({gstSettings.percentage}%) included</span>
+                                                {effectiveGst && !effectiveGst.inclusive && (
+                                                    <span className="text-xs text-gray-400 block">+ GST ({effectiveGst.percentage}%) included</span>
                                                 )}
                                             </div>
                                         </div>
@@ -410,13 +442,13 @@ export default function PackageDetailPage() {
                                             <span className="text-gray-600">Price per person</span>
                                             <div className="text-right">
                                                 <span className="text-2xl font-bold text-[var(--primary)] block">
-                                                    {packageData && gstSettings && !gstSettings.inclusive
-                                                        ? `₹${(packageData.price_per_person * (1 + gstSettings.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                                    {packageData && effectiveGst && !effectiveGst.inclusive
+                                                        ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                                         : `₹${packageData?.price_per_person.toLocaleString()}`
                                                     }
                                                 </span>
-                                                {gstSettings && !gstSettings.inclusive && (
-                                                    <span className="text-xs text-gray-400 block">+ GST ({gstSettings.percentage}%) included</span>
+                                                {effectiveGst && !effectiveGst.inclusive && (
+                                                    <span className="text-xs text-gray-400 block">+ GST ({effectiveGst.percentage}%) included</span>
                                                 )}
                                             </div>
                                         </div>
@@ -617,8 +649,8 @@ export default function PackageDetailPage() {
                                     <p className="text-xs text-gray-500">
                                         {travelers.adults + travelers.children} × ₹{packageData?.price_per_person.toLocaleString()}
                                     </p>
-                                    {gstSettings && !gstSettings.inclusive && (
-                                        <p className="text-xs text-[var(--primary)] font-medium">+ {gstSettings.percentage}% GST</p>
+                                    {effectiveGst && !effectiveGst.inclusive && (
+                                        <p className="text-xs text-[var(--primary)] font-medium">+ {effectiveGst.percentage}% GST</p>
                                     )}
                                 </div>
                             </div>

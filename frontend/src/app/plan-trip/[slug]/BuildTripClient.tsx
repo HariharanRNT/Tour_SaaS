@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { formatDate, cn } from '@/lib/utils'
+import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
 import { flightsAPI, API_URL } from '@/lib/api'
@@ -314,12 +315,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 const data = await response.json()
                 setSession(data)
 
-                // Set GST Settings from session data
-                if (data.gst_percentage !== undefined) {
+                // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
+                if (data.gst_applicable === false) {
+                    setGstSettings(null)  // No GST - do not show or calculate any GST
+                } else if (data.gst_percentage !== undefined && data.gst_percentage > 0) {
                     setGstSettings({
                         inclusive: data.gst_inclusive,
                         percentage: data.gst_percentage
                     })
+                } else {
+                    setGstSettings(null)
                 }
 
                 // Initialize modular selection state based on preferences
@@ -1179,16 +1184,18 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                         }
                                                     }
 
-                                                    let amount = 0;
-                                                    if (rule.refundPercentage > 0) {
-                                                        if (!gstApplicable) {
-                                                            amount = (rule.refundPercentage / 100) * realBase;
-                                                        } else if (rule.fareType === 'base_fare') {
-                                                            amount = (rule.refundPercentage / 100) * realBase;
-                                                        } else {
-                                                            amount = (rule.refundPercentage / 100) * (realBase + gstAmount);
-                                                        }
-                                                    }
+                                                    const amount = calculateRefundAmount(
+                                                        rule,
+                                                        realBase,
+                                                        gstAmount,
+                                                        gstApplicable
+                                                    );
+
+                                                    const fareLabel = getFareTypeLabel(
+                                                        rule.fareType,
+                                                        gstApplicable,
+                                                        rule.refundPercentage
+                                                    );
 
                                                     return (
                                                         <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
@@ -1205,14 +1212,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                 <div className="text-right flex flex-col items-end">
                                                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Refund</p>
                                                                     <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
-                                                                    {gstApplicable && rule.refundPercentage > 0 && (
+                                                                    {fareLabel && (
                                                                         <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
-                                                                            {rule.fareType === 'base_fare' ? '(Base only)' : '(Base + GST)'}
+                                                                            {fareLabel}
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                                 <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100 min-w-[80px] text-center">
-                                                                    ₹{Math.round(amount).toLocaleString()}
+                                                                    ₹{amount.toLocaleString()}
                                                                 </div>
                                                             </div>
                                                         </div>

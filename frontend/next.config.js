@@ -11,6 +11,10 @@ const nextConfig = {
                 hostname: 'toursaas.s3.us-east-1.amazonaws.com',
             },
             {
+                protocol: 'https',
+                hostname: 'upload.wikimedia.org',
+            },
+            {
                 protocol: 'http',
                 hostname: 'localhost',
             },

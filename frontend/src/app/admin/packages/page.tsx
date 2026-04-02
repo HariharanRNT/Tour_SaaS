@@ -107,7 +107,7 @@ export default function AdminPackagesPage() {
                             ← Back to Dashboard
                         </Button>
                         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Package Management</h1>
-                        <p className="text-gray-500 mt-1">Create and manage tour packages</p>
+                        <p className="text-slate-900 mt-1">Create and manage tour packages</p>
                     </div>
 
                     <Button onClick={() => router.push('/admin/packages/new')} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
@@ -159,7 +159,7 @@ export default function AdminPackagesPage() {
                             </div>
                         ) : filteredPackages.length === 0 ? (
                             <div className="text-center py-12">
-                                <p className="text-gray-500">No packages found</p>
+                                <p className="text-slate-900">No packages found</p>
                                 <Button
                                     onClick={() => router.push('/admin/packages/new')}
                                     className="mt-4 bg-blue-600 hover:bg-blue-700"

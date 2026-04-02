@@ -91,6 +91,10 @@ class User(Base):
         
     @property
     def domain(self):
+        if self.role == UserRole.SUB_USER:
+            # We assume sub_user_agent_domain was attached or we resolve it
+            if hasattr(self, '_sub_user_agent_domain'):
+                return self._sub_user_agent_domain
         return getattr(self.profile, 'domain', None) if self.profile else None
 
     @property

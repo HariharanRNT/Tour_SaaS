@@ -45,11 +45,11 @@ function ActivityItem({ icon, iconBg, iconColor, title, description, time, isLas
                     <h4 className="text-sm font-[900] text-slate-800 group-hover:text-[#FF692B] transition-colors tracking-tight">
                         {title}
                     </h4>
-                    <span className="text-[9px] font-black text-slate-400 whitespace-nowrap ml-4 bg-white/80 border border-slate-50 px-2.5 py-1 rounded-lg shadow-sm group-hover:border-orange-100 transition-colors">
+                    <span className="text-[9px] font-black text-slate-700 whitespace-nowrap ml-4 bg-white/80 border border-slate-50 px-2.5 py-1 rounded-lg shadow-sm group-hover:border-orange-100 transition-colors">
                         {time}
                     </span>
                 </div>
-                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-bold opacity-80 group-hover:opacity-100 transition-opacity">
+                <p className="text-[11px] text-slate-900 line-clamp-2 leading-relaxed font-bold opacity-80 group-hover:opacity-100 transition-opacity">
                     {description}
                 </p>
 
@@ -153,7 +153,7 @@ export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) 
                             "px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider transition-all border shrink-0",
                             filter === cat
                                 ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200"
-                                : "bg-white/50 text-slate-500 border-white hover:bg-white hover:text-indigo-600"
+                                : "bg-white/50 text-slate-900 border-white hover:bg-white hover:text-indigo-600"
                         )}
                     >
                         {cat}

@@ -62,7 +62,10 @@ async def list_agent_packages(
     stmt = select(Package).where(Package.created_by == current_agent.agent_id)
     
     if status_filter and status_filter != 'all':
-        stmt = stmt.where(Package.status == PackageStatus(status_filter))
+        try:
+            stmt = stmt.where(Package.status == PackageStatus(status_filter.upper()))
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid status filter: '{status_filter}'. Valid values are: draft, published, archived")
     
     if destination and destination != 'all':
         stmt = stmt.where(Package.destination.ilike(f"%{destination}%"))
@@ -117,6 +120,11 @@ async def create_agent_package(
         base_slug = getattr(package_data, 'slug', None) or package_data.title.lower().replace(' ', '-')
         unique_slug = f"{base_slug}-{str(uuid.uuid4())[:8]}"
         
+        # Determine effective GST values — null them out if GST is not applicable
+        gst_applicable = package_data.gst_applicable  # True / False / None
+        gst_percentage = package_data.gst_percentage if gst_applicable else None
+        gst_mode = package_data.gst_mode if gst_applicable else None
+
         # Create package
         new_package = Package(
             id=package_id,
@@ -140,6 +148,10 @@ async def create_agent_package(
             package_mode=package_data.package_mode,
             destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
             activities=json.dumps(package_data.activities) if package_data.activities else "[]",
+            # GST Configuration
+            gst_applicable=gst_applicable,
+            gst_percentage=gst_percentage,
+            gst_mode=gst_mode,
             # Flight Configuration
             flights_enabled=package_data.flights_enabled,
             flight_origin_cities=json.dumps(package_data.flight_origin_cities) if package_data.flight_origin_cities else "[]",
@@ -248,6 +260,12 @@ async def update_agent_package(
             setattr(package, field, json.dumps(value))
         else:
             setattr(package, field, value)
+
+    # If GST is being set to not applicable, clear percentage and mode to prevent
+    # stale default values (e.g. 18%, exclusive) from lingering in the database.
+    if update_data.get('gst_applicable') is False:
+        package.gst_percentage = None
+        package.gst_mode = None
 
     # Handle cancellation policy update
     if 'cancellation_enabled' in update_data or 'cancellation_rules' in update_data:

@@ -35,7 +35,7 @@ interface SidebarProps {
 
 export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
     const pathname = usePathname()
-    const { user, logout, isSubUser } = useAuth()
+    const { user, logout, isSubUser, hasPermission } = useAuth()
     const [collapsed, setCollapsed] = useState(false)
 
     const userRole = user?.role?.toLowerCase() || (pathname?.startsWith('/agent') ? 'agent' : 'admin')
@@ -97,9 +97,12 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     { icon: Users, label: 'Sub-Users', href: '/agent/settings/sub-users', module: 'settings' },
                 ] : []),
             ].filter(item => {
-                // If sub-user, check permissions array
+                // If sub-user, check permissions explicitly using the AuthContext
                 if (isSubUser && item.module) {
-                    return user?.permissions?.some(p => p.module === item.module);
+                    return hasPermission(item.module, 'view');
+                }
+                if (isSubUser && !item.module) {
+                    return false; // Sub-users shouldn't see modules without explicit permissions defined
                 }
                 return true;
             })
@@ -119,15 +122,15 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
             <div className="shrink-0">
                 {!collapsed && (
                     <Link 
-                        href={userRole === 'agent' ? '/agent/dashboard' : '/admin/dashboard'} 
+                        href={(userRole === 'agent' || userRole === 'sub_user' || userRole === 'staff') ? '/agent/dashboard' : '/admin/dashboard'} 
                         className="sidebar-header group"
                     >
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-white/20 backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform">
-                            <Briefcase className="w-6 h-6 text-white" />
+                            <Briefcase className="w-6 h-6 text-black" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <h2 className="title truncate">
-                                {userRole === 'agent' ? 'Agent Portal' : 'Admin Portal'}
+                                {(userRole === 'agent' || userRole === 'sub_user' || userRole === 'staff') ? 'Agent Portal' : 'Admin Portal'}
                             </h2>
                             <p className="subtitle truncate">
                                 Tour Operations
@@ -141,7 +144,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                         <div className="relative group">
                             <div className="absolute inset-0 blur-lg opacity-40 group-hover:opacity-60 transition-opacity rounded-xl" style={{ backgroundColor: 'var(--primary)' }} />
                             <div className="p-2.5 rounded-xl border border-white/20 relative group-hover:scale-110 transition-transform duration-300 shadow-xl" style={{ backgroundColor: 'var(--primary)' }}>
-                                <Plane className="h-5 w-5 text-white" />
+                                <Plane className="h-5 w-5 text-black" />
                             </div>
                         </div>
                     </div>
@@ -153,10 +156,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                         variant="ghost"
                         size="icon"
                         onClick={toggleSidebar}
-                        className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+                        className="h-8 w-8 !text-black hover:bg-black/10 rounded-lg transition-all duration-300"
                         title="Collapse sidebar"
                     >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-4 w-4" stroke="black" />
                     </Button>
                 )}
             </div>
@@ -207,11 +210,10 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                             variant="ghost"
                             size="icon"
                             onClick={toggleSidebar}
-                            className="h-8 w-8 hover:bg-white/10 rounded-full"
-                            style={{ color: 'rgba(255,255,255,0.60)' }}
+                            className="h-8 w-8 !text-black hover:bg-black/10 rounded-full"
                             title="Expand sidebar"
                         >
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4" stroke="black" />
                         </Button>
                     </div>
                 )}
@@ -249,7 +251,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                                className="h-8 w-8 text-[#92400e] hover:text-[var(--primary)] hover:bg-white/20 rounded-lg shrink-0 transition-colors" 
+                                className="h-8 w-8 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-lg shrink-0 transition-colors" 
                             onClick={() => {
                                 logout()
                                 window.location.href = userRole === 'admin' ? '/admin/login' : '/login'
@@ -263,7 +265,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-9 w-9 text-[#92400e] hover:text-[var(--primary)] hover:bg-white/20 rounded-xl transition-all" 
+                            className="h-9 w-9 text-black hover:text-[var(--primary)] hover:bg-black/10 rounded-xl transition-all" 
                             onClick={() => {
                                 logout()
                                 window.location.href = userRole === 'admin' ? '/admin/login' : '/login'

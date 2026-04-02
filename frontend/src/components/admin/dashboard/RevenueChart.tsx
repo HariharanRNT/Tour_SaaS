@@ -46,7 +46,7 @@ const CustomTooltip = ({ active, payload, label, activeTab, chartData }: any) =>
                         </span>
                     )}
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 mt-1 italic uppercase">{activeTab} Stream</p>
+                <p className="text-[9px] font-bold text-slate-700 mt-1 italic uppercase">{activeTab} Stream</p>
             </div>
         );
     }
@@ -107,7 +107,7 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
 
             <div className="grid grid-cols-3 gap-4 px-2 py-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
                 <div className="text-center border-r border-indigo-100 last:border-0">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total {activeTab}</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-700 tracking-wider">Total {activeTab}</p>
                     <p className="text-xl font-black text-slate-800">
                         {activeTab === 'revenue'
                             ? `₹${chartData.reduce((acc: any, curr: any) => acc + (curr.revenue || 0), 0).toLocaleString()}`
@@ -116,7 +116,7 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                     </p>
                 </div>
                 <div className="text-center border-r border-indigo-100 last:border-0">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Growth</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-700 tracking-wider">Growth</p>
                     <p className={cn(
                         "text-xl font-black",
                         (() => {
@@ -137,7 +137,7 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                     </p>
                 </div>
                 <div className="text-center last:border-0">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Highest Point</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-700 tracking-wider">Highest Point</p>
                     <p className="text-xl font-black text-indigo-600">
                         {chartData.length > 0 ? [...chartData].sort((a: any, b: any) => (b[activeTab] || b.revenue || 0) - (a[activeTab] || a.revenue || 0))[0]?.name : '-'}
                     </p>
@@ -145,7 +145,7 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
             </div>
 
             {chartData.length === 0 ? (
-                <div className="h-[300px] flex flex-col items-center justify-center text-slate-500 border border-dashed border-gray-200 rounded-lg">
+                <div className="h-[300px] flex flex-col items-center justify-center text-slate-900 border border-dashed border-gray-200 rounded-lg">
                     <p>No data available for this period</p>
                 </div>
             ) : (
@@ -162,8 +162,8 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
-                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
+                                        <XAxis dataKey="name" stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
                                         <Tooltip content={<CustomTooltip activeTab="revenue" chartData={chartData} />} />
                                         <Area type="monotone" dataKey="revenue" stroke="#FF6B2B" strokeWidth={4} fillOpacity={1} fill="url(#ytmRevenueGradient)" />
                                     </AreaChart>
@@ -176,8 +176,8 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                        <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
-                                        <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
+                                        <XAxis dataKey="name" stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                        <YAxis stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} />
                                         <Tooltip content={<CustomTooltip activeTab="revenue" chartData={chartData} />} />
                                         <Bar dataKey="revenue" fill="url(#revenueGradient)" radius={[12, 12, 0, 0]} barSize={period === 'monthly' ? 45 : period === 'weekly' ? 30 : 50} minPointSize={1} />
                                     </BarChart>
@@ -192,8 +192,8 @@ export function RevenueChart({ data, ytmData = [], weeklyData = [], dailyData = 
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
-                                    <YAxis stroke="#94A3B8" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <XAxis dataKey="name" stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} tickMargin={15} className="uppercase tracking-widest" />
+                                    <YAxis stroke="#1e293b" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip content={<CustomTooltip activeTab="subscriptions" chartData={chartData} />} />
                                     <Line type="monotone" dataKey="subscriptions" stroke="#8B5CF6" strokeWidth={4} dot={{ r: 4, fill: '#8B5CF6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                                 </LineChart>

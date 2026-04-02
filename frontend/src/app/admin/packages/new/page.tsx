@@ -174,7 +174,7 @@ export default function CreatePackagePage() {
                         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                             {packageId ? 'Edit Package' : 'Create New Package'}
                         </h1>
-                        <p className="text-gray-500 mt-1">Fill in the details to create a tour package</p>
+                        <p className="text-slate-900 mt-1">Fill in the details to create a tour package</p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ export default function CreatePackagePage() {
                                         <Save className="h-8 w-8 text-gray-300" />
                                     </div>
                                     <h3 className="text-lg font-medium text-gray-900">No Package Saved</h3>
-                                    <p className="text-gray-500 max-w-xs mx-auto mt-1">
+                                    <p className="text-slate-900 max-w-xs mx-auto mt-1">
                                         Please save the basic package information first to start building your itinerary.
                                     </p>
                                     <Button onClick={() => setActiveTab('basic')} className="mt-6" variant="outline">

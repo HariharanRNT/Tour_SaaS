@@ -60,7 +60,7 @@ interface Package {
 
 export default function AgentPackagesPage() {
     const router = useRouter()
-    const { hasPermission } = useAuth()
+    const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -90,6 +90,11 @@ export default function AgentPackagesPage() {
     const totalPackages = data?.total || 0
 
     useEffect(() => {
+        if (isSubUser && !hasPermission('packages', 'view')) {
+            router.push('/agent/dashboard')
+            return
+        }
+
         // Check if agent is logged in
         const userStr = localStorage.getItem('user')
         if (!userStr) {
@@ -623,7 +628,7 @@ export default function AgentPackagesPage() {
                                                                                 className="glass-popover-item text-slate-600 focus:text-slate-900"
                                                                                 onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
                                                                             >
-                                                                                <Archive className="mr-2 h-4 w-4 text-slate-400" />
+                                                                                <Archive className="mr-2 h-4 w-4 text-slate-700" />
                                                                                 <span className="font-medium">Archive Package</span>
                                                                             </DropdownMenuItem>
 

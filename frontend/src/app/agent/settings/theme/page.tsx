@@ -898,9 +898,9 @@ export default function AgentThemeSettingsPage() {
 
                             return (
                                 <div key={id} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white/60 border border-white/60">
-                                    <div><p className="text-sm font-bold text-slate-800">{label}</p><p className="text-xs text-slate-400">{desc}</p></div>
+                                    <div><p className="text-sm font-bold text-slate-800">{label}</p><p className="text-xs text-slate-700">{desc}</p></div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono text-slate-400 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
+                                        <span className="text-xs font-mono text-slate-700 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
                                         {isText ? (
                                             <Input
                                                 value={currentVal}
@@ -949,13 +949,13 @@ export default function AgentThemeSettingsPage() {
         <div className="space-y-5">
             <SectionCard icon={<Home className="h-5 w-5" />} title="Hero Content" subtitle="Customize the hero text and buttons customers see">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 1 <span className="font-normal text-slate-400">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 2 <span className="font-normal text-slate-400">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 1 <span className="font-normal text-slate-700">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 2 <span className="font-normal text-slate-700">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
                 </div>
-                <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Subheading <span className="font-normal text-slate-400">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
+                <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Subheading <span className="font-normal text-slate-700">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Primary Button <span className="font-normal text-slate-400">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Secondary Button <span className="font-normal text-slate-400">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Primary Button <span className="font-normal text-slate-700">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Secondary Button <span className="font-normal text-slate-700">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                 </div>
             </SectionCard>
 
@@ -996,7 +996,7 @@ export default function AgentThemeSettingsPage() {
                             </Button>
                             <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoUpload} />
                             {hpSettings.navbar_logo_image !== DEFAULT_HOMEPAGE.navbar_logo_image && (
-                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-slate-400 hover:text-red-500">Reset to Default</Button>
+                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-slate-700 hover:text-red-500">Reset to Default</Button>
                             )}
                         </div>
                     </div>
@@ -1005,7 +1005,7 @@ export default function AgentThemeSettingsPage() {
 
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
                 <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
-                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-400 text-sm">No image selected</div>}
+                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-700 text-sm">No image selected</div>}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm">Preview</div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -1034,7 +1034,7 @@ export default function AgentThemeSettingsPage() {
 
             <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-slate-600 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Badge" subtitle="Configure the badge pill shown in the hero section">
                 <ToggleSwitch checked={hpSettings.showAiBadge} onChange={v => hpField('showAiBadge', v)} label="Show AI Badge" />
-                {hpSettings.showAiBadge && <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Badge Text <span className="font-normal text-slate-400">({hpSettings.badgeText.length}/30)</span></Label><Input maxLength={30} value={hpSettings.badgeText} onChange={e => hpField('badgeText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
+                {hpSettings.showAiBadge && <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Badge Text <span className="font-normal text-slate-700">({hpSettings.badgeText.length}/30)</span></Label><Input maxLength={30} value={hpSettings.badgeText} onChange={e => hpField('badgeText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
             </SectionCard>
 
             {/* Feature Cards Section */}
@@ -1045,7 +1045,7 @@ export default function AgentThemeSettingsPage() {
                         <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-3">
                                 <p className="font-bold text-slate-800">Choose an Icon</p>
-                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-slate-400" /></button>
+                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-slate-700" /></button>
                             </div>
                             <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
                             <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
@@ -1236,7 +1236,7 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Live Preview Panel */}
                         <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Live Result Preview</p>
+                            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mb-3">Live Result Preview</p>
                             <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                                 {[1, 2].map(i => (
                                     <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
@@ -1494,7 +1494,7 @@ export default function AgentThemeSettingsPage() {
                                                     newCards[idx] = { ...newCards[idx], icon: iconName };
                                                     pgField('itinerary_wcu_cards', newCards);
                                                 }}
-                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                                             >
                                                 {IconComp && <IconComp className="h-3 w-3" />}
                                             </button>
@@ -1663,7 +1663,7 @@ export default function AgentThemeSettingsPage() {
                                         )}
                                     >
                                         <span className="text-sm font-medium text-slate-900" style={{ fontFamily: opt.value }}>{opt.preview}</span>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase">{opt.label}</span>
+                                        <span className="text-[10px] font-bold text-slate-700 uppercase">{opt.label}</span>
                                     </button>
                                 ))}
                             </div>
@@ -1857,7 +1857,7 @@ export default function AgentThemeSettingsPage() {
                 {SAVEABLE_TABS.includes(activeTab) && (
                     <div className="fixed bottom-0 left-0 right-0 z-50 px-6 py-3 border-t border-white/20 bg-white/70 backdrop-blur-xl">
                         <div className="max-w-5xl mx-auto flex items-center gap-3">
-                            <p className="text-xs text-slate-400 flex-1 flex items-center gap-1.5">
+                            <p className="text-xs text-slate-700 flex-1 flex items-center gap-1.5">
                                 <span className="p-1 rounded bg-slate-100">ℹ️</span> Changes apply after you save
                             </p>
                             <Button variant="ghost" onClick={handleReset} className="h-9 text-sm text-slate-500 hover:text-slate-800 rounded-xl">

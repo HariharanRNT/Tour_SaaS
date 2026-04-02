@@ -802,7 +802,7 @@
   }
 
   .react-tel-input .country-list .country .dial-code {
-    @apply !text-slate-500 !text-xs !font-medium;
+    @apply !text-slate-900 !text-xs !font-medium;
   }
 
   .react-tel-input .country-list .country.highlight .dial-code {
@@ -1024,7 +1024,7 @@ body.font-playful h3 {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #4A2B1D;
+    color: #000000;
   }
 
   .tab-item:hover {
@@ -1047,10 +1047,9 @@ body.font-playful h3 {
     border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
   }
 
-  /* Inactive Nav Items */
   .nav-item svg,
   .nav-item .icon {
-    color: #7c3010 !important;
+    color: #000000 !important;
     opacity: 1 !important;
     width: 20px !important;
     height: 20px !important;
@@ -1059,7 +1058,7 @@ body.font-playful h3 {
   }
 
   .nav-item .nav-label {
-    color: var(--navbar-text, #92400e) !important;
+    color: var(--navbar-text, #000000) !important;
     font-size: 13px !important;
     font-weight: 400 !important;
   }
@@ -1077,8 +1076,8 @@ body.font-playful h3 {
   }
 
   .nav-item.active .nav-label {
-    color: var(--primary) !important;
-    font-weight: 600 !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
   }
 
 
@@ -1100,23 +1099,23 @@ body.font-playful h3 {
   }
 
   .sidebar-header .title {
-    color: var(--navbar-text, #ffffff) !important;
+    color: #000000 !important;
     font-size: 14px !important;
     font-weight: 700 !important;
     margin: 0 !important;
   }
 
   .sidebar-header .subtitle {
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: rgba(0, 0, 0, 0.7) !important;
     font-size: 10px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
     margin: 0 !important;
   }
 
   .sidebar-header svg {
-    color: #ffffff !important;
+    color: #000000 !important;
     width: 20px !important;
     height: 20px !important;
   }
@@ -1132,23 +1131,24 @@ body.font-playful h3 {
 
   .sidebar-user .user-avatar {
     background: var(--primary) !important;
-    color: white !important;
-    border: 2px solid rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2) !important;
+    color: #000000 !important;
+    border: 2px solid rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
   }
 
   .sidebar-user .user-name {
-    color: var(--navbar-text, #7c3010) !important;
+    color: #000000 !important;
     font-size: 13px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     margin: 0 !important;
   }
 
   .sidebar-user .user-role {
-    color: var(--navbar-text, #92400e) !important;
+    color: #000000 !important;
     font-size: 11px !important;
     margin: 0 !important;
-    opacity: 0.8;
+    opacity: 0.8 !important;
+    font-weight: 600 !important;
   }
 
   /* Edit Package Page - Glassmorphism System */
@@ -1170,7 +1170,7 @@ body.font-playful h3 {
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #92400e !important;
+    color: #0f172a !important;
     margin-bottom: 12px;
     text-decoration: none;
   }
@@ -1184,13 +1184,13 @@ body.font-playful h3 {
 
   /* "Untitled Package" part — muted */
   .page-title-muted {
-    color: #c4a089;
+    color: #334155;
     font-weight: 600;
   }
 
   .page-subtitle {
     font-size: 13px;
-    color: #92400e;
+    color: #0f172a;
     margin-top: 4px;
   }
 
@@ -1258,7 +1258,7 @@ body.font-playful h3 {
     font-weight: 700;
     border: 2px solid rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.25);
-    color: #7c3010;
+    color: #0f172a;
   }
 
   .step-circle.active {
@@ -1289,7 +1289,7 @@ body.font-playful h3 {
   }
 
   .step-status.in-progress { color: var(--theme-primary) !important; }
-  .step-status.pending     { color: #92400e !important; }
+  .step-status.pending     { color: #1e293b !important; }
   .step-status.completed   { color: #16a34a !important; }
 
   /* Overview / form card */
@@ -1314,7 +1314,7 @@ body.font-playful h3 {
 
   .overview-card-subtitle {
     font-size: 12px;
-    color: #92400e;
+    color: #0f172a;
     margin-bottom: 20px;
   }
 
@@ -1322,7 +1322,7 @@ body.font-playful h3 {
   .field-label {
     font-size: 12px;
     font-weight: 600;
-    color: #7c3010;
+    color: #0f172a;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     margin-bottom: 6px;

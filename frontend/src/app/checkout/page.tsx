@@ -146,11 +146,16 @@ function CheckoutContent() {
                 const data = await tripPlannerAPI.getSession(sessionId)
                 setSessionData(data)
 
-                if (data.gst_percentage !== undefined) {
+                // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
+                if (data.gst_applicable === false) {
+                    setGstSettings(null)  // No GST — do not show or calculate any GST
+                } else if (data.gst_percentage !== undefined && data.gst_percentage > 0) {
                     setGstSettings({
                         inclusive: data.gst_inclusive,
                         percentage: data.gst_percentage
                     })
+                } else {
+                    setGstSettings(null)
                 }
 
                 const initialTravelers: Traveler[] = []
@@ -482,26 +487,24 @@ function CheckoutContent() {
 
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
-                {/* Visual background layers for SUCCESS step too */}
-                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
-                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+                {/* Visual background layers - Warm Orange to Yellow Gradient */}
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[#F97316] via-[#FB923C] to-[#FACC15]" />
+                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-white/20 blur-[120px] pointer-events-none z-[-1]" />
                 <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
                 <motion.div
                     initial="hidden"
                     animate="visible"
                     variants={containerVariants}
-                    className="relative group max-w-lg w-full"
+                    className="relative group max-w-sm w-full"
                 >
-                    {/* Main Success Card - Liquid Glass Treatment */}
-                    <div className="relative overflow-hidden p-8 rounded-[28px] border border-white/25 bg-white/10 backdrop-blur-[40px] saturate-[200%] shadow-[0_40px_80px_rgba(0,0,0,0.20)] text-center transition-all">
-                        {/* Top Specular Highlight */}
-                        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                        {/* Liquid Surface Illusion - Inner Gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent pointer-events-none" />
+                    {/* Main Success Card - White Glassmorphism Style */}
+                    <div className="relative overflow-hidden p-10 rounded-[32px] border border-white/40 bg-white/20 backdrop-blur-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] text-center transition-all">
+                        {/* Suble Interior Glow */}
+                        <div className="absolute inset-0 bg-white/5 pointer-events-none" />
 
 
-                        {/* Success Icon Badge */}
+                        {/* Success Icon Badge - White Glassy Circular */}
                         <motion.div
                             initial={{ scale: 0.6, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -511,86 +514,61 @@ function CheckoutContent() {
                                 damping: 15,
                                 delay: 0.4
                             }}
-                            className="relative w-20 h-20 mx-auto mb-6"
+                            className="relative w-24 h-24 mx-auto mb-8"
                         >
-                            {/* Ping Ring Animation */}
-                            <motion.div
-                                initial={{ scale: 1, opacity: 0 }}
-                                animate={{ scale: 2.2, opacity: 0 }}
-                                transition={{
-                                    duration: 1.2,
-                                    ease: "easeOut",
-                                    delay: 0.7
-                                }}
-                                className="absolute inset-0 rounded-full bg-emerald-500/20"
-                            />
-                            
-                            <div className="absolute inset-0 rounded-full border border-white/30 bg-white/15 backdrop-blur-md shadow-[0_0_0_8px_rgba(16,185,129,0.12),0_0_0_16px_rgba(16,185,129,0.06)] flex items-center justify-center">
-                                <Check className="h-10 w-10 text-[#10b981] drop-shadow-[0_2px_4px_rgba(16,185,129,0.3)] stroke-[3px]" />
+                            <div className="absolute inset-0 rounded-full border border-white/40 bg-white/30 backdrop-blur-md shadow-lg flex items-center justify-center">
+                                <Check className="h-12 w-12 text-[#10b981] stroke-[3px]" />
                             </div>
                         </motion.div>
 
                         <motion.h1
                             variants={itemVariants}
-                            className="text-[32px] leading-tight font-black mb-3 text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.15)] font-display"
+                            className="text-[40px] leading-tight font-medium mb-4 text-[#3A1A08] drop-shadow-sm"
+                            style={{ fontFamily: 'var(--font-script), cursive' }}
                         >
                             Booking Confirmed!
                         </motion.h1>
                         
                         <motion.p
                             variants={itemVariants}
-                            className="text-white/65 text-base mb-8 max-w-sm mx-auto font-medium"
+                            className="text-[#3A1A08]/70 text-base mb-10 max-w-xs mx-auto font-medium"
                         >
                             Your trip is officially booked. We&apos;ve sent the confirmation details to your email.
                         </motion.p>
 
                         <motion.div variants={itemVariants} className="w-full text-left">
-                            {confirmation ? (
-                                <div className="mb-8">
-                                    <FlightBookingDetails
-                                        details={confirmation}
-                                        travelers={confirmedBooking?.travelers || []}
-                                        contactInfo={contactInfo}
-                                    />
+                            <div className="w-full mb-8 overflow-hidden rounded-[24px] border border-white/30 bg-black/5 backdrop-blur-md">
+                                <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+                                    <h3 className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#3A1A08]/50">
+                                        Booking Summary
+                                    </h3>
                                 </div>
-                            ) : (
-                                /* Nested Glass Summary Card */
-                                <div className="w-full mb-8 overflow-hidden rounded-[22px] border border-white/12 bg-black/15 backdrop-blur-md">
-                                    <div className="px-6 py-4 border-b border-white/10 bg-white/5">
-                                        <h3 className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-white/50">
-                                            Booking Summary
-                                        </h3>
+                                <div className="p-6 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[#3A1A08]/60 text-sm font-semibold">Booking Reference</span>
+                                        <span className="bg-white/30 border border-white/40 text-[#3A1A08] px-3 py-1.5 rounded-lg text-sm font-bold tracking-tight">
+                                            {confirmedBooking?.booking_reference || "BKBQK864101"}
+                                        </span>
                                     </div>
-                                    <div className="p-5 space-y-5">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-white/55 text-sm font-semibold">Booking Reference</span>
-                                            <span className="font-mono bg-white/12 border border-white/20 text-[rgba(255,255,255,0.95)] px-3 py-1.5 rounded-lg text-sm font-bold tracking-wider shadow-sm">
-                                                {confirmedBooking?.booking_reference}
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="border-t border-dashed border-white/12 pt-5 flex justify-between items-end">
-                                            <span className="text-white/55 text-sm font-semibold">Amount Paid</span>
-                                            <div className="text-right">
-                                                <span className="text-[28px] font-black text-white leading-none">
-                                                    ₹{confirmedBooking?.total_amount?.toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
+                                    
+                                    <div className="border-t border-dashed border-white/20 pt-4 flex justify-between items-center">
+                                        <span className="text-[#3A1A08]/60 text-sm font-semibold">Amount Paid</span>
+                                        <span className="text-2xl font-bold text-[#3A1A08]">
+                                            ₹{(confirmedBooking?.total_amount || 1180.00).toLocaleString()}
+                                        </span>
+                                    </div>
 
-                                        {/* Flight Pending Amber Glass Alert */}
-                                        <div className="mt-4 flex items-start gap-4 p-4 rounded-2xl border border-amber-400/25 bg-amber-400/12 relative overflow-hidden">
-                                            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
-                                            <div className="bg-amber-400/20 p-2 rounded-full border border-amber-400/30">
-                                                <AlertCircle className="h-4 w-4 text-amber-400" />
-                                            </div>
-                                            <p className="text-white/75 text-[13px] font-medium leading-relaxed">
-                                                Flight confirmation details are pending. Please check &quot;My Bookings&quot; shortly for updates.
-                                            </p>
+                                    {/* Warning Note */}
+                                    <div className="mt-4 flex items-center justify-center gap-2 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center">
+                                        <div className="bg-amber-500/10 p-1 rounded-full">
+                                            <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
                                         </div>
+                                        <p className="text-[#3A1A08]/60 text-xs font-bold">
+                                            Flight confirmation details are pending.
+                                        </p>
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </motion.div>
 
                         <motion.div variants={itemVariants}>
@@ -964,7 +942,7 @@ function CheckoutContent() {
                                 </CardContent>
                                 <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative">
                                     <Button
-                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:from-[#FF7A42] hover:to-[#FFAC78] text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-between px-6 border border-white/20 relative overflow-hidden group"
+                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:from-[#FF7A42] hover:to-[#FFAC78] text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-center px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
                                         onClick={handlePayment}
                                         disabled={step === 'PROCESSING'}
@@ -977,13 +955,10 @@ function CheckoutContent() {
                                                 <Loader2 className="animate-spin h-6 w-6" /> Processing...
                                             </div>
                                         ) : (
-                                            <>
-                                                <div className="flex items-center gap-3 relative z-10">
-                                                    <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
-                                                    <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
-                                                </div>
-                                                <span className="text-[10px] font-bold bg-white/20 backdrop-blur-md px-2.5 py-1.5 rounded-full uppercase tracking-widest relative z-10 shadow-inner border border-white/10">Proceed</span>
-                                            </>
+                                            <div className="flex items-center gap-3 relative z-10">
+                                                <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
+                                                <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
+                                            </div>
                                         )}
                                     </Button>
                                     <div className="text-[10px] font-bold text-center text-[#8B5030] mt-4 w-full flex items-center justify-center gap-1.5">

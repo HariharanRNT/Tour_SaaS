@@ -65,8 +65,14 @@ const SettingsSkeleton = () => (
 
 export default function AgentSettingsPage() {
     const router = useRouter()
-    const { hasPermission } = useAuth()
+    const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('settings', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
     const [showSmtpPassword, setShowSmtpPassword] = useState(false)
     const [showRazorpaySecret, setShowRazorpaySecret] = useState(false)
     const [originalSettings, setOriginalSettings] = useState<any>(null)
@@ -447,7 +453,7 @@ export default function AgentSettingsPage() {
                             <div className="grid gap-3 max-w-md">
                                 <Label htmlFor="currency" className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                     Default Currency <span className="text-red-500">*</span>
-                                    <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                                    <Info className="h-3.5 w-3.5 text-slate-700 cursor-help" />
                                 </Label>
                                 <Select value={currency} onValueChange={setCurrency}>
                                     <SelectTrigger className="glass-input h-12 font-medium text-slate-900 rounded-lg">
@@ -551,7 +557,7 @@ export default function AgentSettingsPage() {
                                     <Label htmlFor="smtp_host" className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                         SMTP Host <span className="text-red-500">*</span>
                                         <span title="Example: smtp.gmail.com">
-                                            <Info className="h-3 w-3 text-slate-400 cursor-help" />
+                                            <Info className="h-3 w-3 text-slate-700 cursor-help" />
                                         </span>
                                     </Label>
                                     <Input
@@ -567,7 +573,7 @@ export default function AgentSettingsPage() {
                                     <Label htmlFor="smtp_port" className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                         Port <span className="text-red-500">*</span>
                                         <span title="Common: 587 (TLS), 465 (SSL), 25">
-                                            <Info className="h-3 w-3 text-slate-400 cursor-help" />
+                                            <Info className="h-3 w-3 text-slate-700 cursor-help" />
                                         </span>
                                     </Label>
                                     <Input
@@ -585,7 +591,7 @@ export default function AgentSettingsPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="encryption" className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                         Encryption <span className="text-red-500">*</span>
-                                        <Info className="h-3.5 w-3.5 text-slate-400" />
+                                        <Info className="h-3.5 w-3.5 text-slate-700" />
                                     </Label>
                                     <Select
                                         value={smtp.encryption_type}
@@ -612,7 +618,7 @@ export default function AgentSettingsPage() {
                                         value={smtp.from_name}
                                         onChange={(e) => handleSmtpChange('from_name', e.target.value)}
                                     />
-                                    <p className="text-xs font-medium text-slate-400">Appears in the 'From' field of emails.</p>
+                                    <p className="text-xs font-medium text-slate-700">Appears in the 'From' field of emails.</p>
                                 </div>
                             </div>
 
@@ -624,7 +630,7 @@ export default function AgentSettingsPage() {
                                         Username / Email <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-700 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_user"
                                             className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
@@ -638,7 +644,7 @@ export default function AgentSettingsPage() {
                                         Password
                                     </Label>
                                     <div className="relative group">
-                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
+                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-700 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_pass"
                                             type={showSmtpPassword ? "text" : "password"}
@@ -650,7 +656,7 @@ export default function AgentSettingsPage() {
                                         <button
                                             type="button"
                                             onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-600 focus:outline-none transition-colors"
                                         >
                                             {showSmtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
@@ -673,7 +679,7 @@ export default function AgentSettingsPage() {
                                     onChange={(e) => handleSmtpChange('from_email', e.target.value)}
                                     placeholder="noreply@youragency.com"
                                 />
-                                <p className="text-[10px] font-medium text-slate-400">Usually the same as your login email.</p>
+                                <p className="text-[10px] font-medium text-slate-700">Usually the same as your login email.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -725,7 +731,7 @@ export default function AgentSettingsPage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-7 text-xs font-bold text-slate-400 hover:text-[var(--primary)] bg-transparent px-2"
+                                            className="h-7 text-xs font-bold text-slate-700 hover:text-[var(--primary)] bg-transparent px-2"
                                             onClick={() => {
                                                 navigator.clipboard.writeText(razorpay.key_id);
                                                 toast.info("Key ID copied to clipboard");
@@ -735,7 +741,7 @@ export default function AgentSettingsPage() {
                                         </Button>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-700 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <ShieldCheck className="h-3.5 w-3.5" />
                                         </div>
                                         <Input
@@ -761,7 +767,7 @@ export default function AgentSettingsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-7 text-xs font-bold text-slate-400 hover:text-[var(--primary)] bg-transparent px-2"
+                                                className="h-7 text-xs font-bold text-slate-700 hover:text-[var(--primary)] bg-transparent px-2"
                                                 onClick={() => {
                                                     if (razorpay.key_secret) {
                                                         navigator.clipboard.writeText(razorpay.key_secret);
@@ -775,7 +781,7 @@ export default function AgentSettingsPage() {
                                         </div>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-400 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-slate-700 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <Key className="h-3.5 w-3.5" />
                                         </div>
                                         <Input
@@ -789,7 +795,7 @@ export default function AgentSettingsPage() {
                                         <button
                                             type="button"
                                             onClick={() => setShowRazorpaySecret(!showRazorpaySecret)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-600 focus:outline-none transition-colors"
                                         >
                                             {showRazorpaySecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
@@ -799,7 +805,7 @@ export default function AgentSettingsPage() {
                                         Saved keys are encrypted and stored securely.
                                     </p>
                                     {lastUpdated && (
-                                        <p className="text-[10px] font-medium text-slate-400 italic px-1 mt-2">
+                                        <p className="text-[10px] font-medium text-slate-700 italic px-1 mt-2">
                                             Last modified: {lastUpdated}
                                         </p>
                                     )}

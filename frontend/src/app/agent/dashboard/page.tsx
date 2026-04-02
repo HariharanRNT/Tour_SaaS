@@ -94,6 +94,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchAgentDashboardStats, sendAIChatMessage, generateAIPackage as generateAIPackageApi, API_URL } from '@/lib/api'
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
 import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
+import { useAuth } from '@/context/AuthContext'
 
 // Custom Rupee Icon Component
 const RupeeIcon = ({ className }: { className?: string }) => (
@@ -236,6 +237,13 @@ export default function AgentDashboard() {
     const [customEnd, setCustomEnd] = useState('')
 
     const queryClient = useQueryClient()
+    const { hasPermission, isSubUser } = useAuth()
+    
+    // Check permissions
+    const canCreatePackage = hasPermission('packages', 'edit') || hasPermission('packages', 'full')
+    const canCreateActivity = hasPermission('activities', 'edit') || hasPermission('activities', 'full')
+    const canViewSettings = hasPermission('settings', 'view') || hasPermission('settings', 'edit') || hasPermission('settings', 'full')
+    const showCreateNew = !isSubUser || canCreatePackage || canCreateActivity
 
     const { data: backendStats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
         queryKey: ['agent-dashboard-stats', dateFilter, customStart, customEnd],
@@ -438,6 +446,12 @@ export default function AgentDashboard() {
         const userStr = localStorage.getItem('user')
 
         if (!token || !userStr) {
+            router.push('/login')
+            return
+        }
+
+        // Block sub-users without dashboard view access
+        if (isSubUser && !hasPermission('dashboard', 'view')) {
             router.push('/login')
             return
         }
@@ -646,56 +660,66 @@ export default function AgentDashboard() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Create New
-                                        <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    className="w-56 p-2 z-[100] glass-popover"
-                                >
-                                    <DropdownMenuLabel className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest px-3 py-2">
-                                        Create New
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuItem
-                                        onClick={handleTourPackageClick}
-                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                            {showCreateNew && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Create New
+                                            <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="w-56 p-2 z-[100] glass-popover"
                                     >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
-                                            <Package className="h-4 w-4" />
-                                        </div>
-                                        Tour Package
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => router.push('/agent/activities')}
-                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
-                                    >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
-                                            <MapPin className="h-4 w-4" />
-                                        </div>
-                                        Activity Master
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleAIItineraryClick}
-                                        className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
-                                    >
-                                        <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
-                                            <Sparkles className="h-4 w-4" />
-                                        </div>
-                                        AI Itinerary
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        <DropdownMenuLabel className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest px-3 py-2">
+                                            Create New
+                                        </DropdownMenuLabel>
+                                        {(!isSubUser || canCreatePackage) && (
+                                            <DropdownMenuItem
+                                                onClick={handleTourPackageClick}
+                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                            >
+                                                <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
+                                                    <Package className="h-4 w-4" />
+                                                </div>
+                                                Tour Package
+                                            </DropdownMenuItem>
+                                        )}
+                                        {(!isSubUser || canCreateActivity) && (
+                                            <DropdownMenuItem
+                                                onClick={() => router.push('/agent/activities')}
+                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                            >
+                                                <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
+                                                    <MapPin className="h-4 w-4" />
+                                                </div>
+                                                Activity Master
+                                            </DropdownMenuItem>
+                                        )}
+                                        {(!isSubUser || canCreatePackage) && (
+                                            <DropdownMenuItem
+                                                onClick={handleAIItineraryClick}
+                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                            >
+                                                <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
+                                                    <Sparkles className="h-4 w-4" />
+                                                </div>
+                                                AI Itinerary
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
 
-                            <Link href="/agent/settings">
-                                <Button variant="ghost" className="hover:bg-slate-100/50 text-slate-600 rounded-full h-10 w-10 p-0 border border-slate-200/50 shadow-sm bg-white/50 backdrop-blur-sm">
-                                    <Settings className="h-5 w-5" />
-                                </Button>
-                            </Link>
+                            {(!isSubUser || canViewSettings) && (
+                                <Link href="/agent/settings">
+                                    <Button variant="ghost" className="hover:bg-slate-100/50 text-slate-600 rounded-full h-10 w-10 p-0 border border-slate-200/50 shadow-sm bg-white/50 backdrop-blur-sm">
+                                        <Settings className="h-5 w-5" />
+                                    </Button>
+                                </Link>
+                            )}
 
                             <Button
                                 variant="outline"
@@ -742,7 +766,7 @@ export default function AgentDashboard() {
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomStart(e.target.value)}
                             />
-                            <span className="text-slate-400 font-medium">-</span>
+                            <span className="text-slate-700 font-medium">-</span>
                             <Input
                                 type="date"
                                 className="w-auto bg-white/50 border-white/50 rounded-full"
@@ -822,7 +846,7 @@ export default function AgentDashboard() {
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600" />
                             </span>
                         </h2>
-                        <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${collapsedSections.highlights ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-5 w-5 text-slate-700 transition-transform duration-300 ${collapsedSections.highlights ? 'rotate-180' : ''}`} />
                     </div>
 
                     <AnimatePresence>
@@ -1032,14 +1056,14 @@ export default function AgentDashboard() {
                                         <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
-                                                    <Calendar className="h-6 w-6 text-slate-400" />
+                                                    <Calendar className="h-6 w-6 text-slate-700" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
                                                         <h4 className="font-bold text-slate-900 truncate text-sm">
                                                             {bk.package?.title || 'Custom Tour'}
                                                         </h4>
-                                                        <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
+                                                        <span className="text-[10px] font-bold text-slate-700">{bk.booking_reference}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><Users className="h-3 w-3" /> {bk.number_of_travelers}</span>
@@ -1079,7 +1103,7 @@ export default function AgentDashboard() {
                                                         <h4 className="font-bold text-slate-700 truncate text-sm">
                                                             {bk.package?.title || 'Tour Package'}
                                                         </h4>
-                                                        <span className="text-[10px] font-bold text-slate-400">{bk.booking_reference}</span>
+                                                        <span className="text-[10px] font-bold text-slate-700">{bk.booking_reference}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><CheckCircle className="h-3 w-3" /> Done</span>
@@ -1108,7 +1132,7 @@ export default function AgentDashboard() {
                             </div>
                             Quick Actions
                         </h2>
-                        <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${collapsedSections.quickActions ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-5 w-5 text-slate-700 transition-transform duration-300 ${collapsedSections.quickActions ? 'rotate-180' : ''}`} />
                     </div>
 
                     <AnimatePresence>

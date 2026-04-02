@@ -238,7 +238,7 @@ export default function AdminBillingPage() {
                                 Subscription Management
                             </h1>
 
-                            <p className="text-[#1a1a2e] font-bold text-[15px] mt-2 font-['Plus_Jakarta_Sans',sans-serif] opacity-80">
+                            <p className="text-slate-900 font-bold text-[15px] mt-2 font-['Plus_Jakarta_Sans',sans-serif] opacity-80">
                                 Manage subscription plans and view agent subscriptions
                             </p>
 
@@ -417,7 +417,7 @@ export default function AdminBillingPage() {
                                                             <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight" style={{ color: theme.main }}>{plan.name}</h3>
                                                             <div className={cn(
                                                                 "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[10px] font-black uppercase tracking-[1px] gap-1.5 backdrop-blur-md border",
-                                                                plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
+                                                                plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-700 border-slate-100/20"
                                                             )}>
                                                                 <div className={cn("w-1.5 h-1.5 rounded-full", plan.is_active ? "bg-emerald-400 animate-pulse" : "bg-slate-400")} />
                                                                 {plan.is_active ? 'Active' : 'Inactive'}
@@ -425,15 +425,15 @@ export default function AdminBillingPage() {
                                                         </div>
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="rounded-[8px] hover:bg-[#F8FAFC] h-[28px] w-[28px] text-[#94A3B8] hover:text-[#64748B] transition-colors">
+                                                                <Button variant="ghost" size="icon" className="rounded-[8px] hover:bg-[#F8FAFC] h-[28px] w-[28px] text-slate-800 hover:text-slate-900 transition-colors">
                                                                     <MoreVertical className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl min-w-[180px]">
-                                                                <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
+                                                                <DropdownMenuItem onClick={() => openEditModal(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-900 focus:bg-transparent">
                                                                     <Edit className="h-4 w-4 mr-3" /> Edit Plan
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-600 focus:bg-transparent">
+                                                                <DropdownMenuItem onClick={() => handleToggleStatus(plan)} className="rounded-xl font-bold py-3 px-4 text-slate-900 focus:bg-transparent">
                                                                     <Power className="h-4 w-4 mr-3" /> {plan.is_active ? 'Deactivate' : 'Activate'}
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuSeparator className="my-2 bg-transparent" />
@@ -449,7 +449,7 @@ export default function AdminBillingPage() {
 
                                                     <div className="flex items-baseline gap-[6px]">
                                                         <span className="text-[32px] font-[800] text-[#0F172A] tracking-[-1px] font-['Outfit']">₹{Math.floor(plan.price).toLocaleString('en-IN')}</span>
-                                                        <span className="text-[#94A3B8] font-normal text-[13px] ml-[6px]">/ {plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'yearly' ? 'year' : 'day'}</span>
+                                                        <span className="text-slate-800 font-normal text-[13px] ml-[6px]">/ {plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'yearly' ? 'year' : 'day'}</span>
                                                     </div>
                                                 </CardHeader>
 
@@ -457,7 +457,7 @@ export default function AdminBillingPage() {
                                                     {/* Metric Grid */}
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/limit transition-all hover:bg-white/10">
-                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Bookings</p>
+                                                            <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.15em] mb-1">Bookings</p>
                                                             <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/limit:scale-105 transition-transform origin-left">
                                                                 {plan.booking_limit === -1 || plan.booking_limit === 0 ? (
                                                                     <span className="text-[28px] drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">∞</span>
@@ -467,7 +467,7 @@ export default function AdminBillingPage() {
                                                             </p>
                                                         </div>
                                                         <div className="bg-white/5 backdrop-blur-md p-[12px_16px] rounded-2xl border border-white/10 shadow-inner group/subs transition-all hover:bg-white/10">
-                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">Subscribers</p>
+                                                            <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.15em] mb-1">Subscribers</p>
                                                             <p className="text-[24px] font-black text-white font-['Outfit'] tracking-tighter leading-none group-hover/subs:scale-105 transition-transform origin-left">{subscriberCount}</p>
                                                         </div>
                                                     </div>
@@ -475,13 +475,13 @@ export default function AdminBillingPage() {
                                                     {/* Features */}
                                                     <div className="flex-1 flex flex-col">
                                                         <div className="h-[1px] bg-[#F1F5F9] mb-[16px]" />
-                                                        <p className="text-[10px] font-[700] text-[#94A3B8] uppercase tracking-[1.2px] mb-[12px]">FEATURES</p>
+                                                        <p className="text-[10px] font-[700] text-[#1e293b] uppercase tracking-[1.2px] mb-[12px]">FEATURES</p>
                                                         {(() => {
                                                             const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features;
                                                             return features && features.length > 0 ? (
                                                                 <ul className="grid gap-[10px] mb-[20px]">
                                                                     {features.map((f: string, i: number) => (
-                                                                        <li key={i} className="flex items-center text-[13px] font-normal text-[#475569]">
+                                                                        <li key={i} className="flex items-center text-[13px] font-normal text-slate-900">
                                                                             <div className="mr-[10px]" style={{ color: theme.main }}>
                                                                                 <CheckCircle2 className="h-4 w-4" />
                                                                             </div>
@@ -490,7 +490,7 @@ export default function AdminBillingPage() {
                                                                     ))}
                                                                 </ul>
                                                             ) : (
-                                                                <p className="text-[13px] italic text-[#94A3B8] mb-[20px]">No features configured</p>
+                                                                <p className="text-[13px] italic text-[#1e293b] mb-[20px]">No features configured</p>
                                                             );
                                                         })()}
                                                     </div>
@@ -522,19 +522,19 @@ export default function AdminBillingPage() {
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                         <div>
                                             <CardTitle className="text-xl font-black text-slate-900 font-['Outfit']">Active Subscriptions</CardTitle>
-                                            <CardDescription className="text-slate-500 font-bold mt-1 text-xs">Manage and monitor agent subscription status</CardDescription>
+                                            <CardDescription className="text-slate-900 font-bold mt-1 text-xs">Manage and monitor agent subscription status</CardDescription>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="relative w-72">
-                                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[16px] w-[16px] text-[#94A3B8]" />
+                                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[16px] w-[16px] text-slate-800" />
                                                 <Input
-                                                    className="pl-10 h-[42px] rounded-[12px] border-white/20 bg-white/10 backdrop-blur-md focus:bg-white/20 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all font-semibold text-[13px] text-white placeholder:text-slate-400"
+                                                    className="pl-10 h-[42px] rounded-[12px] border-white/20 bg-white/10 backdrop-blur-md focus:bg-white/20 focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all font-semibold text-[13px] text-slate-900 placeholder:text-slate-700"
                                                     placeholder="Search by agent or ID..."
                                                     value={searchQuery}
                                                     onChange={e => setSearchQuery(e.target.value)}
                                                 />
                                             </div>
-                                            <Button variant="outline" className="h-[42px] px-4 rounded-[12px] border-[1.5px] border-[#E2E8F0] font-semibold text-[13px] text-[#64748B] flex items-center gap-2 hover:bg-[#F8FAFC]">
+                                            <Button variant="outline" className="h-[42px] px-4 rounded-[12px] border-[1.5px] border-[#E2E8F0] font-semibold text-[13px] text-slate-900 flex items-center gap-2 hover:bg-[#F8FAFC]">
                                                 <Download className="h-4 w-4" /> Export
                                             </Button>
                                         </div>
@@ -601,7 +601,7 @@ export default function AdminBillingPage() {
                                                                 <TableCell>
                                                                     <span className={cn(
                                                                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
-                                                                        sub.status === 'active' ? "bg-white/60 text-[#166534] border-emerald-400/20" : "bg-slate-100/10 text-slate-400 border-slate-100/20"
+                                                                        sub.status === 'active' ? "bg-white/60 text-[#166534] border-emerald-400/20" : "bg-slate-100/10 text-slate-700 border-slate-100/20"
                                                                     )}>
                                                                         {sub.status}
                                                                     </span>
@@ -611,9 +611,9 @@ export default function AdminBillingPage() {
                                                                 <TableCell>
                                                                     <div className="flex items-center gap-2">
                                                                         <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                                                            <div className="h-full bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
+                                                                            <div className="h-full bg-slate-900 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
                                                                         </div>
-                                                                        <span className="text-[11px] font-bold text-[#92400e] uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
+                                                                        <span className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell className="pr-8 text-right">
@@ -728,7 +728,7 @@ export default function AdminBillingPage() {
                             <div className="grid grid-cols-2 gap-[16px]">
                                 {/* Plan Name */}
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Plan Name</Label>
+                                    <Label className="text-[11px] font-semibold text-slate-900 uppercase tracking-[0.8px]">Plan Name</Label>
                                     <Input
                                         value={newPlan.name}
                                         onChange={e => setNewPlan({ ...newPlan, name: e.target.value })}
@@ -739,10 +739,10 @@ export default function AdminBillingPage() {
 
                                 {/* Pricing */}
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Pricing (INR)</Label>
+                                    <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Pricing (INR)</Label>
                                     <div className="flex h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#FF6B2B] focus-within:ring-[3px] focus-within:ring-[rgba(255,107,43,0.12)] transition-all duration-200 overflow-hidden">
                                         <div className="flex items-center justify-center bg-[#F1F5F9] border-r-[1.5px] border-[#E2E8F0] px-[12px]">
-                                            <span className="text-[13px] font-semibold text-[#64748B]">₹</span>
+                                            <span className="text-[13px] font-semibold text-[#0f172a]">₹</span>
                                         </div>
                                         <Input
                                             type="number"
@@ -752,11 +752,11 @@ export default function AdminBillingPage() {
                                             placeholder="5,000"
                                         />
                                     </div>
-                                    <p className="text-[10px] text-[#94A3B8]">Enter amount in Indian Rupees</p>
+                                    <p className="text-[10px] text-slate-900">Enter amount in Indian Rupees</p>
                                 </div>
                                 {/* Booking Limit */}
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Booking Limit</Label>
+                                    <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Booking Limit</Label>
                                     <Input
                                         type="number"
                                         value={newPlan.booking_limit}
@@ -768,11 +768,11 @@ export default function AdminBillingPage() {
 
                                 {/* Billing Cycle */}
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Billing Cycle</Label>
+                                    <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Billing Cycle</Label>
                                     <Select value={newPlan.billing_cycle} onValueChange={v => setNewPlan({ ...newPlan, billing_cycle: v })}>
                                         <SelectTrigger className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] px-3 font-normal text-[14px] text-[#0F172A] transition-all duration-200">
                                             <div className="flex items-center gap-2">
-                                                <Calendar className="h-3.5 w-3.5 text-[#94A3B8]" />
+                                                <Calendar className="h-3.5 w-3.5 text-[#1e293b]" />
                                                 <SelectValue />
                                             </div>
                                         </SelectTrigger>
@@ -788,7 +788,7 @@ export default function AdminBillingPage() {
 
                             {newPlan.billing_cycle === 'custom' && (
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Duration in Days</Label>
+                                    <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Duration in Days</Label>
                                     <Input
                                         type="number"
                                         value={newPlan.duration_days}
@@ -801,7 +801,7 @@ export default function AdminBillingPage() {
 
                             {/* Features */}
                             <div className="space-y-[4px]">
-                                <Label className="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.8px]">Features (one per line)</Label>
+                                <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Features (one per line)</Label>
                                 <Textarea
                                     value={newPlan.features}
                                     onChange={e => setNewPlan({ ...newPlan, features: e.target.value })}
@@ -817,18 +817,18 @@ Feature 3`}
                                 {/* Left Accent Bar */}
                                 <div className={cn(
                                     "absolute left-0 top-0 bottom-0 w-[3px] transition-colors duration-200",
-                                    newPlan.is_active ? "bg-[#10B981]" : "bg-[#94A3B8]"
+                                    newPlan.is_active ? "bg-[#10B981]" : "bg-[#1e293b]"
                                 )} />
 
                                 <div className="space-y-0.5 pl-2">
                                     <p className="font-semibold text-[#0F172A] text-[13px]">Active Status</p>
                                     <p className={cn(
                                         "text-[11px] font-normal flex items-center gap-1.5",
-                                        newPlan.is_active ? "text-[#10B981]" : "text-[#64748B]"
+                                        newPlan.is_active ? "text-[#10B981]" : "text-[#0f172a]"
                                     )}>
                                         <span className={cn(
                                             "inline-block w-1.5 h-1.5 rounded-full",
-                                            newPlan.is_active ? "bg-[#10B981]" : "bg-[#94A3B8]"
+                                            newPlan.is_active ? "bg-[#10B981]" : "bg-[#1e293b]"
                                         )} />
                                         {newPlan.is_active ? "Visible to agents" : "Hidden from agents"}
                                     </p>
@@ -859,7 +859,7 @@ Feature 3`}
                                     <Button
                                         variant="ghost"
                                         onClick={() => setIsCreateOpen(false)}
-                                        className="flex-[35] h-[44px] rounded-[10px] font-semibold text-[13px] text-[#64748B] border-[1.5px] border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#94A3B8] hover:text-[#475569] transition-all duration-200"
+                                        className="flex-[35] h-[44px] rounded-[10px] font-semibold text-[13px] text-[#0f172a] border-[1.5px] border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-[#1e293b] hover:text-[#0f172a] transition-all duration-200"
                                     >
                                         Cancel
                                     </Button>

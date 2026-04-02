@@ -580,7 +580,7 @@ export default function AdminAgentsPage() {
                         >
                             Agent <span className="text-[#6366F1]">Management</span>
                         </motion.h1>
-                        <p className="text-slate-500 mt-4 text-lg font-medium">Manage travel agents and their system permissions.</p>
+                        <p className="text-slate-900 mt-4 text-lg font-medium">Manage travel agents and their system permissions.</p>
                     </div>
 
 
@@ -612,7 +612,7 @@ export default function AdminAgentsPage() {
                                 <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
                                     <DialogHeader>
                                         <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Add New <span className="text-orange-600">Agent</span></DialogTitle>
-                                        <DialogDescription className="text-slate-500 font-medium mt-2">
+                                        <DialogDescription className="text-slate-900 font-medium mt-2">
                                             Create a new agent account. They will be able to log in immediately.
                                         </DialogDescription>
                                     </DialogHeader>
@@ -862,7 +862,7 @@ export default function AdminAgentsPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowPassword(!showPassword)}
-                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-900 hover:text-gray-700"
                                                         >
                                                             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                                         </button>
@@ -878,7 +878,7 @@ export default function AdminAgentsPage() {
                                                                 </div>
                                                                 <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
                                                             </div>
-                                                            <p className="text-xs text-gray-500">
+                                                            <p className="text-xs text-slate-900">
                                                                 Use 8+ characters with a mix of letters, numbers & symbols
                                                             </p>
                                                         </div>
@@ -951,7 +951,7 @@ export default function AdminAgentsPage() {
                                             type="button"
                                             variant="ghost"
                                             onClick={() => setIsCreateOpen(false)}
-                                            className="min-w-28 h-12 rounded-xl text-slate-500 font-bold hover:bg-slate-50"
+                                            className="min-w-28 h-12 rounded-xl text-slate-900 font-bold hover:bg-slate-50"
                                         >
                                             Cancel
                                         </Button>
@@ -978,7 +978,7 @@ export default function AdminAgentsPage() {
                     <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
                         <CardContent className="p-7">
                             <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] opacity-80">Total Agents</p>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] opacity-80">Total Agents</p>
                                 <div className="absolute top-6 right-6 w-10 h-10 rounded-xl flex items-center justify-center bg-white/40 shadow-sm">
                                     <Users className="h-5 w-5 text-indigo-600" />
                                 </div>
@@ -993,7 +993,7 @@ export default function AdminAgentsPage() {
                     <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
                         <CardContent className="p-7">
                             <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] opacity-80">Active Agents</p>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] opacity-80">Active Agents</p>
                                 <div className="absolute top-6 right-6 w-10 h-10 rounded-xl flex items-center justify-center bg-white/40 shadow-sm">
                                     <UserCheck className="h-5 w-5 text-emerald-600" />
                                 </div>
@@ -1008,7 +1008,7 @@ export default function AdminAgentsPage() {
                     <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
                         <CardContent className="p-7">
                             <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] opacity-80">New This Month</p>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] opacity-80">New This Month</p>
                                 <div className="absolute top-6 right-6 w-10 h-10 rounded-xl flex items-center justify-center bg-white/40 shadow-sm">
                                     <UserPlus className="h-5 w-5 text-violet-600" />
                                 </div>
@@ -1023,7 +1023,7 @@ export default function AdminAgentsPage() {
                     <Card className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] shadow-xl relative overflow-hidden group hover:translate-y-[-8px] transition-all duration-500 h-full">
                         <CardContent className="p-7">
                             <div className="flex justify-between items-start mb-4">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] opacity-80">Total Bookings</p>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] opacity-80">Total Bookings</p>
                                 <div className="absolute top-6 right-6 w-10 h-10 rounded-xl flex items-center justify-center bg-white/40 shadow-sm">
                                     <TrendingUp className="h-5 w-5 text-orange-600" />
                                 </div>
@@ -1099,7 +1099,7 @@ export default function AdminAgentsPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="text-[20px] font-black text-slate-800 uppercase tracking-[0.1em]">Agent Directory</CardTitle>
-                                        <p className="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                                        <p className="text-[11px] font-bold text-slate-700 mt-1 uppercase tracking-wider">
                                             Showing <span className="text-orange-600 font-black">{paginatedAgents.length}</span> active partnerships
                                             {activeFilterCount > 0 && ` • ${activeFilterCount} active filters`}
                                         </p>
@@ -1120,14 +1120,14 @@ export default function AdminAgentsPage() {
                                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[16px] w-[16px] text-orange-400 group-focus-within:text-orange-600 transition-colors" />
                                         <Input
                                             placeholder="Search agents by name or email..."
-                                            className="pl-12 pr-12 bg-white/30 backdrop-blur-md border border-white/40 focus:border-orange-400 focus:ring-4 focus:ring-orange-400/10 rounded-xl h-12 font-bold text-slate-700 placeholder:text-slate-400 transition-all duration-300"
+                                            className="pl-12 pr-12 bg-white/30 backdrop-blur-md border border-white/40 focus:border-orange-400 focus:ring-4 focus:ring-orange-400/10 rounded-xl h-12 font-bold text-slate-700 placeholder:text-slate-700 transition-all duration-300"
                                             value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
                                         />
                                         {searchQuery && (
                                             <button
                                                 onClick={() => setSearchQuery('')}
-                                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors"
+                                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-700 hover:text-orange-500 transition-colors"
                                             >
                                                 <X className="h-5 w-5" />
                                             </button>
@@ -1206,24 +1206,24 @@ export default function AdminAgentsPage() {
                                             </TableHead>
                                             <TableHead className="cursor-pointer select-none px-5 h-16" onClick={() => handleSort('name')}>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-[10px] text-slate-500 uppercase tracking-widest">Agent Profile</span>
+                                                    <span className="font-black text-[10px] text-slate-900 uppercase tracking-widest">Agent Profile</span>
                                                     <ArrowUpDown className={`h-3 w-3 ${sortColumn === 'name' ? 'text-orange-500' : 'text-slate-300'}`} />
                                                 </div>
                                             </TableHead>
                                             <TableHead className="cursor-pointer select-none px-5 h-16" onClick={() => handleSort('email')}>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-[10px] text-slate-500 uppercase tracking-widest">Contact</span>
+                                                    <span className="font-black text-[10px] text-slate-900 uppercase tracking-widest">Contact</span>
                                                     <ArrowUpDown className={`h-3 w-3 ${sortColumn === 'email' ? 'text-orange-500' : 'text-slate-300'}`} />
                                                 </div>
                                             </TableHead>
-                                            <TableHead className="font-black text-[10px] text-slate-500 uppercase tracking-widest h-16 px-5">Status</TableHead>
+                                            <TableHead className="font-black text-[10px] text-slate-900 uppercase tracking-widest h-16 px-5">Status</TableHead>
                                             <TableHead className="cursor-pointer select-none h-16 px-5" onClick={() => handleSort('created_at')}>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-[10px] text-slate-500 uppercase tracking-widest">Join Date</span>
+                                                    <span className="font-black text-[10px] text-slate-900 uppercase tracking-widest">Join Date</span>
                                                     <ArrowUpDown className={`h-3 w-3 ${sortColumn === 'created_at' ? 'text-orange-500' : 'text-slate-300'}`} />
                                                 </div>
                                             </TableHead>
-                                            <TableHead className="text-right px-8 h-16 font-black text-[10px] text-slate-500 uppercase tracking-widest">Actions</TableHead>
+                                            <TableHead className="text-right px-8 h-16 font-black text-[10px] text-slate-900 uppercase tracking-widest">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
 
@@ -1246,7 +1246,7 @@ export default function AdminAgentsPage() {
                                                 <TableCell colSpan={7} className="text-center py-12">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <Users className="h-12 w-12 text-gray-300" />
-                                                        <p className="text-gray-500 font-medium">
+                                                        <p className="text-slate-900 font-medium">
                                                             {activeFilterCount > 0 ? 'No agents match your filters' : 'No agents found'}
                                                         </p>
                                                         {activeFilterCount > 0 && (
@@ -1315,7 +1315,7 @@ export default function AdminAgentsPage() {
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="font-medium text-[13px] text-[#374151]">{agent.email}</span>
                                                                 </div>
-                                                                <span className="text-[12px] font-normal text-[#94A3B8]">{agent.phone || 'No phone provided'}</span>
+                                                                <span className="text-[12px] font-normal text-[#1e293b]">{agent.phone || 'No phone provided'}</span>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="py-6">
@@ -1335,8 +1335,8 @@ export default function AdminAgentsPage() {
                                                         </TableCell>
                                                         <TableCell className="py-6">
                                                             <div className="flex items-center gap-2">
-                                                                <Calendar className="h-[12px] w-[12px] text-[#94A3B8]" />
-                                                                <span className="font-medium text-[13px] text-[#475569]">
+                                                                <Calendar className="h-[12px] w-[12px] text-[#1e293b]" />
+                                                                <span className="font-medium text-[13px] text-[#0f172a]">
                                                                     {new Date(agent.created_at).toLocaleDateString('en-US', {
                                                                         year: 'numeric',
                                                                         month: 'short',
@@ -1406,7 +1406,7 @@ export default function AdminAgentsPage() {
                                                                         </Button>
                                                                     </DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="end" className="w-[220px] p-2 glass-popover">
-                                                                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-400 uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
+                                                                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-700 uppercase tracking-[1.2px] px-[14px] pt-2 pb-1">AGENT OPERATIONS</DropdownMenuLabel>
                                                                         <DropdownMenuItem onClick={() => {
                                                                             setConfirmAction({ 
                                                                                 id: agent.id, 
@@ -1421,12 +1421,12 @@ export default function AdminAgentsPage() {
                                                                                 </>
                                                                             ) : agent.is_active ? (
                                                                                 <>
-                                                                                    <UserX className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                                    <UserX className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
                                                                                     <span>Deactivate Agent</span>
                                                                                 </>
                                                                             ) : (
                                                                                 <>
-                                                                                    <UserCheck className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                                    <UserCheck className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
                                                                                     <span>Re-activate Access</span>
                                                                                 </>
                                                                             )}
@@ -1444,11 +1444,11 @@ export default function AdminAgentsPage() {
                                                                             </DropdownMenuItem>
                                                                         )}
                                                                         <DropdownMenuItem onClick={() => handleEditClick(agent)} className="glass-popover-item">
-                                                                            <Check className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                            <Check className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
                                                                             <span>Edit Agent Details</span>
                                                                         </DropdownMenuItem>
                                                                         <DropdownMenuItem className="glass-popover-item">
-                                                                            <Shield className="mr-2.5 h-[16px] w-[16px] text-[#64748B]" />
+                                                                            <Shield className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
                                                                             <span>Modify Permissions</span>
                                                                         </DropdownMenuItem>
                                                                         <DropdownMenuSeparator className="my-1 bg-white/10" />
@@ -1532,7 +1532,7 @@ export default function AdminAgentsPage() {
                         <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
                             <DialogHeader>
                                 <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Edit Agent <span className="text-orange-600">Details</span></DialogTitle>
-                                <DialogDescription className="text-slate-500 font-medium mt-2">
+                                <DialogDescription className="text-slate-900 font-medium mt-2">
                                     Update agent profile, agency details, and financial information.
                                 </DialogDescription>
                             </DialogHeader>
@@ -1758,7 +1758,7 @@ export default function AdminAgentsPage() {
                                     type="button"
                                     variant="ghost"
                                     onClick={() => setIsEditOpen(false)}
-                                    className="min-w-28 h-12 rounded-xl text-slate-500 font-bold hover:bg-slate-50"
+                                    className="min-w-28 h-12 rounded-xl text-slate-900 font-bold hover:bg-slate-50"
                                 >
                                     Cancel
                                 </Button>
@@ -1784,7 +1784,7 @@ export default function AdminAgentsPage() {
                                 </div>
                                 <div>
                                     <DialogTitle className="text-xl font-black text-slate-800 tracking-tight uppercase">Delete Agent</DialogTitle>
-                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                    <DialogDescription className="text-slate-900 font-medium text-xs mt-0.5 uppercase tracking-wider">
                                         Irreversible Action
                                     </DialogDescription>
                                 </div>
@@ -1799,7 +1799,7 @@ export default function AdminAgentsPage() {
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setAgentToDelete(null)}
-                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                                className="h-11 px-6 rounded-xl font-bold text-slate-900 hover:bg-white/50"
                             >
                                 Cancel
                             </Button>
@@ -1825,7 +1825,7 @@ export default function AdminAgentsPage() {
                                 </div>
                                 <div>
                                     <DialogTitle className="text-xl font-black text-slate-800 tracking-tight uppercase">Bulk Delete</DialogTitle>
-                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                    <DialogDescription className="text-slate-900 font-medium text-xs mt-0.5 uppercase tracking-wider">
                                         Multiple Records
                                     </DialogDescription>
                                 </div>
@@ -1840,7 +1840,7 @@ export default function AdminAgentsPage() {
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setShowBulkDeleteDialog(false)}
-                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                                className="h-11 px-6 rounded-xl font-bold text-slate-900 hover:bg-white/50"
                             >
                                 Cancel
                             </Button>
@@ -1881,7 +1881,7 @@ export default function AdminAgentsPage() {
                                         {confirmAction?.type === 'activate' && 'Activate Agent'}
                                         {confirmAction?.type === 'deactivate' && 'Deactivate Agent'}
                                     </DialogTitle>
-                                    <DialogDescription className="text-slate-500 font-medium text-xs mt-0.5 uppercase tracking-wider">
+                                    <DialogDescription className="text-slate-900 font-medium text-xs mt-0.5 uppercase tracking-wider">
                                         Confirmation Required
                                     </DialogDescription>
                                 </div>
@@ -1896,7 +1896,7 @@ export default function AdminAgentsPage() {
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setConfirmAction(null)}
-                                className="h-11 px-6 rounded-xl font-bold text-slate-500 hover:bg-white/50"
+                                className="h-11 px-6 rounded-xl font-bold text-slate-900 hover:bg-white/50"
                             >
                                 Cancel
                             </Button>
@@ -1932,7 +1932,7 @@ export default function AdminAgentsPage() {
                         <AlertDialogTitle className="text-2xl font-black text-slate-900 text-center">
                             Email Already Registered
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-500 font-bold text-center leading-relaxed">
+                        <AlertDialogDescription className="text-slate-900 font-bold text-center leading-relaxed">
                             {conflictMessage}. Please use a different email address.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

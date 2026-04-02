@@ -64,9 +64,9 @@ const INITIAL_STATS = {
         trialUsers: 0,
         churnRate: 0,
         system: [
-            { name: "API Status", status: "Loading...", color: "text-slate-400" },
-            { name: "Payments", status: "Loading...", color: "text-slate-400" },
-            { name: "Bookings API", status: "Loading...", color: "text-slate-400" },
+            { name: "API Status", status: "Loading...", color: "text-slate-700" },
+            { name: "Payments", status: "Loading...", color: "text-slate-700" },
+            { name: "Bookings API", status: "Loading...", color: "text-slate-700" },
         ]
     },
     sparklines: {
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                 <div className={`absolute top-0 left-0 right-0 h-2 ${accentColor} opacity-90`} />
 
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-8 relative z-10 px-8">
-                    <h3 className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">{title}</h3>
+                    <h3 className="text-[10px] font-black text-slate-700 tracking-[0.2em] uppercase">{title}</h3>
                     <div className={cn(
                         "p-3 rounded-2xl bg-white shadow-sm border border-slate-50 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-1",
                         colorClass.replace('bg-', 'text-')
@@ -154,11 +154,11 @@ export default function AdminDashboard() {
                                             {Math.abs(change)}%
                                         </span>
                                     )}
-                                    <span className="text-slate-400 uppercase tracking-widest">{changeLabel}</span>
+                                    <span className="text-slate-700 uppercase tracking-widest">{changeLabel}</span>
                                 </div>
                             )}
                             {secondMetric && (
-                                <p className="text-[10px] text-slate-500 mt-4 font-bold opacity-60 uppercase tracking-widest">{secondMetric}</p>
+                                <p className="text-[10px] text-slate-900 mt-4 font-bold opacity-60 uppercase tracking-widest">{secondMetric}</p>
                             )}
                         </div>
                         {sparkData && (
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
                         >
                             Dashboard <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B2B] to-[#F59E0B] underline decoration-orange-200 underline-offset-8">Overview</span>
                         </motion.h1>
-                        <p className="text-slate-500 mt-4 text-lg font-bold tracking-tight uppercase text-[10px] opacity-60">System Administrator Portal</p>
+                        <p className="text-slate-900 mt-4 text-lg font-bold tracking-tight uppercase text-[10px] opacity-60">System Administrator Portal</p>
                         <p className="text-slate-600 mt-1 text-lg font-medium">Welcome back, <span className="text-orange-600 font-bold underline decoration-orange-200 underline-offset-4">Admin</span>. Your business is thriving.</p>
                     </div>
 
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
                             "bg-white/40 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/60 border-l-4 shadow-sm flex items-center justify-between group hover:bg-white transition-all cursor-default",
                             pill.borderColor
                         )}>
-                            <span className="text-xs font-[900] text-slate-500 uppercase tracking-tight">{pill.label}</span>
+                            <span className="text-xs font-[900] text-slate-900 uppercase tracking-tight">{pill.label}</span>
                             <span className={cn("text-lg font-black tracking-tight", pill.color)}>{pill.value}</span>
                         </div>
                     ))}
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
                                 <div>
                                     <h2 className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-1">Business Intelligence</h2>
                                     <CardTitle className="text-2xl font-[900] text-slate-800 tracking-tight">Analytics Hub</CardTitle>
-                                    <CardDescription className="text-slate-400 font-bold text-[11px] mt-1 italic">Real-time performance across all revenue streams</CardDescription>
+                                    <CardDescription className="text-slate-700 font-bold text-[11px] mt-1 italic">Real-time performance across all revenue streams</CardDescription>
                                 </div>
                                 <div className="p-3 bg-orange-50 rounded-2xl border border-orange-100 shadow-sm">
                                     <TrendingUp className="h-6 w-6 text-orange-600" />
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
                                     <CardTitle className="text-2xl font-[900] text-slate-800 tracking-tight">Smart Feed</CardTitle>
-                                    <CardDescription className="text-slate-400 font-bold text-[11px] mt-1 italic">Global system events</CardDescription>
+                                    <CardDescription className="text-slate-700 font-bold text-[11px] mt-1 italic">Global system events</CardDescription>
                                 </div>
                                 <div className="p-3 bg-indigo-50 rounded-2xl border border-indigo-100 shadow-sm">
                                     <Activity className="h-6 w-6 text-indigo-600" />
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
 
                 {/* Section Title for Monitoring */}
                 <div className="pt-6">
-                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 px-1">Health & Monitoring</h2>
+                    <h2 className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em] mb-2 px-1">Health & Monitoring</h2>
                     <div className="h-px bg-gradient-to-r from-slate-200 via-transparent to-transparent w-full" />
                 </div>
 
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                         <CardContent className="pt-8 space-y-6">
                             <div className="space-y-3">
                                 <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
-                                    <span className="text-slate-400">Retention</span>
+                                    <span className="text-slate-700">Retention</span>
                                     <span className="text-emerald-600">84%</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden p-[2px]">
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
-                                    <span className="text-slate-400">Churn Rate</span>
+                                    <span className="text-slate-700">Churn Rate</span>
                                     <span className="text-rose-600">2.4%</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden p-[2px]">
@@ -367,11 +367,11 @@ export default function AdminDashboard() {
                             </div>
                             <div className="pt-4 grid grid-cols-2 gap-3">
                                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trials</p>
+                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1">Trials</p>
                                     <p className="text-xl font-black text-slate-800">{stats.health.trialUsers}</p>
                                 </div>
                                 <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Renewals</p>
+                                    <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-1">Renewals</p>
                                     <p className="text-xl font-black text-slate-800">92%</p>
                                 </div>
                             </div>
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-[900] text-slate-800 tracking-tight">{agent.name}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{agent.bookings} Bookings</p>
+                                            <p className="text-[10px] text-slate-700 font-bold uppercase tracking-wider">{agent.bookings} Bookings</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -446,7 +446,7 @@ export default function AdminDashboard() {
                                             <div className={cn("h-2 w-2 rounded-full", renewal.daysLeft <= 7 ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]" : "bg-blue-500")} />
                                             <div>
                                                 <p className="text-sm font-black text-slate-800 tracking-tight">{renewal.name}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">{renewal.date}</p>
+                                                <p className="text-[10px] text-slate-700 font-bold tracking-widest uppercase">{renewal.date}</p>
                                             </div>
                                         </div>
                                         <span className={cn(
@@ -494,7 +494,7 @@ export default function AdminDashboard() {
                                 </div>
                             ))}
                             <div className="pt-2 flex items-center justify-between px-2">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic flex items-center">
+                                <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest italic flex items-center">
                                     <Clock className="h-3 w-3 mr-1" /> 2m ago
                                 </p>
                                 <button className="text-[10px] font-black text-orange-600 uppercase tracking-widest hover:underline decoration-2 underline-offset-4">

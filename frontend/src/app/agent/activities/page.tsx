@@ -59,11 +59,17 @@ interface DestinationSummary {
 
 export default function ActivitiesMasterPage() {
     const router = useRouter()
-    const { hasPermission } = useAuth()
+    const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize] = useState(8)
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('activities', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
 
     // Modal State for New Destination
     const [isNewDestModalOpen, setIsNewDestModalOpen] = useState(false)
@@ -340,7 +346,7 @@ export default function ActivitiesMasterPage() {
 
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[var(--primary)] hover:bg-white/40 rounded-full transition-all">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-700 hover:text-[var(--primary)] hover:bg-white/40 rounded-full transition-all">
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
@@ -434,7 +440,7 @@ export default function ActivitiesMasterPage() {
                                                     )
                                                 }
                                                 if (page === 2 || page === totalPages - 1) {
-                                                    return <span key={page} className="px-1 text-slate-400">...</span>
+                                                    return <span key={page} className="px-1 text-slate-700">...</span>
                                                 }
                                                 return null
                                             }

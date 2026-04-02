@@ -9,7 +9,7 @@ import {
     fetchAgentNotifications,
     markAgentNotificationAsRead
 } from '@/lib/api'
-import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check } from 'lucide-react'
+import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check, Plane } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,10 +41,6 @@ function getUserRole(): string | null {
     }
 }
 
-
-import { Plane } from 'lucide-react'
-
-// ...
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const router = useRouter()
@@ -125,8 +121,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
             <div className="flex items-center gap-4 flex-1">
                 {onMenuClick && (
-                    <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden">
-                        <Menu className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden text-black">
+                        <Menu className="h-5 w-5" stroke="black" />
                     </Button>
                 )}
 
@@ -138,7 +134,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         <LogoIcon />
                     )}
                     {!logoImage && (
-                        <span className="font-bold text-lg tracking-tight text-slate-900">
+                        <span className="font-bold text-lg tracking-tight text-black">
                             {logoText}
                         </span>
                     )}
@@ -151,7 +147,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
+                        <Button variant="ghost" size="icon" className="text-black hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
@@ -169,7 +165,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         </div>
                         <ScrollArea className="max-h-[400px]">
                             {notifications.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400">
+                                <div className="p-8 text-center text-slate-900">
                                     <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                     <p className="text-sm">No notifications yet</p>
                                 </div>
@@ -194,14 +190,14 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                                             }}
                                         >
                                             <div className="flex items-center justify-between w-full">
-                                                <span className="font-bold text-sm text-slate-800">{notification.title}</span>
-                                                <span className="text-[10px] text-slate-400">
+                                                <span className="font-bold text-sm text-black">{notification.title}</span>
+                                                <span className="text-[10px] text-black/80">
                                                     {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-slate-500 line-clamp-2">{notification.message}</p>
+                                            <p className="text-xs text-black line-clamp-2">{notification.message}</p>
                                             {!notification.is_read && (
-                                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-1"></div>
+                                                <div className="w-2 h-2 bg-black rounded-full mt-1"></div>
                                             )}
                                         </DropdownMenuItem>
                                     ))}
@@ -218,7 +214,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 hidden sm:flex">
+                <Button variant="ghost" size="icon" className="text-black hover:text-slate-800 hidden sm:flex">
                     <HelpCircle className="h-5 w-5" />
                 </Button>
 
@@ -229,11 +225,11 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                                 {((userData?.first_name?.[0] || '') + (userData?.last_name?.[0] || (userRole === 'agent' ? 'A' : 'AD'))).toUpperCase()}
                             </div>
                             <div className="hidden sm:flex flex-col items-start gap-0.5">
-                                <span className="text-sm font-bold text-gray-800 leading-tight">
+                                <span className="text-sm font-bold text-black leading-tight">
                                     {(userRole === 'agent' || userRole === 'AGENT') ? 'Agent' : 
                                      (userRole === 'sub_user' || userRole === 'SUB_USER') ? 'Staff' : 'Admin'}
                                 </span>
-                                <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-md uppercase tracking-wider">
+                                <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-black text-white rounded-md uppercase tracking-wider">
                                     {userData?.role === 'SUB_USER' ? 'Sub-User' : (userRole || 'Role')}
                                 </span>
                             </div>

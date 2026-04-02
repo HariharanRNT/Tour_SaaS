@@ -42,7 +42,7 @@ export default function ReportSection({
                     )}
                     <div>
                         <h3 className="text-[16px] font-bold text-slate-800 tracking-tight">{title}</h3>
-                        {description && <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">{description}</p>}
+                        {description && <p className="text-[11px] text-slate-700 font-medium uppercase tracking-wider mt-0.5">{description}</p>}
                     </div>
                 </div>
                 {(exportData || onExportFetch) && (

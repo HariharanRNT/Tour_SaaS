@@ -11,6 +11,7 @@ import { ArrowLeft, MapPin, Calendar } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { toast } from 'sonner'
 import { API_URL } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
 interface Package {
     id: string
@@ -29,7 +30,14 @@ interface Package {
 export default function PackageDetailPage() {
     const router = useRouter()
     const params = useParams()
+    const { hasPermission, isSubUser } = useAuth()
     const packageId = params.id as string
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('packages', 'edit')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
 
     const [packageData, setPackageData] = useState<Package | null>(null)
     const [loading, setLoading] = useState(true)
@@ -75,7 +83,7 @@ export default function PackageDetailPage() {
         return (
             <div className="min-h-screen bg-transparent flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)] mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading package details...</p>
                 </div>
             </div>
@@ -151,7 +159,7 @@ export default function PackageDetailPage() {
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Price</label>
-                                            <p className="font-medium text-blue-600">₹{packageData.price_per_person}</p>
+                                            <p className="font-medium text-[var(--primary)]">₹{packageData.price_per_person}</p>
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Group Size</label>

@@ -276,9 +276,9 @@ function PlanTripContent() {
             if (filters.duration_min > 1) params.append('duration_min', filters.duration_min.toString())
             if (filters.duration_max < 30) params.append('duration_max', filters.duration_max.toString())
 
-            // Price ranges
-            if (filters.price_min > 0) params.append('price_min', filters.price_min.toString())
-            if (filters.price_max < 500000) params.append('price_max', filters.price_max.toString())
+            // Price ranges — backend expects min_price / max_price
+            if (filters.price_min > 0) params.append('min_price', filters.price_min.toString())
+            if (filters.price_max < 500000) params.append('max_price', filters.price_max.toString())
 
             // Arrays
             filters.trip_styles.forEach(ts => params.append('trip_styles', ts))

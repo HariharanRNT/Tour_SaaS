@@ -63,7 +63,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
     }
 
     if (loading) {
-        return <div className="text-[#64748B] text-center py-12">Loading reports...</div>
+        return <div className="text-[#0f172a] text-center py-12">Loading reports...</div>
     }
 
     const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
@@ -82,13 +82,13 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                     { label: 'ACTIVE', value: summary?.active || 0, sub: 'Currently active', icon: CheckCircle, color: '#10B981', bg: '#DCFCE7', border: '#10B981' },
                     { label: 'COMPLETED', value: summary?.completed || 0, sub: 'Finished plans', icon: CheckCircle, color: '#3B82F6', bg: '#DBEAFE', border: '#3B82F6' },
                     { label: 'UPCOMING', value: summary?.upcoming || 0, sub: 'Starting soon', icon: Clock, color: '#F59E0B', bg: '#FEF3C7', border: '#F59E0B' },
-                    { label: 'PAUSED', value: summary?.paused || 0, sub: 'On hold', icon: Pause, color: '#94A3B8', bg: '#F1F5F9', border: '#94A3B8' },
+                    { label: 'PAUSED', value: summary?.paused || 0, sub: 'On hold', icon: Pause, color: '#1e293b', bg: '#F1F5F9', border: '#1e293b' },
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' }
                 ].map((item, index) => (
                     <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
-                                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[1.2px]">{item.label}</p>
+                                <p className="text-[10px] font-bold text-[#1e293b] uppercase tracking-[1.2px]">{item.label}</p>
                                 <div className="h-9 w-9 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: `${item.color}1F` }}>
                                     <item.icon className="h-[18px] w-[18px]" style={{ color: item.color }} />
                                 </div>
@@ -112,9 +112,9 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                     <CardHeader className="flex flex-row items-start justify-between pb-2">
                         <div>
                             <CardTitle className="text-[#0F172A] text-[17px] font-bold">Month-wise Subscription Trends</CardTitle>
-                            <p className="text-[#94A3B8] text-[12px] font-medium mt-1">Feb 2026 • {summary?.total || 0} total subscriptions</p>
+                            <p className="text-[#1e293b] text-[12px] font-medium mt-1">Feb 2026 • {summary?.total || 0} total subscriptions</p>
                         </div>
-                        <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#64748B] border-[#E2E8F0]">
+                        <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#0f172a] border-[#E2E8F0]">
                             Filter <span className="ml-1">▼</span>
                         </Button>
                     </CardHeader>
@@ -130,29 +130,29 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8FAFC" />
                                 <XAxis
                                     dataKey="period"
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dy={10}
                                 />
                                 <YAxis
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dx={-10}
                                 />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                    labelStyle={{ color: '#64748B', fontSize: '12px', marginBottom: '4px' }}
+                                    labelStyle={{ color: '#0f172a', fontSize: '12px', marginBottom: '4px' }}
                                     itemStyle={{ color: '#0F172A', fontWeight: 'bold', fontSize: '14px' }}
                                 />
                                 <Legend
                                     verticalAlign="bottom"
                                     height={36}
                                     iconType="circle"
-                                    formatter={(value) => <span className="text-[#64748B] text-[12px] font-medium ml-2">{value}</span>}
+                                    formatter={(value) => <span className="text-[#0f172a] text-[12px] font-medium ml-2">{value}</span>}
                                 />
                                 <Line
                                     type="monotone"
@@ -202,7 +202,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 <div className="text-[28px] font-extrabold text-[#0F172A]">
                                     {renewalStats?.renewal_rate || 0}%
                                 </div>
-                                <div className="text-[11px] font-medium text-[#94A3B8] mt-1">Renewal Rate</div>
+                                <div className="text-[11px] font-medium text-[#1e293b] mt-1">Renewal Rate</div>
                             </div>
                         </div>
 
@@ -215,7 +215,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 </div>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-[18px] font-bold text-[#10B981]">{renewalStats?.renewals || 0}</span>
-                                    <span className="text-[12px] font-medium text-[#94A3B8]">({renewalStats?.renewal_rate || 0}%)</span>
+                                    <span className="text-[12px] font-medium text-[#1e293b]">({renewalStats?.renewal_rate || 0}%)</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-center border-l border-[#F1F5F9]">
@@ -225,7 +225,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 </div>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-[18px] font-bold text-[#EF4444]">{renewalStats?.cancellations || 0}</span>
-                                    <span className="text-[12px] font-medium text-[#94A3B8]">({renewalStats?.cancellation_rate || 0}%)</span>
+                                    <span className="text-[12px] font-medium text-[#1e293b]">({renewalStats?.cancellation_rate || 0}%)</span>
                                 </div>
                             </div>
                         </div>
@@ -254,18 +254,18 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                             <div className="flex justify-between items-center glass-input rounded-lg p-3 mb-4 border border-[#10B981]/10">
                                 <div className="text-center">
                                     <p className="text-[16px] font-bold text-[#0F172A]">{planAnalytics?.most_purchased?.subscription_count || 0}</p>
-                                    <p className="text-[11px] text-[#64748B] font-medium">Subscribers</p>
+                                    <p className="text-[11px] text-[#0f172a] font-medium">Subscribers</p>
                                 </div>
                                 <div className="h-8 w-[1px] bg-[#10B981]/20"></div>
                                 <div className="text-center">
                                     <p className="text-[16px] font-bold text-[#10B981]">₹{planAnalytics?.most_purchased?.total_revenue?.toLocaleString() || 0}</p>
-                                    <p className="text-[11px] text-[#64748B] font-medium">Revenue</p>
+                                    <p className="text-[11px] text-[#0f172a] font-medium">Revenue</p>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-[11px] font-medium">
-                                    <span className="text-[#64748B]">Market Share</span>
+                                    <span className="text-[#0f172a]">Market Share</span>
                                     <span className="text-[#0F172A]">90%</span>
                                 </div>
                                 <div className="h-[6px] w-full bg-[#10B981]/10 rounded-full overflow-hidden">
@@ -292,7 +292,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 <h3 className="text-[20px] font-bold text-[#0F172A]">{planAnalytics?.least_purchased?.plan_name || 'N/A'}</h3>
                             </div>
 
-                            <p className="text-[#64748B] text-[13px] font-medium mb-1">
+                            <p className="text-[#0f172a] text-[13px] font-medium mb-1">
                                 Only <span className="text-[#0F172A] font-bold">{planAnalytics?.least_purchased?.subscription_count || 0}</span> subscriptions
                             </p>
                             <p className="text-[#EF4444] text-[12px] font-medium">vs avg: -80% below average</p>
@@ -313,9 +313,9 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-[#F8FAFC] border-b border-[#F1F5F9]">
-                                        <th className="text-left text-[#94A3B8] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Plan</th>
-                                        <th className="text-center text-[#94A3B8] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Subscriptions</th>
-                                        <th className="text-right text-[#94A3B8] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Revenue</th>
+                                        <th className="text-left text-[#1e293b] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Plan</th>
+                                        <th className="text-center text-[#1e293b] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Subscriptions</th>
+                                        <th className="text-right text-[#1e293b] text-[10px] font-bold uppercase tracking-wider py-3 px-6">Revenue</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -337,7 +337,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                                 <td className="py-4 px-6 text-center text-[#374151] text-[14px] font-bold">{plan.subscription_count}</td>
                                                 <td className="py-4 px-6 text-right relative">
                                                     <div className="flex flex-col items-end gap-1">
-                                                        <span className={`text-[14px] font-bold ${plan.total_revenue > 10000 ? 'text-[#10B981]' : (plan.total_revenue > 1000 ? '#6366F1' : '#94A3B8')}`}>
+                                                        <span className={`text-[14px] font-bold ${plan.total_revenue > 10000 ? 'text-[#10B981]' : (plan.total_revenue > 1000 ? '#6366F1' : '#1e293b')}`}>
                                                             ₹{plan.total_revenue.toLocaleString()}
                                                         </span>
                                                         <div className="h-[4px] bg-[#F1F5F9] w-[100px] rounded-full overflow-hidden">

@@ -68,7 +68,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
             {/* Header */}
             <div className="p-4 border-b border-slate-200 bg-white/40">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-1">Package Summary</h3>
-                <p className="text-[10px] text-slate-500 font-medium">Auto-calculating your itinerary stats</p>
+                <p className="text-[10px] text-slate-900 font-medium">Auto-calculating your itinerary stats</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
@@ -79,10 +79,10 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                             <div className="p-1.5 bg-violet-100 text-violet-600 rounded-lg">
                                 <BarChart3 className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Total</span>
+                            <span className="text-[10px] font-bold text-slate-900 uppercase">Total</span>
                         </div>
                         <p className="text-xl font-black text-slate-800">{totalActivities}</p>
-                        <p className="text-[9px] text-slate-400 font-medium whitespace-nowrap">Activities planned</p>
+                        <p className="text-[9px] text-slate-700 font-medium whitespace-nowrap">Activities planned</p>
                     </div>
 
                     <div className="bg-white/60 p-3 rounded-2xl border border-white/80 shadow-sm">
@@ -90,10 +90,10 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                             <div className="p-1.5 bg-orange-100 text-orange-600 rounded-lg">
                                 <Utensils className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Meals</span>
+                            <span className="text-[10px] font-bold text-slate-900 uppercase">Meals</span>
                         </div>
                         <p className="text-xl font-black text-slate-800">{totalMeals}</p>
-                        <p className="text-[9px] text-slate-400 font-medium whitespace-nowrap">Included in trip</p>
+                        <p className="text-[9px] text-slate-700 font-medium whitespace-nowrap">Included in trip</p>
                     </div>
                 </div>
 
@@ -103,11 +103,11 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                         <div className="flex justify-between items-end">
                             <div>
                                 <h4 className="text-xs font-bold text-slate-800 mb-0.5">Itinerary Coverage</h4>
-                                <p className="text-[10px] text-slate-500">{activeDays} of {durationDays} days planned</p>
+                                <p className="text-[10px] text-slate-900">{activeDays} of {durationDays} days planned</p>
                             </div>
                             <span className={cn(
                                 "text-xs font-black",
-                                completionPercentage > 80 ? "text-emerald-600" : completionPercentage > 40 ? "text-amber-500" : "text-slate-400"
+                                completionPercentage > 80 ? "text-emerald-600" : completionPercentage > 40 ? "text-amber-500" : "text-slate-700"
                             )}>{completionPercentage}%</span>
                         </div>
                         <Progress value={completionPercentage} className="h-2 bg-slate-100/50" />
@@ -125,7 +125,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
 
                 {/* Detailed Breakdown */}
                 <div className="space-y-3">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Detailed Breakdown</h4>
+                    <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-widest px-1">Detailed Breakdown</h4>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between p-2.5 bg-white/40 border border-white/60 rounded-xl">
                             <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                                 </div>
                                 <div>
                                     <p className="text-xs font-black text-slate-800">{totalTours}</p>
-                                    <p className="text-[9px] text-slate-500 font-medium">Sightseeing & Tours</p>
+                                    <p className="text-[9px] text-slate-900 font-medium">Sightseeing & Tours</p>
                                 </div>
                             </div>
                             {totalTours > 0 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
@@ -147,7 +147,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                                 </div>
                                 <div>
                                     <p className="text-xs font-black text-slate-800">{totalTransfers}</p>
-                                    <p className="text-[9px] text-slate-500 font-medium">Ground Transfers</p>
+                                    <p className="text-[9px] text-slate-900 font-medium">Ground Transfers</p>
                                 </div>
                             </div>
                             {totalTransfers > 0 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
@@ -158,7 +158,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                 {/* Destination Leg Checklist */}
                 {packageMode === 'multi' && destinations.length > 0 && (
                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Destination Legs</h4>
+                        <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-widest px-1">Destination Legs</h4>
                         <div className="space-y-2">
                             {destinations.map((dest, idx) => {
                                 // Simple logic to check if this destination has any activities (approximate based on days)
@@ -168,7 +168,7 @@ export function ItinerarySummary({ activities, durationDays, destinations, packa
                                         <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-bold text-slate-800 truncate">{dest.city}</p>
-                                            <p className="text-[9px] text-slate-500 font-medium">{dest.days} Days • {dest.country}</p>
+                                            <p className="text-[9px] text-slate-900 font-medium">{dest.days} Days • {dest.country}</p>
                                         </div>
                                     </div>
                                 )

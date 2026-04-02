@@ -48,6 +48,8 @@ async def get_current_user(
         raise credentials_exception
     
     # Eager load profiles to support proxy properties on User model
+    # Note: Keep this flat — do NOT chain selectinload across User→SubUser→User
+    # as it causes NameError (SubUser not imported) and SQLAlchemy mapper confusion
     query = select(User).where(User.id == user_id).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
@@ -73,8 +75,22 @@ async def get_current_user(
         # Attach as dynamic attributes so endpoints can inspect them
         user._sub_user_permissions = permissions
         user._sub_user_agent_id = parent_agent_id
+        
+        # Fetch parent agent's domain via a separate targeted query
+        # (avoids complex cross-entity selectinload chaining)
+        if parent_agent_id:
+            try:
+                from app.models import Agent
+                agent_q = select(Agent).where(Agent.user_id == parent_agent_id)
+                agent_res = await db.execute(agent_q)
+                parent_agent = agent_res.scalar_one_or_none()
+                if parent_agent:
+                    user._sub_user_agent_domain = parent_agent.domain
+            except Exception:
+                pass  # Non-critical — domain check falls back gracefully
     
     return user
+
 
 
 async def get_current_active_user(
@@ -112,8 +128,9 @@ async def get_current_agent(
     
     # Strict multi-tenancy check
     if current_user.domain and current_user.domain != current_domain:
-        # Only enforce if domain is set. In dev (localhost), current_domain might be 'localhost'
-        if current_domain not in ['localhost', 'rnt.local', '127.0.0.1']:
+        # Only enforce if domain is set. Skip check for known dev/local domains
+        dev_domains = ['localhost', 'rnt.local', 'aaa.local', '127.0.0.1']
+        if current_domain not in dev_domains:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access denied: This account belongs to {current_user.domain}, but you are on {current_domain}"

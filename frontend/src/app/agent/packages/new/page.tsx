@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { compressImage, uploadToS3 } from '@/lib/image-upload-utils'
+import { useAuth } from '@/context/AuthContext'
 
 interface PackageFormData {
     title: string
@@ -90,7 +91,14 @@ const ACTIVITIES = [
 export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { hasPermission, isSubUser } = useAuth()
     const editPackageId = searchParams.get('id')
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('packages', 'edit')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
 
     // Steps: 1: Basic Info, 2: Itinerary, 3: Review
     const [activeStep, setActiveStep] = useState(1)
@@ -155,7 +163,7 @@ export default function CreatePackagePage() {
 
         const applyAgentGstDefaults = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/v1/agent/settings`, {
+                const res = await fetch(`${API_URL}/api/v1/agent/settings/`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                 if (!res.ok) return
@@ -278,7 +286,7 @@ export default function CreatePackagePage() {
                 if (gstNeverSet && token) {
                     // Package GST was never explicitly set — fetch agent defaults from Settings
                     try {
-                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings`, {
+                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings/`, {
                             headers: { 'Authorization': `Bearer ${token}` }
                         })
                         if (settingsRes.ok) {
@@ -293,7 +301,7 @@ export default function CreatePackagePage() {
                     // Package has own GST config — fetch agent settings just for visibility control
                     try {
                         const token2 = localStorage.getItem('token')
-                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings`, {
+                        const settingsRes = await fetch(`${API_URL}/api/v1/agent/settings/`, {
                             headers: { 'Authorization': `Bearer ${token2 || ''}` }
                         })
                         if (settingsRes.ok) {
@@ -514,13 +522,23 @@ export default function CreatePackagePage() {
                 return { ...r, fareType: r.fareType || 'total_fare' }
             })
 
+            const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ ...formData, cancellation_rules: sanitisedRules })
+                body: JSON.stringify({ 
+                    ...formData, 
+                    gst_applicable: gstApplicableFinal,
+                    // Clear GST details when not applicable — prevents default values (18%, exclusive)
+                    // from being persisted to the database
+                    gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
+                    gst_mode: gstApplicableFinal ? formData.gst_mode : null,
+                    cancellation_rules: sanitisedRules 
+                })
             })
 
 
@@ -551,11 +569,13 @@ export default function CreatePackagePage() {
         setSaving(true)
         try {
             const url = packageId
-                ? `http://localhost:8000/api/v1/agent/packages/${packageId}`
-                : 'http://localhost:8000/api/v1/agent/packages'
+                ? `${API_URL}/api/v1/agent/packages/${packageId}`
+                : `${API_URL}/api/v1/agent/packages`
 
             const method = packageId ? 'PUT' : 'POST'
             const token = localStorage.getItem('token')
+
+            const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
 
             const response = await fetch(url, {
                 method: method,
@@ -563,7 +583,13 @@ export default function CreatePackagePage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    gst_applicable: gstApplicableFinal,
+                    // Clear GST details when not applicable
+                    gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
+                    gst_mode: gstApplicableFinal ? formData.gst_mode : null,
+                })
             })
 
             if (!response.ok) throw new Error('Failed to save draft')
@@ -784,14 +810,25 @@ export default function CreatePackagePage() {
                                 <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
                                     <Briefcase className="w-5 h-5" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <h3 className="font-semibold text-gray-900">Overview</h3>
                                     <p className="text-xs text-gray-500">Essential package details</p>
                                 </div>
+                                {agentGstApplicable !== null && (
+                                    <div className={cn(
+                                        "text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-2",
+                                        agentGstApplicable
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : "bg-slate-50 text-slate-500 border-slate-200"
+                                    )}>
+                                        <span>GST {agentGstApplicable ? 'Applicable' : 'Not Applicable'}</span>
+                                        <div className={cn("w-2 h-2 rounded-full", agentGstApplicable ? "bg-emerald-500 animate-pulse" : "bg-slate-300")} />
+                                    </div>
+                                )}
                             </div>
                             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Package Type Toggle */}
-                                <div className="space-y-3 md:col-span-2 mb-2">
+                                {/* Package Type Toggle & Title Row */}
+                                <div className="space-y-3 mb-2">
                                     <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Package Type <span className="text-red-500">*</span></Label>
                                     <div className="relative flex p-1 rounded-full max-w-sm" style={{ background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
                                         {/* Sliding Background Indicator */}
@@ -831,7 +868,7 @@ export default function CreatePackagePage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 md:col-span-2">
+                                <div className="space-y-2">
                                     <Label className={cn("text-xs font-medium text-gray-500 uppercase tracking-wider", formData.title ? "text-[var(--primary)]" : "")}>
                                         Package Title <span className="text-red-500">*</span>
                                     </Label>
@@ -878,7 +915,7 @@ export default function CreatePackagePage() {
                                                 >
                                                     <SelectTrigger className="glass-input pl-10 h-11 border-gray-200 rounded-xl">
                                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                            <Globe className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                                            <Globe className="h-4 w-4 text-gray-400 group-focus-within:text-[var(--primary)] transition-colors" />
                                                         </div>
                                                         <SelectValue placeholder="Select a country" />
                                                     </SelectTrigger>
@@ -1116,7 +1153,7 @@ export default function CreatePackagePage() {
                                     <Banknote className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900">Logistics & Pricing</h3>
+                                    <h3 className="font-semibold text-gray-900">Pricing</h3>
                                     <p className="text-xs text-gray-500">Timeline and costs</p>
                                 </div>
                             </div>
@@ -1190,127 +1227,129 @@ export default function CreatePackagePage() {
                                     <div className="space-y-3 md:col-span-2">
                                         <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">GST Configuration</Label>
                                         <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-4">
-                                            {/* GST Percentage */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Percentage</Label>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    {[5, 12, 18].map(pct => (
-                                                        <button
-                                                            key={pct}
-                                                            type="button"
-                                                            onClick={() => updateFormData('gst_percentage', pct)}
-                                                            className={cn(
-                                                                "px-6 py-2.5 text-sm font-bold transition-all rounded-full",
-                                                                formData.gst_percentage === pct
-                                                                    ? "glass-pill-active"
-                                                                    : "glass-pill"
-                                                            )}
-                                                        >
-                                                            {pct}%
-                                                        </button>
-                                                    ))}
-                                                    <div className="relative w-32">
-                                                        <Input
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            value={formData.gst_percentage as any}
-                                                            onChange={(e) => {
-                                                                const val = e.target.value;
-                                                                updateFormData('gst_percentage', val === '' ? '' as any : Number(val));
-                                                            }}
-                                                            className="glass-input h-11 pr-8 text-sm font-bold text-center"
-                                                        />
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold pointer-events-none">%</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-2">
+                                                {/* GST Percentage */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Percentage</Label>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {[5, 12, 18].map(pct => (
+                                                            <button
+                                                                key={pct}
+                                                                type="button"
+                                                                onClick={() => updateFormData('gst_percentage', pct)}
+                                                                className={cn(
+                                                                    "px-6 py-2.5 text-sm font-bold transition-all rounded-full",
+                                                                    formData.gst_percentage === pct
+                                                                        ? "glass-pill-active"
+                                                                        : "glass-pill"
+                                                                )}
+                                                            >
+                                                                {pct}%
+                                                            </button>
+                                                        ))}
+                                                        <div className="relative w-32">
+                                                            <Input
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                value={formData.gst_percentage as any}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    updateFormData('gst_percentage', val === '' ? '' as any : Number(val));
+                                                                }}
+                                                                className="glass-input h-11 pr-8 text-sm font-bold text-center"
+                                                            />
+                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold pointer-events-none">%</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* GST Mode */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Mode</Label>
+                                                {/* GST Mode */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-medium text-gray-600 uppercase tracking-wider">GST Mode</Label>
 
-                                                {/* Segmented Pill Container */}
-                                                <div
-                                                    className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
-                                                    style={{
-                                                        background: 'rgba(255,255,255,0.18)',
-                                                        border: '1px solid rgba(255,255,255,0.35)',
-                                                        borderRadius: '50px',
-                                                        gap: 0
-                                                    }}
-                                                >
-                                                    {/* Animated Sliding Background */}
+                                                    {/* Segmented Pill Container */}
                                                     <div
-                                                        className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
+                                                        className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
                                                         style={{
-                                                            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                            background: 'rgba(255,255,255,0.18)',
+                                                            border: '1px solid rgba(255,255,255,0.35)',
                                                             borderRadius: '50px',
-                                                            left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
-                                                            boxShadow: '0 4px 16px var(--primary-glow)'
+                                                            gap: 0
                                                         }}
-                                                    />
-
-                                                    {/* Exclusive Option */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => updateFormData('gst_mode', 'exclusive')}
-                                                        className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
-                                                        style={{
-                                                            borderRadius: '50px',
-                                                            transition: 'background 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
-                                                        onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                     >
+                                                        {/* Animated Sliding Background */}
                                                         <div
-                                                            className="text-sm tracking-wide transition-colors duration-300"
+                                                            className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
                                                             style={{
-                                                                color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#1e293b',
-                                                                fontWeight: formData.gst_mode === 'exclusive' ? 700 : 500
+                                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                                borderRadius: '50px',
+                                                                left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
+                                                                boxShadow: '0 4px 16px var(--primary-glow)'
                                                             }}
-                                                        >
-                                                            Exclusive
-                                                        </div>
-                                                        <div
-                                                            className="text-[12px] mt-0.5 transition-colors duration-300"
-                                                            style={{
-                                                                color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
-                                                            }}
-                                                        >
-                                                            GST added on top of price
-                                                        </div>
-                                                    </button>
+                                                        />
 
-                                                    {/* Inclusive Option */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => updateFormData('gst_mode', 'inclusive')}
-                                                        className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
-                                                        style={{
-                                                            borderRadius: '50px',
-                                                            transition: 'background 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
-                                                        onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
-                                                    >
-                                                        <div
-                                                            className="text-sm tracking-wide transition-colors duration-300"
+                                                        {/* Exclusive Option */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateFormData('gst_mode', 'exclusive')}
+                                                            className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                             style={{
-                                                                color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : '#1e293b',
-                                                                fontWeight: formData.gst_mode === 'inclusive' ? 700 : 500
+                                                                borderRadius: '50px',
+                                                                transition: 'background 0.2s'
                                                             }}
+                                                            onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
+                                                            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                         >
-                                                            Inclusive
-                                                        </div>
-                                                        <div
-                                                            className="text-[12px] mt-0.5 transition-colors duration-300"
+                                                            <div
+                                                                className="text-sm tracking-wide transition-colors duration-300"
+                                                                style={{
+                                                                    color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#1e293b',
+                                                                    fontWeight: formData.gst_mode === 'exclusive' ? 700 : 500
+                                                                }}
+                                                            >
+                                                                Exclusive
+                                                            </div>
+                                                            <div
+                                                                className="text-[12px] mt-0.5 transition-colors duration-300"
+                                                                style={{
+                                                                    color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
+                                                                }}
+                                                            >
+                                                                GST added on top of price
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Inclusive Option */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateFormData('gst_mode', 'inclusive')}
+                                                            className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
                                                             style={{
-                                                                color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
+                                                                borderRadius: '50px',
+                                                                transition: 'background 0.2s'
                                                             }}
+                                                            onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
+                                                            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                         >
-                                                            Price already includes GST
-                                                        </div>
-                                                    </button>
+                                                            <div
+                                                                className="text-sm tracking-wide transition-colors duration-300"
+                                                                style={{
+                                                                    color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : '#1e293b',
+                                                                    fontWeight: formData.gst_mode === 'inclusive' ? 700 : 500
+                                                                }}
+                                                            >
+                                                                Inclusive
+                                                            </div>
+                                                            <div
+                                                                className="text-[12px] mt-0.5 transition-colors duration-300"
+                                                                style={{
+                                                                    color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(120,60,20,0.55)'
+                                                                }}
+                                                            >
+                                                                Price already includes GST
+                                                            </div>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -1325,7 +1364,7 @@ export default function CreatePackagePage() {
                                                         padding: '12px 16px'
                                                     }}
                                                 >
-                                                    {formData.gst_mode === 'exclusive' ? (
+                                                    {(agentGstApplicable && formData.gst_mode === 'exclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="font-bold text-[#1e293b]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
@@ -1334,7 +1373,7 @@ export default function CreatePackagePage() {
                                                                 ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
                                                         </div>
-                                                    ) : (
+                                                    ) : (agentGstApplicable && formData.gst_mode === 'inclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="text-gray-400 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
@@ -1344,12 +1383,20 @@ export default function CreatePackagePage() {
                                                                 Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
                                                             </span>
                                                         </div>
+                                                    ) : (
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="font-bold text-[#8C6B5D] text-[11px] uppercase tracking-wider">Total Base Price:</span>
+                                                            <span className="font-bold text-[#1e293b]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            {!agentGstApplicable && (
+                                                                <span className="text-[10px] text-gray-400 italic">(GST Not Applicable)</span>
+                                                            )}
+                                                        </div>
                                                     )}
 
                                                     <div className="text-right flex flex-col sm:items-end">
                                                         <div className="text-[10px] font-bold text-[#8C6B5D] uppercase tracking-wider mb-0.5">Final Total</div>
                                                         <div className="text-lg font-black" style={{ color: 'var(--primary)' }}>
-                                                            ₹{formData.gst_mode === 'exclusive'
+                                                            ₹{(agentGstApplicable && formData.gst_mode === 'exclusive')
                                                                 ? (formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })
                                                                 : formData.price_per_person.toLocaleString('en-IN', { maximumFractionDigits: 2 })
                                                             }
@@ -1376,17 +1423,7 @@ export default function CreatePackagePage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {/* GST context badge */}
-                                    {agentGstApplicable !== null && (
-                                        <span className={cn(
-                                            "text-[10px] font-bold px-2.5 py-1 rounded-full border",
-                                            agentGstApplicable
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                : "bg-slate-50 text-slate-500 border-slate-200"
-                                        )}>
-                                            GST {agentGstApplicable ? 'Applicable' : 'Not Applicable'}
-                                        </span>
-                                    )}
+
                                     {/* Toggle */}
                                     <button
                                         type="button"
@@ -1540,7 +1577,7 @@ export default function CreatePackagePage() {
                                     </Button>
 
                                     {/* Example hint */}
-                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                                    <div className="bg-[var(--primary)]/5 border border-[var(--primary)]/10 rounded-lg p-3 text-xs text-[var(--primary)] space-y-1">
                                         {agentGstApplicable ? (
                                             <>
                                                 <p><b>Example (GST applicable, Base ₹1,000 + 18% GST = ₹1,180):</b></p>
@@ -1721,8 +1758,8 @@ export default function CreatePackagePage() {
                                                     className={cn(
                                                         "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
                                                         isSelected
-                                                            ? "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-transparent shadow-indigo-200/50"
-                                                            : "bg-white/10 backdrop-blur-md text-[#2D1A0E] border-white/40 hover:bg-white/20 hover:border-indigo-300 hover:text-indigo-600"
+                                                            ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
+                                                            : "bg-white/10 backdrop-blur-md text-[#2D1A0E] border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
                                                     )}
                                                     onClick={() => toggleActivity(activity.id)}
                                                 >
@@ -2102,7 +2139,7 @@ export default function CreatePackagePage() {
                                             {formData.trip_styles.map(styleId => {
                                                 const style = TRIP_STYLES.find(c => c.id === styleId);
                                                 return style ? (
-                                                    <Badge key={styleId} className="bg-blue-500/20 text-blue-100 hover:bg-blue-500/30 border-0 flex items-center gap-1.5 py-1 px-3">
+                                                    <Badge key={styleId} className="bg-[var(--primary)]/20 text-[var(--primary)] hover:bg-[var(--primary)]/30 border-0 flex items-center gap-1.5 py-1 px-3">
                                                         <span>{style.icon}</span>
                                                         {style.label}
                                                     </Badge>
@@ -2148,7 +2185,7 @@ export default function CreatePackagePage() {
                                                     {formData.activities.map(activityId => {
                                                         const activityInfo = ACTIVITIES.find(a => a.id === activityId)
                                                         return activityInfo ? (
-                                                            <Badge key={activityId} variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-full px-3 py-1">
+                                                            <Badge key={activityId} variant="secondary" className="bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 transition-colors rounded-full px-3 py-1">
                                                                 <span className="mr-1.5">{activityInfo.icon}</span> {activityInfo.label}
                                                             </Badge>
                                                         ) : null

@@ -983,7 +983,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                             <button
                                 className={cn(
                                     "p-1 rounded-md transition-colors",
-                                    isActive ? "bg-white/20 text-white hover:bg-white/30" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                    isActive ? "bg-white/20 text-white hover:bg-white/30" : "bg-gray-100 text-slate-900 hover:bg-gray-200"
                                 )}
                                 onClick={(e) => e.stopPropagation()}
                             >
@@ -1187,7 +1187,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                             ) : (
                                                                                 <div
                                                                                     id={`${day}-${slot}`}
-                                                                                    className="py-12 border-2 border-dashed border-white/30 rounded-3xl flex flex-col items-center justify-center text-slate-400 bg-white/5 backdrop-blur-sm hover:bg-[#FF6B2B]/5 hover:border-[#FF6B2B]/30 transition-all duration-500 group/drop mt-4"
+                                                                                    className="py-12 border-2 border-dashed border-white/30 rounded-3xl flex flex-col items-center justify-center text-slate-700 bg-white/5 backdrop-blur-sm hover:bg-[#FF6B2B]/5 hover:border-[#FF6B2B]/30 transition-all duration-500 group/drop mt-4"
                                                                                 >
                                                                                     <div className="w-12 h-12 rounded-2xl bg-white/10 shadow-lg flex items-center justify-center mb-4 group-hover/drop:scale-110 group-hover/drop:rotate-6 transition-all duration-500 backdrop-blur-md border border-white/20">
                                                                                         <Icon className={cn("h-5 w-5 opacity-40 group-hover/drop:opacity-100 transition-opacity", config.color)} style={{ color: config.color.includes('indigo') ? '#FF6B2B' : undefined }} />

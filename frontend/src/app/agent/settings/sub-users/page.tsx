@@ -23,6 +23,7 @@ import { agentAPI } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -31,8 +32,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function SubUsersPage() {
-    const { hasPermission } = useAuth()
+    const router = useRouter()
+    const { hasPermission, isSubUser } = useAuth()
     const [subUsers, setSubUsers] = useState<any[]>([])
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('settings', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [isModalOpen, setIsModalOpen] = useState(false)

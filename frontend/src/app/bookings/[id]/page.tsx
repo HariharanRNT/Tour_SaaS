@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import {
     Loader2,
     Calendar,
@@ -808,19 +809,34 @@ export default function BookingDetailsPage() {
                                             <span className="text-xs font-bold uppercase tracking-wider">Cancellable Package</span>
                                         </div>
                                         {booking.package.cancellation_rules?.map((rule: any, idx: number) => {
-                                            let refundAmount = (rule.refundPercentage / 100) * booking.total_amount;
                                             
+                                            // Determine true GST applicability
                                             const isGstApplicable = booking.package?.gst_applicable !== null && booking.package?.gst_applicable !== undefined 
-                                                ? booking.package.gst_applicable 
-                                                : gstSettings.inclusive;
-                                            
+                                                ? Boolean(booking.package.gst_applicable)
+                                                : Boolean(gstSettings); // If it relies on agent default, GST applies
+
                                             const activeGstPct = booking.package?.gst_percentage || gstSettings.percentage || 0;
                                             
-                                            // Handle GST fareType logic if applicable
-                                            if (isGstApplicable && rule.fareType === 'base_fare') {
-                                                const estimatedBase = booking.total_amount / (1 + (activeGstPct / 100));
-                                                refundAmount = (rule.refundPercentage / 100) * estimatedBase;
+                                            let baseFare = Number(booking.total_amount);
+                                            let gstAmount = 0;
+
+                                            if (isGstApplicable && activeGstPct > 0) {
+                                                baseFare = Number(booking.total_amount) / (1 + (activeGstPct / 100));
+                                                gstAmount = Number(booking.total_amount) - baseFare;
                                             }
+
+                                            const refundAmount = calculateRefundAmount(
+                                                rule,
+                                                baseFare,
+                                                gstAmount,
+                                                isGstApplicable
+                                            );
+
+                                            const fareLabel = getFareTypeLabel(
+                                                rule.fareType,
+                                                isGstApplicable,
+                                                rule.refundPercentage
+                                            );
 
                                             return (
                                                 <div key={idx} className="flex justify-between items-center p-3 bg-white/40 rounded-lg border border-white/10">
@@ -830,9 +846,9 @@ export default function BookingDetailsPage() {
                                                     </div>
                                                     <div className="text-right flex flex-col items-end">
                                                         <span className="text-sm font-black text-emerald-700">{rule.refundPercentage}% Refund</span>
-                                                        {isGstApplicable && rule.refundPercentage > 0 && (
+                                                        {fareLabel && (
                                                             <span className="text-[9px] font-bold text-emerald-600/70 uppercase tracking-tighter -mt-0.5">
-                                                                {rule.fareType === 'base_fare' ? '(Base only)' : '(Base + GST)'}
+                                                                {fareLabel}
                                                             </span>
                                                         )}
                                                         <p className="text-[10px] text-emerald-600 font-bold mt-0.5">≈ {formatCurrency(refundAmount)}</p>

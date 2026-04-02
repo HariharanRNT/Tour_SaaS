@@ -75,7 +75,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
     }
 
     if (loading) {
-        return <div className="text-[#64748B] text-center py-12">Loading reports...</div>
+        return <div className="text-[#0f172a] text-center py-12">Loading reports...</div>
     }
 
     // Calculate payment status totals
@@ -117,7 +117,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                             <div className="text-[32px] font-extrabold text-[#0F172A] tracking-tight fa-outfit">
                                 ₹{summary?.total_revenue?.toLocaleString() || 0}
                             </div>
-                            <p className="text-[12px] text-[#64748B] font-medium mt-1">Total earnings from all plans</p>
+                            <p className="text-[12px] text-[#0f172a] font-medium mt-1">Total earnings from all plans</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -131,7 +131,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                     <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
-                                <p className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[1.2px]">{item.label}</p>
+                                <p className="text-[10px] font-bold text-[#1e293b] uppercase tracking-[1.2px]">{item.label}</p>
                                 <div className="h-8 w-8 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: `${item.color}1F` }}>
                                     <item.icon className="h-[16px] w-[16px]" style={{ color: item.color }} />
                                 </div>
@@ -154,7 +154,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                 <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Monthly Revenue</CardTitle>
-                        <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#64748B] border-[#E2E8F0]">
+                        <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#0f172a] border-[#E2E8F0]">
                             Filter <span className="ml-1">▼</span>
                         </Button>
                     </CardHeader>
@@ -164,15 +164,15 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8FAFC" />
                                 <XAxis
                                     dataKey="period"
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dy={10}
                                 />
                                 <YAxis
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dx={-10}
@@ -180,7 +180,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 <Tooltip
                                     cursor={{ fill: '#F1F5F9' }}
                                     contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                    labelStyle={{ color: '#64748B', fontSize: '12px', marginBottom: '4px' }}
+                                    labelStyle={{ color: '#0f172a', fontSize: '12px', marginBottom: '4px' }}
                                     formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
                                     itemStyle={{ color: '#0F172A', fontWeight: 'bold', fontSize: '14px' }}
                                 />
@@ -207,22 +207,22 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8FAFC" />
                                 <XAxis
                                     dataKey="period"
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dy={10}
                                 />
                                 <YAxis
-                                    stroke="#94A3B8"
-                                    tick={{ fill: '#94A3B8', fontSize: 11 }}
+                                    stroke="#1e293b"
+                                    tick={{ fill: '#1e293b', fontSize: 11 }}
                                     tickLine={false}
                                     axisLine={false}
                                     dx={-10}
                                 />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                    labelStyle={{ color: '#64748B', fontSize: '12px', marginBottom: '4px' }}
+                                    labelStyle={{ color: '#0f172a', fontSize: '12px', marginBottom: '4px' }}
                                     formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
                                     itemStyle={{ color: '#0F172A', fontWeight: 'bold', fontSize: '14px' }}
                                 />
@@ -252,9 +252,9 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                             <table className="w-full">
                                 <thead className="sticky top-0 bg-[#F8FAFC]">
                                     <tr className="border-b border-[#F1F5F9]">
-                                        <th className="text-left text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Agent</th>
-                                        <th className="text-right text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Subs</th>
-                                        <th className="text-right text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Revenue</th>
+                                        <th className="text-left text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Agent</th>
+                                        <th className="text-right text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Subs</th>
+                                        <th className="text-right text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Revenue</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -262,9 +262,9 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                         <tr key={agent.agent_id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
                                             <td className="py-4 px-6">
                                                 <div className="text-[#0F172A] text-[14px] font-semibold">{agent.agent_name}</div>
-                                                <div className="text-[#64748B] text-[12px]">{agent.email}</div>
+                                                <div className="text-[#0f172a] text-[12px]">{agent.email}</div>
                                             </td>
-                                            <td className="py-4 px-6 text-right text-[#64748B] text-[13px] font-medium">{agent.subscription_count}</td>
+                                            <td className="py-4 px-6 text-right text-[#0f172a] text-[13px] font-medium">{agent.subscription_count}</td>
                                             <td className="py-4 px-6 text-right text-[#10B981] text-[14px] font-bold">
                                                 ₹{agent.total_revenue.toLocaleString()}
                                             </td>
@@ -286,18 +286,18 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                             <table className="w-full">
                                 <thead className="sticky top-0 bg-[#F8FAFC]">
                                     <tr className="border-b border-[#F1F5F9]">
-                                        <th className="text-left text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Plan</th>
-                                        <th className="text-right text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Price</th>
-                                        <th className="text-right text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Subs</th>
-                                        <th className="text-right text-[#94A3B8] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Total</th>
+                                        <th className="text-left text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Plan</th>
+                                        <th className="text-right text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Price</th>
+                                        <th className="text-right text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Subs</th>
+                                        <th className="text-right text-[#1e293b] text-[11px] font-bold uppercase tracking-wider py-3 px-6">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {planRevenue.map((plan: any) => (
                                         <tr key={plan.plan_id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
                                             <td className="py-4 px-6 text-[#0F172A] text-[14px] font-semibold">{plan.plan_name}</td>
-                                            <td className="py-4 px-6 text-right text-[#64748B] text-[13px]">₹{plan.price.toLocaleString()}</td>
-                                            <td className="py-4 px-6 text-right text-[#64748B] text-[13px]">{plan.subscription_count}</td>
+                                            <td className="py-4 px-6 text-right text-[#0f172a] text-[13px]">₹{plan.price.toLocaleString()}</td>
+                                            <td className="py-4 px-6 text-right text-[#0f172a] text-[13px]">{plan.subscription_count}</td>
                                             <td className="py-4 px-6 text-right text-[#10B981] text-[14px] font-bold">
                                                 ₹{plan.total_revenue.toLocaleString()}
                                             </td>

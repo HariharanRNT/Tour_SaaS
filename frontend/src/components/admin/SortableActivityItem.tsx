@@ -122,7 +122,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
 
                     {/* Description */}
                     <div className="relative">
-                        <p className={`text-xs text-slate-500 leading-relaxed transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
+                        <p className={`text-xs text-slate-900 leading-relaxed transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
                             {activity.description}
                         </p>
                         {activity.description && activity.description.length > 100 && (

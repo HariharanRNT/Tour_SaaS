@@ -94,23 +94,23 @@ async def get_agent_report_summary(
             if start: refund_stmt = refund_stmt.where(Booking.created_at >= start)
             if end: refund_stmt = refund_stmt.where(Booking.created_at < end)
 
-            rev = (await db.execute(rev_stmt)).scalar() or 0
+            rev = (await db.execute(rev_stmt)).scalar()
             books = (await db.execute(book_stmt)).scalar() or 0
             cancels = (await db.execute(cancel_stmt)).scalar() or 0
-            refunds = (await db.execute(refund_stmt)).scalar() or 0
+            refunds = (await db.execute(refund_stmt)).scalar()
 
             return {
-                "revenue": float(rev), 
+                "revenue": float(rev or 0), 
                 "bookings": books, 
                 "cancellations": cancels,
-                "refunds": float(refunds)
+                "refunds": float(refunds or 0)
             }
 
         current_stats = await get_stats(filter_start, filter_end)
         prev_stats = await get_stats(prev_start, prev_end)
 
         def calc_change(curr, prev):
-            if prev == 0:
+            if not prev or prev == 0:
                 return "+100%" if curr > 0 else "0%"
             change = ((curr - prev) / prev) * 100
             return f"{'+' if change >= 0 else ''}{round(change, 1)}%"
@@ -130,7 +130,10 @@ async def get_agent_report_summary(
             "refundUp": current_stats["refunds"] > prev_stats["refunds"]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print(f"Error in summary: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Summary error: {str(e)}")
 
 @router.get("/charts")
 async def get_agent_report_charts(
@@ -503,9 +506,9 @@ async def get_agent_package_performance(
         # For now, we'll fetch all agent packages, compute metrics, then slice for pagination.
         # In a very large scale system, these metrics would be pre-calculated/cached.
         
-        # Optimized single query to fetch all metrics for all relevant packages
-        stmt = select(
-            Package,
+        # Use a subquery for metrics aggregation to avoid grouping by JSON columns (Postgres restriction)
+        metrics_stmt = select(
+            Package.id.label('pkg_id'),
             func.count(Booking.id).label('total_bookings'),
             func.sum(
                 case(
@@ -532,8 +535,6 @@ async def get_agent_package_performance(
                     else_=0
                 )
             ).label('cancellations'),
-            # We also need a specific count of bookings that "count" for this agent
-            # to calculate cancel_pct and conversion correctly.
             func.count(
                 case(
                     (and_(
@@ -559,11 +560,22 @@ async def get_agent_package_performance(
         )
 
         if filter_start:
-            stmt = stmt.where(or_(Booking.created_at >= filter_start, Booking.id == None))
+            metrics_stmt = metrics_stmt.where(or_(Booking.created_at >= filter_start, Booking.id == None))
         if filter_end:
-            stmt = stmt.where(or_(Booking.created_at < filter_end, Booking.id == None))
+            metrics_stmt = metrics_stmt.where(or_(Booking.created_at < filter_end, Booking.id == None))
 
-        stmt = stmt.group_by(Package.id)
+        metrics_subquery = metrics_stmt.group_by(Package.id).subquery()
+
+        # Join Package metadata with metrics subquery
+        stmt = select(
+            Package,
+            metrics_subquery.c.total_bookings,
+            metrics_subquery.c.revenue,
+            metrics_subquery.c.cancellations,
+            metrics_subquery.c.relevant_bookings_count
+        ).join(
+            metrics_subquery, Package.id == metrics_subquery.c.pkg_id
+        )
 
         result = await db.execute(stmt)
         rows = result.all()
@@ -606,6 +618,10 @@ async def get_agent_package_performance(
             "limit": limit
         }
     except Exception as e:
+        import traceback
+        traceback_str = traceback.format_exc()
+        print(f"ERROR get_agent_package_performance: {str(e)}")
+        print(traceback_str)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/financial")
@@ -663,6 +679,10 @@ async def get_agent_financial_report(
             default_inclusive = agent_obj.gst_inclusive or False
 
         for b in bookings:
+            # Safety check: if created_at is null, skip or use a fallback
+            if not b.created_at:
+                continue
+                
             d_str = b.created_at.date().isoformat()
             if d_str not in financial_data:
                 financial_data[d_str] = {

@@ -675,7 +675,7 @@ async def get_trip_session(
     
     # GST Settings Logic
     # 1. Start with Package specific settings if applicable
-    p_gst_applicable = row[21]
+    p_gst_applicable = row[21]  # None = not set, True = GST applies, False = explicitly no GST
     p_gst_mode = row[19]
     p_gst_percentage = row[20]
 
@@ -683,24 +683,40 @@ async def get_trip_session(
     gst_inclusive = row[15]
     gst_percentage = row[16]
 
-    # Override with package-specific settings if they exist
-    if p_gst_applicable is not None:
-        if p_gst_mode:
-            gst_inclusive = (p_gst_mode == 'inclusive')
-        if p_gst_percentage is not None:
-            gst_percentage = p_gst_percentage
-    
-    # 2. If accessed via a custom domain, prefer the Domain Agent's settings
-    # This ensures that when an agent sells a package (even a system package), 
-    # THEIR GST settings apply, not the package creator's.
-    if domain:
-        agent_stmt = select(Agent).where(Agent.domain == domain)
-        agent_res = await db.execute(agent_stmt)
-        agent = agent_res.scalar_one_or_none()
-        if agent:
-             # Override with Domain Agent's GST settings
-             gst_inclusive = agent.gst_inclusive
-             gst_percentage = agent.gst_percentage
+    # CRITICAL: If package explicitly marks GST as NOT applicable, override to 0 immediately
+    if p_gst_applicable is False:
+        # Package says explicitly: no GST. Honour it regardless of agent-level defaults.
+        gst_inclusive = True   # Mark as inclusive to suppress the extra GST line in frontend
+        gst_percentage = 0
+        gst_applicable_final = False
+    else:
+        gst_applicable_final = True  # either True or None (inherit agent default)
+
+        # Override with package-specific settings if they exist (and GST is applicable)
+        if p_gst_applicable is True:
+            if p_gst_mode:
+                gst_inclusive = (p_gst_mode == 'inclusive')
+            if p_gst_percentage is not None:
+                gst_percentage = p_gst_percentage
+
+        # 2. If accessed via a custom domain, prefer the Domain Agent's settings
+        # This ensures that when an agent sells a package (even a system package),
+        # THEIR GST settings apply, ONLY if the package has not explicitly set gst_applicable=False.
+        if domain:
+            agent_stmt = select(Agent).where(Agent.domain == domain)
+            agent_res = await db.execute(agent_stmt)
+            agent = agent_res.scalar_one_or_none()
+            if agent:
+                # Domain agent's gst_applicable setting also matters:
+                # If the domain agent has GST off (gst_applicable=False), suppress GST.
+                if agent.gst_applicable is False:
+                    gst_inclusive = True
+                    gst_percentage = 0
+                    gst_applicable_final = False
+                else:
+                    # Override with Domain Agent's GST settings
+                    gst_inclusive = agent.gst_inclusive
+                    gst_percentage = agent.gst_percentage
 
     # Enrich itinerary with latest times from package items if available
     # This handles cases where the session was created before times were added to package
@@ -762,6 +778,7 @@ async def get_trip_session(
         "feature_image_url": row[17],
         "destination_image_url": row[18],
         "flight_details": flight_details,
+        "gst_applicable": gst_applicable_final,
         "gst_inclusive": gst_inclusive,
         "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0,
         "homepage_settings": agent_settings

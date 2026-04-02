@@ -74,7 +74,7 @@ import { Booking } from '@/types'
 
 export default function AgentBookingsPage() {
     const router = useRouter()
-    const { hasPermission } = useAuth()
+    const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
     const [activeTab, setActiveTab] = useState('upcoming')
@@ -84,6 +84,12 @@ export default function AgentBookingsPage() {
     const [isToOpen, setIsToOpen] = useState(false)
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('bookings', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
 
     const { data: bookingsData, isLoading: loading, refetch: loadBookings } = useQuery({
         queryKey: ['agent-bookings'],
@@ -113,7 +119,7 @@ export default function AgentBookingsPage() {
             case 'succeeded': return <CheckCircle className="h-4 w-4 text-green-500" />
             case 'failed': return <XCircle className="h-4 w-4 text-red-500" />
             case 'pending': return <Clock className="h-4 w-4 text-amber-500" />
-            default: return <AlertCircle className="h-4 w-4 text-slate-400" />
+            default: return <AlertCircle className="h-4 w-4 text-slate-700" />
         }
     }
 
@@ -251,7 +257,7 @@ export default function AgentBookingsPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56 p-2 glass-popover">
-                                <DropdownMenuLabel className="text-[10px] uppercase font-black text-slate-400 px-3 py-2">Choose Format</DropdownMenuLabel>
+                                <DropdownMenuLabel className="text-[10px] uppercase font-black text-slate-700 px-3 py-2">Choose Format</DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-slate-100" />
                                 <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                     <FileText className="h-4 w-4 mr-3 text-red-500" />
@@ -772,7 +778,7 @@ export default function AgentBookingsPage() {
                                     {booking.travelers?.map((traveler, index) => (
                                         <div className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-[var(--primary)]/20 hover:bg-white hover:shadow-xl hover:shadow-[var(--primary-glow)] transition-all duration-500">
                                             <div className="flex items-start gap-4">
-                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-400 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
+                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-700 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                                                     {String(index + 1).padStart(2, '0')}
                                                 </div>
                                                 <div className="min-w-0">
@@ -782,19 +788,19 @@ export default function AgentBookingsPage() {
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3 uppercase text-[9px] font-black tracking-widest">
                                                         <div>
-                                                            <p className="text-slate-400 mb-0.5">Gender</p>
+                                                            <p className="text-slate-700 mb-0.5">Gender</p>
                                                             <p className="text-slate-700">{traveler.gender}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-400 mb-0.5">Nationality</p>
+                                                            <p className="text-slate-700 mb-0.5">Nationality</p>
                                                             <p className="text-slate-700 truncate">{traveler.nationality}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-400 mb-0.5">Date of Birth</p>
+                                                            <p className="text-slate-700 mb-0.5">Date of Birth</p>
                                                             <p className="text-slate-700">{format(new Date(traveler.date_of_birth), 'dd MMM yyyy')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-400 mb-0.5">Passport / ID</p>
+                                                            <p className="text-slate-700 mb-0.5">Passport / ID</p>
                                                             <p className="text-slate-700 font-mono text-[10px]">{traveler.passport_number || 'NOT PROVIDED'}</p>
                                                         </div>
                                                     </div>
@@ -862,7 +868,7 @@ export default function AgentBookingsPage() {
                                                 {(() => {
                                                     try {
                                                         const parsed = JSON.parse(booking.special_requests);
-                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-slate-400">"{booking.special_requests}"</p>;
+                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-slate-700">"{booking.special_requests}"</p>;
 
                                                         return (
                                                             <div className="space-y-8">
@@ -874,19 +880,19 @@ export default function AgentBookingsPage() {
                                                                             </p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">Street / Landmark</p>
+                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Street / Landmark</p>
                                                                             <p className="text-slate-900">{parsed.contact_info.address || 'Not specified'}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">City/State</p>
+                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">City/State</p>
                                                                             <p className="text-slate-900">{parsed.contact_info.city}{parsed.contact_info.state ? `, ${parsed.contact_info.state}` : ''}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">Country/Pincode</p>
+                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Country/Pincode</p>
                                                                             <p className="text-slate-900">{parsed.contact_info.country || 'Not specified'} · {parsed.contact_info.pincode || 'N/A'}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">Backup Contact</p>
+                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Backup Contact</p>
                                                                             <p className="text-slate-900">
                                                                                 {parsed.contact_info.phone ? (
                                                                                     <a href={`tel:${parsed.contact_info.phone}`} className="hover:text-indigo-600 underline underline-offset-4 decoration-slate-200">
@@ -950,7 +956,7 @@ export default function AgentBookingsPage() {
                                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                         <div className="lg:col-span-12">
                                             <div className="space-y-5">
-                                                <div className="flex justify-between items-center text-slate-400 text-xs font-black uppercase tracking-widest">
+                                                <div className="flex justify-between items-center text-slate-700 text-xs font-black uppercase tracking-widest">
                                                     <span>Description</span>
                                                     <span>Amount</span>
                                                 </div>

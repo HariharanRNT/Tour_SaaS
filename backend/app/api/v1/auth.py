@@ -224,8 +224,10 @@ async def login(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
-        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
-        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.sub_user_profile).options(
+            selectinload(SubUser.permissions),
+            selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
+        ),
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
@@ -253,6 +255,18 @@ async def login(
             # Sub-user inherits parent agent's profile for branding/SMTP
             if user.sub_user_profile and user.sub_user_profile.agent:
                 agent_profile = user.sub_user_profile.agent.agent_profile
+                
+        # Validate Sub-User Domain
+        if user.role == UserRole.SUB_USER and agent_profile:
+            agent_domain = agent_profile.domain
+            if agent_domain and agent_domain.lower() != domain.lower():
+                # Allow strict localhost/IP bypass for development, but enforce for rnt.local or production domains
+                if domain not in ["localhost", "127.0.0.1"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, 
+                        detail="Access denied. You must login from your authorized agency domain."
+                    )
+
         # Check rate limiting
         if not await OTPService.check_login_rate_limit(user.email):
             logger.warning(f"Agent login OTP rate limit exceeded for: {user.email}")
@@ -608,7 +622,9 @@ async def send_login_otp(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
-        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
+        selectinload(User.sub_user_profile).options(
+            selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
+        )
     )
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
@@ -763,7 +779,8 @@ async def send_login_otp(
 @router.post("/verify-login-otp", response_model=Token)
 async def verify_login_otp(
     data: VerifyLoginOTPRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
 ):
     """Verify OTP and complete login for Agent, Customer, or Sub-User"""
     from sqlalchemy.orm import selectinload
@@ -783,8 +800,10 @@ async def verify_login_otp(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
-        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
-        selectinload(User.sub_user_profile).selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
+        selectinload(User.sub_user_profile).options(
+            selectinload(SubUser.permissions),
+            selectinload(SubUser.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings)
+        ),
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
@@ -796,6 +815,18 @@ async def verify_login_otp(
     # 3. Verify allowed roles
     if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:
         raise HTTPException(status_code=403, detail="Access denied")
+        
+    # Validate Sub-User Domain
+    if user.role == UserRole.SUB_USER and user.sub_user_profile and user.sub_user_profile.agent:
+        agent_profile = user.sub_user_profile.agent.agent_profile
+        if agent_profile and agent_profile.domain:
+            agent_domain = agent_profile.domain
+            if agent_domain.lower() != domain.lower():
+                if domain not in ["localhost", "127.0.0.1"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, 
+                        detail="Access denied. You must login from your authorized agency domain."
+                    )
     
     # 4. Check if user is active
     if not user.is_active:

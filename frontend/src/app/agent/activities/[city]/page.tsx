@@ -12,14 +12,22 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { activitiesAPI, API_URL } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import { Activity, ActivityCreate, TimeSlotPreference } from '@/types/activities'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { getValidImageUrl } from '@/lib/utils/image'
 
 export default function CityActivityManager({ params }: { params: { city: string } }) {
     const router = useRouter()
+    const { hasPermission, isSubUser } = useAuth()
     // Decode the city name from the URL
     const cityName = decodeURIComponent(params.city)
+
+    useEffect(() => {
+        if (isSubUser && !hasPermission('activities', 'view')) {
+            router.push('/agent/dashboard')
+        }
+    }, [isSubUser, hasPermission, router])
 
     // Left Side State
     const [existingActivities, setExistingActivities] = useState<Activity[]>([])
