@@ -210,7 +210,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-[440px] bg-white/10 backdrop-blur-[24px] rounded-[24px] border border-white/30 shadow-[0_20px_50px_rgba(255,107,53,0.15)] overflow-hidden"
+                className="relative w-full max-w-[380px] bg-white/10 backdrop-blur-[24px] rounded-[24px] border border-white/30 shadow-[0_20px_50px_rgba(255,107,53,0.15)] overflow-hidden"
             >
                 {/* Close Button */}
                 <button
@@ -220,18 +220,18 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                     <X className="w-5 h-5" />
                 </button>
 
-                <div className="p-8 md:p-10">
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-orange-500/30 mb-4 ring-4 ring-white/10">
-                            <ShieldCheck className="w-7 h-7" />
+                <div className="p-6 md:p-8">
+                    <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-orange-500/30 mb-3 ring-4 ring-white/10">
+                            <ShieldCheck className="w-6 h-6" />
                         </div>
-                        <h2 className="text-2xl font-bold text-white tracking-tight">Complete Booking</h2>
-                        <p className="text-white/70 text-sm mt-1">Sign in to secure your adventure</p>
+                        <h2 className="text-xl font-bold text-white tracking-tight">Complete Booking</h2>
+                        <p className="text-white/70 text-xs mt-1">Sign in to secure your adventure</p>
                     </div>
 
                     {/* Tabs */}
                     {!requireOtp && (
-                        <div className="flex p-1 bg-white/10 rounded-2xl mb-8 border border-white/10">
+                        <div className="flex p-1 bg-white/10 rounded-2xl mb-6 border border-white/10">
                             {(['login', 'register'] as Tab[]).map((tab) => (
                                 <button
                                     key={tab}
@@ -433,7 +433,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
+                                    className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
                                 >
                                     {loading ? (
                                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -446,7 +446,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                         </motion.div>
                     </AnimatePresence>
 
-                    <div className="relative my-8">
+                    <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
                         <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold text-white/30"><span className="bg-transparent px-3">secure social sign-in</span></div>
                     </div>
@@ -455,7 +455,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                         onClick={() => googleLogin()}
                         disabled={loading}
                         variant="outline"
-                        className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-2xl transition-all font-bold flex items-center justify-center gap-3"
+                        className="w-full h-11 bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-2xl transition-all font-bold flex items-center justify-center gap-3"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#EA4335" d="M12 5.04c1.86 0 3.53.64 4.84 1.89l3.63-3.63C18.23 1.23 15.35 0 12 0 7.31 0 3.32 2.69 1.41 6.63l4.24 3.29C6.65 7.15 9.1 5.04 12 5.04z" />
@@ -468,7 +468,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                 </div>
 
                 {/* Footer Section */}
-                <div className="bg-white/5 border-t border-white/10 px-8 py-5 text-center">
+                <div className="bg-white/5 border-t border-white/10 px-6 py-4 text-center">
                     <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
                         {activeTab === 'login' ? "New around here?" : "Already have an account?"}{' '}
                         <button

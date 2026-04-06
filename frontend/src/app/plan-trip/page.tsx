@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
@@ -74,9 +74,14 @@ function PlanTripContent() {
     // UI State
     const [loading, setLoading] = useState(false)
     const [searching, setSearching] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
-    const [inputValue, setInputValue] = useState('')
+
+    // Initialize searchQuery from URL params synchronously so first render is correct
+    const initialQuery = searchParams.get('destination') || (searchParams.get('search') !== 'all' ? searchParams.get('search') : '') || ''
+    const [searchQuery, setSearchQuery] = useState(initialQuery)
+    const [inputValue, setInputValue] = useState(initialQuery)
     const [placeholderText, setPlaceholderText] = useState('Try Chennai...')
+    const [visibleCount, setVisibleCount] = useState(9)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     // Cycle placeholders
     useEffect(() => {
@@ -89,10 +94,11 @@ function PlanTripContent() {
         return () => clearInterval(interval)
     }, [])
 
-    // Read destination and style from URL
+    // Read destination and style from URL (handles navigation changes)
     useEffect(() => {
         const dest = searchParams.get('destination')
         const style = searchParams.get('trip_style')
+        const searchAll = searchParams.get('search') === 'all'
 
         if (dest) {
             setInputValue(dest)
@@ -102,6 +108,10 @@ function PlanTripContent() {
 
         if (style) {
             setFilters(prev => ({ ...prev, trip_styles: [style] }))
+            setHasSearched(true)
+        }
+
+        if (searchAll) {
             setHasSearched(true)
         }
     }, [searchParams])
@@ -120,18 +130,27 @@ function PlanTripContent() {
     // Load initial packages
     const [packages, setPackages] = useState<Package[]>([])
     const [totalPackages, setTotalPackages] = useState(0)
-    const [hasSearched, setHasSearched] = useState(false) // Whether user has executed a search/filter to show grid
+    const [hasSearched, setHasSearched] = useState(() => {
+        // Initialize from URL so first render shows correct view immediately
+        const dest = searchParams.get('destination')
+        const style = searchParams.get('trip_style')
+        const searchQuery = searchParams.get('search')
+        return !!(dest || style || searchQuery)
+    })
 
-    // Filter State
-    const [filters, setFilters] = useState({
-        package_mode: 'all',
-        duration_min: 1,
-        duration_max: 30,
-        price_min: 0,
-        price_max: 500000,
-        trip_styles: [] as string[],
-        activities: [] as string[],
-        countries: [] as string[]
+    // Filter State — initialize from URL so first render is correct
+    const [filters, setFilters] = useState(() => {
+        const style = searchParams.get('trip_style')
+        return {
+            package_mode: 'all',
+            duration_min: 1,
+            duration_max: 30,
+            price_min: 0,
+            price_max: 500000,
+            trip_styles: style ? [style] : [] as string[],
+            activities: [] as string[],
+            countries: [] as string[]
+        }
     })
 
     // Sort State
@@ -142,9 +161,82 @@ function PlanTripContent() {
     const ACTIVITIES = ['Beach', 'Mountain', 'Trekking', 'Heritage', 'Nature', 'Food & Culinary', 'City Tour', 'Snow', 'Pilgrimage', 'Water Sports', 'Safari', 'Cycling', 'Wine Tour', 'Photography', 'Festivals']
     const AVAILABLE_COUNTRIES = ['India', 'France', 'Italy', 'Spain', 'Germany', 'Switzerland', 'Thailand', 'Maldives', 'Indonesia', 'UAE'] // Ideally fetched from API
 
+    // Computed Facets from Current Packages
+    const facets = useMemo(() => {
+        const activityCounts: Record<string, number> = {}
+        const countryCounts: Record<string, number> = {}
+        const styleCounts: Record<string, number> = {}
+        let minPrice = Infinity
+        let maxPrice = -Infinity
+        let minDur = Infinity
+        let maxDur = -Infinity
+
+        packages.forEach(pkg => {
+            // Activities
+            pkg.activities?.forEach(act => {
+                activityCounts[act] = (activityCounts[act] || 0) + 1
+            })
+            // Country
+            if (pkg.country) {
+                countryCounts[pkg.country] = (countryCounts[pkg.country] || 0) + 1
+            }
+            // Trip Style
+            if (pkg.trip_style) {
+                styleCounts[pkg.trip_style] = (styleCounts[pkg.trip_style] || 0) + 1
+            }
+            // Price & Duration for smart ranges
+            if (pkg.price_per_person < minPrice) minPrice = pkg.price_per_person
+            if (pkg.price_per_person > maxPrice) maxPrice = pkg.price_per_person
+            if (pkg.duration_days < minDur) minDur = pkg.duration_days
+            if (pkg.duration_days > maxDur) maxDur = pkg.duration_days
+        })
+
+        return {
+            activityCounts,
+            countryCounts,
+            styleCounts,
+            minPrice: minPrice === Infinity ? 0 : minPrice,
+            maxPrice: maxPrice === -Infinity ? 500000 : maxPrice,
+            minDur: minDur === Infinity ? 1 : minDur,
+            maxDur: maxDur === -Infinity ? 30 : maxDur
+        }
+    }, [packages])
+
     // Refs
     const searchRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const loaderRef = useRef<HTMLDivElement>(null);
+
+    // Infinite Scroll Implementation (Intersection Observer)
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const target = entries[0]
+                if (target.isIntersecting && packages.length > visibleCount && !searching && !isLoadingMore) {
+                    setIsLoadingMore(true)
+                    // Simulate a small delay for better UX
+                    setTimeout(() => {
+                        setVisibleCount(prev => prev + 9)
+                        setIsLoadingMore(false)
+                    }, 400)
+                }
+            },
+            {
+                rootMargin: '200px',
+                threshold: 0.1
+            }
+        )
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current)
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current)
+            }
+        }
+    }, [packages.length, visibleCount, searching, isLoadingMore])
 
     // Global drag selection lock
     useEffect(() => {
@@ -260,10 +352,12 @@ function PlanTripContent() {
     }
 
     // Execute Search / Filter
-    const executeSearch = async () => {
+    const executeSearch = async (signal?: AbortSignal) => {
         setSearching(true)
         setShowSuggestions(false)
         setHasSearched(true)
+        setVisibleCount(9) // Reset pagination on new search
+
 
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
@@ -289,17 +383,19 @@ function PlanTripContent() {
             if (sort !== 'recommended') params.append('sort', sort)
 
             const res = await fetch(`${API_URL}/api/v1/packages?${params.toString()}`, {
-                headers: { 'X-Domain': domain }
+                headers: { 'X-Domain': domain },
+                signal
             })
 
             if (res.ok) {
                 const data = await res.json()
-                setPackages(data.packages)
+                setPackages(data.packages || [])
                 setTotalPackages(data.total)
             } else {
                 toast.error("Failed to fetch packages")
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError') return
             console.error("Search failed:", error)
             toast.error("Error connecting to server")
         } finally {
@@ -315,17 +411,24 @@ function PlanTripContent() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, hasSearched])
 
-    // Run search when filters or sort change (Debounced)
+    // Run search when filters or sort change (Smart debounce/instant)
     useEffect(() => {
         if (hasSearched) {
-            // Debounce to prevent multiple API calls while sliding sliders
+            const controller = new AbortController()
+            // If actively dragging sliders, wait longer. If clicking buttons, fire almost instantly.
+            const timeout = isSliderDragging ? 600 : 150
+
             const timer = setTimeout(() => {
-                executeSearch()
-            }, 500)
-            return () => clearTimeout(timer)
+                executeSearch(controller.signal)
+            }, timeout)
+
+            return () => {
+                clearTimeout(timer)
+                controller.abort()
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters, sort])
+    }, [filters, sort, isSliderDragging])
 
     // Filter Handlers
     const toggleFilterArray = (key: 'trip_styles' | 'activities' | 'countries', value: string) => {
@@ -356,7 +459,6 @@ function PlanTripContent() {
     }
 
     const clearAllFilters = () => {
-        setSearchQuery('')
         setFilters({
             package_mode: 'all',
             duration_min: 1,
@@ -446,18 +548,28 @@ function PlanTripContent() {
         return (
             <div className="flex flex-col h-full relative w-full">
                 <div className="px-6 pt-6 pb-8 space-y-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-[#3A1A08] flex items-center gap-2.5 text-[18px] font-display">
-                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-var(--primary-light)">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-bold text-[#3A1A08] flex items-center gap-2.5 text-[17px] font-display">
+                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-orange-100">
                                 <Filter className="h-4 w-4 text-[var(--primary)]" />
                             </div>
                             <span>Filters</span>
                             {activeFilterCount > 0 && (
-                                <span className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[10px] min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center font-black shadow-md border border-white/20">
+                                <span className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[10px] min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center font-black shadow-sm border border-white/20">
                                     {activeFilterCount}
                                 </span>
                             )}
                         </h3>
+                        <button
+                            onClick={clearAllFilters}
+                            disabled={activeFilterCount === 0}
+                            className={`flex items-center gap-1.5 text-[12px] font-bold transition-all uppercase tracking-wider
+                                ${activeFilterCount > 0
+                                    ? 'text-[var(--primary)] hover:text-[#A0501E] cursor-pointer'
+                                    : 'text-gray-300 cursor-not-allowed opacity-60'}`}
+                        >
+                            Reset <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
                     </div>
 
                     {/* Package Type */}
@@ -466,21 +578,31 @@ function PlanTripContent() {
                             <span className="text-[#FFB347]">📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
-                            {['all', 'single', 'multi'].map(type => (
-                                <div
-                                    key={type}
-                                    onClick={() => setFilters(prev => ({ ...prev, package_mode: type }))}
-                                    className={`
-                                py-2.5 px-4 rounded-xl text-[13px] font-bold cursor-pointer border transition-all duration-300 flex items-center justify-between group
-                                ${filters.package_mode === type
-                                            ? 'bg-gradient-to-r from-[var(--primary)] to-[#FF8C00] border-transparent text-white shadow-md'
-                                            : 'bg-white/50 border-orange-100 text-[#7C3A10] hover:border-[var(--primary)] hover:bg-white'}
-                            `}
-                                >
-                                    <span>{type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}</span>
-                                    {filters.package_mode === type && <CheckCircle2 className="h-4 w-4 text-white" />}
-                                </div>
-                            ))}
+                            {['all', 'single', 'multi'].map(type => {
+                                const count = type === 'all' ? packages.length : packages.filter(p => p.package_mode === type).length;
+                                const isDisabled = count === 0 && type !== 'all';
+
+                                return (
+                                    <div
+                                        key={type}
+                                        onClick={() => !isDisabled && setFilters(prev => ({ ...prev, package_mode: type }))}
+                                        className={`
+                                            py-2.5 px-4 rounded-xl text-[13px] font-bold cursor-pointer border transition-all duration-300 flex items-center justify-between group
+                                            ${filters.package_mode === type
+                                                ? 'bg-gradient-to-r from-[var(--primary)] to-[#FF8C00] border-transparent text-white shadow-md'
+                                                : isDisabled
+                                                    ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400'
+                                                    : 'bg-white/50 border-orange-100 text-[#7C3A10] hover:border-[var(--primary)] hover:bg-white'}
+                                        `}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            {type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}
+                                            {!isDisabled && <span className={`text-[10px] ${filters.package_mode === type ? 'text-white/80' : 'text-[#A0501E]/50'}`}>({count})</span>}
+                                        </span>
+                                        {filters.package_mode === type && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -494,16 +616,22 @@ function PlanTripContent() {
                             {['1-3', '4-6', '7-10', '10+'].map(range => {
                                 const [minLabel, maxLabel] = range.includes('+') ? [10, 30] : range.split('-').map(Number);
                                 const isActive = filters.duration_min === minLabel && filters.duration_max === maxLabel;
+                                const count = packages.filter(p => p.duration_days >= minLabel && p.duration_days <= maxLabel).length;
+                                const isDisabled = count === 0;
 
                                 return (
                                     <button
                                         key={range}
+                                        disabled={isDisabled}
                                         onClick={() => {
                                             setFilters(prev => ({ ...prev, duration_min: minLabel, duration_max: maxLabel }));
                                         }}
-                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[var(--primary)] hover:bg-[var(--primary-soft)]'}`}
+                                        className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border 
+                                            ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' :
+                                                isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
+                                                    'border-white/40 bg-white/25 text-[var(--primary)] hover:bg-[var(--primary-soft)]'}`}
                                     >
-                                        {range} Days
+                                        {range} Days {count > 0 && <span className="text-[10px] opacity-60 ml-0.5">({count})</span>}
                                     </button>
                                 )
                             })}
@@ -545,13 +673,20 @@ function PlanTripContent() {
                                 { label: '₹50K+', min: 50000, max: 500000 }
                             ].map(range => {
                                 const isActive = filters.price_min === range.min && filters.price_max === range.max;
+                                const count = packages.filter(p => p.price_per_person >= range.min && p.price_per_person <= range.max).length;
+                                const isDisabled = count === 0;
+
                                 return (
                                     <button
                                         key={range.label}
+                                        disabled={isDisabled}
                                         onClick={() => setFilters(prev => ({ ...prev, price_min: range.min, price_max: range.max }))}
-                                        className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' : 'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
+                                        className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border 
+                                            ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_4px_12px_var(--primary-glow)]' :
+                                                isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
+                                                    'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
                                     >
-                                        {range.label}
+                                        {range.label} {count > 0 && <span className="opacity-50 text-[9px]">({count})</span>}
                                     </button>
                                 )
                             })}
@@ -567,7 +702,7 @@ function PlanTripContent() {
                             onPointerCancel={() => setIsSliderDragging(false)}
                         >
                             <div className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[11px] font-black rounded-xl py-2 px-4 mx-auto shadow-lg tracking-wider w-max border border-white/30 mb-2">
-                                ₹{filters.price_min.toLocaleString()} — ₹{filters.price_max.toLocaleString()}
+                                ₹{filters.price_min.toLocaleString('en-IN')} — ₹{filters.price_max.toLocaleString('en-IN')}
                             </div>
                             <Slider
                                 value={[filters.price_min, filters.price_max]}
@@ -594,19 +729,28 @@ function PlanTripContent() {
                         {isTripStyleOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
                                 <div className="space-y-3 pb-6">
-                                    {TRIP_STYLES.map(style => (
-                                        <div key={style} className="flex items-center group cursor-pointer" onClick={() => toggleFilterArray('trip_styles', style)}>
-                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)] group-hover:border-[var(--primary)]'}`}>
-                                                {filters.trip_styles.includes(style) && <Check className="h-3 w-3 text-white" />}
+                                    {TRIP_STYLES.map(style => {
+                                        const count = facets.styleCounts[style] || 0;
+                                        const isDisabled = count === 0 && !filters.trip_styles.includes(style);
+
+                                        return (
+                                            <div
+                                                key={style}
+                                                className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                                                onClick={() => !isDisabled && toggleFilterArray('trip_styles', style)}
+                                            >
+                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
+                                                    {filters.trip_styles.includes(style) && <Check className="h-3 w-3 text-white" />}
+                                                </div>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.trip_styles.includes(style) ? 'text-[var(--primary)]' : 'text-[#6B3010]'}`}>
+                                                    {style}
+                                                    {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
+                                                </label>
                                             </div>
-                                            <label className="text-[13px] font-bold text-[#6B3010] cursor-pointer group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">
-                                                {style}
-                                            </label>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
-                                {/* Fade out gradient indicating scroll */}
-                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[var(--primary-soft)] to-transparent pointer-events-none rounded-b-md" />
+
                             </div>
                         )}
                     </div>
@@ -626,19 +770,28 @@ function PlanTripContent() {
                         {isActivitiesOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
                                 <div className="space-y-3 pb-6">
-                                    {ACTIVITIES.slice(0, 10).map(act => (
-                                        <div key={act} className="flex items-center group cursor-pointer" onClick={() => toggleFilterArray('activities', act)}>
-                                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)] group-hover:border-[var(--primary)]'}`}>
-                                                {filters.activities.includes(act) && <Check className="h-3 w-3 text-white" />}
+                                    {ACTIVITIES.map(act => {
+                                        const count = facets.activityCounts[act] || 0;
+                                        const isDisabled = count === 0 && !filters.activities.includes(act);
+
+                                        return (
+                                            <div
+                                                key={act}
+                                                className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                                                onClick={() => !isDisabled && toggleFilterArray('activities', act)}
+                                            >
+                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
+                                                    {filters.activities.includes(act) && <Check className="h-3 w-3 text-white" />}
+                                                </div>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.activities.includes(act) ? 'text-[var(--primary)]' : 'text-[#8B5030]'}`}>
+                                                    {act}
+                                                    {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
+                                                </label>
                                             </div>
-                                            <label className="text-[13px] font-bold text-[#8B5030] cursor-pointer group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">
-                                                {act}
-                                            </label>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
-                                {/* Fade out gradient indicating scroll */}
-                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[var(--primary-soft)] to-transparent pointer-events-none rounded-b-md" />
+
                             </div>
                         )}
                     </div>
@@ -649,47 +802,28 @@ function PlanTripContent() {
                             <span className="text-cyan-500 text-sm drop-shadow-sm">🌍</span> COUNTRY
                         </p>
                         <div className="flex overflow-x-auto gap-2.5 pb-2 scrollbar-hide -mx-2 px-2 snap-x">
-                            {AVAILABLE_COUNTRIES.map(c => (
-                                <Badge
-                                    key={c}
-                                    variant={filters.countries.includes(c) ? "default" : "outline"}
-                                    className={`cursor-pointer px-4 py-2 rounded-xl transition-all border snap-start whitespace-nowrap text-xs
-                                ${filters.countries.includes(c)
-                                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]'
-                                            : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-[var(--primary)]'}`}
-                                    onClick={() => toggleFilterArray('countries', c)}
-                                >
-                                    {c}
-                                </Badge>
-                            ))}
+                            {AVAILABLE_COUNTRIES.map(c => {
+                                const count = facets.countryCounts[c] || 0;
+                                const isDisabled = count === 0 && !filters.countries.includes(c);
+
+                                return (
+                                    <Badge
+                                        key={c}
+                                        variant={filters.countries.includes(c) ? "default" : "outline"}
+                                        className={`cursor-pointer px-4 py-2 rounded-xl transition-all border snap-start whitespace-nowrap text-xs
+                                            ${filters.countries.includes(c)
+                                                ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]'
+                                                : isDisabled
+                                                    ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed pointer-events-none'
+                                                    : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-[var(--primary)]'}`}
+                                        onClick={() => !isDisabled && toggleFilterArray('countries', c)}
+                                    >
+                                        {c} {count > 0 && <span className="opacity-50 text-[10px] ml-1">({count})</span>}
+                                    </Badge>
+                                );
+                            })}
                         </div>
                     </div>
-
-                    {/* Sticky Sidebar Action */}
-                    <div className="mt-auto pt-6 border-t border-[var(--primary)]/40 sticky bottom-0 bg-white/10 backdrop-blur-md -mx-6 px-6 pb-2 z-20">
-                        <div className="flex gap-3">
-                            <Button
-                                onClick={clearAllFilters}
-                                variant="outline"
-                                className="flex-1 h-12 rounded-2xl border-[var(--primary)] text-[#8B5030] font-bold hover:bg-[var(--primary)] transition-all text-sm gap-2"
-                            >
-                                <RotateCcw className="h-4 w-4" /> Reset
-                            </Button>
-                            <Button
-                                onClick={() => { }} // Auto-applies, but could close mobile sheet if needed
-                                className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black shadow-lg hover:shadow-orange-200 shadow-orange-100 transition-all text-sm"
-                            >
-                                Apply
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Apply Filters Button - Now part of flow */}
-                <div className="px-6 pb-8">
-                    <Button className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-full shadow-[0_4px_20px_var(--primary-glow)] hover:scale-[1.02] transition-all text-[15px]">
-                        Apply Filters
-                    </Button>
                 </div>
             </div>
         )
@@ -1066,8 +1200,12 @@ function PlanTripContent() {
 
                                 {/* Main Results Area */}
                                 <div className="flex-1 min-w-0">
+                                    {/* Top Search Bar */}
+                                    <div className="mb-6 relative z-50 overflow-visible">
+                                        {renderSearchBar(true)}
+                                    </div>
                                     {/* Context Header & Mobile Filter Trigger */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                         <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[90px] pt-4 px-6 border border-white/20 shadow-[0_4px_24px_var(--primary-glow)] flex-1 flex flex-col justify-center relative overflow-hidden">
                                             {/* faint texture overlay */}
                                             <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
@@ -1160,156 +1298,176 @@ function PlanTripContent() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] items-stretch grid-auto-rows-[1fr]">
-                                            {packages.map((pkg, idx) => (
-                                                <motion.div
-                                                    key={pkg.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                                    className="glass-pkg-card group flex flex-col h-full relative overflow-hidden"
-                                                >
-                                                    <div className="flex flex-col flex-1 h-full p-2 overflow-hidden rounded-2xl">
-                                                        {/* Image Header */}
-                                                        <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
+                                        <div className="space-y-12">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] items-stretch grid-auto-rows-[1fr]">
+                                                {packages.slice(0, visibleCount).map((pkg, idx) => (
+                                                    <motion.div
+                                                        key={pkg.id}
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.5, delay: idx % 9 * 0.1 }}
+                                                        className="glass-pkg-card group flex flex-col h-full relative overflow-hidden"
+                                                    >
+                                                        <div className="flex flex-col flex-1 h-full p-2 overflow-hidden rounded-2xl">
+                                                            {/* Image Header */}
+                                                            <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
 
-                                                            {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
-                                                                <>
-                                                                    <img
-                                                                        src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
-                                                                        alt={pkg.title}
-                                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                                    />
-                                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
-                                                                </>
-                                                            ) : (
-                                                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[var(--primary)]/40 flex items-center justify-center p-6 text-center z-0">
-                                                                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
-                                                                    {/* Fallback real-world image based on destination if available */}
-                                                                    <img
-                                                                        src={`https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=1200`}
-                                                                        alt="Destination fallback"
-                                                                        className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
-                                                                    />
-                                                                    <div className="relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                                                                        <div className="text-white font-black text-xl mb-1.5 drop-shadow-md font-display leading-tight uppercase tracking-tight">
-                                                                            {pkg.package_mode === 'multi' && pkg.destinations?.length > 0
-                                                                                ? pkg.destinations.map(d => d.city).join(' → ')
-                                                                                : pkg.destination}
-                                                                        </div>
-                                                                        <div className="text-orange-50 font-black tracking-[0.14em] text-[10px] flex items-center justify-center gap-1.5 uppercase drop-shadow-sm opacity-90">
-                                                                            {pkg.package_mode === 'multi' ? '🌍 Multi-City Tour' : `📍 ${pkg.country || 'Destination'}`}
+                                                                {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
+                                                                    <>
+                                                                        <img
+                                                                            src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
+                                                                            alt={pkg.title}
+                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                                        />
+                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[var(--primary)]/40 flex items-center justify-center p-6 text-center z-0">
+                                                                        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
+                                                                        {/* Fallback real-world image based on destination if available */}
+                                                                        <img
+                                                                            src={`https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=1200`}
+                                                                            alt="Destination fallback"
+                                                                            className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
+                                                                        />
+                                                                        <div className="relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                                                                            <div className="text-white font-black text-xl mb-1.5 drop-shadow-md font-display leading-tight uppercase tracking-tight">
+                                                                                {pkg.package_mode === 'multi' && pkg.destinations?.length > 0
+                                                                                    ? pkg.destinations.length > 1
+                                                                                        ? `${pkg.destinations[0].city} → ${pkg.destinations[pkg.destinations.length - 1].city}`
+                                                                                        : pkg.destinations[0].city
+                                                                                    : pkg.destination}
+                                                                            </div>
+                                                                            {pkg.package_mode !== 'multi' && (
+                                                                                <div className="text-orange-50 font-black tracking-[0.14em] text-[10px] flex items-center justify-center gap-1.5 uppercase drop-shadow-sm opacity-90">
+                                                                                    📍 {pkg.country || 'Destination'}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
+                                                                )}
 
-                                                            {/* Overlays */}
-                                                            <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                                                <Badge className="bg-white/40 text-white hover:bg-white/60 backdrop-blur-md border border-white/50 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
-                                                                    {pkg.duration_days} Days
-                                                                </Badge>
-                                                            </div>
-                                                            {pkg.package_mode === 'multi' && (
-                                                                <div className="absolute top-4 right-4 z-10">
-                                                                    <Badge className="bg-gradient-to-r from-[#FFB347] to-[#FF8C00] text-white border-0 shadow-lg font-bold flex items-center gap-1 rounded-full px-3 py-1">
-                                                                        ✈ Multi-City
-                                                                    </Badge>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Wishlist Button */}
-                                                            <button
-                                                                className="absolute top-4 right-4 z-10 group/wishlist"
-                                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                                            >
-                                                                <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all hover:bg-white/40 hover:scale-110 active:scale-90">
-                                                                    <Heart className="h-5 w-5 text-white group-hover/wishlist:text-red-400 transition-colors" />
-                                                                </div>
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Content */}
-                                                        <div className="p-5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between min-h-[160px]" onClick={() => handleContinueToBook(pkg)}>
-                                                            <div className="flex flex-col gap-1">
-                                                                <div className="flex items-start justify-between gap-3 mb-2">
-                                                                    <h3 className="font-bold text-[#3A1A08] text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[3rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                                                        {pkg.title}
-                                                                    </h3>
-                                                                </div>
-
-                                                                {/* Destination Route */}
-                                                                <div className="mb-4 text-sm text-[#8B5030] mt-1 flex items-center gap-2 line-clamp-1 font-medium">
-                                                                    <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-                                                                    {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
-                                                                        <span className="truncate">
-                                                                            {pkg.destinations.map(d => d.city).join(' → ')}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span>{pkg.destination} · {pkg.country || "Asia"}</span>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Tags */}
-                                                                <div className="flex flex-wrap gap-2 mb-3 min-h-[28px] items-center">
-                                                                    {pkg.trip_style && (
-                                                                        <Badge variant="outline" className="bg-white/50 text-[#5C2500] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                                                                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
-                                                                            {pkg.trip_style}
+                                                                {/* Overlays */}
+                                                                {pkg.package_mode === 'multi' && (
+                                                                    <div className="absolute top-4 left-4 z-10">
+                                                                        <Badge className="bg-gradient-to-r from-[#FFB347] to-[#FF8C00] text-white border-0 shadow-lg font-bold flex items-center gap-1.5 rounded-full px-3.5 py-1.5">
+                                                                            🌐 Multi-City Tour
                                                                         </Badge>
-                                                                    )}
-                                                                    {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
-                                                                        typeof act === 'string' ? ( // Handle JSON string edge cases if any
-                                                                            <Badge key={idx} variant="outline" className="text-[#8B5030] border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
-                                                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
-                                                                                {act.replace(/["\[\]]/g, '')}
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
+                                                                    <div className="flex flex-col gap-2 items-end">
+                                                                        <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
+                                                                            {pkg.duration_days} Days
+                                                                        </Badge>
+                                                                        <Badge className="bg-[var(--primary)] text-white border-0 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
+                                                                            ₹{pkg.price_per_person.toLocaleString('en-IN')}
+                                                                        </Badge>
+                                                                    </div>
+                                                                    {/* Wishlist Button */}
+                                                                    <button
+                                                                        className="group/wishlist mt-1"
+                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                                                    >
+                                                                        <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all hover:bg-white/40 hover:scale-110 active:scale-90 shadow-sm">
+                                                                            <Heart className="h-5 w-5 text-white group-hover/wishlist:text-red-400 transition-colors" />
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Content */}
+                                                            <div className="p-4 pt-2.5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between" onClick={() => handleContinueToBook(pkg)}>
+                                                                <div className="flex flex-col gap-1">
+                                                                    <div className="flex items-start justify-between gap-3 mb-1.5">
+                                                                        <h3 className="font-bold text-black text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                                                                            {pkg.title}
+                                                                        </h3>
+                                                                    </div>
+
+                                                                    {/* Destination Route */}
+                                                                    <div className="mb-2 text-sm text-black mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
+                                                                        <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+                                                                        {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
+                                                                            <span className="truncate">
+                                                                                {pkg.destinations.length > 1
+                                                                                    ? `${pkg.destinations[0].city} → ${pkg.destinations[pkg.destinations.length - 1].city}`
+                                                                                    : pkg.destinations[0].city}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span>{pkg.destination} · {pkg.country || "Asia"}</span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Tags */}
+                                                                    <div className="flex flex-wrap gap-2 mb-1.5 min-h-[24px] items-center">
+                                                                        {pkg.trip_style && (
+                                                                            <Badge variant="outline" className="bg-white/50 text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
+                                                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                                                                                {pkg.trip_style}
                                                                             </Badge>
-                                                                        ) : null
-                                                                    ))}
+                                                                        )}
+                                                                        {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
+                                                                            typeof act === 'string' ? ( // Handle JSON string edge cases if any
+                                                                                <Badge key={idx} variant="outline" className="text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
+                                                                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
+                                                                                    {act.replace(/["\[\]]/g, '')}
+                                                                                </Badge>
+                                                                            ) : null
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-
-                                                            {/* Rating & Group info (Mocked for now since not in schema) */}
-                                                            <div className="flex items-center gap-3 text-sm font-medium text-[#8B5030]/80 mt-auto pt-2">
-                                                                <span className="flex items-center gap-1">
-                                                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FFB347] to-[#FF8C00] font-bold text-lg">★</span>
-                                                                    4.5
-                                                                </span>
-                                                                <span className="w-1 h-1 rounded-full bg-orange-200"></span>
-                                                                <span className="flex items-center gap-1">👥 Max 20</span>
-                                                            </div>
                                                         </div>
-                                                    </div>
 
-                                                    {/* Price and Action Section */}
-                                                    <div className="p-3 px-4 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
-                                                        <div className="pt-4 border-t border-[var(--primary)]/40 flex items-center justify-between gap-2 w-full flex-nowrap">
-                                                            <div className="flex flex-col flex-1">
-                                                                <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-1 drop-shadow-sm">Starting From</span>
-                                                                <div className="flex items-baseline gap-1">
-                                                                    <span className="text-xl font-bold text-[#5C2500]">₹{pkg.price_per_person.toLocaleString()}</span>
-                                                                    <span className="text-xs text-[#8B5030]/70 font-medium uppercase tracking-widest">/ pp</span>
+                                                        {/* Price and Action Section */}
+                                                        <div className="p-4 pt-1 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="pt-3 border-t border-[var(--primary)]/40 flex items-center justify-between gap-2 w-full flex-nowrap">
+                                                                <div className="flex flex-col flex-1">
+                                                                    <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-0.5 drop-shadow-sm">Starting From</span>
+                                                                    <div className="flex items-baseline gap-1">
+                                                                        <span className="text-xl font-bold text-black">₹{pkg.price_per_person.toLocaleString('en-IN')}</span>
+                                                                        <span className="text-xs text-black/70 font-medium uppercase tracking-widest">/ pp</span>
+                                                                    </div>
                                                                 </div>
+                                                                <Button
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setSelectedPackageForBooking(pkg);
+                                                                        setIsBookingModalOpen(true);
+                                                                    }}
+                                                                    className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
+                                                                >
+                                                                    <span className="relative z-10 flex items-center gap-2">
+                                                                        Book Now
+                                                                        <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
+                                                                    </span>
+                                                                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
+                                                                </Button>
                                                             </div>
-                                                            <Button
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setSelectedPackageForBooking(pkg);
-                                                                    setIsBookingModalOpen(true);
-                                                                }}
-                                                                className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
-                                                            >
-                                                                <span className="relative z-10 flex items-center gap-2">
-                                                                    Book Now
-                                                                    <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
-                                                                </span>
-                                                                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
-                                                            </Button>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+
+                                            {/* Infinite Scroll Sentinel & Loader */}
+                                            <div ref={loaderRef} className="py-12 flex flex-col items-center justify-center gap-4">
+                                                {isLoadingMore ? (
+                                                    <div className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
+                                                        <Loader2 className="h-8 w-8 text-[var(--primary)] animate-spin" />
+                                                        <p className="text-sm font-bold text-black animate-pulse uppercase tracking-[0.2em]">Exploring more packages...</p>
+                                                    </div>
+                                                ) : visibleCount >= packages.length ? (
+                                                    <div className="flex flex-col items-center gap-3 py-6 px-12 bg-white/40 backdrop-blur-xl rounded-full border border-orange-100/50 shadow-sm animate-in zoom-in duration-500">
+                                                        <div className="flex items-center gap-3 text-black">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+                                                            <p className="text-[11px] font-black uppercase tracking-[0.2em]">All {packages.length} hidden gems loaded</p>
                                                         </div>
                                                     </div>
-                                                </motion.div>
-                                            ))}
+                                                ) : null}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -1346,7 +1504,7 @@ function PlanTripContent() {
                         <div className="pt-4 p-2 space-y-6 overflow-y-auto custom-scrollbar">
                             {/* Travel Date Section */}
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
+                                <Label className="text-xs font-bold text-black uppercase tracking-[0.15em] px-1">
                                     Travel Date
                                 </Label>
                                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -1386,7 +1544,7 @@ function PlanTripContent() {
 
                             {/* Travelers Section */}
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
+                                <Label className="text-xs font-bold text-black uppercase tracking-[0.15em] px-1">
                                     Travelers
                                 </Label>
                                 <div className="space-y-3">
@@ -1426,7 +1584,7 @@ function PlanTripContent() {
                             {/* Origin City Section - Condition rendering based on flights_enabled */}
                             {selectedPackageForBooking?.flights_enabled && (
                                 <div className="space-y-4">
-                                    <Label className="text-xs font-bold text-[#94A3B8] uppercase tracking-[0.15em] px-1">
+                                    <Label className="text-xs font-bold text-black uppercase tracking-[0.15em] px-1">
                                         Starting From
                                     </Label>
                                     <div className="relative group">

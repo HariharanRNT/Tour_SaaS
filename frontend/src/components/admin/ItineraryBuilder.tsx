@@ -76,6 +76,8 @@ interface ItineraryBuilderProps {
     durationDays: number
     packageMode?: string
     destinations?: { city: string; country: string; days: number }[]
+    // For single-destination packages: the one selected destination city
+    singleDestination?: string
 }
 
 const timeSlotConfig = {
@@ -206,7 +208,7 @@ function DroppableTimeSlot({ id, children }: { id: string, children: React.React
     );
 }
 
-export function ItineraryBuilder({ packageId, durationDays, packageMode = 'single', destinations = [] }: ItineraryBuilderProps) {
+export function ItineraryBuilder({ packageId, durationDays, packageMode = 'single', destinations = [], singleDestination = '' }: ItineraryBuilderProps) {
     const [currentDay, setCurrentDay] = useState(1)
     const [activities, setActivities] = useState<Record<number, DayActivities>>({})
     const [showAddForm, setShowAddForm] = useState(false)
@@ -1020,6 +1022,11 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
     }
 
     const getDayCity = (day: number) => {
+        // Single-destination package: always show only that destination in the library
+        if (packageMode === 'single') {
+            return singleDestination || ''
+        }
+        // Multi-destination: map day number to the correct leg's city
         if (packageMode !== 'multi' || !destinations.length) return ''
         let currentDayCounter = 1
         for (const dest of destinations) {
@@ -1044,7 +1051,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                     {/* COLUMN 1: Activity Library */}
                     <div className="w-1/3 min-w-[320px] max-w-[400px] border-r border-white/40">
-                        <ActivityLibrary currentCity={getDayCity(currentDay) || 'All Cities'} />
+                        <ActivityLibrary currentCity={getDayCity(currentDay) || undefined} />
                     </div>
 
                     {/* COLUMN 2: Itinerary Builder */}

@@ -394,12 +394,12 @@ export default function CustomerAIChatCard() {
 
                     <div className="p-6 space-y-5">
                         <div className="space-y-2">
-                            <Label className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Travel Date</Label>
+                            <Label className="text-[11px] font-bold uppercase text-black tracking-wider">Travel Date</Label>
                             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className="w-full justify-start h-12 rounded-xl border-slate-100 hover:border-[var(--primary)]/30 group transition-all">
                                         <CalendarIcon className="w-4 h-4 mr-2 text-[var(--primary)]" />
-                                        {date ? format(date, "PPP") : <span>Select date</span>}
+                                        {date ? format(date, "PPP") : <span className="text-black/60">Select date</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0 border-0 shadow-xl" align="start">
@@ -415,7 +415,7 @@ export default function CustomerAIChatCard() {
                         </div>
 
                         <div className="space-y-4">
-                            <Label className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Travelers</Label>
+                            <Label className="text-[11px] font-bold uppercase text-black tracking-wider">Travelers</Label>
                             {(Object.keys(guests) as Array<keyof typeof guests>).map((type) => (
                                 <div key={type} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                                     <span className="text-sm font-bold text-slate-700 capitalize">{type}</span>

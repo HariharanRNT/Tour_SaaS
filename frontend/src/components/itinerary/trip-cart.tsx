@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, ShoppingCart, Lock, ShieldCheck, Clock, Users, CheckCircle2 } from 'lucide-react'
+import { Loader2, ShoppingCart, Lock, ShieldCheck, Clock, Users, CheckCircle2, RotateCcw, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +37,7 @@ interface TripCartProps {
     buttonStyle?: 'pill' | 'rounded' | 'square'
     customTitle?: string
     customCtaText?: string
+    cancellationEnabled?: boolean
 }
 
 export function TripCart({
@@ -57,7 +58,8 @@ export function TripCart({
     cardStyle = 'glassy',
     buttonStyle = 'pill',
     customTitle,
-    customCtaText
+    customCtaText,
+    cancellationEnabled = true
 }: TripCartProps) {
     const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
 
@@ -80,9 +82,9 @@ export function TripCart({
             className={cn(
                 "sticky top-24 transition-all duration-500 overflow-hidden",
                 cardStyle === 'glassy' ? "shadow-2xl border-0 bg-slate-900/40 backdrop-blur-[24px] rounded-[2.5rem] ring-1 ring-white/15" :
-                cardStyle === 'minimal' ? "shadow-sm border border-slate-100 bg-white rounded-xl" :
-                cardStyle === 'rounded' ? "shadow-md border border-slate-200 bg-white rounded-3xl" :
-                "shadow-none border border-slate-300 bg-slate-50 rounded-lg" // classic
+                    cardStyle === 'minimal' ? "shadow-sm border border-slate-100 bg-white rounded-xl" :
+                        cardStyle === 'rounded' ? "shadow-md border border-slate-200 bg-white rounded-3xl" :
+                            "shadow-none border border-slate-300 bg-slate-50 rounded-lg" // classic
             )}
             style={cardStyle === 'glassy' ? { border: '1px solid rgba(255,255,255,0.15)' } : {}}
         >
@@ -119,14 +121,14 @@ export function TripCart({
                     )}>
                         <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
-                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/40" : "text-slate-400")}>Travelers</span>
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-black")}>Travelers</span>
                             <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-slate-900")}>{totalTravelers} People</span>
                         </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-xl ml-1">
                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
-                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/40" : "text-slate-400")}>Duration</span>
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-black")}>Duration</span>
                             <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-slate-900")}>{duration.days}D / {duration.nights}N</span>
                         </div>
                     </div>
@@ -182,7 +184,7 @@ export function TripCart({
                         "flex justify-between items-center p-3 rounded-xl border shadow-sm",
                         cardStyle === 'glassy' ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100"
                     )}>
-                        <span className={cn("font-black text-[9px] uppercase tracking-[0.2em]", cardStyle === 'glassy' ? "text-white/40" : "text-slate-400")}>
+                        <span className={cn("font-black text-[9px] uppercase tracking-[0.2em]", cardStyle === 'glassy' ? "text-white/60" : "text-black")}>
                             {gstSettings && !gstSettings.inclusive ? "Net Amount" : "Taxes & Fees"}
                         </span>
                         {gstSettings && !gstSettings.inclusive ? (
@@ -219,7 +221,7 @@ export function TripCart({
                     <div className="relative z-10 space-y-5">
                         <div className="flex justify-between items-end">
                             <div className="flex flex-col">
-                                <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-0.5", cardStyle === 'glassy' ? "text-white/40" : "text-slate-400")}>Total Amount</span>
+                                <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-black")}>Total Amount</span>
                                 {gstSettings && gstSettings.inclusive && (
                                     <span className="text-[9px] text-emerald-500 font-black tracking-widest">INC. ALL TAXES</span>
                                 )}
@@ -240,13 +242,14 @@ export function TripCart({
                             </div>
                         </div>
 
+
                         <Button
                             id="checkout-trigger"
                             className={cn(
                                 "w-full h-13 text-white font-bold text-base transition-all duration-300 border border-white/20",
                                 buttonStyle === 'pill' ? "rounded-full shadow-[0_8px_30px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:scale-[1.01] active:scale-[0.99]" :
-                                buttonStyle === 'rounded' ? "rounded-xl shadow-md bg-[var(--primary)] hover:bg-[var(--primary-light)]" :
-                                "rounded-none shadow-none bg-slate-800 hover:bg-black" // square
+                                    buttonStyle === 'rounded' ? "rounded-xl shadow-md bg-[var(--primary)] hover:bg-[var(--primary-light)]" :
+                                        "rounded-none shadow-none bg-slate-800 hover:bg-black" // square
                             )}
                             onClick={onCheckout}
                             disabled={loading || disabled}

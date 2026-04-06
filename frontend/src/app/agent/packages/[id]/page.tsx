@@ -25,6 +25,8 @@ interface Package {
     description: string
     status?: string
     itinerary?: any[]
+    package_mode?: string
+    destinations?: { city: string; country: string; days: number }[]
 }
 
 export default function PackageDetailPage() {
@@ -189,6 +191,9 @@ export default function PackageDetailPage() {
                                 <ItineraryBuilder
                                     packageId={packageId}
                                     durationDays={packageData.duration_days}
+                                    packageMode={packageData.package_mode || 'single'}
+                                    destinations={packageData.destinations || []}
+                                    singleDestination={packageData.destination}
                                 />
                             </CardContent>
                         </Card>

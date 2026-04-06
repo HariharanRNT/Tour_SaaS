@@ -139,20 +139,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         return <Icon className="h-6 w-6" style={{ color: iconColor }} />;
     };
 
-    const handleSampleItinerary = async () => {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/packages/cheapest`)
-            if (res.ok) {
-                const data = await res.json()
-                router.push(`/plan-trip/${data.slug}?mode=preview`)
-            } else {
-                alert("No sample packages available at the moment.")
-            }
-        } catch (error) {
-            console.error("Failed to fetch sample itinerary", error)
-            alert("Unable to load sample itinerary.")
-        }
-    }
+
 
     useEffect(() => {
         if (isLoading) return;
@@ -194,18 +181,18 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
     return (
         <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
-            {/* Multi-tenant site identifier banner */}
-            <div className={`p-3 text-center transition-all duration-300 font-bold tracking-tight shadow-sm border-b
-                ${site === 'site1' ? 'bg-blue-600 text-white border-blue-400' :
-                site === 'site2' ? 'bg-emerald-600 text-white border-emerald-400' :
-                'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                {site === 'site1' && <div className="flex items-center justify-center gap-2"><Globe className="h-4 w-4" /> Site 1 UI</div>}
-                {site === 'site2' && <div className="flex items-center justify-center gap-2"><MapPin className="h-4 w-4" /> Site 2 UI</div>}
-                {site === 'default' && <div className="opacity-70">Default Site</div>}
-            </div>
-
             {/* Modernized Hero Section */}
             <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden -mt-16">
+
+                {/* Multi-tenant site identifier banner — sits on top of the hero, not above it */}
+                {site !== 'default' && (
+                    <div className={`absolute top-16 left-0 right-0 z-20 p-2 text-center font-bold tracking-tight shadow-sm
+                        ${site === 'site1' ? 'bg-blue-600/80 text-white' :
+                            site === 'site2' ? 'bg-emerald-600/80 text-white' : ''}`}>
+                        {site === 'site1' && <div className="flex items-center justify-center gap-2"><Globe className="h-4 w-4" /> Site 1 UI</div>}
+                        {site === 'site2' && <div className="flex items-center justify-center gap-2"><MapPin className="h-4 w-4" /> Site 2 UI</div>}
+                    </div>
+                )}
 
                 {/* Background with Overlay */}
                 <div className="absolute inset-0 z-0">
@@ -242,7 +229,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 </div>
 
                 {/* AI Badge Moved After Header / Above Headline */}
-                <div className="container mx-auto px-4 relative z-10 pt-16">
+                <div className="container mx-auto px-4 relative z-10 pt-20">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -261,7 +248,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                             ) : (
                                 <>
                                     {hpSettings?.headline1 || 'Adventure Awaits—'}<br className="hidden md:block" />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary-soft)] via-[var(--primary-light)] to-[var(--primary)] drop-shadow-sm">
+                                    <span className="text-white drop-shadow-sm">
                                         {hpSettings?.headline2 || 'Tailored Just for You'}
                                     </span>
                                 </>
@@ -277,7 +264,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                         {/* CTA Section */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
                             <Button
-                                onClick={handleSampleItinerary}
+                                onClick={() => router.push('/plan-trip?search=all')}
                                 variant="outline"
                                 size="lg"
                                 className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white bg-transparent rounded-[30px]"
@@ -286,7 +273,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                 {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
                             </Button>
 
-                            <Link href="/plan-trip">
+                            <Link href="/plan-trip?search=all">
                                 <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
                                     style={{
                                         background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))',
@@ -362,9 +349,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     <h2 className="text-4xl md:text-6xl font-black text-slate-900 font-display mb-4 tracking-tight">
                                         Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[#FF8C00]">Packages</span>
                                     </h2>
-                                    <p className="text-slate-500 font-medium max-w-xl text-lg opacity-80">
-                                        Explore our most loved travel packages, handpicked and AI-optimized for the perfect experience.
-                                    </p>
+
                                 </motion.div>
                                 <motion.div
                                     initial={{ opacity: 0, x: 20 }}
@@ -410,16 +395,16 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-80 transition-opacity" />
 
-                                            <div className="absolute top-6 right-6 flex flex-col gap-2">
-                                                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full scale-90 origin-right">
+                                            <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
+                                                <Badge className="bg-black text-white hover:bg-black/90 border border-white/20 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full shadow-md">
                                                     <Clock className="h-3 w-3" /> {pkg.duration_days} Days
                                                 </Badge>
-                                                <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 rounded-full scale-90 origin-right">
-                                                    ₹{pkg.price_per_person.toLocaleString()}
+                                                <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full shadow-md">
+                                                    ₹{pkg.price_per_person.toLocaleString('en-IN')}
                                                 </Badge>
                                             </div>
 
-                                            <div className="absolute bottom-8 left-8 right-8">
+                                            <div className="absolute bottom-8 left-8 right-8 z-10">
                                                 <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{pkg.destination}, {pkg.country || 'International'}</p>
                                                 <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2">{title}</h3>
                                                 <div className="relative inline-block group/link">
@@ -500,7 +485,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                         <h3 className="card-title text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                                             {feature.title}
                                         </h3>
-                                        <p className="text-[rgba(80,40,10,0.65)] leading-relaxed font-medium text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        <p className="text-black leading-relaxed font-medium text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
                                             {feature.description || feature.desc}
                                         </p>
                                     </motion.div>

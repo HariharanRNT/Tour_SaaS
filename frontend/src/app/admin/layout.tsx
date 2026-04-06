@@ -26,17 +26,13 @@ export default function AdminLayout({
                     className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
                     style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
                 >
-                    {/* Fixed Header - dynamically positioned based on sidebar state */}
+                    {/* Header - dynamically positioned based on sidebar state */}
                     <div
-                        className="fixed top-0 right-0 z-40 transition-all duration-300 ease-in-out"
-                        style={{
-                            left: isSidebarCollapsed ? '70px' : '260px',
-                            width: isSidebarCollapsed ? 'calc(100% - 70px)' : 'calc(100% - 260px)'
-                        }}
+                        className="z-40 transition-all duration-300 ease-in-out w-full"
                     >
                         <AdminHeader />
                     </div>
-                    <main className="flex-1 overflow-y-auto pt-[70px]">
+                    <main className="flex-1 overflow-y-auto">
                         {children}
                     </main>
                 </div>

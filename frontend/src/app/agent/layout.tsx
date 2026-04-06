@@ -37,13 +37,9 @@ export default function AgentLayout({
                             className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
                         style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
                     >
-                        {/* Fixed Header */}
+                        {/* Header */}
                         <div
-                            className="fixed top-0 right-0 z-50 transition-all duration-300 ease-in-out max-lg:!left-0 max-lg:!w-full"
-                            style={{
-                                left: isSidebarCollapsed ? '70px' : '260px',
-                                width: isSidebarCollapsed ? 'calc(100% - 70px)' : 'calc(100% - 260px)'
-                            }}
+                            className="z-50 transition-all duration-300 ease-in-out w-full"
                         >
                             <AdminHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                         </div>
@@ -58,8 +54,8 @@ export default function AgentLayout({
                             </div>
                         )}
 
-                        {/* Main Content with pt-[70px] to account for fixed header (pt-0 if sub-user banner handles gap) */}
-                        <main className={`flex-1 w-full ${user?.role === 'SUB_USER' ? 'pt-0' : 'pt-[70px]'}`}>
+                        {/* Main Content */}
+                        <main className="flex-1 w-full">
                             {children}
                         </main>
                     </div>

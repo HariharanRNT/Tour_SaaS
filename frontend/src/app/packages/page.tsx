@@ -377,14 +377,18 @@ export default function MultiStepPackageSearch() {
                                                     <MapPin className="h-3 w-3 mr-1" />
                                                     {pkg.destination}
                                                 </Badge>
-                                                <Badge className="bg-[var(--primary)]">
-                                                    <span className="mr-0.5">₹</span>
-                                                    {pkg.price_per_person.toLocaleString()}
-                                                </Badge>
+                                                <div className="flex flex-col gap-2 items-end">
+                                                    <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 font-bold px-3 py-1">
+                                                        {pkg.duration_days} Days
+                                                    </Badge>
+                                                    <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1">
+                                                        ₹{pkg.price_per_person.toLocaleString('en-IN')}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                             <CardTitle className="text-xl">{pkg.title}</CardTitle>
                                             <CardDescription>
-                                                {pkg.duration_days} days trip
+                                                View complete details and itinerary
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>

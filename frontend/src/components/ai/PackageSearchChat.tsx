@@ -337,7 +337,7 @@ export default function PackageSearchChat() {
                                                             {/* Price & Action - Compact */}
                                                             <div className="pt-2 mt-auto border-t border-slate-100 flex flex-col gap-2">
                                                                 <div className="flex items-baseline justify-between">
-                                                                    <span className="text-[10px] text-slate-400 font-medium">Starting from</span>
+                                                                    <span className="text-[10px] text-black font-medium">Starting from</span>
                                                                     <span className="font-bold text-sm text-violet-600">₹{pkg.price.toLocaleString()}</span>
                                                                 </div>
 
@@ -396,12 +396,12 @@ export default function PackageSearchChat() {
                                             <CardContent className="p-5 space-y-5">
                                                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
                                                     <div className="text-center flex-1">
-                                                        <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Duration</span>
+                                                        <span className="block text-[10px] text-black uppercase font-bold tracking-wider mb-1">Duration</span>
                                                         <span className="text-sm font-bold text-slate-700">{msg.tool_result.duration_days} Days</span>
                                                     </div>
                                                     <div className="w-px h-8 bg-slate-200" />
                                                     <div className="text-center flex-1">
-                                                        <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Price</span>
+                                                        <span className="block text-[10px] text-black uppercase font-bold tracking-wider mb-1">Price</span>
                                                         <span className="text-lg font-bold text-violet-600">₹{msg.tool_result.price.toLocaleString()}</span>
                                                     </div>
                                                 </div>

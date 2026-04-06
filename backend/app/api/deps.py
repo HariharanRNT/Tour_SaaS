@@ -189,7 +189,7 @@ def check_permission(module: str, required_level: str):
             if not module_perm:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Access denied: No permissions for module '{module}'"
+                    detail=f"Access denied: No permissions for module '{module}' (Sub-User)"
                 )
             
             level_map = {"view": 1, "edit": 2, "full": 3}
@@ -201,12 +201,12 @@ def check_permission(module: str, required_level: str):
                 
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions: '{required_level}' access required for '{module}'"
+                detail=f"Insufficient permissions: '{required_level}' access required for '{module}'. (Sub-User UserLevel: {user_level})"
             )
             
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Unauthorized role"
+            detail=f"Unauthorized role: {current_user.role} for module {module}"
         )
         
     return _permission_dependency

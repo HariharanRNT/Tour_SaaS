@@ -33,14 +33,14 @@ async function getInitialTheme() {
         const headersList = headers();
         const host = headersList.get('host') || 'localhost';
         const hostname = host.split(':')[0]; // Remove port if present
-        
+
         const res = await fetch(`${API_URL}/api/v1/agent/settings/public`, {
             headers: { 'X-Domain': hostname },
             cache: 'no-store'
         });
-        
+
         console.log(`[SSR] Theme fetch status: ${res.status} for ${hostname}`);
-        
+
         if (!res.ok) {
             const errorText = await res.text();
             console.error(`[SSR] Theme fetch failed: ${errorText}`);

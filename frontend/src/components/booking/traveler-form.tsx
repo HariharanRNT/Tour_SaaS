@@ -18,6 +18,12 @@ export interface Traveler {
     passport_expiry: string
     nationality: string
     type: 'ADULT' | 'CHILD' | 'INFANT'
+    email?: string
+    phone?: string
+    address?: string
+    city?: string
+    state?: string
+    country?: string
 }
 
 interface TravelerFormProps {
@@ -111,7 +117,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
 
     return (
         <div className="bg-white/15 backdrop-blur-xl p-6 rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] space-y-6 hover:shadow-[0_12px_40px_var(--primary-glow)] transition-shadow duration-300 relative overflow-hidden">
-            <h3 className="font-bold text-[#3A1A08] font-display text-xl flex items-center justify-between border-b border-white/20 pb-4">
+            <h3 className="font-bold text-black font-display text-xl flex items-center justify-between border-b border-white/20 pb-4">
                 <span className="flex items-center gap-3">
                     <span className="bg-[var(--primary)]/10 text-[var(--primary)] p-2 rounded-xl border border-[var(--primary)]/20">
                         <User className="h-5 w-5" />
@@ -120,6 +126,12 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                     <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-white/20 border border-[var(--primary)]/20 px-2.5 py-1 rounded-full ml-2 shadow-inner">
                         {traveler.type}
                     </span>
+                    {index === 0 && (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full ml-2 shadow-sm flex items-center gap-1.5 animate-in fade-in zoom-in duration-500">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Primary Traveler
+                        </span>
+                    )}
                 </span>
             </h3>
 
@@ -128,7 +140,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                 <div className="md:col-span-2">
                     <div className="relative group">
                         <Select value={traveler.title} onValueChange={(val) => onChange(index, 'title', val)}>
-                            <SelectTrigger className="w-full h-14 bg-white/25 border-white/40 rounded-[14px] px-3 pt-5 pb-1 text-sm shadow-sm transition-all outline-none focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 text-[#5C2500] font-bold backdrop-blur-sm">
+                            <SelectTrigger className="w-full h-14 bg-white/25 border-white/40 rounded-[14px] px-3 pt-5 pb-1 text-sm shadow-sm transition-all outline-none focus:bg-white/40 focus:border-[var(--primary)] focus:ring-[3px] focus:ring-[var(--primary)]/25 text-black font-bold backdrop-blur-sm">
                                 <SelectValue placeholder=" " />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
@@ -149,14 +161,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                                         key={opt.val}
                                         value={opt.val}
                                         disabled={!opt.types.includes(traveler.type)}
-                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : 'font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10'}
+                                        className={!opt.types.includes(traveler.type) ? 'opacity-50 cursor-not-allowed hidden' : 'font-bold text-black focus:bg-[var(--primary)]/10'}
                                     >
                                         {opt.val}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                        <label className="absolute left-3 top-2 z-10 origin-[0] -translate-y-0 scale-75 transform text-[10px] font-bold tracking-widest uppercase text-[#A0501E] duration-150 pointer-events-none">
+                        <label className="absolute left-3 top-2 z-10 origin-[0] -translate-y-0 scale-75 transform text-[10px] font-bold tracking-widest uppercase text-black duration-150 pointer-events-none">
                             Title
                         </label>
                     </div>
@@ -170,7 +182,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                         value={traveler.first_name}
                         onChange={(e: any) => onChange(index, 'first_name', e.target.value)}
                         error={errors[`first_name_${index}`]}
-                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                     />
                 </div>
                 <div className="md:col-span-5">
@@ -179,7 +191,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                         label="Last Name"
                         value={traveler.last_name}
                         onChange={(e: any) => onChange(index, 'last_name', e.target.value)}
-                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                     />
                 </div>
             </div>
@@ -188,7 +200,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Gender Segmented Control */}
                 <div className="space-y-1.5 relative z-10">
-                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm">Gender</Label>
+                    <Label className="text-[10px] font-bold text-black uppercase tracking-widest ml-1 drop-shadow-sm">Gender</Label>
                     <div className="flex bg-white/20 p-1 rounded-[16px] border border-white/40 h-14 items-center shadow-inner backdrop-blur-sm">
                         {[
                             { val: 'MALE', label: 'Male' },
@@ -212,7 +224,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                                     "flex-1 flex items-center justify-center gap-2 text-sm font-bold h-full rounded-[12px] transition-all",
                                     traveler.gender === g.val
                                         ? "bg-[var(--primary)] text-white shadow-[0_4px_16px_var(--primary-glow)] ring-1 ring-[var(--primary)]"
-                                        : "text-[#8B5030] hover:text-[#5C2500] hover:bg-white/40"
+                                        : "text-black hover:text-black hover:bg-white/40"
                                 )}
                             >
                                 {g.label}
@@ -223,18 +235,18 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                 </div>
 
                 <div className="space-y-1.5 relative z-10 group">
-                    <Label className="text-[10px] font-bold text-[#A0501E] uppercase tracking-widest ml-1 drop-shadow-sm group-focus-within:text-[var(--primary)] transition-colors">
+                    <Label className="text-[10px] font-bold text-black uppercase tracking-widest ml-1 drop-shadow-sm group-focus-within:text-[var(--primary)] transition-colors">
                         Date of Birth <span className="text-red-500">*</span>
                     </Label>
                     <div className="bg-white/20 p-1 rounded-[16px] border border-white/40 h-14 flex items-center shadow-inner backdrop-blur-sm group-focus-within:border-[var(--primary)] group-focus-within:ring-[3px] group-focus-within:ring-[var(--primary)]/25 transition-all">
                         {/* Day */}
                         <Select value={d} onValueChange={(val) => handleDateChange('day', val)}>
-                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
+                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-black font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="DD" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {days.map(day => (
-                                    <SelectItem key={day} value={day} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{day}</SelectItem>
+                                    <SelectItem key={day} value={day} className="font-bold text-black focus:bg-[var(--primary)]/10">{day}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -243,12 +255,12 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
 
                         {/* Month */}
                         <Select value={m} onValueChange={(val) => handleDateChange('month', val)}>
-                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
+                            <SelectTrigger className="flex-1 h-full bg-transparent border-none text-black font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="MMM" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50">
                                 {months.map(mon => (
-                                    <SelectItem key={mon.value} value={mon.value} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{mon.label}</SelectItem>
+                                    <SelectItem key={mon.value} value={mon.value} className="font-bold text-black focus:bg-[var(--primary)]/10">{mon.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -257,12 +269,12 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
 
                         {/* Year */}
                         <Select value={y} onValueChange={(val) => handleDateChange('year', val)}>
-                            <SelectTrigger className="flex-[1.2] h-full bg-transparent border-none text-[#5C2500] font-bold focus:ring-0 shadow-none px-3">
+                            <SelectTrigger className="flex-[1.2] h-full bg-transparent border-none text-black font-bold focus:ring-0 shadow-none px-3">
                                 <SelectValue placeholder="YYYY" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/95 backdrop-blur-md rounded-[14px] border border-white/50 h-[300px]">
                                 {years.map(yr => (
-                                    <SelectItem key={yr} value={yr} className="font-bold text-[#3A1A08] focus:bg-[var(--primary)]/10">{yr}</SelectItem>
+                                    <SelectItem key={yr} value={yr} className="font-bold text-black focus:bg-[var(--primary)]/10">{yr}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -283,7 +295,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                     value={traveler.nationality}
                     onChange={(e: any) => onChange(index, 'nationality', e.target.value.toUpperCase())}
                     maxLength={2}
-                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                 />
 
                 <FloatingLabelInput
@@ -291,9 +303,67 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                     label="Passport Number (Optional for Domestic)"
                     value={traveler.passport_number}
                     onChange={(e: any) => onChange(index, 'passport_number', e.target.value.toUpperCase())}
-                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-[#5C2500] !font-bold transition-all"
+                    className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                 />
             </div>
+            
+            {/* Row 4: Contact Info (Traveler 1 ONLY) */}
+            {index === 0 && (
+                <div className="space-y-5 pt-4 border-t border-white/20 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="h-4 w-1 rounded-full bg-amber-400" />
+                        <span className="text-xs font-bold text-black uppercase tracking-widest">Contact Information</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <FloatingLabelInput
+                            id={`email-${index}`}
+                            label="Email Address"
+                            type="email"
+                            value={traveler.email || ''}
+                            onChange={(e: any) => onChange(index, 'email', e.target.value)}
+                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
+                        />
+                        <FloatingLabelInput
+                            id={`phone-${index}`}
+                            label="Mobile Number"
+                            type="tel"
+                            value={traveler.phone || ''}
+                            onChange={(e: any) => onChange(index, 'phone', e.target.value)}
+                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
+                        />
+                    </div>
+                    <FloatingLabelInput
+                        id={`addr-${index}`}
+                        label="Full Billing Address"
+                        value={traveler.address || ''}
+                        onChange={(e: any) => onChange(index, 'address', e.target.value)}
+                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <FloatingLabelInput
+                            id={`country-${index}`}
+                            label="Country"
+                            value={traveler.country || ''}
+                            onChange={(e: any) => onChange(index, 'country', e.target.value)}
+                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
+                        />
+                        <FloatingLabelInput
+                            id={`state-${index}`}
+                            label="State"
+                            value={traveler.state || ''}
+                            onChange={(e: any) => onChange(index, 'state', e.target.value)}
+                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring(--primary)/25 !text-black !font-bold transition-all"
+                        />
+                        <FloatingLabelInput
+                            id={`city-${index}`}
+                            label="City"
+                            value={traveler.city || ''}
+                            onChange={(e: any) => onChange(index, 'city', e.target.value)}
+                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring(--primary)/25 !text-black !font-bold transition-all"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -638,7 +638,8 @@ async def get_trip_session(
                t.travelers, t.preferences, t.matched_package_id, t.itinerary, t.status,
                t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details,
                a.gst_inclusive, a.gst_percentage, p.feature_image_url, d.image_url as destination_image_url,
-               p.gst_mode, p.gst_percentage as package_gst_percentage, p.gst_applicable
+               p.gst_mode, p.gst_percentage as package_gst_percentage, p.gst_applicable,
+               p.cancellation_enabled, p.cancellation_rules
         FROM trip_planning_sessions t
         LEFT JOIN packages p ON t.matched_package_id = p.id
         LEFT JOIN popular_destinations d ON t.destination = d.name
@@ -781,6 +782,8 @@ async def get_trip_session(
         "gst_applicable": gst_applicable_final,
         "gst_inclusive": gst_inclusive,
         "gst_percentage": float(gst_percentage) if gst_percentage is not None else 0,
+        "cancellation_enabled": row[22],
+        "cancellation_rules": parse_json_field(row[23]),
         "homepage_settings": agent_settings
     }
 

@@ -24,7 +24,8 @@ import {
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle } from "@/components/ui/alert-dialog"
+    AlertDialogTitle
+} from "@/components/ui/alert-dialog"
 import { DayPlanner } from '@/components/itinerary/DayPlanner'
 import { BookingAuthModal } from '@/components/auth/BookingAuthModal'
 
@@ -106,8 +107,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const [session, setSession] = useState<any>(null)
     const [itinerary, setItinerary] = useState<DayItinerary[]>([])
     const [currentDay, setCurrentDay] = useState(1)
-    const [saving, setSaving] = useState(false)
-    const [success, setSuccess] = useState(false)
 
     // Modular State
     const [flightSelected, setFlightSelected] = useState(false)
@@ -489,7 +488,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
 
     const saveItinerary = async () => {
-        setSaving(true)
         try {
             // Include selectedFlight in the payload
             const totalFlightPrice = (selectedOnwardFlight?.price || 0) + (selectedReturnFlight?.price || 0)
@@ -589,8 +587,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             })
 
             if (response.ok) {
-                setSuccess(true)
-                setTimeout(() => setSuccess(false), 2000)
                 return currentSessionId
             } else {
                 alert('Failed to save itinerary')
@@ -601,7 +597,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             alert('Failed to save itinerary')
             return null
         } finally {
-            setSaving(false)
         }
     }
 
@@ -613,11 +608,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             return
         }
 
-        // Save first
-        const finalSessionId = await saveItinerary()
-        if (!finalSessionId) return
-
-        const checkoutUrl = `/checkout?sessionId=${finalSessionId}`
+        // Navigate directly to checkout using the existing session
+        const checkoutUrl = `/checkout?sessionId=${sessionId}`
         router.push(checkoutUrl)
     }
 
@@ -633,7 +625,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 animate-spin text-[var(--primary)]" />
-                    <p className="text-gray-500 font-medium">Building your itinerary...</p>
+                    <p className="text-black font-medium">Building your itinerary...</p>
                 </div>
             </div>
         )
@@ -680,14 +672,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center transition-transform transition-duration-[4s] group-hover:scale-105"
                     style={{
-                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')` }}
+                        backgroundImage: `url('${session?.feature_image_url || session?.destination_image_url || `https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&q=80&w=1800`}')`
+                    }}
                 />
 
                 {/* Gradient Overlay — stronger at bottom for chip readability */}
                 <div
                     className="absolute inset-0 z-10"
                     style={{
-                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.8) 100%)' }}
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.8) 100%)'
+                    }}
                 />
 
                 {/* Noise texture overlay */}
@@ -702,13 +696,6 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.destination}, {session.country || 'India'}</span>
                             </div>
 
-                            {true && (
-                                <Badge className="relative overflow-hidden text-white border-0 px-5 py-2 text-sm font-bold shadow-[0_0_16px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] rounded-full">
-                                    <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></span>
-                                    <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
-                                    AI Optimized Itinerary ✨
-                                </Badge>
-                            )}
                         </div>
 
                         {/* Title */}
@@ -750,227 +737,231 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             </div>
 
-                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
-                                    <Wallet className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Budget</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap">
-                                        {session.price_per_person ? `₹${session.price_per_person.toLocaleString()}` : session.budget_tier ? `${session.budget_tier} Tier` : 'Custom'}
-                                    </p>
-                                </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Save Button — frosted pill with orange border */}
-                <div className="absolute top-6 right-6 z-30">
-                    <Button
-                        id="save-btn"
-                        className={`
-                            rounded-full px-6 h-11 font-bold transition-all shadow-xl backdrop-blur-lg
-                            ${success
-                                ? 'bg-emerald-500 border-transparent text-white'
-                                : 'bg-white/90 border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white'
-                            }
-                        `}
-                        onClick={saveItinerary}
-                        disabled={saving || mode === 'preview'}
-                    >
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : success ? <CheckCircle className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        <span>{saving ? 'Saving...' : success ? 'Saved!' : 'Save Trip'}</span>
-                    </Button>
-                </div>
             </div>
 
             <div className="container mx-auto px-4 -mt-16 pb-8 relative z-30">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                        {/* Left Column - Main Content */}
-                        {/* Left Column - Main Content */}
-                        <div className="lg:col-span-8 xl:col-span-9 space-y-8 min-w-0">
+                    {/* Left Column - Main Content */}
+                    {/* Left Column - Main Content */}
+                    <div className="lg:col-span-8 xl:col-span-9 space-y-8 min-w-0">
 
-                            {/* AI Summary Banner */}
-                            <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_var(--primary-glow)] border border-[var(--primary)]/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary-soft)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
-                                <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
-                                    <div className="shrink-0">
-                                        <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
-                                            <Sparkles className="h-9 w-9 animate-pulse" />
-                                        </div>
+                        {/* AI Summary Banner */}
+                        <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_50px_var(--primary-glow)] border border-[var(--primary)]/10 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary-soft)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
+                            <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
+                                <div className="shrink-0">
+                                    <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
+                                        <Sparkles className="h-9 w-9 animate-pulse" />
                                     </div>
-                                    <div className="space-y-4">
-                                        <h3 className="text-3xl font-bold text-[var(--primary)] font-display">
-                                            Your Personalized AI Itinerary
-                                        </h3>
-                                        <p className="text-slate-600 leading-relaxed text-lg max-w-2xl">
-                                            We've crafted this {session.duration_days}-day journey through <span className="font-bold text-[var(--primary)]">{session.destination}</span> based on your love for <span className="font-bold text-[var(--primary)]">{session.trip_type}</span> experiences.
-                                        </p>
-                                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                                            {[
-                                                { icon: <Sparkles className="h-3 w-3" />, label: 'Perfectly Paced' },
-                                                { icon: <MapPin className="h-3 w-3" />, label: 'Top Rated Spots' },
-                                                { icon: <CheckCircle className="h-3 w-3" />, label: 'Local Gems' },
-                                            ].map((tag) => (
-                                                <div key={tag.label} className="bg-[var(--primary)]/10 border border-[var(--primary)]/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-[var(--primary)] flex items-center gap-1.5 transition-all hover:bg-[var(--primary)] hover:text-white hover:border-transparent">
-                                                    {tag.icon}
-                                                    <span>{tag.label}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <h2 className="text-3xl md:text-4xl font-black text-black font-display leading-tight">
+                                        {session.title}
+                                    </h2>
+                                    <div 
+                                        className="text-black leading-relaxed text-lg max-w-5xl"
+                                        dangerouslySetInnerHTML={{ __html: session.description || '' }}
+                                    />
                                 </div>
                             </div>
+                        </div>
 
-                                    {/* Trip Overview Cards */}
-                                    <section>
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="h-10 w-1.5 rounded-full bg-[var(--itinerary-primary,var(--primary))]" />
-                                            <h2 className="text-3xl font-bold text-[#3A1A08] font-display">Trip Overview</h2>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                            {[
-                                                { icon: <Plane className="h-6 w-6" />, label: "Flights", desc: "Best connections", detail: "Round-trip · Economy" },
-                                                { icon: <Hotel className="h-6 w-6" />, label: "Hotels", desc: "Premium stays", detail: `${session.duration_nights ?? (session.duration_days - 1)} nights · 4★ rated` },
-                                                { icon: <Camera className="h-6 w-6" />, label: "Activities", desc: "Curated guide", detail: `${session.duration_days} days · Local expert` },
-                                                { icon: <Car className="h-6 w-6" />, label: "Transfers", desc: "Private cabs", detail: "Door-to-door service" }
-                                            ].map((item, i) => (
-                                                <div key={i} className="group relative transition-all duration-500 overflow-hidden cursor-default p-6 bg-white/60 backdrop-blur-md rounded-[2rem] border border-white/20 shadow-sm hover:shadow-xl hover:-translate-y-2">
-                                                    {/* Hover glow */}
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]" />
-
-                                                    <div className="relative z-10">
-                                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] flex items-center justify-center mb-5 text-white shadow-lg shadow-[var(--primary)]/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                                                            {item.icon}
-                                                        </div>
-                                                        <h3 className="font-bold text-slate-800 text-xl mb-1">{item.label}</h3>
-                                                        <p className="text-sm text-slate-600 font-medium opacity-70">{item.desc}</p>
-                                                        <p className="text-[11px] text-slate-400 font-semibold mt-1.5">{item.detail}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </section>
-
-                            <div className="border-t border-gray-100"></div>
-
-                            {/* Itinerary Tabs - Clean & Modern */}
-                            <section>
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
-                                        <h2 className="text-3xl font-bold text-gray-900">Day-by-Day Journey</h2>
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        className="rounded-full border-white/20 hover:bg-white/10 text-gray-600 gap-2 shadow-sm font-semibold"
-                                        onClick={() => {
-                                            // The original package ID is used for generating the PDF
-                                            // Handling both TripSession (has package_id) and Package modes (has id)
-                                            const pkgId = session?.package_id || session?.id || packageId;
-                                            if (pkgId) {
-                                                window.open(`${API_URL}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
-                                            } else {
-                                                alert("Could not locate the package ID required for the PDF.");
-                                            }
-                                        }}
-                                    >
-                                        <Download className="h-4 w-4" /> Download PDF
-                                    </Button>
+                        {/* Itinerary Tabs - Clean & Modern */}
+                        <section>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
+                                    <h2 className="text-3xl font-bold text-black">Day-by-Day Journey</h2>
                                 </div>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-full border-black/10 hover:bg-black/5 text-black gap-2 shadow-sm font-semibold"
+                                    onClick={() => {
+                                        // The original package ID is used for generating the PDF
+                                        // Handling both TripSession (has package_id) and Package modes (has id)
+                                        const pkgId = session?.package_id || session?.id || packageId;
+                                        if (pkgId) {
+                                            window.open(`${API_URL}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
+                                        } else {
+                                            alert("Could not locate the package ID required for the PDF.");
+                                        }
+                                    }}
+                                >
+                                    <Download className="h-4 w-4" /> Download PDF
+                                </Button>
+                            </div>
 
-                                <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
-                                    <TabsList className="mb-8 w-full flex justify-start overflow-x-auto glass-panel p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-white/20">
-                                        {itinerary.map((day) => (
-                                            <TabsTrigger
-                                                key={day.day_number}
-                                                value={day.day_number.toString()}
-                                                className="
+                            <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
+                                <TabsList className="mb-8 w-full flex justify-start overflow-x-auto glass-panel p-1.5 gap-2 scrollbar-hide h-auto rounded-2xl border border-white/20">
+                                    {itinerary.map((day) => (
+                                        <TabsTrigger
+                                            key={day.day_number}
+                                            value={day.day_number.toString()}
+                                            className="
                                                 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
                                                 data-[state=active]:bg-white data-[state=active]:shadow-md
-                                                text-slate-500 hover:text-slate-700 hover:bg-slate-100/50
+                                                text-black hover:text-black hover:bg-black/5
                                             "
-                                                style={{
-                                                    color: currentDay === day.day_number ? '#1d4ed8' : ''
-                                                }}
-                                            >
-                                                Day {day.day_number}
-                                            </TabsTrigger>
-                                        ))}
-                                    </TabsList>
-
-                                    {itinerary.map((day) => (
-                                        <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-5 duration-500">
-                                            <DayPlanner
-                                                day={day}
-                                                onAddActivity={addActivity}
-                                                onRemoveActivity={removeActivity}
-                                                morningColor={undefined}
-                                                afternoonColor={undefined}
-                                                eveningColor={undefined}
-                                                nightColor={undefined}
-                                                activeDayColor={undefined}
-                                                headingBorderColor={undefined}
-                                                dayBadgeColor={undefined}
-                                                isReadonly={mode === 'preview'}
-                                            />
-                                        </TabsContent>
+                                            style={{
+                                                color: currentDay === day.day_number ? '#1d4ed8' : ''
+                                            }}
+                                        >
+                                            Day {day.day_number}
+                                        </TabsTrigger>
                                     ))}
-                                </Tabs>
-                            </section>
+                                </TabsList>
 
-                            {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
-                                <div className="border-t border-gray-100"></div>
-                            )}
+                                {itinerary.map((day) => (
+                                    <TabsContent key={day.day_number} value={day.day_number.toString()} className="mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-5 duration-500">
+                                        <DayPlanner
+                                            day={day}
+                                            onAddActivity={addActivity}
+                                            onRemoveActivity={removeActivity}
+                                            morningColor={undefined}
+                                            afternoonColor={undefined}
+                                            eveningColor={undefined}
+                                            nightColor={undefined}
+                                            activeDayColor={undefined}
+                                            headingBorderColor={undefined}
+                                            dayBadgeColor={undefined}
+                                            isReadonly={mode === 'preview'}
+                                        />
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        </section>
 
-                            {/* FLIGHTS MODULE - Enhanced */}
-                            {preferences.include_flights && (
-                                <section className="space-y-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
-                                        <div className="flex-1 flex items-center justify-between">
-                                            <h2 className="text-2xl font-bold text-gray-900">Flights</h2>
-                                            {flightError && <Badge variant="destructive">{flightError}</Badge>}
-                                        </div>
+                        {(preferences.include_flights || preferences.include_hotels || preferences.include_transfers) && (
+                            <div className="border-t border-gray-100"></div>
+                        )}
+
+                        {/* FLIGHTS MODULE - Enhanced */}
+                        {preferences.include_flights && (
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
+                                    <div className="flex-1 flex items-center justify-between">
+                                        <h2 className="text-2xl font-bold text-black">Flights</h2>
+                                        {flightError && <Badge variant="destructive">{flightError}</Badge>}
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <div className="p-1 bg-[var(--primary)]/10 rounded-md">
+                                                <Plane className="h-3 w-3" />
+                                            </div>
+                                            Onward Journey
+                                        </h3>
+                                        {selectedOnwardFlight ? (
+                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
+                                                <div className="p-1">
+                                                    <FlightCard
+                                                        flight={selectedOnwardFlight}
+                                                        isSelected={true}
+                                                        onSelect={() => { }}
+                                                    />
+                                                    <div className="border-t border-dashed border-black/10 p-2 flex justify-center">
+                                                        <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
+                                                                    Change Onward Flight
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
+                                                                <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
+                                                                    <DialogTitle className="text-black font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
+                                                                </DialogHeader>
+                                                                <div className="flex flex-1 overflow-hidden">
+                                                                    <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
+                                                                        <div className="flex items-center justify-between mb-6">
+                                                                            <h3 className="font-bold text-black">Filters</h3>
+                                                                            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between mb-6 md:hidden">
+                                                                            <h3 className="font-bold text-black">Filters</h3>
+                                                                            <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                        </div>
+                                                                        <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
+                                                                        <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
+                                                                    </div>
+                                                                    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
+                                                                        <div className="md:hidden mb-4">
+                                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
+                                                                                Filters
+                                                                            </Button>
+                                                                        </div>
+                                                                        <div className="space-y-4">
+                                                                            {filteredOnwardFlights.length === 0 ? (
+                                                                                <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
+                                                                                    <p className="text-black mb-2">No flights found matching your filters.</p>
+                                                                                    <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                filteredOnwardFlights.map(f => (
+                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
+                                                                                ))
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-black/10 shadow-none">
+                                                <div className="flex flex-col items-center gap-3 text-black">
+                                                    {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
+                                                    <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
+                                                </div>
+                                            </Card>
+                                        )}
                                     </div>
 
-                                    <div className="grid md:grid-cols-2 gap-8">
+                                    {returnFlights.length > 0 && (
                                         <div className="space-y-4">
                                             <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
                                                 <div className="p-1 bg-[var(--primary)]/10 rounded-md">
-                                                    <Plane className="h-3 w-3" />
+                                                    <Plane className="h-3 w-3 -rotate-180" />
                                                 </div>
-                                                Onward Journey
+                                                Return Journey
                                             </h3>
-                                            {selectedOnwardFlight ? (
+                                            {selectedReturnFlight ? (
                                                 <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
                                                     <div className="p-1">
                                                         <FlightCard
-                                                            flight={selectedOnwardFlight}
+                                                            flight={selectedReturnFlight}
                                                             isSelected={true}
                                                             onSelect={() => { }}
                                                         />
-                                                        <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
-                                                            <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
+                                                        <div className="border-t border-dashed border-black/10 p-2 flex justify-center">
+                                                            <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
                                                                 <DialogTrigger asChild>
                                                                     <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
-                                                                        Change Onward Flight
+                                                                        Change Return Flight
                                                                     </Button>
                                                                 </DialogTrigger>
-                                                                <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
+                                                                <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
                                                                     <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                        <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
+                                                                        <DialogTitle className="text-black font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
                                                                         <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                             <div className="flex items-center justify-between mb-6">
-                                                                                <h3 className="font-bold text-gray-900">Filters</h3>
+                                                                                <h3 className="font-bold text-black">Filters</h3>
                                                                                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
                                                                             </div>
                                                                             <div className="flex items-center justify-between mb-6 md:hidden">
-                                                                                <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                                <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
+                                                                                <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
                                                                             </div>
                                                                             <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
                                                                             <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
@@ -982,16 +973,9 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                                 </Button>
                                                                             </div>
                                                                             <div className="space-y-4">
-                                                                                {filteredOnwardFlights.length === 0 ? (
-                                                                                    <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
-                                                                                        <p className="text-gray-500 mb-2">No flights found matching your filters.</p>
-                                                                                        <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    filteredOnwardFlights.map(f => (
-                                                                                        <FlightCard key={f.id} flight={f} isSelected={selectedOnwardFlight.id === f.id} isBestValue={onwardFlights[0].id === f.id} onSelect={(flight) => { setSelectedOnwardFlight(flight); setIsOnwardModalOpen(false); }} />
-                                                                                    ))
-                                                                                )}
+                                                                                {filteredReturnFlights.map(f => (
+                                                                                    <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
+                                                                                ))}
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1001,416 +985,309 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none">
-                                                    <div className="flex flex-col items-center gap-3 text-gray-400">
+                                                <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-black/10 shadow-none glass-panel">
+                                                    <div className="flex flex-col items-center gap-3 text-black">
                                                         {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
-                                                        <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
+                                                        <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
                                                     </div>
                                                 </Card>
                                             )}
                                         </div>
-
-                                        {returnFlights.length > 0 && (
-                                            <div className="space-y-4">
-                                                <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
-                                                    <div className="p-1 bg-[var(--primary)]/10 rounded-md">
-                                                        <Plane className="h-3 w-3 -rotate-180" />
-                                                    </div>
-                                                    Return Journey
-                                                </h3>
-                                                {selectedReturnFlight ? (
-                                                    <div className="hover:shadow-2xl transition-all duration-300 rounded-[16px] bg-white/5 ring-1 ring-white/10 overflow-hidden group backdrop-blur-sm border border-white/10">
-                                                        <div className="p-1">
-                                                            <FlightCard
-                                                                flight={selectedReturnFlight}
-                                                                isSelected={true}
-                                                                onSelect={() => { }}
-                                                            />
-                                                            <div className="border-t border-dashed border-gray-100 p-2 flex justify-center">
-                                                                <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
-                                                                    <DialogTrigger asChild>
-                                                                        <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
-                                                                            Change Return Flight
-                                                                        </Button>
-                                                                    </DialogTrigger>
-                                                                    <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
-                                                                        <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                            <DialogTitle className="text-[#3A1A08] font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
-                                                                        </DialogHeader>
-                                                                        <div className="flex flex-1 overflow-hidden">
-                                                                            <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
-                                                                                <div className="flex items-center justify-between mb-6">
-                                                                                    <h3 className="font-bold text-gray-900">Filters</h3>
-                                                                                    <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between mb-6 md:hidden">
-                                                                                    <Button variant="ghost" size="sm" className="text-blue-600 h-auto p-0 hover:bg-transparent" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
-                                                                                </div>
-                                                                                <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
-                                                                                <Button className="w-full mt-4 md:hidden" onClick={() => setShowMobileFilters(false)}>Apply Filters</Button>
-                                                                            </div>
-                                                                            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent custom-orange-scrollbar">
-                                                                                <div className="md:hidden mb-4">
-                                                                                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowMobileFilters(true)}>
-                                                                                        Filters
-                                                                                    </Button>
-                                                                                </div>
-                                                                                <div className="space-y-4">
-                                                                                    {filteredReturnFlights.map(f => (
-                                                                                        <FlightCard key={f.id} flight={f} isSelected={selectedReturnFlight.id === f.id} isBestValue={returnFlights[0].id === f.id} onSelect={(flight) => { setSelectedReturnFlight(flight); setIsReturnModalOpen(false); }} />
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </DialogContent>
-                                                                </Dialog>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-white/20 shadow-none glass-panel">
-                                                        <div className="flex flex-col items-center gap-3 text-gray-400">
-                                                            {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
-                                                            <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
-                                                        </div>
-                                                    </Card>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
-                            )}
-
-
-                            {(preferences.include_hotels || preferences.include_transfers) && (
-                                <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* HOTELS & TRANSFERS MODULES */}
-                                    {preferences.include_hotels && (
-                                        <div className="space-y-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
-                                                    <Hotel className="h-6 w-6" />
-                                                </div>
-                                                <h2 className="text-2xl font-bold text-gray-900">Accommodation</h2>
-                                            </div>
-
-                                            <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
-                                                <ServiceCard
-                                                    type="hotel"
-                                                    status={hotelSelected ? 'selected' : 'pending'}
-                                                    title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
-                                                    description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
-                                                    price={hotelSelected ? HOTEL_ESTIMATE : undefined}
-                                                    details={hotelSelected ? {
-                                                        date: 'Check-in: Day 1',
-                                                        rating: 4.8
-                                                    } : undefined}
-                                                    onAction={() => setHotelSelected(!hotelSelected)}
-                                                    disabled={mode === 'preview'}
-                                                />
-                                            </div>
-                                        </div>
                                     )}
-
-                                    {preferences.include_transfers && (
-                                        <div className="space-y-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
-                                                    <Car className="h-6 w-6" />
-                                                </div>
-                                                <h2 className="text-2xl font-bold text-gray-900">Transfers</h2>
-                                            </div>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-lg shadow-sm">
-                                                        <Plane className="h-4 w-4 text-white" />
-                                                    </div>
-                                                    <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Onward Journey</h3>
-                                                </div>
-                                                <div className="text-xs font-bold text-slate-500 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
-                                                    Direct Flight Only
-                                                </div>
-                                            </div>
-                                            <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
-                                                <ServiceCard
-                                                    type="transfer"
-                                                    status={transferSelected ? 'selected' : 'pending'}
-                                                    title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
-                                                    description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
-                                                    price={transferSelected ? TRANSFER_ESTIMATE : undefined}
-                                                    details={transferSelected ? {
-                                                        duration: 'Full Trip Coverage'
-                                                    } : undefined}
-                                                    onAction={() => setTransferSelected(!transferSelected)}
-                                                    disabled={mode === 'preview'}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                </section>
-                            )}
-
-
-
-                            {/* Cancellation Policy Section */}
-                            <section className="pt-16 pb-8 border-t border-gray-100">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
-                                    <h2 className="text-3xl font-bold text-slate-900 font-display">Cancellation Policy</h2>
                                 </div>
+                            </section>
+                        )}
 
-                                {session.cancellation_enabled ? (
-                                    <div className="space-y-4 max-w-3xl">
-                                        <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-8 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-6 text-emerald-800">
-                                                <div className="p-2 bg-emerald-100 rounded-lg">
-                                                    <CheckCircle className="h-5 w-5" />
-                                                </div>
-                                                <span className="font-bold text-xl">Cancellable Package</span>
+
+                        {(preferences.include_hotels || preferences.include_transfers) && (
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* HOTELS & TRANSFERS MODULES */}
+                                {preferences.include_hotels && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                                                <Hotel className="h-6 w-6" />
                                             </div>
-                                            <div className="grid gap-4">
-                                                {session.cancellation_rules?.map((rule: any, idx: number) => {
-                                                    const baseFare = (session.price_per_person || 0) * (travelers.adults + travelers.children);
-                                                    const gstApplicable = !!gstSettings;
-                                                    let gstAmount = 0;
-                                                    let realBase = baseFare;
-
-                                                    if (gstApplicable) {
-                                                        if (gstSettings.inclusive) {
-                                                            realBase = baseFare / (1 + gstSettings.percentage / 100);
-                                                            gstAmount = baseFare - realBase;
-                                                        } else {
-                                                            gstAmount = (baseFare * gstSettings.percentage) / 100;
-                                                        }
-                                                    }
-
-                                                    const amount = calculateRefundAmount(
-                                                        rule,
-                                                        realBase,
-                                                        gstAmount,
-                                                        gstApplicable
-                                                    );
-
-                                                    const fareLabel = getFareTypeLabel(
-                                                        rule.fareType,
-                                                        gstApplicable,
-                                                        rule.refundPercentage
-                                                    );
-
-                                                    return (
-                                                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-2 bg-slate-50 rounded-lg">
-                                                                    <Clock className="h-4 w-4 text-emerald-600" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Timing</p>
-                                                                    <span className="font-bold text-slate-800">Cancel before {rule.daysBefore} days</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="text-right flex flex-col items-end">
-                                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Refund</p>
-                                                                    <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
-                                                                    {fareLabel && (
-                                                                        <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
-                                                                            {fareLabel}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100 min-w-[80px] text-center">
-                                                                    ₹{amount.toLocaleString()}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
-                                                {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50 rounded-2xl border border-red-100 shadow-sm gap-4 opacity-80">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-white rounded-lg">
-                                                                <XCircle className="h-4 w-4 text-red-600" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Condition</p>
-                                                                <span className="font-bold text-red-800 whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="text-right">
-                                                                <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Refund</p>
-                                                                <span className="text-red-700 font-black text-lg">0% back</span>
-                                                            </div>
-                                                            <div className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black border border-red-200 uppercase tracking-tighter">
-                                                                Non-refundable
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <h2 className="text-2xl font-bold text-black">Accommodation</h2>
                                         </div>
-                                        <p className="text-[11px] text-slate-400 font-medium px-4 flex items-start gap-2 max-w-2xl">
-                                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                            <span>
-                                                * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
-                                            </span>
-                                        </p>
+
+                                        <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
+                                            <ServiceCard
+                                                type="hotel"
+                                                status={hotelSelected ? 'selected' : 'pending'}
+                                                title={hotelSelected ? 'Luxury Stay Included' : 'Select Hotel Preference'}
+                                                description={hotelSelected ? '5-Star Hotel with Breakfast' : 'Choose where you want to stay'}
+                                                price={hotelSelected ? HOTEL_ESTIMATE : undefined}
+                                                details={hotelSelected ? {
+                                                    date: 'Check-in: Day 1',
+                                                    rating: 4.8
+                                                } : undefined}
+                                                onAction={() => setHotelSelected(!hotelSelected)}
+                                                disabled={mode === 'preview'}
+                                            />
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 bg-red-50/50 border border-red-100 rounded-[2.5rem] max-w-3xl">
-                                        <div className="p-4 bg-red-100 rounded-2xl text-red-600 shadow-inner">
-                                            <XCircle className="h-8 w-8" />
+                                )}
+
+                                {preferences.include_transfers && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
+                                                <Car className="h-6 w-6" />
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-black">Transfers</h2>
                                         </div>
-                                        <div>
-                                            <h4 className="font-black text-red-900 text-2xl font-display mb-1">Non-Cancellable</h4>
-                                            <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-lg shadow-sm">
+                                                    <Plane className="h-4 w-4 text-white" />
+                                                </div>
+                                                <h3 className="font-black text-black uppercase tracking-widest text-sm">Onward Journey</h3>
+                                            </div>
+                                            <div className="text-xs font-bold text-black bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                                                Direct Flight Only
+                                            </div>
+                                        </div>
+                                        <div className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1">
+                                            <ServiceCard
+                                                type="transfer"
+                                                status={transferSelected ? 'selected' : 'pending'}
+                                                title={transferSelected ? 'Private Transfers Included' : 'Add Private Transfers'}
+                                                description={transferSelected ? 'Airport Pickup & Drop + Inter-city' : 'Hassle-free airport & city transfers'}
+                                                price={transferSelected ? TRANSFER_ESTIMATE : undefined}
+                                                details={transferSelected ? {
+                                                    duration: 'Full Trip Coverage'
+                                                } : undefined}
+                                                onAction={() => setTransferSelected(!transferSelected)}
+                                                disabled={mode === 'preview'}
+                                            />
                                         </div>
                                     </div>
                                 )}
                             </section>
+                        )}
 
-                            {/* Footer Confidence Boost - Redesigned */}
-                            {true && (
-                                <div className="pt-16 pb-8" style={{ backgroundColor: 'transparent' }}>
-                                    <div className="text-center mb-12">
-                                        <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-2">
-                                            Peace of Mind
-                                        </h3>
-                                        <h2 className="text-3xl font-bold text-slate-900 font-display">
-                                            {"Why book with RNT Tour?"}
-                                        </h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        {([
-                                            { title: "Verified & Secure", description: "Curated packages & 100% secure payments via reliable gateways.", icon: "ShieldCheck" },
-                                            { title: "Flexible & Transparent", description: "Customizable plans with absolutely no hidden fees.", icon: "CheckCircle" },
-                                            { title: "24/7 Expert Support", description: "Instant confirmation & dedicated assistance throughout your trip.", icon: "Headphones" }
-                                        ]).map((card: any, idx: number) => {
-                                            const Icons: Record<string, any> = {
-                                                ShieldCheck, CheckCircle, Headphones, Map: MapIcon, Users, Clock, Shield, Star, Heart, Camera, Car, Globe, Plane
-                                            };
-                                            const IconComponent = Icons[card.icon] || ShieldCheck;
-                                            
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    className="flex flex-col items-center text-center gap-6 group p-8 transition-all duration-500 bg-white/40 backdrop-blur-sm border border-white/30 rounded-[2rem] hover:shadow-xl hover:-translate-y-1"
-                                                >
-                                                    <div
-                                                        className="p-6 rounded-2xl transition-all duration-500 shadow-sm group-hover:shadow-lg bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white"
-                                                    >
-                                                        <IconComponent className="h-8 w-8" />
+
+
+                        {/* Cancellation Policy Section */}
+                        <section className="pt-16 pb-8 border-t border-gray-100">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
+                                <h2 className="text-3xl font-bold text-slate-900 font-display">Cancellation Policy</h2>
+                            </div>
+
+                            {session.cancellation_enabled ? (
+                                <div className="space-y-4 max-w-3xl">
+                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-8 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-6 text-emerald-800">
+                                            <div className="p-2 bg-emerald-100 rounded-lg">
+                                                <CheckCircle className="h-5 w-5" />
+                                            </div>
+                                            <span className="font-bold text-xl">Cancellable Package</span>
+                                        </div>
+                                        <div className="grid gap-4">
+                                            {session.cancellation_rules?.map((rule: any, idx: number) => {
+                                                const baseFare = (session.price_per_person || 0) * (travelers.adults + travelers.children);
+                                                const gstApplicable = !!gstSettings;
+                                                let gstAmount = 0;
+                                                let realBase = baseFare;
+
+                                                if (gstApplicable) {
+                                                    if (gstSettings.inclusive) {
+                                                        realBase = baseFare / (1 + gstSettings.percentage / 100);
+                                                        gstAmount = baseFare - realBase;
+                                                    } else {
+                                                        gstAmount = (baseFare * gstSettings.percentage) / 100;
+                                                    }
+                                                }
+
+                                                const amount = calculateRefundAmount(
+                                                    rule,
+                                                    realBase,
+                                                    gstAmount,
+                                                    gstApplicable
+                                                );
+
+                                                const fareLabel = getFareTypeLabel(
+                                                    rule.fareType,
+                                                    gstApplicable,
+                                                    rule.refundPercentage
+                                                );
+
+                                                return (
+                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-black/5 rounded-lg">
+                                                                <Clock className="h-4 w-4 text-emerald-600" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Timing</p>
+                                                                <span className="font-bold text-black">Cancel before {rule.daysBefore} days</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-right flex flex-col items-end">
+                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Refund</p>
+                                                                <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
+                                                                {fareLabel && (
+                                                                    <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
+                                                                        {fareLabel}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100 min-w-[80px] text-center">
+                                                                ₹{amount.toLocaleString()}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-900 text-xl mb-2 font-display">{card.title}</h4>
-                                                        <p className="text-sm text-slate-600 leading-relaxed">{card.description || card.desc}</p>
+                                                );
+                                            })}
+                                            {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
+                                            {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50 rounded-2xl border border-red-100 shadow-sm gap-4 opacity-80">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-white rounded-lg">
+                                                            <XCircle className="h-4 w-4 text-red-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Condition</p>
+                                                            <span className="font-bold text-red-800 whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-right">
+                                                            <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Refund</p>
+                                                            <span className="text-red-700 font-black text-lg">0% back</span>
+                                                        </div>
+                                                        <div className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black border border-red-200 uppercase tracking-tighter">
+                                                            Non-refundable
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-black font-medium px-4 flex items-start gap-2 max-w-2xl">
+                                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                        <span>
+                                            * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
+                                        </span>
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col md:flex-row md:items-center gap-6 p-8 bg-red-50/50 border border-red-100 rounded-[2.5rem] max-w-3xl">
+                                    <div className="p-4 bg-red-100 rounded-2xl text-red-600 shadow-inner">
+                                        <XCircle className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-red-900 text-2xl font-display mb-1">Non-Cancellable</h4>
+                                        <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
                                     </div>
                                 </div>
                             )}
+                        </section>
 
-                        </div>
 
-                        {/* Right Column - Trip Cart (Sticky) */}
-                        <div className="hidden lg:block lg:col-span-4 xl:col-span-3 min-w-0">
-                            <div className="sticky top-8">
-                                <div className="relative">
-                                    {/* Decorative elements behind cart */}
-                                    <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
-                                    <TripCart
-                                        basePrice={session.price_per_person || 18000}
-                                        travelers={travelers}
-                                        duration={{ days: session.duration_days, nights: session.duration_nights }}
-                                        services={[
-                                            ...(selectedOnwardFlight ? [{
-                                                name: 'Onward Flight',
-                                                price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
-                                            }] : []),
-                                            ...(selectedReturnFlight ? [{
-                                                name: 'Return Flight',
-                                                price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
-                                            }] : []),
-                                            ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                            ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                        ]}
-                                        onCheckout={handleCheckout}
-                                        disabled={mode === 'preview'}
-                                        gstSettings={gstSettings || undefined}
-                                    />
-                                </div>
+                    </div>
+
+                    {/* Right Column - Trip Cart (Sticky) */}
+                    <div className="hidden lg:block lg:col-span-4 xl:col-span-3 min-w-0">
+                        <div className="sticky top-8">
+                            <div className="relative">
+                                {/* Decorative elements behind cart */}
+                                <div className="absolute inset-x-4 -top-6 -bottom-6 bg-blue-50/50 rounded-[2.5rem] -z-10 blur-xl"></div>
+                                <TripCart
+                                    basePrice={session.price_per_person || 18000}
+                                    travelers={travelers}
+                                    duration={{ days: session.duration_days, nights: session.duration_nights }}
+                                    services={[
+                                        ...(selectedOnwardFlight ? [{
+                                            name: 'Onward Flight',
+                                            price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                        }] : []),
+                                        ...(selectedReturnFlight ? [{
+                                            name: 'Return Flight',
+                                            price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                        }] : []),
+                                        ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                        ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                    ]}
+                                    onCheckout={handleCheckout}
+                                    disabled={mode === 'preview'}
+                                    gstSettings={gstSettings || undefined}
+                                    cancellationEnabled={session.cancellation_enabled}
+                                />
                             </div>
                         </div>
+                    </div>
 
+                </div>
+            </div>
+            {/* Mobile Sticky Footer */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div className="flex flex-col">
+                    <span className="text-xs text-black font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-black">
+                            ₹{(() => {
+                                const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
+                                const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
+                                const services = [
+                                    ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                    ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                    ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                ]
+                                const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
+                                let subTotal = totalBasePrice + totalServicesPrice
+
+                                if (gstSettings && !gstSettings.inclusive) {
+                                    const gstAmount = (subTotal * gstSettings.percentage) / 100
+                                    subTotal += gstAmount
+                                }
+
+                                return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                            })()}
+                        </span>
+                        <Button variant="link" size="sm" className="h-auto p-0 text-[var(--primary)] text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
                     </div>
                 </div>
-                {/* Mobile Sticky Footer */}
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                    <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-bold text-gray-900">
-                                ₹{(() => {
-                                    const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
-                                    const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
-                                    const services = [
-                                        ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                        ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
-                                        ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                        ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                    ]
-                                    const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
-                                    let subTotal = totalBasePrice + totalServicesPrice
+                <Button onClick={handleCheckout} className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--primary-glow)]">
+                    Book Now
+                </Button>
+            </div>
 
-                                    if (gstSettings && !gstSettings.inclusive) {
-                                        const gstAmount = (subTotal * gstSettings.percentage) / 100
-                                        subTotal += gstAmount
-                                    }
-
-                                    return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                                })()}
-                            </span>
-                            <Button variant="link" size="sm" className="h-auto p-0 text-[var(--primary)] text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
-                        </div>
+            {/* Mobile Cart Dialog */}
+            <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
+                <DialogContent className="glass-panel max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl border-0">
+                    <div className="p-4 border-b border-white/20 bg-white/10 flex justify-between items-center sticky top-0 z-10">
+                        <DialogTitle>Trip Summary</DialogTitle>
                     </div>
-                    <Button onClick={handleCheckout} className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--primary-glow)]">
-                        Book Now
-                    </Button>
-                </div>
-
-                {/* Mobile Cart Dialog */}
-                <Dialog open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
-                    <DialogContent className="glass-panel max-h-[85vh] overflow-y-auto p-0 gap-0 w-[95vw] rounded-2xl border-0">
-                        <div className="p-4 border-b border-white/20 bg-white/10 flex justify-between items-center sticky top-0 z-10">
-                            <DialogTitle>Trip Summary</DialogTitle>
-                        </div>
-                        <div className="p-4 bg-transparent min-h-[50vh]">
-                                    <TripCart
-                                        basePrice={session.price_per_person || 18000}
-                                        travelers={travelers}
-                                        duration={{ days: session.duration_days, nights: session.duration_nights }}
-                                        services={[
-                                            ...(selectedOnwardFlight ? [{
-                                                name: 'Onward Flight',
-                                                price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
-                                            }] : []),
-                                            ...(selectedReturnFlight ? [{
-                                                name: 'Return Flight',
-                                                price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
-                                            }] : []),
-                                            ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                            ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                        ]}
-                                        onCheckout={handleCheckout}
-                                        disabled={mode === 'preview'}
-                                        gstSettings={gstSettings || undefined}
-                                    />
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                    <div className="p-4 bg-transparent min-h-[50vh]">
+                        <TripCart
+                            basePrice={session.price_per_person || 18000}
+                            travelers={travelers}
+                            duration={{ days: session.duration_days, nights: session.duration_nights }}
+                            services={[
+                                ...(selectedOnwardFlight ? [{
+                                    name: 'Onward Flight',
+                                    price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children)
+                                }] : []),
+                                ...(selectedReturnFlight ? [{
+                                    name: 'Return Flight',
+                                    price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children)
+                                }] : []),
+                                ...(hotelSelected ? [{ name: 'Hotel Upgrade', price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                ...(transferSelected ? [{ name: 'Private Transfers', price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                            ]}
+                            onCheckout={handleCheckout}
+                            disabled={mode === 'preview'}
+                            gstSettings={gstSettings || undefined}
+                            cancellationEnabled={session.cancellation_enabled}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <BookingAuthModal
                 isOpen={isAuthModalOpen}

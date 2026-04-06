@@ -39,9 +39,9 @@ export function PassengerCounter({
     return (
         <div className={`flex items-center justify-between rounded-2xl p-4 shadow-sm border border-slate-100/50 ${compact ? 'h-[64px]' : ''} ${className}`}>
             <div className="flex flex-col">
-                <p className="font-bold text-[#4A5568] text-sm uppercase tracking-tight">{label}</p>
+                <p className="font-bold text-black text-sm uppercase tracking-tight">{label}</p>
                 {sublabel && (
-                    <p className="text-[11px] text-[#A0AEC0] font-medium">
+                    <p className="text-[11px] text-black/80 font-medium">
                         {sublabel}
                     </p>
                 )}

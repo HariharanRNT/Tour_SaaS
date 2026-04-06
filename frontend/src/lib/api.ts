@@ -249,7 +249,7 @@ export const updatePackageStatus = async (id: string, new_status: string) => {
 
 // Agent Packages API
 export const fetchAgentPackages = async (params: any) => {
-    const response = await api.get('/agent/packages/', { params })
+    const response = await api.get('/agent/packages', { params })
     return response.data
 }
 
@@ -328,27 +328,27 @@ export const bookingsAPI = {
     },
 
     getAll: async () => {
-        const response = await api.get('/bookings/')
+        const response = await api.get('/bookings')
         return response.data
     },
 
     getAgentBookings: async (params?: any) => {
-        const response = await api.get('/agent/bookings/', { params })
+        const response = await api.get('/agent/bookings', { params })
         return response.data
     },
 
     getById: async (id: string) => {
-        const response = await api.get(`/bookings/${id}/`)
+        const response = await api.get(`/bookings/${id}`)
         return response.data
     },
 
     cancel: async (id: string) => {
-        const response = await api.post(`/bookings/${id}/cancel/`)
+        const response = await api.post(`/bookings/${id}/cancel`)
         return response.data
     },
 
     getCancelPreview: async (id: string) => {
-        const response = await api.get(`/bookings/${id}/cancel-preview/`)
+        const response = await api.get(`/bookings/${id}/cancel-preview`)
         return response.data
     },
 

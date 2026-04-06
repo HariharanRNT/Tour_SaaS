@@ -432,8 +432,8 @@ export default function BookingsPage() {
                         <div className="space-y-4 py-2">
                             {/* Refund amount card with glassmorphism */}
                             <div className={`rounded-2xl border p-6 text-center transition-all animate-in fade-in zoom-in duration-500 ${preview.refund_amount > 0
-                                    ? 'border-emerald-200/50 bg-emerald-500/10 text-emerald-900'
-                                    : 'border-red-200/50 bg-red-500/10 text-red-900'
+                                ? 'border-emerald-200/50 bg-emerald-500/10 text-emerald-900'
+                                : 'border-red-200/50 bg-red-500/10 text-red-900'
                                 }`}>
                                 {preview.refund_amount > 0 ? (
                                     <>

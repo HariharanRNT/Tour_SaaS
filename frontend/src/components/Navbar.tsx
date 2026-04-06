@@ -71,7 +71,7 @@ export function Navbar() {
         // Default links
         const defaultLinks = [
             { label: 'Packages', href: '/', show: true, requiresAuth: false, role: null },
-            { label: 'Plan Trip', href: '/plan-trip', show: true, requiresAuth: false, role: null },
+            { label: 'Plan Trip', href: '/plan-trip?search=all', show: true, requiresAuth: false, role: null },
             { label: 'My Bookings', href: '/bookings', show: true, requiresAuth: true, role: 'customer' }
         ]
 
@@ -189,7 +189,7 @@ export function Navbar() {
 
     return (
         <div
-            className="fixed top-0 left-0 right-0 w-full z-50 pointer-events-none px-4 transition-all duration-300 flex justify-center"
+            className="absolute top-0 left-0 right-0 w-full z-50 pointer-events-none px-4 transition-all duration-300 flex justify-center"
             style={{ paddingTop: scrolled ? '8px' : '16px', paddingBottom: scrolled ? '6px' : '10px' }}
         >
             <nav

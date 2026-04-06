@@ -143,6 +143,141 @@
     border-radius: 999px;
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* Component-Level Glassmorphism System */
+  /* -------------------------------------------------------------------------- */
+
+  .glass-card-refinement {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card-hover:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  /* Red-tinted glass for warning/cancellation */
+  .glass-card-warning-red {
+    background: rgba(239, 68, 68, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(239, 68, 68, 0.05);
+  }
+
+  /* Ghost Glass Buttons */
+  .btn-glass-ghost-blue {
+    background: rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(59, 130, 246, 0.3);
+    color: #ffffff;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glass-ghost-blue::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transform: rotate(45deg);
+    transition: 0.5s;
+  }
+
+  .btn-glass-ghost-blue:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-glass-ghost-red {
+    background: rgba(239, 68, 68, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    transition: all 0.3s ease;
+  }
+
+  .btn-glass-ghost-red:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  }
+
+  /* High-contrast Glass Pills */
+  .glass-pill-chip {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .glass-pill-glow-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* Gradient Text for Premium Elements */
+  .text-gradient-premium {
+    background: linear-gradient(135deg, #60a5fa, #22d3ee);
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text;
+  }
+
+  .text-gradient-orange {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text;
+  }
+
+  /* Animations */
+  @keyframes soft-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+  }
+
+  .animate-pulse-soft {
+    animation: soft-pulse 2s infinite ease-in-out;
+  }
+
+  /* Transparent Glass Floating Bar */
+  .glass-floating-strip {
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.2);
+  }
+
   /* Trip Style Card Glass */
   .glass-trip-card {
     background: rgba(255, 255, 255, 0.12); /* Higher transparency */
@@ -280,19 +415,19 @@
   /* Form Inputs (Glass) - Scoped to Package Creation */
 
   .pkg-creation-root .glass-input {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 14px;
     transition: all 0.3s ease;
   }
   .pkg-creation-root .glass-input:focus, 
   .pkg-creation-root .glass-input:focus-within {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2);
-    border-color: rgba(255, 107, 43, 0.4);
-    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.5);
+    background: rgba(255, 255, 255, 0.22);
   }
 
   /* Preset Pills (Glass) - Scoped */
@@ -319,11 +454,12 @@
 
   /* Section Cards - Scoped */
   .pkg-creation-root .glass-card {
-    background: rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
   }
 
   /* Trip Style Cards - Scoped */
@@ -502,13 +638,23 @@
   .pkg-creation-root .inclusion-pill .pill-check {
     display: none;
   }
-  .pkg-creation-root.glass-dropdown-content {
-    background: rgba(255, 255, 255, 0.18) !important;
-    backdrop-filter: blur(28px) !important;
-    -webkit-backdrop-filter: blur(28px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  .pkg-creation-root.glass-dropdown-content,
+  .glass-dropdown-content.pkg-creation-root {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
     border-radius: 16px !important;
-    box-shadow: 0 8px 32px rgba(255, 107, 43, 0.2) !important;
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.12),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+    color: #000000 !important;
+  }
+  
+  /* Robust override for Radix/Shadcn Popovers */
+  [data-radix-popper-content-wrapper].pkg-creation-root .glass-dropdown-content,
+  .pkg-creation-root .glass-dropdown-content {
+    background: rgba(255, 255, 255, 0.12) !important;
   }
   .pkg-creation-root .glass-select-item[data-highlighted] {
     background-color: var(--primary-glow) !important;
@@ -1083,7 +1229,10 @@ body.font-playful h3 {
 
   /* Sidebar Header */
   .sidebar-header {
-    background: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
     border-radius: 12px !important;
     padding: 12px 14px !important;
     margin: 12px !important;
@@ -1106,10 +1255,10 @@ body.font-playful h3 {
   }
 
   .sidebar-header .subtitle {
-    color: rgba(0, 0, 0, 0.7) !important;
+    color: #000000 !important;
     font-size: 10px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.06em !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
     margin: 0 !important;
   }
@@ -1147,8 +1296,8 @@ body.font-playful h3 {
     color: #000000 !important;
     font-size: 11px !important;
     margin: 0 !important;
-    opacity: 0.8 !important;
-    font-weight: 600 !important;
+    opacity: 1 !important;
+    font-weight: 700 !important;
   }
 
   /* Edit Package Page - Glassmorphism System */
@@ -1182,10 +1331,10 @@ body.font-playful h3 {
     color: #1c1c1c;
   }
 
-  /* "Untitled Package" part — muted */
+  /* "Untitled Package" part — black */
   .page-title-muted {
-    color: #334155;
-    font-weight: 600;
+    color: #000000;
+    font-weight: 700;
   }
 
   .page-subtitle {
