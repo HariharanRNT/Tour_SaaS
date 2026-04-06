@@ -358,7 +358,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     viewport={{ once: true }}
                                 >
                                     <button
-                                        onClick={() => router.push('/plan-trip')}
+                                        onClick={() => router.push('/plan-trip?search=all')}
                                         className="text-[var(--primary)] font-black text-sm tracking-widest uppercase flex items-center gap-2 group hover:gap-3 transition-all"
                                     >
                                         View All Packages
