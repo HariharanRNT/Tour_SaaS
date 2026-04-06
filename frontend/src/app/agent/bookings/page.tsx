@@ -56,6 +56,7 @@ import {
     DialogTitle,
     DialogFooter
 } from "@/components/ui/dialog"
+import { formatCurrency, formatDuration } from '@/lib/utils'
 import {
     Popover,
     PopoverContent,
@@ -548,7 +549,7 @@ export default function AgentBookingsPage() {
                                     </div>
                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
                                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
-                                        <span className="text-[11px] font-bold">{booking.package?.duration_days}D / {booking.package?.duration_nights || (booking.package?.duration_days ?? 0) - 1}N</span>
+                                        <span className="text-[11px] font-bold">{formatDuration(booking.package?.duration_days || 0)}</span>
                                     </div>
                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
                                         <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
@@ -675,7 +676,7 @@ export default function AgentBookingsPage() {
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full border border-white/30 backdrop-blur-md">
                                         <Clock className="h-3.5 w-3.5 opacity-80" />
-                                        {booking.package?.duration_days} Days / {booking.package?.duration_nights || (booking.package?.duration_days ?? 0) - 1} Nights
+                                        {formatDuration(booking.package?.duration_days || 0)}
                                     </div>
                                 </div>
                             </div>
@@ -755,7 +756,7 @@ export default function AgentBookingsPage() {
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
                                             <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-2 leading-none">Duration</p>
-                                            <p className="font-bold text-[#2D1A0E] text-sm">{booking.package?.duration_days}D / {booking.package?.duration_nights || (booking.package?.duration_days ?? 0) - 1}N</p>
+                                            <p className="font-bold text-[#2D1A0E] text-sm">{formatDuration(booking.package?.duration_days || 0)}</p>
                                         </div>
                                     </div>
                                 </section>

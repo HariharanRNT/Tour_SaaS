@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { tripPlannerAPI } from '@/lib/api'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Calendar, MapPin, Users, Trash2, ArrowRight, Loader2, Plane, Clock, Sparkles, Filter, Search } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -194,7 +194,7 @@ export default function SavedTripsPage() {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Duration</p>
-                                                    <p className="font-bold">{session.duration_days} Days / {session.duration_nights} Nights</p>
+                                                    <p className="font-bold">{formatDuration(session.duration_days)}</p>
                                                 </div>
                                             </div>
 

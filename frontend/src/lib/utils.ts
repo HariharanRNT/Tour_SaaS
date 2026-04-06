@@ -19,3 +19,9 @@ export function formatDate(date: string | Date): string {
         month: 'long',
         day: 'numeric' }).format(new Date(date))
 }
+
+export function formatDuration(days: number): string {
+    const d = Math.max(1, days || 1);
+    const n = d - 1;
+    return `${n}N/${d}D`;
+}

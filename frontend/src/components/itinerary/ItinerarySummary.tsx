@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, MapPin } from 'lucide-react'
+import { formatDuration } from '@/lib/utils'
 
 interface ItinerarySummaryProps {
     days: ItineraryDay[]
@@ -52,7 +53,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                         {locationInfo?.city || destination}, {locationInfo?.country || ''}
                     </CardTitle>
                     <CardDescription>
-                        {days.length} {days.length === 1 ? 'day' : 'days'} itinerary
+                        {formatDuration(days.length)} itinerary
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

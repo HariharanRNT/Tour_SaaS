@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
+import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -1359,7 +1360,7 @@ function PlanTripContent() {
                                                                 <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
                                                                     <div className="flex flex-col gap-2 items-end">
                                                                         <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
-                                                                            {pkg.duration_days} Days
+                                                                            {formatDuration(pkg.duration_days)}
                                                                         </Badge>
                                                                         <Badge className="bg-[var(--primary)] text-white border-0 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
                                                                             ₹{pkg.price_per_person.toLocaleString('en-IN')}

@@ -108,6 +108,8 @@ export default function CreatePackagePage() {
     const [packageId, setPackageId] = useState<string | null>(editPackageId)
     const [useFeatureImage, setUseFeatureImage] = useState(false)
     const [tripStyleError, setTripStyleError] = useState(false)
+    // Track whether package data has been loaded so we can suppress validation until ready
+    const [dataLoaded, setDataLoaded] = useState(!editPackageId)
 
     // Multi-Destination Drag & Drop State
     const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
@@ -145,6 +147,13 @@ export default function CreatePackagePage() {
 
     // Whether agent has GST set to Applicable in Settings — controls GST section visibility
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
+
+    // Clear trip style validation error automatically when styles are pre-populated
+    useEffect(() => {
+        if (formData.trip_styles.length > 0) {
+            setTripStyleError(false)
+        }
+    }, [formData.trip_styles])
 
     // Load existing package data if editing
     useEffect(() => {
@@ -350,10 +359,12 @@ export default function CreatePackagePage() {
                 }
                 if (pkg.feature_image_url) setUseFeatureImage(true)
                 setPackageId(id)
+                setDataLoaded(true)
             }
         } catch (error) {
             console.error('Failed to load package:', error)
             toast.error('Failed to load package data')
+            setDataLoaded(true) // allow interaction even on error
         } finally {
             setLoading(false)
         }
@@ -477,6 +488,12 @@ export default function CreatePackagePage() {
     }
 
     const handleContinueSave = async (targetStep: number) => {
+        // Don't run while initial data is being loaded in edit mode
+        if (loading || !dataLoaded) {
+            toast.info('Please wait while the package data is loading...')
+            return
+        }
+
         // Validation check before proceeding
         if (targetStep > activeStep) {
             const missingFields: string[] = [];
@@ -678,6 +695,11 @@ export default function CreatePackagePage() {
     }
 
     const handleStepClick = (step: number) => {
+        // Block navigation while data is still loading
+        if (loading || !dataLoaded) {
+            return
+        }
+
         // Prevent skipping ahead without saving basic info
         if (step > 1 && !packageId) {
             if (activeStep === 1 && isBasicInfoValid()) {
@@ -694,6 +716,19 @@ export default function CreatePackagePage() {
         } else {
             setActiveStep(step)
         }
+    }
+
+    // Show full-page loading overlay while fetching edit data
+    if (loading && !dataLoaded) {
+        return (
+            <div className="pkg-creation-root min-h-screen flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)] animate-spin mx-auto" />
+                    <p className="text-black font-semibold text-lg">Loading package details...</p>
+                    <p className="text-black/60 text-sm">Please wait while we fetch your saved data</p>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -1606,8 +1641,9 @@ export default function CreatePackagePage() {
                                     <div className="bg-[var(--primary)]/5 border border-[var(--primary)]/10 rounded-lg p-3 text-xs text-[var(--primary)] space-y-1">
                                         {agentGstApplicable ? (
                                             <>
-                                                <p><b>Example (GST applicable, Base ₹1,000 + 18% GST = ₹1,180):</b></p>
-                                                <p>Cancel 5+ days → 70% of <b>Total Fare</b> = ₹826 &nbsp;|&nbsp; Cancel 2–4 days → 25% of <b>Base Fare</b> = ₹250 (GST forfeited) &nbsp;|&nbsp; &lt;2 days → No refund</p>
+                                                <p><b>Example:</b></p>
+                                                <p>1) Cancel 10 days before travel → 100% refund on <b>Base Fare</b></p>
+                                                <p>2) Cancel 5 days before travel → 25% refund on <b>Total Fare</b></p>
                                             </>
                                         ) : (
                                             <p><b>Example:</b> Cancel 7+ days before → 80% refund | 3–6 days → 50% | &lt;3 days → 0%</p>

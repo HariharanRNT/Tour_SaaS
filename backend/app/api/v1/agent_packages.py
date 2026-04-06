@@ -125,6 +125,12 @@ async def create_agent_package(
         gst_percentage = package_data.gst_percentage if gst_applicable else None
         gst_mode = package_data.gst_mode if gst_applicable else None
 
+        # Serialize trip_styles list → JSON string for the trip_style DB column
+        import json as _json
+        trip_styles_list = package_data.trip_styles or ([
+            package_data.trip_style] if package_data.trip_style else [])
+        trip_style_serialized = _json.dumps(trip_styles_list) if trip_styles_list else None
+
         # Create package
         new_package = Package(
             id=package_id,
@@ -133,7 +139,7 @@ async def create_agent_package(
             destination=package_data.destination,
             duration_days=package_data.duration_days,
             duration_nights=package_data.duration_nights,
-            trip_style=package_data.trip_style,
+            trip_style=trip_style_serialized,
             price_per_person=package_data.price_per_person,
             max_group_size=package_data.max_group_size,
             description=package_data.description,
@@ -251,7 +257,19 @@ async def update_agent_package(
     # Update fields
     update_data = package_data.dict(exclude_unset=True)
     json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
-    
+
+    # Handle trip_styles → serialize as JSON into the trip_style String column
+    import json as _json
+    if 'trip_styles' in update_data:
+        trip_styles_list = update_data.pop('trip_styles') or []
+        # Also remove trip_style if it was sent separately to avoid conflicts
+        update_data.pop('trip_style', None)
+        package.trip_style = _json.dumps(trip_styles_list) if trip_styles_list else None
+    elif 'trip_style' in update_data:
+        # Legacy single-value update — wrap as JSON list for consistency
+        raw = update_data.pop('trip_style')
+        package.trip_style = _json.dumps([raw]) if raw else None
+
     for field, value in update_data.items():
         if field == 'cancellation_rules':
             # Skip here — handled separately below

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Loader2, ShoppingCart, Lock, ShieldCheck, Clock, Users, CheckCircle2, RotateCcw, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { cn, formatDuration } from '@/lib/utils'
 
 interface TripCartProps {
     travelers: {
@@ -129,7 +129,7 @@ export function TripCart({
                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
                             <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-black")}>Duration</span>
-                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-slate-900")}>{duration.days}D / {duration.nights}N</span>
+                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-slate-900")}>{formatDuration(duration.days)}</span>
                         </div>
                     </div>
                 </div>

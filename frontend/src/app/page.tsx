@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import {
     Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
     Globe, Users, Clock, Star, Heart, Luggage, Compass, Search,
@@ -397,7 +398,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
                                             <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
                                                 <Badge className="bg-black text-white hover:bg-black/90 border border-white/20 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full shadow-md">
-                                                    <Clock className="h-3 w-3" /> {pkg.duration_days} Days
+                                                    <Clock className="h-3 w-3" /> {formatDuration(pkg.duration_days)}
                                                 </Badge>
                                                 <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1 flex items-center gap-1.5 rounded-full shadow-md">
                                                     ₹{pkg.price_per_person.toLocaleString('en-IN')}

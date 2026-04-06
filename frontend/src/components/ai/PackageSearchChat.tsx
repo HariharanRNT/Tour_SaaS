@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency, formatDuration } from "@/lib/utils"
 import { API_URL } from '@/lib/api'
 
 interface Message {
@@ -397,7 +397,7 @@ export default function PackageSearchChat() {
                                                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
                                                     <div className="text-center flex-1">
                                                         <span className="block text-[10px] text-black uppercase font-bold tracking-wider mb-1">Duration</span>
-                                                        <span className="text-sm font-bold text-slate-700">{msg.tool_result.duration_days} Days</span>
+                                                        <span className="text-sm font-bold text-slate-700">{formatDuration(msg.tool_result.duration_days)}</span>
                                                     </div>
                                                     <div className="w-px h-8 bg-slate-200" />
                                                     <div className="text-center flex-1">

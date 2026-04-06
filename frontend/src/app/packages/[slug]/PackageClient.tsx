@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MapPin, Calendar, Users, Sun, Cloud, Sunset, Moon, ArrowLeft, Clock, X, Check, Plane, FileDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDuration } from '@/lib/utils'
 import { packagesEnhancedAPI, API_URL } from '@/lib/api'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -269,7 +269,7 @@ export default function PackageDetailPage() {
                     <div className="flex gap-6 mt-6 text-white/90">
                         <div className="flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
-                            <span>{packageData.duration_days} days / {packageData.duration_nights} nights</span>
+                            <span>{formatDuration(packageData.duration_days)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Users className="h-5 w-5" />
@@ -456,7 +456,7 @@ export default function PackageDetailPage() {
                                         <div className="space-y-2 text-sm text-gray-600">
                                             <div className="flex justify-between">
                                                 <span>Duration</span>
-                                                <span className="font-medium">{packageData?.duration_days} days</span>
+                                                <span className="font-medium">{formatDuration(packageData?.duration_days || 0)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Max group size</span>
@@ -525,7 +525,7 @@ export default function PackageDetailPage() {
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1 flex items-center gap-1">
                                         <Calendar className="h-3.5 w-3.5" />
-                                        {packageData?.duration_days} Days / {packageData?.duration_nights} Nights
+                                        {formatDuration(packageData?.duration_days || 0)}
                                     </p>
                                 </div>
                             </div>

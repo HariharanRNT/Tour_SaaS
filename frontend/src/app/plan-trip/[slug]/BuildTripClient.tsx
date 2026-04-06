@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
 import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
-import { formatDate, cn } from '@/lib/utils'
 import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
@@ -722,7 +722,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <div className="text-left">
                                     <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
                                     <p className="font-bold text-white text-sm whitespace-nowrap">
-                                        {session.duration_days} Days / {session.duration_nights ?? (session.duration_days > 1 ? session.duration_days - 1 : session.duration_days)} Nights
+                                        {formatDuration(session.duration_days)}
                                     </p>
                                 </div>
                             </div>

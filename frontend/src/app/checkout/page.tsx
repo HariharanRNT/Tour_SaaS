@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
@@ -78,15 +79,6 @@ function CheckoutContent() {
             return newTravelers
         })
 
-        // Auto-fill Contact Info from Traveler 1 (Primary Traveler)
-        if (index === 0) {
-            if (field === 'email') setContactEmail(value)
-            if (field === 'phone') setContactPhone(value)
-            if (field === 'address') setContactAddress(value)
-            if (field === 'country') setContactCountry(value)
-            if (field === 'state') setContactState(value)
-            if (field === 'city') setContactCity(value)
-        }
     }
 
     // State for confirmed booking displaying details
@@ -820,7 +812,7 @@ function CheckoutContent() {
                                             <div className="bg-black/10 backdrop-blur-md border-t border-white/20 p-5 space-y-4 animate-in slide-in-from-top-2">
                                                 <div className="flex justify-between text-sm items-center">
                                                     <span className="text-white/80 font-medium">Duration</span>
-                                                    <span className="font-bold bg-white/20 px-3 py-1 rounded-full text-white shadow-sm">{sessionData?.duration_days} Days</span>
+                                                    <span className="font-bold bg-white/20 px-3 py-1 rounded-full text-white shadow-sm">{formatDuration(sessionData?.duration_days || 0)}</span>
                                                 </div>
                                                 <div className="flex justify-between text-sm items-center">
                                                     <span className="text-white/80 font-medium">Travelers</span>

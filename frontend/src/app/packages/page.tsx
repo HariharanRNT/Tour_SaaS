@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatDuration } from '@/lib/utils'
 import { ArrowLeft, ArrowRight, Search, Calendar, Users } from 'lucide-react'
 import { TripCustomization } from '@/components/packages/TripCustomization'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
@@ -378,8 +379,8 @@ export default function MultiStepPackageSearch() {
                                                     {pkg.destination}
                                                 </Badge>
                                                 <div className="flex flex-col gap-2 items-end">
-                                                    <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 font-bold px-3 py-1">
-                                                        {pkg.duration_days} Days
+                                                    <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 shadow-sm font-bold rounded-full px-3 py-1">
+                                                        {formatDuration(pkg.duration_days)}
                                                     </Badge>
                                                     <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1">
                                                         ₹{pkg.price_per_person.toLocaleString('en-IN')}

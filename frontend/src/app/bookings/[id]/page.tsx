@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { bookingsAPI } from '@/lib/api'
 import { Booking } from '@/types'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -335,7 +335,7 @@ export default function BookingDetailsPage() {
                                                     <div className="h-12 w-12 rounded-[20px] bg-purple-600/10 flex items-center justify-center border border-purple-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
                                                         <Clock className="h-6 w-6 text-purple-600" />
                                                     </div>
-                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{booking.package?.duration_days}D / {booking.package?.duration_nights}N</span>
+                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{formatDuration(booking.package?.duration_days || 0)}</span>
                                                 </div>
                                                 <div className="flex items-center gap-4 group/meta">
                                                     <div className="h-12 w-12 rounded-[20px] bg-emerald-600/10 flex items-center justify-center border border-emerald-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
@@ -426,7 +426,7 @@ export default function BookingDetailsPage() {
                                     <div className="flex gap-4">
                                         <div className="glass-pill-chip px-5 py-3 h-auto flex flex-col items-center min-w-[100px] border-blue-600/20 bg-blue-600/5">
                                             <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">Duration</p>
-                                            <p className="font-black text-lg text-black">{booking.package?.duration_days}D / {booking.package?.duration_nights}N</p>
+                                            <p className="font-black text-lg text-black">{formatDuration(booking.package?.duration_days || 0)}</p>
                                         </div>
                                         <div className="glass-pill-chip px-5 py-3 h-auto flex flex-col items-center min-w-[100px] border-purple-600/20 bg-purple-600/5">
                                             <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest mb-1">Travelers</p>

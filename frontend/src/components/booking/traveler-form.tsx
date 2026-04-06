@@ -178,7 +178,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                 <div className="md:col-span-5">
                     <FloatingLabelInput
                         id={`fname-${index}`}
-                        label="First Name (As on Passport)"
+                        label="First Name"
                         value={traveler.first_name}
                         onChange={(e: any) => onChange(index, 'first_name', e.target.value)}
                         error={errors[`first_name_${index}`]}
@@ -306,64 +306,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                     className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                 />
             </div>
-            
-            {/* Row 4: Contact Info (Traveler 1 ONLY) */}
-            {index === 0 && (
-                <div className="space-y-5 pt-4 border-t border-white/20 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="h-4 w-1 rounded-full bg-amber-400" />
-                        <span className="text-xs font-bold text-black uppercase tracking-widest">Contact Information</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <FloatingLabelInput
-                            id={`email-${index}`}
-                            label="Email Address"
-                            type="email"
-                            value={traveler.email || ''}
-                            onChange={(e: any) => onChange(index, 'email', e.target.value)}
-                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
-                        />
-                        <FloatingLabelInput
-                            id={`phone-${index}`}
-                            label="Mobile Number"
-                            type="tel"
-                            value={traveler.phone || ''}
-                            onChange={(e: any) => onChange(index, 'phone', e.target.value)}
-                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
-                        />
-                    </div>
-                    <FloatingLabelInput
-                        id={`addr-${index}`}
-                        label="Full Billing Address"
-                        value={traveler.address || ''}
-                        onChange={(e: any) => onChange(index, 'address', e.target.value)}
-                        className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <FloatingLabelInput
-                            id={`country-${index}`}
-                            label="Country"
-                            value={traveler.country || ''}
-                            onChange={(e: any) => onChange(index, 'country', e.target.value)}
-                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
-                        />
-                        <FloatingLabelInput
-                            id={`state-${index}`}
-                            label="State"
-                            value={traveler.state || ''}
-                            onChange={(e: any) => onChange(index, 'state', e.target.value)}
-                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring(--primary)/25 !text-black !font-bold transition-all"
-                        />
-                        <FloatingLabelInput
-                            id={`city-${index}`}
-                            label="City"
-                            value={traveler.city || ''}
-                            onChange={(e: any) => onChange(index, 'city', e.target.value)}
-                            className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring(--primary)/25 !text-black !font-bold transition-all"
-                        />
-                    </div>
-                </div>
-            )}
+
         </div>
     )
 }
