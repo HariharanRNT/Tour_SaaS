@@ -502,14 +502,12 @@ export default function SubscriptionPage() {
                 {/* Header Section */}
                 <div className="mb-8">
                     {/* Breadcrumb */}
-                    <nav className="flex items-center text-sm text-gray-500 mb-6">
-
-
-                        <Link href="/agent/dashboard" className="hover:text-gray-900 transition-colors">
+                    <nav className="flex items-center text-sm text-black/60 mb-6">
+                        <Link href="/agent/dashboard" className="hover:text-black transition-colors">
                             Dashboard
                         </Link>
                         <span className="mx-2">/</span>
-                        <span className="font-medium text-gray-900">Billing</span>
+                        <span className="font-medium text-black">Billing</span>
                     </nav>
 
                     {/* Title Area */}
@@ -519,8 +517,8 @@ export default function SubscriptionPage() {
                                 <CreditCard className="h-8 w-8 text-blue-600" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">Billing</h1>
-                                <p className="text-gray-500 mt-1">Manage your active plans, billing history, and upgrades</p>
+                                <h1 className="text-3xl font-bold text-black">Billing</h1>
+                                <p className="text-black/60 mt-1">Manage your active plans, billing history, and upgrades</p>
                             </div>
                         </div>
                     </div>
@@ -531,7 +529,7 @@ export default function SubscriptionPage() {
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-4">
                             <Sparkles className="h-5 w-5 text-indigo-600" />
-                            <h2 className="text-lg font-bold text-gray-900">Current Subscription</h2>
+                            <h2 className="text-lg font-bold text-black">Current Subscription</h2>
                         </div>
 
                         <Card className="glass-agent border-0 overflow-hidden relative">
@@ -550,12 +548,12 @@ export default function SubscriptionPage() {
                                                 Auto-Renews
                                             </Badge>
                                         </div>
-                                        <h3 className="text-3xl font-bold text-slate-900 mb-1">{activeSub.plan.name}</h3>
-                                        <p className="text-slate-600 font-medium flex items-center gap-2">
+                                        <h3 className="text-3xl font-bold text-black mb-1">{activeSub.plan.name}</h3>
+                                        <p className="text-black/80 font-medium flex items-center gap-2">
                                             {getBillingCycleDisplay(activeSub.plan)} Billing
                                             <span className="w-1 h-1 rounded-full bg-slate-400"></span>
-                                            <span className="text-slate-900 font-bold">₹{activeSub.plan.price.toLocaleString()}</span>
-                                            <span className="text-slate-500">{getBillingCycleShort(activeSub.plan)}</span>
+                                            <span className="text-black font-bold">₹{activeSub.plan.price.toLocaleString()}</span>
+                                            <span className="text-black/60">{getBillingCycleShort(activeSub.plan)}</span>
                                         </p>
                                     </div>
 
@@ -580,7 +578,7 @@ export default function SubscriptionPage() {
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-indigo-900/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
                                             <Calendar className="h-3.5 w-3.5" />
                                             Expires On
                                         </div>
@@ -596,7 +594,7 @@ export default function SubscriptionPage() {
                                     </div>
 
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-indigo-900/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
                                             <CreditCard className="h-3.5 w-3.5" />
                                             Next Bill
                                         </div>
@@ -611,7 +609,7 @@ export default function SubscriptionPage() {
                                     </div>
 
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-indigo-900/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
                                             <Zap className="h-3.5 w-3.5" />
                                             Bookings Usage
                                         </div>
@@ -630,8 +628,8 @@ export default function SubscriptionPage() {
                                 {/* Billing Cycle Progress */}
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
-                                        <span className="text-sm font-semibold text-indigo-900">Billing Cycle Progress</span>
-                                        <span className="text-xs font-medium text-indigo-700">
+                                        <span className="text-sm font-semibold text-black">Billing Cycle Progress</span>
+                                        <span className="text-xs font-medium text-black">
                                             {activeSub.plan.booking_limit !== -1 && (
                                                 <span className="opacity-75 mr-2">
                                                     {Math.round((activeSub.current_bookings_usage / activeSub.plan.booking_limit) * 100)}% usage
@@ -703,12 +701,12 @@ export default function SubscriptionPage() {
                                         <div>
                                             <Badge className="bg-purple-100 text-purple-700 mb-2">Upcoming</Badge>
                                             <h3 className="font-bold text-lg">{sub.plan.name}</h3>
-                                            <p className="text-sm text-gray-500">Purchased on {new Date(sub.created_at || sub.start_date || new Date()).toLocaleDateString()}</p>
+                                            <p className="text-sm text-black/60">Purchased on {new Date(sub.created_at || sub.start_date || new Date()).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="text-right mr-4">
                                                 <p className="font-medium text-sm">Valid for {getBillingCycleDisplay(sub.plan)}</p>
-                                                <p className="text-xs text-gray-500">Auto-activates when current plan ends</p>
+                                                <p className="text-xs text-black/60">Auto-activates when current plan ends</p>
                                             </div>
                                             <Button
                                                 onClick={() => handleActivate(sub.id)}
@@ -729,7 +727,7 @@ export default function SubscriptionPage() {
                 {/* 3. Paused / On Hold Plans Section */}
                 {pausedSubs.length > 0 && (
                     <div className="mb-10">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-black">
                             <PauseCircle className="h-5 w-5 text-amber-600" /> Paused Plans
                         </h2>
                         <div className="flex flex-col gap-4">
@@ -741,17 +739,17 @@ export default function SubscriptionPage() {
                                                 <AlertTriangle className="h-6 w-6 text-amber-600" />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-lg text-amber-900 flex items-center gap-2">
+                                                <h3 className="font-bold text-lg text-black flex items-center gap-2">
                                                     Subscription Paused
                                                     <Badge className="bg-amber-200 text-amber-800 hover:bg-amber-200 border-0">
                                                         {sub.plan.name}
                                                     </Badge>
                                                 </h3>
-                                                <p className="text-amber-800/80 mt-1 font-medium">
+                                                <p className="text-black/80 mt-1 font-medium">
                                                     Your plan is currently on hold.
                                                     {sub.end_date && ` It is scheduled to auto-resume on ${new Date(sub.end_date).toLocaleDateString()}.`}
                                                 </p>
-                                                <p className="text-sm text-amber-700/60 mt-2 flex items-center gap-1.5">
+                                                <p className="text-sm text-black/60 mt-2 flex items-center gap-1.5">
                                                     <PauseCircle className="h-3.5 w-3.5" />
                                                     Paused on {new Date(sub.updated_at || new Date()).toLocaleDateString()}
                                                 </p>
@@ -793,11 +791,11 @@ export default function SubscriptionPage() {
                         <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 mb-3 border-0">
                             Subscription Plans
                         </Badge>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-3 flex items-center justify-center gap-2">
+                        <h2 className="text-3xl font-bold text-black mb-3 flex items-center justify-center gap-2">
                             💎 Choose Your Plan
                         </h2>
                         <div className="flex justify-center items-center gap-4 mb-4">
-                            <p className="text-gray-500">
+                            <p className="text-black/60">
                                 Select the perfect plan for your business needs. Upgrade anytime.
                             </p>
 
@@ -831,25 +829,25 @@ export default function SubscriptionPage() {
                                                 </TableHeader>
                                                 <TableBody>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
+                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
                                                         {plans.map((p: Plan) => (
                                                             <TableCell key={p.id} className="text-center font-black text-indigo-600 text-[15px] py-4">₹{p.price.toLocaleString()}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
+                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
                                                         {plans.map((p: Plan) => (
                                                             <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-slate-500 py-4 pl-6 text-[13px]">Users Access</TableCell>
+                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Users Access</TableCell>
                                                         {plans.map((p: Plan) => (
                                                             <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.user_limit || 'Varies'}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-0 transition-colors">
-                                                        <TableCell className="font-bold text-slate-500 py-5 pl-6 text-[13px]">Support Level</TableCell>
+                                                        <TableCell className="font-bold text-black/60 py-5 pl-6 text-[13px]">Support Level</TableCell>
                                                         {plans.map((p: Plan) => {
                                                             const theme = getPlanTheme(p.name);
                                                             return (
@@ -907,7 +905,7 @@ export default function SubscriptionPage() {
                                     >
                                         {/* Header Section */}
                                         <div className="text-center mb-3">
-                                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
+                                            <h3 className="text-lg font-bold text-black mb-4 flex items-center justify-center gap-2">
                                                 <span className="text-2xl">{icon}</span> {plan.name}
                                             </h3>
 
@@ -916,9 +914,9 @@ export default function SubscriptionPage() {
                                                     ₹{plan.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
 
-                                                <div className="w-16 h-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent my-2"></div>
+                                                <div className="w-16 h-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent my-2"></div>
 
-                                                <span className="text-sm font-medium text-gray-500">
+                                                <span className="text-sm font-medium text-black/60">
                                                     {getBillingCycleShort(plan).replace('/', '')} billing
                                                 </span>
 
@@ -933,9 +931,9 @@ export default function SubscriptionPage() {
                                         {/* Features Section */}
                                         <div className="flex-1 space-y-4">
                                             {/* Booking Limit Highlight */}
-                                            <div className={`flex items-center justify-center gap-2 bg-white/10 py-3 rounded-xl border border-gray-100`}>
+                                            <div className={`flex items-center justify-center gap-2 bg-white/10 py-3 rounded-xl border border-slate-100`}>
                                                 <Zap className={`h-4 w-4 ${theme.text}`} />
-                                                <span className="font-semibold text-gray-900 text-sm">
+                                                <span className="font-semibold text-black text-sm">
                                                     {plan.booking_limit === -1 ? 'Unlimited' : plan.booking_limit} Bookings{getBillingCycleShort(plan)}
                                                 </span>
                                             </div>
@@ -945,7 +943,7 @@ export default function SubscriptionPage() {
                                                     <div key={idx} className="last:mb-0">
                                                         {section.category !== 'USAGE LIMITS' && ( // Usage limits handled by highlight above usually
                                                             <>
-                                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5 opacity-80 pl-1">
+                                                                <h4 className="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-3 flex items-center gap-1.5 opacity-80 pl-1">
                                                                     {section.category === 'FEATURES' && <Sparkles className="h-3 w-3" />}
                                                                     {section.category === 'PRICING' && <CreditCard className="h-3 w-3" />}
                                                                     {section.category}
@@ -958,7 +956,7 @@ export default function SubscriptionPage() {
                                                                                     <Check className="h-3 w-3 text-emerald-600" />
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="text-sm font-medium text-gray-600 leading-snug group-hover/item:text-gray-900 transition-colors">
+                                                                            <span className="text-sm font-medium text-black/80 leading-snug group-hover/item:text-black transition-colors">
                                                                                 {item}
                                                                             </span>
                                                                         </li>
@@ -972,11 +970,11 @@ export default function SubscriptionPage() {
                                         </div>
 
                                         {/* Action Button */}
-                                        <div className="mt-4 pt-4 border-t border-gray-100">
+                                        <div className="mt-4 pt-4 border-t border-slate-100">
                                             <Button
                                                 className={`w-full font-bold h-10 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95 ${isPopular
                                                     ? `bg-gradient-to-r ${theme.gradient} text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5`
-                                                    : 'bg-white hover:bg-transparent text-gray-900 border-2 border-gray-100 hover:border-gray-200 shadow-none'
+                                                    : 'bg-white hover:bg-transparent text-black border-2 border-slate-100 hover:border-slate-200 shadow-none'
                                                     }`}
                                                 onClick={() => handlePurchase(plan)}
                                                 disabled={processingId === plan.id}
@@ -997,34 +995,34 @@ export default function SubscriptionPage() {
 
                 {/* 5. History Link Section (Replacing full table for cleaner UI) */}
                 {historySubs.length > 0 && (
-                    <div className="mt-8 pt-8 border-t border-gray-200">
+                    <div className="mt-8 pt-8 border-t border-slate-200">
                         <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                <Clock className="h-5 w-5 text-gray-400" />
+                            <h2 className="text-xl font-bold text-black flex items-center gap-2">
+                                <Clock className="h-5 w-5 text-black/40" />
                                 Subscription History
                             </h2>
                             <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-2 py-1">
-                                    <span className="text-xs text-gray-500 font-medium">From:</span>
+                                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-md px-2 py-1">
+                                    <span className="text-xs text-black/60 font-medium">From:</span>
                                     <input
                                         type="date"
-                                        className="text-xs border-0 p-1 outline-none text-gray-600"
+                                        className="text-xs border-0 p-1 outline-none text-black/60"
                                         value={historyDateFilter.start}
                                         max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, start: e.target.value }))}
                                     />
-                                    <span className="text-gray-300">|</span>
-                                    <span className="text-xs text-gray-500 font-medium">To:</span>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="text-xs text-black/60 font-medium">To:</span>
                                     <input
                                         type="date"
-                                        className="text-xs border-0 p-1 outline-none text-gray-600"
+                                        className="text-xs border-0 p-1 outline-none text-black/60"
                                         value={historyDateFilter.end}
                                         max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, end: e.target.value }))}
                                     />
                                     {(historyDateFilter.start || historyDateFilter.end) && (
                                         <Button
-                                            variant="ghost" size="sm" className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                                            variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"
                                             onClick={() => setHistoryDateFilter({ start: '', end: '' })}
                                         >
                                             <X className="h-3 w-3" />
@@ -1039,7 +1037,7 @@ export default function SubscriptionPage() {
                         <div className="glass-agent overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-transparent border-b border-gray-100 text-gray-500 font-medium">
+                                    <thead className="bg-transparent border-b border-slate-100 text-black/60 font-medium">
                                         <tr>
                                             <th className="px-6 py-4">PLAN NAME</th>
                                             <th className="px-6 py-4">STATUS</th>
@@ -1047,12 +1045,12 @@ export default function SubscriptionPage() {
                                             <th className="px-6 py-4 text-right">USAGE</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y divide-slate-100">
                                         {paginatedHistory.map((sub: Subscription, i: number) => {
                                             const theme = getPlanTheme(sub.plan.name);
                                             return (
-                                                <tr key={sub.id} className={`hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-white/5'}`}>
-                                                    <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2">
+                                                <tr key={sub.id} className={`hover:bg-white/20 transition-colors ${i % 2 === 0 ? 'bg-white/10' : 'bg-white/5'}`}>
+                                                    <td className="px-6 py-4 font-semibold text-black flex items-center gap-2">
                                                         <div className={`p-1 rounded-full ${theme.bg}`}>
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
                                                         </div>
@@ -1062,19 +1060,19 @@ export default function SubscriptionPage() {
                                                         <Badge variant="secondary" className={`
                                                             font-medium border-0
                                                             ${sub.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                                sub.status === 'expired' ? 'bg-gray-100 text-gray-600' :
+                                                                sub.status === 'expired' ? 'bg-slate-100 text-slate-600' :
                                                                     'bg-red-50 text-red-600'}
                                                         `}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${sub.status === 'completed' ? 'bg-green-500' : sub.status === 'expired' ? 'bg-transparent0' : 'bg-red-500'}`} />
+                                                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${sub.status === 'completed' ? 'bg-green-500' : sub.status === 'expired' ? 'bg-slate-400' : 'bg-red-500'}`} />
                                                             {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4 text-gray-500">
+                                                    <td className="px-6 py-4 text-black/60">
                                                         {new Date(sub.start_date).toLocaleDateString()}
-                                                        <span className="mx-2 text-gray-300">→</span>
+                                                        <span className="mx-2 text-slate-300">→</span>
                                                         {new Date(sub.end_date).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right text-gray-600 font-medium">
+                                                    <td className="px-6 py-4 text-right text-black/80 font-medium">
                                                         {sub.current_bookings_usage} bookings
                                                     </td>
                                                 </tr>
@@ -1093,8 +1091,8 @@ export default function SubscriptionPage() {
 
                             {/* Pagination */}
                             {totalHistoryPages > 1 && (
-                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white/5">
-                                    <div className="text-xs text-gray-500">
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white/5">
+                                    <div className="text-xs text-black/60">
                                         Page {historyPage} of {totalHistoryPages}
                                     </div>
                                     <div className="flex gap-2">

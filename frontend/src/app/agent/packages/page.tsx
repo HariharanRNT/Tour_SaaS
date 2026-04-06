@@ -56,6 +56,7 @@ interface Package {
     price_per_person: number
     status: string
     created_at: string
+    package_mode?: string
 }
 
 export default function AgentPackagesPage() {
@@ -546,8 +547,17 @@ export default function AgentPackagesPage() {
                                                     </TableCell>
                                                     <TableCell className="py-5">
                                                         <div className="flex items-center gap-2 text-black">
-                                                            <MapPin className="h-4 w-4 text-black" />
-                                                            <span className="font-medium">{pkg.destination}</span>
+                                                            {pkg.package_mode === 'multi' ? (
+                                                                <>
+                                                                    <MapPin className="h-4 w-4 text-black" />
+                                                                    <span className="font-semibold text-black">Multi-City</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <MapPin className="h-4 w-4 text-black" />
+                                                                    <span className="font-medium">{pkg.destination}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-5">
@@ -700,8 +710,17 @@ export default function AgentPackagesPage() {
 
                                             <div className="grid grid-cols-2 gap-y-2 text-sm text-black mb-4 font-medium">
                                                 <div className="flex items-center gap-2">
-                                                    <MapPin className="h-4 w-4 text-black" />
-                                                    <span className="truncate">{pkg.destination}</span>
+                                                    {pkg.package_mode === 'multi' ? (
+                                                        <>
+                                                            <MapPin className="h-4 w-4 text-black" />
+                                                            <span className="font-semibold text-black">Multi-City</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <MapPin className="h-4 w-4 text-black" />
+                                                            <span className="truncate">{pkg.destination}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Calendar className="h-4 w-4 text-black" />

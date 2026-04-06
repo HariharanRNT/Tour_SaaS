@@ -183,7 +183,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     return (
         <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
             {/* Modernized Hero Section */}
-            <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden -mt-16">
+            <section className="relative flex flex-col justify-center overflow-visible -mt-16 pb-0">
 
                 {/* Multi-tenant site identifier banner — sits on top of the hero, not above it */}
                 {site !== 'default' && (
@@ -291,7 +291,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
                     {/* Feature Cards */}
                     {theme.show_feature_cards !== false && (
-                        <div className={`grid ${cardAppearance?.layout === 'horizontal' ? 'grid-cols-1 md:grid-cols-2' : 'md:grid-cols-3'} gap-8 max-w-6xl mx-auto transform translate-y-2 z-20 relative 
+                        <div className={`grid ${cardAppearance?.layout === 'horizontal' ? 'grid-cols-1 md:grid-cols-2' : 'md:grid-cols-3'} gap-8 max-w-6xl mx-auto z-20 relative 
                             cards-style-container 
                             ${cardAppearance ? `cards-icon-${cardAppearance.iconStyle} cards-bg-${cardAppearance.background} cards-border-${cardAppearance.border} cards-hover-${cardAppearance.hover} cards-layout-${cardAppearance.layout} cards-title-${cardAppearance.titleColor}` : ''}`}>
                             {(agentFeatureCards && agentFeatureCards.length > 0 ? agentFeatureCards : (theme.feature_cards && theme.feature_cards.length > 0 ? theme.feature_cards : [
@@ -329,9 +329,18 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 </div>
             </section>
 
+
+
+
             {/* AI-Powered Popular Packages */}
+
             {packages.length > 0 && (
-                <section className="py-24 bg-white relative overflow-hidden">
+                <section className="pt-32 pb-24 bg-white relative overflow-hidden">
+
+
+
+
+
                     {/* Background Decorative Elements */}
                     <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-orange-50 rounded-full blur-[120px] -z-10" />
                     <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-blue-50 rounded-full blur-[100px] -z-10" />
@@ -407,7 +416,10 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
                                             <div className="absolute bottom-8 left-8 right-8 z-10">
                                                 <p className="text-white/60 text-xs font-black uppercase tracking-[0.2em] mb-1">{pkg.destination}, {pkg.country || 'International'}</p>
-                                                <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2">{title}</h3>
+                                                <div className="custom-tooltip-container">
+                                                    <h3 className="text-3xl font-bold text-white mb-4 font-display drop-shadow-lg line-clamp-2" title={title}>{title}</h3>
+                                                    <span className="custom-tooltip-content">{title}</span>
+                                                </div>
                                                 <div className="relative inline-block group/link">
                                                     <p className="text-white text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
                                                         Book This Trip <ChevronRight className="h-4 w-4 group-hover/link:translate-x-1 transition-transform" />

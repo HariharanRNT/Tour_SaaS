@@ -195,8 +195,8 @@ export default function BookingsPage() {
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="flex justify-between items-end mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-                        <p className="text-gray-500 mt-1">Manage all your upcoming and past trips</p>
+                        <h1 className="text-3xl font-bold text-black">My Bookings</h1>
+                        <p className="text-black/60 mt-1">Manage all your upcoming and past trips</p>
                     </div>
                 </div>
 
@@ -206,8 +206,8 @@ export default function BookingsPage() {
                             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <MapPin className="h-8 w-8 text-blue-500" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">No bookings yet</h3>
-                            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                            <h3 className="text-xl font-semibold mb-2 text-black">No bookings yet</h3>
+                            <p className="text-black/60 mb-6 max-w-md mx-auto">
                                 You haven't made any bookings yet. Start planning your dream vacation today!
                             </p>
                             <Link href="/plan-trip">
@@ -255,7 +255,7 @@ export default function BookingsPage() {
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                                                        <h2 className="text-xl font-bold text-black hover:text-blue-600 transition-colors cursor-pointer">
                                                             {booking.package?.destination ? `🏖️ ${booking.package.title}` : booking.package?.title || 'Custom Trip'}
                                                         </h2>
                                                         <div className="hidden md:block">
@@ -265,10 +265,10 @@ export default function BookingsPage() {
                                                         </div>
                                                     </div>
                                                     <div
-                                                        className="flex items-center gap-2 text-xs text-gray-500 group cursor-pointer w-fit"
+                                                        className="flex items-center gap-2 text-xs text-black/60 group cursor-pointer w-fit"
                                                         onClick={() => copyToClipboard(booking.booking_reference)}
                                                     >
-                                                        <span className="font-medium bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                                                        <span className="font-medium bg-gray-100 px-1.5 py-0.5 rounded text-black/80">
                                                             Ref: {booking.booking_reference}
                                                         </span>
                                                         <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -276,7 +276,7 @@ export default function BookingsPage() {
                                                 </div>
 
                                                 <div className="text-right">
-                                                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Total Amount</p>
+                                                    <p className="text-xs text-black/60 font-semibold uppercase tracking-wider mb-0.5">Total Amount</p>
                                                     <p className="text-2xl font-bold text-blue-600">{formatCurrency(booking.total_amount)}</p>
                                                     {/* Refund Status Badge on cancelled bookings */}
                                                     {booking.status === 'cancelled' && (booking as any).refund_amount > 0 && (() => {
@@ -310,22 +310,22 @@ export default function BookingsPage() {
                                                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                                                     <Calendar className="h-4 w-4 text-violet-500" />
                                                     <div>
-                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">Travel Date</p>
-                                                        <p className="text-sm font-semibold text-gray-800">{formatDate(booking.travel_date)}</p>
+                                                        <p className="text-[10px] text-black/60 font-bold uppercase">Travel Date</p>
+                                                        <p className="text-sm font-semibold text-black">{formatDate(booking.travel_date)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                                                     <Users className="h-4 w-4 text-pink-500" />
                                                     <div>
-                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">Travelers</p>
-                                                        <p className="text-sm font-semibold text-gray-800">{booking.number_of_travelers} People</p>
+                                                        <p className="text-[10px] text-black/60 font-bold uppercase">Travelers</p>
+                                                        <p className="text-sm font-semibold text-black">{booking.number_of_travelers} People</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
                                                     <CreditCard className="h-4 w-4 text-emerald-500" />
                                                     <div>
-                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">Payment</p>
-                                                        <p className="text-sm font-semibold text-gray-800 capitalize">{booking.payment_status}</p>
+                                                        <p className="text-[10px] text-black/60 font-bold uppercase">Payment</p>
+                                                        <p className="text-sm font-semibold text-black capitalize">{booking.payment_status}</p>
                                                     </div>
                                                 </div>
 
@@ -362,7 +362,7 @@ export default function BookingsPage() {
 
                                                 <Button
                                                     variant="outline"
-                                                    className="flex-1 sm:flex-none gap-2 hover:bg-white/10 border-white/20 text-gray-700 glass-panel"
+                                                    className="flex-1 sm:flex-none gap-2 hover:bg-white/10 border-white/20 text-black glass-panel"
                                                     onClick={(e) => downloadInvoice(booking, e)}
                                                 >
                                                     <Download className="h-4 w-4" /> Invoice
@@ -410,7 +410,7 @@ export default function BookingsPage() {
             <Dialog open={!!cancelTarget} onOpenChange={closeCancelDialog}>
                 <DialogContent className="max-w-md glass-premium border-0" overlayClass="bg-black/40">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-gray-900">
+                        <DialogTitle className="flex items-center gap-2 text-black">
                             <AlertTriangle className="h-5 w-5 text-red-500" />
                             Cancel Booking
                         </DialogTitle>
@@ -421,7 +421,7 @@ export default function BookingsPage() {
 
                     {/* Loading preview */}
                     {previewLoading && (
-                        <div className="flex items-center justify-center py-8 gap-3 text-gray-500">
+                        <div className="flex items-center justify-center py-8 gap-3 text-black/60">
                             <RefreshCw className="h-5 w-5 animate-spin" />
                             <span>Calculating refund...</span>
                         </div>
@@ -459,12 +459,12 @@ export default function BookingsPage() {
                             </div>
 
                             {/* Trust-building message with frosted look */}
-                            <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 text-sm text-gray-700 leading-relaxed border border-white/40 shadow-sm shadow-blue-900/5">
+                            <div className="bg-white/40 backdrop-blur-md rounded-xl p-4 text-sm text-black leading-relaxed border border-white/40 shadow-sm shadow-blue-900/5">
                                 {preview.message}
                             </div>
 
                             {/* Days before info */}
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <div className="flex items-center gap-2 text-xs text-black/60">
                                 <Calendar className="h-3.5 w-3.5" />
                                 <span>
                                     {preview.days_before > 0
@@ -488,7 +488,7 @@ export default function BookingsPage() {
                             variant="outline"
                             onClick={closeCancelDialog}
                             disabled={cancelling}
-                            className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-gray-800 backdrop-blur-sm transition-all"
+                            className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-black backdrop-blur-sm transition-all"
                         >
                             Keep Booking
                         </Button>

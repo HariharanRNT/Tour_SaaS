@@ -145,8 +145,14 @@ export default function CreatePackagePage() {
         cancellation_rules: []
     })
 
-    // Whether agent has GST set to Applicable in Settings — controls GST section visibility
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
+    
+    // Duplicate day validation for cancellation rules
+    const duplicateDayIndices = formData.cancellation_rules
+        .map((r, i) => ({ days: r.daysBefore, index: i }))
+        .filter(r => (r.days as any) !== '' && r.days !== null && r.days !== undefined)
+        .filter((r, i, self) => self.some((other, otherIdx) => other.days === r.days && other.index !== r.index))
+        .map(r => r.index);
 
     // Clear trip style validation error automatically when styles are pre-populated
     useEffect(() => {
@@ -532,6 +538,12 @@ export default function CreatePackagePage() {
                 setTripStyleError(formData.trip_styles.length === 0);
                 return;
             }
+
+            // Cancellation policy duplicate day check
+            if (formData.cancellation_enabled && duplicateDayIndices.length > 0) {
+                toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
+                return;
+            }
         }
 
         setSaving(true)
@@ -621,6 +633,12 @@ export default function CreatePackagePage() {
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
                 })
             })
+
+            if (formData.cancellation_enabled && duplicateDayIndices.length > 0) {
+                setSaving(false);
+                toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
+                return;
+            }
 
             if (!response.ok) throw new Error('Failed to save draft')
 
@@ -1545,7 +1563,7 @@ export default function CreatePackagePage() {
                                                 agentGstApplicable ? "grid-cols-[1fr_1fr_1.4fr_auto]" : "grid-cols-[1fr_1fr_auto]"
                                             )}>
                                                 {/* Days Before */}
-                                                <div>
+                                                <div className="relative group/day">
                                                     <Input
                                                         type="text"
                                                         inputMode="numeric"
@@ -1556,9 +1574,21 @@ export default function CreatePackagePage() {
                                                             updated[idx] = { ...updated[idx], daysBefore: val === '' ? '' as any : Number(val) }
                                                             setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                         }}
-                                                        className="h-8 text-sm"
+                                                        className={cn(
+                                                            "h-8 text-sm transition-all duration-300",
+                                                            duplicateDayIndices.includes(idx) 
+                                                                ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10" 
+                                                                : "bg-white/80"
+                                                        )}
                                                         placeholder="e.g. 7"
                                                     />
+                                                    {duplicateDayIndices.includes(idx) && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                This day is already used in another rule. Each rule must have a unique number of days.
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {/* Refund % */}
                                                 <div>
@@ -1641,12 +1671,16 @@ export default function CreatePackagePage() {
                                     <div className="bg-[var(--primary)]/5 border border-[var(--primary)]/10 rounded-lg p-3 text-xs text-[var(--primary)] space-y-1">
                                         {agentGstApplicable ? (
                                             <>
-                                                <p><b>Example:</b></p>
-                                                <p>1) Cancel 10 days before travel → 100% refund on <b>Base Fare</b></p>
-                                                <p>2) Cancel 5 days before travel → 25% refund on <b>Total Fare</b></p>
+                                                <p><b>Example:</b> Package Price = ₹1,000 + ₹180 GST (18%) = ₹1,180 Total</p>
+                                                <p className="mt-1">1) Cancel 10 days before travel → 100% refund on <b>Base Fare</b> (₹1,000 refundable)</p>
+                                                <p>2) Cancel 5 days before travel → 25% refund on <b>Total Fare</b> (₹295 refundable)</p>
                                             </>
                                         ) : (
-                                            <p><b>Example:</b> Cancel 7+ days before → 80% refund | 3–6 days → 50% | &lt;3 days → 0%</p>
+                                            <>
+                                                <p><b>Example:</b> Package Price = ₹1,000 Total</p>
+                                                <p className="mt-1">1) Cancel 10 days before travel → 100% refund (₹1,000 refundable)</p>
+                                                <p>2) Cancel 5 days before travel → 25% refund (₹250 refundable)</p>
+                                            </>
                                         )}
                                     </div>
                                 </CardContent>
@@ -2215,7 +2249,7 @@ export default function CreatePackagePage() {
                                             )}
                                         </div>
                                         <CardTitle className="text-3xl font-bold mb-2 text-white">{formData.title}</CardTitle>
-                                        <div className="flex flex-wrap items-center gap-4 text-black font-bold text-sm">
+                                        <div className="flex flex-wrap items-center gap-4 text-white/90 font-bold text-sm">
                                             <span className="flex items-center gap-1">
                                                 <MapPin className="w-4 h-4" />
                                                 {formData.package_mode === 'multi' && formData.destinations.length > 0
@@ -2227,7 +2261,7 @@ export default function CreatePackagePage() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm text-black font-bold">Price per person</p>
+                                        <p className="text-sm text-white/90 font-bold">Price per person</p>
                                         <p className="text-3xl font-bold text-white">₹{formData.price_per_person.toLocaleString()}</p>
                                     </div>
                                 </div>

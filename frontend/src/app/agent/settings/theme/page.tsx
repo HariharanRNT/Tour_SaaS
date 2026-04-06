@@ -5,8 +5,6 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { themes } from '@/lib/themes';
 import { useTheme } from '@/context/ThemeContext';
-import EmailTemplateEditor from '@/components/agent/EmailTemplateEditor';
-import { DEFAULT_TEMPLATES } from '@/constants/email-defaults';
 import {
     Check, Palette, Sparkles, Wand2, Eye, Save, ExternalLink,
     RefreshCw, Upload, Link as LinkIcon, Home, Map as MapIcon, Package,
@@ -275,7 +273,6 @@ const TABS = [
     { id: 'itinerary', icon: <ClipboardList className="h-4 w-4" />, label: 'Itinerary', count: 4 },
     { id: 'cart', icon: <ShoppingCart className="h-4 w-4" />, label: 'Cart', count: 3 },
     { id: 'uistyle', icon: <Sliders className="h-4 w-4" />, label: 'UI Style', count: 5 },
-    { id: 'email', icon: <Mail className="h-4 w-4" />, label: 'Email', count: 3 },
 ] as const;
 type TabId = typeof TABS[number]['id'];
 
@@ -328,11 +325,6 @@ export default function AgentThemeSettingsPage() {
     const [fontPairing, setFontPairing] = useState('serif-sans');
     const [fontFamily, setFontFamily] = useState('var(--font-inter)');
     const [fontColor, setFontColor] = useState('#1e293b');
-
-    // Email state
-    const [defaultEmailTheme, setDefaultEmailTheme] = useState('classic');
-    const [defaultEmailMessage, setDefaultEmailMessage] = useState('');
-    const [emailTemplates, setEmailTemplates] = useState<Record<string, string>>(DEFAULT_TEMPLATES);
 
     // Homepage state
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
@@ -479,23 +471,6 @@ export default function AgentThemeSettingsPage() {
                                 font_size: hs.font_size || hs.fontSize || '16px'
                             }));
                         }
-                        if (hs.default_email_theme) {
-                            setDefaultEmailTheme(hs.default_email_theme);
-                        }
-                        if (hs.default_email_message) {
-                            setDefaultEmailMessage(hs.default_email_message);
-                        }
-                        if (hs.email_templates) {
-                            setEmailTemplates(hs.email_templates);
-                        }
-
-                        // Update UI Style specific states
-                        if (hs.buttonShape) setButtonShape(hs.buttonShape);
-                        if (hs.iconStyle) setIconStyle(hs.iconStyle);
-                        if (hs.cardStyle) setCardStyle(hs.cardStyle);
-                        if (hs.density) setDensity(hs.density);
-                        if (hs.fontPairing) setFontPairing(hs.fontPairing);
-                        if (hs.font_family || hs.fontFamily) setFontFamily(hs.font_family || hs.fontFamily);
                         if (hs.font_color || hs.fontColor) setFontColor(hs.font_color || hs.fontColor);
                     }
                 }
@@ -753,9 +728,7 @@ export default function AgentThemeSettingsPage() {
             ...heroData,
             feature_cards: featureCards,
             wcu_cards: wcuCards,
-            card_appearance: cardAppearance,
-            default_email_theme: defaultEmailTheme,
-            default_email_message: defaultEmailMessage
+            card_appearance: cardAppearance
         };
 
         console.log("Saving Homepage Payload:", fullPayload);
@@ -805,9 +778,7 @@ export default function AgentThemeSettingsPage() {
                 density,
                 fontPairing,
                 font_family: fontFamily,
-                font_color: fontColor,
-                default_email_theme: defaultEmailTheme,
-                default_email_message: defaultEmailMessage
+                font_color: fontColor
             };
 
             const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
@@ -1750,37 +1721,6 @@ export default function AgentThemeSettingsPage() {
         </div>
     );
 
-    const renderEmailTab = () => (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-            <div className="bg-white/10 backdrop-blur-xl rounded-[48px] border border-white/20 p-4 md:p-10 shadow-2xl shadow-black/20 overflow-hidden relative">
-                <EmailTemplateEditor
-                    initialTemplates={emailTemplates}
-                    onSave={async (newTemplates) => {
-                        const token = localStorage.getItem('token') || '';
-
-                        setEmailTemplates(newTemplates);
-
-                        const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                email_templates: newTemplates
-                            })
-                        });
-
-                        if (!res.ok) {
-                            const err = await res.json();
-                            throw new Error(err.detail || "Failed to save templates");
-                        }
-                    }}
-                />
-            </div>
-        </div>
-    );
-
     // Tabs that have a save/reset bar
     const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'uistyle'];
 
@@ -1812,7 +1752,6 @@ export default function AgentThemeSettingsPage() {
                                 {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
                                 {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
                                 {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
-                                {activeTab === 'email' && 'Set the default visual style for booking confirmation emails'}
                             </p>
                         </div>
 
@@ -1849,7 +1788,6 @@ export default function AgentThemeSettingsPage() {
                         {activeTab === 'itinerary' && renderItineraryTab()}
                         {activeTab === 'cart' && renderCartTab()}
                         {activeTab === 'uistyle' && renderUiStyleTab()}
-                        {activeTab === 'email' && renderEmailTab()}
                     </div>
                 </div>
 

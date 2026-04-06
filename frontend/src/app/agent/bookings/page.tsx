@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, addMonths, subMonths } from 'date-fns'
 import {
     Calendar,
     MapPin,
@@ -24,16 +24,17 @@ import {
     User,
     Info,
     FileText,
-    Share,
+
     Edit,
     Trash2,
     FileSpreadsheet,
     FileDown,
     Printer,
-    Share2,
+
     ExternalLink,
     ShieldCheck
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
@@ -71,7 +72,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
 import { bookingsAPI } from '@/lib/api'
-import { Booking } from '@/types'
+import { Booking, Traveler } from '@/types'
 
 export default function AgentBookingsPage() {
     const router = useRouter()
@@ -124,14 +125,39 @@ export default function AgentBookingsPage() {
         }
     }
 
-    // Filter Logic
-    // Auto-reset dates on tab switch
+    // Date Helpers
+    const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
+    const getDateOffsetStr = (months: number) => {
+        const d = months >= 0 ? addMonths(new Date(), months) : subMonths(new Date(), Math.abs(months))
+        return format(d, 'yyyy-MM-dd')
+    }
+
+    // Auto-reset dates on tab switch with defaults
     useEffect(() => {
-        setStartDate('')
-        setEndDate('')
+        const today = getTodayStr()
+        if (activeTab === 'upcoming') {
+            setStartDate(today)
+            setEndDate(getDateOffsetStr(1))
+        } else {
+            setStartDate(getDateOffsetStr(-1))
+            setEndDate(today)
+        }
     }, [activeTab])
 
-    const filterBookings = (tabType: 'upcoming' | 'completed') => {
+    const handleQuickRange = (months: number) => {
+        const today = getTodayStr()
+        if (activeTab === 'upcoming') {
+            setStartDate(today)
+            setEndDate(getDateOffsetStr(months))
+        } else {
+            setStartDate(getDateOffsetStr(-months))
+            setEndDate(today)
+        }
+        // Force refresh
+        loadBookings()
+    }
+
+    const filterBookings = (tabType: 'upcoming' | 'completed', ignoreDateFilter = false): Booking[] => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
@@ -141,7 +167,7 @@ export default function AgentBookingsPage() {
                 booking.booking_reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 booking.package?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (booking.package?.destination && booking.package.destination.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (booking.travelers && booking.travelers.some((t: any) =>
+                (booking.travelers && booking.travelers.some((t: Traveler) =>
                     `${t.first_name} ${t.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
                 ));
 
@@ -149,8 +175,10 @@ export default function AgentBookingsPage() {
 
             // Date Range Filter
             const travelDateStr = booking.travel_date
-            if (startDate && travelDateStr < startDate) return false
-            if (endDate && travelDateStr > endDate) return false
+            if (!ignoreDateFilter) {
+                if (startDate && travelDateStr < startDate) return false
+                if (endDate && travelDateStr > endDate) return false
+            }
 
             const travelDate = new Date(booking.travel_date)
             const isValues = tabType === 'upcoming'
@@ -161,6 +189,44 @@ export default function AgentBookingsPage() {
         }).sort((a: Booking, b: Booking) => {
             return new Date(b.travel_date).getTime() - new Date(a.travel_date).getTime()
         })
+    }
+
+    const handleExcelExport = () => {
+        const filteredBookings = filterBookings(activeTab as 'upcoming' | 'completed')
+        
+        if (filteredBookings.length === 0) {
+            toast.error("No records found to export for the current filters")
+            return
+        }
+
+        const data = filteredBookings.map((booking: Booking) => ({
+            "Booking Reference": booking.booking_reference || 'N/A',
+            "Package Name": booking.package?.title || 'N/A',
+            "Destination": booking.package?.destination || 'N/A',
+            "Traveler Name": `${booking.user?.first_name || ''} ${booking.user?.last_name || ''}`.trim() || 'N/A',
+            "Travel Date": booking.travel_date ? format(new Date(booking.travel_date), 'dd MMM yyyy') : 'N/A',
+            "Duration": (booking.package?.duration_days !== undefined) ? formatDuration(booking.package.duration_days) : 'N/A',
+            "Guests": booking.number_of_travelers || 0,
+            "Total Payment": booking.total_amount ? `₹${booking.total_amount.toLocaleString()}` : '₹0',
+            "Status": booking.status ? (booking.status.charAt(0).toUpperCase() + booking.status.slice(1)) : 'Pending'
+        }))
+
+        const ws = XLSX.utils.json_to_sheet(data)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, "Bookings Report")
+
+        // Prepare filename: booking-report-[FROM_DATE]-to-[TO_DATE].xlsx
+        const fromDateStr = startDate || 'Start'
+        const toDateStr = endDate || 'End'
+        const fileName = `booking-report-${fromDateStr}-to-${toDateStr}.xlsx`
+
+        try {
+            XLSX.writeFile(wb, fileName)
+            toast.success(`Successfully exported ${filteredBookings.length} records to Excel`)
+        } catch (error) {
+            console.error("Excel export failed:", error)
+            toast.error("Failed to generate Excel file")
+        }
     }
 
     const filteredBookings = filterBookings(activeTab as 'upcoming' | 'completed')
@@ -221,55 +287,43 @@ export default function AgentBookingsPage() {
                         <div className="flex items-center gap-3 mb-2">
                             <Link href="/agent/dashboard">
                                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/20 backdrop-blur-md border border-white/30">
-                                    <ArrowLeft className="h-5 w-5 text-[#3A1A08]" />
+                                    <ArrowLeft className="h-5 w-5 text-black" />
                                 </Button>
                             </Link>
-                            <nav className="text-xs font-bold text-[#B4501E]/60 uppercase tracking-widest flex items-center gap-2">
+                            <nav className="text-xs font-bold text-black/60 uppercase tracking-widest flex items-center gap-2">
                                 Agent Portal <ChevronRight className="h-3 w-3" /> Booking Report
                             </nav>
                         </div>
-                        <h1 className="text-4xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        <h1 className="text-4xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>
                             Booking Report
                         </h1>
 
                         {/* Status Strip */}
                         <div className="flex flex-wrap items-center gap-2 mt-4">
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#B4501E]/60">Total:</span>
-                                <span className="text-xs font-black text-[#2D1A0E]">{bookings.length}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-black/60">Total:</span>
+                                <span className="text-xs font-black text-black">{bookings.length}</span>
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-[var(--primary)]/10 backdrop-blur-md border border-[var(--primary)]/20 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]/70">Upcoming:</span>
-                                <span className="text-xs font-black text-[var(--primary)]">{filterBookings('upcoming').length}</span>
+                                <span className="text-xs font-black text-[var(--primary)]">{filterBookings('upcoming', true).length}</span>
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#B4501E]/60">Completed:</span>
-                                <span className="text-xs font-black text-[#2D1A0E]">{filterBookings('completed').length}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-black/60">Completed:</span>
+                                <span className="text-xs font-black text-black">{filterBookings('completed', true).length}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-[#3A1A08] font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm">
-                                    <FileDown className="h-5 w-5 opacity-70" />
-                                    Export Records
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 p-2 glass-popover">
-                                <DropdownMenuLabel className="text-[10px] uppercase font-black text-slate-700 px-3 py-2">Choose Format</DropdownMenuLabel>
-                                <DropdownMenuSeparator className="bg-slate-100" />
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
-                                    <FileText className="h-4 w-4 mr-3 text-red-500" />
-                                    <span className="font-bold">Export as PDF</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
-                                    <FileSpreadsheet className="h-4 w-4 mr-3 text-green-600" />
-                                    <span className="font-bold">Export for Excel</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button 
+                            variant="outline"
+                            onClick={handleExcelExport}
+                            className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-black font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                            Export for Excel
+                        </Button>
                     </div>
                 </div>
 
@@ -279,7 +333,7 @@ export default function AgentBookingsPage() {
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--primary)] opacity-60 group-focus-within:opacity-100 transition-opacity" />
                         <Input
                             placeholder="Search booking reference, destination, or traveler names..."
-                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-[#2D1A0E] font-semibold placeholder:text-[#B4501E]/40 focus:bg-white/35 focus:border-[var(--primary)]/50 transition-all shadow-sm"
+                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-black font-semibold placeholder:text-black/40 focus:bg-white/35 focus:border-[var(--primary)]/50 transition-all shadow-sm"
                             style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -294,14 +348,30 @@ export default function AgentBookingsPage() {
 
                     <div className="flex flex-col sm:flex-row items-center gap-3">
                         <div className="h-[52px] px-6 rounded-full bg-white/25 backdrop-blur-[16px] border border-white/40 flex items-center gap-4 group shadow-sm transition-all hover:bg-white/30">
+                            {/* Quick Select Buttons */}
+                            <div className="flex items-center gap-1.5 mr-2">
+                                {[1, 2, 3].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => handleQuickRange(m)}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border border-white/40 hover:bg-[var(--primary)] hover:text-white transition-all bg-white/40 text-black shadow-sm"
+                                        title={`Set range to ${m} month${m > 1 ? 's' : ''}`}
+                                    >
+                                        {m}M
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="h-6 w-px bg-black/10 mr-1" />
+
                             <div className="flex items-center gap-3">
                                 <Calendar className="h-5 w-5 text-[var(--primary)] opacity-60" />
 
                                 <Popover open={isFromOpen} onOpenChange={setIsFromOpen}>
                                     <PopoverTrigger asChild>
                                         <button className="flex flex-col items-start hover:opacity-80 transition-opacity" onClick={() => setIsFromOpen(true)}>
-                                            <span className="text-[9px] uppercase font-black text-[#B4501E]/50 leading-none mb-0.5">From</span>
-                                            <span className="text-xs font-bold text-[#2D1A0E]">
+                                            <span className="text-[9px] uppercase font-black text-black/50 leading-none mb-0.5">From</span>
+                                            <span className="text-xs font-bold text-black">
                                                 {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Pick Date'}
                                             </span>
                                         </button>
@@ -334,8 +404,8 @@ export default function AgentBookingsPage() {
                             <Popover open={isToOpen} onOpenChange={setIsToOpen}>
                                 <PopoverTrigger asChild>
                                     <button className="flex flex-col items-start hover:opacity-80 transition-opacity" onClick={() => setIsToOpen(true)}>
-                                        <span className="text-[9px] uppercase font-black text-[#B4501E]/50 leading-none mb-0.5">To</span>
-                                        <span className="text-xs font-bold text-[#2D1A0E]">
+                                        <span className="text-[9px] uppercase font-black text-black/50 leading-none mb-0.5">To</span>
+                                        <span className="text-xs font-bold text-black">
                                             {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Pick Date'}
                                         </span>
                                     </button>
@@ -365,7 +435,7 @@ export default function AgentBookingsPage() {
                             {(startDate || endDate) && (
                                 <button
                                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                                    className="ml-2 text-[#B4501E]/40 hover:text-[var(--primary)] transition-colors"
+                                    className="ml-2 text-black/40 hover:text-[var(--primary)] transition-colors"
                                     title="Clear All Dates"
                                 >
                                     <XCircle className="h-4 w-4" />
@@ -389,13 +459,13 @@ export default function AgentBookingsPage() {
                         <TabsList className="h-[52px] bg-white/15 backdrop-blur-xl p-1.5 rounded-full border border-white/30 shadow-sm inline-flex relative overflow-hidden">
                             <TabsTrigger
                                 value="upcoming"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-black/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Upcoming Trips
                             </TabsTrigger>
                             <TabsTrigger
                                 value="completed"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[#B4501E]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-black/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Past Travels
                             </TabsTrigger>
@@ -413,7 +483,7 @@ export default function AgentBookingsPage() {
                                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
                                                         <Calendar className="h-4 w-4 text-[var(--primary)]" />
-                                                        <span className="text-sm font-black text-[#2D1A0E]">
+                                                        <span className="text-sm font-black text-black">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
@@ -452,7 +522,7 @@ export default function AgentBookingsPage() {
                                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
                                                         <Calendar className="h-4 w-4 text-[var(--primary)]" />
-                                                        <span className="text-sm font-black text-[#2D1A0E]">
+                                                        <span className="text-sm font-black text-black">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
@@ -521,9 +591,9 @@ export default function AgentBookingsPage() {
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Location Preview</span>
                             </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#2D1A0E]/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
                         <div className="absolute top-4 left-4">
-                            <Badge className="bg-[#2D1A0E]/80 backdrop-blur-md text-white border-0 font-mono text-[9px] px-3 py-1 uppercase tracking-[0.2em] rounded-md shadow-lg">
+                            <Badge className="bg-black/80 backdrop-blur-md text-white border-0 font-mono text-[9px] px-3 py-1 uppercase tracking-[0.2em] rounded-md shadow-lg">
                                 REF: {booking.booking_reference}
                             </Badge>
                         </div>
@@ -534,7 +604,7 @@ export default function AgentBookingsPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="text-2xl font-bold text-[#2D1A0E] tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                    <h3 className="text-2xl font-bold text-black tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
                                         {booking.package?.title || 'Bespoke Tour Experience'}
                                     </h3>
                                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
@@ -543,15 +613,15 @@ export default function AgentBookingsPage() {
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
+                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
                                         <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{booking.package?.destination || 'Global Discovery'}</span>
                                     </div>
-                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
+                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
                                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{formatDuration(booking.package?.duration_days || 0)}</span>
                                     </div>
-                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[#2D1A0E]/70 shadow-sm">
+                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
                                         <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{travelerCount} Guest{travelerCount > 1 ? 's' : ''}</span>
                                     </div>
@@ -559,12 +629,10 @@ export default function AgentBookingsPage() {
                             </div>
 
                             <div className="flex items-center gap-2 self-end sm:self-start">
-                                <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
-                                    <Share2 className="h-4 w-4" />
-                                </Button>
+
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[#2D1A0E] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
+                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-black hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
                                             <MoreHorizontal className="h-5 w-5" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -572,9 +640,7 @@ export default function AgentBookingsPage() {
                                         <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 glass-popover-item">
                                             <Info className="h-4 w-4 mr-3" /> <span className="font-bold">View Full Details</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem className="cursor-pointer rounded-xl h-11 glass-popover-item">
-                                            <Share className="h-4 w-4 mr-3" /> <span className="font-bold">Share Itinerary</span>
-                                        </DropdownMenuItem>
+
                                         <DropdownMenuSeparator className="bg-white/10" />
                                         {booking.status !== 'cancelled' && hasPermission('bookings', 'edit') && (
                                             <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)} className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
@@ -599,9 +665,9 @@ export default function AgentBookingsPage() {
                                     <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black text-[#2D1A0E] leading-none mb-1.5">{travelerName}</p>
-                                    <div className="px-2 py-0.5 rounded-full bg-[#B4501E]/10 border border-[#B4501E]/10 inline-block">
-                                        <p className="text-[10px] font-black text-[#B4501E]/60 uppercase tracking-tighter">
+                                    <p className="text-sm font-black text-black leading-none mb-1.5">{travelerName}</p>
+                                    <div className="px-2 py-0.5 rounded-full bg-black/5 border border-black/10 inline-block">
+                                        <p className="text-[10px] font-black text-black/60 uppercase tracking-tighter">
                                             +{travelerCount - 1} Accompaniment
                                         </p>
                                     </div>
@@ -610,7 +676,7 @@ export default function AgentBookingsPage() {
 
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#B4501E]/50 mb-1">Total Payment</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/50 mb-1">Total Payment</p>
                                     <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
                                 <Button
@@ -694,7 +760,7 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <User className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>Booking Contact</h3>
+                                        <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>Booking Contact</h3>
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         <div className="flex items-center gap-5 p-6 bg-white/40 rounded-3xl border border-white/60">
@@ -704,8 +770,8 @@ export default function AgentBookingsPage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
-                                                <p className="font-bold text-[#2D1A0E] text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
+                                                <p className="text-[10px] font-black text-black/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
+                                                <p className="font-bold text-black text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
@@ -714,8 +780,8 @@ export default function AgentBookingsPage() {
                                                     <Mail className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
-                                                    <span className="truncate text-sm font-bold text-[#2D1A0E] block">{booking.user?.email}</span>
+                                                    <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
+                                                    <span className="truncate text-sm font-bold text-black block">{booking.user?.email}</span>
                                                 </div>
                                             </a>
                                             <a href={`tel:${booking.user?.phone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
@@ -723,8 +789,8 @@ export default function AgentBookingsPage() {
                                                     <Phone className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
-                                                    <span className="truncate text-sm font-bold text-[#2D1A0E] block">{booking.user?.phone || 'Not provided'}</span>
+                                                    <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
+                                                    <span className="truncate text-sm font-bold text-black block">{booking.user?.phone || 'Not provided'}</span>
                                                 </div>
                                             </a>
                                         </div>
@@ -737,26 +803,26 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-[#2D1A0E]" style={{ fontFamily: "'Playfair Display', serif" }}>Tour Logistics</h3>
+                                        <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>Tour Logistics</h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 flex-1">
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-2 leading-none">Meeting Point</p>
-                                            <p className="font-bold text-[#2D1A0E] text-sm">{booking.package?.destination || 'Primary Hub'}</p>
+                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Meeting Point</p>
+                                            <p className="font-bold text-black text-sm">{booking.package?.destination || 'Primary Hub'}</p>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-2 leading-none">Check-in Time</p>
-                                            <p className="font-bold text-[#2D1A0E] text-sm">09:00 AM</p>
+                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Check-in Time</p>
+                                            <p className="font-bold text-black text-sm">09:00 AM</p>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60 flex flex-col justify-between">
-                                            <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
+                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
                                             <Badge className="bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20 font-black uppercase py-0.5 px-3 text-[9px] rounded-full w-fit">
                                                 {booking.package?.category || 'Standard'}
                                             </Badge>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-[#B4501E]/50 uppercase tracking-[0.2em] mb-2 leading-none">Duration</p>
-                                            <p className="font-bold text-[#2D1A0E] text-sm">{formatDuration(booking.package?.duration_days || 0)}</p>
+                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Duration</p>
+                                            <p className="font-bold text-black text-sm">{formatDuration(booking.package?.duration_days || 0)}</p>
                                         </div>
                                     </div>
                                 </section>
@@ -1069,10 +1135,10 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
         <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
             <Calendar className="h-12 w-12 text-white" />
         </div>
-        <h3 className="text-3xl font-bold text-[#2D1A0E] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <h3 className="text-3xl font-bold text-black mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
             {searchQuery ? "No matches found" : `No ${activeTab} bookings`}
         </h3>
-        <p className="text-[#B4501E]/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
+        <p className="text-black/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
             {searchQuery
                 ? `We couldn't find any bookings matching "${searchQuery}". Try a different search term or clear filters.`
                 : `Your ${activeTab} trip list is currently empty. Start by exploring our premium tour packages.`
@@ -1082,7 +1148,7 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
             {searchQuery ? (
                 <Button
                     onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-[#2D1A0E] font-black rounded-full hover:bg-white/40 transition-all"
+                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-black font-black rounded-full hover:bg-white/40 transition-all"
                 >
                     Clear All Filters
                 </Button>
@@ -1090,7 +1156,7 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
                 activeTab === 'upcoming' && (
                     <Button
                         onClick={() => router.push('/agent/packages')}
-                        className="h-14 px-10 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all"
+                        className="h-14 px-10 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-1 transition-all"
                     >
                         Browse Packages
                     </Button>

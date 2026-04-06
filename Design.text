@@ -1,212 +1,134 @@
-1. Upgrade the Core Concept → “Floating Glass Workflow”
+Core Design Strategy
+✅ Fixed Base
+Background → Blue gradient (always same)
+Creates consistency + brand identity
+✅ Dynamic Accent Layer
+Peach / Orange / Purple / etc
+Used for:
+Buttons
+Highlights
+Active states
+Glow effects
+💙 1. Background System (Do NOT change)
+Use layered blue gradients:
+background: 
+linear-gradient(135deg, #0f172a, #1e3a8a),
+radial-gradient(circle at 20% 30%, rgba(59,130,246,0.25), transparent),
+radial-gradient(circle at 80% 70%, rgba(147,197,253,0.2), transparent);
 
-Right now:
+👉 This stays SAME for all themes.
 
-Cards look good but still a bit flat
+🍑 2. Accent Theme System (Dynamic)
 
-Upgrade to:
-👉 Floating layered glass panels with depth hierarchy
+Create a theme variable system
 
-How:
-Main form card → z-10
-Inner sections → z-20
-Active elements → z-30 + glow
+Example:
+:root {
+  --accent: #ff8a5b;
+  --accent-soft: rgba(255,138,91,0.2);
+  --accent-glow: rgba(255,138,91,0.4);
+}
 
-Add:
+Switch theme:
 
-transform: translateY(0);
-transition: all 0.3s ease;
+[data-theme="blue"] {
+  --accent: #3b82f6;
+}
 
+[data-theme="peach"] {
+  --accent: #ff8a5b;
+}
+
+[data-theme="purple"] {
+  --accent: #8b5cf6;
+}
+🧊 3. Glass Cards (Neutral Base + Accent Glow)
+
+Keep cards neutral glass, not orange/blue.
+
+background: rgba(255,255,255,0.08);
+backdrop-filter: blur(20px);
+border: 1px solid rgba(255,255,255,0.15);
+Add Accent ONLY on interaction
 .card:hover {
-  transform: translateY(-4px) scale(1.01);
+  border: 1px solid var(--accent);
+  box-shadow: 0 10px 40px var(--accent-soft);
 }
-🎨 2. Smart Theme Engine (Make it Feel Alive)
+🎯 4. Where to Apply Accent Color
+Use Accent ONLY here:
+✅ Buttons
+background: linear-gradient(135deg, var(--accent), #ffffff);
+color: #0f172a;
+✅ Active Step (Progress Bar)
+background: var(--accent-soft);
+border: 1px solid var(--accent);
+✅ Icons
+color: var(--accent);
+✅ Links / CTA
+color: var(--accent);
+❌ DO NOT APPLY ACCENT HERE
+Full background ❌
+Entire cards ❌
+Large sections ❌
 
-You already support:
-✔ Orange/Peach
-✔ Red/Blue
-✔ Custom
+👉 This is where most UI breaks.
 
-Now enhance it:
-
-🔥 Add “Adaptive Glass Tinting”
-
-Instead of same opacity for all themes:
-
-Theme	Glass Tint
-Peach	warm white
-Red	slight pink tint
-Blue	cool bluish tint
-Green	mint tint
-
-👉 This makes themes feel completely different, not just color swap.
-
-🎛 Add Floating Theme Picker (Premium Touch)
-
-Instead of settings page:
-
-Floating circular button (bottom right)
-Opens glass palette panel
-Includes:
-Presets
-Gradient picker
-Live preview
-🧊 3. True 3D Glass Effect (Missing Piece)
-
-Right now it's glassy, but not “3D”.
-
-Add these:
-✨ A. Light Reflection Layer
-
-Top gradient shine:
-
-background: linear-gradient(
-  120deg,
-  rgba(255,255,255,0.35),
-  rgba(255,255,255,0.05)
-);
-✨ B. Inner Depth
-box-shadow:
-  inset 0 1px 2px rgba(255,255,255,0.4),
-  inset 0 -2px 6px rgba(0,0,0,0.1);
-✨ C. Edge Glow (theme-based)
-box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.25);
-🧩 4. Section-by-Section Improvements
-👤 “Who’s Traveling” Card
-Upgrade:
-Add Traveler Tabs (like browser tabs)
-Active tab = glowing glass pill
-Add:
-👉 + Add Traveler with animated expand
-🧾 Inputs (Big UX Win)
-
-Current:
-
-Slightly flat
-
-Upgrade to:
-
-💎 Glass Input Style
-Floating labels
-Inner blur
-Glow on focus
-input:focus {
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb),0.4);
+🔵 5. Hero Section (Blue Glass + Accent Highlight)
+6
+Keep it blue, add accent subtly:
+.hero-title {
+  background: linear-gradient(90deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  color: transparent;
 }
-⚧ Gender Toggle
+📊 6. Progress Bar (Best Place for Theme)
 
-Make it:
-👉 Sliding Glass Pill Switch
+This is where your theme shines.
 
-Animated background slide
-Smooth easing
-Slight 3D press effect
-🎂 Date of Birth
-
-Instead of 3 dropdowns:
-👉 Use single glass date picker
-
-Cleaner
-Saves space
-Feels modern
-📦 5. Right Panel → Turn into “Premium Payment Card”
-
-This is where you can really stand out.
-
-🏝 Trip Card (Chennai)
-
-Upgrade:
-
-Add background image (blurred)
-Overlay glass layer
-Title pops more
-💰 Order Summary
-Improve readability:
-Use divider lines (very soft)
-Animate numbers (count-up effect)
-💳 Total Amount
-
-Make it:
-👉 Hero Element
-
-Bigger font
-Gradient text (theme-based)
-Subtle glow pulse
-🔘 Pay Button (Important)
-
-Right now good → can be 🔥
-
-Upgrade to:
-
-👉 3D Glass Neon Button
-
-Gradient fill
-Hover → glow expands
-Click → press in
-button:active {
-  transform: scale(0.97);
+.progress-line {
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    rgba(255,255,255,0.2)
+  );
 }
+💳 7. Payment Summary Highlight
+.total-amount {
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+⚠️ 8. Cancellation Section (Mixed Colors)
 
-Add:
+Keep logic colors:
 
-Lock icon animation
-“Secure payment” micro text fades in
-✨ 6. Micro Interactions (Game Changer)
+Green → Refund
+Orange → Warning
+Red → No refund
 
-Add these and your UI feels premium instantly:
+BUT:
 
-Hover → lift + glow
-Input focus → highlight border
-Step change → smooth slide
-Toggle → spring animation
-Pay click → ripple effect
-🧠 7. UX Improvements
-✅ Stepper (Top)
+border: 1px solid var(--accent-soft);
 
-Make it:
-👉 Animated glass stepper
+👉 Blend with theme.
 
-Active step glows
-Line animates progress
-✅ Autofill Toggle
+✨ 9. Micro Interactions (Important)
+Hover Glow
+button:hover {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+Active Card
+.active {
+  outline: 1px solid var(--accent);
+}
+🧠 Final Visual Balance Rule
 
-When ON:
-👉 Animate field filling (not instant)
+👉 Follow this ratio:
 
-✅ Validation
-Soft red glow (not harsh)
-Shake animation for error
-🌈 8. Background Enhancement
-
-Right now gradient is good.
-
-Upgrade:
-
-👉 Add:
-
-Floating blurred blobs
-Subtle grain texture
-Slow gradient movement
-🧊 9. Advanced (Optional but 🔥)
-Mouse-based Parallax
-Cards slightly tilt
-Light reflection moves
-🧾 10. Final Visual Hierarchy Fix
-
-Improve clarity:
-
-Titles → bold + darker
-Labels → lighter
-Important → glow
-Secondary → reduce opacity
-🚀 Final Result Feel
-
-After these changes, your UI will feel like:
-
-👉 Stripe Checkout + Apple Wallet + Modern Travel App
-
-Premium
-Interactive
-Clean
-Theme-adaptive
-Memorable
+70% Blue Base
+20% Glass White
+10% Accent Color
+🚀 Result You’ll Get
+Consistent brand feel (blue stays)
+Easy theme switching (only accent changes)
+Premium SaaS look (not over-colored)
+Better readability

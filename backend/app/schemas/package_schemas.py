@@ -59,10 +59,17 @@ class PackageWithItineraryResponse(BaseModel):
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
+    
     itinerary_by_day: List[PackageDayItinerary]
+    
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[CancellationRule] = []
+    
+    # New Multi-Dest Support
+    package_mode: str = "single"
+    destinations: List[Dict[str, Any]] = []
+    
     homepage_settings: Optional[Dict[str, Any]] = None
     
     class Config:
@@ -81,7 +88,7 @@ class PackageWithItineraryResponse(BaseModel):
 
     try:
         from pydantic import validator
-        @validator('flight_origin_cities', pre=True, check_fields=False)
+        @validator('flight_origin_cities', 'destinations', pre=True, check_fields=False)
         def validate_json_lists(cls, v):
             return cls._parse_json_list(v)
     except ImportError:

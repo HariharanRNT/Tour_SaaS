@@ -360,7 +360,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                     {cityName.charAt(0).toUpperCase() + cityName.slice(1)}
                                 </h1>
-                                <p className="text-[#8B5E34] text-sm mt-1 font-medium">Manage all activities for this destination</p>
+                                <p className="text-slate-700/80 text-sm mt-1 font-medium">Manage all activities for this destination</p>
                             </div>
                         </div>
 
@@ -388,12 +388,12 @@ export default function CityActivityManager({ params }: { params: { city: string
                     <div className="h-full flex flex-col overflow-hidden border border-white/40 shadow-sm transition-all" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: '32px' }}>
                         <div className="p-6 shrink-0 sticky top-0 z-10 border-b border-white/40 bg-white/20 backdrop-blur-md">
                             <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-xl font-bold text-[var(--primary)]">Existing Activities</h2>
-                                <div className="bg-[#FF9A5C]/20 text-[#D95D22] font-bold px-3 py-1 rounded-full text-xs border border-[#FF9A5C]/30 shadow-sm">
+                                <h2 className="text-xl font-bold text-black">Existing Activities</h2>
+                                <div className="bg-slate-100 text-black font-bold px-3 py-1 rounded-full text-xs border border-slate-200 shadow-sm">
                                     {existingActivities.length}
                                 </div>
                             </div>
-                            <p className="text-sm text-[#8B5E34] font-medium opacity-80">Live preview of saved activities</p>
+                            <p className="text-sm text-slate-600 font-medium opacity-80">Live preview of saved activities</p>
                         </div>
 
                         <div className="p-6 pt-4 space-y-4 overflow-y-auto custom-scrollbar flex-1 relative">
@@ -406,8 +406,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     <div className="h-12 w-12 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-amber-50 rounded-2xl flex items-center justify-center border border-white/60 shadow-inner">
                                         <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                     </div>
-                                    <p className="text-[var(--primary)] text-[15px] font-semibold mb-1">No activities planned yet.</p>
-                                    <p className="text-[#8B5E34] text-sm leading-relaxed opacity-80">Add your first experience on the right to start building your itinerary.</p>
+                                    <p className="text-black text-[15px] font-semibold mb-1">No activities planned yet.</p>
+                                    <p className="text-slate-600 text-sm leading-relaxed opacity-80">Add your first experience on the right to start building your itinerary.</p>
                                 </div>
                             ) : (
                                 existingActivities.map((activity) => {
@@ -449,7 +449,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                 <div className="absolute bottom-0 inset-x-0 bg-white/40 backdrop-blur-md p-3 px-4 border-t border-white/50 flex justify-between items-center bg-gradient-to-t from-white/60 to-white/10 z-10">
                                                     <h3 className="font-bold text-[var(--primary)] text-[17px] line-clamp-1 flex-1 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>{activity.name}</h3>
                                                     {(activity.price_per_person ?? 0) > 0 && (
-                                                        <span className="font-semibold text-[#D95D22] text-sm ml-3 shrink-0 bg-white/60 px-2 py-0.5 rounded-md border border-white/50 backdrop-blur-sm shadow-sm">₹{activity.price_per_person}</span>
+                                                        <span className="font-semibold text-black text-sm ml-3 shrink-0 bg-white/60 px-2 py-0.5 rounded-md border border-white/50 backdrop-blur-sm shadow-sm">₹{activity.price_per_person}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -521,7 +521,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             <Label className="floating-label">Activity Name <span className="text-red-500">*</span></Label>
                                         </div>
                                         <div>
-                                            <Label className="text-[#8B5E34] font-semibold mb-2 block">Category <span className="text-red-500">*</span></Label>
+                                            <Label className="text-black font-semibold mb-2 block">Category <span className="text-red-500">*</span></Label>
                                             <Select
                                                 value={row.category}
                                                 onValueChange={(val) => handleRowChange(index, 'category', val)}
@@ -544,7 +544,7 @@ export default function CityActivityManager({ params }: { params: { city: string
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-7 mt-7">
                                         <div>
-                                            <Label className="text-[#8B5E34] font-semibold mb-2 block">Time Slot <span className="text-red-500">*</span></Label>
+                                            <Label className="text-black font-semibold mb-2 block">Time Slot <span className="text-red-500">*</span></Label>
                                             <Select
                                                 value={row.time_slot_preference}
                                                 onValueChange={(val: TimeSlotPreference) => handleRowChange(index, 'time_slot_preference', val)}
@@ -596,12 +596,12 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     {/* Inline Images - Horizontal layout for compactness */}
                                     <div className="mt-8 space-y-4 p-5 bg-white/10 backdrop-blur-md border-2 border-dashed border-[var(--primary)]/40 rounded-[16px] shadow-sm relative transition-all hover:border-[var(--primary)]/60 hover:bg-white/20">
                                         <div className="flex items-center justify-between">
-                                            <Label className="text-[var(--primary)] font-bold flex items-center gap-2.5 text-base">
-                                                <div className="bg-orange-100 p-1.5 rounded-lg border border-orange-200">
-                                                    <Upload className="h-4 w-4 text-[var(--primary)]" />
+                                            <Label className="text-black font-bold flex items-center gap-2.5 text-base">
+                                                <div className="bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                                                    <Upload className="h-4 w-4 text-black" />
                                                 </div>
                                                 Activity Images
-                                                <span className="bg-[#FF9A5C]/20 text-[#D95D22] text-xs px-2.5 py-0.5 rounded-full border border-[#FF9A5C]/30 shadow-sm ml-1">
+                                                <span className="bg-slate-100 text-black text-xs px-2.5 py-0.5 rounded-full border border-slate-200 shadow-sm ml-1">
                                                     {row.images?.length || 0}/5
                                                 </span>
                                             </Label>
@@ -611,7 +611,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleAddImage(index)}
-                                                    className="glass-button h-9 px-4 text-xs font-bold rounded-full text-[#D95D22] border border-[var(--primary)]/30 hover:bg-[var(--primary)]/10 hover:border-[var(--primary)]/50 transition-all shadow-sm"
+                                                    className="glass-button h-9 px-4 text-xs font-bold rounded-full text-black border border-slate-200 hover:bg-slate-100 transition-all shadow-sm"
                                                     disabled={(row.images?.length || 0) >= 5}
                                                 >
                                                     <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload File
@@ -671,7 +671,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             placeholder=" "
                                             className="glass-input peer min-h-[120px] pb-8 pt-4 resize-y leading-relaxed"
                                         />
-                                        <div className="absolute bottom-3 right-4 text-[#E8A585] text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
+                                        <div className="absolute bottom-3 right-4 text-black text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
                                             Activity Highlights
                                         </div>
                                         <Label className="floating-label">Description</Label>
@@ -695,7 +695,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     <Button
                                         onClick={handleCancelEdit}
                                         variant="ghost"
-                                        className="px-8 h-14 glass-button text-[#8B5E34] hover:bg-white/40 font-bold border-2 border-dashed border-[#8B5E34]/30"
+                                        className="px-8 h-14 glass-button text-black hover:bg-white/40 font-bold border-2 border-dashed border-slate-300"
                                     >
                                         Cancel Edit
                                     </Button>
@@ -706,8 +706,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     variant="outline"
                                     className="w-full max-w-2xl glass-button rounded-[50px] border-2 border-dashed border-[var(--primary)]/50 text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:border-[var(--primary)] transition-all duration-300 h-14 font-bold text-base flex items-center justify-center gap-3 shadow-sm bg-white/20"
                                 >
-                                    <div className="bg-[var(--primary)]/20 rounded-full p-1 border border-[var(--primary)]/30 shadow-inner">
-                                        <Plus className="h-4 w-4 text-[#D95D22]" />
+                                    <div className="bg-slate-100 rounded-full p-1 border border-slate-200 shadow-inner">
+                                        <Plus className="h-4 w-4 text-black" />
                                     </div>
                                     Add Another Activity
                                 </Button>
@@ -757,9 +757,9 @@ export default function CityActivityManager({ params }: { params: { city: string
                     transition: all 0.3s ease;
                 }
                 .glass-button:hover:not(:disabled) {
-                    background: rgba(255, 107, 43, 0.1) !important;
-                    border-color: rgba(255, 107, 43, 0.4) !important;
-                    color: #D95D22 !important;
+                    background: rgba(0, 0, 0, 0.05) !important;
+                    border-color: rgba(0, 0, 0, 0.1) !important;
+                    color: black !important;
                 }
                 
                 /* Custom animated label approach */
@@ -772,14 +772,14 @@ export default function CityActivityManager({ params }: { params: { city: string
                     transition: all 0.3s ease;
                     transform-origin: left bottom;
                     transform: translateY(0);
-                    color: #8B5E34;
+                    color: black;
                     font-weight: 600;
                     margin-bottom: 8px;
                 }
                 .glass-input:focus + .floating-label,
                 .glass-input:not(:placeholder-shown) + .floating-label {
                     transform: translateY(-2px);
-                    color: var(--primary);
+                    color: black;
                 }
 
                 .custom-scrollbar::-webkit-scrollbar {

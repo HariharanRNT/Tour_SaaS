@@ -1382,9 +1382,12 @@ function PlanTripContent() {
                                                             <div className="p-4 pt-2.5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between" onClick={() => handleContinueToBook(pkg)}>
                                                                 <div className="flex flex-col gap-1">
                                                                     <div className="flex items-start justify-between gap-3 mb-1.5">
-                                                                        <h3 className="font-bold text-black text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                                                            {pkg.title}
-                                                                        </h3>
+                                                                        <div className="custom-tooltip-container mb-1.5 h-auto">
+                                                                            <h3 className="font-bold text-black text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }} title={pkg.title}>
+                                                                                {pkg.title}
+                                                                            </h3>
+                                                                            <span className="custom-tooltip-content">{pkg.title}</span>
+                                                                        </div>
                                                                     </div>
 
                                                                     {/* Destination Route */}

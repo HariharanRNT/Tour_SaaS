@@ -191,10 +191,10 @@ export default function ActivitiesMasterPage() {
                 <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex flex-col gap-4">
                         {/* Breadcrumb */}
-                        <nav className="flex items-center text-[13px] font-medium text-[#92400e]/80">
-                            <span className="hover:text-[#92400e] cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
+                        <nav className="flex items-center text-[13px] font-medium text-slate-800/80">
+                            <span className="hover:text-black cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
                             <span className="mx-2">/</span>
-                            <span className="text-[#92400e]">Destinations Library</span>
+                            <span className="text-black">Destinations Library</span>
                         </nav>
 
                         {/* Title & Badge */}
@@ -206,7 +206,7 @@ export default function ActivitiesMasterPage() {
                                 <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#4A2B1D' }}>
                                     Destinations Library
                                 </h1>
-                                <p className="mt-1.5 text-[#8B5E34] text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
+                                <p className="mt-1.5 text-slate-700/90 text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
                                     Manage all destinations and their activities
                                 </p>
                             </div>
@@ -241,7 +241,7 @@ export default function ActivitiesMasterPage() {
                             <MapPin className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <p className="text-xs text-[#E8A585] font-bold uppercase tracking-widest mb-0.5">Destinations</p>
+                            <p className="text-xs text-slate-600 font-bold uppercase tracking-widest mb-0.5">Destinations</p>
                             <p className="text-4xl font-extrabold text-[var(--primary)] leading-none tracking-tight">{destinations.length}</p>
                         </div>
                     </div>
@@ -253,7 +253,7 @@ export default function ActivitiesMasterPage() {
                             <ActivityIcon className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <p className="text-xs text-[#E8A585] font-bold uppercase tracking-widest mb-0.5">Total Activities</p>
+                            <p className="text-xs text-slate-600 font-bold uppercase tracking-widest mb-0.5">Total Activities</p>
                             <p className="text-4xl font-extrabold text-[var(--primary)] leading-none tracking-tight">{totalActivities}</p>
                         </div>
                     </div>
@@ -277,7 +277,7 @@ export default function ActivitiesMasterPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-[#B4501E]/60 uppercase tracking-widest italic pr-2">
+                        <span className="text-[11px] font-bold text-slate-800/60 uppercase tracking-widest italic pr-2">
                             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} destinations
                         </span>
                     </div>
@@ -373,24 +373,19 @@ export default function ActivitiesMasterPage() {
                                                         </DropdownMenu>
                                                     </div>
 
-                                                    <h2 className="text-[20px] font-black group-hover:text-[var(--primary)] transition-colors leading-tight h-7 overflow-hidden truncate" style={{ fontFamily: "'Playfair Display', serif", color: '#2D1A0E' }}>
-                                                        {dest.name}
-                                                    </h2>
-
-                                                    {/* Row 3: Activity count orange dot pill — 24px height */}
                                                     <div className="flex items-center h-6 mb-2">
-                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-[#B4501E] text-[10px] uppercase tracking-widest">
+                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-slate-800 text-[10px] uppercase tracking-widest">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mr-2 animate-pulse shadow-[0_0_8px_var(--primary-glow)]" />
                                                             {dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}
                                                             <span className="mx-2 opacity-30">|</span>
                                                             {dest.package_count} {dest.package_count === 1 ? 'Package' : 'Packages'}
                                                         </div>
-                                                        {dest.is_popular && (
-                                                            <div className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-amber-300 bg-amber-50 text-amber-700 text-[10px] uppercase tracking-widest shadow-sm">
-                                                                🔥 Popular
-                                                            </div>
-                                                        )}
                                                     </div>
+
+                                                    <h2 className="text-[20px] font-black group-hover:text-[var(--primary)] transition-colors leading-tight h-7 overflow-hidden truncate" style={{ fontFamily: "'Playfair Display', serif", color: '#2D1A0E' }}>
+                                                        {dest.name}
+                                                    </h2>
+
 
                                                     {/* Row 4: MANAGE LIBRARY → link pinned to bottom — 32px height */}
                                                     <div className="mt-auto flex items-center h-8 text-[var(--primary)] font-black text-[10px] uppercase tracking-widest group-hover:pl-1 transition-all">
@@ -432,7 +427,7 @@ export default function ActivitiesMasterPage() {
                                                                 "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
                                                                 currentPage === page
                                                                     ? "bg-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)] scale-110"
-                                                                    : "text-[#4A2B1D] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
+                                                                    : "text-slate-800 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
                                                             )}
                                                         >
                                                             {page}
@@ -454,7 +449,7 @@ export default function ActivitiesMasterPage() {
                                                         "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
                                                         currentPage === page
                                                             ? "bg-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)] scale-110"
-                                                            : "text-[#4A2B1D] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
+                                                            : "text-slate-800 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
                                                     )}
                                                 >
                                                     {page}
@@ -556,7 +551,7 @@ export default function ActivitiesMasterPage() {
                             {isEditing ? 'Edit Destination' : 'New Destination'}
                         </DialogTitle>
                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>
-                        <DialogDescription style={{ color: 'rgba(120,60,20,0.75)', fontWeight: 400, fontSize: '15px' }}>
+                        <DialogDescription style={{ color: 'rgba(0,0,0,0.7)', fontWeight: 400, fontSize: '15px' }}>
                             {isEditing ? `Update details for ${editingDestOriginalName}.` : 'Enter the name of the new destination to manage its activities.'}
                         </DialogDescription>
                     </div>
@@ -564,7 +559,7 @@ export default function ActivitiesMasterPage() {
                     <form onSubmit={handleCreateNewDestination} className="px-6 pb-6">
                         <div className="space-y-3 mb-5 text-left">
                             <div className="space-y-2">
-                                <label htmlFor="destination-name" style={{ color: 'var(--primary-glow)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                <label htmlFor="destination-name" style={{ color: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
                                     Destination
                                 </label>
                                 <Input
@@ -572,7 +567,7 @@ export default function ActivitiesMasterPage() {
                                     value={newCityName}
                                     onChange={(e) => setNewCityName(e.target.value)}
                                     placeholder="e.g., Bali, Paris, Tokyo"
-                                    className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-[#B4501E]/40 text-[#3A1A08] font-semibold"
+                                    className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-black/30 text-black font-semibold"
                                     style={{
                                         background: 'rgba(255,255,255,0.45)',
                                         backdropFilter: 'blur(14px)',
@@ -595,7 +590,7 @@ export default function ActivitiesMasterPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <label style={{ color: 'var(--primary-glow)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                <label style={{ color: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
                                     Destination Image
                                 </label>
 
@@ -677,14 +672,7 @@ export default function ActivitiesMasterPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox id="is-popular" checked={isPopular} onCheckedChange={(checked) => setIsPopular(checked as boolean)} />
-                                <label htmlFor="is-popular" className="text-xs font-semibold text-[#3A1A08] cursor-pointer">
-                                    Show in Popular Destinations
-                                </label>
-                            </div>
                         </div>
-
                         <div className="flex gap-3 pt-2">
                             <Button
                                 type="button"

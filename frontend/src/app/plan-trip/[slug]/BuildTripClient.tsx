@@ -700,7 +700,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                         {/* Title */}
                         <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] font-display drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                            Trip to <span className="text-white italic font-serif bg-clip-text drop-shadow-sm">{session.destination}</span>
+                            Trip to <span className="text-white italic font-serif bg-clip-text drop-shadow-sm">
+                                {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1)) 
+                                    ? "Multi City Tour" 
+                                    : session.destination
+                                }
+                            </span>
                         </h1>
 
                         {/* Trip Details Grid - Info Chips */}

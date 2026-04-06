@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { bookingsAPI } from '@/lib/api'
+import { bookingsAPI, agentAPI } from '@/lib/api'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -82,12 +82,11 @@ export default function BookingDetailsPage() {
 
             // Fetch agent GST settings as fallback
             try {
-                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch('/api/v1/agent-settings/public', { headers: { 'X-Domain': domain } })
-                if (res.ok) {
-                    const settings = await res.json()
-                    setGstSettings({ inclusive: settings.gst_inclusive, percentage: settings.gst_percentage })
-                }
+                const settings = await agentAPI.getPublicSettings()
+                setGstSettings({ 
+                    inclusive: settings.homepage_settings?.gst_inclusive ?? false, 
+                    percentage: settings.homepage_settings?.gst_percentage ?? 18 
+                })
             } catch (e) {
                 console.error("Failed to load fallback GST settings", e)
             }
@@ -284,7 +283,7 @@ export default function BookingDetailsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
                 </div>
 
-                <div className="container mx-auto px-4 h-full relative flex flex-col justify-between py-8">
+                <div className="container mx-auto px-4 h-full relative flex flex-col justify-between py-4">
                     {/* Top Navigation Row */}
                     <div className="flex justify-between items-center animate-fade-in mb-8">
                         <Button
@@ -306,19 +305,57 @@ export default function BookingDetailsPage() {
                         </div>
                     </div>
 
+                    {/* Booking Progress Indicator */}
+                    <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+                        <div className="glass-card-refinement bg-white/30 border-white/40 backdrop-blur-sm p-1 rounded-full max-w-fit mx-auto shadow-sm">
+                            <div className="flex items-center gap-1">
+                                {['Booked', 'Confirmed', 'Trip Date', 'Completed'].map((stage, idx) => {
+                                    const isCompleted = (booking.status === 'completed' && idx <= 3) || 
+                                                        (new Date() >= new Date(booking.travel_date) && idx <= 2) ||
+                                                        (booking.status === 'confirmed' && idx <= 1) ||
+                                                        (idx === 0);
+                                    const isCurrent = (booking.status === 'completed' && idx === 3) ||
+                                                      (booking.status !== 'completed' && new Date() >= new Date(booking.travel_date) && idx === 2) ||
+                                                      (booking.status === 'confirmed' && new Date() < new Date(booking.travel_date) && idx === 1) ||
+                                                      (booking.status === 'pending' && idx === 0);
+
+                                    return (
+                                        <div key={stage} className="flex items-center">
+                                            {idx > 0 && (
+                                                <div className={`w-8 h-px mx-1 ${isCompleted ? 'bg-blue-600/40' : 'bg-black/10'}`} />
+                                            )}
+                                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-500 ${
+                                                isCurrent 
+                                                ? 'bg-blue-600 text-white shadow-md scale-105' 
+                                                : isCompleted 
+                                                ? 'bg-blue-600/10 text-blue-700' 
+                                                : 'text-black/60'
+                                            }`}>
+                                                <div className={`h-1.5 w-1.5 rounded-full ${
+                                                    isCurrent ? 'bg-white animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
+                                                }`} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">{stage}</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Unified Hero Card */}
-                    <div className="w-full mt-auto pb-8">
-                        <div className="glass-card-refinement bg-white/50 border-white/40 backdrop-blur-md shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] rounded-[48px] overflow-hidden">
-                            <div className="p-8 md:p-12">
-                                <div className="flex flex-col lg:flex-row justify-between items-start gap-12">
+                    <div className="w-full mt-auto pb-4">
+                        <div className="glass-card-refinement bg-white/50 border-white/40 backdrop-blur-md shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] rounded-[32px] overflow-hidden">
+                            <div className="p-6 md:p-6 md:pb-5">
+                                <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
                                     {/* Left: Title & Meta */}
-                                    <div className="flex-1 space-y-10">
+                                    <div className="flex-1 space-y-6">
                                         <div>
-                                            <h1 className="text-4xl md:text-7xl font-black text-[#0f172a] mb-8 tracking-tighter leading-[1.05] animate-in slide-in-from-left duration-700 capitalize">
+                                            <h1 className="text-3xl md:text-5xl font-black text-[#0f172a] mb-4 tracking-tighter leading-[1.05] animate-in slide-in-from-left duration-700 capitalize">
                                                 {booking.package?.title || 'Custom Trip Package'}
                                             </h1>
 
-                                            <div className="flex flex-wrap items-center gap-y-6 gap-x-12 text-black text-sm md:text-base font-black">
+                                            <div className="flex flex-wrap items-center gap-y-4 gap-x-8 text-black text-sm md:text-base font-black">
                                                 <div className="flex items-center gap-4 group/meta">
                                                     <div className="h-12 w-12 rounded-[20px] bg-blue-600/10 flex items-center justify-center border border-blue-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
                                                         <MapPin className="h-6 w-6 text-blue-600" />
@@ -348,10 +385,10 @@ export default function BookingDetailsPage() {
                                     </div>
 
                                     {/* Right: Badges & Actions */}
-                                    <div className="flex flex-col items-start lg:items-end gap-10 min-w-fit">
+                                    <div className="flex flex-col items-start lg:items-end gap-6 min-w-fit">
                                         {/* Status & REF Column */}
                                         <div className="flex flex-col gap-4 w-full">
-                                            <div className={`glass-pill-chip h-14 pl-6 pr-8 shadow-md border-2 transition-all duration-500 scale-105 ${
+                                            <div className={`glass-pill-chip py-2 px-5 shadow-md border-2 transition-all duration-500 scale-105 ${
                                                 booking.status === 'confirmed' 
                                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 shadow-[0_0_30px_rgba(16,185,129,0.2)]' 
                                                 : 'bg-white/60 border-black/10 text-black'
@@ -414,29 +451,31 @@ export default function BookingDetailsPage() {
                     <div className="lg:col-span-3 space-y-8">
 
                         {/* Package Details Card */}
-                        <Card className="glass-card-refinement bg-white/40 border-black/10 overflow-hidden group shadow-lg">
-                            <CardContent className="p-8">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6 border-b border-black/5 pb-8">
-                                    <div className="space-y-2">
-                                        <h2 className="text-3xl font-black text-[#0f172a] tracking-tight">Package Overview</h2>
-                                        <p className="text-black text-sm font-black flex items-center gap-2">
-                                            <Calendar className="h-4 w-4 text-blue-600" /> Trip starts on {formatDate(booking.travel_date)}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="glass-pill-chip px-5 py-3 h-auto flex flex-col items-center min-w-[100px] border-blue-600/20 bg-blue-600/5">
-                                            <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">Duration</p>
-                                            <p className="font-black text-lg text-black">{formatDuration(booking.package?.duration_days || 0)}</p>
+                        <Card className="glass-card-refinement bg-white/40 border-black/10 overflow-hidden group shadow-lg min-h-0">
+                            <CardContent className="p-6">
+                                <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 ${booking.package?.included_items?.length ? 'border-b border-black/5 pb-6' : ''}`}>
+                                    <div className="flex flex-col md:flex-row md:items-center gap-6">
+                                        <div className="space-y-1">
+                                            <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">Package Overview</h2>
+                                            <p className="text-black text-sm font-black flex items-center gap-2">
+                                                <Calendar className="h-4 w-4 text-blue-600" /> Trip starts on {formatDate(booking.travel_date)}
+                                            </p>
                                         </div>
-                                        <div className="glass-pill-chip px-5 py-3 h-auto flex flex-col items-center min-w-[100px] border-purple-600/20 bg-purple-600/5">
-                                            <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest mb-1">Travelers</p>
-                                            <p className="font-black text-lg text-black">{booking.number_of_travelers}</p>
+                                        <div className="flex gap-3">
+                                            <div className="glass-pill-chip px-4 py-2 h-auto flex items-center gap-3 border-blue-600/10 bg-blue-600/5">
+                                                <span className="text-[9px] text-blue-600 font-black uppercase tracking-widest">Duration</span>
+                                                <span className="font-black text-sm text-black">{formatDuration(booking.package?.duration_days || 0)}</span>
+                                            </div>
+                                            <div className="glass-pill-chip px-4 py-2 h-auto flex items-center gap-3 border-purple-600/10 bg-purple-600/5">
+                                                <span className="text-[9px] text-purple-600 font-black uppercase tracking-widest">Travelers</span>
+                                                <span className="font-black text-sm text-black">{booking.number_of_travelers}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {booking.package?.included_items && booking.package.included_items.length > 0 ? (
-                                    <div className="space-y-6">
+                                    <div className="space-y-4 mt-6">
                                         <h4 className="font-black text-black flex items-center gap-2 text-[10px] uppercase tracking-[0.25em]">
                                             <CheckCircle className="h-4 w-4 text-emerald-600" /> Package Inclusions
                                         </h4>
@@ -458,14 +497,14 @@ export default function BookingDetailsPage() {
 
 
                         <Card className="glass-card-refinement bg-white/40 border-black/10 overflow-hidden shadow-xl backdrop-blur-md">
-                            <CardHeader className="bg-black/[0.03] border-b border-black/5 pb-6 pt-8 px-8">
-                                <CardTitle className="text-xl font-black flex items-center gap-4 text-black uppercase tracking-[0.25em]">
-                                    <MapPin className="h-6 w-6 text-indigo-600" /> Itinerary Overview
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8">
+                            <CardContent className="p-6">
+                                <div className="mb-6 border-b border-black/5 pb-4">
+                                    <h3 className="text-xl font-bold flex items-center gap-4 text-black uppercase tracking-[0.12em]">
+                                        <MapPin className="h-6 w-6 text-indigo-600" /> Itinerary Overview
+                                    </h3>
+                                </div>
                                 {booking.package?.itinerary_items && booking.package.itinerary_items.length > 0 ? (
-                                    <div className="space-y-5">
+                                    <div className="space-y-4">
                                         {Object.entries(
                                             booking.package.itinerary_items.reduce((acc, item) => {
                                                 const day = item.day_number;
@@ -474,31 +513,31 @@ export default function BookingDetailsPage() {
                                                 return acc;
                                             }, {} as Record<number, typeof booking.package.itinerary_items>)
                                         ).sort(([a], [b]) => Number(a) - Number(b)).map(([day, items], idx) => (
-                                            <details key={day} className="group glass-card-refinement bg-white/10 border-white/20 overflow-hidden rounded-[32px] shadow-sm" open={idx === 0}>
-                                                <summary className="flex items-center justify-between p-6 cursor-pointer list-none group-open:bg-black/[0.02] transition-colors">
-                                                    <div className="flex items-center gap-6">
-                                                        <div className="bg-indigo-600 text-white h-14 w-14 rounded-3xl flex flex-col items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] border border-white/30">
-                                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-0.5">Day</span>
-                                                            <span className="text-2xl font-black leading-none">{day}</span>
+                                            <details key={day} className="group glass-card-refinement bg-white/10 border-white/20 overflow-hidden rounded-[24px] shadow-sm" open={idx === 0}>
+                                                <summary className="flex items-center justify-between p-4 cursor-pointer list-none group-open:bg-black/[0.02] transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="bg-indigo-600 text-white h-12 w-12 rounded-2xl flex flex-col items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] border border-white/30">
+                                                            <span className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-0.5">Day</span>
+                                                            <span className="text-xl font-black leading-none">{day}</span>
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-black text-black text-xl tracking-tight">{items[0].title}</h4>
-                                                            <div className="flex items-center gap-3 mt-1.5">
+                                                            <h4 className="font-black text-black text-lg tracking-tight">{items[0].title}</h4>
+                                                            <div className="flex items-center gap-2 mt-1">
                                                                 <div className="h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)]" />
-                                                                <p className="text-[11px] font-black text-black uppercase tracking-[0.2em]">{items.length} Planned Activities</p>
+                                                                <p className="text-[10px] font-black text-black uppercase tracking-[0.2em]">{items.length} Planned Activities</p>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="h-12 w-12 rounded-2xl flex items-center justify-center p-2 glass-pill-chip group-open:rotate-180 transition-all bg-white/60 border-black/5 group-open:text-indigo-600 group-open:border-indigo-600/30 group-open:shadow-inner">
-                                                        <MoreHorizontal className="h-6 w-6" />
+                                                    <div className="h-10 w-10 rounded-xl flex items-center justify-center p-2 glass-pill-chip group-open:rotate-180 transition-all bg-white/60 border-black/5 group-open:text-indigo-600 group-open:border-indigo-600/30 group-open:shadow-inner">
+                                                        <MoreHorizontal className="h-5 w-5" />
                                                     </div>
                                                 </summary>
-                                                <div className="px-6 pb-8 pt-4 border-t border-black/5 space-y-8 relative overflow-hidden">
-                                                    <div className="absolute left-[43px] top-8 bottom-12 w-0.5 bg-gradient-to-b from-indigo-600 via-indigo-600/20 to-transparent opacity-30" />
+                                                <div className="px-4 pb-6 pt-2 border-t border-black/5 space-y-4 relative overflow-hidden">
+                                                    <div className="absolute left-[35px] top-6 bottom-10 w-0.5 bg-gradient-to-b from-indigo-600 via-indigo-600/20 to-transparent opacity-30" />
                                                     {items.map((item, i) => (
-                                                        <div key={item.id} className="relative pl-16 group/activity">
-                                                            <div className="absolute left-[39.5px] top-2 h-2.5 w-2.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)] z-10" />
-                                                            <div className="p-6 glass-card-refinement border-white/40 bg-white/40 hover:bg-white/60 border-l-4 border-l-indigo-600/40 transition-all rounded-3xl shadow-sm relative">
+                                                        <div key={item.id} className="relative pl-12 group/activity">
+                                                            <div className="absolute left-[31.5px] top-[1.35rem] -translate-y-1/2 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)] z-10" />
+                                                            <div className="p-4 glass-card-refinement border-white/40 bg-white/40 hover:bg-white/60 border-l-4 border-l-indigo-600/40 transition-all rounded-2xl shadow-sm relative">
                                                                 <div className="flex items-center justify-between mb-3">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="h-2 w-2 rounded-full bg-indigo-600" />
@@ -510,7 +549,7 @@ export default function BookingDetailsPage() {
                                                                         <MoreHorizontal className="h-4 w-4 text-black" />
                                                                     </Button>
                                                                 </div>
-                                                                <p className="text-sm text-black leading-relaxed font-black opacity-90">{item.description}</p>
+                                                                <p className="text-[0.78rem] text-black/80 leading-relaxed font-medium">{item.description}</p>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -631,40 +670,40 @@ export default function BookingDetailsPage() {
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between mt-12 mb-6">
-                            <div className="glass-card-refinement bg-black/[0.03] border-black/5 px-8 py-3 rounded-2xl backdrop-blur-md flex items-center gap-4">
-                                <Users className="h-6 w-6 text-purple-600" />
-                                <h3 className="text-base font-black text-black uppercase tracking-[0.25em]">Traveler Roster</h3>
-                                <div className="h-1 w-16 bg-purple-600/30 rounded-full ml-6" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {booking.travelers?.map((traveler, index) => (
-                                <div key={traveler.id} className={`glass-card-refinement bg-white/40 border-black/10 p-10 flex items-start gap-8 relative group hover:scale-[1.02] transition-all duration-500 rounded-[40px] shadow-lg ${booking.travelers?.length === 1 ? 'md:col-span-2' : ''}`}>
-                                    <div className="flex flex-col items-start gap-6 shrink-0">
-                                        <div className="h-20 w-20 rounded-[28px] bg-purple-600/10 flex items-center justify-center text-purple-600 border border-purple-600/20 group-hover:scale-110 transition-transform duration-700 shadow-sm">
-                                            <span className="text-2xl font-black uppercase text-purple-800">{traveler.first_name[0]}{traveler.last_name[0]}</span>
+                                <div key={traveler.id} className={`glass-card-refinement bg-white/40 border-black/10 p-0 flex flex-col items-start relative group hover:scale-[1.01] transition-all duration-500 rounded-[24px] shadow-lg ${booking.travelers?.length === 1 ? 'md:col-span-2' : ''}`}>
+                                    <div className="w-full px-6 py-4 border-b border-black/5 flex items-center justify-between bg-black/[0.02]">
+                                        <div className="flex items-center gap-3">
+                                            <Users className="h-4 w-4 text-purple-600" />
+                                            <span className="text-[10px] font-black text-black uppercase tracking-[0.2em]">Traveler Roster</span>
                                         </div>
+                                        {traveler.is_primary && (
+                                            <div className="glass-pill-chip bg-purple-600/10 border-purple-600/20 text-[9px] px-3 py-1 uppercase font-black text-purple-800 shadow-xs">Primary Contact</div>
+                                        )}
                                     </div>
-                                    <div className="flex-1 pt-2">
-                                        <div className="flex flex-col items-start mb-10 gap-3">
-                                            <h4 className="font-black text-[#0f172a] text-2xl tracking-tight leading-tight">{traveler.first_name} {traveler.last_name}</h4>
-                                            {traveler.is_primary && (
-                                                <div className="glass-pill-chip bg-purple-600/10 border-purple-600/20 text-[10px] px-4 py-2 uppercase font-black text-purple-800 shadow-xs">Primary Contact</div>
-                                            )}
+                                    <div className="p-6 flex items-start gap-5 w-full">
+                                        <div className="flex flex-col items-start gap-4 shrink-0">
+                                            <div className="h-14 w-14 rounded-[18px] bg-purple-600/10 flex items-center justify-center text-purple-600 border border-purple-600/20 group-hover:scale-110 transition-transform duration-700 shadow-sm">
+                                                <span className="text-lg font-black uppercase text-purple-800">{traveler.first_name[0]}{traveler.last_name[0]}</span>
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div className="flex items-center justify-between py-1.5 border-b border-black/8">
-                                                <span className="text-[11px] font-black text-black uppercase tracking-[0.25em]">Category</span>
-                                                <span className="text-xs font-black text-black uppercase tracking-widest">{traveler.date_of_birth ? 'Adult' : 'Child'}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1.5 border-b border-black/8">
-                                                <span className="text-[11px] font-black text-black uppercase tracking-[0.25em]">Gender</span>
-                                                <span className="text-xs font-black text-black uppercase tracking-widest">{traveler.gender}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1.5">
-                                                <span className="text-[11px] font-black text-black uppercase tracking-[0.25em]">Region</span>
-                                                <span className="text-xs font-black text-black uppercase tracking-widest">{traveler.nationality}</span>
+                                        <div className="flex-1 pt-1">
+                                            <h4 className="font-black text-[#0f172a] text-xl tracking-tight leading-tight mb-4">{traveler.first_name} {traveler.last_name}</h4>
+                                            
+                                            <div className="grid grid-cols-1 gap-2">
+                                                <div className="flex items-center justify-between py-1 border-b border-black/5">
+                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Category</span>
+                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.date_of_birth ? 'Adult' : 'Child'}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between py-1 border-b border-black/5">
+                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Gender</span>
+                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.gender}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between py-1">
+                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Region</span>
+                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.nationality}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -677,16 +716,16 @@ export default function BookingDetailsPage() {
 
 
                     {/* RIGHT COLUMN (Sidebar) - spans 2 columns (40%) */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24 self-start">
 
                         {/* Payment Summary */}
                         <Card className="glass-card-refinement bg-white/40 border-white/60 overflow-hidden shadow-lg">
-                            <CardHeader className="bg-black/5 border-b border-black/5 pb-6 pt-8 px-8">
-                                <CardTitle className="text-xl font-black flex items-center gap-3 text-black uppercase tracking-wider">
-                                    <CreditCard className="h-6 w-6 text-blue-600" /> Payment Summary
+                            <CardHeader className="bg-black/5 border-b border-black/5 p-4 px-6">
+                                <CardTitle className="text-lg font-black flex items-center gap-3 text-black uppercase tracking-wider">
+                                    <CreditCard className="h-5 w-5 text-blue-600" /> Payment Summary
                                 </CardTitle>
                             </CardHeader>
-                             <CardContent className="p-8 space-y-6">
+                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center text-sm font-black">
                                         <span className="text-black uppercase tracking-widest text-[10px]">Package Base Cost</span>
@@ -700,9 +739,9 @@ export default function BookingDetailsPage() {
                                 
                                 <div className="h-px bg-gradient-to-r from-transparent via-black/5 to-transparent" />
                                 
-                                <div className="flex justify-between items-baseline py-2">
-                                    <span className="font-black text-xs text-slate-800 uppercase tracking-[0.2em]">Total Investment</span>
-                                    <span className="font-black text-4xl tracking-tighter transition-all duration-500 hover:scale-105 inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                                <div className="flex justify-between items-baseline py-1">
+                                    <span className="font-black text-[10px] text-slate-800 uppercase tracking-[0.2em]">Total Investment</span>
+                                    <span className="font-black text-3xl tracking-tighter transition-all duration-500 hover:scale-105 inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                                         {formatCurrency(booking.total_amount)}
                                     </span>
                                 </div>
@@ -791,12 +830,12 @@ export default function BookingDetailsPage() {
 
                         {/* Cancellation Policy */}
                         <Card className="glass-card-warning-red border-red-200 bg-red-50/30 overflow-hidden shadow-lg">
-                            <CardHeader className="bg-red-600/5 border-b border-red-600/10 pb-6 pt-8 px-8">
-                                <CardTitle className="text-xl font-black flex items-center gap-3 text-red-700 uppercase tracking-wider">
-                                    <XCircle className="h-6 w-6 animate-pulse-soft" /> Cancellation Terms
+                            <CardHeader className="bg-red-600/5 border-b border-red-600/10 p-4 px-6">
+                                <CardTitle className="text-lg font-black flex items-center gap-3 text-red-700 uppercase tracking-wider">
+                                    <XCircle className="h-5 w-5 animate-pulse-soft" /> Cancellation Terms
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-8 space-y-6">
+                            <CardContent className="p-6 space-y-4">
                                 {booking.package?.cancellation_enabled ? (
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2.5 text-emerald-700 mb-2">
@@ -878,12 +917,12 @@ export default function BookingDetailsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="glass-card-refinement border-red-600/10 bg-red-600/5 p-12 text-center rounded-[40px]">
-                                        <div className="h-20 w-20 bg-red-600/10 rounded-3xl flex items-center justify-center text-red-600 mx-auto mb-8 border border-red-600/20 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
-                                            <AlertCircle className="h-10 w-10 animate-pulse-soft" />
+                                    <div className="glass-card-refinement border-red-600/10 bg-red-600/5 p-6 text-center rounded-[24px]">
+                                        <div className="h-12 w-12 bg-red-600/10 rounded-2xl flex items-center justify-center text-red-600 mx-auto mb-4 border border-red-600/20 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
+                                            <AlertCircle className="h-6 w-6 animate-pulse-soft" />
                                         </div>
-                                        <h4 className="text-2xl font-black text-black tracking-tight uppercase mb-4">Non-Cancellable</h4>
-                                        <p className="text-xs font-black text-black max-w-[240px] mx-auto leading-relaxed uppercase tracking-[0.15em] opacity-80">
+                                        <h4 className="text-lg font-black text-black tracking-tight uppercase mb-2">Non-Cancellable</h4>
+                                        <p className="text-[10px] font-black text-black max-w-[200px] mx-auto leading-relaxed uppercase tracking-[0.15em] opacity-80">
                                             Strict non-refundable policy applied to this package.
                                         </p>
                                     </div>
@@ -892,25 +931,25 @@ export default function BookingDetailsPage() {
                         </Card>
 
                         {/* Need Help Section - Inline Strip */}
-                        <div className="glass-card-refinement bg-white/40 border-black/10 p-10 flex flex-col md:flex-row items-center justify-between gap-10 rounded-[48px] shadow-lg backdrop-blur-md transition-all hover:bg-white/60 group/help overflow-hidden">
-                            <div className="flex items-center gap-8 min-w-0">
-                                <div className="h-20 w-20 rounded-[32px] bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20 shadow-sm group-hover/help:scale-110 transition-transform duration-500 shrink-0">
-                                    <Phone className="h-9 w-9" />
+                        <div className="glass-card-refinement bg-white/60 border-black/10 p-6 flex flex-col md:flex-row items-center justify-between gap-6 rounded-[32px] shadow-lg backdrop-blur-md transition-all group/help">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className="h-14 w-14 rounded-[22px] bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20 shadow-sm group-hover/help:scale-110 transition-transform duration-500 shrink-0">
+                                    <Phone className="h-6 w-6" />
                                 </div>
-                                <div className="text-center md:text-left min-w-0">
-                                    <p className="text-xl font-black text-[#0f172a] uppercase tracking-[0.1em] truncate">Priority Support</p>
-                                    <p className="text-[11px] text-blue-600 font-black uppercase tracking-[0.3em] mt-2 truncate">24/7 Dedicated Concierge</p>
+                                <div className="text-left w-full">
+                                    <p className="text-lg font-black text-[#0f172a] uppercase tracking-[0.1em]">Priority Support</p>
+                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.3em] mt-1">24/7 Dedicated Concierge</p>
                                 </div>
                             </div>
                             
-                            <div className="hidden md:block w-px h-16 bg-black/10 mx-4 shrink-0" />
+                            <div className="hidden md:block w-px h-10 bg-black/10 mx-2 shrink-0" />
 
-                            <div className="flex flex-col items-center md:items-end gap-4 font-black text-black min-w-0 max-w-full md:max-w-fit">
-                                <a href="tel:+9118001234567" className="flex items-center gap-4 hover:text-blue-600 transition-all text-lg tracking-tight hover:scale-105 truncate max-w-full">
-                                    <Phone className="h-5 w-5 text-blue-600/60 shrink-0" /> <span className="truncate">+91 1800-123-4567</span>
+                            <div className="flex flex-col items-center md:items-end gap-2 font-black text-black w-full md:w-auto">
+                                <a href="tel:+9118001234567" className="flex items-center gap-3 hover:text-blue-600 transition-all text-sm tracking-tight hover:scale-105">
+                                    <Phone className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>+91 1800-123-4567</span>
                                 </a>
-                                <a href="mailto:support@toursaas.com" className="flex items-center gap-4 hover:text-blue-600 transition-all text-[10px] opacity-60 tracking-[0.2em] hover:scale-105 truncate max-w-full">
-                                    <Mail className="h-5 w-5 text-blue-600/60 shrink-0" /> <span className="truncate">support@toursaas.com</span>
+                                <a href="mailto:support@toursaas.com" className="flex items-center gap-3 hover:text-blue-600 transition-all text-[0.7rem] opacity-60 tracking-[0.2em] hover:scale-105">
+                                    <Mail className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>support@toursaas.com</span>
                                 </a>
                             </div>
                         </div>
