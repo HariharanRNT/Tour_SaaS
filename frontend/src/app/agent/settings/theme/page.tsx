@@ -352,6 +352,17 @@ export default function AgentThemeSettingsPage() {
     };
     const getIconCmp = (name: string) => ICON_MAP[name] || Sparkles;
 
+    const getSelectedFontFamily = (value: string) => {
+        switch(value) {
+            case 'var(--font-inter)': return "'DM Sans', sans-serif";
+            case 'var(--font-playfair)': return "'Playfair Display', serif";
+            case 'var(--font-mono)': return "'Courier New', monospace";
+            case 'var(--font-script)': return "'Dancing Script', cursive";
+            case 'var(--font-rounded)': return "'Nunito', sans-serif";
+            default: return "sans-serif";
+        }
+    };
+
     const updateCard = (idx: number, field: keyof FeatureCard, value: any) =>
         setFeatureCards(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
     const updateWcuCard = (idx: number, field: keyof FeatureCard, value: any) =>
@@ -396,7 +407,11 @@ export default function AgentThemeSettingsPage() {
         
         // Apply font variables immediately to root for preview
         const root = document.documentElement;
-        if (next.font_family) root.style.setProperty('--project-font-family', next.font_family);
+        if (next.font_family) {
+            root.style.setProperty('--font-family', next.font_family);
+            root.style.setProperty('--font-primary', next.font_family);
+            root.style.setProperty('--project-font-family', next.font_family);
+        }
         if (next.font_color) root.style.setProperty('--project-font-color', next.font_color);
 
         localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
@@ -1683,8 +1698,8 @@ export default function AgentThemeSettingsPage() {
                             </div>
                             <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden" 
                                  style={{ 
-                                     fontFamily: 'var(--project-font-family, sans-serif)',
-                                     color: 'var(--project-font-color, inherit)'
+                                     fontFamily: getSelectedFontFamily(fontFamily),
+                                     color: fontColor
                                  }}>
                                 <div className="space-y-1">
                                     <h3 className="text-2xl font-medium leading-tight">Majestic Maldives</h3>

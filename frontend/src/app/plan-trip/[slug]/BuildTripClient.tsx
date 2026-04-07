@@ -699,8 +699,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] font-display drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                            Trip to <span className="text-white italic font-serif bg-clip-text drop-shadow-sm">
+                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                            Trip to <span className="text-white italic bg-clip-text drop-shadow-sm">
                                 {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1)) 
                                     ? "Multi City Tour" 
                                     : session.destination
@@ -765,7 +765,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     </div>
                                 </div>
                                 <div className="space-y-6">
-                                    <h2 className="text-3xl md:text-4xl font-black text-black font-display leading-tight">
+                                    <h2 className="text-3xl md:text-4xl font-black text-black leading-tight">
                                         {session.title}
                                     </h2>
                                     <div 

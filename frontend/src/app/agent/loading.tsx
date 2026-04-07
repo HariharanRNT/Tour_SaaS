@@ -18,7 +18,7 @@ export default function Loading() {
                     </div>
                 </motion.div>
                 <div className="mt-8 space-y-4">
-                    <h2 className="text-xl font-jakarta font-bold text-slate-800">
+                    <h2 className="text-xl font-bold text-slate-800">
                         Initializing Agent Portal
                     </h2>
                     <div className="flex justify-center gap-1.5">

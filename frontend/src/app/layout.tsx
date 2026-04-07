@@ -116,6 +116,7 @@ function generateThemeStyles(settings: any) {
             --accent-color: ${settings.accent_color || p};
 
             ${settings.font_family ? `--font-family: ${settings.font_family};` : ''}
+            ${settings.font_family ? `--font-primary: ${settings.font_family};` : ''}
             ${settings.font_family ? `--project-font-family: ${settings.font_family};` : ''}
             ${settings.font_color ? `--project-font-color: ${settings.font_color};` : ''}
         }
@@ -139,7 +140,7 @@ export default async function RootLayout({
                     <style dangerouslySetInnerHTML={{ __html: generateThemeStyles(homepageSettings) }} />
                 )}
             </head>
-            <body className={`${dmSans.className} antialiased`}>
+            <body className="antialiased">
                 <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
                     <Providers>
                         <ScrollToTop />

@@ -8,6 +8,7 @@
     min-height: 100%;
     margin: 0;
     padding: 0;
+    scroll-behavior: smooth;
   }
 
   #root,
@@ -48,6 +49,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 24 95% 53%;
     --radius: 0.5rem;
+    --font-primary: var(--font-inter);
   }
 
   .dark {
@@ -85,7 +87,7 @@
     background-attachment: fixed;
     /* body already has min-height and overflow-x-hidden from base layer */
     @apply text-foreground;
-    font-family: var(--project-font-family, var(--font-dm-sans)), sans-serif;
+    font-family: var(--font-primary, var(--font-inter)), sans-serif;
     color: var(--project-font-color, inherit);
   }
 

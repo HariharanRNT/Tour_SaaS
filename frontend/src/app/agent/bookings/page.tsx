@@ -294,7 +294,7 @@ export default function AgentBookingsPage() {
                                 Agent Portal <ChevronRight className="h-3 w-3" /> Booking Report
                             </nav>
                         </div>
-                        <h1 className="text-4xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        <h1 className="text-4xl font-bold text-black">
                             Booking Report
                         </h1>
 
@@ -604,7 +604,7 @@ export default function AgentBookingsPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="text-2xl font-bold text-black tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                    <h3 className="text-2xl font-bold text-black tracking-tight">
                                         {booking.package?.title || 'Bespoke Tour Experience'}
                                     </h3>
                                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
@@ -724,7 +724,7 @@ export default function AgentBookingsPage() {
                                     <span>•</span>
                                     <span className="font-mono bg-white/20 px-2 py-0.5 rounded tracking-tighter">{booking.booking_reference}</span>
                                 </div>
-                                <h2 className="text-3xl font-bold mb-4 leading-tight flex items-center gap-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+                                <h2 className="text-3xl font-bold mb-4 leading-tight flex items-center gap-4">
                                     {booking.package?.title || 'Tour Experience'}
                                     <Badge className={`${booking.status === 'confirmed' ? 'bg-emerald-500 border-emerald-400' : 'bg-amber-500 border-amber-400'
                                         } text-white border shadow-lg px-4 py-1.5 font-black text-[10px] uppercase tracking-widest rounded-full ring-4 ring-white/10`}>
@@ -760,7 +760,7 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <User className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>Booking Contact</h3>
+                                        <h3 className="text-xl font-bold text-black">Booking Contact</h3>
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         <div className="flex items-center gap-5 p-6 bg-white/40 rounded-3xl border border-white/60">
@@ -803,7 +803,7 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Playfair Display', serif" }}>Tour Logistics</h3>
+                                        <h3 className="text-xl font-bold text-black">Tour Logistics</h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 flex-1">
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
@@ -1135,7 +1135,7 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
         <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
             <Calendar className="h-12 w-12 text-white" />
         </div>
-        <h3 className="text-3xl font-bold text-black mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <h3 className="text-3xl font-bold text-black mb-4">
             {searchQuery ? "No matches found" : `No ${activeTab} bookings`}
         </h3>
         <p className="text-black/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">

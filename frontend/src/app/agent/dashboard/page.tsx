@@ -552,7 +552,7 @@ export default function AgentDashboard() {
 
     return (
         <div
-            className="min-h-screen relative overflow-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900"
+            className="min-h-screen relative overflow-hidden selection:bg-indigo-100 selection:text-indigo-900"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -630,7 +630,7 @@ export default function AgentDashboard() {
                             </div>
 
                             <div>
-                                <h1 className="text-3xl font-jakarta font-bold flex items-center gap-2 tracking-tight">
+                                <h1 className="text-3xl font-bold flex items-center gap-2 tracking-tight">
                                     <span className="text-slate-800">Welcome back,</span>
                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] animate-gradient-x bg-[length:200%_auto]">
                                         {agentName}
@@ -793,13 +793,13 @@ export default function AgentDashboard() {
                                         <Card className="relative overflow-hidden rounded-[20px] h-full">
                                             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`} />
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                                <CardTitle className="text-xs font-bold  uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
+                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest">{card.title}</CardTitle>
                                                 <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2 rounded-xl shadow-md ${card.shadowColor}`}>
                                                     <card.icon className="h-4 w-4 text-white" />
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="relative z-10 pt-1">
-                                                <div className="text-3xl font-extrabold text-slate-900 tracking-tight font-jakarta">{card.value}</div>
+                                                <div className="text-3xl font-extrabold text-slate-900 tracking-tight">{card.value}</div>
                                                 <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-2.5 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                             </CardContent>
                                         </Card>
@@ -819,13 +819,13 @@ export default function AgentDashboard() {
                                 <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                                     <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest font-jakarta">{card.title}</CardTitle>
+                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest">{card.title}</CardTitle>
                                         <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2.5 rounded-xl shadow-lg ${card.shadowColor} group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300`}>
                                             <card.icon className="h-5 w-5 text-white" />
                                         </div>
                                     </CardHeader>
                                     <CardContent className="relative z-10 pt-2">
-                                        <div className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight font-jakarta">{card.value}</div>
+                                        <div className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">{card.value}</div>
                                         <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-3 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                     </CardContent>
                                 </Card>

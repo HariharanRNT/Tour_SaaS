@@ -99,7 +99,7 @@ export default function BookingReports({ dateRange }: BookingReportsProps) {
                                 </div>
                             </div>
                             <div className="text-center">
-                                <div className="text-[32px] font-extrabold text-[#0F172A] tracking-[-1px] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                <div className="text-[32px] font-extrabold text-[#0F172A] tracking-[-1px] leading-none">
                                     {item.value}
                                 </div>
                                 <p className="text-[12px] font-medium mt-1" style={{ color: item.color }}>{item.sub}</p>

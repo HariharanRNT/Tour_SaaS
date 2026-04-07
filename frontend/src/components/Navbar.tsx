@@ -70,7 +70,7 @@ export function Navbar() {
     const NavLinks = () => {
         // Default links
         const defaultLinks = [
-            { label: 'Packages', href: '/', show: true, requiresAuth: false, role: null },
+            { label: 'Packages', href: '/#popular-packages', show: true, requiresAuth: false, role: null },
             { label: 'Plan Trip', href: '/plan-trip?search=all', show: true, requiresAuth: false, role: null },
             { label: 'My Bookings', href: '/bookings', show: true, requiresAuth: true, role: 'customer' }
         ]

@@ -495,7 +495,6 @@ function CheckoutContent() {
                         <motion.h1
                             variants={itemVariants}
                             className="text-[40px] leading-tight font-medium mb-4 text-black drop-shadow-sm"
-                            style={{ fontFamily: 'var(--font-script), cursive' }}
                         >
                             Booking Confirmed!
                         </motion.h1>

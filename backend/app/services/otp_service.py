@@ -16,7 +16,7 @@ class OTPService:
     LOGIN_RESEND_LIMIT_PREFIX = "agent_login_resend:"
     
     OTP_EXPIRY = 300  # 5 minutes
-    MAX_RESEND_ATTEMPTS = 10  # Maximum OTP requests per hour
+    MAX_RESEND_ATTEMPTS = 100  # Maximum OTP requests per hour
     RESEND_WINDOW = 3600  # 1 hour window for resend limit
 
     @classmethod

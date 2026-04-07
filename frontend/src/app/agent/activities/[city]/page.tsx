@@ -356,7 +356,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                             <div>
-                                <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--primary)' }}>
+                                <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight" style={{ color: 'var(--primary)' }}>
                                     <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                     {cityName.charAt(0).toUpperCase() + cityName.slice(1)}
                                 </h1>
@@ -447,7 +447,7 @@ export default function CityActivityManager({ params }: { params: { city: string
 
                                                 {/* Title Overlay inside thumbnail */}
                                                 <div className="absolute bottom-0 inset-x-0 bg-white/40 backdrop-blur-md p-3 px-4 border-t border-white/50 flex justify-between items-center bg-gradient-to-t from-white/60 to-white/10 z-10">
-                                                    <h3 className="font-bold text-[var(--primary)] text-[17px] line-clamp-1 flex-1 tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>{activity.name}</h3>
+                                                    <h3 className="font-bold text-[var(--primary)] text-[17px] line-clamp-1 flex-1 tracking-tight"> {activity.name}</h3>
                                                     {(activity.price_per_person ?? 0) > 0 && (
                                                         <span className="font-semibold text-black text-sm ml-3 shrink-0 bg-white/60 px-2 py-0.5 rounded-md border border-white/50 backdrop-blur-sm shadow-sm">₹{activity.price_per_person}</span>
                                                     )}

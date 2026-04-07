@@ -18,7 +18,7 @@ export default function Loading() {
                     </div>
                 </motion.div>
                 <div className="mt-8 space-y-4">
-                    <h2 className="text-xl font-jakarta font-bold text-slate-900">
+                    <h2 className="text-xl font-bold text-slate-900">
                         Securing Admin Session
                     </h2>
                     <div className="w-48 h-1.5 bg-slate-200 mx-auto rounded-full overflow-hidden">

@@ -203,7 +203,7 @@ export default function ActivitiesMasterPage() {
                                 <MapPin className="h-6 w-6 text-[var(--primary)]" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#4A2B1D' }}>
+                                <h1 className="text-3xl font-bold tracking-tight" style={{ color: '#4A2B1D' }}>
                                     Destinations Library
                                 </h1>
                                 <p className="mt-1.5 text-slate-700/90 text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
@@ -382,7 +382,7 @@ export default function ActivitiesMasterPage() {
                                                         </div>
                                                     </div>
 
-                                                    <h2 className="text-[20px] font-black group-hover:text-[var(--primary)] transition-colors leading-tight h-7 overflow-hidden truncate" style={{ fontFamily: "'Playfair Display', serif", color: '#2D1A0E' }}>
+                                                    <h2 className="text-[20px] font-black group-hover:text-[var(--primary)] transition-colors leading-tight h-7 overflow-hidden truncate" style={{ color: '#2D1A0E' }}>
                                                         {dest.name}
                                                     </h2>
 
@@ -547,7 +547,7 @@ export default function ActivitiesMasterPage() {
                         <div className="mx-auto w-10 h-10 mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(255, 122, 69, 0.15)', boxShadow: '0 0 20px rgba(255, 122, 69, 0.2)' }}>
                             <MapPin className="h-5 w-5 text-[var(--primary)]" />
                         </div>
-                        <DialogTitle style={{ fontFamily: "'Playfair Display', serif", color: '#3A1A08', fontSize: '22px', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '8px' }}>
+                        <DialogTitle style={{ color: '#3A1A08', fontSize: '22px', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '8px' }}>
                             {isEditing ? 'Edit Destination' : 'New Destination'}
                         </DialogTitle>
                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>

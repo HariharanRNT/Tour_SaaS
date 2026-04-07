@@ -42,7 +42,7 @@ export default function AIAssistantCard({
     };
 
     return (
-        <div className="font-jakarta">
+        <div>
             {/* The Chatbot GIF Button - Fixed permanently */}
             <div className="fixed z-[1050]" style={{ bottom: '24px', right: '24px' }}>
                 <button

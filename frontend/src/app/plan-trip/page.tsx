@@ -34,6 +34,7 @@ interface Package {
     price_per_person: number;
     trip_style: string;
     activities: string[];
+    trip_styles?: string[];
     package_mode: string;
     destinations: { city: string, country: string, days: number }[];
     feature_image_url?: string;
@@ -62,6 +63,47 @@ export default function PlanTripPage() {
 function PlanTripContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
+
+    // Helper to parse and format tags (trip styles, activities) from various data formats
+    const parsePackageTags = (tags: string | string[] | undefined | null): string[] => {
+        if (!tags) return [];
+
+        let result: string[] = [];
+
+        if (Array.isArray(tags)) {
+            // If it's an array, look for stringified JSON inside elements (defensive)
+            result = tags.flatMap(tag => {
+                if (typeof tag === 'string' && tag.startsWith('[') && tag.endsWith(']')) {
+                    try {
+                        const parsed = JSON.parse(tag);
+                        return Array.isArray(parsed) ? parsed : [parsed];
+                    } catch {
+                        return tag;
+                    }
+                }
+                return tag;
+            });
+        } else if (typeof tags === 'string') {
+            if (tags.startsWith('[') && tags.endsWith(']')) {
+                try {
+                    const parsed = JSON.parse(tags);
+                    result = Array.isArray(parsed) ? parsed : [parsed];
+                } catch {
+                    result = [tags];
+                }
+            } else if (tags.includes(',')) {
+                result = tags.split(',').map(s => s.trim());
+            } else {
+                result = [tags];
+            }
+        }
+
+        // Clean up results: remove quotes/brackets leftovers, filter empty, and format to proper case
+        return result
+            .map(tag => tag.toString().replace(/["\[\]]/g, '').trim())
+            .filter(tag => tag.length > 0)
+            .map(tag => tag.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+    };
 
     // Booking Modal State
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
@@ -1406,19 +1448,18 @@ function PlanTripContent() {
 
                                                                     {/* Tags */}
                                                                     <div className="flex flex-wrap gap-2 mb-1.5 min-h-[24px] items-center">
-                                                                        {pkg.trip_style && (
-                                                                            <Badge variant="outline" className="bg-white/50 text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
+                                                                        {parsePackageTags((pkg as any).trip_styles || pkg.trip_style).map((style, sIdx) => (
+                                                                            <Badge key={`style-${sIdx}`} variant="outline" className="bg-white/50 text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
                                                                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
-                                                                                {pkg.trip_style}
+                                                                                {style}
                                                                             </Badge>
-                                                                        )}
-                                                                        {pkg.activities && pkg.activities.slice(0, 2).map((act, idx) => (
-                                                                            typeof act === 'string' ? ( // Handle JSON string edge cases if any
-                                                                                <Badge key={idx} variant="outline" className="text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
-                                                                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
-                                                                                    {act.replace(/["\[\]]/g, '')}
-                                                                                </Badge>
-                                                                            ) : null
+                                                                        ))}
+
+                                                                        {parsePackageTags(pkg.activities).slice(0, 3).map((act, aIdx) => (
+                                                                            <Badge key={`act-${aIdx}`} variant="outline" className="text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
+                                                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
+                                                                                {act}
+                                                                            </Badge>
                                                                         ))}
                                                                     </div>
                                                                 </div>

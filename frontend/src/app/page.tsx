@@ -183,7 +183,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     return (
         <div style={{ "--section-spacing": "var(--section-spacing, 4rem)" } as any}>
             {/* Modernized Hero Section */}
-            <section className="relative flex flex-col justify-center overflow-visible -mt-16 pb-0">
+            <section className="relative flex flex-col justify-center overflow-hidden -mt-16 pb-10">
 
                 {/* Multi-tenant site identifier banner — sits on top of the hero, not above it */}
                 {site !== 'default' && (
@@ -243,7 +243,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                 <span className="font-bold tracking-widest text-[11px] uppercase drop-shadow-sm">{hpSettings?.badgeText || 'AI-Powered Trip Planning'}</span>
                             </Badge>
                         )}
-                        <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.05] text-white drop-shadow-md" style={{ color: "var(--heading, white)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.05] text-white drop-shadow-md" style={{ color: "var(--heading, white)" }}>
                             {isLoading ? (
                                 <span className="h-20 w-3/4 bg-white/10 rounded-2xl animate-pulse mx-auto block" />
                             ) : (
@@ -256,7 +256,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                             )}
                         </h1>
 
-                        <p className="text-xl md:text-2xl mb-10 text-white/90 max-w-3xl mx-auto leading-relaxed font-light drop-shadow-sm" style={{ color: "var(--body-text, rgba(255, 255, 255, 0.9))", fontFamily: "'Inter', sans-serif" }}>
+                        <p className="text-xl md:text-2xl mb-10 text-white/90 max-w-3xl mx-auto leading-relaxed font-light drop-shadow-sm" style={{ color: "var(--body-text, rgba(255, 255, 255, 0.9))" }}>
                             {isLoading ? (
                                 <span className="h-8 w-1/2 bg-white/10 rounded-lg animate-pulse mx-auto inline-block" />
                             ) : (hpSettings?.subheading || theme.home_hero_subtitle || "Plan, customize, and book your dream trip effortlessly with AI-powered suggestions.")}
@@ -335,7 +335,8 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
             {/* AI-Powered Popular Packages */}
 
             {packages.length > 0 && (
-                <section className="pt-32 pb-24 bg-white relative overflow-hidden">
+                <section id="popular-packages" className="pt-24 pb-24 bg-white relative overflow-hidden">
+
 
 
 
@@ -495,10 +496,10 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                             style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(feature.icon, <Globe className="h-8 w-8 text-white" />)}
                                         </div>
-                                        <h3 className="card-title text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                                        <h3 className="card-title text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors">
                                             {feature.title}
                                         </h3>
-                                        <p className="text-black leading-relaxed font-medium text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                                        <p className="text-black leading-relaxed font-medium text-sm">
                                             {feature.description || feature.desc}
                                         </p>
                                     </motion.div>

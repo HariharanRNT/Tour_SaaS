@@ -88,6 +88,7 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     if (s.font_family || s.fontFamily) {
                         const ff = s.font_family || s.fontFamily;
                         r.style.setProperty('--font-family', ff);
+                        r.style.setProperty('--font-primary', ff);
                         r.style.setProperty('--project-font-family', ff);
                     }
                     if (s.font_color || s.fontColor) {
