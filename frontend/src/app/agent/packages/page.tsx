@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,7 +47,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchAgentPackages, deleteAgentPackage, updateAgentPackageStatus } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 
-interface Package {
+interface PackageData {
     id: string
     title: string
     slug: string
@@ -73,7 +73,7 @@ export default function AgentPackagesPage() {
     // Pagination & Sort State
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(5)
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Package; direction: 'asc' | 'desc' } | null>(null)
+    const [sortConfig, setSortConfig] = useState<{ key: keyof PackageData; direction: 'asc' | 'desc' } | null>(null)
 
     const { data, isLoading } = useQuery({
         queryKey: ['agent-packages', currentPage, itemsPerPage, sortConfig, statusFilter, destinationFilter, searchQuery],
@@ -283,7 +283,7 @@ export default function AgentPackagesPage() {
     // Note: 'packages' state now contains only the current page's items fetched from backend
 
 
-    const handleSort = (key: keyof Package) => {
+    const handleSort = (key: keyof PackageData) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
@@ -304,7 +304,7 @@ export default function AgentPackagesPage() {
         const styles: Record<string, string> = {
             published: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 ring-emerald-500/10',
             draft: 'bg-amber-500/10 text-amber-600 border-amber-500/20 ring-amber-500/10',
-            archived: 'bg-slate-500/10 text-black border-slate-500/20 ring-slate-500/10'
+            archived: 'bg-slate-500/10 text-[var(--color-primary-font)] border-slate-500/20 ring-slate-500/10'
         }
 
         const dots: Record<string, string> = {
@@ -314,7 +314,7 @@ export default function AgentPackagesPage() {
         }
 
         return (
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${styles[lowerStatus] || 'bg-gray-500/10 text-black border-gray-500/20'}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${styles[lowerStatus] || 'bg-gray-500/10 text-[var(--color-primary-font)] border-gray-500/20'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${dots[lowerStatus] || 'bg-gray-600'}`}></span>
                 {status}
             </div>
@@ -329,7 +329,7 @@ export default function AgentPackagesPage() {
                 <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex flex-col gap-4">
                         {/* Breadcrumb */}
-                        <nav className="flex items-center text-sm text-black">
+                        <nav className="flex items-center text-sm text-[var(--color-primary-font)]">
                             <span 
                                 className="hover:text-[var(--primary)] cursor-pointer transition-colors" 
                                 onClick={() => router.push('/agent/dashboard')}
@@ -337,7 +337,7 @@ export default function AgentPackagesPage() {
                                 Dashboard
                             </span>
                             <span className="mx-2 text-gray-400">/</span>
-                            <span className="font-medium text-black">Packages</span>
+                            <span className="font-medium text-[var(--color-primary-font)]">Packages</span>
                         </nav>
 
                         {/* Title & Subtitle */}
@@ -346,12 +346,12 @@ export default function AgentPackagesPage() {
                                 <Package className="h-7 w-7 text-[var(--primary)]" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-black tracking-tight">Agent Package Management</h1>
+                                <h1 className="text-2xl font-bold text-[var(--color-primary-font)] tracking-tight">Agent Package Management</h1>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-black text-sm">Create and manage your tour packages</p>
+                                    <p className="text-[var(--color-primary-font)]/70 text-sm">Create and manage your tour packages</p>
                                     <span className="text-gray-400">•</span>
-                                    <div className="flex items-center gap-1 text-sm font-medium text-black">
-                                        <span className="w-2 h-2 rounded-full bg-black"></span>
+                                    <div className="flex items-center gap-1 text-sm font-medium text-[var(--color-primary-font)]">
+                                        <span className="w-2 h-2 rounded-full bg-[var(--color-primary-font)]"></span>
                                         {totalPackages} Packages
                                     </div>
                                 </div>
@@ -383,11 +383,11 @@ export default function AgentPackagesPage() {
                     <CardHeader className="border-b border-white/10 pb-6 px-8 pt-8">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <CardTitle className="flex items-center gap-2 text-xl text-black">
+                                <CardTitle className="flex items-center gap-2 text-xl text-[var(--color-primary-font)]">
                                     <Package className="h-5 w-5 text-[var(--primary)]" />
                                     All Packages
                                 </CardTitle>
-                                <CardDescription className="mt-1 text-black">
+                                <CardDescription className="mt-1 text-[var(--color-primary-font)]/70">
                                     Manage, track, and update your {totalPackages} tour packages
                                 </CardDescription>
                             </div>
@@ -396,12 +396,12 @@ export default function AgentPackagesPage() {
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* Search */}
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-black" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/60" />
                                     <Input
                                         placeholder="Search packages..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="glass-input pl-10 w-48 sm:w-64 rounded-full text-black placeholder-gray-500"
+                                        className="glass-input pl-10 w-48 sm:w-64 rounded-full text-[var(--color-primary-font)] placeholder-gray-500"
                                     />
                                 </div>
 
@@ -411,13 +411,13 @@ export default function AgentPackagesPage() {
                                         <select
                                             value={statusFilter}
                                             onChange={(e) => setStatusFilter(e.target.value)}
-                                            className="glass-input appearance-none pl-4 pr-8 py-2 text-sm rounded-full cursor-pointer text-black"
+                                            className="glass-input appearance-none pl-4 pr-8 py-2 text-sm rounded-full cursor-pointer text-[var(--color-primary-font)]"
                                         >
                                             <option value="all">All Status</option>
                                             <option value="draft">Draft</option>
                                             <option value="published">Published</option>
                                         </select>
-                                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-black pointer-events-none" />
+                                        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-[var(--color-primary-font)]/60 pointer-events-none" />
                                     </div>
 
                                     <div className="relative">
@@ -425,9 +425,9 @@ export default function AgentPackagesPage() {
                                             placeholder="Filter destination..."
                                             value={destinationFilter === 'all' ? '' : destinationFilter}
                                             onChange={(e) => setDestinationFilter(e.target.value || 'all')}
-                                            className="glass-input pl-4 pr-8 py-2 text-sm w-40 rounded-full text-black placeholder-gray-500"
+                                            className="glass-input pl-4 pr-8 py-2 text-sm w-40 rounded-full text-[var(--color-primary-font)] placeholder-gray-500"
                                         />
-                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-black pointer-events-none" />
+                                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/60 pointer-events-none" />
                                     </div>
 
 
@@ -437,7 +437,7 @@ export default function AgentPackagesPage() {
                                             variant="ghost"
                                             size="sm"
                                             onClick={clearFilters}
-                                            className="text-black hover:text-red-500 hover:bg-red-50 rounded-full px-3"
+                                            className="text-[var(--color-primary-font)]/70 hover:text-red-500 hover:bg-red-50 rounded-full px-3"
                                         >
                                             Clear
                                         </Button>
@@ -451,15 +451,15 @@ export default function AgentPackagesPage() {
                         {isLoading ? (
                             <div className="text-center py-20">
                                 <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[var(--primary)]/10 border-t-[var(--primary)]"></div>
-                                <p className="mt-4 text-black font-medium">Loading your packages...</p>
+                                <p className="mt-4 text-[var(--color-primary-font)] font-medium">Loading your packages...</p>
                             </div>
                         ) : packages.length === 0 ? (
                             <div className="text-center py-20 px-4">
                                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Package className="h-8 w-8 text-black" />
+                                    <Package className="h-8 w-8 text-[var(--color-primary-font)]/60" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-black">No packages found</h3>
-                                <p className="text-black mt-1 max-w-sm mx-auto">
+                                <h3 className="text-lg font-semibold text-[var(--color-primary-font)]">No packages found</h3>
+                                <p className="text-[var(--color-primary-font)]/70 mt-1 max-w-sm mx-auto">
                                     Get started by creating your first tour package to reach more travelers.
                                 </p>
                                 {hasPermission('packages', 'edit') && (
@@ -485,37 +485,37 @@ export default function AgentPackagesPage() {
                                                         className="data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]"
                                                     />
                                                 </TableHead>
-                                                <TableHead className="py-4 pl-6 font-semibold text-black w-[30%] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('title')}>
+                                                <TableHead className="py-4 pl-6 font-semibold text-[var(--color-primary-font)] w-[30%] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('title')}>
                                                     <div className="flex items-center gap-2">
                                                         Package Details
                                                         {sortConfig?.key === 'title' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-black cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('destination')}>
+                                                <TableHead className="py-4 font-semibold text-[var(--color-primary-font)] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('destination')}>
                                                     <div className="flex items-center gap-2">
                                                         Destination
                                                         {sortConfig?.key === 'destination' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-black cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('duration_days')}>
+                                                <TableHead className="py-4 font-semibold text-[var(--color-primary-font)] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('duration_days')}>
                                                     <div className="flex items-center gap-2">
                                                         Duration
                                                         {sortConfig?.key === 'duration_days' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-black cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('price_per_person')}>
+                                                <TableHead className="py-4 font-semibold text-[var(--color-primary-font)] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('price_per_person')}>
                                                     <div className="flex items-center gap-2">
                                                         Price
                                                         {sortConfig?.key === 'price_per_person' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 font-semibold text-black cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('status')}>
+                                                <TableHead className="py-4 font-semibold text-[var(--color-primary-font)] cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => handleSort('status')}>
                                                     <div className="flex items-center gap-2">
                                                         Status
                                                         {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                                     </div>
                                                 </TableHead>
-                                                <TableHead className="py-4 pr-6 text-right font-semibold text-black">Actions</TableHead>
+                                                <TableHead className="py-4 pr-6 text-right font-semibold text-[var(--color-primary-font)]">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -540,35 +540,35 @@ export default function AgentPackagesPage() {
                                                                 {pkg.title.charAt(0)}
                                                             </div>
                                                                 <div>
-                                                                    <div className="font-semibold text-black">{pkg.title}</div>
-                                                                    <div className="text-xs text-black mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
+                                                                    <div className="font-semibold text-[var(--color-primary-font)]">{pkg.title}</div>
+                                                                    <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
                                                                 </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-5">
-                                                        <div className="flex items-center gap-2 text-black">
+                                                        <div className="flex items-center gap-2 text-[var(--color-primary-font)]">
                                                             {pkg.package_mode === 'multi' ? (
                                                                 <>
-                                                                    <MapPin className="h-4 w-4 text-black" />
-                                                                    <span className="font-semibold text-black">Multi-City</span>
+                                                                    <MapPin className="h-4 w-4 text-[var(--color-primary-font)]/40" />
+                                                                    <span className="font-semibold text-[var(--color-primary-font)]">Multi-City</span>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <MapPin className="h-4 w-4 text-black" />
-                                                                    <span className="font-medium">{pkg.destination}</span>
+                                                                    <MapPin className="h-4 w-4 text-[var(--color-primary-font)]/40" />
+                                                                    <span className="font-medium text-[var(--color-primary-font)]/80">{pkg.destination}</span>
                                                                 </>
                                                             )}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-5">
-                                                        <div className="flex items-center gap-2 text-black">
-                                                            <Calendar className="h-4 w-4 text-black" />
-                                                            <span>{pkg.duration_days} Days</span>
+                                                        <div className="flex items-center gap-2 text-[var(--color-primary-font)]">
+                                                            <Calendar className="h-4 w-4 text-[var(--color-primary-font)]/40" />
+                                                            <span className="text-[var(--color-primary-font)]/80">{pkg.duration_days} Days</span>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-5">
-                                                        <div className="flex items-center gap-1 font-bold text-black">
-                                                            <span className="text-black/50">₹</span>
+                                                        <div className="flex items-center gap-1 font-bold text-[var(--color-primary-font)]">
+                                                            <span className="text-[var(--color-primary-font)]/50">₹</span>
                                                             {pkg.price_per_person.toLocaleString('en-IN')}
                                                         </div>
                                                     </TableCell>
@@ -581,7 +581,7 @@ export default function AgentPackagesPage() {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-8 w-8 text-black hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
+                                                                    className="h-8 w-8 text-[var(--color-primary-font)]/60 hover:text-indigo-600 hover:bg-indigo-50 hidden sm:inline-flex"
                                                                     onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                     title="Edit"
                                                                 >
@@ -591,7 +591,7 @@ export default function AgentPackagesPage() {
 
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:text-[var(--primary)]">
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-primary-font)]/60 hover:text-[var(--primary)]">
                                                                         <MoreVertical className="h-4 w-4" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
@@ -609,8 +609,8 @@ export default function AgentPackagesPage() {
                                                                         className="glass-popover-item"
                                                                         onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}
                                                                     >
-                                                                        <Eye className="mr-2 h-4 w-4 text-black" />
-                                                                        <span className="font-medium text-black">Preview Listing</span>
+                                                                        <Eye className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
+                                                                        <span className="font-medium text-[var(--color-primary-font)]">Preview Listing</span>
                                                                     </DropdownMenuItem>
                                                                     <div className="h-px bg-gray-100 my-1" />
                                                                     {hasPermission('packages', 'edit') && (
@@ -635,10 +635,10 @@ export default function AgentPackagesPage() {
                                                                     {hasPermission('packages', 'full') && (
                                                                         <>
                                                                             <DropdownMenuItem
-                                                                                className="glass-popover-item text-black focus:text-black font-semibold"
+                                                                                className="glass-popover-item text-[var(--color-primary-font)] focus:text-[var(--color-primary-font)] font-semibold"
                                                                                 onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
                                                                             >
-                                                                                <Archive className="mr-2 h-4 w-4 text-black" />
+                                                                                <Archive className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
                                                                                 Archive Package
                                                                             </DropdownMenuItem>
 
@@ -647,7 +647,7 @@ export default function AgentPackagesPage() {
                                                                                 onClick={() => handleDeleteClick(pkg.id)}
                                                                             >
                                                                                 <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
-                                                                                <span className="text-black group-hover/delete:text-red-600 font-semibold">Delete Package</span>
+                                                                                <span className="text-[var(--color-primary-font)] group-hover/delete:text-red-600 font-semibold">Delete Package</span>
                                                                             </DropdownMenuItem>
                                                                         </>
                                                                     )}
@@ -679,13 +679,13 @@ export default function AgentPackagesPage() {
                                                         {pkg.title.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-semibold text-black line-clamp-1">{pkg.title}</h3>
-                                                        <p className="text-xs text-black">ID: {pkg.id.slice(0, 8)}</p>
+                                                        <h3 className="font-semibold text-[var(--color-primary-font)] line-clamp-1">{pkg.title}</h3>
+                                                        <p className="text-xs text-[var(--color-primary-font)]/60">ID: {pkg.id.slice(0, 8)}</p>
                                                     </div>
                                                 </div>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8 text-black">
+                                                        <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8 text-[var(--color-primary-font)]/60">
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -708,22 +708,22 @@ export default function AgentPackagesPage() {
                                                 </DropdownMenu>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-y-2 text-sm text-black mb-4 font-medium">
+                                            <div className="grid grid-cols-2 gap-y-2 text-sm text-[var(--color-primary-font)]/80 mb-4 font-medium">
                                                 <div className="flex items-center gap-2">
                                                     {pkg.package_mode === 'multi' ? (
                                                         <>
-                                                            <MapPin className="h-4 w-4 text-black" />
-                                                            <span className="font-semibold text-black">Multi-City</span>
+                                                            <MapPin className="h-4 w-4 text-[var(--color-primary-font)]" />
+                                                            <span className="font-semibold text-[var(--color-primary-font)]">Multi-City</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <MapPin className="h-4 w-4 text-black" />
+                                                            <MapPin className="h-4 w-4 text-[var(--color-primary-font)]" />
                                                             <span className="truncate">{pkg.destination}</span>
                                                         </>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <Calendar className="h-4 w-4 text-black" />
+                                                    <Calendar className="h-4 w-4 text-[var(--color-primary-font)]" />
                                                     <span>{pkg.duration_days} Days</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 col-span-2 mt-1 font-normal">
@@ -732,7 +732,7 @@ export default function AgentPackagesPage() {
                                             </div>
 
                                             <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                                                <div className="font-bold text-lg text-black">
+                                                <div className="font-bold text-lg text-[var(--color-primary-font)]">
                                                     ₹{pkg.price_per_person.toLocaleString('en-IN')}
                                                 </div>
                                                 {hasPermission('packages', 'edit') && (
@@ -787,12 +787,12 @@ export default function AgentPackagesPage() {
 
                     {/* Floating Bulk Action Bar */}
                     {selectedPackages.length > 0 && (
-                        <div className="glass-panel text-black rounded-full px-6 py-3 fixed bottom-6 left-1/2 transform -translate-x-1/2 shadow-2xl flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
-                            <span className="font-medium text-sm border-r border-white/40 pr-4 text-black">
+                        <div className="glass-panel text-[var(--color-primary-font)] rounded-full px-6 py-3 fixed bottom-6 left-1/2 transform -translate-x-1/2 shadow-2xl flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+                            <span className="font-medium text-sm border-r border-white/40 pr-4 text-[var(--color-primary-font)]">
                                 {selectedPackages.length} selected
                             </span>
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="text-black hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
+                                <Button variant="ghost" size="sm" className="text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10" onClick={() => setSelectedPackages([])}>
                                     Cancel
                                 </Button>
                                 {hasPermission('packages', 'full') && (
@@ -814,9 +814,9 @@ export default function AgentPackagesPage() {
                         <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 mx-auto sm:mx-0 transition-transform hover:scale-110">
                             <AlertTriangle className="h-6 w-6 text-red-500" />
                         </div>
-                        <DialogTitle className="text-xl font-bold text-black">Are you sure?</DialogTitle>
-                        <DialogDescription className="text-black/80 pt-2 leading-relaxed font-medium">
-                            This action cannot be undone. This will permanently remove <span className="font-bold text-black">{packages.find((p: any) => p.id === deleteId)?.title}</span> from your package library.
+                        <DialogTitle className="text-xl font-bold text-[var(--color-primary-font)]">Are you sure?</DialogTitle>
+                        <DialogDescription className="text-[var(--color-primary-font)]/80 pt-2 leading-relaxed font-medium">
+                            This action cannot be undone. This will permanently remove <span className="font-bold text-[var(--color-primary-font)]">{packages.find((p: any) => p.id === deleteId)?.title}</span> from your package library.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-8 gap-3 sm:gap-0">

@@ -191,10 +191,10 @@ export default function ActivitiesMasterPage() {
                 <div className="page-header-card animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex flex-col gap-4">
                         {/* Breadcrumb */}
-                        <nav className="flex items-center text-[13px] font-medium text-slate-800/80">
-                            <span className="hover:text-black cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
+                        <nav className="flex items-center text-[13px] font-medium text-[var(--color-primary-font)]/80">
+                            <span className="hover:text-[var(--color-primary-font)] cursor-pointer transition-colors" onClick={() => router.push('/agent/dashboard')}>Dashboard</span>
                             <span className="mx-2">/</span>
-                            <span className="text-black">Destinations Library</span>
+                            <span className="text-[var(--color-primary-font)]">Destinations Library</span>
                         </nav>
 
                         {/* Title & Badge */}
@@ -206,7 +206,7 @@ export default function ActivitiesMasterPage() {
                                 <h1 className="text-3xl font-bold tracking-tight" style={{ color: '#4A2B1D' }}>
                                     Destinations Library
                                 </h1>
-                                <p className="mt-1.5 text-slate-700/90 text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
+                                <p className="mt-1.5 text-[var(--color-primary-font)]/90 text-[13px] font-medium bg-white/40 px-3 py-1 rounded-[20px] border border-white/50 backdrop-blur-md inline-block shadow-sm">
                                     Manage all destinations and their activities
                                 </p>
                             </div>
@@ -241,7 +241,7 @@ export default function ActivitiesMasterPage() {
                             <MapPin className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <p className="text-xs text-slate-600 font-bold uppercase tracking-widest mb-0.5">Destinations</p>
+                            <p className="text-xs text-[var(--color-primary-font)] font-bold uppercase tracking-widest mb-0.5">Destinations</p>
                             <p className="text-4xl font-extrabold text-[var(--primary)] leading-none tracking-tight">{destinations.length}</p>
                         </div>
                     </div>
@@ -253,7 +253,7 @@ export default function ActivitiesMasterPage() {
                             <ActivityIcon className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <p className="text-xs text-slate-600 font-bold uppercase tracking-widest mb-0.5">Total Activities</p>
+                            <p className="text-xs text-[var(--color-primary-font)] font-bold uppercase tracking-widest mb-0.5">Total Activities</p>
                             <p className="text-4xl font-extrabold text-[var(--primary)] leading-none tracking-tight">{totalActivities}</p>
                         </div>
                     </div>
@@ -272,12 +272,12 @@ export default function ActivitiesMasterPage() {
                                     setCurrentPage(1);
                                 }
                             }}
-                            className="bg-white/25 backdrop-blur-md border-white/40 shadow-sm pl-14 h-12 w-full rounded-full text-slate-800 focus:ring-[var(--primary-light)]/40 focus:border-[var(--primary-light)] focus:bg-white/40 transition-all font-medium text-[15px] placeholder:text-slate-500/80"
+                            className="bg-white/25 backdrop-blur-md border-white/40 shadow-sm pl-14 h-12 w-full rounded-full text-[var(--color-primary-font)] focus:ring-[var(--primary-light)]/40 focus:border-[var(--primary-light)] focus:bg-white/40 transition-all font-medium text-[15px] placeholder:text-[var(--color-primary-font)]/50"
                         />
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-800/60 uppercase tracking-widest italic pr-2">
+                        <span className="text-[11px] font-bold text-[var(--color-primary-font)]/60 uppercase tracking-widest italic pr-2">
                             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} destinations
                         </span>
                     </div>
@@ -301,8 +301,8 @@ export default function ActivitiesMasterPage() {
                 ) : destinations.length === 0 ? (
                     <div className="text-center py-20 px-4 rounded-[20px]" style={{ background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
                         <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-slate-800">No destinations found</h3>
-                        <p className="text-slate-500 mt-2 max-w-md mx-auto">
+                        <h3 className="text-xl font-semibold text-[var(--color-primary-font)]">No destinations found</h3>
+                        <p className="text-[var(--color-primary-font)]/60 mt-2 max-w-md mx-auto">
                             {searchTerm ? `No destinations match "${searchTerm}".` : "You haven't added any destinations yet."}
                         </p>
                     </div>
@@ -346,14 +346,14 @@ export default function ActivitiesMasterPage() {
 
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-700 hover:text-[var(--primary)] hover:bg-white/40 rounded-full transition-all">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] hover:bg-white/40 rounded-full transition-all">
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="w-52 p-1.5 rounded-2xl shadow-2xl border-white/50 bg-white/80 backdrop-blur-2xl">
                                                                 {hasPermission('activities', 'edit') && (
                                                                     <DropdownMenuItem
-                                                                        className="text-slate-600 focus:text-[var(--primary)] focus:bg-orange-50 cursor-pointer rounded-xl h-11 font-bold"
+                                                                        className="text-[var(--color-primary-font)]/70 focus:text-[var(--primary)] focus:bg-orange-50 cursor-pointer rounded-xl h-11 font-bold"
                                                                         onClick={(e) => { e.stopPropagation(); handleEditDestination(dest); }}
                                                                     >
                                                                         <Edit className="mr-3 h-4 w-4" />
@@ -374,7 +374,7 @@ export default function ActivitiesMasterPage() {
                                                     </div>
 
                                                     <div className="flex items-center h-6 mb-2">
-                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-slate-800 text-[10px] uppercase tracking-widest">
+                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-[var(--color-primary-font)] text-[10px] uppercase tracking-widest">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mr-2 animate-pulse shadow-[0_0_8px_var(--primary-glow)]" />
                                                             {dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}
                                                             <span className="mx-2 opacity-30">|</span>
@@ -427,7 +427,7 @@ export default function ActivitiesMasterPage() {
                                                                 "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
                                                                 currentPage === page
                                                                     ? "bg-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)] scale-110"
-                                                                    : "text-slate-800 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
+                                                                    : "text-[var(--color-primary-font)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
                                                             )}
                                                         >
                                                             {page}
@@ -449,7 +449,7 @@ export default function ActivitiesMasterPage() {
                                                         "h-9 w-9 rounded-full text-sm font-bold transition-all duration-300 mx-0.5",
                                                         currentPage === page
                                                             ? "bg-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)] scale-110"
-                                                            : "text-slate-800 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
+                                                            : "text-[var(--color-primary-font)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
                                                     )}
                                                 >
                                                     {page}
@@ -551,7 +551,7 @@ export default function ActivitiesMasterPage() {
                             {isEditing ? 'Edit Destination' : 'New Destination'}
                         </DialogTitle>
                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>
-                        <DialogDescription style={{ color: 'rgba(0,0,0,0.7)', fontWeight: 400, fontSize: '15px' }}>
+                        <DialogDescription style={{ color: 'var(--color-primary-font)', opacity: 0.7, fontWeight: 400, fontSize: '15px' }}>
                             {isEditing ? `Update details for ${editingDestOriginalName}.` : 'Enter the name of the new destination to manage its activities.'}
                         </DialogDescription>
                     </div>
@@ -559,7 +559,7 @@ export default function ActivitiesMasterPage() {
                     <form onSubmit={handleCreateNewDestination} className="px-6 pb-6">
                         <div className="space-y-3 mb-5 text-left">
                             <div className="space-y-2">
-                                <label htmlFor="destination-name" style={{ color: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                <label htmlFor="destination-name" style={{ color: 'var(--color-primary-font)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
                                     Destination
                                 </label>
                                 <Input
@@ -567,7 +567,7 @@ export default function ActivitiesMasterPage() {
                                     value={newCityName}
                                     onChange={(e) => setNewCityName(e.target.value)}
                                     placeholder="e.g., Bali, Paris, Tokyo"
-                                    className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-black/30 text-black font-semibold"
+                                    className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-[var(--color-primary-font)]/30 text-[var(--color-primary-font)] font-semibold"
                                     style={{
                                         background: 'rgba(255,255,255,0.45)',
                                         backdropFilter: 'blur(14px)',
@@ -590,7 +590,7 @@ export default function ActivitiesMasterPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <label style={{ color: 'black', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
+                                <label style={{ color: 'var(--color-primary-font)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '11px', fontWeight: 600, display: 'block' }}>
                                     Destination Image
                                 </label>
 
@@ -744,7 +744,7 @@ export default function ActivitiesMasterPage() {
             <AlertDialog open={!!cityToDelete} onOpenChange={(open) => !open && setCityToDelete(null)}>
                 <AlertDialogContent className="rounded-[24px] border-none shadow-2xl sm:max-w-[425px]">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-2xl font-bold tracking-tight text-slate-800">
+                        <AlertDialogTitle className="text-2xl font-bold tracking-tight text-[var(--color-primary-font)]">
                             Delete Destination
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-500 text-base mt-2">
@@ -754,7 +754,7 @@ export default function ActivitiesMasterPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6">
-                        <AlertDialogCancel className="rounded-full text-slate-600 hover:text-slate-800 hover:bg-slate-100 border-none">
+                        <AlertDialogCancel className="rounded-full text-[var(--color-primary-font)]/60 hover:text-[var(--color-primary-font)] hover:bg-slate-100 border-none">
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction

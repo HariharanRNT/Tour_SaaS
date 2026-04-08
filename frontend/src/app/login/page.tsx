@@ -330,7 +330,7 @@ function LoginContent() {
                                         <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 shadow-[0_8px_32px_rgba(34,197,94,0.3)]">
                                             <CheckCircle className="w-8 h-8 text-white" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-[#1a1a2e]">Welcome Back!</h3>
+                                        <h3 className="text-xl font-bold text-[#1a1a2e]">Welcome</h3>
                                         <p className="text-[#6B3F2A] text-sm font-medium">Boarding your dashboard... ✈️</p>
                                     </motion.div>
                                 ) : !otpSent ? (
@@ -510,7 +510,7 @@ function LoginContent() {
                                                 type="submit" disabled={otpLoading || otp.length !== 6}
                                                 className="w-full h-14 rounded-[30px] font-bold transition-all duration-300 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] disabled:opacity-50 text-white"
                                             >
-                                                {otpLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify & Board'}
+                                                {otpLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify & Onboard'}
                                             </Button>
 
                                             <div className="flex flex-col gap-4 text-center mt-6">

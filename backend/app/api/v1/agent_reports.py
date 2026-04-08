@@ -717,9 +717,10 @@ async def get_agent_financial_report(
                 stats["final_earnings"] += (amount - tax)
             
             if b.status == BookingStatus.CANCELLED:
-                stats["refund_amount"] += float(b.refund_amount or 0.0)
-                # Refund doesn't deduct from "gross revenue" of that day usually in these reports, 
-                # but might affect earnings if we want net-net. 
+                refund = float(b.refund_amount or 0.0)
+                stats["refund_amount"] += refund
+                stats["net_revenue"] -= refund
+                stats["final_earnings"] -= refund
                 # According to example: Final Earnings = Net Revenue - Taxes.
                 # Let's keep it simple as per example.
 

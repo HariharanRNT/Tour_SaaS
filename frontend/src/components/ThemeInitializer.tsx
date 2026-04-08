@@ -92,7 +92,7 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                         r.style.setProperty('--project-font-family', ff);
                     }
                     if (s.font_color || s.fontColor) {
-                        r.style.setProperty('--project-font-color', s.font_color || s.fontColor);
+                        r.style.setProperty('--color-primary-font', s.font_color || s.fontColor);
                     }
                 };
 

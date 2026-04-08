@@ -86,9 +86,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     // Support legacy URLs but prefer the cookie/slug combination
     const urlSessionId = searchParams.get('session')
+    const ref = searchParams.get('ref')
     const [sessionId, setSessionId] = useState<string | null>(urlSessionId)
 
     useEffect(() => {
+        // If coming from a fresh listing click, we ignore any existing session cookie
+        // to prevent picking up data from a previous search/booking.
+        if (ref === 'listing' && typeof window !== 'undefined') {
+            document.cookie = "tripSessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+            return;
+        }
+
         if (!urlSessionId && typeof window !== 'undefined') {
             // Check for cookie if not in URL
             const cookies = document.cookie.split(';');
@@ -98,7 +106,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 setSessionId(cookieVal);
             }
         }
-    }, [urlSessionId]);
+    }, [urlSessionId, ref]);
 
     const mode = searchParams.get('mode')
     const packageId = searchParams.get('package_id')
@@ -608,9 +616,14 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             return
         }
 
-        // Navigate directly to checkout using the existing session
-        const checkoutUrl = `/checkout?sessionId=${sessionId}`
-        router.push(checkoutUrl)
+        // Always sync the current state (itinerary, travelers, etc.) to the session
+        // before redirecting to checkout to ensure data consistency.
+        const sid = await saveItinerary();
+
+        if (sid) {
+            const checkoutUrl = `/checkout?sessionId=${sid}`
+            router.push(checkoutUrl)
+        }
     }
 
     const handleAuthSuccess = () => {
@@ -625,7 +638,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 animate-spin text-[var(--primary)]" />
-                    <p className="text-black font-medium">Building your itinerary...</p>
+                    <p className="text-[var(--color-primary-font)] font-medium">Building your itinerary...</p>
                 </div>
             </div>
         )
@@ -653,12 +666,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             {mode === 'preview' && (
                 <div className="glass-panel border-b border-amber-200/50 px-4 py-3 sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-amber-800">
+                        <div className="flex items-center gap-2 text-[var(--color-primary-font)]">
                             <Sparkles className="h-5 w-5" />
                             <span className="font-bold">Sample Itinerary Preview</span>
                             <span className="text-sm opacity-80 hidden md:inline"> - This is a read-only view of our curated package.</span>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => router.push('/')} className="bg-white/50 hover:bg-white text-amber-900 border-amber-300">
+                        <Button variant="outline" size="sm" onClick={() => router.push('/')} className="bg-white/50 hover:bg-white text-[var(--color-primary-font)] border-amber-300">
                             Exit Preview
                         </Button>
                     </div>
@@ -765,11 +778,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     </div>
                                 </div>
                                 <div className="space-y-6">
-                                    <h2 className="text-3xl md:text-4xl font-black text-black leading-tight">
+                                    <h2 className="text-3xl md:text-4xl font-black text-[var(--color-primary-font)] leading-tight">
                                         {session.title}
                                     </h2>
                                     <div 
-                                        className="text-black leading-relaxed text-lg max-w-5xl"
+                                        className="text-[var(--color-primary-font)]/90 leading-relaxed text-lg max-w-5xl"
                                         dangerouslySetInnerHTML={{ __html: session.description || '' }}
                                     />
                                 </div>
@@ -782,11 +795,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <div className="flex items-center gap-3">
                                     <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
-                                    <h2 className="text-3xl font-bold text-black">Day-by-Day Journey</h2>
+                                    <h2 className="text-3xl font-bold text-[var(--color-primary-font)]">Day-by-Day Journey</h2>
                                 </div>
                                 <Button
                                     variant="outline"
-                                    className="rounded-full border-black/10 hover:bg-black/5 text-black gap-2 shadow-sm font-semibold"
+                                    className="rounded-full border-[var(--color-primary-font)]/10 hover:bg-[var(--color-primary-font)]/5 text-[var(--color-primary-font)] gap-2 shadow-sm font-semibold"
                                     onClick={() => {
                                         // The original package ID is used for generating the PDF
                                         // Handling both TripSession (has package_id) and Package modes (has id)
@@ -852,7 +865,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <div className="flex items-center gap-3">
                                     <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></div>
                                     <div className="flex-1 flex items-center justify-between">
-                                        <h2 className="text-2xl font-bold text-black">Flights</h2>
+                                        <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Flights</h2>
                                         {flightError && <Badge variant="destructive">{flightError}</Badge>}
                                     </div>
                                 </div>
@@ -882,16 +895,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                             </DialogTrigger>
                                                             <DialogContent className="bg-[rgba(255,245,235,0.75)] backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
                                                                 <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                    <DialogTitle className="text-black font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
+                                                                    <DialogTitle className="text-[var(--color-primary-font)] font-black text-xl font-display uppercase tracking-tight">Select Onward Flight</DialogTitle>
                                                                 </DialogHeader>
                                                                 <div className="flex flex-1 overflow-hidden">
                                                                     <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                         <div className="flex items-center justify-between mb-6">
-                                                                            <h3 className="font-bold text-black">Filters</h3>
+                                                                            <h3 className="font-bold text-[var(--color-primary-font)]">Filters</h3>
                                                                             <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
                                                                         </div>
                                                                         <div className="flex items-center justify-between mb-6 md:hidden">
-                                                                            <h3 className="font-bold text-black">Filters</h3>
+                                                                            <h3 className="font-bold text-[var(--color-primary-font)]">Filters</h3>
                                                                             <Button variant="ghost" size="sm" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Reset</Button>
                                                                         </div>
                                                                         <FlightFilters filters={filters} onChange={setFilters} availableAirlines={availableAirlines} />
@@ -906,7 +919,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                         <div className="space-y-4">
                                                                             {filteredOnwardFlights.length === 0 ? (
                                                                                 <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
-                                                                                    <p className="text-black mb-2">No flights found matching your filters.</p>
+                                                                                    <p className="text-[var(--color-primary-font)] mb-2">No flights found matching your filters.</p>
                                                                                     <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
                                                                                 </div>
                                                                             ) : (
@@ -924,7 +937,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             </div>
                                         ) : (
                                             <Card className="glass-panel min-h-[200px] flex items-center justify-center border-dashed border-2 border-black/10 shadow-none">
-                                                <div className="flex flex-col items-center gap-3 text-black">
+                                                <div className="flex flex-col items-center gap-3 text-[var(--color-primary-font)]">
                                                     {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
                                                     <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No onward flights"}</p>
                                                 </div>
@@ -957,12 +970,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                 </DialogTrigger>
                                                                 <DialogContent className="bg-[#FFF5EB]/75 backdrop-blur-[24px] max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_8px_32px_var(--primary-glow)]">
                                                                     <DialogHeader className="px-6 py-5 border-b border-white/20 bg-white/10 flex flex-row items-center justify-between">
-                                                                        <DialogTitle className="text-black font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
+                                                                        <DialogTitle className="text-[var(--color-primary-font)] font-black text-xl font-display uppercase tracking-tight">Select Return Flight</DialogTitle>
                                                                     </DialogHeader>
                                                                     <div className="flex flex-1 overflow-hidden">
                                                                         <div className={`md:block w-72 border-r border-white/30 bg-white/20 p-6 overflow-y-auto ${showMobileFilters ? 'fixed inset-0 z-50 w-full' : 'hidden'}`}>
                                                                             <div className="flex items-center justify-between mb-6">
-                                                                                <h3 className="font-bold text-black">Filters</h3>
+                                                                                <h3 className="font-bold text-[var(--color-primary-font)]">Filters</h3>
                                                                                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setShowMobileFilters(false)}>Close</Button>
                                                                             </div>
                                                                             <div className="flex items-center justify-between mb-6 md:hidden">
@@ -991,7 +1004,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                 </div>
                                             ) : (
                                                 <Card className="min-h-[200px] flex items-center justify-center border-dashed border-2 border-black/10 shadow-none glass-panel">
-                                                    <div className="flex flex-col items-center gap-3 text-black">
+                                                    <div className="flex flex-col items-center gap-3 text-[var(--color-primary-font)]">
                                                         {loadingFlights ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plane className="h-8 w-8 opacity-20" />}
                                                         <p className="font-medium text-sm">{loadingFlights ? "Finding best flights..." : "No return flights"}</p>
                                                     </div>
@@ -1013,7 +1026,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
                                                 <Hotel className="h-6 w-6" />
                                             </div>
-                                            <h2 className="text-2xl font-bold text-black">Accommodation</h2>
+                                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Accommodation</h2>
                                         </div>
 
                                         <div className="hover:shadow-2xl transition-all duration-300 rounded-[1.5rem] bg-white ring-1 ring-gray-100 p-1 group">
@@ -1040,16 +1053,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
                                                 <Car className="h-6 w-6" />
                                             </div>
-                                            <h2 className="text-2xl font-bold text-black">Transfers</h2>
+                                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Transfers</h2>
                                         </div>
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-lg shadow-sm">
                                                     <Plane className="h-4 w-4 text-white" />
                                                 </div>
-                                                <h3 className="font-black text-black uppercase tracking-widest text-sm">Onward Journey</h3>
+                                                <h3 className="font-black text-[var(--color-primary-font)] uppercase tracking-widest text-sm">Onward Journey</h3>
                                             </div>
-                                            <div className="text-xs font-bold text-black bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                                            <div className="text-xs font-bold text-[var(--color-primary-font)] bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
                                                 Direct Flight Only
                                             </div>
                                         </div>
@@ -1078,7 +1091,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         <section className="pt-16 pb-8 border-t border-gray-100">
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
-                                <h2 className="text-3xl font-bold text-slate-900 font-display">Cancellation Policy</h2>
+                                <h2 className="text-3xl font-bold text-[var(--color-primary-font)] font-display">Cancellation Policy</h2>
                             </div>
 
                             {session.cancellation_enabled ? (
@@ -1126,13 +1139,13 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                 <Clock className="h-4 w-4 text-emerald-600" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Timing</p>
-                                                                <span className="font-bold text-black">Cancel before {rule.daysBefore} days</span>
+                                                                <p className="text-xs text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Timing</p>
+                                                                <span className="font-bold text-[var(--color-primary-font)]">Cancel before {rule.daysBefore} days</span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                             <div className="text-right flex flex-col items-end">
-                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Refund</p>
+                                                                <p className="text-xs text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Refund</p>
                                                                 <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
                                                                 {fareLabel && (
                                                                     <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
@@ -1172,7 +1185,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-[11px] text-black font-medium px-4 flex items-start gap-2 max-w-2xl">
+                                    <p className="text-[11px] text-[var(--color-primary-font)] font-medium px-4 flex items-start gap-2 max-w-2xl">
                                         <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                                         <span>
                                             * Refund amounts vary by rule. Some rules refund Base + GST, others refund Base only (GST forfeited). See each rule above for details.
@@ -1185,7 +1198,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         <XCircle className="h-8 w-8" />
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-red-900 text-2xl font-display mb-1">Non-Cancellable</h4>
+                                        <h4 className="font-black text-[var(--color-primary-font)] text-2xl font-display mb-1">Non-Cancellable</h4>
                                         <p className="text-red-700 font-medium opacity-80 leading-relaxed">This package is highly curated and does not support cancellations. Once booked, it is non-refundable and non-transferable.</p>
                                     </div>
                                 </div>
@@ -1229,11 +1242,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 </div>
             </div>
             {/* Mobile Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--color-primary-font)]/10 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div className="flex flex-col">
-                    <span className="text-xs text-black font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
+                    <span className="text-xs text-[var(--color-primary-font)] font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold text-black">
+                        <span className="text-lg font-bold text-[var(--color-primary-font)]">
                             ₹{(() => {
                                 const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
                                 const totalBasePrice = (session.price_per_person || 18000) * totalTravelers

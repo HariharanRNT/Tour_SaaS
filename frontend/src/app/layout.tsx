@@ -115,10 +115,8 @@ function generateThemeStyles(settings: any) {
             --page-bg: ${settings.bg_color || 'transparent'};
             --accent-color: ${settings.accent_color || p};
 
-            ${settings.font_family ? `--font-family: ${settings.font_family};` : ''}
-            ${settings.font_family ? `--font-primary: ${settings.font_family};` : ''}
             ${settings.font_family ? `--project-font-family: ${settings.font_family};` : ''}
-            ${settings.font_color ? `--project-font-color: ${settings.font_color};` : ''}
+            ${settings.font_color ? `--color-primary-font: ${settings.font_color};` : ''}
         }
     `.replace(/\s+/g, ' ');
 }

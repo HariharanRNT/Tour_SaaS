@@ -318,72 +318,34 @@ export default function AgentSettingsPage() {
 
     return (
         <div className="min-h-screen">
-            {/* Unsaved Changes Banner */}
-            {isDirty && (
-                <div className="sticky top-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-3 shadow-sm animate-in slide-in-from-top duration-300">
-                    <div className="max-w-6xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-1.5 bg-amber-100 rounded-full text-amber-600">
-                                <AlertCircle className="h-4 w-4" />
-                            </div>
-                            <p className="text-sm font-medium text-amber-800">
-                                You have unsaved changes
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {hasPermission('settings', 'edit') && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-amber-700 hover:bg-amber-100 font-semibold"
-                                        onClick={discardChanges}
-                                    >
-                                        Discard
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-semibold"
-                                        onClick={handleSubmit}
-                                        disabled={submitting}
-                                    >
-                                        {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                                        Save Changes
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
                 {/* Header & Navigation */}
                 <div className="space-y-6">
                     <div className="flex flex-col gap-4">
                         {/* Breadcrumbs */}
-                        <nav className="flex items-center text-sm font-medium text-black">
+                        <nav className="flex items-center text-sm font-medium text-[var(--color-primary-font)]">
                             <button
                                 onClick={() => router.push('/agent/dashboard')}
                                 className="hover:text-[var(--primary)] transition-colors"
                             >
                                 Dashboard
                             </button>
-                            <ChevronRight className="h-4 w-4 mx-2 text-black/40" />
-                            <span className="text-slate-900">Settings</span>
+                            <ChevronRight className="h-4 w-4 mx-2 text-[var(--color-primary-font)]/40" />
+                            <span className="text-[var(--color-primary-font)]">Settings</span>
                         </nav>
 
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                             <div className="space-y-1">
-                                <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Settings</h1>
-                                <p className="text-lg text-black max-w-2xl font-medium">
+                                <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-primary-font)]">Settings</h1>
+                                <p className="text-lg text-[var(--color-primary-font)] max-w-2xl font-medium">
                                     Manage your agency preferences, email integrations, and payment gateways.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                                 <Button
                                     variant="outline"
-                                    className="font-semibold px-6 border-slate-200 hover:bg-transparent text-black/70"
+                                    className="font-semibold px-6 border-slate-200 hover:bg-transparent text-[var(--color-primary-font)]/70"
                                     onClick={() => router.push('/agent/dashboard')}
                                 >
                                     Cancel
@@ -417,11 +379,10 @@ export default function AgentSettingsPage() {
                     <div className="glass-navbar rounded-full p-1.5 flex gap-1 overflow-x-auto scrollbar-hide shadow-sm">
                         {[
                             { name: 'General', id: 'general-section' },
-                            { name: 'Theme', id: 'theme-link' },
                             { name: 'Email', id: 'email-section' },
                             { name: 'Payment', id: 'payment-section' },
                             { name: 'Notifications', id: 'notifications-section' },
-                            { name: 'API', id: 'api-section' }
+                            { name: 'Theme', id: 'theme-link' }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -432,7 +393,7 @@ export default function AgentSettingsPage() {
                                         scrollToSection(tab.id);
                                     }
                                 }}
-                                className="px-5 py-2 text-sm font-bold rounded-full whitespace-nowrap transition-all text-black hover:text-black/70 hover:bg-white/50"
+                                className="px-5 py-2 text-sm font-bold rounded-full whitespace-nowrap transition-all text-[var(--color-primary-font)] hover:text-[var(--color-primary-font)]/70 hover:bg-white/50"
                             >
                                 {tab.name}
                             </button>
@@ -449,8 +410,8 @@ export default function AgentSettingsPage() {
                                     <Globe className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight">General Configuration</CardTitle>
-                                    <CardDescription className="text-sm font-semibold text-black/80">
+                                    <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight">General Configuration</CardTitle>
+                                    <CardDescription className="text-sm font-semibold text-[var(--color-primary-font)]/80">
                                         Configure basic agency settings and system preferences.
                                     </CardDescription>
                                 </div>
@@ -458,12 +419,12 @@ export default function AgentSettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-8 px-8 pb-8 pt-2">
                             <div className="grid gap-3 max-w-md">
-                                <Label htmlFor="currency" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                <Label htmlFor="currency" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                     Default Currency <span className="text-red-500">*</span>
-                                    <Info className="h-3.5 w-3.5 text-black/70 cursor-help" />
+                                    <Info className="h-3.5 w-3.5 text-[var(--color-primary-font)]/70 cursor-help" />
                                 </Label>
                                 <Select value={currency} onValueChange={setCurrency}>
-                                    <SelectTrigger className="glass-input h-12 font-medium text-slate-900 rounded-lg">
+                                    <SelectTrigger className="glass-input h-12 font-medium text-[var(--color-primary-font)] rounded-lg">
                                         <SelectValue placeholder="Select Currency" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -473,7 +434,7 @@ export default function AgentSettingsPage() {
                                         <SelectItem value="GBP" className="font-medium">🇬🇧 GBP - British Pound (£)</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs font-medium text-black flex items-center gap-1.5 mt-1">
+                                <p className="text-xs font-medium text-[var(--color-primary-font)] flex items-center gap-1.5 mt-1">
                                     <ShieldCheck className="h-3 w-3" />
                                     This currency will be used for all internal calculations and defaults.
                                 </p>
@@ -484,8 +445,8 @@ export default function AgentSettingsPage() {
                             {/* GST Configuration */}
                             <div className="space-y-4">
                                 <div className="space-y-1">
-                                    <h3 className="text-lg font-bold text-slate-900">GST Configuration</h3>
-                                    <p className="text-sm text-black">Set default GST applicability for new packages. Mode and percentage are configured per package.</p>
+                                    <h3 className="text-lg font-bold text-[var(--color-primary-font)]">GST Configuration</h3>
+                                    <p className="text-sm text-[var(--color-primary-font)]">Set default GST applicability for new packages. Mode and percentage are configured per package.</p>
                                 </div>
 
                                 <div className="flex gap-3">
@@ -494,7 +455,7 @@ export default function AgentSettingsPage() {
                                         onClick={() => setGstDefaults(prev => ({ ...prev, gst_applicable: true }))}
                                         className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${gstDefaults.gst_applicable
                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                                            : 'border-slate-200 bg-white text-black hover:border-slate-300'
+                                            : 'border-slate-200 bg-white text-[var(--color-primary-font)] hover:border-slate-300'
                                             }`}
                                     >
                                         ✅ Applicable
@@ -504,7 +465,7 @@ export default function AgentSettingsPage() {
                                         onClick={() => setGstDefaults(prev => ({ ...prev, gst_applicable: false }))}
                                         className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${!gstDefaults.gst_applicable
                                             ? 'border-red-400 bg-red-50 text-red-600 shadow-sm'
-                                            : 'border-slate-200 bg-white text-black hover:border-slate-300'
+                                            : 'border-slate-200 bg-white text-[var(--color-primary-font)] hover:border-slate-300'
                                             }`}
                                     >
                                         ❌ Not Applicable
@@ -521,9 +482,9 @@ export default function AgentSettingsPage() {
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <Mail className="h-6 w-6" />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight">Email Configuration (SMTP)</CardTitle>
-                                    <CardDescription className="text-sm font-semibold text-black/80">
+                                 <div className="space-y-1.5">
+                                    <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight">Email Configuration (SMTP)</CardTitle>
+                                    <CardDescription className="text-sm font-semibold text-[var(--color-primary-font)]/80">
                                         Set your own service to send professional automated confirmations.
                                     </CardDescription>
                                 </div>
@@ -531,7 +492,7 @@ export default function AgentSettingsPage() {
                             <div className="flex flex-col items-end gap-3 shrink-0">
                                 <div className={cn(
                                     "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm",
-                                    smtp.host ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-black border-slate-500/20"
+                                    smtp.host ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-[var(--color-primary-font)] border-slate-500/20"
                                 )}>
                                     <div className={cn(
                                         "h-1.5 w-1.5 rounded-full",
@@ -543,7 +504,7 @@ export default function AgentSettingsPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="font-bold border-white/40 bg-white/30 hover:bg-white/50 text-black/70 h-10 px-6 rounded-xl shadow-sm transition-all active:scale-95"
+                                        className="font-bold border-white/40 bg-white/30 hover:bg-white/50 text-[var(--color-primary-font)]/70 h-10 px-6 rounded-xl shadow-sm transition-all active:scale-95"
                                         onClick={testSmtpConnection}
                                         disabled={testingSmtp || !smtp.host}
                                     >
@@ -561,10 +522,10 @@ export default function AgentSettingsPage() {
                         <CardContent className="space-y-8 px-8 pb-8 pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                 <div className="md:col-span-9 space-y-2">
-                                    <Label htmlFor="smtp_host" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="smtp_host" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         SMTP Host <span className="text-red-500">*</span>
                                         <span title="Example: smtp.gmail.com">
-                                            <Info className="h-3 w-3 text-black/70 cursor-help" />
+                                            <Info className="h-3 w-3 text-[var(--color-primary-font)]/70 cursor-help" />
                                         </span>
                                     </Label>
                                     <Input
@@ -574,13 +535,13 @@ export default function AgentSettingsPage() {
                                         value={smtp.host}
                                         onChange={(e) => handleSmtpChange('host', e.target.value)}
                                     />
-                                    <p className="text-xs font-medium text-black italic">Example: smtp.mailtrap.io or smtp.gmail.com</p>
+                                    <p className="text-xs font-medium text-[var(--color-primary-font)] italic">Example: smtp.mailtrap.io or smtp.gmail.com</p>
                                 </div>
                                 <div className="md:col-span-3 space-y-2">
-                                    <Label htmlFor="smtp_port" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="smtp_port" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         Port <span className="text-red-500">*</span>
                                         <span title="Common: 587 (TLS), 465 (SSL), 25">
-                                            <Info className="h-3 w-3 text-black/70 cursor-help" />
+                                            <Info className="h-3 w-3 text-[var(--color-primary-font)]/70 cursor-help" />
                                         </span>
                                     </Label>
                                     <Input
@@ -596,9 +557,9 @@ export default function AgentSettingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <Label htmlFor="encryption" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="encryption" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         Encryption <span className="text-red-500">*</span>
-                                        <Info className="h-3.5 w-3.5 text-black/70" />
+                                        <Info className="h-3.5 w-3.5 text-[var(--color-primary-font)]/70" />
                                     </Label>
                                     <Select
                                         value={smtp.encryption_type}
@@ -615,7 +576,7 @@ export default function AgentSettingsPage() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="from_name" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="from_name" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         Sender Name <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
@@ -625,7 +586,7 @@ export default function AgentSettingsPage() {
                                         value={smtp.from_name}
                                         onChange={(e) => handleSmtpChange('from_name', e.target.value)}
                                     />
-                                    <p className="text-xs font-medium text-black/70">Appears in the 'From' field of emails.</p>
+                                    <p className="text-xs font-medium text-[var(--color-primary-font)]/70">Appears in the 'From' field of emails.</p>
                                 </div>
                             </div>
 
@@ -633,11 +594,11 @@ export default function AgentSettingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <Label htmlFor="smtp_user" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="smtp_user" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         Username / Email <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/70 group-focus-within:text-[var(--primary)] transition-colors" />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/70 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_user"
                                             className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
@@ -647,23 +608,23 @@ export default function AgentSettingsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="smtp_pass" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                    <Label htmlFor="smtp_pass" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                         Password
                                     </Label>
                                     <div className="relative group">
-                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/70 group-focus-within:text-[var(--primary)] transition-colors" />
+                                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/70 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_pass"
                                             type={showSmtpPassword ? "text" : "password"}
                                             placeholder={smtp.password ? "••••••••" : "Enter account password"}
-                                            className="glass-input h-12 pl-11 pr-11 font-medium rounded-lg transition-all placeholder:text-black/40 placeholder:italic"
+                                            className="glass-input h-12 pl-11 pr-11 font-medium rounded-lg transition-all placeholder:text-[var(--color-primary-font)]/40 placeholder:italic"
                                             value={smtp.password}
                                             onChange={(e) => handleSmtpChange('password', e.target.value)}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-black/70 hover:text-slate-600 focus:outline-none transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-primary-font)]/70 hover:text-slate-600 focus:outline-none transition-colors"
                                         >
                                             {showSmtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
@@ -676,7 +637,7 @@ export default function AgentSettingsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="from_email" className="text-sm font-bold text-black/70 flex items-center gap-2">
+                                <Label htmlFor="from_email" className="text-sm font-bold text-[var(--color-primary-font)]/70 flex items-center gap-2">
                                     Reply-To Email Address <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
@@ -686,7 +647,7 @@ export default function AgentSettingsPage() {
                                     onChange={(e) => handleSmtpChange('from_email', e.target.value)}
                                     placeholder="noreply@youragency.com"
                                 />
-                                <p className="text-[10px] font-medium text-black/70">Usually the same as your login email.</p>
+                                <p className="text-[10px] font-medium text-[var(--color-primary-font)]/70">Usually the same as your login email.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -698,11 +659,11 @@ export default function AgentSettingsPage() {
                                 <div className="p-3.5 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--primary)]/5 rounded-2xl text-[var(--primary)] border border-white/40 shadow-sm">
                                     <CreditCard className="h-6 w-6" />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                                 <div className="space-y-1.5">
+                                    <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight flex items-center gap-3">
                                         Payment Gateway (Razorpay)
                                     </CardTitle>
-                                    <CardDescription className="text-sm font-semibold text-black/80">
+                                    <CardDescription className="text-sm font-semibold text-[var(--color-primary-font)]/80">
                                         Configure your Razorpay account to receive payments directly into your account.
                                     </CardDescription>
                                 </div>
@@ -710,7 +671,7 @@ export default function AgentSettingsPage() {
                             <div className="flex flex-col items-end gap-3 shrink-0">
                                 <div className={cn(
                                     "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm",
-                                    razorpay.key_id ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-black border-slate-500/20"
+                                    razorpay.key_id ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-[var(--color-primary-font)] border-slate-500/20"
                                 )}>
                                     <div className={cn(
                                         "h-1.5 w-1.5 rounded-full",
@@ -718,7 +679,7 @@ export default function AgentSettingsPage() {
                                     )} />
                                     {razorpay.key_id ? 'Active Gateway' : 'Inactive'}
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-black bg-white/40 px-3 py-1.5 rounded-lg border border-white/40 shadow-sm">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)] bg-white/40 px-3 py-1.5 rounded-lg border border-white/40 shadow-sm">
                                     Mode:
                                     <span className={cn(
                                         "ml-1",
@@ -734,11 +695,11 @@ export default function AgentSettingsPage() {
                             <div className="grid grid-cols-1 gap-8">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="key_id" className="text-sm font-bold text-black/70">Key ID <span className="text-red-500">*</span></Label>
-                                        <Button
+                                        <Label htmlFor="key_id" className="text-sm font-bold text-[var(--color-primary-font)]/70">Key ID <span className="text-red-500">*</span></Label>
+                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-7 text-xs font-bold text-black/70 hover:text-[var(--primary)] bg-transparent px-2"
+                                            className="h-7 text-xs font-bold text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] bg-transparent px-2"
                                             onClick={() => {
                                                 navigator.clipboard.writeText(razorpay.key_id);
                                                 toast.info("Key ID copied to clipboard");
@@ -748,7 +709,7 @@ export default function AgentSettingsPage() {
                                         </Button>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-black/70 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-[var(--color-primary-font)]/70 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <ShieldCheck className="h-3.5 w-3.5" />
                                         </div>
                                         <Input
@@ -769,12 +730,12 @@ export default function AgentSettingsPage() {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="key_secret" className="text-sm font-bold text-black/70">Key Secret <span className="text-red-500">*</span></Label>
+                                        <Label htmlFor="key_secret" className="text-sm font-bold text-[var(--color-primary-font)]/70">Key Secret <span className="text-red-500">*</span></Label>
                                         <div className="flex items-center gap-1">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-7 text-xs font-bold text-black/70 hover:text-[var(--primary)] bg-transparent px-2"
+                                                className="h-7 text-xs font-bold text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] bg-transparent px-2"
                                                 onClick={() => {
                                                     if (razorpay.key_secret) {
                                                         navigator.clipboard.writeText(razorpay.key_secret);
@@ -788,21 +749,21 @@ export default function AgentSettingsPage() {
                                         </div>
                                     </div>
                                     <div className="relative group">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-black/70 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 rounded text-[var(--color-primary-font)]/70 group-focus-within:bg-[var(--primary)]/10 group-focus-within:text-[var(--primary)] transition-colors">
                                             <Key className="h-3.5 w-3.5" />
                                         </div>
                                         <Input
                                             id="key_secret"
                                             type={showRazorpaySecret ? "text" : "password"}
                                             placeholder={razorpay.key_secret ? "••••••••" : "Enter new account secret code"}
-                                            className="glass-input h-12 pl-12 pr-11 font-medium rounded-lg transition-all placeholder:text-black/40 italic"
+                                            className="glass-input h-12 pl-12 pr-11 font-medium rounded-lg transition-all placeholder:text-[var(--color-primary-font)]/40 italic"
                                             value={razorpay.key_secret}
                                             onChange={(e) => handleRazorpayChange('key_secret', e.target.value)}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowRazorpaySecret(!showRazorpaySecret)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-black/70 hover:text-slate-600 focus:outline-none transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-primary-font)]/70 hover:text-slate-600 focus:outline-none transition-colors"
                                         >
                                             {showRazorpaySecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
@@ -812,7 +773,7 @@ export default function AgentSettingsPage() {
                                         Saved keys are encrypted and stored securely.
                                     </p>
                                     {lastUpdated && (
-                                        <p className="text-[10px] font-medium text-black/70 italic px-1 mt-2">
+                                        <p className="text-[10px] font-medium text-[var(--color-primary-font)]/70 italic px-1 mt-2">
                                             Last modified: {lastUpdated}
                                         </p>
                                     )}
@@ -829,10 +790,10 @@ export default function AgentSettingsPage() {
                                     <Bell className="h-6 w-6" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <CardTitle className="text-2xl font-extrabold text-black tracking-tight flex items-center gap-3">
+                                    <CardTitle className="text-2xl font-extrabold text-[var(--color-primary-font)] tracking-tight flex items-center gap-3">
                                         Notifications & Email Visuals
                                     </CardTitle>
-                                    <CardDescription className="text-sm font-semibold text-black">
+                                    <CardDescription className="text-sm font-semibold text-[var(--color-primary-font)]">
                                         Customize the layout and design of automated emails sent to your customers.
                                     </CardDescription>
                                 </div>

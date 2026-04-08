@@ -410,8 +410,8 @@ export default function PackageDetailPage() {
                                                 <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
                                                     <Calendar className="h-4 w-4" /> {selectedDate}
                                                 </p>
-                                                <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
-                                                    <Users className="h-4 w-4" /> {travelers.adults + travelers.children} Travelers
+                                                <p className="text-sm text-green-600 mt-1 flex items-center gap-1 font-bold">
+                                                    <Users className="h-4 w-4" /> {travelers.adults + travelers.children + travelers.infants} Travelers
                                                 </p>
                                             </div>
                                         </div>
@@ -647,8 +647,14 @@ export default function PackageDetailPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-gray-500">
-                                        {travelers.adults + travelers.children} × ₹{packageData?.price_per_person.toLocaleString()}
+                                        {travelers.adults + travelers.children} × ₹{packageData?.price_per_person.toLocaleString()} 
+                                        <span className="ml-1 text-[10px] opacity-60">(Adults + Children)</span>
                                     </p>
+                                    {travelers.infants > 0 && (
+                                        <p className="text-xs text-[var(--primary)] font-black">
+                                            Infants ({travelers.infants}) — FREE
+                                        </p>
+                                    )}
                                     {effectiveGst && !effectiveGst.inclusive && (
                                         <p className="text-xs text-[var(--primary)] font-medium">+ {effectiveGst.percentage}% GST</p>
                                     )}

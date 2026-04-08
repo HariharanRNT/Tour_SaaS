@@ -122,12 +122,12 @@ export function DayPlanner({
 
         // Enhanced Color themes
         const themeMap = {
-            morning: { text: 'text-black', bg: 'bg-white', border: 'border-amber-600', iconBg: 'bg-gradient-to-br from-[#F59E0B] to-[#FCD34D]', iconColor: 'text-white' },
-            afternoon: { text: 'text-black', bg: 'bg-white', border: 'border-[var(--itinerary-primary,var(--primary))]', iconBg: 'bg-gradient-to-br from-[var(--itinerary-primary,var(--primary))] to-[var(--itinerary-secondary,var(--primary))]', iconColor: 'text-white' },
-            evening: { text: 'text-black', bg: 'bg-white', border: 'border-orange-600', iconBg: 'bg-gradient-to-br from-[#E11D48] to-[#FB7185]', iconColor: 'text-white' },
-            night: { text: 'text-black', bg: 'bg-white', border: 'border-black/20', iconBg: 'bg-gradient-to-br from-[#451A03] to-[#92400E]', iconColor: 'text-white' },
-            half_day: { text: 'text-black', bg: 'bg-white', border: 'border-teal-200', iconBg: 'bg-teal-500', iconColor: 'text-white' },
-            full_day: { text: 'text-black', bg: 'bg-white', border: 'border-blue-200', iconBg: 'bg-blue-500', iconColor: 'text-white' }
+            morning: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-amber-600', iconBg: 'bg-gradient-to-br from-[#F59E0B] to-[#FCD34D]', iconColor: 'text-white' },
+            afternoon: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-[var(--itinerary-primary,var(--primary))]', iconBg: 'bg-gradient-to-br from-[var(--itinerary-primary,var(--primary))] to-[var(--itinerary-secondary,var(--primary))]', iconColor: 'text-white' },
+            evening: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-orange-600', iconBg: 'bg-gradient-to-br from-[#E11D48] to-[#FB7185]', iconColor: 'text-white' },
+            night: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-black/20', iconBg: 'bg-gradient-to-br from-[#451A03] to-[#92400E]', iconColor: 'text-white' },
+            half_day: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-teal-200', iconBg: 'bg-teal-500', iconColor: 'text-white' },
+            full_day: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-blue-200', iconBg: 'bg-blue-500', iconColor: 'text-white' }
         }
 
         const theme = themeMap[timeSlot]
@@ -169,7 +169,7 @@ export function DayPlanner({
                             {label}
                         </h4>
                         <div className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full border border-[var(--itinerary-primary,var(--primary-glow))]">
-                            <span className="text-black font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
+                            <span className="text-[var(--color-primary-font)] font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
                                 {timeRange}
                             </span>
                         </div>
@@ -235,7 +235,7 @@ export function DayPlanner({
                                                     ✨ Experience
                                                 </div>
 
-                                                <h5 className="font-display text-lg md:text-xl text-black leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-words">
+                                                <h5 className="font-display text-lg md:text-xl text-[var(--color-primary-font)] leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-words">
                                                     {activity.title}
                                                 </h5>
                                                 {(activity.start_time || activity.end_time) && (
@@ -489,11 +489,11 @@ export function DayPlanner({
                                 {/* Content */}
                                 <div className="p-8 md:p-10 space-y-6 bg-[var(--primary-soft)]/30 backdrop-blur-xl flex-1">
                                     <div className="space-y-6">
-                                        <h3 className="font-bold text-2xl text-black flex items-center gap-3">
+                                        <h3 className="font-bold text-2xl text-[var(--color-primary-font)] flex items-center gap-3">
                                             <div className="h-8 w-1.5 bg-[var(--primary)] rounded-full"></div>
                                             About this activity
                                         </h3>
-                                        <div className="text-black leading-relaxed text-lg whitespace-pre-wrap">
+                                        <div className="text-[var(--color-primary-font)] leading-relaxed text-lg whitespace-pre-wrap">
                                             {selectedActivity.description}
                                         </div>
                                     </div>

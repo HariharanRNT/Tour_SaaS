@@ -496,10 +496,10 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                             style={!cardAppearance ? { background: "linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))" } : {}}>
                                             {getIcon(feature.icon, <Globe className="h-8 w-8 text-white" />)}
                                         </div>
-                                        <h3 className="card-title text-xl font-bold text-slate-800 mb-3 group-hover:text-[var(--primary)] transition-colors">
+                                        <h3 className="card-title text-xl font-bold text-[var(--color-primary-font)] mb-3 group-hover:text-[var(--primary)] transition-colors">
                                             {feature.title}
                                         </h3>
-                                        <p className="text-black leading-relaxed font-medium text-sm">
+                                        <p className="leading-relaxed font-medium text-sm text-[var(--color-primary-font)]/90">
                                             {feature.description || feature.desc}
                                         </p>
                                     </motion.div>

@@ -26,6 +26,13 @@
     --gradient-start: #F97316;
     --gradient-mid: #FDBA74;
     --gradient-end: #FED7AA;
+    
+    /* Activity Redesign Palette (Teal-to-Sky) */
+    --teal-primary: #2A9D8F;
+    --teal-secondary: #48CAE4;
+    --teal-glow: rgba(42, 157, 143, 0.25);
+    --teal-soft: rgba(42, 157, 143, 0.1);
+    
     --sidebar-bg: rgba(55, 45, 100, 0.50);
 
     /* Background and card are transparent so the body gradient shows through */
@@ -88,7 +95,11 @@
     /* body already has min-height and overflow-x-hidden from base layer */
     @apply text-foreground;
     font-family: var(--font-primary, var(--font-inter)), sans-serif;
-    color: var(--project-font-color, inherit);
+    color: var(--color-primary-font, #000000);
+  }
+  
+  .text-white {
+    color: #ffffff !important;
   }
 
   .noise-overlay {
@@ -107,6 +118,9 @@
     z-index: 1;
     background-image: url("https://grainy-gradients.vercel.app/noise.svg");
     filter: contrast(150%) brightness(100%);
+  }
+  .agent-portal-root {
+    --muted-foreground: 0 0% 0%;
   }
 }
 
@@ -323,7 +337,7 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.35);
-    border-left: 3px solid rgba(255, 107, 43, 0.6);
+    border-left: 3px solid var(--primary-glow);
     border-radius: 20px;
     transition: all 0.3s ease;
   }
@@ -388,7 +402,7 @@
   }
   .glass-pkg-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(255, 107, 43, 0.3);
+    box-shadow: 0 16px 40px var(--primary-glow);
   }
 
   /* New Glass Utilities */
@@ -398,7 +412,7 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 50px;
-    box-shadow: 0 4px 30px rgba(255, 107, 43, 0.2);
+    box-shadow: 0 4px 30px var(--primary-glow);
   }
 
   .glass-hero-bar {
@@ -496,14 +510,14 @@
   }
   .pkg-creation-root .glass-pill:hover {
     background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 107, 43, 0.3);
+    border-color: var(--primary-glow);
   }
   .pkg-creation-root .glass-pill-active {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%) !important;
     border-color: transparent !important;
     color: white !important;
     border-radius: 9999px;
-    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.3) !important;
+    box-shadow: 0 4px 12px var(--primary-glow) !important;
   }
 
   /* Section Cards - Scoped */
@@ -526,13 +540,13 @@
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .pkg-creation-root .glass-style-card:hover {
-    background: rgba(255, 107, 43, 0.1);
+    background: var(--primary-glow);
     transform: translateY(-3px);
   }
   .pkg-creation-root .glass-style-card.active {
-    background: rgba(255, 107, 43, 0.18);
-    border-color: rgba(255, 107, 43, 0.6);
-    box-shadow: 0 4px 20px rgba(255, 107, 43, 0.2);
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    box-shadow: 0 4px 20px var(--primary-glow);
   }
 
   /* Description Card - Scoped */
@@ -566,13 +580,13 @@
     color: #4B5563;
   }
   .pkg-creation-root .glass-toolbar-btn:hover {
-    background: rgba(255, 107, 43, 0.15);
+    background: var(--primary-glow);
     color: var(--primary);
   }
   .pkg-creation-root .glass-toolbar-btn.active {
     background: var(--primary);
     color: white;
-    box-shadow: 0 2px 8px rgba(255, 107, 43, 0.3);
+    box-shadow: 0 2px 8px var(--primary-soft);
   }
 
   /* Custom Textarea Adjustments */
@@ -587,8 +601,8 @@
     transition: all 0.3s ease !important;
   }
   .pkg-creation-root .glass-textarea:focus {
-    box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2) !important;
-    border-color: rgba(255, 107, 43, 0.5) !important;
+    box-shadow: 0 0 0 3px var(--primary-glow) !important;
+    border-color: var(--primary-light) !important;
     outline: none !important;
   }
   .pkg-creation-root .glass-textarea::placeholder {
@@ -603,7 +617,7 @@
     background: transparent;
   }
   .pkg-creation-root .glass-textarea::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 43, 0.4);
+    background: var(--primary-soft);
     border-radius: 10px;
   }
 
@@ -612,13 +626,13 @@
     height: 2px;
     background: var(--primary);
     transition: width 0.3s ease;
-    box-shadow: 0 0 8px rgba(255, 107, 43, 0.3);
+    box-shadow: 0 0 8px var(--primary-glow);
   }
 
   /* Orange Gradient Badge */
   .pkg-creation-root .orange-gradient-badge {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
-    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.3);
+    box-shadow: 0 4px 12px var(--primary-glow);
   }
 
   /* Custom Glass Toggle Switch */
@@ -647,8 +661,8 @@
   }
   .pkg-creation-root .glass-toggle.active {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
-    border-color: rgba(255, 107, 43, 0.4);
-    box-shadow: 0 4px 12px rgba(255, 107, 43, 0.2);
+    border-color: var(--primary-glow);
+    box-shadow: 0 4px 12px var(--primary-soft);
   }
   .pkg-creation-root .glass-toggle.active::after {
     left: calc(100% - 20px);
@@ -670,14 +684,14 @@
     text-align: left;
   }
   .pkg-creation-root .inclusion-pill:hover {
-    background: rgba(255, 107, 43, 0.1);
-    border-color: rgba(255, 107, 43, 0.3);
+    background: var(--primary-glow);
+    border-color: var(--primary-soft);
   }
   .pkg-creation-root .inclusion-pill.active {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     border-color: transparent;
     color: white !important;
-    box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
+    box-shadow: 0 4px 15px var(--primary-glow);
   }
   .pkg-creation-root .inclusion-pill.active .pill-icon {
     color: white !important;
@@ -793,7 +807,47 @@
     @apply w-5 h-5 bg-white border-2 border-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary-glow)] cursor-pointer hover:scale-110 transition-transform;
   }
 
-  /* Pulse Animation */
+
+  @keyframes soft-pulse-teal {
+    0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(72, 202, 228, 0.4); }
+    50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 0 8px rgba(72, 202, 228, 0); }
+    100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(72, 202, 228, 0); }
+  }
+
+  .animate-pulse-teal {
+    animation: soft-pulse-teal 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  }
+
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+  }
+
+  .animate-shimmer-sweep {
+    animation: shimmer-sweep 3s infinite linear;
+  }
+
+  .glass-pearl {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 
+      0 12px 40px rgba(42, 157, 143, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .teal-gradient-border {
+    position: relative;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(42, 157, 143, 0.4), rgba(72, 202, 228, 0.4));
+    padding: 1px;
+  }
+
+  .teal-gradient-border > * {
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 23px;
+  }
   .pulse-subtle {
     animation: pulse-orange 2s infinite;
   }
@@ -863,11 +917,11 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 43, 0.4);
+    background: var(--primary-glow);
     border-radius: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 107, 43, 0.6);
+    background: var(--primary);
   }
 
   /* Glass Select Dropdowns */
@@ -927,7 +981,7 @@
     border-radius: 10px;
   }
   .glass-select-viewport::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 107, 43, 0.6);
+    background: var(--primary);
   }
 
   /* Custom Orange Scrollbar for Flight Modal */

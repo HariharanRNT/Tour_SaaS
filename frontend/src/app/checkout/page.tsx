@@ -110,7 +110,10 @@ function CheckoutContent() {
 
     // Load Session & Settings
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || sessionId === 'null') {
+            if (sessionId === 'null') setLoading(false);
+            return;
+        }
 
         const fetchSession = async () => {
             try {
@@ -201,16 +204,16 @@ function CheckoutContent() {
         setCountryStates(State.getStatesOfCountry('IN'))
     }, [sessionId])
 
-    // Effect to recalculate total when GST settings or travelers change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Recalculate total when GST settings or travelers change
     useEffect(() => {
         if (!sessionData) return
 
-        const count = travelers.length
+        // Infants (Under 2) are free
+        const chargeableCount = travelers.filter(t => t.type !== 'INFANT').length
         const basePrice = sessionData.price_per_person || 18000
         const flightPrice = sessionData.flight_details?.price || 0
 
-        let subTotal = (basePrice + flightPrice) * count
+        let subTotal = (basePrice + flightPrice) * chargeableCount
 
         if (gstSettings && !gstSettings.inclusive) {
             const gstAmount = (subTotal * gstSettings.percentage) / 100
@@ -455,104 +458,112 @@ function CheckoutContent() {
             hidden: { opacity: 0, y: 20 },
             visible: { opacity: 1, y: 0 }
         }
-
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
-                {/* Visual background layers - Cool Blue Gradient */}
-                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#60a5fa]" />
-                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-white/20 blur-[120px] pointer-events-none z-[-1]" />
+                {/* Ambient Deep Mesh Background */}
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
+                
+                {/* Ambient Orbs */}
+                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+                <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
+
+                {/* Subtle Noise Texture */}
                 <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
 
                 <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={containerVariants}
-                    className="relative group max-w-sm w-full"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="relative group w-full flex justify-center"
+                    style={{ maxWidth: '90%', width: '480px' }}
                 >
-                    {/* Main Success Card - White Glassmorphism Style */}
-                    <div className="relative overflow-hidden p-10 rounded-[32px] border border-white/40 bg-white/20 backdrop-blur-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] text-center transition-all">
-                        {/* Suble Interior Glow */}
-                        <div className="absolute inset-0 bg-white/5 pointer-events-none" />
+                    {/* Main Success Card - Premium Glassmorphism Style */}
+                    <div className="relative overflow-hidden w-full p-8 md:p-[32px_28px] rounded-[28px] border border-white/25 bg-white/18 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.3)] text-center transition-all flex flex-col gap-5">
+                        {/* Interior Glow Enhancement */}
+                        <div className="absolute inset-0 pointer-events-none" 
+                             style={{ background: 'radial-gradient(circle at top, rgba(255,255,255,0.25), transparent 60%)' }} />
 
-
-                        {/* Success Icon Badge - White Glassy Circular */}
+                        {/* Success Icon Badge - Premium Gradient Circular */}
                         <motion.div
-                            initial={{ scale: 0.6, opacity: 0 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{
                                 type: "spring",
                                 stiffness: 200,
-                                damping: 15,
-                                delay: 0.4
+                                damping: 12,
+                                delay: 0.2
                             }}
-                            className="relative w-24 h-24 mx-auto mb-8"
+                            className="relative w-[72px] h-[72px] mx-auto"
                         >
-                            <div className="absolute inset-0 rounded-full border border-white/40 bg-white/30 backdrop-blur-md shadow-lg flex items-center justify-center">
-                                <Check className="h-12 w-12 text-[#10b981] stroke-[3px]" />
-                            </div>
+                            <motion.div 
+                                animate={{ 
+                                    boxShadow: ["0 10px 25px rgba(0,200,120,0.25)", "0 10px 35px rgba(0,200,120,0.45)", "0 10px 25px rgba(0,200,120,0.25)"] 
+                                }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute inset-0 rounded-full border border-white/40 bg-gradient-to-br from-[#e6f9f0] to-[#c8f7dc] shadow-lg flex items-center justify-center"
+                            >
+                                <Check className="h-9 w-9 text-[#00a86b] stroke-[3.5px]" />
+                            </motion.div>
                         </motion.div>
 
-                        <motion.h1
-                            variants={itemVariants}
-                            className="text-[40px] leading-tight font-medium mb-4 text-black drop-shadow-sm"
-                        >
-                            Booking Confirmed!
-                        </motion.h1>
+                        <div className="flex flex-col gap-3">
+                            <motion.h1
+                                variants={itemVariants}
+                                className="text-[30px] font-bold text-[var(--color-primary-font)] drop-shadow-sm font-display"
+                            >
+                                Booking Confirmed!
+                            </motion.h1>
 
-                        <motion.p
-                            variants={itemVariants}
-                            className="text-black/70 text-base mb-10 max-w-xs mx-auto font-medium"
-                        >
-                            Your trip is officially booked. We&apos;ve sent the confirmation details to your email.
-                        </motion.p>
+                            <motion.p
+                                variants={itemVariants}
+                                className="text-[var(--color-primary-font)] opacity-70 text-sm leading-1.6 max-w-[320px] mx-auto"
+                            >
+                                Your trip is officially booked. We&apos;ve sent the confirmation details to your email.
+                            </motion.p>
+                        </div>
 
                         <motion.div variants={itemVariants} className="w-full text-left">
-                            <div className="w-full mb-8 overflow-hidden rounded-[24px] border border-white/30 bg-black/5 backdrop-blur-md">
-                                <div className="px-6 py-4 border-b border-white/10 bg-white/5">
-                                    <h3 className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-black/50">
-                                        Booking Summary
-                                    </h3>
-                                </div>
-                                <div className="p-6 space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-black/60 text-sm font-semibold">Booking Reference</span>
-                                        <span className="bg-white/30 border border-white/40 text-black px-3 py-1.5 rounded-lg text-sm font-bold tracking-tight">
-                                            {confirmedBooking?.booking_reference || "BKBQK864101"}
-                                        </span>
+                            <div className="w-full overflow-hidden rounded-[18px] bg-white/25 backdrop-blur-md p-[18px] flex flex-col gap-[14px]">
+                                <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-black/50 border-b border-white/10 pb-2">
+                                    Booking Summary
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-template-columns: 1fr auto items-center">
+                                        <div className="flex justify-between items-center w-full">
+                                            <span className="text-[var(--color-primary-font)]/70 text-sm font-medium">Booking Ref</span>
+                                            <span className="text-[var(--color-primary-font)] text-sm font-bold">
+                                                {confirmedBooking?.booking_reference || "BKZGD322250"}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div className="border-t border-dashed border-white/20 pt-4 flex justify-between items-center">
-                                        <span className="text-black/60 text-sm font-semibold">Amount Paid</span>
-                                        <span className="text-2xl font-bold text-black">
+                                    <div className="flex justify-between items-center w-full">
+                                        <span className="text-[var(--color-primary-font)]/70 text-sm font-medium">Amount Paid</span>
+                                        <span className="text-lg font-bold text-[var(--color-primary-font)]">
                                             ₹{(confirmedBooking?.total_amount || 1180.00).toLocaleString()}
                                         </span>
                                     </div>
 
-                                    {/* Warning Note */}
-                                    <div className="mt-4 flex items-center justify-center gap-2 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center">
-                                        <div className="bg-amber-500/10 p-1 rounded-full">
-                                            <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
-                                        </div>
-                                        <p className="text-black/60 text-xs font-bold">
-                                            Flight confirmation details are pending.
+                                    {/* Glass Alert Box */}
+                                    <div className="flex items-center gap-2 p-[10px_12px] rounded-[12px] border border-amber-500/30 bg-[rgba(255,200,0,0.15)] mt-1">
+                                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                                        <p className="text-[var(--color-primary-font)]/80 text-[13px] font-medium">
+                                            Flight confirmation is pending
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </motion.div>
 
-                        <motion.div variants={itemVariants}>
+                        <motion.div variants={itemVariants} className="mt-2">
                             <Button
                                 onClick={() => router.push('/bookings')}
-                                className="group relative overflow-hidden h-12 min-w-[220px] px-10 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_20px_40px_var(--primary-glow)]"
-                                style={{
-                                    background: `linear-gradient(180deg, rgba(255,255,255,0.28) 0%, var(--primary) 35%, color-mix(in srgb, var(--primary) 80%, #000) 100%)`
-                                } as any}
+                                className="group relative overflow-hidden h-[48px] w-full rounded-[16px] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98] shadow-[0_10px_25px_rgba(0,120,140,0.4)] hover:shadow-[0_14px_30px_rgba(0,120,140,0.5)] bg-gradient-to-br from-[#0f5f6b] to-[#0a7c8c] border-none"
                             >
-                                <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/30" />
-                                <div className="relative z-10 flex items-center justify-center gap-2 text-white font-bold text-lg tracking-wide">
+                                <div className="relative z-10 flex items-center justify-center gap-2 text-white font-semibold text-base tracking-[0.3px]">
                                     View My Bookings
-                                    <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                                 </div>
                             </Button>
                         </motion.div>
@@ -564,8 +575,9 @@ function CheckoutContent() {
 
     const basePrice = sessionData?.price_per_person || 18000
     const flightPrice = sessionData?.flight_details?.price || 0
-    const subTotal = (basePrice + flightPrice) * travelers.length
-    const gstAmount = (gstSettings && !gstSettings.inclusive) ? (subTotal * gstSettings.percentage) / 100 : 0
+    const chargeableCount = travelers.filter((t: any) => t.type !== 'INFANT').length
+    const subTotal = (basePrice + flightPrice) * chargeableCount
+    const gstAmount = (gstSettings && !gstSettings.inclusive) ? (subTotal * (gstSettings as any).percentage) / 100 : 0
 
     // Progress Stepper Component
     const steps = [
@@ -591,7 +603,7 @@ function CheckoutContent() {
             <div className="pt-6 relative z-50">
                 <div className="container mx-auto px-4 lg:max-w-6xl">
                     <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_var(--primary-glow)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
-                        <h1 className="text-xl font-bold text-black drop-shadow-sm font-display tracking-wide">Checkout</h1>
+                        <h1 className="text-xl font-bold text-[var(--color-primary-font)] drop-shadow-sm font-display tracking-wide">Checkout</h1>
 
                         {/* Glowing Glass Stepper */}
                         <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 md:pb-0 hide-scrollbar scroll-smooth">
@@ -830,51 +842,58 @@ function CheckoutContent() {
                             <Card className="rounded-[24px] border border-white/35 shadow-[0_8px_32px_var(--primary-glow)] overflow-hidden bg-white/15 backdrop-blur-xl">
                                 <CardHeader className="glass-panel border-b border-white/20 pb-4 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/10 to-transparent pointer-events-none" />
-                                    <CardTitle className="text-lg text-black font-display relative z-10">Order Summary</CardTitle>
+                                    <CardTitle className="text-lg text-[var(--color-primary-font)] font-display relative z-10">Order Summary</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 pt-6">
                                     <div className="flex justify-between items-center group">
-                                        <span className="text-black/80 group-hover:text-black font-bold transition-colors">Base Package</span>
-                                        <span className="font-bold text-black">₹{(basePrice * travelers.length).toLocaleString()}</span>
+                                        <span className="text-[var(--color-primary-font)]/80 group-hover:text-[var(--color-primary-font)] font-bold transition-colors">Base Package</span>
+                                        <span className="font-bold text-[var(--color-primary-font)]">₹{(basePrice * chargeableCount).toLocaleString()}</span>
                                     </div>
-                                    <div className="text-xs text-black font-semibold -mt-3 flex justify-between">
-                                        <span>₹{basePrice.toLocaleString()} × {travelers.length}</span>
+                                    <div className="text-xs text-[var(--color-primary-font)] font-semibold -mt-3 flex justify-between">
+                                        <span>₹{basePrice.toLocaleString()} × {chargeableCount} Adults/Children</span>
                                     </div>
+
+                                    {travelers.some(t => t.type === 'INFANT') && (
+                                        <div className="flex justify-between items-center group text-[var(--color-primary-font)] font-bold mt-2">
+                                            <span className="flex items-center gap-1.5 opacity-60">Infants ({travelers.filter(t => t.type === 'INFANT').length})</span>
+                                            <span className="text-[var(--primary)] font-black">FREE</span>
+                                        </div>
+                                    )}
 
                                     {flightPrice > 0 && (
                                         <>
-                                            <div className="flex justify-between items-center group text-black font-bold mt-2">
+                                            <div className="flex justify-between items-center group text-[var(--color-primary-font)] font-bold mt-2">
                                                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]"></span> Flights</span>
-                                                <span>₹{(flightPrice * travelers.length).toLocaleString()}</span>
+                                                <span>₹{(flightPrice * chargeableCount).toLocaleString()}</span>
                                             </div>
-                                            <div className="text-xs text-black font-semibold -mt-3 flex justify-between">
-                                                <span>₹{flightPrice.toLocaleString()} × {travelers.length}</span>
+                                            <div className="text-xs text-[var(--color-primary-font)] font-semibold -mt-3 flex justify-between">
+                                                <span>₹{flightPrice.toLocaleString()} × {chargeableCount}</span>
                                             </div>
                                         </>
                                     )}
 
                                     {gstSettings && !gstSettings.inclusive ? (
                                         <div className="group bg-blue-100/40 p-3 rounded-[14px] border border-white/50 flex justify-between items-center text-sm shadow-sm backdrop-blur-sm mt-2">
-                                            <span className="flex items-center gap-2 text-black font-bold">
+                                            <span className="flex items-center gap-2 text-[var(--color-primary-font)] font-bold">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_6px_var(--primary-glow)]"></span>
                                                 GST ({gstSettings.percentage}%)
                                             </span>
-                                            <span className="font-extrabold text-black">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                            <span className="font-extrabold text-[var(--color-primary-font)]">₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                         </div>
                                     ) : (
-                                        <div className="glass-panel p-3 rounded-[14px] border border-dashed border-white/30 text-xs font-bold text-black text-center mt-2 bg-white/10 backdrop-blur-sm">
+                                        <div className="glass-panel p-3 rounded-[14px] border border-dashed border-white/30 text-xs font-bold text-[var(--color-primary-font)] text-center mt-2 bg-white/10 backdrop-blur-sm">
                                             Taxes & Fees Included
                                         </div>
                                     )}
 
                                     <div className="border-t border-white/20 pt-5 flex justify-between items-end">
                                         <div className="w-full">
-                                            <span className="text-black text-[10px] font-bold uppercase tracking-widest block mb-1">
+                                            <span className="text-[var(--color-primary-font)] text-[10px] font-bold uppercase tracking-widest block mb-1">
                                                 {gstSettings && !gstSettings.inclusive ? "Total Amount" : "Total Amount"}
                                             </span>
                                             <div className="flex justify-between items-baseline w-full">
-                                                <span className="text-4xl font-black text-black leading-none drop-shadow-sm font-display tracking-tight">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                                <span className="text-xs font-bold text-black">INR</span>
+                                                <span className="text-4xl font-black text-[var(--color-primary-font)] leading-none drop-shadow-sm font-display tracking-tight">₹{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                <span className="text-xs font-bold text-[var(--color-primary-font)]">INR</span>
                                             </div>
                                         </div>
                                     </div>
@@ -922,7 +941,7 @@ function CheckoutContent() {
                                             </div>
                                         )}
                                     </Button>
-                                    <div className="text-[10px] font-bold text-center text-black mt-4 w-full flex items-center justify-center gap-1.5">
+                                    <div className="text-[10px] font-bold text-center text-[var(--color-primary-font)] mt-4 w-full flex items-center justify-center gap-1.5">
                                         <CheckCircle className="h-3.5 w-3.5 text-green-600 drop-shadow-sm" /> Secure Payment via Razorpay
                                     </div>
                                 </CardFooter>

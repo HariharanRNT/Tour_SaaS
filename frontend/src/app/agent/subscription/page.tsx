@@ -502,12 +502,12 @@ export default function SubscriptionPage() {
                 {/* Header Section */}
                 <div className="mb-8">
                     {/* Breadcrumb */}
-                    <nav className="flex items-center text-sm text-black/60 mb-6">
-                        <Link href="/agent/dashboard" className="hover:text-black transition-colors">
+                    <nav className="flex items-center text-sm text-[var(--color-primary-font)]/60 mb-6">
+                        <Link href="/agent/dashboard" className="hover:text-[var(--color-primary-font)] transition-colors">
                             Dashboard
                         </Link>
                         <span className="mx-2">/</span>
-                        <span className="font-medium text-black">Billing</span>
+                        <span className="font-medium text-[var(--color-primary-font)]">Billing</span>
                     </nav>
 
                     {/* Title Area */}
@@ -517,8 +517,8 @@ export default function SubscriptionPage() {
                                 <CreditCard className="h-8 w-8 text-blue-600" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold text-black">Billing</h1>
-                                <p className="text-black/60 mt-1">Manage your active plans, billing history, and upgrades</p>
+                                <h1 className="text-3xl font-bold text-[var(--color-primary-font)]">Billing</h1>
+                                <p className="text-[var(--color-primary-font)]/60 mt-1">Manage your active plans, billing history, and upgrades</p>
                             </div>
                         </div>
                     </div>
@@ -529,7 +529,7 @@ export default function SubscriptionPage() {
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-4">
                             <Sparkles className="h-5 w-5 text-indigo-600" />
-                            <h2 className="text-lg font-bold text-black">Current Subscription</h2>
+                            <h2 className="text-lg font-bold text-[var(--color-primary-font)]">Current Subscription</h2>
                         </div>
 
                         <Card className="glass-agent border-0 overflow-hidden relative">
@@ -548,12 +548,12 @@ export default function SubscriptionPage() {
                                                 Auto-Renews
                                             </Badge>
                                         </div>
-                                        <h3 className="text-3xl font-bold text-black mb-1">{activeSub.plan.name}</h3>
-                                        <p className="text-black/80 font-medium flex items-center gap-2">
+                                        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-1">{activeSub.plan.name}</h3>
+                                        <p className="text-[var(--color-primary-font)]/80 font-medium flex items-center gap-2">
                                             {getBillingCycleDisplay(activeSub.plan)} Billing
                                             <span className="w-1 h-1 rounded-full bg-slate-400"></span>
-                                            <span className="text-black font-bold">₹{activeSub.plan.price.toLocaleString()}</span>
-                                            <span className="text-black/60">{getBillingCycleShort(activeSub.plan)}</span>
+                                            <span className="text-[var(--color-primary-font)] font-bold">₹{activeSub.plan.price.toLocaleString()}</span>
+                                            <span className="text-[var(--color-primary-font)]/60">{getBillingCycleShort(activeSub.plan)}</span>
                                         </p>
                                     </div>
 
@@ -578,11 +578,11 @@ export default function SubscriptionPage() {
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-[var(--color-primary-font)]/60 text-xs font-bold uppercase tracking-wider">
                                             <Calendar className="h-3.5 w-3.5" />
                                             Expires On
                                         </div>
-                                        <div className="text-lg font-bold text-indigo-950">
+                                        <div className="text-lg font-bold text-[var(--color-primary-font)]">
                                             {new Date(activeSub.end_date).toLocaleDateString()}
                                         </div>
                                         <div className={`text-xs font-semibold mt-1 flex items-center gap-1 ${getExpiryLabel(activeSub.end_date).isUrgent ? 'text-red-600' : 'text-emerald-600'}`}>
@@ -594,11 +594,11 @@ export default function SubscriptionPage() {
                                     </div>
 
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-[var(--color-primary-font)]/60 text-xs font-bold uppercase tracking-wider">
                                             <CreditCard className="h-3.5 w-3.5" />
                                             Next Bill
                                         </div>
-                                        <div className="text-lg font-bold text-indigo-950">
+                                        <div className="text-lg font-bold text-[var(--color-primary-font)]">
                                             ₹{activeSub.plan.price.toLocaleString()}
                                         </div>
                                         <div className="text-xs font-semibold mt-1 text-indigo-600">
@@ -609,11 +609,11 @@ export default function SubscriptionPage() {
                                     </div>
 
                                     <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 shadow-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-black/60 text-xs font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-2 mb-1 text-[var(--color-primary-font)]/60 text-xs font-bold uppercase tracking-wider">
                                             <Zap className="h-3.5 w-3.5" />
                                             Bookings Usage
                                         </div>
-                                        <div className="text-lg font-bold text-indigo-950">
+                                        <div className="text-lg font-bold text-[var(--color-primary-font)]">
                                             {activeSub.current_bookings_usage} / {activeSub.plan.booking_limit === -1 ? '∞' : activeSub.plan.booking_limit}
                                         </div>
                                         <div className="text-xs font-semibold mt-1 text-indigo-600">
@@ -628,8 +628,8 @@ export default function SubscriptionPage() {
                                 {/* Billing Cycle Progress */}
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
-                                        <span className="text-sm font-semibold text-black">Billing Cycle Progress</span>
-                                        <span className="text-xs font-medium text-black">
+                                        <span className="text-sm font-semibold text-[var(--color-primary-font)]">Billing Cycle Progress</span>
+                                        <span className="text-xs font-medium text-[var(--color-primary-font)]">
                                             {activeSub.plan.booking_limit !== -1 && (
                                                 <span className="opacity-75 mr-2">
                                                     {Math.round((activeSub.current_bookings_usage / activeSub.plan.booking_limit) * 100)}% usage
@@ -700,13 +700,13 @@ export default function SubscriptionPage() {
                                     <CardContent className="flex items-center justify-between p-6">
                                         <div>
                                             <Badge className="bg-purple-100 text-purple-700 mb-2">Upcoming</Badge>
-                                            <h3 className="font-bold text-lg">{sub.plan.name}</h3>
-                                            <p className="text-sm text-black/60">Purchased on {new Date(sub.created_at || sub.start_date || new Date()).toLocaleDateString()}</p>
+                                            <h3 className="font-bold text-lg text-[var(--color-primary-font)]">{sub.plan.name}</h3>
+                                            <p className="text-sm text-[var(--color-primary-font)]/60">Purchased on {new Date(sub.created_at || sub.start_date || new Date()).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <div className="text-right mr-4">
+                                            <div className="text-right mr-4 text-[var(--color-primary-font)]">
                                                 <p className="font-medium text-sm">Valid for {getBillingCycleDisplay(sub.plan)}</p>
-                                                <p className="text-xs text-black/60">Auto-activates when current plan ends</p>
+                                                <p className="text-xs text-[var(--color-primary-font)]/60">Auto-activates when current plan ends</p>
                                             </div>
                                             <Button
                                                 onClick={() => handleActivate(sub.id)}
@@ -727,7 +727,7 @@ export default function SubscriptionPage() {
                 {/* 3. Paused / On Hold Plans Section */}
                 {pausedSubs.length > 0 && (
                     <div className="mb-10">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-black">
+                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-[var(--color-primary-font)]">
                             <PauseCircle className="h-5 w-5 text-amber-600" /> Paused Plans
                         </h2>
                         <div className="flex flex-col gap-4">
@@ -739,17 +739,17 @@ export default function SubscriptionPage() {
                                                 <AlertTriangle className="h-6 w-6 text-amber-600" />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-lg text-black flex items-center gap-2">
+                                                <h3 className="font-bold text-lg text-[var(--color-primary-font)] flex items-center gap-2">
                                                     Subscription Paused
                                                     <Badge className="bg-amber-200 text-amber-800 hover:bg-amber-200 border-0">
                                                         {sub.plan.name}
                                                     </Badge>
                                                 </h3>
-                                                <p className="text-black/80 mt-1 font-medium">
+                                                <p className="text-[var(--color-primary-font)]/80 mt-1 font-medium">
                                                     Your plan is currently on hold.
                                                     {sub.end_date && ` It is scheduled to auto-resume on ${new Date(sub.end_date).toLocaleDateString()}.`}
                                                 </p>
-                                                <p className="text-sm text-black/60 mt-2 flex items-center gap-1.5">
+                                                <p className="text-sm text-[var(--color-primary-font)]/60 mt-2 flex items-center gap-1.5">
                                                     <PauseCircle className="h-3.5 w-3.5" />
                                                     Paused on {new Date(sub.updated_at || new Date()).toLocaleDateString()}
                                                 </p>
@@ -791,11 +791,11 @@ export default function SubscriptionPage() {
                         <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 mb-3 border-0">
                             Subscription Plans
                         </Badge>
-                        <h2 className="text-3xl font-bold text-black mb-3 flex items-center justify-center gap-2">
+                        <h2 className="text-3xl font-bold text-[var(--color-primary-font)] mb-3 flex items-center justify-center gap-2">
                             💎 Choose Your Plan
                         </h2>
                         <div className="flex justify-center items-center gap-4 mb-4">
-                            <p className="text-black/60">
+                            <p className="text-[var(--color-primary-font)]/60">
                                 Select the perfect plan for your business needs. Upgrade anytime.
                             </p>
 
@@ -808,10 +808,10 @@ export default function SubscriptionPage() {
                                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
                                     <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10 flex items-center justify-between">
                                         <DialogHeader>
-                                            <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+                                            <DialogTitle className="text-2xl font-black text-[var(--color-primary-font)] tracking-tight uppercase flex items-center gap-2">
                                                 ⚖️ Compare <span className="text-indigo-600">All Plans</span>
                                             </DialogTitle>
-                                            <DialogDescription className="text-slate-500 font-medium text-xs mt-1 uppercase tracking-wider">
+                                            <DialogDescription className="text-[var(--color-primary-font)]/50 font-medium text-xs mt-1 uppercase tracking-wider">
                                                 Find the perfect fit for your agency
                                             </DialogDescription>
                                         </DialogHeader>
@@ -821,33 +821,33 @@ export default function SubscriptionPage() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="bg-white/40 hover:bg-white/40 border-b border-white/40">
-                                                        <TableHead className="w-[200px] font-black text-slate-500 uppercase tracking-widest text-[10px] py-5 pl-6">Feature</TableHead>
+                                                        <TableHead className="w-[200px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest text-[10px] py-5 pl-6">Feature</TableHead>
                                                         {plans.map((p: Plan) => (
-                                                            <TableHead key={p.id} className="text-center font-black text-slate-800 uppercase tracking-widest text-[10px] py-5 px-4">{p.name}</TableHead>
+                                                            <TableHead key={p.id} className="text-center font-black text-[var(--color-primary-font)] uppercase tracking-widest text-[10px] py-5 px-4">{p.name}</TableHead>
                                                         ))}
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
+                                                        <TableCell className="font-bold text-[var(--color-primary-font)]/60 py-4 pl-6 text-[13px]">Monthly Price</TableCell>
                                                         {plans.map((p: Plan) => (
                                                             <TableCell key={p.id} className="text-center font-black text-indigo-600 text-[15px] py-4">₹{p.price.toLocaleString()}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
+                                                        <TableCell className="font-bold text-[var(--color-primary-font)]/60 py-4 pl-6 text-[13px]">Bookings Limit</TableCell>
                                                         {plans.map((p: Plan) => (
-                                                            <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
+                                                            <TableCell key={p.id} className="text-center font-bold text-[var(--color-primary-font)]/70 py-4">{p.booking_limit === -1 ? 'Unlimited' : p.booking_limit}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-b border-white/20 transition-colors">
-                                                        <TableCell className="font-bold text-black/60 py-4 pl-6 text-[13px]">Users Access</TableCell>
+                                                        <TableCell className="font-bold text-[var(--color-primary-font)]/60 py-4 pl-6 text-[13px]">Users Access</TableCell>
                                                         {plans.map((p: Plan) => (
-                                                            <TableCell key={p.id} className="text-center font-bold text-slate-700 py-4">{p.user_limit || 'Varies'}</TableCell>
+                                                            <TableCell key={p.id} className="text-center font-bold text-[var(--color-primary-font)]/70 py-4">{p.user_limit || 'Varies'}</TableCell>
                                                         ))}
                                                     </TableRow>
                                                     <TableRow className="hover:bg-white/30 border-0 transition-colors">
-                                                        <TableCell className="font-bold text-black/60 py-5 pl-6 text-[13px]">Support Level</TableCell>
+                                                        <TableCell className="font-bold text-[var(--color-primary-font)]/60 py-5 pl-6 text-[13px]">Support Level</TableCell>
                                                         {plans.map((p: Plan) => {
                                                             const theme = getPlanTheme(p.name);
                                                             return (
@@ -905,7 +905,7 @@ export default function SubscriptionPage() {
                                     >
                                         {/* Header Section */}
                                         <div className="text-center mb-3">
-                                            <h3 className="text-lg font-bold text-black mb-4 flex items-center justify-center gap-2">
+                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] mb-4 flex items-center justify-center gap-2">
                                                 <span className="text-2xl">{icon}</span> {plan.name}
                                             </h3>
 
@@ -916,7 +916,7 @@ export default function SubscriptionPage() {
 
                                                 <div className="w-16 h-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent my-2"></div>
 
-                                                <span className="text-sm font-medium text-black/60">
+                                                <span className="text-sm font-medium text-[var(--color-primary-font)]/60">
                                                     {getBillingCycleShort(plan).replace('/', '')} billing
                                                 </span>
 
@@ -933,7 +933,7 @@ export default function SubscriptionPage() {
                                             {/* Booking Limit Highlight */}
                                             <div className={`flex items-center justify-center gap-2 bg-white/10 py-3 rounded-xl border border-slate-100`}>
                                                 <Zap className={`h-4 w-4 ${theme.text}`} />
-                                                <span className="font-semibold text-black text-sm">
+                                                <span className="font-semibold text-[var(--color-primary-font)] text-sm">
                                                     {plan.booking_limit === -1 ? 'Unlimited' : plan.booking_limit} Bookings{getBillingCycleShort(plan)}
                                                 </span>
                                             </div>
@@ -943,7 +943,7 @@ export default function SubscriptionPage() {
                                                     <div key={idx} className="last:mb-0">
                                                         {section.category !== 'USAGE LIMITS' && ( // Usage limits handled by highlight above usually
                                                             <>
-                                                                <h4 className="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-3 flex items-center gap-1.5 opacity-80 pl-1">
+                                                                <h4 className="text-[10px] font-bold text-[var(--color-primary-font)]/40 uppercase tracking-widest mb-3 flex items-center gap-1.5 opacity-80 pl-1">
                                                                     {section.category === 'FEATURES' && <Sparkles className="h-3 w-3" />}
                                                                     {section.category === 'PRICING' && <CreditCard className="h-3 w-3" />}
                                                                     {section.category}
@@ -956,7 +956,7 @@ export default function SubscriptionPage() {
                                                                                     <Check className="h-3 w-3 text-emerald-600" />
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="text-sm font-medium text-black/80 leading-snug group-hover/item:text-black transition-colors">
+                                                                            <span className="text-sm font-medium text-[var(--color-primary-font)]/80 leading-snug group-hover/item:text-[var(--color-primary-font)] transition-colors">
                                                                                 {item}
                                                                             </span>
                                                                         </li>
@@ -974,7 +974,7 @@ export default function SubscriptionPage() {
                                             <Button
                                                 className={`w-full font-bold h-10 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95 ${isPopular
                                                     ? `bg-gradient-to-r ${theme.gradient} text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5`
-                                                    : 'bg-white hover:bg-transparent text-black border-2 border-slate-100 hover:border-slate-200 shadow-none'
+                                                    : 'bg-white hover:bg-transparent text-[var(--color-primary-font)] border-2 border-slate-100 hover:border-slate-200 shadow-none'
                                                     }`}
                                                 onClick={() => handlePurchase(plan)}
                                                 disabled={processingId === plan.id}
@@ -997,25 +997,25 @@ export default function SubscriptionPage() {
                 {historySubs.length > 0 && (
                     <div className="mt-8 pt-8 border-t border-slate-200">
                         <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-                            <h2 className="text-xl font-bold text-black flex items-center gap-2">
-                                <Clock className="h-5 w-5 text-black/40" />
+                            <h2 className="text-xl font-bold text-[var(--color-primary-font)] flex items-center gap-2">
+                                <Clock className="h-5 w-5 text-[var(--color-primary-font)]/40" />
                                 Subscription History
                             </h2>
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-md px-2 py-1">
-                                    <span className="text-xs text-black/60 font-medium">From:</span>
+                                    <span className="text-xs text-[var(--color-primary-font)]/60 font-medium">From:</span>
                                     <input
                                         type="date"
-                                        className="text-xs border-0 p-1 outline-none text-black/60"
+                                        className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.start}
                                         max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, start: e.target.value }))}
                                     />
                                     <span className="text-slate-300">|</span>
-                                    <span className="text-xs text-black/60 font-medium">To:</span>
+                                    <span className="text-xs text-[var(--color-primary-font)]/60 font-medium">To:</span>
                                     <input
                                         type="date"
-                                        className="text-xs border-0 p-1 outline-none text-black/60"
+                                        className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.end}
                                         max={new Date().toISOString().split('T')[0]}
                                         onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, end: e.target.value }))}
@@ -1037,7 +1037,7 @@ export default function SubscriptionPage() {
                         <div className="glass-agent overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-transparent border-b border-slate-100 text-black/60 font-medium">
+                                    <thead className="bg-transparent border-b border-slate-100 text-[var(--color-primary-font)]/60 font-medium">
                                         <tr>
                                             <th className="px-6 py-4">PLAN NAME</th>
                                             <th className="px-6 py-4">STATUS</th>
@@ -1050,7 +1050,7 @@ export default function SubscriptionPage() {
                                             const theme = getPlanTheme(sub.plan.name);
                                             return (
                                                 <tr key={sub.id} className={`hover:bg-white/20 transition-colors ${i % 2 === 0 ? 'bg-white/10' : 'bg-white/5'}`}>
-                                                    <td className="px-6 py-4 font-semibold text-black flex items-center gap-2">
+                                                    <td className="px-6 py-4 font-semibold text-[var(--color-primary-font)] flex items-center gap-2">
                                                         <div className={`p-1 rounded-full ${theme.bg}`}>
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
                                                         </div>
@@ -1067,12 +1067,12 @@ export default function SubscriptionPage() {
                                                             {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4 text-black/60">
+                                                    <td className="px-6 py-4 text-[var(--color-primary-font)]/60">
                                                         {new Date(sub.start_date).toLocaleDateString()}
                                                         <span className="mx-2 text-slate-300">→</span>
                                                         {new Date(sub.end_date).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right text-black/80 font-medium">
+                                                    <td className="px-6 py-4 text-right text-[var(--color-primary-font)]/80 font-medium">
                                                         {sub.current_bookings_usage} bookings
                                                     </td>
                                                 </tr>
@@ -1092,7 +1092,7 @@ export default function SubscriptionPage() {
                             {/* Pagination */}
                             {totalHistoryPages > 1 && (
                                 <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white/5">
-                                    <div className="text-xs text-black/60">
+                                    <div className="text-xs text-[var(--color-primary-font)]/60">
                                         Page {historyPage} of {totalHistoryPages}
                                     </div>
                                     <div className="flex gap-2">

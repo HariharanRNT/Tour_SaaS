@@ -93,7 +93,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 },
 
                 // Sub-Users management
-                ...((userRole === 'agent' && !isSubUser) || (isSubUser && user?.permissions?.some(p => p.module === 'settings')) ? [
+                ...((userRole === 'agent' && !isSubUser) ? [
                     { icon: Users, label: 'Sub-Users', href: '/agent/settings/sub-users', module: 'settings' },
                 ] : []),
             ].filter(item => {

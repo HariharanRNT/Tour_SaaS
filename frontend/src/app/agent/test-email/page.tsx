@@ -40,7 +40,7 @@ export default function TestEmailPage() {
                     </Link>
                     
                     <div className="text-right">
-                        <h1 className="text-2xl font-black text-slate-800">Component Gallery</h1>
+                        <h1 className="text-2xl font-black text-[var(--color-primary-font)]">Component Gallery</h1>
                         <p className="text-slate-500 text-sm">Previewing: EmailTemplatePicker</p>
                     </div>
                 </div>
@@ -53,7 +53,7 @@ export default function TestEmailPage() {
                              </svg>
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-4xl font-black text-slate-800">Email Sent Successfully!</h2>
+                            <h2 className="text-4xl font-black text-[var(--color-primary-font)]">Email Sent Successfully!</h2>
                             <p className="text-slate-500 text-xl font-medium">Using the <span className="text-green-600 font-bold uppercase tracking-wider">{selectedTheme}</span> theme.</p>
                         </div>
                     </Card>

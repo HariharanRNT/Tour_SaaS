@@ -631,7 +631,15 @@ class PackageResponse(PackageBase):
     images: List[PackageImageResponse] = []
     itinerary_items: List[ItineraryItemResponse] = []
     availability: List[PackageAvailabilityResponse] = []
-    
+
+    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @classmethod
+    def sanitize_package_text(cls, v):
+        """On read: only strip XSS — do NOT reject SQL patterns (data is already in DB)."""
+        if v is None or not isinstance(v, str):
+            return v
+        return strip_xss(v).strip()
+
     @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'cancellation_rules', mode='before')
     @classmethod
     def parse_json_list(cls, v):
@@ -661,6 +669,7 @@ class TravelerBase(BaseModel):
     gender: Optional[str] = Field(None, min_length=0)
     passport_number: Optional[str] = Field(None, max_length=50)
     nationality: Optional[str] = Field(None, min_length=0)
+    type: Optional[str] = Field(None, min_length=0)
     is_primary: Optional[bool] = False
 
     @field_validator('first_name', 'last_name', 'nationality', mode='before')

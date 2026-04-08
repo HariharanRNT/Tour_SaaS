@@ -8,6 +8,8 @@ import { PermissionMatrix, ModulePermission } from './PermissionMatrix'
 import { agentAPI } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 interface SubUserModalProps {
     isOpen: boolean
@@ -170,12 +172,17 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest pl-1">Phone Number</label>
-                            <Input 
-                                value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+91 9876543210"
-                                className="rounded-xl border-black/10 focus:border-orange-500/50"
-                            />
+                            <div className="phone-input-container">
+                                <PhoneInput
+                                    country={'in'}
+                                    value={formData.phone}
+                                    onChange={phone => setFormData({ ...formData, phone })}
+                                    containerClass="!w-full !rounded-xl"
+                                    inputClass="!w-full !h-10 !pl-12 !bg-white/50 !border-black/10 !rounded-xl focus:!border-orange-500/50 focus:!bg-white !transition-all !text-sm !font-medium !placeholder-black/20"
+                                    buttonClass="!bg-transparent !border-none !rounded-l-xl !pl-2 hover:!bg-black/5 !transition-colors"
+                                    dropdownClass="rounded-2xl shadow-xl border-black/5"
+                                />
+                            </div>
                         </div>
                     </div>
 

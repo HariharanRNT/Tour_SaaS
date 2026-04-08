@@ -43,8 +43,7 @@ export default function CityActivityManager({ params }: { params: { city: string
         duration_hours: 1,
         time_slot_preference: 'morning',
         description: '',
-        images: [],
-        price_per_person: 0
+        images: []
     })
 
     const [activityRows, setActivityRows] = useState<ActivityCreate[]>([createEmptyRow()])
@@ -229,7 +228,7 @@ export default function CityActivityManager({ params }: { params: { city: string
         let hasValidationErrors = false
 
         activityRows.forEach((row, i) => {
-            const isCompletelyEmpty = !row.name && !row.category && (row.duration_hours === 1) && !row.description && (!row.images || row.images.length === 0) && row.price_per_person === 0
+            const isCompletelyEmpty = !row.name && !row.category && (row.duration_hours === 1) && !row.description && (!row.images || row.images.length === 0)
 
             if (isCompletelyEmpty) {
                 // Ignore completely empty rows
@@ -288,8 +287,7 @@ export default function CityActivityManager({ params }: { params: { city: string
             duration_hours: activity.duration_hours,
             time_slot_preference: activity.time_slot_preference,
             description: activity.description || '',
-            images: activity.images.map(img => ({ image_url: img.image_url, display_order: img.display_order })),
-            price_per_person: activity.price_per_person || 0
+            images: activity.images.map(img => ({ image_url: img.image_url, display_order: img.display_order }))
         }])
 
         // Smooth scroll to form
@@ -340,7 +338,7 @@ export default function CityActivityManager({ params }: { params: { city: string
     }
 
     return (
-        <div className="min-h-screen flex flex-col h-screen overflow-hidden text-slate-800 bg-transparent">
+        <div className="min-h-screen flex flex-col h-screen overflow-hidden text-[var(--color-primary-font)] bg-transparent">
 
             {/* Header - Glass */}
             <div className="glass-panel border-b border-white/10 shrink-0 relative z-30 m-6 mb-2 rounded-[32px]">
@@ -367,8 +365,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                         <Button
                             onClick={handleSaveAll}
                             disabled={isSavingAll || activityRows.length === 0}
-                            className="text-white font-semibold rounded-[50px] px-8 py-6 shadow-[0_8px_24px_rgba(255,107,43,0.3)] hover:shadow-[0_12px_32px_rgba(255,107,43,0.4)] transition-all duration-300 hover:-translate-y-1 active:scale-95 border border-white/20"
-                            style={{ background: 'linear-gradient(135deg, var(--primary), #FF9A5C)' }}
+                            className="text-white font-semibold rounded-[50px] px-8 py-6 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_32px_var(--primary-glow)] transition-all duration-300 hover:-translate-y-1 active:scale-95 border border-white/20"
+                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
                         >
                             {isSavingAll ? 'Saving...' : (
                                 <>
@@ -388,8 +386,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                     <div className="h-full flex flex-col overflow-hidden border border-white/40 shadow-sm transition-all" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: '32px' }}>
                         <div className="p-6 shrink-0 sticky top-0 z-10 border-b border-white/40 bg-white/20 backdrop-blur-md">
                             <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-xl font-bold text-black">Existing Activities</h2>
-                                <div className="bg-slate-100 text-black font-bold px-3 py-1 rounded-full text-xs border border-slate-200 shadow-sm">
+                                <h2 className="text-xl font-bold text-[var(--color-primary-font)]">Existing Activities</h2>
+                                <div className="bg-[var(--color-primary-font)]/10 text-[var(--color-primary-font)] font-bold px-3 py-1 rounded-full text-xs border border-[var(--color-primary-font)]/20 shadow-sm">
                                     {existingActivities.length}
                                 </div>
                             </div>
@@ -406,7 +404,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     <div className="h-12 w-12 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-amber-50 rounded-2xl flex items-center justify-center border border-white/60 shadow-inner">
                                         <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                     </div>
-                                    <p className="text-black text-[15px] font-semibold mb-1">No activities planned yet.</p>
+                                    <p className="text-[var(--color-primary-font)] text-[15px] font-semibold mb-1">No activities planned yet.</p>
                                     <p className="text-slate-600 text-sm leading-relaxed opacity-80">Add your first experience on the right to start building your itinerary.</p>
                                 </div>
                             ) : (
@@ -427,7 +425,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     const isEditing = editingActivity?.id === activity.id
 
                                     return (
-                                        <Card key={activity.id} className={`overflow-hidden relative group border-white/50 hover:shadow-[0_12px_30px_rgba(255,107,43,0.1)] transition-all duration-300 hover:-translate-y-1 ${isEditing ? 'border-l-4 border-l-[var(--primary)] bg-[var(--primary)]/10 shadow-[0_8px_24px_rgba(255,107,43,0.15)] scale-[1.02]' : ''}`} style={{ background: isEditing ? 'rgba(255,107,43,0.08)' : 'rgba(255,255,255,0.4)', backdropFilter: 'blur(20px)', borderRadius: '20px' }}>
+                                        <Card key={activity.id} className={`overflow-hidden relative group border-white/50 hover:shadow-[0_12px_30px_var(--primary-glow)] transition-all duration-300 hover:-translate-y-1 ${isEditing ? 'border-l-4 border-l-[var(--primary)] bg-[var(--primary)]/10 shadow-[0_8px_24px_var(--primary-glow)] scale-[1.02]' : ''}`} style={{ background: isEditing ? 'var(--primary-glow)' : 'rgba(255,255,255,0.4)', backdropFilter: 'blur(20px)', borderRadius: '20px' }}>
                                             <div className="h-40 relative rounded-t-[20px] overflow-hidden">
                                                 <ActivityImageGallery
                                                     images={activity.images.map((img: any) => img.image_url)}
@@ -448,9 +446,6 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                 {/* Title Overlay inside thumbnail */}
                                                 <div className="absolute bottom-0 inset-x-0 bg-white/40 backdrop-blur-md p-3 px-4 border-t border-white/50 flex justify-between items-center bg-gradient-to-t from-white/60 to-white/10 z-10">
                                                     <h3 className="font-bold text-[var(--primary)] text-[17px] line-clamp-1 flex-1 tracking-tight"> {activity.name}</h3>
-                                                    {(activity.price_per_person ?? 0) > 0 && (
-                                                        <span className="font-semibold text-black text-sm ml-3 shrink-0 bg-white/60 px-2 py-0.5 rounded-md border border-white/50 backdrop-blur-sm shadow-sm">₹{activity.price_per_person}</span>
-                                                    )}
                                                 </div>
                                             </div>
 
@@ -487,7 +482,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                             <div key={index} className="glass-panel relative overflow-visible animate-in fade-in slide-in-from-bottom-4 group">
 
                                 {/* Row Number Indicator / Pencil Icon */}
-                                <div className={`absolute -left-4 -top-4 bg-gradient-to-br transition-all duration-500 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white/90 z-10 group-hover:scale-110 ${editingActivity ? 'from-[var(--primary)] to-[#D95D22] text-white scale-110' : 'from-[#FF9A5C] to-[var(--primary)] text-white'}`}>
+                                <div className={`absolute -left-4 -top-4 bg-gradient-to-br transition-all duration-500 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white/90 z-10 group-hover:scale-110 ${editingActivity ? 'from-[var(--primary)] to-[#D95D22] text-white scale-110' : 'from-[var(--primary-light)] to-[var(--primary)] text-white'}`}>
                                     {editingActivity ? <Edit className="h-5 w-5" /> : index + 1}
                                 </div>
 
@@ -521,12 +516,12 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             <Label className="floating-label">Activity Name <span className="text-red-500">*</span></Label>
                                         </div>
                                         <div>
-                                            <Label className="text-black font-semibold mb-2 block">Category <span className="text-red-500">*</span></Label>
+                                            <Label className="text-[var(--color-primary-font)] font-semibold mb-2 block">Category <span className="text-red-500">*</span></Label>
                                             <Select
                                                 value={row.category}
                                                 onValueChange={(val) => handleRowChange(index, 'category', val)}
                                             >
-                                                <SelectTrigger className="bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-slate-800 focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-slate-500/80">
+                                                <SelectTrigger className="bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-[var(--color-primary-font)] focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-[var(--color-primary-font)]/50">
                                                     <SelectValue placeholder="Select Category" />
                                                 </SelectTrigger>
                                                 <SelectContent className="glass-panel border border-white/60 bg-white/80 backdrop-blur-xl">
@@ -542,14 +537,14 @@ export default function CityActivityManager({ params }: { params: { city: string
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-7 mt-7">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-7 mt-7">
                                         <div>
-                                            <Label className="text-black font-semibold mb-2 block">Time Slot <span className="text-red-500">*</span></Label>
+                                            <Label className="text-[var(--color-primary-font)] font-semibold mb-2 block">Time Slot <span className="text-red-500">*</span></Label>
                                             <Select
                                                 value={row.time_slot_preference}
                                                 onValueChange={(val: TimeSlotPreference) => handleRowChange(index, 'time_slot_preference', val)}
                                             >
-                                                <SelectTrigger className="bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-slate-800 focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-slate-500/80">
+                                                <SelectTrigger className="bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-[var(--color-primary-font)] focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-[var(--color-primary-font)]/50">
                                                     <SelectValue placeholder="Select Time" />
                                                 </SelectTrigger>
                                                 <SelectContent className="glass-panel border border-white/60 bg-white/80 backdrop-blur-xl">
@@ -577,31 +572,17 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             </div>
                                             <Label className="floating-label">Duration <span className="text-red-500">*</span></Label>
                                         </div>
-                                        <div className="floating-label-group">
-                                            <div className="relative h-10">
-                                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-bold">₹</div>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={row.price_per_person || ''}
-                                                    onChange={(e) => handleRowChange(index, 'price_per_person', parseFloat(e.target.value) || 0)}
-                                                    className="pl-8 glass-input h-full"
-                                                    placeholder=" "
-                                                />
-                                            </div>
-                                            <Label className="floating-label">Price / Person</Label>
-                                        </div>
                                     </div>
 
                                     {/* Inline Images - Horizontal layout for compactness */}
                                     <div className="mt-8 space-y-4 p-5 bg-white/10 backdrop-blur-md border-2 border-dashed border-[var(--primary)]/40 rounded-[16px] shadow-sm relative transition-all hover:border-[var(--primary)]/60 hover:bg-white/20">
                                         <div className="flex items-center justify-between">
-                                            <Label className="text-black font-bold flex items-center gap-2.5 text-base">
-                                                <div className="bg-slate-100 p-1.5 rounded-lg border border-slate-200">
-                                                    <Upload className="h-4 w-4 text-black" />
+                                            <Label className="text-[var(--color-primary-font)] font-bold flex items-center gap-2.5 text-base">
+                                                <div className="bg-[var(--color-primary-font)]/10 p-1.5 rounded-lg border border-[var(--color-primary-font)]/20">
+                                                    <Upload className="h-4 w-4 text-[var(--color-primary-font)]" />
                                                 </div>
                                                 Activity Images
-                                                <span className="bg-slate-100 text-black text-xs px-2.5 py-0.5 rounded-full border border-slate-200 shadow-sm ml-1">
+                                                <span className="bg-[var(--color-primary-font)]/10 text-[var(--color-primary-font)] text-xs px-2.5 py-0.5 rounded-full border border-[var(--color-primary-font)]/20 shadow-sm ml-1">
                                                     {row.images?.length || 0}/5
                                                 </span>
                                             </Label>
@@ -611,7 +592,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleAddImage(index)}
-                                                    className="glass-button h-9 px-4 text-xs font-bold rounded-full text-black border border-slate-200 hover:bg-slate-100 transition-all shadow-sm"
+                                                    className="glass-button h-9 px-4 text-xs font-bold rounded-full text-[var(--color-primary-font)] border border-[var(--color-primary-font)]/20 hover:bg-[var(--color-primary-font)]/10 transition-all shadow-sm"
                                                     disabled={(row.images?.length || 0) >= 5}
                                                 >
                                                     <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload File
@@ -641,7 +622,7 @@ export default function CityActivityManager({ params }: { params: { city: string
 
                                                                 {/* Primary Badge */}
                                                                 {imgIdx === 0 && (
-                                                                    <div className="absolute top-0 left-0 bg-gradient-to-r from-[#FF9A5C] to-[var(--primary)] text-white text-[10px] font-bold px-2 py-1 rounded-br-lg shadow-sm z-10">
+                                                                    <div className="absolute top-0 left-0 bg-gradient-to-r from-[var(--primary-light)] to-[var(--primary)] text-white text-[10px] font-bold px-2 py-1 rounded-br-lg shadow-sm z-10">
                                                                         PRIMARY
                                                                     </div>
                                                                 )}
@@ -671,7 +652,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             placeholder=" "
                                             className="glass-input peer min-h-[120px] pb-8 pt-4 resize-y leading-relaxed"
                                         />
-                                        <div className="absolute bottom-3 right-4 text-black text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
+                                        <div className="absolute bottom-3 right-4 text-[var(--color-primary-font)] text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
                                             Activity Highlights
                                         </div>
                                         <Label className="floating-label">Description</Label>
@@ -688,14 +669,14 @@ export default function CityActivityManager({ params }: { params: { city: string
                                         onClick={handleSaveAll}
                                         disabled={isSavingAll}
                                         className="flex-1 h-14 text-white font-bold rounded-[50px] shadow-lg transition-all duration-300 hover:-translate-y-1 active:scale-95 border border-white/20"
-                                        style={{ background: 'linear-gradient(135deg, var(--primary), #FF9A5C)' }}
+                                        style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
                                     >
                                         <Save className="mr-2 h-5 w-5" /> {isSavingAll ? 'Updating...' : 'Save Changes'}
                                     </Button>
                                     <Button
                                         onClick={handleCancelEdit}
                                         variant="ghost"
-                                        className="px-8 h-14 glass-button text-black hover:bg-white/40 font-bold border-2 border-dashed border-slate-300"
+                                        className="px-8 h-14 glass-button text-[var(--color-primary-font)] hover:bg-white/40 font-bold border-2 border-dashed border-slate-300"
                                     >
                                         Cancel Edit
                                     </Button>
@@ -706,8 +687,8 @@ export default function CityActivityManager({ params }: { params: { city: string
                                     variant="outline"
                                     className="w-full max-w-2xl glass-button rounded-[50px] border-2 border-dashed border-[var(--primary)]/50 text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:border-[var(--primary)] transition-all duration-300 h-14 font-bold text-base flex items-center justify-center gap-3 shadow-sm bg-white/20"
                                 >
-                                    <div className="bg-slate-100 rounded-full p-1 border border-slate-200 shadow-inner">
-                                        <Plus className="h-4 w-4 text-black" />
+                                    <div className="bg-[var(--color-primary-font)]/10 rounded-full p-1 border border-[var(--color-primary-font)]/20 shadow-inner">
+                                        <Plus className="h-4 w-4 text-[var(--color-primary-font)]" />
                                     </div>
                                     Add Another Activity
                                 </Button>
@@ -739,13 +720,13 @@ export default function CityActivityManager({ params }: { params: { city: string
                     background: rgba(255, 255, 255, 0.22) !important;
                     border: 1px solid rgba(255, 255, 255, 0.4) !important;
                     border-radius: 14px !important;
-                    color: #1e293b !important;
+                    color: var(--color-primary-font) !important;
                     transition: all 0.3s ease;
                 }
                 .glass-input:focus {
                     background: rgba(255, 255, 255, 0.4) !important;
-                    border-color: rgba(255, 107, 43, 0.5) !important;
-                    box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.25) !important;
+                    border-color: var(--primary-glow) !important;
+                    box-shadow: 0 0 0 3px var(--primary-soft) !important;
                 }
 
                 .glass-button {
@@ -759,7 +740,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                 .glass-button:hover:not(:disabled) {
                     background: rgba(0, 0, 0, 0.05) !important;
                     border-color: rgba(0, 0, 0, 0.1) !important;
-                    color: black !important;
+                    color: var(--color-primary-font) !important;
                 }
                 
                 /* Custom animated label approach */
@@ -772,14 +753,14 @@ export default function CityActivityManager({ params }: { params: { city: string
                     transition: all 0.3s ease;
                     transform-origin: left bottom;
                     transform: translateY(0);
-                    color: black;
+                    color: var(--color-primary-font);
                     font-weight: 600;
                     margin-bottom: 8px;
                 }
                 .glass-input:focus + .floating-label,
                 .glass-input:not(:placeholder-shown) + .floating-label {
                     transform: translateY(-2px);
-                    color: black;
+                    color: var(--color-primary-font);
                 }
 
                 .custom-scrollbar::-webkit-scrollbar {
@@ -799,7 +780,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                 
                 /* Select dropdown overrides to prevent black text */
                 [data-radix-popper-content-wrapper] .glass-panel * {
-                    color: #1e293b;
+                    color: var(--color-primary-font);
                 }
                 [data-radix-popper-content-wrapper] .glass-panel [data-state="checked"] {
                     background: rgba(0,0,0,0.05) !important;

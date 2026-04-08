@@ -71,7 +71,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 WebkitBackdropFilter: 'blur(32px) saturate(150%)',
                 border: '1.5px solid rgba(255,255,255,0.70)',
                 borderRadius: '20px',
-                boxShadow: '0 16px 48px rgba(255,107,43,0.25), 0 4px 16px rgba(0,0,0,0.10)',
+                boxShadow: '0 16px 48px var(--primary-glow), 0 4px 16px rgba(0,0,0,0.10)',
                 opacity: isVisible ? 1 : 0,
                 transform: isVisible ? 'scale(1)' : 'scale(0.92)',
                 transformOrigin: showAbove ? 'bottom center' : 'top center',
@@ -115,9 +115,9 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'rgba(255,107,43,0.08)' }}
+                        background: 'var(--primary-glow)' }}
                 >
-                    <LayoutGrid style={{ width: '32px', height: '32px', color: 'rgba(255,107,43,0.25)' }} />
+                    <LayoutGrid style={{ width: '32px', height: '32px', color: 'var(--primary)', opacity: 0.25 }} />
                 </div>
             )}
 
@@ -179,18 +179,11 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     display: 'flex',
                     alignItems: 'center',
                     gap: '3px' }}>
-                    <Clock style={{ width: '10px', height: '10px', color: '#FF6B2B' }} />
+                    <Clock style={{ width: '10px', height: '10px', color: 'var(--primary)' }} />
                     {activity.duration_hours}h
                 </span>
             </div>
 
-            {/* Price */}
-            {activity.price_per_person && (
-                <div style={{ padding: '0 16px 8px', fontSize: '14px', fontWeight: 700, color: '#FF6B2B' }}>
-                    ₹{activity.price_per_person.toLocaleString()}
-                    <span style={{ fontSize: '10px', fontWeight: 500, color: '#A0522D', marginLeft: '4px' }}>/person</span>
-                </div>
-            )}
 
             {/* Description */}
             {activity.description && (
@@ -217,7 +210,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 justifyContent: 'center',
                 gap: '6px',
                 background: 'rgba(255,255,255,0.20)' }}>
-                <GripVertical style={{ width: '12px', height: '12px', color: 'rgba(255,107,43,0.50)' }} />
+                <GripVertical style={{ width: '12px', height: '12px', color: 'var(--primary)', opacity: 0.5 }} />
                 <span style={{ fontSize: '11px', color: 'rgba(160,82,45,0.65)', fontStyle: 'italic' }}>
                     Drag to add to itinerary
                 </span>
@@ -281,12 +274,12 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
             ref={setRefs}
             className={cn(
                 "group/card relative border rounded-2xl p-3 transition-all select-none",
-                "hover:shadow-[0_8px_30px_rgba(255,107,43,0.15)] hover:-translate-y-0.5",
+                "hover:shadow-[0_8px_30px_var(--primary-glow)] hover:-translate-y-0.5",
                 isDragging
-                    ? "opacity-70 border-dashed border-[#FF6B2B] rotate-2 shadow-2xl cursor-grabbing"
+                    ? "opacity-70 border-dashed border-[var(--primary)] rotate-2 shadow-2xl cursor-grabbing"
                     : isPreviewOpen
-                        ? "border-[#FF6B2B]/50 shadow-[0_4px_20px_rgba(255,107,43,0.15)]"
-                        : "border-white/35 hover:border-[#FF6B2B]/35 cursor-pointer"
+                        ? "border-[var(--primary)]/50 shadow-[0_4px_20px_var(--primary-glow)]"
+                        : "border-white/35 hover:border-[var(--primary)]/35 cursor-pointer"
             )}
             style={{
                 ...dragStyle,
@@ -299,8 +292,8 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
             {showFirstHoverTip && (
                 <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none">
                     <div
-                        className="px-3 py-1 rounded-full text-[9px] font-bold text-[#FF6B2B] shadow-lg"
-                        style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(255,107,43,0.25)' }}
+                        className="px-3 py-1 rounded-full text-[9px] font-bold text-[var(--primary)] shadow-lg"
+                        style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid var(--primary-soft)' }}
                     >
                         Drag to add · Click to preview
                     </div>
@@ -316,7 +309,7 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
                     onClick={e => e.stopPropagation()}
                     title="Drag to itinerary"
                 >
-                    <GripVertical className="w-4 h-4 text-[#FF6B2B]" />
+                    <GripVertical className="w-4 h-4 text-[var(--primary)]" />
                 </div>
 
                 {/* Thumbnail */}
@@ -325,8 +318,8 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
                         <img src={activity.images[0].image_url} alt={activity.name} className="w-full h-full object-cover" />
                     </div>
                 ) : (
-                    <div className="w-12 h-12 rounded-xl bg-[#FFF5EB]/50 flex items-center justify-center flex-shrink-0 border border-[#FFD4B0]/40">
-                        <LayoutGrid className="w-4 h-4 text-[#FF6B2B]/30" />
+                    <div className="w-12 h-12 rounded-xl bg-[var(--primary-soft)]/20 flex items-center justify-center flex-shrink-0 border border-[var(--primary-soft)]/40">
+                        <LayoutGrid className="w-4 h-4 text-[var(--primary)]/30" />
                     </div>
                 )}
 
@@ -338,15 +331,10 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
                             {activity.category}
                         </Badge>
                         <span className="text-[9px] text-[#A0522D] flex items-center gap-0.5 font-medium">
-                            <Clock className="w-2.5 h-2.5 text-[#FF6B2B]" />
+                            <Clock className="w-2.5 h-2.5 text-[var(--primary)]" />
                             {activity.duration_hours}h
                         </span>
                     </div>
-                    {activity.price_per_person && (
-                        <div className="mt-0.5 text-[11px] font-bold text-[#FF6B2B]">
-                            ₹{activity.price_per_person.toLocaleString()}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
@@ -371,14 +359,14 @@ function DestinationCard({ city, activities, isExpanded, onToggle, onPreview, ac
                 className={cn(
                     "w-full flex items-center gap-3 p-3 rounded-[14px] border transition-all text-left",
                     isExpanded
-                        ? "border-[#FF6B2B]/40 rounded-b-none border-b-0"
-                        : "border-white/35 hover:border-[#FF6B2B]/40 hover:-translate-y-0.5"
+                        ? "border-[var(--primary)]/40 rounded-b-none border-b-0"
+                        : "border-white/35 hover:border-[var(--primary)]/40 hover:-translate-y-0.5"
                 )}
-                style={{ background: isExpanded ? 'rgba(255,107,43,0.08)' : 'rgba(255,255,255,0.20)' }}
+                style={{ background: isExpanded ? 'var(--primary-glow)' : 'rgba(255,255,255,0.20)' }}
             >
                 <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, #FF6B2B, #FF9A5C)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
                 >
                     <MapPin className="w-4 h-4 text-white" />
                 </div>
@@ -386,12 +374,12 @@ function DestinationCard({ city, activities, isExpanded, onToggle, onPreview, ac
                     <p className="text-xs font-bold text-[#2D1A0E] truncate">{city}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-[#FF6B2B]"
-                        style={{ background: 'rgba(255,107,43,0.15)' }}>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-[var(--primary)]"
+                        style={{ background: 'var(--primary-glow)' }}>
                         {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'}
                     </span>
                     {isExpanded
-                        ? <ChevronUp className="w-3.5 h-3.5 text-[#FF6B2B]" />
+                        ? <ChevronUp className="w-3.5 h-3.5 text-[var(--primary)]" />
                         : <ChevronDown className="w-3.5 h-3.5 text-[#A0522D]/60" />
                     }
                 </div>
@@ -399,8 +387,8 @@ function DestinationCard({ city, activities, isExpanded, onToggle, onPreview, ac
 
             {isExpanded && (
                 <div
-                    className="border border-t-0 border-[#FF6B2B]/40 rounded-b-[14px] p-2 space-y-2"
-                    style={{ background: 'rgba(255,107,43,0.03)' }}
+                    className="border border-t-0 border-[var(--primary)]/40 rounded-b-[14px] p-2 space-y-2"
+                    style={{ background: 'var(--primary)]/5' }}
                 >
                     {activities.map(activity => (
                         <ActivityDraggableCard
@@ -548,8 +536,8 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
             <div className="p-5 pb-4 border-b border-white/20 bg-white/10 backdrop-blur-md flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                     <div>
-                        <h3 className="text-xs font-bold text-[#5C2500] uppercase tracking-[0.15em] flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-[#FF6B2B] shadow-[0_0_8px_rgba(255,107,43,0.6)]" />
+                        <h3 className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-[0.15em] flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]" />
                             Activity Library
                         </h3>
                         <p className="text-[10px] text-[#A0522D] font-semibold italic mt-0.5 flex items-center gap-1">
@@ -557,18 +545,18 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                             Drag activities into time slots
                         </p>
                     </div>
-                    <div className="p-2.5 bg-gradient-to-br from-[#FF6B2B] to-[#FF9A5C] text-white rounded-xl shadow-[0_4px_12px_rgba(255,107,43,0.3)]">
+                    <div className="p-2.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white rounded-xl shadow-[0_4px_12px_var(--primary-glow)]">
                         <LayoutGrid className="w-4 h-4" />
                     </div>
                 </div>
 
                 <div className="relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#FF6B2B] group-focus-within:scale-110 transition-transform z-10" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--primary)] group-focus-within:scale-110 transition-transform z-10" />
                     <Input
                         placeholder="Search destinations..."
-                        className="pl-10 h-10 text-xs border-white/40 focus:border-[#FF6B2B]/50 transition-all rounded-full placeholder:text-[#A0522D]/40 text-[#5C2500] font-medium"
+                        className="pl-10 h-10 text-xs border-white/40 focus:border-[var(--primary)]/50 transition-all rounded-full placeholder:text-[#A0522D]/40 text-[#5C2500] font-medium"
                         style={{ background: 'rgba(255,255,255,0.22)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)' }}
-                        onFocus={e => { e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255,107,43,0.20), inset 0 1px 3px rgba(0,0,0,0.04)' }}
+                        onFocus={e => { e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-glow), inset 0 1px 3px rgba(0,0,0,0.04)' }}
                         onBlur={e => { e.currentTarget.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.04)' }}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -580,7 +568,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
             <div
                 ref={listRef}
                 className="flex-1 overflow-y-auto p-4 space-y-2"
-                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,107,43,0.40) transparent' }}
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--primary-soft) transparent' }}
             >
                 {/* Stagger keyframes injected once */}
                 <style>{`
@@ -627,20 +615,20 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                                 className="group w-full flex items-center justify-center gap-2 py-2.5 rounded-full transition-all duration-200"
                                 style={{
                                     background: 'rgba(255,255,255,0.22)',
-                                    border: `1.5px ${showAll ? 'solid' : 'dashed'} rgba(255,107,43,0.45)`,
+                                    border: `1.5px ${showAll ? 'solid' : 'dashed'} var(--primary-soft)`,
                                     marginTop: '6px' }}
                                 onMouseEnter={e => {
                                     const el = e.currentTarget
-                                    el.style.background = 'rgba(255,107,43,0.10)'
-                                    el.style.border = '1.5px solid rgba(255,107,43,0.55)'
+                                    el.style.background = 'var(--primary-glow)'
+                                    el.style.border = '1.5px solid var(--primary-light)'
                                 }}
                                 onMouseLeave={e => {
                                     const el = e.currentTarget
                                     el.style.background = 'rgba(255,255,255,0.22)'
-                                    el.style.border = `1.5px ${showAll ? 'solid' : 'dashed'} rgba(255,107,43,0.45)`
+                                    el.style.border = `1.5px ${showAll ? 'solid' : 'dashed'} var(--primary-soft)`
                                 }}
                             >
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#FF6B2B' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)' }}>
                                     {showAll
                                         ? 'Show Less'
                                         : `See All Destinations (${hiddenCount} more)`
@@ -650,7 +638,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                                     style={{
                                         width: '14px',
                                         height: '14px',
-                                        color: '#FF6B2B',
+                                        color: 'var(--primary)',
                                         transform: showAll ? 'rotate(180deg)' : 'rotate(0deg)',
                                         transition: 'transform 0.25s ease' }}
                                 />
@@ -659,7 +647,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                     </>
                 ) : (
                     <div className="text-center py-10 flex flex-col items-center gap-2">
-                        <MapPin className="w-5 h-5 text-[#FF6B2B]/40" />
+                        <MapPin className="w-5 h-5 text-[var(--primary)]/40" />
                         <p className="text-xs font-semibold text-[#A0522D]/60">No destinations found</p>
                     </div>
                 )}
@@ -670,7 +658,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
             <div className="p-4 bg-white/10 backdrop-blur-md border-t border-white/20 flex-shrink-0">
                 <Button
                     variant="ghost"
-                    className="w-full h-10 text-[11px] font-bold gap-2 border-2 border-dashed border-[#FF6B2B]/40 text-[#FF6B2B] hover:bg-[#FF6B2B]/5 rounded-xl transition-all"
+                    className="w-full h-10 text-[11px] font-bold gap-2 border-2 border-dashed border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--primary)]/5 rounded-xl transition-all"
                     onClick={() => window.open('/agent/activities', '_blank')}
                 >
                     <Plus className="w-3.5 h-3.5" />

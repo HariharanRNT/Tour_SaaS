@@ -185,7 +185,7 @@ export function Navbar() {
 
 
     // Global frosted style
-    const textClass = 'text-[#2C2C2C]'
+    const textClass = 'text-[var(--color-primary-font)]'
 
     return (
         <div
@@ -212,7 +212,7 @@ export function Navbar() {
                                 alt="Agent Logo"
                                 className="h-9 w-9 object-contain"
                             />
-                            <span className={`text-xl font-bold font-display text-[#2C2C2C]`}>
+                            <span className={`text-xl font-bold font-display text-[var(--color-primary-font)]`}>
                                 {agencyName}
                             </span>
                         </Link>

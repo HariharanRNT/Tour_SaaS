@@ -89,11 +89,6 @@ export default function ReportsPage() {
     const { hasPermission, isSubUser } = useAuth()
     const { theme } = useTheme()
 
-    useEffect(() => {
-        if (isSubUser && !hasPermission('reports', 'view')) {
-            router.push('/agent/dashboard')
-        }
-    }, [isSubUser, hasPermission, router])
     const [activePeriod, setActivePeriod] = useState<'today' | 'week' | 'month' | 'all' | 'custom'>('month')
     const [customRange, setCustomRange] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined })
     const [bookingListStatus, setBookingListStatus] = useState<string>('all')
@@ -294,7 +289,6 @@ export default function ReportsPage() {
             "Date": f.date,
             "Total Bookings": f.total_bookings,
             "Gross Revenue": f.gross_revenue,
-            "Discounts": f.discounts,
             "Net Revenue": f.net_revenue,
             "Refund Amount": f.refund_amount,
             "Taxes": f.taxes,
@@ -346,12 +340,12 @@ export default function ReportsPage() {
         scales: {
             x: {
                 grid: { display: false },
-                ticks: { color: 'rgba(0,0,0,0.4)', font: { size: 11 } }
+                ticks: { color: '#000000', font: { size: 11 } }
             },
             y: {
                 grid: { color: 'rgba(255,255,255,0.15)' },
                 ticks: {
-                    color: 'rgba(0,0,0,0.4)',
+                    color: '#000000',
                     callback: (value) => '₹' + (Number(value) / 1000).toFixed(0) + 'k'
                 }
             },
@@ -379,8 +373,8 @@ export default function ReportsPage() {
             }
         },
         scales: {
-            x: { grid: { display: false }, ticks: { color: 'rgba(0,0,0,0.4)', font: { size: 10 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: 'rgba(0,0,0,0.4)', stepSize: 2 } }
+            x: { grid: { display: false }, ticks: { color: '#000000', font: { size: 10 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: '#000000', stepSize: 2 } }
         },
         datasets: {
             bar: {
@@ -410,8 +404,8 @@ export default function ReportsPage() {
             }
         },
         scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: 'rgba(0,0,0,0.4)', callback: (v) => '₹' + (Number(v) / 1000).toFixed(0) + 'k' } },
-            y: { grid: { display: false }, ticks: { color: 'rgba(0,0,0,0.4)', font: { size: 11 } } }
+            x: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: '#000000', callback: (v) => '₹' + (Number(v) / 1000).toFixed(0) + 'k' } },
+            y: { grid: { display: false }, ticks: { color: '#000000', font: { size: 11 } } }
         }
     }
 
@@ -502,8 +496,8 @@ export default function ReportsPage() {
                         <BarChart2 className="h-4.5 w-4.5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-[17px] font-bold text-black tracking-tight">Finance Reports</h1>
-                        <p className="text-[12px] text-black font-medium">Track revenue, bookings and performance</p>
+                        <h1 className="text-[17px] font-bold text-[var(--color-primary-font)] tracking-tight">Finance Reports</h1>
+                        <p className="text-[12px] text-[var(--color-primary-font)] font-medium">Track revenue, bookings and performance</p>
                     </div>
                 </div>
             </motion.div>
@@ -526,8 +520,8 @@ export default function ReportsPage() {
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-6 rounded-[18px] text-[13.5px] font-black tracking-tight whitespace-nowrap transition-all duration-500 relative ${
                             activeTab === tab.id 
-                            ? 'text-black' 
-                            : 'text-black/70 hover:text-black font-black uppercase'
+                            ? 'text-[var(--color-primary-font)]' 
+                            : 'text-[var(--color-primary-font)]/70 hover:text-[var(--color-primary-font)] font-black uppercase'
                         }`}
                     >
                         {activeTab === tab.id && (
@@ -537,7 +531,7 @@ export default function ReportsPage() {
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
                         )}
-                        <tab.icon className={`h-4.5 w-4.5 relative z-10 transition-colors duration-500 ${activeTab === tab.id ? 'text-black' : 'text-black/70'}`} />
+                        <tab.icon className={`h-4.5 w-4.5 relative z-10 transition-colors duration-500 ${activeTab === tab.id ? 'text-[var(--color-primary-font)]' : 'text-[var(--color-primary-font)]/70'}`} />
                         <span className="relative z-10">{tab.label}</span>
                     </button>
                 ))}
@@ -557,7 +551,7 @@ export default function ReportsPage() {
                 }}
             >
                     <div className="flex items-center gap-3">
-                        <span className="text-[11px] uppercase tracking-[0.1em] text-black font-black">Period</span>
+                        <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--color-primary-font)] font-black">Period</span>
                         <div className="flex p-1.5 bg-white/20 backdrop-blur-xl border border-white/50 rounded-2xl shadow-inner relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
                             {['today', 'week', 'month', 'all'].map((p) => (
@@ -567,7 +561,7 @@ export default function ReportsPage() {
                                     className={`px-5 py-2 rounded-xl text-[12.5px] font-black transition-all duration-500 relative z-10 ${
                                         activePeriod === p 
                                         ? 'text-white shadow-lg' 
-                                        : 'text-black/50 hover:text-black'
+                                        : 'text-[var(--color-primary-font)]/50 hover:text-[var(--color-primary-font)]'
                                     }`}
                                     style={activePeriod === p ? { 
                                         background: 'linear-gradient(135deg, #475569, #1e293b)',
@@ -583,7 +577,7 @@ export default function ReportsPage() {
                     <div className="w-px h-6 bg-slate-300/30 mx-2" />
 
                     <div className="flex items-center gap-3">
-                        <span className="text-[11px] uppercase tracking-[0.1em] text-black font-black">Custom Range</span>
+                        <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--color-primary-font)] font-black">Custom Range</span>
                         <div className="flex items-center gap-2">
                             <Popover>
                                 <PopoverTrigger asChild>
@@ -591,10 +585,10 @@ export default function ReportsPage() {
                                         variant="outline"
                                         className={cn(
                                             "min-w-[140px] justify-start text-left font-bold text-[12.5px] bg-white/40 border border-white/60 hover:border-black/50 rounded-xl px-4 py-2 transition-all backdrop-blur-xl shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)]",
-                                            !customRange.from && "text-black"
+                                            !customRange.from && "text-[var(--color-primary-font)]"
                                         )}
                                     >
-                                        <Calendar className="mr-2 h-4 w-4 text-black" />
+                                        <Calendar className="mr-2 h-4 w-4 text-[var(--color-primary-font)]" />
                                         {customRange.from ? format(customRange.from, "PPP") : <span>From Date</span>}
                                     </Button>
                                 </PopoverTrigger>
@@ -611,7 +605,7 @@ export default function ReportsPage() {
                                 </PopoverContent>
                             </Popover>
 
-                            <span className="text-[12px] text-black font-black uppercase tracking-widest">to</span>
+                            <span className="text-[12px] text-[var(--color-primary-font)] font-black uppercase tracking-widest">to</span>
 
                             <Popover>
                                 <PopoverTrigger asChild>
@@ -620,10 +614,10 @@ export default function ReportsPage() {
                                         disabled={!customRange.from}
                                         className={cn(
                                             "min-w-[140px] justify-start text-left font-bold text-[12.5px] bg-white/40 border border-white/60 hover:border-black/50 rounded-xl px-4 py-2 transition-all backdrop-blur-xl shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)]",
-                                            !customRange.to && "text-black"
+                                            !customRange.to && "text-[var(--color-primary-font)]"
                                         )}
                                     >
-                                        <Calendar className="mr-2 h-4 w-4 text-black" />
+                                        <Calendar className="mr-2 h-4 w-4 text-[var(--color-primary-font)]" />
                                         {customRange.to ? format(customRange.to, "PPP") : <span>To Date</span>}
                                     </Button>
                                 </PopoverTrigger>
@@ -685,9 +679,9 @@ export default function ReportsPage() {
                             
                             <div className="flex justify-between items-start mb-5">
                                 <div>
-                                    <span className="text-[11px] font-black tracking-[0.15em] text-black/80 uppercase block mb-1">{stat.title}</span>
+                                    <span className="text-[11px] font-black tracking-[0.15em] text-[var(--color-primary-font)]/80 uppercase block mb-1">{stat.title}</span>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-[26px] font-black text-black tracking-tight leading-none">{stat.value}</span>
+                                        <span className="text-[26px] font-black text-[var(--color-primary-font)] tracking-tight leading-none">{stat.value}</span>
                                     </div>
                                 </div>
                                 <div className="w-[40px] h-[40px] rounded-[12px] flex items-center justify-center shrink-0 border border-white/60 shadow-inner group-hover:scale-110 transition-transform duration-500" style={{ background: stat.bg }}>
@@ -702,7 +696,7 @@ export default function ReportsPage() {
                                     {stat.up ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                                     {stat.change}
                                 </div>
-                                <span className="text-[10px] text-black font-bold uppercase tracking-widest opacity-60">vs prev. period</span>
+                                <span className="text-[10px] text-[var(--color-primary-font)] font-bold uppercase tracking-widest opacity-60">vs prev. period</span>
                             </div>
                         </div>
                     ))}
@@ -721,15 +715,15 @@ export default function ReportsPage() {
                 <div className="space-y-8">
                     <div>
                         <div className="flex justify-between items-center mb-6">
-                            <h4 className="text-[14px] font-bold text-black">Revenue & Booking Trends</h4>
+                            <h4 className="text-[14px] font-bold text-[var(--color-primary-font)]">Revenue & Booking Trends</h4>
                             <div className="flex gap-4">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2.5 h-2.5 rounded-full bg-[#1e293b]" />
-                                    <span className="text-[11px] text-black/60 font-bold uppercase tracking-wider">Revenue</span>
+                                    <span className="text-[11px] text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Revenue</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
-                                    <span className="text-[11px] text-black/60 font-bold uppercase tracking-wider">Bookings</span>
+                                    <span className="text-[11px] text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Bookings</span>
                                 </div>
                             </div>
                         </div>
@@ -740,13 +734,13 @@ export default function ReportsPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-slate-100">
                         <div>
-                            <h4 className="text-[14px] font-bold text-black mb-6">Bookings vs Cancellations</h4>
+                            <h4 className="text-[14px] font-bold text-[var(--color-primary-font)] mb-6">Bookings vs Cancellations</h4>
                             <div className="h-[220px] w-full">
                                 <Bar data={bookingVsCancelData} options={barChartOptions} />
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-[14px] font-bold text-black mb-6">Revenue by Package</h4>
+                            <h4 className="text-[14px] font-bold text-[var(--color-primary-font)] mb-6">Revenue by Package</h4>
                             <div className="h-[220px] w-full">
                                 <Bar data={revByPackageData} options={horizontalBarOptions} />
                             </div>
@@ -782,13 +776,13 @@ export default function ReportsPage() {
                     columns={[
                         { header: 'Package Name', sortKey: 'name', accessor: (pkg) => (
                             <div className="flex flex-col">
-                                <span className="text-[13px] font-bold text-black">{pkg.name}</span>
-                                <span className="text-[10px] text-black/70 font-medium uppercase tracking-wider">{pkg.sublabel}</span>
+                                <span className="text-[13px] font-bold text-[var(--color-primary-font)]">{pkg.name}</span>
+                                <span className="text-[10px] text-[var(--color-primary-font)]/70 font-medium uppercase tracking-wider">{pkg.sublabel}</span>
                             </div>
                         )},
                         { header: 'Visibility', sortKey: 'status', accessor: (pkg) => (
                             <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                                pkg.status === 'published' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-black/10 text-black/60'
+                                pkg.status === 'published' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-[var(--color-primary-font)]/10 text-[var(--color-primary-font)]/60'
                             }`}>
                                 {pkg.status}
                             </span>
@@ -800,7 +794,7 @@ export default function ReportsPage() {
                                 <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-rose-500" style={{ width: `${pkg.cancel_pct}%` }} />
                                 </div>
-                                <span className="text-[11px] font-bold text-black">{pkg.cancel_pct}%</span>
+                                <span className="text-[11px] font-bold text-[var(--color-primary-font)]">{pkg.cancel_pct}%</span>
                             </div>
                         )},
                         { header: 'Conversion %', sortKey: 'conversion', accessor: (pkg) => (
@@ -808,7 +802,7 @@ export default function ReportsPage() {
                                 <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-emerald-500" style={{ width: `${pkg.conversion}%` }} />
                                 </div>
-                                <span className="text-[11px] font-bold text-black">{pkg.conversion}%</span>
+                                <span className="text-[11px] font-bold text-[var(--color-primary-font)]">{pkg.conversion}%</span>
                             </div>
                         )}
                     ]}
@@ -838,7 +832,7 @@ export default function ReportsPage() {
                             value={bookingListStatus}
                             onValueChange={setBookingListStatus}
                         >
-                            <SelectTrigger className="h-10 px-5 w-[140px] text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 text-black shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60">
+                            <SelectTrigger className="h-10 px-5 w-[140px] text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 text-[var(--color-primary-font)] shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60">
                                 <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/70 backdrop-blur-2xl border border-white/50 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
@@ -855,7 +849,7 @@ export default function ReportsPage() {
                             onValueChange={setBookingListRefundStatus}
                             disabled={bookingListStatus !== 'all' && bookingListStatus !== 'cancelled'}
                         >
-                            <SelectTrigger className="h-10 px-5 w-[180px] text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 text-black shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60">
+                            <SelectTrigger className="h-10 px-5 w-[180px] text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 text-[var(--color-primary-font)] shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60">
                                 <SelectValue placeholder="Refund Filter: All" />
                             </SelectTrigger>
                             <SelectContent className="bg-white/70 backdrop-blur-2xl border border-white/50 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
@@ -869,7 +863,7 @@ export default function ReportsPage() {
 
                     <div className="relative w-full md:w-[280px] group">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-black group-focus-within:text-orange-500 transition-colors" />
+                            <Search className="h-4 w-4 text-[var(--color-primary-font)]/40 group-focus-within:text-orange-500 transition-colors" />
                         </div>
                         <Input
                             type="text"
@@ -879,7 +873,7 @@ export default function ReportsPage() {
                                 setBookingSearch(e.target.value)
                                 debouncedSetSearch(e.target.value)
                             }}
-                            className="h-10 pl-11 pr-4 w-full text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/30 text-black shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60 placeholder:text-black/60 placeholder:font-medium"
+                            className="h-10 pl-11 pr-4 w-full text-[12.5px] font-bold bg-white/50 backdrop-blur-xl border border-white/60 rounded-xl outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/30 text-[var(--color-primary-font)] shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.8)] transition-all hover:bg-white/60 placeholder:text-[var(--color-primary-font)]/60 placeholder:font-medium"
                         />
                     </div>
                 </div>
@@ -894,18 +888,18 @@ export default function ReportsPage() {
                             </div>
                         )},
                         { header: 'Package Name', accessor: (bk) => (
-                            <span className="text-[11px] font-bold text-black truncate max-w-[200px]">{bk.package?.title || '-'}</span>
+                            <span className="text-[11px] font-bold text-[var(--color-primary-font)] truncate max-w-[200px]">{bk.package?.title || '-'}</span>
                         )},
                         { header: 'Guest Profile', accessor: (bk) => (
                             <div className="flex flex-col">
-                                <span className="text-[13px] font-bold text-black">{bk.user?.first_name} {bk.user?.last_name}</span>
-                                <span className="text-[10px] text-black/70">{bk.user?.email}</span>
+                                <span className="text-[13px] font-bold text-[var(--color-primary-font)]">{bk.user?.first_name} {bk.user?.last_name}</span>
+                                <span className="text-[10px] text-[var(--color-primary-font)]/70">{bk.user?.email}</span>
                             </div>
                         )},
                         { header: 'Booking Date', accessor: (bk) => (
                             <div className="flex flex-col">
-                                <span className="text-[12.5px] font-bold text-black">{format(new Date(bk.created_at), 'dd MMM yyyy')}</span>
-                               <span className="text-[10px] text-black/70 font-medium uppercase tracking-tighter">{format(new Date(bk.created_at), 'HH:mm')}</span>
+                                <span className="text-[12.5px] font-bold text-[var(--color-primary-font)]">{format(new Date(bk.created_at), 'dd MMM yyyy')}</span>
+                               <span className="text-[10px] text-[var(--color-primary-font)]/70 font-medium uppercase tracking-tighter">{format(new Date(bk.created_at), 'HH:mm')}</span>
                             </div>
                         )},
                         { header: 'Investment', accessor: (bk) => `₹${bk.total_amount.toLocaleString()}`, className: 'text-right font-black' },
@@ -927,7 +921,7 @@ export default function ReportsPage() {
                                 }`}>
                                     {bk.refund?.status || 'PENDING'}
                                 </span>
-                            ) : <span className="text-black/30">-</span>
+                            ) : <span className="text-[var(--color-primary-font)]/30">-</span>
                         )},
                         { header: 'Refund Amt', accessor: (bk) => bk.refund_amount > 0 ? `₹${bk.refund_amount.toLocaleString()}` : '-', className: 'text-right' }
                     ]}
@@ -935,8 +929,8 @@ export default function ReportsPage() {
 
                 {!isRecentBookingsLoading && recentBookings.length > 0 && (
                     <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-6">
-                        <div className="text-[12px] text-black font-medium">
-                            Showing <span className="font-bold text-black">{((recentBookingsPage - 1) * recentBookingsLimit) + 1}</span> to <span className="font-bold text-black">{Math.min(recentBookingsPage * recentBookingsLimit, totalRecentBookings)}</span> of <span className="font-bold text-black">{totalRecentBookings}</span> results
+                        <div className="text-[12px] text-[var(--color-primary-font)] font-medium">
+                            Showing <span className="font-bold text-[var(--color-primary-font)]">{((recentBookingsPage - 1) * recentBookingsLimit) + 1}</span> to <span className="font-bold text-[var(--color-primary-font)]">{Math.min(recentBookingsPage * recentBookingsLimit, totalRecentBookings)}</span> of <span className="font-bold text-[var(--color-primary-font)]">{totalRecentBookings}</span> results
                         </div>
                         <div className="flex items-center gap-2">
                             <Button
@@ -987,11 +981,10 @@ export default function ReportsPage() {
                     columns={[
                         { header: 'Date', accessor: 'date', className: 'font-mono' },
                         { header: 'Bookings', accessor: 'total_bookings', className: 'text-center font-bold' },
-                        { header: 'Gross Revenue', accessor: (f) => `₹${Math.round(f.gross_revenue).toLocaleString()}`, className: 'text-right text-black' },
-                        { header: 'Discounts', accessor: (f) => `₹${f.discounts.toLocaleString()}`, className: 'text-right text-rose-500' },
-                        { header: 'Net Revenue', accessor: (f) => `₹${Math.round(f.net_revenue).toLocaleString()}`, className: 'text-right font-bold text-black' },
+                        { header: 'Gross Revenue', accessor: (f) => `₹${Math.round(f.gross_revenue).toLocaleString()}`, className: 'text-right text-[var(--color-primary-font)]' },
+                        { header: 'Net Revenue', accessor: (f) => `₹${Math.round(f.net_revenue).toLocaleString()}`, className: 'text-right font-bold text-[var(--color-primary-font)]' },
                         { header: 'Refunds', accessor: (f) => `₹${f.refund_amount.toLocaleString()}`, className: 'text-right text-amber-600' },
-                        { header: 'Taxes (GST)', accessor: (f) => `₹${Math.round(f.taxes).toLocaleString()}`, className: 'text-right text-black/70' },
+                        { header: 'Taxes (GST)', accessor: (f) => `₹${Math.round(f.taxes).toLocaleString()}`, className: 'text-right text-[var(--color-primary-font)]/70' },
                         { header: 'Final Earnings', accessor: (f) => `₹${Math.round(f.final_earnings).toLocaleString()}`, className: 'text-right font-black text-emerald-600 text-[14px]' }
                     ]}
                     emptyMessage="No financial data for the selected period"

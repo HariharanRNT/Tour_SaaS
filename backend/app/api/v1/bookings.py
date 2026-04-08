@@ -175,7 +175,9 @@ async def create_booking(
             except:
                 pass
         
-        subtotal = (package_price + flight_price) * booking_data.number_of_travelers
+        # B-04: Infants (Under 2) are free. Only multiply by non-infant travelers.
+        chargeable_travelers_count = len([t for t in booking_data.travelers if t.type != 'INFANT'])
+        subtotal = (package_price + flight_price) * chargeable_travelers_count
         total_amount = subtotal
         
         # Apply GST Logic

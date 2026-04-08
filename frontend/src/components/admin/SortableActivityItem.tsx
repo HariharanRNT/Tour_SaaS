@@ -75,14 +75,14 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
             className={`relative shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group touch-none hover:translate-x-1`}
         >
             {/* Left Color Accent Border */}
-            <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-[#FF6B2B] rounded-l-2xl`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--primary)] rounded-l-2xl`} />
 
             <div className="flex items-start gap-3 p-4 pl-5">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
                     {...listeners}
-                    className="mt-1 cursor-grab active:cursor-grabbing text-[#FF6B2B]/40 hover:text-[#FF6B2B] flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/30 transition-colors flex-shrink-0"
+                    className="mt-1 cursor-grab active:cursor-grabbing text-[var(--primary)]/40 hover:text-[var(--primary)] flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/30 transition-colors flex-shrink-0"
                 >
                     <GripVertical className="h-4 w-4" />
                 </div>
@@ -99,18 +99,14 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                     <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
                         {(activity.start_time || activity.end_time) && (
                             <span className="flex items-center gap-1.5 font-bold text-[#A0522D] shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
-                                <Clock className="w-3 h-3 text-[#FF6B2B]" />
+                                <Clock className="w-3 h-3 text-[var(--primary)]" />
                                 {activity.start_time || '?'} - {activity.end_time || '?'}
                                 {duration && <span className="text-[#A0522D]/60 font-medium">({duration})</span>}
                             </span>
                         )}
                         <span className="flex items-center gap-1.5 shadow-sm text-[#A0522D] font-bold" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
-                            <MapPin className="w-3 h-3 text-[#FF6B2B]" />
+                            <MapPin className="w-3 h-3 text-[var(--primary)]" />
                             {activity.location || 'Location TBA'}
-                        </span>
-                        <span className="flex items-center gap-1.5 shadow-sm text-emerald-700 font-black" style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.20)', borderRadius: '100px', padding: '4px 12px' }}>
-                            <span className="text-emerald-600">₹</span>
-                            {activity.price ? activity.price : 'Included'}
                         </span>
                         {activity.is_optional && (
                             <span className="flex items-center gap-1 shadow-sm text-teal-700 font-black tracking-widest text-[9px]" style={{ background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.30)', borderRadius: '100px', padding: '4px 10px' }}>
@@ -173,7 +169,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-[#FF6B2B]/10 hover:text-[#FF6B2B] rounded-xl bg-white/20 transition-all duration-300"
+                    className="h-8 w-8 p-0 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] rounded-xl bg-white/20 transition-all duration-300"
                     onClick={() => onEdit(activity)}
                     title="Edit"
                 >

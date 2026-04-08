@@ -48,8 +48,8 @@ export default function AgentLayout({
                         {user?.role === 'SUB_USER' && (
                             <div className="bg-gradient-to-r from-orange-500/20 to-transparent border-b border-orange-500/20 px-6 py-2 flex items-center gap-2 mt-[70px]">
                                 <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-1.5 py-0.5 rounded">Sub-User</span>
-                                <span className="text-sm text-black/70 font-medium">
-                                    Acting on behalf of <span className="text-black font-bold">{user?.agency_name || 'Agent Account'}</span>
+                                <span className="text-sm text-[var(--color-primary-font)]/70 font-medium">
+                                    Acting on behalf of <span className="text-[var(--color-primary-font)] font-bold">{user?.agency_name || 'Agent Account'}</span>
                                 </span>
                             </div>
                         )}

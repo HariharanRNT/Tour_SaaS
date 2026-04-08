@@ -521,7 +521,7 @@ function PlanTripContent() {
 
         if (searchQuery) {
             chips.push(
-                <Badge key="sq" variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key="sq" variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span className="capitalize">{searchQuery}</span>
                     <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('searchQuery')} />
                 </Badge>
@@ -530,7 +530,7 @@ function PlanTripContent() {
 
         filters.trip_styles.forEach(ts => {
             chips.push(
-                <Badge key={`ts-${ts}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-[#A0501E] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key={`ts-${ts}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span>{ts}</span>
                     <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('trip_styles', ts)} />
                 </Badge>
@@ -538,7 +538,7 @@ function PlanTripContent() {
         })
         filters.activities.forEach(act => {
             chips.push(
-                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[var(--primary-soft)] text-[var(--primary)] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[var(--primary-soft)] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
                     <span>{act}</span>
                     <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('activities', act)} />
                 </Badge>
@@ -549,7 +549,7 @@ function PlanTripContent() {
             return (
                 <div className="flex flex-wrap items-center gap-4 mb-8 mt-4">
                     {chips}
-                    <button onClick={clearAllFilters} className="text-[11px] font-bold text-[var(--primary)] hover:underline px-2 transition-all">Clear All</button>
+                    <button onClick={clearAllFilters} className="text-[11px] font-bold text-black hover:underline px-2 transition-all">Clear All</button>
                 </div>
             )
         }
@@ -592,7 +592,7 @@ function PlanTripContent() {
             <div className="flex flex-col h-full relative w-full">
                 <div className="px-6 pt-6 pb-8 space-y-6">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-[#3A1A08] flex items-center gap-2.5 text-[17px] font-display">
+                        <h3 className="font-bold text-[var(--color-primary-font)] flex items-center gap-2.5 text-[17px] font-display">
                             <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-orange-100">
                                 <Filter className="h-4 w-4 text-[var(--primary)]" />
                             </div>
@@ -608,7 +608,7 @@ function PlanTripContent() {
                             disabled={activeFilterCount === 0}
                             className={`flex items-center gap-1.5 text-[12px] font-bold transition-all uppercase tracking-wider
                                 ${activeFilterCount > 0
-                                    ? 'text-[var(--primary)] hover:text-[#A0501E] cursor-pointer'
+                                    ? 'text-black hover:text-gray-700 cursor-pointer'
                                     : 'text-gray-300 cursor-not-allowed opacity-60'}`}
                         >
                             Reset <RotateCcw className="h-3.5 w-3.5" />
@@ -617,7 +617,7 @@ function PlanTripContent() {
 
                     {/* Package Type */}
                     <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-black uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
                             <span className="text-[#FFB347]">📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
@@ -640,7 +640,7 @@ function PlanTripContent() {
                                     >
                                         <span className="flex items-center gap-2">
                                             {type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}
-                                            {!isDisabled && <span className={`text-[10px] ${filters.package_mode === type ? 'text-white/80' : 'text-[#A0501E]/50'}`}>({count})</span>}
+                                            {!isDisabled && <span className={`text-[10px] ${filters.package_mode === type ? 'text-white/80' : 'text-[var(--color-primary-font)]/50'}`}>({count})</span>}
                                         </span>
                                         {filters.package_mode === type && <CheckCircle2 className="h-4 w-4 text-white" />}
                                     </div>
@@ -651,7 +651,7 @@ function PlanTripContent() {
 
                     {/* Duration */}
                     <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
-                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex justify-between items-center gap-1.5 mb-3">
+                        <p className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider flex justify-between items-center gap-1.5 mb-3">
                             <span className="flex items-center gap-1.5"><span className="text-[#4F46E5]">⏱️</span> DURATION</span>
                         </p>
 
@@ -704,7 +704,7 @@ function PlanTripContent() {
 
                     {/* Budget */}
                     <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
-                        <p className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider flex items-center gap-1.5">
+                        <p className="text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
                             <span className="text-[#10B981]">💰</span> BUDGET (PER PERSON)
                         </p>
 
@@ -727,7 +727,7 @@ function PlanTripContent() {
                                         className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border 
                                             ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_4px_12px_var(--primary-glow)]' :
                                                 isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
-                                                    'border-white/40 bg-white/25 text-[#7C3A10] hover:bg-[#FFD6B9]/50'}`}
+                                                    'border-white/40 bg-white/25 text-[var(--color-primary-font)]/80 hover:bg-[#FFD6B9]/50'}`}
                                     >
                                         {range.label} {count > 0 && <span className="opacity-50 text-[9px]">({count})</span>}
                                     </button>
@@ -763,11 +763,11 @@ function PlanTripContent() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}
                         >
-                            <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
+                            <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-pink-400 text-sm drop-shadow-sm">🌺</span> TRIP STYLE
-                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.trip_styles.length})</span>}
+                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-black text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.trip_styles.length})</span>}
                             </p>
-                            <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`h-4 w-4 text-black/50 transition-transform duration-500 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {isTripStyleOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
@@ -785,7 +785,7 @@ function PlanTripContent() {
                                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
                                                     {filters.trip_styles.includes(style) && <Check className="h-3 w-3 text-white" />}
                                                 </div>
-                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.trip_styles.includes(style) ? 'text-[var(--primary)]' : 'text-[#6B3010]'}`}>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.trip_styles.includes(style) ? 'text-[var(--primary)]' : 'text-[var(--color-primary-font)]/80'}`}>
                                                     {style}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>
@@ -804,11 +804,11 @@ function PlanTripContent() {
                             className="flex justify-between items-center cursor-pointer group"
                             onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
                         >
-                            <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
+                            <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-blue-500 text-sm drop-shadow-sm">🏄</span> ACTIVITIES
-                                {filters.activities.length > 0 && <span className="bg-orange-100 text-[var(--primary)] text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.activities.length})</span>}
+                                {filters.activities.length > 0 && <span className="bg-orange-100 text-black text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.activities.length})</span>}
                             </p>
-                            <ChevronDown className={`h-4 w-4 text-[#A0501E]/50 transition-transform duration-500 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`h-4 w-4 text-black/50 transition-transform duration-500 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {isActivitiesOpen && (
                             <div className="mt-3 max-h-[180px] overflow-y-auto custom-scrollbar pr-2 relative filter-list-container">
@@ -826,7 +826,7 @@ function PlanTripContent() {
                                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
                                                     {filters.activities.includes(act) && <Check className="h-3 w-3 text-white" />}
                                                 </div>
-                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.activities.includes(act) ? 'text-[var(--primary)]' : 'text-[#8B5030]'}`}>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.activities.includes(act) ? 'text-[var(--primary)]' : 'text-[var(--color-primary-font)]/80'}`}>
                                                     {act}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>
@@ -841,7 +841,7 @@ function PlanTripContent() {
 
                     {/* Country */}
                     <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30 pb-4">
-                        <p className="text-[10px] font-black text-[#A0501E] uppercase tracking-[0.2em] flex items-center gap-2">
+                        <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
                             <span className="text-cyan-500 text-sm drop-shadow-sm">🌍</span> COUNTRY
                         </p>
                         <div className="flex overflow-x-auto gap-2.5 pb-2 scrollbar-hide -mx-2 px-2 snap-x">
@@ -956,7 +956,7 @@ function PlanTripContent() {
                             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pt-8">
                                 <h1 className="text-4xl md:text-[72px] font-bold font-display text-white leading-[1.1] drop-shadow-2xl mb-6 tracking-tight" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
                                     Where do you <br />
-                                    <span className="italic font-medium" style={{ color: 'var(--primary-light)' }}>want</span> to go?
+                                    <span className="italic font-medium" style={{ color: 'black' }}>want</span> to go?
                                 </h1>
                                 <p className="text-lg md:text-xl text-white font-light max-w-2xl mx-auto" style={{ opacity: 0.8, textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
                                     Search for a destination, package name, or an experience you love
@@ -977,7 +977,7 @@ function PlanTripContent() {
                                             <input
                                                 type="text"
                                                 placeholder={placeholderText}
-                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-gray-900 font-bold placeholder:text-gray-400 text-lg transition-all duration-500"
+                                                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none p-0 text-[var(--color-primary-font)] font-bold placeholder:text-gray-400 text-lg transition-all duration-500"
                                                 value={inputValue}
                                                 onChange={(e) => {
                                                     setInputValue(e.target.value)
@@ -1091,7 +1091,7 @@ function PlanTripContent() {
                                         <h2 className="text-[34px] font-semibold text-[#1A1A1A] font-display mb-2 leading-tight">
                                             Browse by Trip Style
                                         </h2>
-                                        <p className="text-sm text-[#8B5030] font-medium opacity-80 max-w-xl">
+                                        <p className="text-sm text-black font-medium opacity-80 max-w-xl">
                                             Whether you&apos;re seeking thrills or romantic sunsets, we&apos;ve curated the perfect journeys for every vibe.
                                         </p>
                                     </div>
@@ -1137,7 +1137,7 @@ function PlanTripContent() {
                                                     <IconComponent className="h-7 w-7 text-[var(--primary)]" />
                                                 </div>
                                                 <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight mb-2">{item.title}</h3>
-                                                <p className="text-xs font-bold text-[#8B5030]/50 uppercase tracking-widest">{item.description}</p>
+                                                <p className="text-xs font-bold text-black/50 uppercase tracking-widest">{item.description}</p>
                                             </div>
                                         );
                                     })}
@@ -1258,11 +1258,11 @@ function PlanTripContent() {
                                                     <Search className="h-5 w-5 text-indigo-500 stroke-[2.5]" />
                                                 </div>
                                                 <div className="flex items-baseline gap-3">
-                                                    <h2 className="text-2xl md:text-3xl tracking-tight font-bold text-[#3A1A08] font-display capitalize">
+                                                    <h2 className="text-2xl md:text-3xl tracking-tight font-bold text-[var(--color-primary-font)] font-display capitalize">
                                                         {searching ? 'Searching...' : (searchQuery || 'All Destinations')}
                                                     </h2>
                                                     {!searching && (
-                                                        <span className="text-[13px] font-bold text-[#8B5030]/60 uppercase tracking-widest border-l border-[var(--primary)]/50 pl-3">
+                                                        <span className="text-[13px] font-bold text-black/60 uppercase tracking-widest border-l border-[var(--primary)]/50 pl-3">
                                                             {packages.length} {packages.length === 1 ? 'Result' : 'Results'} Found
                                                         </span>
                                                     )}
@@ -1293,17 +1293,17 @@ function PlanTripContent() {
 
                                             {/* Sort Dropdown */}
                                             <Select value={sort} onValueChange={setSort}>
-                                                <SelectTrigger className="w-[200px] h-14 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold text-[#5C2500]">
-                                                    <span className="text-[10px] text-[#A0501E] mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
+                                                <SelectTrigger className="w-[200px] h-14 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold text-black">
+                                                    <span className="text-[10px] text-black mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
                                                     <SelectValue placeholder="Recommended" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_var(--primary-glow)]">
-                                                    <SelectItem value="recommended" className="font-bold text-[#5C2500]">Recommended</SelectItem>
-                                                    <SelectItem value="price_asc" className="font-bold text-[#5C2500]">Price: Low to High</SelectItem>
-                                                    <SelectItem value="price_desc" className="font-bold text-[#5C2500]">Price: High to Low</SelectItem>
-                                                    <SelectItem value="duration_asc" className="font-bold text-[#5C2500]">Duration: Short to Long</SelectItem>
-                                                    <SelectItem value="duration_desc" className="font-bold text-[#5C2500]">Duration: Long to Short</SelectItem>
-                                                    <SelectItem value="newest" className="font-bold text-[#5C2500]">Newest First</SelectItem>
+                                                    <SelectItem value="recommended" className="font-bold text-black">Recommended</SelectItem>
+                                                    <SelectItem value="price_asc" className="font-bold text-black">Price: Low to High</SelectItem>
+                                                    <SelectItem value="price_desc" className="font-bold text-black">Price: High to Low</SelectItem>
+                                                    <SelectItem value="duration_asc" className="font-bold text-black">Duration: Short to Long</SelectItem>
+                                                    <SelectItem value="duration_desc" className="font-bold text-black">Duration: Long to Short</SelectItem>
+                                                    <SelectItem value="newest" className="font-bold text-black">Newest First</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -1327,8 +1327,8 @@ function PlanTripContent() {
                                                         <MapPin className="absolute -top-2 -right-2 h-5 w-5 text-indigo-400" />
                                                     </div>
                                                 </div>
-                                                <h3 className="text-3xl font-bold text-[#3A1A08] mb-4 font-display">No hidden gems found</h3>
-                                                <p className="text-[#8B5030] max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
+                                                <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4 font-display">No hidden gems found</h3>
+                                                <p className="text-[var(--color-primary-font)]/80 max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
                                                     We couldn&apos;t find any packages matching your current filters. Try broadening your search!
                                                 </p>
                                                 <Button
@@ -1425,7 +1425,7 @@ function PlanTripContent() {
                                                                 <div className="flex flex-col gap-1">
                                                                     <div className="flex items-start justify-between gap-3 mb-1.5">
                                                                         <div className="custom-tooltip-container mb-1.5 h-auto">
-                                                                            <h3 className="font-bold text-black text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }} title={pkg.title}>
+                                                                            <h3 className="font-bold text-[var(--color-primary-font)] text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }} title={pkg.title}>
                                                                                 {pkg.title}
                                                                             </h3>
                                                                             <span className="custom-tooltip-content">{pkg.title}</span>
@@ -1433,7 +1433,7 @@ function PlanTripContent() {
                                                                     </div>
 
                                                                     {/* Destination Route */}
-                                                                    <div className="mb-2 text-sm text-black mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
+                                                                    <div className="mb-2 text-sm text-[var(--color-primary-font)]/90 mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
                                                                         <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
                                                                         {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
                                                                             <span className="truncate">
@@ -1502,11 +1502,11 @@ function PlanTripContent() {
                                                 {isLoadingMore ? (
                                                     <div className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
                                                         <Loader2 className="h-8 w-8 text-[var(--primary)] animate-spin" />
-                                                        <p className="text-sm font-bold text-black animate-pulse uppercase tracking-[0.2em]">Exploring more packages...</p>
+                                                        <p className="text-sm font-bold text-[var(--color-primary-font)] animate-pulse uppercase tracking-[0.2em]">Exploring more packages...</p>
                                                     </div>
                                                 ) : visibleCount >= packages.length ? (
                                                     <div className="flex flex-col items-center gap-3 py-6 px-12 bg-white/40 backdrop-blur-xl rounded-full border border-orange-100/50 shadow-sm animate-in zoom-in duration-500">
-                                                        <div className="flex items-center gap-3 text-black">
+                                                        <div className="flex items-center gap-3 text-[var(--color-primary-font)]">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
                                                             <p className="text-[11px] font-black uppercase tracking-[0.2em]">All {packages.length} hidden gems loaded</p>
                                                         </div>
@@ -1549,7 +1549,7 @@ function PlanTripContent() {
                         <div className="pt-4 p-2 space-y-6 overflow-y-auto custom-scrollbar">
                             {/* Travel Date Section */}
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold text-black uppercase tracking-[0.15em] px-1">
+                                <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-[0.15em] px-1">
                                     Travel Date
                                 </Label>
                                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -1558,7 +1558,7 @@ function PlanTripContent() {
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)] z-10">
                                                 <CalendarIcon className="h-5 w-5" />
                                             </div>
-                                            <div className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border border-white/40 rounded-2xl font-bold text-slate-800 flex items-center shadow-inner group-hover:bg-white/60 transition-all">
+                                            <div className="h-14 pl-12 pr-4 bg-white/50 backdrop-blur-md border border-white/40 rounded-2xl font-bold text-[var(--color-primary-font)] flex items-center shadow-inner group-hover:bg-white/60 transition-all">
                                                 {selectedDate ? format(new Date(selectedDate), 'dd-MM-yyyy') : 'Select Date'}
                                             </div>
                                         </div>
@@ -1589,7 +1589,7 @@ function PlanTripContent() {
 
                             {/* Travelers Section */}
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold text-black uppercase tracking-[0.15em] px-1">
+                                <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-[0.15em] px-1">
                                     Travelers
                                 </Label>
                                 <div className="space-y-3">

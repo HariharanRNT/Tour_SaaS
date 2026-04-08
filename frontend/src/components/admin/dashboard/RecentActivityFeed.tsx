@@ -42,14 +42,14 @@ function ActivityItem({ icon, iconBg, iconColor, title, description, time, isLas
             {/* Content Area */}
             <div className="pb-10 flex-1 relative">
                 <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-[900] text-slate-800 group-hover:text-[#FF692B] transition-colors tracking-tight">
+                    <h4 className="text-sm font-[900] text-black group-hover:text-[#FF692B] transition-colors tracking-tight">
                         {title}
                     </h4>
-                    <span className="text-[9px] font-black text-slate-700 whitespace-nowrap ml-4 bg-white/80 border border-slate-50 px-2.5 py-1 rounded-lg shadow-sm group-hover:border-orange-100 transition-colors">
+                    <span className="text-[9px] font-black text-black whitespace-nowrap ml-4 bg-white/80 border border-slate-50 px-2.5 py-1 rounded-lg shadow-sm group-hover:border-orange-100 transition-colors">
                         {time}
                     </span>
                 </div>
-                <p className="text-[11px] text-slate-900 line-clamp-2 leading-relaxed font-bold opacity-80 group-hover:opacity-100 transition-opacity">
+                <p className="text-[11px] text-black line-clamp-2 leading-relaxed font-bold group-hover:opacity-100 transition-opacity">
                     {description}
                 </p>
 
@@ -102,7 +102,7 @@ export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) 
                 return {
                     icon: <UserX className="h-4 w-4" />,
                     bg: "bg-slate-100",
-                    color: "text-slate-600",
+                    color: "text-black",
                     title: "Agent Deactivated",
                     category: 'AGENTS'
                 }
@@ -118,7 +118,7 @@ export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) 
                 return {
                     icon: <Clock className="h-4 w-4" />,
                     bg: "bg-slate-50",
-                    color: "text-slate-600",
+                    color: "text-black",
                     title: type || "System Event",
                     category: 'SYSTEM'
                 }
@@ -153,7 +153,7 @@ export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) 
                             "px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider transition-all border shrink-0",
                             filter === cat
                                 ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200"
-                                : "bg-white/50 text-slate-900 border-white hover:bg-white hover:text-indigo-600"
+                                : "bg-white/50 text-black border-white hover:bg-white hover:text-indigo-600"
                         )}
                     >
                         {cat}
@@ -171,9 +171,9 @@ export function RecentActivityFeed({ activities = [] }: { activities?: any[] }) 
                         />
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-[150px] text-slate-300">
-                        <Clock className="h-8 w-8 mb-2 opacity-20" />
-                        <p className="text-[11px] font-black uppercase tracking-widest opacity-40">No activity recorded</p>
+                    <div className="flex flex-col items-center justify-center h-[150px] text-black">
+                        <Clock className="h-8 w-8 mb-2 opacity-50" />
+                        <p className="text-[11px] font-black uppercase tracking-widest">No activity recorded</p>
                     </div>
                 )}
             </div>

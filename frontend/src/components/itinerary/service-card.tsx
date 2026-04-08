@@ -72,24 +72,24 @@ export function ServiceCard({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                            <h3 className={`font-bold text-lg ${status === 'selected' ? 'text-[var(--primary)]' : 'text-gray-900'}`}>{title}</h3>
+                            <h3 className={`font-bold text-lg ${status === 'selected' ? 'text-[var(--primary)]' : 'text-[var(--color-primary-font)]'}`}>{title}</h3>
                             {price !== undefined && (
-                                <span className="font-bold text-gray-900">
+                                <span className="font-bold text-[var(--color-primary-font)]">
                                     ₹{price.toLocaleString()}
                                 </span>
                             )}
                         </div>
 
-                        <p className="text-gray-500 text-sm mb-4 font-medium">{description}</p>
+                        <p className="text-[var(--color-primary-font)]/60 text-sm mb-4 font-medium">{description}</p>
 
                         {/* Details Grid */}
                         {details && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 bg-white/60 p-3 rounded-lg border border-gray-100/50 mb-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-[var(--color-primary-font)]/70 bg-white/60 p-3 rounded-lg border border-gray-100/50 mb-4">
                                 {details.from && details.to && (
                                     <div className="col-span-full flex items-center gap-2">
-                                        <span className="font-semibold text-gray-700">{details.from}</span>
+                                        <span className="font-semibold text-[var(--color-primary-font)]/90">{details.from}</span>
                                         <ArrowRight className="h-3 w-3 text-gray-400" />
-                                        <span className="font-semibold text-gray-700">{details.to}</span>
+                                        <span className="font-semibold text-[var(--color-primary-font)]/90">{details.to}</span>
                                     </div>
                                 )}
                                 {details.date && (

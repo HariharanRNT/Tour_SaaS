@@ -481,6 +481,7 @@ class Traveler(Base):
     gender = Column(String, nullable=False)
     passport_number = Column(String, nullable=True)
     nationality = Column(String, nullable=False)
+    type = Column(String, nullable=True) # ADULT, CHILD, INFANT
     is_primary = Column(Boolean, default=False)
     
     # Relationships

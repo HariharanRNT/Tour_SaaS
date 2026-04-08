@@ -83,9 +83,9 @@ export default function BookingDetailsPage() {
             // Fetch agent GST settings as fallback
             try {
                 const settings = await agentAPI.getPublicSettings()
-                setGstSettings({ 
-                    inclusive: settings.homepage_settings?.gst_inclusive ?? false, 
-                    percentage: settings.homepage_settings?.gst_percentage ?? 18 
+                setGstSettings({
+                    inclusive: settings.homepage_settings?.gst_inclusive ?? false,
+                    percentage: settings.homepage_settings?.gst_percentage ?? 18
                 })
             } catch (e) {
                 console.error("Failed to load fallback GST settings", e)
@@ -291,10 +291,10 @@ export default function BookingDetailsPage() {
                             onClick={() => router.push('/bookings')}
                             className="glass-pill-chip bg-black/5 hover:bg-black/10 border-black/10 text-black pl-3 pr-5 h-11 group"
                         >
-                            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" /> 
+                            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
                             <span className="text-xs font-black uppercase tracking-[0.15em]">My Bookings</span>
                         </Button>
-                        
+
                         <div className="hidden md:flex gap-3">
                             <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60">
                                 <Share2 className="h-4 w-4 text-black" />
@@ -310,30 +310,28 @@ export default function BookingDetailsPage() {
                         <div className="glass-card-refinement bg-white/30 border-white/40 backdrop-blur-sm p-1 rounded-full max-w-fit mx-auto shadow-sm">
                             <div className="flex items-center gap-1">
                                 {['Booked', 'Confirmed', 'Trip Date', 'Completed'].map((stage, idx) => {
-                                    const isCompleted = (booking.status === 'completed' && idx <= 3) || 
-                                                        (new Date() >= new Date(booking.travel_date) && idx <= 2) ||
-                                                        (booking.status === 'confirmed' && idx <= 1) ||
-                                                        (idx === 0);
+                                    const isCompleted = (booking.status === 'completed' && idx <= 3) ||
+                                        (new Date() >= new Date(booking.travel_date) && idx <= 2) ||
+                                        (booking.status === 'confirmed' && idx <= 1) ||
+                                        (idx === 0);
                                     const isCurrent = (booking.status === 'completed' && idx === 3) ||
-                                                      (booking.status !== 'completed' && new Date() >= new Date(booking.travel_date) && idx === 2) ||
-                                                      (booking.status === 'confirmed' && new Date() < new Date(booking.travel_date) && idx === 1) ||
-                                                      (booking.status === 'pending' && idx === 0);
+                                        (booking.status !== 'completed' && new Date() >= new Date(booking.travel_date) && idx === 2) ||
+                                        (booking.status === 'confirmed' && new Date() < new Date(booking.travel_date) && idx === 1) ||
+                                        (booking.status === 'pending' && idx === 0);
 
                                     return (
                                         <div key={stage} className="flex items-center">
                                             {idx > 0 && (
                                                 <div className={`w-8 h-px mx-1 ${isCompleted ? 'bg-blue-600/40' : 'bg-black/10'}`} />
                                             )}
-                                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-500 ${
-                                                isCurrent 
-                                                ? 'bg-blue-600 text-white shadow-md scale-105' 
-                                                : isCompleted 
-                                                ? 'bg-blue-600/10 text-blue-700' 
-                                                : 'text-black/60'
-                                            }`}>
-                                                <div className={`h-1.5 w-1.5 rounded-full ${
-                                                    isCurrent ? 'bg-white animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
-                                                }`} />
+                                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-500 ${isCurrent
+                                                    ? 'bg-blue-600 text-white shadow-md scale-105'
+                                                    : isCompleted
+                                                        ? 'bg-blue-600/10 text-blue-700'
+                                                        : 'text-black/60'
+                                                }`}>
+                                                <div className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-white animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
+                                                    }`} />
                                                 <span className="text-[10px] font-black uppercase tracking-widest">{stage}</span>
                                             </div>
                                         </div>
@@ -388,14 +386,12 @@ export default function BookingDetailsPage() {
                                     <div className="flex flex-col items-start lg:items-end gap-6 min-w-fit">
                                         {/* Status & REF Column */}
                                         <div className="flex flex-col gap-4 w-full">
-                                            <div className={`glass-pill-chip py-2 px-5 shadow-md border-2 transition-all duration-500 scale-105 ${
-                                                booking.status === 'confirmed' 
-                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 shadow-[0_0_30px_rgba(16,185,129,0.2)]' 
-                                                : 'bg-white/60 border-black/10 text-black'
-                                            }`}>
-                                                <div className={`h-2.5 w-2.5 rounded-full mr-4 ${
-                                                    booking.status === 'confirmed' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]' : 'bg-black'
-                                                } animate-pulse-soft`} />
+                                            <div className={`glass-pill-chip py-2 px-5 shadow-md border-2 transition-all duration-500 scale-105 ${booking.status === 'confirmed'
+                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+                                                    : 'bg-white/60 border-black/10 text-black'
+                                                }`}>
+                                                <div className={`h-2.5 w-2.5 rounded-full mr-4 ${booking.status === 'confirmed' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]' : 'bg-black'
+                                                    } animate-pulse-soft`} />
                                                 <span className="text-xs font-black tracking-[0.3em] uppercase">
                                                     {statusConfig.label}
                                                 </span>
@@ -603,7 +599,7 @@ export default function BookingDetailsPage() {
                                                                 <span className="text-[10px] font-black text-black">{flightConfirmation.departure_time || '10:30 AM'}</span>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         <div className="flex-1 px-12 flex flex-col items-center max-w-[280px]">
                                                             <div className="w-full flex items-center justify-between relative text-black">
                                                                 <div className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.3)]" />
@@ -690,7 +686,7 @@ export default function BookingDetailsPage() {
                                         </div>
                                         <div className="flex-1 pt-1">
                                             <h4 className="font-black text-[#0f172a] text-xl tracking-tight leading-tight mb-4">{traveler.first_name} {traveler.last_name}</h4>
-                                            
+
                                             <div className="grid grid-cols-1 gap-2">
                                                 <div className="flex items-center justify-between py-1 border-b border-black/5">
                                                     <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Category</span>
@@ -725,7 +721,7 @@ export default function BookingDetailsPage() {
                                     <CreditCard className="h-5 w-5 text-blue-600" /> Payment Summary
                                 </CardTitle>
                             </CardHeader>
-                             <CardContent className="p-6 space-y-4">
+                            <CardContent className="p-6 space-y-4">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center text-sm font-black">
                                         <span className="text-black uppercase tracking-widest text-[10px]">Package Base Cost</span>
@@ -736,9 +732,9 @@ export default function BookingDetailsPage() {
                                         <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20 text-emerald-700 text-[9px] uppercase font-black">Inclusive</div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="h-px bg-gradient-to-r from-transparent via-black/5 to-transparent" />
-                                
+
                                 <div className="flex justify-between items-baseline py-1">
                                     <span className="font-black text-[10px] text-slate-800 uppercase tracking-[0.2em]">Total Investment</span>
                                     <span className="font-black text-3xl tracking-tighter transition-all duration-500 hover:scale-105 inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -746,7 +742,7 @@ export default function BookingDetailsPage() {
                                     </span>
                                 </div>
 
-                                 <div className="glass-card-refinement border-black/5 bg-black/[0.02] p-5 space-y-4">
+                                <div className="glass-card-refinement border-black/5 bg-black/[0.02] p-5 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] text-black font-black uppercase tracking-widest">Transaction Status</span>
                                         <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20">
@@ -815,11 +811,11 @@ export default function BookingDetailsPage() {
                                         <div className={`p-4 glass-card-refinement border-black/5 bg-black/[0.01] flex gap-3 text-[11px] font-black leading-relaxed ${refundStatus === 'failed' ? 'text-red-700' : 'text-black'}`}>
                                             <span className="h-4 w-4 shrink-0 mt-0.5 opacity-60">⚠️</span>
                                             <span>
-                                                {refundStatus === 'succeeded' 
-                                                    ? "Funds have been released. Credit will reflect in your account within 5–7 business days per banking standards." 
+                                                {refundStatus === 'succeeded'
+                                                    ? "Funds have been released. Credit will reflect in your account within 5–7 business days per banking standards."
                                                     : refundStatus === 'failed'
-                                                    ? "An error occurred during fund release. Our recovery team has been notified. Please quote your Refund ID for support."
-                                                    : "Security audit in progress. Funds will be routed to your original payment method within the next 48–72 hours."}
+                                                        ? "An error occurred during fund release. Our recovery team has been notified. Please quote your Refund ID for support."
+                                                        : "Security audit in progress. Funds will be routed to your original payment method within the next 48–72 hours."}
                                             </span>
                                         </div>
                                     </CardContent>
@@ -844,7 +840,7 @@ export default function BookingDetailsPage() {
                                             </div>
                                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Cancellable Package</span>
                                         </div>
-                                        
+
                                         <div className="space-y-3">
                                             {booking.package.cancellation_rules?.map((rule: any, idx: number) => {
                                                 const isGstApplicable = booking.package?.gst_applicable !== null && booking.package?.gst_applicable !== undefined
@@ -892,7 +888,7 @@ export default function BookingDetailsPage() {
                                                     </div>
                                                 );
                                             })}
-                                            
+
                                             {/* Final No-Refund fallback */}
                                             {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 0 &&
                                                 booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 &&
@@ -941,7 +937,7 @@ export default function BookingDetailsPage() {
                                     <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.3em] mt-1">24/7 Dedicated Concierge</p>
                                 </div>
                             </div>
-                            
+
                             <div className="hidden md:block w-px h-10 bg-black/10 mx-2 shrink-0" />
 
                             <div className="flex flex-col items-center md:items-end gap-2 font-black text-black w-full md:w-auto">
@@ -968,108 +964,105 @@ export default function BookingDetailsPage() {
                     />
 
                     {/* Dialog Content */}
-                    <div className="relative w-full max-w-lg glass-card-refinement bg-white/90 shadow-[0_32px_128px_rgba(0,0,0,0.2)] border border-white/60 rounded-[40px] overflow-hidden animate-in zoom-in-95 duration-500">
+                    <div className="relative w-full max-w-lg bg-[rgba(255,255,255,0.15)] backdrop-blur-[20px] border border-white/30 rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.2)] overflow-hidden animate-in zoom-in-95 duration-500">
                         {/* Close button */}
                         <button
                             disabled={isCancelling}
                             onClick={() => setIsCancelDialogOpen(false)}
-                            className="absolute right-8 top-8 h-10 w-10 rounded-full flex items-center justify-center text-black/40 hover:bg-black/5 hover:text-black transition-all z-10 border border-black/5"
+                            className="absolute right-6 top-6 h-8 w-8 rounded-full flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all z-10 border border-white/10"
                         >
-                            <X className="h-5 w-5" />
+                            <X className="h-4 w-4" />
                         </button>
 
-                        <div className="p-10">
+                        <div className="p-8">
                             {/* Header */}
-                            <div className="flex gap-6 mb-8">
-                                <div className="h-14 w-14 rounded-2xl bg-red-600/10 flex items-center justify-center text-red-600 shrink-0 border border-red-600/20">
-                                    <AlertCircle className="h-8 w-8" />
+                            <div className="flex gap-4 mb-6">
+                                <div className="h-12 w-12 rounded-xl bg-red-600/20 flex items-center justify-center text-red-500 shrink-0 border border-red-500/30 shadow-[0_0_20px_rgba(220,38,38,0.3)]">
+                                    <AlertCircle className="h-7 w-7" />
                                 </div>
-                                <div>
-                                    <h3 className="text-2xl font-black text-black tracking-tight">Initiate Cancellation</h3>
-                                    <p className="text-xs text-red-600 font-black uppercase tracking-[0.2em] mt-1">
-                                        REF: {booking.booking_reference}
-                                    </p>
+                                <div className="flex flex-col justify-center">
+                                    <h3 className="text-xl font-black text-black tracking-tight leading-none">Initiate Cancellation</h3>
+                                    <div className="inline-flex items-center px-2 py-1 rounded-md bg-black/5 backdrop-blur-sm border border-black/10 mt-1.5 w-fit">
+                                        <p className="text-[9px] text-black/60 font-black uppercase tracking-[0.2em]">
+                                            REF: {booking.booking_reference}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Refund Status Banner */}
-                            <div className={`relative overflow-hidden rounded-[32px] p-8 text-center mb-8 transition-all duration-700 ${cancelPreview.refund_amount > 0
-                                ? 'bg-emerald-600/5 border border-emerald-600/20 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)]'
-                                : 'bg-red-600/5 border border-red-600/20 shadow-[inset_0_0_40px_rgba(220,38,38,0.05)]'
-                                }`}>
-                                <div className={`h-16 w-16 mx-auto rounded-3xl flex items-center justify-center mb-6 border ${cancelPreview.refund_amount > 0 ? 'bg-emerald-600/20 border-emerald-600/40 text-emerald-600' : 'bg-red-600/20 border-red-600/40 text-red-600'
-                                    }`}>
+                            {/* Refund Status Banner - Glassy Pill with Glow */}
+                            <div className={`relative overflow-hidden rounded-[24px] p-6 text-center mb-6 transition-all duration-700 bg-[rgba(255,255,255,0.1)] backdrop-blur-md border border-white/20 shadow-[0_0_30px_rgba(16,185,129,0.2)] group`}>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+
+                                <div className={`h-12 w-12 mx-auto rounded-2xl flex items-center justify-center mb-4 border bg-black/5 backdrop-blur-sm border-black/10 text-black`}>
                                     {cancelPreview.refund_amount > 0 ? (
-                                        <Check className="h-8 w-8 stroke-[3]" />
+                                        <Check className="h-6 w-6 stroke-[3]" />
                                     ) : (
-                                        <X className="h-8 w-8 stroke-[3]" />
+                                        <X className="h-6 w-6 stroke-[3]" />
                                     )}
                                 </div>
 
-                                <h4 className={`text-5xl font-black mb-2 tracking-tighter ${cancelPreview.refund_amount > 0 ? 'text-emerald-700' : 'text-red-700'
-                                    }`}>
+                                <h4 className={`text-4xl font-black mb-1 tracking-tighter text-black flex items-center justify-center gap-1`}>
                                     {cancelPreview.refund_amount > 0
                                         ? formatCurrency(cancelPreview.refund_amount)
                                         : 'Final Terms'}
                                 </h4>
-                                <p className={`text-[10px] font-black uppercase tracking-[0.4em] opacity-60 ${cancelPreview.refund_amount > 0 ? 'text-emerald-700' : 'text-red-700'
-                                    }`}>
+                                <p className={`text-[9px] font-black uppercase tracking-[0.4em] text-black/60`}>
                                     {cancelPreview.refund_amount > 0
                                         ? `${cancelPreview.refund_percentage}% REFUNDABLE VALUE`
                                         : 'NON-REFUNDABLE TRANSACTION'}
                                 </p>
                             </div>
 
-                            {/* Policy Message */}
-                            <div className="bg-black/5 backdrop-blur-md rounded-3xl p-6 mb-8 border border-black/5">
-                                <p className="text-sm text-black leading-relaxed text-center font-black">
+                            {/* Policy Message - Frosted Box */}
+                            <div className="bg-black/5 backdrop-blur-md rounded-2xl p-4 mb-6 border border-black/5">
+                                <p className="text-[13px] text-black/90 leading-relaxed text-center font-bold tracking-tight">
                                     {cancelPreview.message}
                                 </p>
                             </div>
 
-                            {/* Meta Info */}
-                            <div className="flex items-center justify-center gap-8 mb-10 text-[10px] font-black text-black border-b border-black/5 pb-8">
-                                <div className="flex items-center gap-2.5">
-                                    <Calendar className="h-4 w-4" />
-                                    <span className="uppercase tracking-widest">{cancelPreview.days_before} DAYS UNTIL TRAVEL</span>
+                            {/* Meta Info - Frosted Glas Pills */}
+                            <div className="flex items-center justify-center gap-3 mb-8 border-b border-black/10 pb-6">
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/5 backdrop-blur-md border border-black/10 text-black/90 shadow-sm">
+                                    <Calendar className="h-3.5 w-3.5 text-black/40" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">{cancelPreview.days_before} DAYS UNTIL TRAVEL</span>
                                 </div>
-                                <div className="h-1.5 w-1.5 rounded-full bg-black/10" />
-                                <div className="flex items-center gap-2.5">
-                                    <CreditCard className="h-4 w-4" />
-                                    <span className="uppercase tracking-widest">PAID: {formatCurrency(cancelPreview.paid_amount)}</span>
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/5 backdrop-blur-md border border-black/10 text-black/90 shadow-sm">
+                                    <CreditCard className="h-3.5 w-3.5 text-black/40" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">PAID: {formatCurrency(cancelPreview.paid_amount)}</span>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <Button
                                     variant="ghost"
                                     disabled={isCancelling}
                                     onClick={() => setIsCancelDialogOpen(false)}
-                                    className="h-14 rounded-2xl font-black bg-black/5 hover:bg-black/10 text-black border border-black/5 text-sm uppercase tracking-widest transition-all"
+                                    className="h-12 rounded-xl font-black bg-black/5 hover:bg-black/10 text-black border border-black/30 text-xs uppercase tracking-widest transition-all"
                                 >
                                     Stay Active
                                 </Button>
                                 <Button
                                     disabled={isCancelling}
                                     onClick={handleCancelBooking}
-                                    className="h-14 rounded-2xl font-black bg-red-600 hover:bg-red-500 text-white shadow-[0_12px_40px_rgba(220,38,38,0.2)] border-0 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                                    className="h-12 rounded-xl font-black bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-[0_8px_30px_rgba(220,38,38,0.3)] border-t border-white/20 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest group/confirm active:scale-95"
                                 >
                                     {isCancelling ? (
                                         <>
-                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                            <Loader2 className="h-4 w-4 animate-spin" />
                                             Processing...
                                         </>
                                     ) : (
                                         <>
-                                            <XCircle className="h-5 w-5" />
+                                            <XCircle className="h-4 w-4 group-hover/confirm:scale-110 transition-transform" />
                                             Confirm
                                         </>
                                     )}
                                 </Button>
                             </div>
                             {!cancelPreview.cancellation_enabled && (
-                                <p className="text-[10px] text-red-600 font-black text-center mt-6 uppercase tracking-[0.2em]">Note: This action is irreversible once confirmed.</p>
+                                <p className="text-[9px] text-red-500 font-black text-center mt-5 uppercase tracking-[0.2em] animate-pulse">Note: This action is irreversible once confirmed.</p>
                             )}
                         </div>
                     </div>

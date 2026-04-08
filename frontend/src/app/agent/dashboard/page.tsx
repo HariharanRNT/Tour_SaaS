@@ -240,8 +240,12 @@ export default function AgentDashboard() {
     const { hasPermission, isSubUser } = useAuth()
     
     // Check permissions
+    const canViewPackages = hasPermission('packages', 'view') || hasPermission('packages', 'edit') || hasPermission('packages', 'full')
     const canCreatePackage = hasPermission('packages', 'edit') || hasPermission('packages', 'full')
+    const canViewActivities = hasPermission('activities', 'view') || hasPermission('activities', 'edit') || hasPermission('activities', 'full')
     const canCreateActivity = hasPermission('activities', 'edit') || hasPermission('activities', 'full')
+    const canViewBookings = hasPermission('bookings', 'view') || hasPermission('bookings', 'edit') || hasPermission('bookings', 'full')
+    const canViewReports = hasPermission('finance_reports', 'view') || hasPermission('finance_reports', 'edit') || hasPermission('finance_reports', 'full')
     const canViewSettings = hasPermission('settings', 'view') || hasPermission('settings', 'edit') || hasPermission('settings', 'full')
     const showCreateNew = !isSubUser || canCreatePackage || canCreateActivity
 
@@ -631,12 +635,12 @@ export default function AgentDashboard() {
 
                             <div>
                                 <h1 className="text-3xl font-bold flex items-center gap-2 tracking-tight">
-                                    <span className="text-slate-800">Welcome back,</span>
+                                    <span className="text-[var(--color-primary-font)]/80">Welcome back,</span>
                                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] animate-gradient-x bg-[length:200%_auto]">
                                         {agentName}
                                     </span>
                                 </h1>
-                                <div className="flex items-center gap-3 mt-1.5 text-sm font-medium">
+                                <div className="flex items-center gap-3 mt-1.5 text-sm font-medium text-[var(--color-primary-font)]/70">
                                     <span className="">Here's what's happening today:</span>
                                     <div className="hidden sm:flex items-center gap-2">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
@@ -679,7 +683,7 @@ export default function AgentDashboard() {
                                         {(!isSubUser || canCreatePackage) && (
                                             <DropdownMenuItem
                                                 onClick={handleTourPackageClick}
-                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                                className="text-[var(--color-primary-font)] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                             >
                                                 <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                                     <Package className="h-4 w-4" />
@@ -690,7 +694,7 @@ export default function AgentDashboard() {
                                         {(!isSubUser || canCreateActivity) && (
                                             <DropdownMenuItem
                                                 onClick={() => router.push('/agent/activities')}
-                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                                className="text-[var(--color-primary-font)] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                             >
                                                 <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                                     <MapPin className="h-4 w-4" />
@@ -701,7 +705,7 @@ export default function AgentDashboard() {
                                         {(!isSubUser || canCreatePackage) && (
                                             <DropdownMenuItem
                                                 onClick={handleAIItineraryClick}
-                                                className="text-[#4A2B1D] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
+                                                className="text-[var(--color-primary-font)] font-bold rounded-[14px] cursor-pointer py-2.5 px-3 transition-colors group glass-popover-item"
                                             >
                                                 <div className="bg-white/30 backdrop-blur-md border border-white/40 h-8 w-8 rounded-full flex items-center justify-center mr-3 text-[var(--primary)] shadow-sm group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
                                                     <Sparkles className="h-4 w-4" />
@@ -742,10 +746,10 @@ export default function AgentDashboard() {
                 >
                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/60 bg-white/30">
                         <Calendar className="h-4 w-4 text-violet-600" />
-                        <span className="text-sm font-semibold text-slate-700">Date Range</span>
+                        <span className="text-sm font-semibold text-[var(--color-primary-font)]">Date Range</span>
                     </div>
                     <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-[160px] bg-white/40 border-white/50 backdrop-blur-sm rounded-full text-slate-700 focus:ring-violet-400/20">
+                        <SelectTrigger className="w-[160px] bg-white/40 border-white/50 backdrop-blur-sm rounded-full text-[var(--color-primary-font)] focus:ring-violet-400/20">
                             <SelectValue placeholder="Select period" />
                         </SelectTrigger>
                         <SelectContent>
@@ -766,7 +770,7 @@ export default function AgentDashboard() {
                                 max={new Date().toISOString().split('T')[0]}
                                 onChange={e => setCustomStart(e.target.value)}
                             />
-                            <span className="text-slate-700 font-medium">-</span>
+                            <span className="text-[var(--color-primary-font)] font-medium">-</span>
                             <Input
                                 type="date"
                                 className="w-auto bg-white/50 border-white/50 rounded-full"
@@ -799,7 +803,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="relative z-10 pt-1">
-                                                <div className="text-3xl font-extrabold text-slate-900 tracking-tight">{card.value}</div>
+                                                <div className="text-3xl font-extrabold text-[var(--color-primary-font)] tracking-tight">{card.value}</div>
                                                 <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-2.5 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                             </CardContent>
                                         </Card>
@@ -825,7 +829,7 @@ export default function AgentDashboard() {
                                         </div>
                                     </CardHeader>
                                     <CardContent className="relative z-10 pt-2">
-                                        <div className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">{card.value}</div>
+                                        <div className="text-3xl font-extrabold text-[var(--color-primary-font)] mt-1 tracking-tight">{card.value}</div>
                                         <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-3 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                     </CardContent>
                                 </Card>
@@ -837,7 +841,7 @@ export default function AgentDashboard() {
                 {/* Market Insights Section */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => toggleSection('highlights')}>
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                        <h2 className="text-xl font-bold flex items-center gap-2 text-[var(--color-primary-font)]">
                             <TrendingUp className="h-5 w-5 text-violet-600" />
                             Performance Highlights
                             {/* Animated live pulse dot */}
@@ -846,7 +850,7 @@ export default function AgentDashboard() {
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-600" />
                             </span>
                         </h2>
-                        <ChevronDown className={`h-5 w-5 text-slate-700 transition-transform duration-300 ${collapsedSections.highlights ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-5 w-5 text-[var(--color-primary-font)]/60 transition-transform duration-300 ${collapsedSections.highlights ? 'rotate-180' : ''}`} />
                     </div>
 
                     <AnimatePresence>
@@ -884,7 +888,7 @@ export default function AgentDashboard() {
                                                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg overflow-hidden border border-emerald-200 shadow-inner">
                                                                 🇯🇵
                                                             </div>
-                                                            <h3 className="text-lg font-bold text-slate-800 line-clamp-1">{stats.highlights.mostPopular.title}</h3>
+                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{stats.highlights.mostPopular.title}</h3>
                                                         </div>
 
                                                         <div className="space-y-2">
@@ -938,7 +942,7 @@ export default function AgentDashboard() {
                                                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600 border border-blue-200 shadow-inner">
                                                                 📉
                                                             </div>
-                                                            <h3 className="text-lg font-bold text-slate-800 line-clamp-1">{stats.highlights.leastPopular.title}</h3>
+                                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] line-clamp-1">{stats.highlights.leastPopular.title}</h3>
                                                         </div>
 
                                                         <div className="space-y-2">
@@ -1000,7 +1004,7 @@ export default function AgentDashboard() {
                                                                     }`}>
                                                                     {index + 1}
                                                                 </span>
-                                                                <span className="font-semibold text-slate-700 truncate text-sm group-hover:text-purple-700 transition-colors">
+                                                                <span className="font-semibold text-[var(--color-primary-font)]/80 truncate text-sm group-hover:text-purple-700 transition-colors">
                                                                     {pkg.title}
                                                                 </span>
                                                             </div>
@@ -1028,20 +1032,22 @@ export default function AgentDashboard() {
                 <div className="mb-8">
                     {/* Section header with glass icon badge */}
                     <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-xl font-bold flex items-center gap-3 text-slate-800">
+                        <h2 className="text-xl font-bold flex items-center gap-3 text-[var(--color-primary-font)]">
                             <div className="p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 shadow-sm">
                                 <Clock className="h-4 w-4 text-amber-600" />
                             </div>
                             Recent Bookings
                         </h2>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-violet-600 hover:bg-white/30 hover:backdrop-blur-sm font-semibold gap-1 rounded-full px-4 border border-white/40"
-                            onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
-                        >
-                            View All <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        {(!isSubUser || canViewBookings) && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-violet-600 hover:bg-white/30 hover:backdrop-blur-sm font-semibold gap-1 rounded-full px-4 border border-white/40"
+                                onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
+                            >
+                                View All <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1056,14 +1062,14 @@ export default function AgentDashboard() {
                                         <Card key={i} className="hover:shadow-md transition-shadow group overflow-hidden" style={{ background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '16px' }}>
                                             <div className="p-4 flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
-                                                    <Calendar className="h-6 w-6 text-slate-700" />
+                                                    <Calendar className="h-6 w-6 text-[var(--color-primary-font)]/60" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
-                                                        <h4 className="font-bold text-slate-900 truncate text-sm">
+                                                        <h4 className="font-bold text-[var(--color-primary-font)] truncate text-sm">
                                                             {bk.package?.title || 'Custom Tour'}
                                                         </h4>
-                                                        <span className="text-[10px] font-bold text-slate-700">{bk.booking_reference}</span>
+                                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{bk.booking_reference}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><Users className="h-3 w-3" /> {bk.number_of_travelers}</span>
@@ -1100,15 +1106,15 @@ export default function AgentDashboard() {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
-                                                        <h4 className="font-bold text-slate-700 truncate text-sm">
+                                                        <h4 className="font-bold text-[var(--color-primary-font)] truncate text-sm">
                                                             {bk.package?.title || 'Tour Package'}
                                                         </h4>
-                                                        <span className="text-[10px] font-bold text-slate-700">{bk.booking_reference}</span>
+                                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{bk.booking_reference}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-[11px]  font-medium">
                                                         <span className="flex items-center gap-1 opacity-80"><CheckCircle className="h-3 w-3" /> Done</span>
                                                         <span className="flex items-center gap-1 opacity-80"><Clock className="h-3 w-3" /> {format(new Date(bk.travel_date), 'dd MMM')}</span>
-                                                        <span className="font-bold text-slate-900 ml-auto">₹{(bk.total_amount || 0).toLocaleString()}</span>
+                                                        <span className="font-bold text-[var(--color-primary-font)] ml-auto">₹{(bk.total_amount || 0).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1126,13 +1132,13 @@ export default function AgentDashboard() {
                 <div className="mb-8">
                     {/* Section header with glass icon badge */}
                     <div className="flex items-center justify-between mb-5 cursor-pointer" onClick={() => toggleSection('quickActions')}>
-                        <h2 className="text-xl font-bold flex items-center gap-3 text-slate-800">
+                        <h2 className="text-xl font-bold flex items-center gap-3 text-[var(--color-primary-font)]">
                             <div className="p-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 shadow-sm">
                                 <LayoutDashboard className="h-4 w-4 text-violet-600" />
                             </div>
                             Quick Actions
                         </h2>
-                        <ChevronDown className={`h-5 w-5 text-slate-700 transition-transform duration-300 ${collapsedSections.quickActions ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-5 w-5 text-[var(--color-primary-font)] transition-transform duration-300 ${collapsedSections.quickActions ? 'rotate-180' : ''}`} />
                     </div>
 
                     <AnimatePresence>
@@ -1146,53 +1152,56 @@ export default function AgentDashboard() {
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {/* Manage Packages */}
-                                    <Card
-                                        onClick={() => handleRestrictedAction(() => router.push('/agent/packages'))}
-                                        className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
-                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
-                                    >
-                                        <CardHeader>
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                    <Package className="h-6 w-6 text-[var(--primary)]" />
+                                    {(!isSubUser || canViewPackages) && (
+                                        <Card
+                                            onClick={() => handleRestrictedAction(() => router.push('/agent/packages'))}
+                                            className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                            style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
+                                        >
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <Package className="h-6 w-6 text-[var(--primary)]" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg text-[var(--color-primary-font)]">Manage Packages</CardTitle>
+                                                        <CardDescription>View, Edit, or Create Tours</CardDescription>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <CardTitle className="text-lg text-slate-800">Manage Packages</CardTitle>
-                                                    <CardDescription>View, Edit, or Create Tours</CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                Go to Packages
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                    Go to Packages
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
 
                                     {/* My Bookings */}
-                                    <Card
-                                        onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
-                                        className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
-                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
-                                    >
-                                        <CardHeader>
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                    <FileText className="h-6 w-6 text-[var(--primary)]" />
+                                    {(!isSubUser || canViewBookings) && (
+                                        <Card
+                                            onClick={() => handleRestrictedAction(() => router.push('/agent/bookings'))}
+                                            className={`hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300 ${!isPlanActive ? 'opacity-70 grayscale' : ''}`}
+                                            style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}
+                                        >
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <FileText className="h-6 w-6 text-[var(--primary)]" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg text-[var(--color-primary-font)]">My Bookings</CardTitle>
+                                                        <CardDescription>Track Booking Status</CardDescription>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <CardTitle className="text-lg text-slate-800">My Bookings</CardTitle>
-                                                    <CardDescription>Track Booking Status</CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                View Bookings
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                    View Bookings
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
 
                                     {/* Subscription */}
                                     <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
@@ -1204,7 +1213,7 @@ export default function AgentDashboard() {
                                                         <Star className="h-6 w-6 text-[var(--primary)]" />
                                                     </div>
                                                     <div>
-                                                        <CardTitle className="text-lg text-slate-800">Subscription</CardTitle>
+                                                        <CardTitle className="text-lg text-[var(--color-primary-font)]">Subscription</CardTitle>
                                                         <CardDescription>Manage Plan & Billing</CardDescription>
                                                     </div>
                                                 </div>
@@ -1218,50 +1227,54 @@ export default function AgentDashboard() {
                                     </Card>
 
                                     {/* Settings */}
-                                    <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
-                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
-                                        <Link href="/agent/settings">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <Settings className="h-6 w-6 text-slate-600" />
+                                    {(!isSubUser || canViewSettings) && (
+                                        <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
+                                            style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
+                                            <Link href="/agent/settings">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                            <Settings className="h-6 w-6 text-slate-600" />
+                                                        </div>
+                                                        <div>
+                                                            <CardTitle className="text-lg text-[var(--color-primary-font)]">Settings</CardTitle>
+                                                            <CardDescription>Configure Preferences</CardDescription>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg text-slate-800">Settings</CardTitle>
-                                                        <CardDescription>Configure Preferences</CardDescription>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                        Configure Settings
-                                                    </Button>
-                                            </CardContent>
-                                        </Link>
-                                    </Card>
+                                                </CardHeader>
+                                                <CardContent>
+                                                        <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                            Configure Settings
+                                                        </Button>
+                                                </CardContent>
+                                            </Link>
+                                        </Card>
+                                    )}
 
                                     {/* Reports & Analytics */}
-                                    <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
-                                        style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
-                                        <Link href="/agent/reports">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <BarChart2 className="h-6 w-6 text-[var(--primary)]" />
+                                    {(!isSubUser || canViewReports) && (
+                                        <Card className="hover:shadow-xl transition-all cursor-pointer group hover:scale-[1.02] rounded-[20px] duration-300"
+                                            style={{ background: 'rgba(255,255,255,0.28)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.50)', borderRadius: '20px' }}>
+                                            <Link href="/agent/reports">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-3 rounded-full bg-white/50 backdrop-blur-sm border border-white/60 shadow-sm group-hover:scale-110 transition-transform">
+                                                            <BarChart2 className="h-6 w-6 text-[var(--primary)]" />
+                                                        </div>
+                                                        <div>
+                                                            <CardTitle className="text-lg text-[var(--color-primary-font)]">Reports & Analytics</CardTitle>
+                                                            <CardDescription>Revenue, Bookings & Charts</CardDescription>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg text-slate-800">Reports & Analytics</CardTitle>
-                                                        <CardDescription>Revenue, Bookings & Charts</CardDescription>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                        View Reports
-                                                    </Button>
-                                            </CardContent>
-                                        </Link>
-                                    </Card>
+                                                </CardHeader>
+                                                <CardContent>
+                                                        <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                            View Reports
+                                                        </Button>
+                                                </CardContent>
+                                            </Link>
+                                        </Card>
+                                    )}
                                 </div>
                             </motion.div>
                         )}

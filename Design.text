@@ -1,134 +1,146 @@
-Core Design Strategy
-✅ Fixed Base
-Background → Blue gradient (always same)
-Creates consistency + brand identity
-✅ Dynamic Accent Layer
-Peach / Orange / Purple / etc
-Used for:
-Buttons
-Highlights
-Active states
-Glow effects
-💙 1. Background System (Do NOT change)
-Use layered blue gradients:
-background: 
-linear-gradient(135deg, #0f172a, #1e3a8a),
-radial-gradient(circle at 20% 30%, rgba(59,130,246,0.25), transparent),
-radial-gradient(circle at 80% 70%, rgba(147,197,253,0.2), transparent);
+Top Section (Hero Booking Card)
 
-👉 This stays SAME for all themes.
+❌ Problems
+"Demo" title feels weak
+Status + booking ref misaligned
+Actions feel secondary
+✅ Fix (Make it a HERO card)
+[ Demo Booking ]                [ CONFIRMED ● ]
 
-🍑 2. Accent Theme System (Dynamic)
+Salem • April 22, 2026 • 2N/4D • 2 Travellers
 
-Create a theme variable system
+Booking Ref: BKZV...
+-------------------------------------------------
+[ Modify Booking ]     [ Cancel Booking ]
+💡 Improvements
+Increase height slightly → make it a hero strip
+Left align all content (currently slightly scattered)
+Move status badge → top-right fixed
+Make booking ref copyable (icon aligned)
+CTA Fix
+Modify:
+background: glass light
 
-Example:
-:root {
-  --accent: #ff8a5b;
-  --accent-soft: rgba(255,138,91,0.2);
-  --accent-glow: rgba(255,138,91,0.4);
-}
+Cancel:
+background: rgba(255,0,0,0.12)
+color: #ff4d4f
+📊 2. Layout Structure (BIG FIX)
+❌ Current
+Feels like random stacking
+No clear reading flow
+✅ New Grid System
+grid-template-columns: 2fr 1fr;
+gap: 20px;
 
-Switch theme:
+👉 Left = Content
+👉 Right = Financial + Status
 
-[data-theme="blue"] {
-  --accent: #3b82f6;
-}
+📦 3. Left Column (Content Sections)
+🧾 Package Overview
+❌ Problem
+Too small, low importance
+✅ Fix
+Merge with hero OR make richer
+Package Overview
+Starts: April 22, 2026
+Duration: 2N/4D
+Travellers: 2
 
-[data-theme="peach"] {
-  --accent: #ff8a5b;
-}
+👉 Add icons + inline layout
 
-[data-theme="purple"] {
-  --accent: #8b5cf6;
-}
-🧊 3. Glass Cards (Neutral Base + Accent Glow)
+🗺️ Itinerary Overview
+7
+❌ Problems
+Feels flat
+No hierarchy for Day 1
+✅ Upgrade to Timeline Style
+Day 1
+│
+├── Bergen’s University District
+│   Self-Guided Audio Tour
+│
+└── Details ▼
+💡 Improvements
+Add vertical timeline line
+Expand/collapse animation
+Highlight active day
+👥 Traveller Cards
+❌ Problems
+Too much empty space
+Duplicate info blocks
+✅ Fix
+Hariharan R (Primary)
+Adult • Male • IN
 
-Keep cards neutral glass, not orange/blue.
+👉 Convert into compact horizontal cards
 
-background: rgba(255,255,255,0.08);
-backdrop-filter: blur(20px);
-border: 1px solid rgba(255,255,255,0.15);
-Add Accent ONLY on interaction
-.card:hover {
-  border: 1px solid var(--accent);
-  box-shadow: 0 10px 40px var(--accent-soft);
-}
-🎯 4. Where to Apply Accent Color
-Use Accent ONLY here:
-✅ Buttons
-background: linear-gradient(135deg, var(--accent), #ffffff);
-color: #0f172a;
-✅ Active Step (Progress Bar)
-background: var(--accent-soft);
-border: 1px solid var(--accent);
-✅ Icons
-color: var(--accent);
-✅ Links / CTA
-color: var(--accent);
-❌ DO NOT APPLY ACCENT HERE
-Full background ❌
-Entire cards ❌
-Large sections ❌
+display: flex;
+align-items: center;
+gap: 12px;
 
-👉 This is where most UI breaks.
+👉 Reduce height by 30%
 
-🔵 5. Hero Section (Blue Glass + Accent Highlight)
-6
-Keep it blue, add accent subtly:
-.hero-title {
-  background: linear-gradient(90deg, #fff, var(--accent));
-  -webkit-background-clip: text;
-  color: transparent;
-}
-📊 6. Progress Bar (Best Place for Theme)
+💰 4. Right Column (Important Section)
+💳 Payment Summary (Make it Strong)
+5
+❌ Problems
+Doesn’t stand out enough
+Amount not dominant
+✅ Fix
+Total Paid
+₹1,180  ← BIG FOCUS
 
-This is where your theme shines.
+---------------------
+Base Fare        ₹1,180
+Taxes            Inclusive
 
-.progress-line {
-  background: linear-gradient(
-    90deg,
-    var(--accent),
-    rgba(255,255,255,0.2)
-  );
-}
-💳 7. Payment Summary Highlight
-.total-amount {
-  color: var(--accent);
-  text-shadow: 0 0 10px var(--accent-glow);
-}
-⚠️ 8. Cancellation Section (Mixed Colors)
+Status: SUCCESS ●
+Date: April 3, 2026
+💡 Improvements
+amount:
+font-size: 28px;
+font-weight: 700;
+🔁 Cancellation Terms (Needs Simplification)
+❌ Problems
+Too dense
+Too many repeated blocks
+✅ Convert to Clean Table
+10+ Days        75% Refund
+5+ Days         50% Refund
+3+ Days         10% Refund
+< 3 Days        No Refund
+💡 UI Upgrade
+Use color coding
+Green → high refund
+Orange → medium
+Red → no refund
+☎️ Priority Support
+✅ Keep but improve
+Need help?
+📞 +91 XXX XXX XXXX
+✉ support@...
 
-Keep logic colors:
+👉 Make it sticky at bottom
 
-Green → Refund
-Orange → Warning
-Red → No refund
+🎯 5. Visual Hierarchy Fix (CRITICAL)
+Apply this scale:
+Element	Size
+Page Title	24px
+Section Title	16px
+Labels	12–13px
+Amount	26–30px
+✨ 6. Glassmorphism Consistency Fix
+❌ Problem
 
-BUT:
+Different cards have different opacity feel
 
-border: 1px solid var(--accent-soft);
-
-👉 Blend with theme.
-
-✨ 9. Micro Interactions (Important)
-Hover Glow
-button:hover {
-  box-shadow: 0 0 20px var(--accent-glow);
-}
-Active Card
-.active {
-  outline: 1px solid var(--accent);
-}
-🧠 Final Visual Balance Rule
-
-👉 Follow this ratio:
-
-70% Blue Base
-20% Glass White
-10% Accent Color
-🚀 Result You’ll Get
-Consistent brand feel (blue stays)
-Easy theme switching (only accent changes)
-Premium SaaS look (not over-colored)
-Better readability
+✅ Standardize
+background: rgba(255,255,255,0.16);
+border: 1px solid rgba(255,255,255,0.25);
+backdrop-filter: blur(18px);
+border-radius: 20px;
+🎬 7. Micro Interactions (Premium Feel)
+Card hover → lift slightly
+Buttons → soft glow
+Copy booking ref → toast animation
+Expand itinerary → smooth height transition

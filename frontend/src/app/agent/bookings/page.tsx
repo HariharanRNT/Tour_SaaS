@@ -287,30 +287,30 @@ export default function AgentBookingsPage() {
                         <div className="flex items-center gap-3 mb-2">
                             <Link href="/agent/dashboard">
                                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/20 backdrop-blur-md border border-white/30">
-                                    <ArrowLeft className="h-5 w-5 text-black" />
+                                    <ArrowLeft className="h-5 w-5 text-[var(--color-primary-font)]" />
                                 </Button>
                             </Link>
-                            <nav className="text-xs font-bold text-black/60 uppercase tracking-widest flex items-center gap-2">
+                            <nav className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase tracking-widest flex items-center gap-2">
                                 Agent Portal <ChevronRight className="h-3 w-3" /> Booking Report
                             </nav>
                         </div>
-                        <h1 className="text-4xl font-bold text-black">
+                        <h1 className="text-4xl font-bold text-[var(--color-primary-font)]">
                             Booking Report
                         </h1>
 
                         {/* Status Strip */}
                         <div className="flex flex-wrap items-center gap-2 mt-4">
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-black/60">Total:</span>
-                                <span className="text-xs font-black text-black">{bookings.length}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/60">Total:</span>
+                                <span className="text-xs font-black text-[var(--color-primary-font)]">{bookings.length}</span>
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-[var(--primary)]/10 backdrop-blur-md border border-[var(--primary)]/20 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]/70">Upcoming:</span>
                                 <span className="text-xs font-black text-[var(--primary)]">{filterBookings('upcoming', true).length}</span>
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-black/60">Completed:</span>
-                                <span className="text-xs font-black text-black">{filterBookings('completed', true).length}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/60">Completed:</span>
+                                <span className="text-xs font-black text-[var(--color-primary-font)]">{filterBookings('completed', true).length}</span>
                             </div>
                         </div>
                     </div>
@@ -319,7 +319,7 @@ export default function AgentBookingsPage() {
                         <Button 
                             variant="outline"
                             onClick={handleExcelExport}
-                            className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-black font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
+                            className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-[var(--color-primary-font)] font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
                         >
                             <FileSpreadsheet className="h-5 w-5 text-green-600" />
                             Export for Excel
@@ -333,7 +333,7 @@ export default function AgentBookingsPage() {
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--primary)] opacity-60 group-focus-within:opacity-100 transition-opacity" />
                         <Input
                             placeholder="Search booking reference, destination, or traveler names..."
-                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-black font-semibold placeholder:text-black/40 focus:bg-white/35 focus:border-[var(--primary)]/50 transition-all shadow-sm"
+                            className="w-full h-[52px] pl-14 pr-6 rounded-full bg-white/25 backdrop-blur-[16px] border-white/40 text-[var(--color-primary-font)] font-semibold placeholder:text-[var(--color-primary-font)]/40 focus:bg-white/35 focus:border-[var(--primary)]/50 transition-all shadow-sm"
                             style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -354,7 +354,7 @@ export default function AgentBookingsPage() {
                                     <button
                                         key={m}
                                         onClick={() => handleQuickRange(m)}
-                                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border border-white/40 hover:bg-[var(--primary)] hover:text-white transition-all bg-white/40 text-black shadow-sm"
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border border-white/40 hover:bg-[var(--primary)] hover:text-white transition-all bg-white/40 text-[var(--color-primary-font)] shadow-sm"
                                         title={`Set range to ${m} month${m > 1 ? 's' : ''}`}
                                     >
                                         {m}M
@@ -370,8 +370,8 @@ export default function AgentBookingsPage() {
                                 <Popover open={isFromOpen} onOpenChange={setIsFromOpen}>
                                     <PopoverTrigger asChild>
                                         <button className="flex flex-col items-start hover:opacity-80 transition-opacity" onClick={() => setIsFromOpen(true)}>
-                                            <span className="text-[9px] uppercase font-black text-black/50 leading-none mb-0.5">From</span>
-                                            <span className="text-xs font-bold text-black">
+                                            <span className="text-[9px] uppercase font-black text-[var(--color-primary-font)]/50 leading-none mb-0.5">From</span>
+                                            <span className="text-xs font-bold text-[var(--color-primary-font)]">
                                                 {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Pick Date'}
                                             </span>
                                         </button>
@@ -404,8 +404,8 @@ export default function AgentBookingsPage() {
                             <Popover open={isToOpen} onOpenChange={setIsToOpen}>
                                 <PopoverTrigger asChild>
                                     <button className="flex flex-col items-start hover:opacity-80 transition-opacity" onClick={() => setIsToOpen(true)}>
-                                        <span className="text-[9px] uppercase font-black text-black/50 leading-none mb-0.5">To</span>
-                                        <span className="text-xs font-bold text-black">
+                                        <span className="text-[9px] uppercase font-black text-[var(--color-primary-font)]/50 leading-none mb-0.5">To</span>
+                                        <span className="text-xs font-bold text-[var(--color-primary-font)]">
                                             {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Pick Date'}
                                         </span>
                                     </button>
@@ -435,7 +435,7 @@ export default function AgentBookingsPage() {
                             {(startDate || endDate) && (
                                 <button
                                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                                    className="ml-2 text-black/40 hover:text-[var(--primary)] transition-colors"
+                                    className="ml-2 text-[var(--color-primary-font)]/40 hover:text-[var(--primary)] transition-colors"
                                     title="Clear All Dates"
                                 >
                                     <XCircle className="h-4 w-4" />
@@ -459,13 +459,13 @@ export default function AgentBookingsPage() {
                         <TabsList className="h-[52px] bg-white/15 backdrop-blur-xl p-1.5 rounded-full border border-white/30 shadow-sm inline-flex relative overflow-hidden">
                             <TabsTrigger
                                 value="upcoming"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-black/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Upcoming Trips
                             </TabsTrigger>
                             <TabsTrigger
                                 value="completed"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-black/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
                             >
                                 Past Travels
                             </TabsTrigger>
@@ -483,7 +483,7 @@ export default function AgentBookingsPage() {
                                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
                                                         <Calendar className="h-4 w-4 text-[var(--primary)]" />
-                                                        <span className="text-sm font-black text-black">
+                                                        <span className="text-sm font-black text-[var(--color-primary-font)]">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
@@ -522,7 +522,7 @@ export default function AgentBookingsPage() {
                                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
                                                     <div className="bg-white/25 backdrop-blur-xl px-6 py-2 rounded-full border border-white/40 shadow-sm flex items-center gap-3">
                                                         <Calendar className="h-4 w-4 text-[var(--primary)]" />
-                                                        <span className="text-sm font-black text-black">
+                                                        <span className="text-sm font-black text-[var(--color-primary-font)]">
                                                             {format(new Date(date), 'EEEE, dd MMM yyyy')}
                                                         </span>
                                                     </div>
@@ -604,7 +604,7 @@ export default function AgentBookingsPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="text-2xl font-bold text-black tracking-tight">
+                                    <h3 className="text-2xl font-bold text-[var(--color-primary-font)] tracking-tight">
                                         {booking.package?.title || 'Bespoke Tour Experience'}
                                     </h3>
                                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
@@ -613,15 +613,15 @@ export default function AgentBookingsPage() {
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
+                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[var(--color-primary-font)]/70 shadow-sm">
                                         <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{booking.package?.destination || 'Global Discovery'}</span>
                                     </div>
-                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
+                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[var(--color-primary-font)]/70 shadow-sm">
                                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{formatDuration(booking.package?.duration_days || 0)}</span>
                                     </div>
-                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-black/70 shadow-sm">
+                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[var(--color-primary-font)]/70 shadow-sm">
                                         <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{travelerCount} Guest{travelerCount > 1 ? 's' : ''}</span>
                                     </div>
@@ -632,7 +632,7 @@ export default function AgentBookingsPage() {
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-black hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
+                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[var(--color-primary-font)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
                                             <MoreHorizontal className="h-5 w-5" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -665,9 +665,9 @@ export default function AgentBookingsPage() {
                                     <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black text-black leading-none mb-1.5">{travelerName}</p>
+                                    <p className="text-sm font-black text-[var(--color-primary-font)] leading-none mb-1.5">{travelerName}</p>
                                     <div className="px-2 py-0.5 rounded-full bg-black/5 border border-black/10 inline-block">
-                                        <p className="text-[10px] font-black text-black/60 uppercase tracking-tighter">
+                                        <p className="text-[10px] font-black text-[var(--color-primary-font)]/60 uppercase tracking-tighter">
                                             +{travelerCount - 1} Accompaniment
                                         </p>
                                     </div>
@@ -676,7 +676,7 @@ export default function AgentBookingsPage() {
 
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-black/50 mb-1">Total Payment</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--color-primary-font)]/50 mb-1">Total Payment</p>
                                     <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
                                 <Button
@@ -760,7 +760,7 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <User className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-black">Booking Contact</h3>
+                                        <h3 className="text-xl font-bold text-[var(--color-primary-font)]">Booking Contact</h3>
                                     </div>
                                     <div className="space-y-6 flex-1">
                                         <div className="flex items-center gap-5 p-6 bg-white/40 rounded-3xl border border-white/60">
@@ -770,8 +770,8 @@ export default function AgentBookingsPage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-black/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
-                                                <p className="font-bold text-black text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
+                                                <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
+                                                <p className="font-bold text-[var(--color-primary-font)] text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
@@ -780,8 +780,8 @@ export default function AgentBookingsPage() {
                                                     <Mail className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
-                                                    <span className="truncate text-sm font-bold text-black block">{booking.user?.email}</span>
+                                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
+                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{booking.user?.email}</span>
                                                 </div>
                                             </a>
                                             <a href={`tel:${booking.user?.phone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
@@ -789,8 +789,8 @@ export default function AgentBookingsPage() {
                                                     <Phone className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
-                                                    <span className="truncate text-sm font-bold text-black block">{booking.user?.phone || 'Not provided'}</span>
+                                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
+                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{booking.user?.phone || 'Not provided'}</span>
                                                 </div>
                                             </a>
                                         </div>
@@ -803,26 +803,26 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-3 rounded-2xl">
                                             <MapPin className="h-6 w-6 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-black">Tour Logistics</h3>
+                                        <h3 className="text-xl font-bold text-[var(--color-primary-font)]">Tour Logistics</h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 flex-1">
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Meeting Point</p>
-                                            <p className="font-bold text-black text-sm">{booking.package?.destination || 'Primary Hub'}</p>
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-2 leading-none">Meeting Point</p>
+                                            <p className="font-bold text-[var(--color-primary-font)] text-sm">{booking.package?.destination || 'Primary Hub'}</p>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Check-in Time</p>
-                                            <p className="font-bold text-black text-sm">09:00 AM</p>
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-2 leading-none">Check-in Time</p>
+                                            <p className="font-bold text-[var(--color-primary-font)] text-sm">09:00 AM</p>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60 flex flex-col justify-between">
-                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
                                             <Badge className="bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20 font-black uppercase py-0.5 px-3 text-[9px] rounded-full w-fit">
                                                 {booking.package?.category || 'Standard'}
                                             </Badge>
                                         </div>
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-black/50 uppercase tracking-[0.2em] mb-2 leading-none">Duration</p>
-                                            <p className="font-bold text-black text-sm">{formatDuration(booking.package?.duration_days || 0)}</p>
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-2 leading-none">Duration</p>
+                                            <p className="font-bold text-[var(--color-primary-font)] text-sm">{formatDuration(booking.package?.duration_days || 0)}</p>
                                         </div>
                                     </div>
                                 </section>
@@ -835,9 +835,9 @@ export default function AgentBookingsPage() {
                                         <div className="bg-[var(--primary)]/10 p-2.5 rounded-xl">
                                             <Users className="h-5 w-5 text-[var(--primary)]" />
                                         </div>
-                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Traveler Details</h3>
+                                        <h3 className="text-xl font-black text-[var(--color-primary-font)] tracking-tight">Traveler Details</h3>
                                     </div>
-                                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200 font-black px-4 py-1 rounded-full uppercase text-[10px] tracking-widest">
+                                    <Badge variant="secondary" className="bg-slate-100 text-[var(--color-primary-font)]/60 border-slate-200 font-black px-4 py-1 rounded-full uppercase text-[10px] tracking-widest">
                                         {booking.travelers?.length || 0} Registered
                                     </Badge>
                                 </div>
@@ -845,30 +845,30 @@ export default function AgentBookingsPage() {
                                     {booking.travelers?.map((traveler, index) => (
                                         <div className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-[var(--primary)]/20 hover:bg-white hover:shadow-xl hover:shadow-[var(--primary-glow)] transition-all duration-500">
                                             <div className="flex items-start gap-4">
-                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-slate-700 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
+                                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-[var(--color-primary-font)]/70 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                                                     {String(index + 1).padStart(2, '0')}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <p className="font-black text-slate-900 truncate tracking-tight">{traveler.first_name} {traveler.last_name}</p>
+                                                        <p className="font-black text-[var(--color-primary-font)] truncate tracking-tight">{traveler.first_name} {traveler.last_name}</p>
                                                         {traveler.is_primary && <Badge className="bg-[var(--primary)] text-[8px] py-0 px-1.5 h-4 uppercase font-black">Primary</Badge>}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3 uppercase text-[9px] font-black tracking-widest">
                                                         <div>
-                                                            <p className="text-slate-700 mb-0.5">Gender</p>
-                                                            <p className="text-slate-700">{traveler.gender}</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 mb-0.5">Gender</p>
+                                                            <p className="text-[var(--color-primary-font)]/70">{traveler.gender}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-700 mb-0.5">Nationality</p>
-                                                            <p className="text-slate-700 truncate">{traveler.nationality}</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 mb-0.5">Nationality</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 truncate">{traveler.nationality}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-700 mb-0.5">Date of Birth</p>
-                                                            <p className="text-slate-700">{format(new Date(traveler.date_of_birth), 'dd MMM yyyy')}</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 mb-0.5">Date of Birth</p>
+                                                            <p className="text-[var(--color-primary-font)]/70">{format(new Date(traveler.date_of_birth), 'dd MMM yyyy')}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-slate-700 mb-0.5">Passport / ID</p>
-                                                            <p className="text-slate-700 font-mono text-[10px]">{traveler.passport_number || 'NOT PROVIDED'}</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 mb-0.5">Passport / ID</p>
+                                                            <p className="text-[var(--color-primary-font)]/70 font-mono text-[10px]">{traveler.passport_number || 'NOT PROVIDED'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -885,13 +885,13 @@ export default function AgentBookingsPage() {
                                         <div className="bg-emerald-50 p-2.5 rounded-xl">
                                             <ShieldCheck className="h-5 w-5 text-emerald-600" />
                                         </div>
-                                        <h3 className="text-lg font-black text-slate-900">What's Included</h3>
+                                        <h3 className="text-lg font-black text-[var(--color-primary-font)]">What's Included</h3>
                                     </div>
                                     <div className="space-y-2.5">
                                         {(booking.package?.included_items || ['Expert Professional Guide', 'Premium Accommodation (4*)', 'All Local Transportation', 'Entrance Fees to Major Sights', 'Buffet Breakfast & Welcome Dinner']).map((item, idx) => (
                                             <div key={idx} className="flex items-start gap-2.5">
                                                 <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                                <span className="text-sm font-bold text-slate-600 leading-tight">{item}</span>
+                                                <span className="text-sm font-bold text-[var(--color-primary-font)]/70 leading-tight">{item}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -901,21 +901,21 @@ export default function AgentBookingsPage() {
                                         <div className="bg-red-50 p-2.5 rounded-xl">
                                             <AlertCircle className="h-5 w-5 text-red-600" />
                                         </div>
-                                        <h3 className="text-lg font-black text-slate-900">Cancellation Policy</h3>
+                                        <h3 className="text-lg font-black text-[var(--color-primary-font)]">Cancellation Policy</h3>
                                     </div>
                                     <ul className="space-y-3">
                                         <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
                                             <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                             <div>
-                                                <p className="text-xs font-black text-slate-900 mb-0.5 uppercase tracking-tighter">Full Refund</p>
-                                                <p className="text-[11px] font-bold text-slate-500 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
+                                                <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Full Refund</p>
+                                                <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
                                             </div>
                                         </li>
                                         <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
                                             <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                             <div>
-                                                <p className="text-xs font-black text-slate-900 mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
-                                                <p className="text-[11px] font-bold text-slate-500 leading-normal">Cancellations made between 7-14 days before travel date.</p>
+                                                <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
+                                                <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made between 7-14 days before travel date.</p>
                                             </div>
                                         </li>
                                     </ul>
@@ -930,12 +930,12 @@ export default function AgentBookingsPage() {
                                             <Info className="h-6 w-6 text-indigo-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-lg font-black text-slate-900 mb-6">Additional Info & Location Data</h3>
-                                            <div className="text-sm text-slate-600 leading-relaxed font-bold">
+                                            <h3 className="text-lg font-black text-[var(--color-primary-font)] mb-6">Additional Info & Location Data</h3>
+                                            <div className="text-sm text-[var(--color-primary-font)]/70 leading-relaxed font-bold">
                                                 {(() => {
                                                     try {
                                                         const parsed = JSON.parse(booking.special_requests);
-                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-slate-700">"{booking.special_requests}"</p>;
+                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-[var(--color-primary-font)]/80">"{booking.special_requests}"</p>;
 
                                                         return (
                                                             <div className="space-y-8">
@@ -947,20 +947,20 @@ export default function AgentBookingsPage() {
                                                                             </p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Street / Landmark</p>
-                                                                            <p className="text-slate-900">{parsed.contact_info.address || 'Not specified'}</p>
+                                                                            <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">Street / Landmark</p>
+                                                                            <p className="text-[var(--color-primary-font)]">{parsed.contact_info.address || 'Not specified'}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">City/State</p>
-                                                                            <p className="text-slate-900">{parsed.contact_info.city}{parsed.contact_info.state ? `, ${parsed.contact_info.state}` : ''}</p>
+                                                                            <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">City/State</p>
+                                                                            <p className="text-[var(--color-primary-font)]">{parsed.contact_info.city}{parsed.contact_info.state ? `, ${parsed.contact_info.state}` : ''}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Country/Pincode</p>
-                                                                            <p className="text-slate-900">{parsed.contact_info.country || 'Not specified'} · {parsed.contact_info.pincode || 'N/A'}</p>
+                                                                            <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">Country/Pincode</p>
+                                                                            <p className="text-[var(--color-primary-font)]">{parsed.contact_info.country || 'Not specified'} · {parsed.contact_info.pincode || 'N/A'}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
-                                                                            <p className="text-[10px] uppercase font-black text-slate-700 tracking-tighter">Backup Contact</p>
-                                                                            <p className="text-slate-900">
+                                                                            <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">Backup Contact</p>
+                                                                            <p className="text-[var(--color-primary-font)]">
                                                                                 {parsed.contact_info.phone ? (
                                                                                     <a href={`tel:${parsed.contact_info.phone}`} className="hover:text-indigo-600 underline underline-offset-4 decoration-slate-200">
                                                                                         {parsed.contact_info.phone}
@@ -992,7 +992,7 @@ export default function AgentBookingsPage() {
                                                                             <Info className="h-12 w-12" />
                                                                         </div>
                                                                         <p className="text-[11px] uppercase font-black text-indigo-700 tracking-widest mb-3">Special Requests Notes</p>
-                                                                        <p className="text-slate-700 leading-relaxed italic text-base">"{parsed.requests}"</p>
+                                                                        <p className="text-[var(--color-primary-font)]/80 leading-relaxed italic text-base">"{parsed.requests}"</p>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1082,7 +1082,7 @@ export default function AgentBookingsPage() {
                             <Button
                                 variant="outline"
                                 onClick={onClose}
-                                className="w-full sm:w-auto px-10 h-12 font-black border-slate-200 text-slate-500 rounded-2xl hover:bg-transparent hover:text-slate-900 transition-all uppercase text-[11px] tracking-widest"
+                                className="w-full sm:w-auto px-10 h-11 font-black border-slate-200 text-slate-500 rounded-2xl hover:bg-transparent hover:text-[var(--color-primary-font)]/90 transition-all uppercase text-[11px] tracking-widest"
                             >
                                 Close View
                             </Button>
@@ -1099,7 +1099,7 @@ export default function AgentBookingsPage() {
                                     </Button>
                                 )}
                                 {hasPermission('bookings', 'edit') && (
-                                    <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-slate-700 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
+                                    <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-[var(--color-primary-font)]/80 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
                                         <Edit className="h-4 w-4 mr-2" /> Modify Trip
                                     </Button>
                                 )}
@@ -1135,10 +1135,10 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
         <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-8 rounded-full shadow-lg shadow-orange-500/20 w-fit mx-auto mb-8 ring-8 ring-white/10">
             <Calendar className="h-12 w-12 text-white" />
         </div>
-        <h3 className="text-3xl font-bold text-black mb-4">
+        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4">
             {searchQuery ? "No matches found" : `No ${activeTab} bookings`}
         </h3>
-        <p className="text-black/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
+        <p className="text-[var(--color-primary-font)]/70 font-bold max-w-xs mx-auto mb-10 leading-relaxed text-sm">
             {searchQuery
                 ? `We couldn't find any bookings matching "${searchQuery}". Try a different search term or clear filters.`
                 : `Your ${activeTab} trip list is currently empty. Start by exploring our premium tour packages.`
@@ -1148,7 +1148,7 @@ const EmptyState = ({ searchQuery, activeTab, setSearchQuery, setStartDate, setE
             {searchQuery ? (
                 <Button
                     onClick={() => { setSearchQuery(''); setStartDate(''); setEndDate(''); }}
-                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-black font-black rounded-full hover:bg-white/40 transition-all"
+                    className="h-14 px-10 bg-white/30 backdrop-blur-md border border-white/40 text-[var(--color-primary-font)] font-black rounded-full hover:bg-white/40 transition-all"
                 >
                     Clear All Filters
                 </Button>

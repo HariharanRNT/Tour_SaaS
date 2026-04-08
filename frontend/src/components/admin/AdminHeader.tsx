@@ -150,7 +150,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         <Button variant="ghost" size="icon" className="text-black hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,107,43,0.6)]"></span>
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_var(--primary-glow)]"></span>
                             )}
                         </Button>
                     </DropdownMenuTrigger>
@@ -158,7 +158,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         <div className="p-4 border-b border-white/20 bg-white/5 flex items-center justify-between backdrop-blur-md">
                             <DropdownMenuLabel className="font-bold text-slate-800">Notifications</DropdownMenuLabel>
                             {unreadCount > 0 && (
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-orange-200">
+                                <Badge variant="secondary" className="bg-[var(--primary-soft)]/20 text-[var(--primary)] border-[var(--primary-soft)]/40">
                                     {unreadCount} New
                                 </Badge>
                             )}

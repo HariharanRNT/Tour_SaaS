@@ -280,7 +280,7 @@ type TabId = typeof TABS[number]['id'];
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
     return (
         <div className="flex items-center justify-between py-2">
-            <span className="text-sm font-semibold text-slate-700">{label}</span>
+            <span className="text-sm font-semibold text-[var(--color-primary-font)]/70">{label}</span>
             <button onClick={() => onChange(!checked)}
                 className={`relative w-11 h-6 rounded-full transition-all duration-200 focus:outline-none ${checked ? 'bg-[var(--primary)]' : 'bg-slate-200'}`}>
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -296,7 +296,7 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-[var(--primary-glow)] rounded-xl text-[var(--primary)]">{icon}</div>
-                    <div><CardTitle className="text-base font-bold text-slate-900">{title}</CardTitle><CardDescription className="text-xs text-slate-500">{subtitle}</CardDescription></div>
+                    <div><CardTitle className="text-base font-bold text-[var(--color-primary-font)]">{title}</CardTitle><CardDescription className="text-xs text-[var(--color-primary-font)]/50">{subtitle}</CardDescription></div>
                 </div>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">{children}</CardContent>
@@ -324,7 +324,7 @@ export default function AgentThemeSettingsPage() {
     const [density, setDensity] = useState('spacious');
     const [fontPairing, setFontPairing] = useState('serif-sans');
     const [fontFamily, setFontFamily] = useState('var(--font-inter)');
-    const [fontColor, setFontColor] = useState('#1e293b');
+    const [fontColor, setFontColor] = useState('var(--color-primary-font)');
 
     // Homepage state
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
@@ -412,7 +412,7 @@ export default function AgentThemeSettingsPage() {
             root.style.setProperty('--font-primary', next.font_family);
             root.style.setProperty('--project-font-family', next.font_family);
         }
-        if (next.font_color) root.style.setProperty('--project-font-color', next.font_color);
+        if (next.font_color) root.style.setProperty('--color-primary-font', next.font_color);
 
         localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
         toast.success('UI style updated!', { position: 'bottom-right' });
@@ -434,7 +434,7 @@ export default function AgentThemeSettingsPage() {
                 setButtonShape(u.buttonShape || 'pill'); setIconStyle(u.iconStyle || 'filled-circle');
                 setCardStyle(u.cardStyle || 'glass'); setDensity(u.density || 'spacious'); setFontPairing(u.fontPairing || 'serif-sans');
                 setFontFamily(u.font_family || 'var(--font-inter)');
-                setFontColor(u.font_color || '#1e293b');
+                setFontColor(u.font_color || 'var(--color-primary-font)');
                 applyBodyClasses(u.buttonShape || 'pill', u.iconStyle || 'filled-circle', u.cardStyle || 'glass', u.density || 'spacious', u.fontPairing || 'serif-sans');
             } else { applyBodyClasses('pill', 'filled-circle', 'glass', 'spacious', 'serif-sans'); }
         } catch { }
@@ -831,13 +831,13 @@ export default function AgentThemeSettingsPage() {
                                     <div key={i} className="w-4 h-4 rounded-full shadow-sm" style={{ background: c }} />
                                 ))}
                             </div>
-                            <p className="text-xs font-bold text-slate-800 capitalize">{t.name || key}</p>
+                            <p className="text-xs font-bold text-[var(--color-primary-font)] capitalize">{t.name || key}</p>
                         </button>
                     ))}
                     <button onClick={() => setShowCustomEditor(!showCustomEditor)}
                         className={`p-3 rounded-2xl border-2 transition-all text-left flex flex-col gap-2 ${showCustomEditor || isCustomActive ? 'border-[var(--primary)] shadow-lg' : 'border-dashed border-slate-300 bg-white hover:border-slate-400'}`}>
                         <Wand2 className="h-4 w-4 text-[var(--primary)]" />
-                        <p className="text-xs font-bold text-slate-800">Custom</p>
+                        <p className="text-xs font-bold text-[var(--color-primary-font)]">Custom</p>
                     </button>
                 </div>
             </SectionCard>
@@ -884,9 +884,9 @@ export default function AgentThemeSettingsPage() {
 
                             return (
                                 <div key={id} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white/60 border border-white/60">
-                                    <div><p className="text-sm font-bold text-slate-800">{label}</p><p className="text-xs text-slate-700">{desc}</p></div>
+                                    <div><p className="text-sm font-bold text-[var(--color-primary-font)]">{label}</p><p className="text-xs text-[var(--color-primary-font)]/70">{desc}</p></div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono text-slate-700 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
+                                        <span className="text-xs font-mono text-[var(--color-primary-font)]/70 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
                                         {isText ? (
                                             <Input
                                                 value={currentVal}
@@ -935,26 +935,26 @@ export default function AgentThemeSettingsPage() {
         <div className="space-y-5">
             <SectionCard icon={<Home className="h-5 w-5" />} title="Hero Content" subtitle="Customize the hero text and buttons customers see">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 1 <span className="font-normal text-slate-700">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Headline Line 2 <span className="font-normal text-slate-700">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Headline Line 1 <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Headline Line 2 <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
                 </div>
-                <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Subheading <span className="font-normal text-slate-700">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
+                <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Subheading <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Primary Button <span className="font-normal text-slate-700">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Secondary Button <span className="font-normal text-slate-700">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Primary Button <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Secondary Button <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                 </div>
             </SectionCard>
 
             <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
                 <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Company / Agency Name</Label>
+                    <Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Company / Agency Name</Label>
                     <Input
                         value={hpSettings.agency_name || ''}
                         onChange={e => hpField('agency_name', e.target.value)}
                         placeholder="e.g. Dream Travels"
                         className="h-10 rounded-xl glass-input w-full max-w-md"
                     />
-                    <p className="text-xs text-slate-500 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
+                    <p className="text-xs text-[var(--color-primary-font)]/60 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
                 </div>
             </SectionCard>
 
@@ -964,7 +964,7 @@ export default function AgentThemeSettingsPage() {
                         {hpSettings.navbar_logo_image ? (
                             <img src={hpSettings.navbar_logo_image} alt="Logo Preview" className="w-full h-full object-contain p-2" />
                         ) : (
-                            <div className="text-slate-300 flex flex-col items-center">
+                            <div className="text-[var(--color-primary-font)]/30 flex flex-col items-center">
                                 <Plane className="h-8 w-8 mb-1" />
                                 <span className="text-[10px] font-bold">DEFAULT</span>
                             </div>
@@ -972,17 +972,17 @@ export default function AgentThemeSettingsPage() {
                     </div>
                     <div className="flex-1 space-y-3 w-full">
                         <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-slate-800">Agency Logo</h4>
-                            <p className="text-xs text-slate-500">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
+                            <h4 className="text-sm font-bold text-[var(--color-primary-font)]">Agency Logo</h4>
+                            <p className="text-xs text-[var(--color-primary-font)]/60">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-slate-700 bg-white">
+                            <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70 bg-white">
                                 {logoUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" /> : <Upload className="h-4 w-4 mr-1.5" />}
                                 {logoUploading ? 'Uploading…' : 'Upload Logo'}
                             </Button>
                             <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoUpload} />
                             {hpSettings.navbar_logo_image !== DEFAULT_HOMEPAGE.navbar_logo_image && (
-                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-slate-700 hover:text-red-500">Reset to Default</Button>
+                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset to Default</Button>
                             )}
                         </div>
                     </div>
@@ -991,21 +991,21 @@ export default function AgentThemeSettingsPage() {
 
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
                 <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
-                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-700 text-sm">No image selected</div>}
+                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-[var(--color-primary-font)]/70 text-sm">No image selected</div>}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm">Preview</div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-slate-700">
+                    <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70">
                         {imageUploading ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />Uploading…</> : <><Upload className="h-4 w-4 mr-1.5" />Upload to S3</>}
                     </Button>
                     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileUpload} />
-                    <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-slate-700"><LinkIcon className="h-4 w-4 mr-1.5" />Use URL</Button>
+                    <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70"><LinkIcon className="h-4 w-4 mr-1.5" />Use URL</Button>
                 </div>
                 {showUrlInput && (
                     <div className="flex gap-2"><Input value={imageUrlDraft} onChange={e => setImageUrlDraft(e.target.value)} placeholder="https://…" className="h-9 rounded-xl glass-input flex-1" /><Button onClick={handleApplyImageUrl} className="h-9 rounded-xl px-4 text-white" style={{ background: 'var(--primary)' }}>Apply</Button></div>
                 )}
                 <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quick Presets</p>
+                    <p className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase tracking-wider mb-2">Quick Presets</p>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                         {PRESET_IMAGES.map(img => (
                             <button key={img.label} onClick={() => hpField('backgroundImageUrl', img.url)}
@@ -1018,9 +1018,9 @@ export default function AgentThemeSettingsPage() {
                 </div>
             </SectionCard>
 
-            <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-slate-600 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Badge" subtitle="Configure the badge pill shown in the hero section">
+            <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-[var(--color-primary-font)]/70 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Badge" subtitle="Configure the badge pill shown in the hero section">
                 <ToggleSwitch checked={hpSettings.showAiBadge} onChange={v => hpField('showAiBadge', v)} label="Show AI Badge" />
-                {hpSettings.showAiBadge && <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Badge Text <span className="font-normal text-slate-700">({hpSettings.badgeText.length}/30)</span></Label><Input maxLength={30} value={hpSettings.badgeText} onChange={e => hpField('badgeText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
+                {hpSettings.showAiBadge && <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Badge Text <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.badgeText.length}/30)</span></Label><Input maxLength={30} value={hpSettings.badgeText} onChange={e => hpField('badgeText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
             </SectionCard>
 
             {/* Feature Cards Section */}
@@ -1030,8 +1030,8 @@ export default function AgentThemeSettingsPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
                         <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-3">
-                                <p className="font-bold text-slate-800">Choose an Icon</p>
-                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-slate-700" /></button>
+                                <p className="font-bold text-[var(--color-primary-font)]">Choose an Icon</p>
+                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-[var(--color-primary-font)]/70" /></button>
                             </div>
                             <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
                             <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
@@ -1065,8 +1065,8 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
                                         <IconC className="h-5 w-5 text-white" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-800 leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-slate-500 leading-tight">{card.description || 'Description'}</p>
+                                    <p className="text-sm font-bold text-[var(--color-primary-font)] leading-tight">{card.title || 'Card Title'}</p>
+                                    <p className="text-xs text-[var(--color-primary-font)]/60 leading-tight">{card.description || 'Description'}</p>
                                 </div>
 
                                 {/* Icon picker button */}
@@ -1074,20 +1074,20 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: 'var(--primary)' }}>
                                         <IconC className="h-5 w-5" />
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-slate-600 flex-1">
+                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-[var(--color-primary-font)]/70 flex-1">
                                         Change Icon ({card.icon})
                                     </Button>
                                 </div>
 
                                 {/* Title */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-slate-500">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
                                     <Input maxLength={30} value={card.title} onChange={e => updateCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
                                 </div>
 
                                 {/* Description */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-slate-500">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
                                     <Textarea maxLength={100} value={card.description} onChange={e => updateCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
                                 </div>
                             </div>
@@ -1108,8 +1108,8 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
                                         <IconC className="h-5 w-5 text-white" />
                                     </div>
-                                    <p className="text-sm font-bold text-slate-800 leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-slate-500 leading-tight">{card.description || 'Description'}</p>
+                                    <p className="text-sm font-bold text-[var(--color-primary-font)] leading-tight">{card.title || 'Card Title'}</p>
+                                    <p className="text-xs text-[var(--color-primary-font)]/60 leading-tight">{card.description || 'Description'}</p>
                                 </div>
 
                                 {/* Icon picker button */}
@@ -1117,20 +1117,20 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: 'var(--primary)' }}>
                                         <IconC className="h-5 w-5" />
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-slate-600 flex-1">
+                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-[var(--color-primary-font)]/70 flex-1">
                                         Change Icon ({card.icon})
                                     </Button>
                                 </div>
 
                                 {/* Title */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-slate-500">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
                                     <Input maxLength={30} value={card.title} onChange={e => updateWcuCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
                                 </div>
 
                                 {/* Description */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-slate-500">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
                                     <Textarea maxLength={100} value={card.description} onChange={e => updateWcuCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
                                 </div>
                             </div>
@@ -1144,33 +1144,33 @@ export default function AgentThemeSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Icon Style</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Icon Style</Label>
                             <div className="grid grid-cols-5 gap-2">
                                 {(['filled-circle', 'outlined-circle', 'rounded-square', 'gradient-circle', 'soft-tinted'] as const).map(s => (
                                     <button key={s} onClick={() => updateCardStyle('iconStyle', s)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.iconStyle === s ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s === 'filled-circle' ? 'bg-orange-500 rounded-full' : s === 'outlined-circle' ? 'border-2 border-orange-500 rounded-full' : s === 'rounded-square' ? 'bg-orange-100 rounded-xl' : s === 'gradient-circle' ? 'bg-gradient-to-br from-orange-400 to-orange-600 rounded-full' : 'bg-orange-50 rounded-full'}`}>
                                             <Sparkles className={`h-4 w-4 ${s === 'filled-circle' || s === 'gradient-circle' ? 'text-white' : 'text-orange-500'}`} />
                                         </div>
-                                        <span className="text-[10px] font-bold text-slate-600 capitalize text-center leading-tight">{s.split('-')[0]}</span>
+                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize text-center leading-tight">{s.split('-')[0]}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Card Background</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Card Background</Label>
                             <div className="grid grid-cols-5 gap-2">
                                 {(['soft-white', 'glass', 'tinted', 'pure-white', 'transparent'] as const).map(bg => (
                                     <button key={bg} onClick={() => updateCardStyle('background', bg)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.background === bg ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                         <div className={`w-full aspect-video rounded-lg border border-slate-200 ${bg === 'pure-white' ? 'bg-white' : bg === 'tinted' ? 'bg-orange-50' : bg === 'transparent' ? 'bg-transparent border-dashed' : 'bg-slate-50'}`} />
-                                        <span className="text-[10px] font-bold text-slate-600 capitalize text-center leading-tight">{bg.split('-')[0]}</span>
+                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize text-center leading-tight">{bg.split('-')[0]}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Card Border & Effect</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Card Border & Effect</Label>
                             <div className="flex flex-wrap gap-2">
                                 {(['none', 'subtle', 'primary', 'top-accent', 'glow'] as const).map(b => (
                                     <Button key={b} variant={cardAppearance.border === b ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('border', b)} className="h-8 rounded-lg text-xs px-3 capitalize" style={cardAppearance.border === b ? { background: 'var(--primary)' } : {}}>
@@ -1183,7 +1183,7 @@ export default function AgentThemeSettingsPage() {
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Hover Effect</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Hover Effect</Label>
                             <div className="flex flex-wrap gap-2">
                                 {(['lift', 'glow', 'scale', 'border', 'none'] as const).map(h => (
                                     <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className="h-8 rounded-lg text-xs px-4 capitalize" style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
@@ -1194,7 +1194,7 @@ export default function AgentThemeSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Title Color</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Title Color</Label>
                             <div className="flex gap-2">
                                 {(['dark', 'primary', 'gradient'] as const).map(c => (
                                     <Button key={c} variant={cardAppearance.titleColor === c ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('titleColor', c)} className="h-8 rounded-lg text-xs px-4 capitalize flex-1" style={cardAppearance.titleColor === c ? { background: 'var(--primary)' } : {}}>
@@ -1205,7 +1205,7 @@ export default function AgentThemeSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Layout Direction</Label>
+                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Layout Direction</Label>
                             <div className="grid grid-cols-3 gap-2">
                                 {(['top', 'horizontal', 'minimal'] as const).map(l => (
                                     <button key={l} onClick={() => updateCardStyle('layout', l)} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${cardAppearance.layout === l ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
@@ -1214,7 +1214,7 @@ export default function AgentThemeSettingsPage() {
                                             {l === 'horizontal' && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-orange-400" /><div className="w-5 h-1 rounded-full bg-slate-300" /></div>}
                                             {l === 'minimal' && <div className="flex flex-col items-center gap-1"><div className="w-8 h-1 rounded-full bg-slate-400" /><div className="w-10 h-1.5 rounded-full bg-slate-200" /></div>}
                                         </div>
-                                        <span className="text-[10px] font-bold text-slate-600 capitalize">{l}</span>
+                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize">{l}</span>
                                     </button>
                                 ))}
                             </div>
@@ -1222,7 +1222,7 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Live Preview Panel */}
                         <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mb-3">Live Result Preview</p>
+                            <p className="text-[10px] font-bold text-[var(--color-primary-font)]/70 uppercase tracking-widest mb-3">Live Result Preview</p>
                             <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                                 {[1, 2].map(i => (
                                     <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
@@ -1238,8 +1238,8 @@ export default function AgentThemeSettingsPage() {
                                             </div>
                                         )}
                                         <div className={cardAppearance.layout === 'horizontal' ? 'flex-1' : ''}>
-                                            <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-slate-800'}`}>Card Title</h4>
-                                            <p className="text-[10px] text-slate-500 leading-tight">Short tagline goes here.</p>
+                                            <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-[var(--color-primary-font)]'}`}>Card Title</h4>
+                                            <p className="text-[10px] text-[var(--color-primary-font)]/60 leading-tight">Short tagline goes here.</p>
                                         </div>
                                     </div>
                                 ))}
@@ -1607,7 +1607,7 @@ export default function AgentThemeSettingsPage() {
                                 <div className="w-[80px] h-[54px] rounded-lg overflow-hidden" style={opt.s}>
                                     <div className="p-1.5 space-y-1"><div className="h-2 w-10 rounded bg-slate-300/60" /><div className="h-1.5 w-full rounded bg-slate-200/60" /><div className="h-1.5 w-2/3 rounded bg-slate-200/60" /></div>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-500">{opt.label}</span>
+                                <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{opt.label}</span>
                             </button>
                         ))}
                     </div>
@@ -1615,11 +1615,11 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Density */}
                 <div className="space-y-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Spacing</p>
+                    <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Spacing</p>
                     <div className="flex rounded-xl overflow-hidden border border-slate-200 w-fit">
                         {(['spacious', 'comfortable', 'compact'] as const).map((opt, i) => (
                             <button key={opt} onClick={() => saveUiStyle({ density: opt })}
-                                className={`px-5 py-2 text-xs font-bold transition-all ${density === opt ? 'text-white' : 'text-slate-600 bg-white hover:bg-slate-50'} ${i > 0 ? 'border-l border-slate-200' : ''}`}
+                                className={`px-5 py-2 text-xs font-bold transition-all ${density === opt ? 'text-white' : 'text-[var(--color-primary-font)]/70 bg-white hover:bg-slate-50'} ${i > 0 ? 'border-l border-slate-200' : ''}`}
                                 style={density === opt ? { background: 'var(--primary)' } : {}}>
                                 {opt.charAt(0).toUpperCase() + opt.slice(1)}
                             </button>
@@ -1629,7 +1629,7 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Font Theme Selector */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Font Theme</p>
+                    <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Font Theme</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
@@ -1648,14 +1648,14 @@ export default function AgentThemeSettingsPage() {
                                             fontFamily === opt.value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-100 bg-white hover:border-slate-200"
                                         )}
                                     >
-                                        <span className="text-sm font-medium text-slate-900" style={{ fontFamily: opt.value }}>{opt.preview}</span>
-                                        <span className="text-[10px] font-bold text-slate-700 uppercase">{opt.label}</span>
+                                        <span className="text-sm font-medium text-[var(--color-primary-font)]" style={{ fontFamily: opt.value }}>{opt.preview}</span>
+                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 uppercase">{opt.label}</span>
                                     </button>
                                 ))}
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Primary Font Color</p>
+                                <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Primary Font Color</p>
                                 <div className="flex flex-wrap gap-3 items-center">
                                     <div className="relative group">
                                         <input 
@@ -1710,7 +1710,7 @@ export default function AgentThemeSettingsPage() {
                                     <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
                                         5D / 4N
                                     </div>
-                                    <div className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
+                                    <div className="px-3 py-1 rounded-full bg-[var(--color-primary-font)]/5 text-[var(--color-primary-font)]/60 text-[10px] font-bold">
                                         Best Seller
                                     </div>
                                 </div>
@@ -1756,7 +1756,7 @@ export default function AgentThemeSettingsPage() {
                     {/* Modern Page Header Card */}
                     <div className="page-header-card flex-col items-start gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+                            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-primary-font)] flex items-center gap-3">
                                 <span className="text-[var(--primary)]">{TABS.find(t => t.id === activeTab)?.icon}</span>
                                 {TABS.find(t => t.id === activeTab)?.label}
                             </h1>
@@ -1785,7 +1785,7 @@ export default function AgentThemeSettingsPage() {
                                         {tab.count > 0 && (
                                             <span className={cn(
                                                 "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-all",
-                                                active ? "bg-[var(--primary)] text-white" : "bg-slate-200/50 text-slate-500"
+                                                active ? "bg-[var(--primary)] text-white" : "bg-[var(--color-primary-font)]/10 text-[var(--color-primary-font)]/60"
                                             )}>
                                                 {tab.count}
                                             </span>
@@ -1810,10 +1810,10 @@ export default function AgentThemeSettingsPage() {
                 {SAVEABLE_TABS.includes(activeTab) && (
                     <div className="fixed bottom-0 left-0 right-0 z-50 px-6 py-3 border-t border-white/20 bg-white/70 backdrop-blur-xl">
                         <div className="max-w-5xl mx-auto flex items-center gap-3">
-                            <p className="text-xs text-slate-700 flex-1 flex items-center gap-1.5">
+                            <p className="text-xs text-[var(--color-primary-font)]/70 flex items-center gap-1.5">
                                 <span className="p-1 rounded bg-slate-100">ℹ️</span> Changes apply after you save
                             </p>
-                            <Button variant="ghost" onClick={handleReset} className="h-9 text-sm text-slate-500 hover:text-slate-800 rounded-xl">
+                            <Button variant="ghost" onClick={handleReset} className="h-9 text-sm text-[var(--color-primary-font)]/60 hover:text-[var(--color-primary-font)]/90 rounded-xl">
                                 <RotateCcw className="h-4 w-4 mr-1.5" />Reset
                             </Button>
                             {activeTab === 'homepage' && (
