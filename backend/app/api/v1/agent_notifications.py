@@ -52,6 +52,18 @@ async def mark_as_read(
     
     return notification
 
+@router.delete("/clear-all", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_all_notifications(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Clear all notifications for the current agent/user"""
+    stmt = delete(Notification).where(
+        Notification.user_id == current_user.id
+    )
+    await db.execute(stmt)
+    await db.commit()
+
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_notification(
     notification_id: UUID,

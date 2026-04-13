@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
-import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle } from 'lucide-react'
+import { formatCurrency, formatDate, formatDuration, formatError } from '@/lib/utils'
+import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle, User } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
@@ -37,6 +37,7 @@ function CheckoutContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const sessionId = searchParams.get('sessionId')
+    const customerId = searchParams.get('customerId') // Set when agent books on behalf of customer
 
     const [loading, setLoading] = useState(true)
     const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS'>('DETAILS')
@@ -100,7 +101,7 @@ function CheckoutContent() {
 
         } catch (err: any) {
             console.error(err)
-            toast.error(err.message || "Payment successful but booking failed.")
+            toast.error(formatError(err) || "Payment successful but booking failed.")
             setStep('DETAILS')
             setShowMockModal(false)
         }
@@ -187,7 +188,7 @@ function CheckoutContent() {
                 setTotalAmount((basePrice + flightPrice) * count)
             } catch (e) {
                 console.error("Load session failed", e)
-                toast.error("Could not load trip details")
+                toast.error(formatError(e) || "Could not load trip details")
             } finally {
                 setLoading(false)
             }
@@ -325,7 +326,7 @@ function CheckoutContent() {
                 return
             }
 
-            const bookingPayload = {
+            const bookingPayload: Record<string, any> = {
                 package_id: packageId,
                 travel_date: sessionData?.start_date || "2024-06-01",
                 number_of_travelers: travelers.length,
@@ -352,8 +353,13 @@ function CheckoutContent() {
                 })
             }
 
+            // If agent is booking on behalf of a customer, pass customer_id
+            if (customerId) {
+                bookingPayload.customer_id = customerId
+            }
+
             // 1. Create Booking
-            const booking = await bookingsAPI.create(bookingPayload)
+            const booking = await bookingsAPI.create(bookingPayload as any)
             setCurrentBookingId(booking.id)
 
             // 2. Review Flight 
@@ -362,7 +368,7 @@ function CheckoutContent() {
                 console.log("Flight Review Success:", reviewData.data)
             } catch (err: any) {
                 console.error("Flight Review Failed:", err)
-                toast.error(`Flight validation failed: ${err.response?.data?.detail || err.message}`)
+                toast.error(`Flight validation failed: ${formatError(err)}`)
                 setStep('DETAILS')
                 return
             }
@@ -392,7 +398,12 @@ function CheckoutContent() {
                         contact: contactPhone || "9999999999"
                     },
                     modal: {
-                        ondismiss: function () {
+                        ondismiss: async function () {
+                            try {
+                                await paymentsAPI.markFailed(booking.id)
+                            } catch (e) {
+                                console.error("Failed to mark payment as failed", e)
+                            }
                             setStep('DETAILS')
                         }
                     }
@@ -411,7 +422,7 @@ function CheckoutContent() {
                 return
             }
 
-            toast.error(error.response?.data?.detail || error.message || "Something went wrong")
+            toast.error(formatError(error))
             setStep('DETAILS')
         }
     }
@@ -559,7 +570,7 @@ function CheckoutContent() {
                         <motion.div variants={itemVariants} className="mt-2">
                             <Button
                                 onClick={() => router.push('/bookings')}
-                                className="group relative overflow-hidden h-[48px] w-full rounded-[16px] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98] shadow-[0_10px_25px_rgba(0,120,140,0.4)] hover:shadow-[0_14px_30px_rgba(0,120,140,0.5)] bg-gradient-to-br from-[#0f5f6b] to-[#0a7c8c] border-none"
+                                className="group relative overflow-hidden h-[48px] w-full rounded-[16px] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98] shadow-[0_10px_25px_var(--primary-glow)] hover:shadow-[0_14px_30px_var(--primary-glow)] bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] border-none"
                             >
                                 <div className="relative z-10 flex items-center justify-center gap-2 text-white font-semibold text-base tracking-[0.3px]">
                                     View My Bookings
@@ -604,6 +615,14 @@ function CheckoutContent() {
                 <div className="container mx-auto px-4 lg:max-w-6xl">
                     <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_var(--primary-glow)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
                         <h1 className="text-xl font-bold text-[var(--color-primary-font)] drop-shadow-sm font-display tracking-wide">Checkout</h1>
+
+                        {/* Agent Context Banner */}
+                        {customerId && (
+                            <div className="flex items-center gap-2 px-4 py-1.5 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-full animate-in fade-in zoom-in duration-500">
+                                <User className="w-3.5 h-3.5 text-[var(--primary)]" />
+                                <span className="text-xs font-bold text-[var(--primary)]">Booking on Behalf of Customer</span>
+                            </div>
+                        )}
 
                         {/* Glowing Glass Stepper */}
                         <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1 md:pb-0 hide-scrollbar scroll-smooth">
@@ -922,7 +941,7 @@ function CheckoutContent() {
                                 </CardContent>
                                 <CardFooter className="p-5 border-t border-white/20 bg-white/20 backdrop-blur-xl relative">
                                     <Button
-                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:from-blue-600 hover:to-blue-400 text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-center px-6 border border-white/20 relative overflow-hidden group"
+                                        className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:opacity-90 text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-center px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
                                         onClick={handlePayment}
                                         disabled={step === 'PROCESSING'}
@@ -976,7 +995,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
     return (
-        <Suspense fallback={<div className="flex flex-col items-center justify-center min-h-screen bg-transparent"><Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" /><p className="text-gray-500 font-medium animate-pulse">Loading checkout...</p></div>}>
+        <Suspense fallback={<div className="flex flex-col items-center justify-center min-h-screen bg-transparent"><Loader2 className="h-12 w-12 animate-spin text-[var(--primary)] mb-4" /><p className="text-gray-500 font-medium animate-pulse">Loading checkout...</p></div>}>
             <CheckoutContent />
         </Suspense>
     )

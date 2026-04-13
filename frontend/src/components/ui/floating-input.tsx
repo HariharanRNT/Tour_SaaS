@@ -26,7 +26,7 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
                 <label
                     htmlFor={id}
                     className={cn(
-                        "absolute left-3 top-1 z-10 origin-[0] -translate-y-0 scale-75 transform text-xs text-slate-500 duration-150 peer-placeholder-shown:top-3.5 peer-placeholder-shown:scale-100 peer-focus:top-1 peer-focus:scale-75 peer-focus:text-blue-500 pointer-events-none",
+                        "absolute left-3 top-1 z-10 origin-[0] -translate-y-0 scale-75 transform text-xs text-black duration-150 peer-placeholder-shown:top-3.5 peer-placeholder-shown:scale-100 peer-focus:top-1 peer-focus:scale-75 peer-focus:text-blue-500 pointer-events-none",
                         error ? "text-red-500 peer-focus:text-red-500" : ""
                     )}
                 >

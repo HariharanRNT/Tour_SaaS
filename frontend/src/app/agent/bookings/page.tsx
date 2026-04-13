@@ -14,6 +14,7 @@ import {
     Filter,
     ArrowLeft,
     MoreHorizontal,
+    RefreshCw,
     Download,
     CreditCard,
     CheckCircle,
@@ -100,8 +101,9 @@ export default function AgentBookingsPage() {
             if (Array.isArray(data)) return data
             if (data.items && Array.isArray(data.items)) return data.items
             if (data.bookings && Array.isArray(data.bookings)) return data.bookings
-            return []
-        }
+        },
+        staleTime: 30000, // 30 seconds
+        refetchOnWindowFocus: true
     })
 
     const bookings = bookingsData || []
@@ -110,7 +112,8 @@ export default function AgentBookingsPage() {
         switch (status.toLowerCase()) {
             case 'confirmed': return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
             case 'completed': return 'bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30'
-            case 'pending': return 'bg-amber-500/15 text-amber-600 border-amber-500/30'
+            case 'pending':
+            case 'initiated': return 'bg-amber-500/15 text-amber-600 border-amber-500/30'
             case 'cancelled': return 'bg-red-500/15 text-red-600 border-red-500/30'
             default: return 'bg-slate-500/15 text-slate-600 border-slate-500/30'
         }
@@ -118,6 +121,7 @@ export default function AgentBookingsPage() {
 
     const getPaymentStatusIcon = (status: string) => {
         switch (status.toLowerCase()) {
+            case 'paid':
             case 'succeeded': return <CheckCircle className="h-4 w-4 text-green-500" />
             case 'failed': return <XCircle className="h-4 w-4 text-red-500" />
             case 'pending': return <Clock className="h-4 w-4 text-amber-500" />
@@ -193,7 +197,7 @@ export default function AgentBookingsPage() {
 
     const handleExcelExport = () => {
         const filteredBookings = filterBookings(activeTab as 'upcoming' | 'completed')
-        
+
         if (filteredBookings.length === 0) {
             toast.error("No records found to export for the current filters")
             return
@@ -316,7 +320,16 @@ export default function AgentBookingsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button 
+                        <Button
+                            variant="outline"
+                            onClick={() => loadBookings()}
+                            disabled={loading}
+                            className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-[var(--color-primary-font)] font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                        <Button
                             variant="outline"
                             onClick={handleExcelExport}
                             className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-[var(--color-primary-font)] font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
@@ -607,13 +620,23 @@ export default function AgentBookingsPage() {
                                     <h3 className="text-2xl font-bold text-[var(--color-primary-font)] tracking-tight">
                                         {booking.package?.title || 'Bespoke Tour Experience'}
                                     </h3>
-                                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
-                                        <div className={`h-1.5 w-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-40'}`} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{booking.status}</span>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusColor(booking.status)} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
+                                            <div className={`h-1.5 w-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-40'}`} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {booking.status === 'initiated' ? 'PENDING' : booking.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        {booking.payment_status?.toLowerCase() !== 'paid' && booking.payment_status?.toLowerCase() !== 'succeeded' && (
+                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${booking.payment_status?.toLowerCase() === 'failed' ? 'bg-red-500/15 text-red-600 border-red-500/30' : 'bg-amber-500/15 text-amber-600 border-amber-500/30'} backdrop-blur-md shadow-sm ring-4 ring-white/10`}>
+                                                {getPaymentStatusIcon(booking.payment_status || 'pending')}
+                                                <span className="text-[10px] font-black uppercase tracking-widest">{booking.payment_status?.toUpperCase() || 'PAYMENT PENDING'}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                     <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[var(--color-primary-font)]/70 shadow-sm">
+                                    <div className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center gap-2 text-[var(--color-primary-font)]/70 shadow-sm">
                                         <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" />
                                         <span className="text-[11px] font-bold">{booking.package?.destination || 'Global Discovery'}</span>
                                     </div>
@@ -666,10 +689,20 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-black text-[var(--color-primary-font)] leading-none mb-1.5">{travelerName}</p>
-                                    <div className="px-2 py-0.5 rounded-full bg-black/5 border border-black/10 inline-block">
-                                        <p className="text-[10px] font-black text-[var(--color-primary-font)]/60 uppercase tracking-tighter">
-                                            +{travelerCount - 1} Accompaniment
-                                        </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <div className="px-2 py-0.5 rounded-full bg-black/5 border border-black/10 inline-block">
+                                            <p className="text-[10px] font-black text-[var(--color-primary-font)]/60 uppercase tracking-tighter">
+                                                +{travelerCount - 1} Accompaniment
+                                            </p>
+                                        </div>
+                                        {booking.booked_by && (
+                                            <div className="px-2 py-0.5 rounded-full bg-[var(--primary)]/5 border border-[var(--primary)]/20 inline-flex items-center gap-1">
+                                                <ShieldCheck className="w-2.5 h-2.5 text-[var(--primary)]" />
+                                                <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-tighter">
+                                                    By: {booking.booked_by.first_name}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -726,7 +759,9 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <h2 className="text-3xl font-bold mb-4 leading-tight flex items-center gap-4">
                                     {booking.package?.title || 'Tour Experience'}
-                                    <Badge className={`${booking.status === 'confirmed' ? 'bg-emerald-500 border-emerald-400' : 'bg-amber-500 border-amber-400'
+                                    <Badge className={`${booking.status === 'confirmed' ? 'bg-emerald-500 border-emerald-400' :
+                                        booking.status === 'initiated' ? 'bg-gray-500 border-slate-400' :
+                                            'bg-amber-500 border-amber-400'
                                         } text-white border shadow-lg px-4 py-1.5 font-black text-[10px] uppercase tracking-widest rounded-full ring-4 ring-white/10`}>
                                         {booking.status}
                                     </Badge>
@@ -769,9 +804,22 @@ export default function AgentBookingsPage() {
                                                     {booking.user?.first_name?.[0]}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
-                                                <p className="font-bold text-[var(--color-primary-font)] text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-1">Contact Name</p>
+                                                        <p className="font-bold text-[var(--color-primary-font)] text-lg truncate">{booking.user?.first_name} {booking.user?.last_name}</p>
+                                                    </div>
+                                                    {booking.booked_by && (
+                                                        <div className="text-right">
+                                                            <p className="text-[10px] font-black text-[var(--primary)]/50 uppercase tracking-[0.2em] mb-1">Booked By (Team)</p>
+                                                            <div className="px-3 py-1 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-full inline-flex items-center gap-1.5">
+                                                                <ShieldCheck className="w-3 h-3 text-[var(--primary)]" />
+                                                                <span className="text-[10px] font-bold text-[var(--primary)] uppercase">{booking.booked_by.first_name} {booking.booked_by.last_name}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">

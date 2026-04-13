@@ -25,3 +25,18 @@ export function formatDuration(days: number): string {
     const n = d - 1;
     return `${n}N/${d}D`;
 }
+
+export function formatError(err: any): string {
+    if (typeof err === 'string') return err;
+    
+    // Handle Pydantic/FastAPI validation errors
+    const detail = err?.response?.data?.detail || err?.detail || err;
+    if (Array.isArray(detail)) {
+        // Return the first error message or join them
+        return detail.map((d: any) => d.msg || d).join(', ');
+    }
+    
+    if (typeof detail === 'string') return detail;
+    
+    return err?.message || 'An unexpected error occurred';
+}

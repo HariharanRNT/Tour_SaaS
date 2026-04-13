@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-    fetchAdminPlans, 
-    fetchAdminSubscriptions, 
-    createSubscriptionPlan, 
-    updateSubscriptionPlan, 
-    deleteSubscriptionPlan 
+import {
+    fetchAdminPlans,
+    fetchAdminSubscriptions,
+    createSubscriptionPlan,
+    updateSubscriptionPlan,
+    deleteSubscriptionPlan
 } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,7 +36,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
-import { cn } from "@/lib/utils";
+import { cn, formatError } from "@/lib/utils";
 
 // Types
 interface SubscriptionPlan {
@@ -54,6 +54,12 @@ interface SubscriptionPlan {
 interface Subscription {
     id: string;
     user_id: string;
+    user?: {
+        agency_name: string;
+        first_name: string;
+        last_name: string;
+        email: string;
+    };
     plan: SubscriptionPlan;
     status: string;
     start_date: string;
@@ -85,11 +91,13 @@ export default function AdminBillingPage() {
 
     const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
         queryKey: ['admin-plans'],
-        queryFn: fetchAdminPlans });
+        queryFn: fetchAdminPlans
+    });
 
     const { data: subscriptions = [], isLoading: isLoadingSubs } = useQuery({
         queryKey: ['admin-subscriptions'],
-        queryFn: fetchAdminSubscriptions });
+        queryFn: fetchAdminSubscriptions
+    });
 
     const isLoading = isLoadingPlans || isLoadingSubs;
 
@@ -101,7 +109,7 @@ export default function AdminBillingPage() {
             setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
             toast.success("Plan created successfully!");
         },
-        onError: (err: any) => toast.error(`Save failed: ${err.response?.data?.detail || err.message}`)
+        onError: (err: any) => toast.error(`Save failed: ${formatError(err)}`)
     });
 
     const updateMutation = useMutation({
@@ -112,7 +120,7 @@ export default function AdminBillingPage() {
             setEditingId(null);
             toast.success("Plan updated successfully!");
         },
-        onError: (err: any) => toast.error(`Update failed: ${err.response?.data?.detail || err.message}`)
+        onError: (err: any) => toast.error(`Update failed: ${formatError(err)}`)
     });
 
     const deleteMutation = useMutation({
@@ -121,7 +129,7 @@ export default function AdminBillingPage() {
             queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
             toast.success("Plan deleted successfully");
         },
-        onError: (err: any) => toast.error(err.response?.data?.detail || "Error deleting plan")
+        onError: (err: any) => toast.error(formatError(err) || "Error deleting plan")
     });
 
     const isCurrentMonth = (dateString: string) => {
@@ -142,7 +150,7 @@ export default function AdminBillingPage() {
         totalCount: subscriptions.filter((s: Subscription) => s.plan.id === p.id).length
     }));
 
-    const maxSubscribers = planSubscriberCounts.length > 0 
+    const maxSubscribers = planSubscriberCounts.length > 0
         ? Math.max(...planSubscriberCounts.map((p: { count: number }) => p.count))
         : 0;
 
@@ -168,9 +176,9 @@ export default function AdminBillingPage() {
     })();
 
     const handleToggleStatus = (plan: SubscriptionPlan) => {
-        updateMutation.mutate({ 
-            id: plan.id, 
-            data: { is_active: !plan.is_active } 
+        updateMutation.mutate({
+            id: plan.id,
+            data: { is_active: !plan.is_active }
         });
     };
 
@@ -294,7 +302,7 @@ export default function AdminBillingPage() {
                                     <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">
                                         {stats.totalSubscriptions > 0
                                             ? `${Math.round((stats.activeSubscriptions / stats.totalSubscriptions) * 100)}% of total`
-                                             : '0% total'}
+                                            : '0% total'}
                                     </p>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-emerald-400" />
@@ -500,7 +508,8 @@ export default function AdminBillingPage() {
                                                             onClick={() => openEditModal(plan)}
                                                             className="w-full h-[46px] rounded-2xl font-black text-[12px] uppercase tracking-widest text-white transition-all hover:scale-[1.02] active:scale-[0.98] border-0 overflow-hidden relative group/btn shadow-xl"
                                                             style={{
-                                                                background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})` }}
+                                                                background: `linear-gradient(135deg, ${theme.gradientBar.from}, ${theme.gradientBar.to})`
+                                                            }}
                                                         >
                                                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                                                             <span className="relative z-10 flex items-center justify-center gap-2">
@@ -534,9 +543,6 @@ export default function AdminBillingPage() {
                                                     onChange={e => setSearchQuery(e.target.value)}
                                                 />
                                             </div>
-                                            <Button variant="outline" className="h-[42px] px-4 rounded-[12px] border-[1.5px] border-[#E2E8F0] font-semibold text-[13px] text-slate-900 flex items-center gap-2 hover:bg-[#F8FAFC]">
-                                                <Download className="h-4 w-4" /> Export
-                                            </Button>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -545,13 +551,13 @@ export default function AdminBillingPage() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow className="bg-white/5 hover:bg-transparent transition-colors h-12 border-b border-slate-100">
-                                                    <TableHead className="pl-8 text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Agent</TableHead>
-                                                    <TableHead className="text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Plan</TableHead>
-                                                    <TableHead className="text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Status</TableHead>
-                                                    <TableHead className="text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Started</TableHead>
-                                                    <TableHead className="text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Expires</TableHead>
-                                                    <TableHead className="text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Usage</TableHead>
-                                                    <TableHead className="pr-8 text-right text-[#7c3010] font-bold uppercase text-[10px] tracking-wider">Actions</TableHead>
+                                                    <TableHead className="pl-8 !text-[#000000] font-black uppercase text-[10px] tracking-wider">Agent</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Plan</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Status</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Started</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Expires</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Usage</TableHead>
+                                                    <TableHead className="pr-8 text-right !text-[#000000] font-black uppercase text-[10px] tracking-wider">Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -578,7 +584,13 @@ export default function AdminBillingPage() {
                                                     </TableRow>
                                                 ) : (
                                                     subscriptions
-                                                        .filter((sub: Subscription) => sub.status === 'active')
+                                                        .filter((sub: Subscription) => {
+                                                            if (sub.status !== 'active') return false;
+                                                            const endDate = new Date(sub.end_date);
+                                                            const today = new Date();
+                                                            today.setHours(0, 0, 0, 0);
+                                                            return endDate >= today;
+                                                        })
                                                         .map((sub: Subscription, i: number) => (
                                                             <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
                                                                 <TableCell className="pl-8">
@@ -587,11 +599,15 @@ export default function AdminBillingPage() {
                                                                             "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs",
                                                                             `bg-indigo-400/10 text-indigo-300 border border-indigo-400/20`
                                                                         )}>
-                                                                            {sub.user_id.substring(0, 2).toUpperCase()}
+                                                                            {(sub.user?.agency_name || sub.user_id).substring(0, 2).toUpperCase()}
                                                                         </div>
                                                                         <div className="space-y-0.5">
-                                                                            <p className="font-bold text-[#1c1c1c] text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">{sub.user_id}</p>
-                                                                            <p className="text-[11px] text-[#92400e] font-semibold tracking-[0.5px]">ID: {sub.id.substring(0, 8)}</p>
+                                                                            <p className="font-bold text-[#1c1c1c] text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+                                                                                {sub.user?.agency_name || sub.user_id}
+                                                                            </p>
+                                                                            <p className="text-[11px] text-[#92400e] font-semibold tracking-[0.5px]">
+                                                                                {sub.user?.agency_name ? `Agent: ${sub.user_id.substring(0, 8)}` : `ID: ${sub.id.substring(0, 8)}`}
+                                                                            </p>
                                                                         </div>
                                                                     </div>
                                                                 </TableCell>
@@ -746,8 +762,17 @@ export default function AdminBillingPage() {
                                         </div>
                                         <Input
                                             type="number"
+                                            min={0}
                                             value={newPlan.price}
-                                            onChange={e => setNewPlan({ ...newPlan, price: e.target.value })}
+                                            onChange={e => {
+                                                const val = parseFloat(e.target.value);
+                                                if (val >= 0 || e.target.value === '') {
+                                                    setNewPlan({ ...newPlan, price: e.target.value });
+                                                }
+                                            }}
+                                            onKeyDown={e => {
+                                                if (e.key === '-' || e.key === 'e') e.preventDefault();
+                                            }}
                                             className="h-full border-0 bg-transparent focus:ring-0 font-normal text-[14px] text-[#0F172A] px-3 flex-1"
                                             placeholder="5,000"
                                         />
@@ -759,10 +784,19 @@ export default function AdminBillingPage() {
                                     <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Booking Limit</Label>
                                     <Input
                                         type="number"
+                                        min={-1}
                                         value={newPlan.booking_limit}
-                                        onChange={e => setNewPlan({ ...newPlan, booking_limit: e.target.value })}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value);
+                                            if (val >= -1 || e.target.value === '' || e.target.value === '-') {
+                                                setNewPlan({ ...newPlan, booking_limit: e.target.value });
+                                            }
+                                        }}
+                                        onKeyDown={e => {
+                                            if (e.key === 'e') e.preventDefault();
+                                        }}
                                         className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
-                                        placeholder="Enter limit (0 = unlimited)"
+                                        placeholder="Enter limit (-1 = unlimited)"
                                     />
                                 </div>
 

@@ -839,6 +839,7 @@ export default function ReportsPage() {
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="confirmed">Confirmed</SelectItem>
                                 <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="initiated">Payment Failed</SelectItem>
                                 <SelectItem value="completed">Completed</SelectItem>
                                 <SelectItem value="cancelled">Cancelled</SelectItem>
                             </SelectContent>
@@ -907,9 +908,10 @@ export default function ReportsPage() {
                             <span className={`px-2.5 py-1 rounded-lg text-[9.5px] font-black uppercase tracking-[0.1em] border shadow-sm ${
                                 bk.status === 'confirmed' || bk.status === 'completed' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' :
                                 bk.status === 'cancelled' ? 'bg-rose-500/10 text-rose-600 border-rose-500/30' :
+                                bk.status === 'initiated' ? 'bg-rose-500/15 text-rose-700 border-rose-500/40 animate-pulse' :
                                 'bg-amber-500/10 text-amber-600 border-amber-500/30'
                             }`}>
-                                {bk.status}
+                                {bk.status === 'initiated' ? 'Payment Failed' : bk.status}
                             </span>
                         )},
                         { header: 'Refund Status', accessor: (bk) => (
@@ -923,7 +925,14 @@ export default function ReportsPage() {
                                 </span>
                             ) : <span className="text-[var(--color-primary-font)]/30">-</span>
                         )},
-                        { header: 'Refund Amt', accessor: (bk) => bk.refund_amount > 0 ? `₹${bk.refund_amount.toLocaleString()}` : '-', className: 'text-right' }
+                        { header: 'Refund Amt', accessor: (bk) => bk.refund_amount > 0 ? `₹${bk.refund_amount.toLocaleString()}` : '-', className: 'text-right' },
+                        { header: 'Booked By', accessor: (bk) => (
+                            bk.booked_by ? (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg">
+                                    <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{bk.booked_by.first_name}</span>
+                                </div>
+                            ) : <span className="text-[var(--color-primary-font)]/30 text-[10px]">-</span>
+                        )}
                     ]}
                 />
 

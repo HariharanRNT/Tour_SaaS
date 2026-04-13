@@ -79,3 +79,21 @@ class NotificationService:
             title="Booking Cancelled",
             message=f"You have cancelled booking {booking_reference} ({customer_name}) for '{package_title}'."
         )
+
+    @staticmethod
+    async def notify_new_enquiry(
+        db: AsyncSession,
+        agent_id: UUID,
+        customer_name: str,
+        package_title: str,
+        travel_date: str,
+        travellers: int
+    ):
+        """Trigger a notification for a new enquiry received by the agent"""
+        await NotificationService.create_notification(
+            db=db,
+            user_id=agent_id,
+            type="info",
+            title="New Enquiry Received!",
+            message=f"{customer_name} has sent an enquiry for '{package_title}' (Travel: {travel_date}, {travellers} guest{'s' if travellers != 1 else ''})."
+        )

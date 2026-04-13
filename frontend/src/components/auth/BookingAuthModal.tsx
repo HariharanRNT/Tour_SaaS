@@ -2,25 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Lock, Eye, EyeOff, Loader2, User, Check, AlertCircle, ShieldCheck } from 'lucide-react'
+import { X, Mail, Lock, Eye, EyeOff, Loader2, Check, AlertCircle, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authAPI } from '@/lib/api'
 import { useGoogleLogin } from '@react-oauth/google'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 
 interface BookingAuthModalProps {
     isOpen: boolean
     onClose: () => void
-    onSuccess: () => void
+    onSuccess?: () => void
+    initialTab?: Tab
 }
 
 type Tab = 'login' | 'register'
 
-export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModalProps) {
+export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'login' }: BookingAuthModalProps) {
     const { login: authLogin } = useAuth()
-    const [activeTab, setActiveTab] = useState<Tab>('login')
+    const [activeTab, setActiveTab] = useState<Tab>(initialTab)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -28,8 +29,6 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
     // Form states
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
 
     // New OTP states
@@ -41,6 +40,9 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
 
     // Reset state when modal opens/closes
     useEffect(() => {
+        if (isOpen) {
+            setActiveTab(initialTab)
+        }
         if (!isOpen) {
             setError('')
             setOtpError('')
@@ -91,14 +93,25 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
             const response = await authAPI.login(email, password)
             if (response.require_otp) {
                 setRequireOtp(true)
+                if (response.email) setEmail(response.email)
                 setOtpExpiresAt(Date.now() + (response.expires_in || 300) * 1000)
                 setResendCooldown(60)
             } else {
                 authLogin(response.access_token, response.user)
-                onSuccess()
+                onClose()
+                
+                // Handle success actions
+                if (onSuccess) onSuccess()
+                
+                // Handle redirection
+                const redirect = sessionStorage.getItem('redirectAfterLogin')
+                if (redirect) {
+                    sessionStorage.removeItem('redirectAfterLogin')
+                    window.location.href = redirect
+                }
             }
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Invalid email or password')
+            setError(formatError(err))
         } finally {
             setLoading(false)
         }
@@ -113,9 +126,10 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
         try {
             const data = await authAPI.verifyLoginOTP(email, otp)
             authLogin(data.access_token, data.user)
-            onSuccess()
+            onClose()
+            if (onSuccess) onSuccess()
         } catch (err: any) {
-            setOtpError(err.response?.data?.detail || 'Invalid or expired OTP')
+            setOtpError(formatError(err))
         } finally {
             setLoading(false)
         }
@@ -131,7 +145,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
             setResendCooldown(60)
             setOtp('')
         } catch (err: any) {
-            setOtpError(err.response?.data?.detail || 'Failed to resend OTP')
+            setOtpError(formatError(err))
         } finally {
             setLoading(false)
         }
@@ -142,7 +156,6 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
         setError('')
 
         if (!validateEmail(email)) return setError('Invalid email address')
-        if (!firstName || !lastName) return setError('First and last name are required')
         if (password.length < 8) return setError('Password must be at least 8 characters')
         if (password !== confirmPassword) return setError('Passwords do not match')
 
@@ -151,13 +164,13 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
             const data = await authAPI.register({
                 email,
                 password,
-                first_name: firstName,
-                last_name: lastName
+                first_name: '',
+                last_name: ''
             })
             authLogin(data.access_token, data.user)
-            onSuccess()
+            if (onSuccess) onSuccess()
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Registration failed')
+            setError(formatError(err))
         } finally {
             setLoading(false)
         }
@@ -169,9 +182,9 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
             try {
                 const data = await authAPI.googleLogin(tokenResponse.access_token)
                 authLogin(data.access_token, data.user)
-                onSuccess()
-            } catch (err) {
-                setError('Google login failed')
+                if (onSuccess) onSuccess()
+            } catch (err: any) {
+                setError(formatError(err))
             } finally {
                 setLoading(false)
             }
@@ -202,7 +215,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={onClose}
-                className="absolute inset-0 bg-gradient-to-br from-[#FF6B35]/30 to-[#FFB347]/30 backdrop-blur-md"
+                className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/30 to-[var(--primary-light)]/30 backdrop-blur-md"
             />
 
             {/* Modal Card */}
@@ -210,37 +223,37 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-[380px] bg-white/10 backdrop-blur-[24px] rounded-[24px] border border-white/30 shadow-[0_20px_50px_rgba(255,107,53,0.15)] overflow-hidden"
+                className="relative w-full max-w-[420px] max-h-[90vh] bg-white/10 backdrop-blur-[24px] rounded-[24px] border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-y-auto scrollbar-none"
             >
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+                    className="absolute top-6 right-6 p-2 rounded-full bg-black/10 hover:bg-black/20 text-black transition-colors z-10"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
                 <div className="p-6 md:p-8">
-                    <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-orange-500/30 mb-3 ring-4 ring-white/10">
-                            <ShieldCheck className="w-6 h-6" />
+                    <div className="text-center mb-3">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary)]/30 mb-2 ring-4 ring-white/10">
+                            <ShieldCheck className="w-5 h-5" />
                         </div>
-                        <h2 className="text-xl font-bold text-white tracking-tight">Complete Booking</h2>
-                        <p className="text-white/70 text-xs mt-1">Sign in to secure your adventure</p>
+                        <h2 className="text-[18px] font-bold text-black tracking-tight">Complete Booking</h2>
+                        <p className="text-black/70 text-[13px] mt-0.5">Sign in to secure your adventure</p>
                     </div>
 
                     {/* Tabs */}
                     {!requireOtp && (
-                        <div className="flex p-1 bg-white/10 rounded-2xl mb-6 border border-white/10">
+                        <div className="flex p-1 bg-white/10 rounded-2xl mb-4 border border-white/10">
                             {(['login', 'register'] as Tab[]).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => { setActiveTab(tab); setError(''); }}
                                     className={cn(
-                                        "flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                        "flex-1 py-2 text-sm font-bold rounded-xl transition-all duration-300",
                                         activeTab === tab
                                             ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-md"
-                                            : "text-white/60 hover:text-white hover:bg-white/5"
+                                            : "text-black/60 hover:text-black hover:bg-white/5"
                                     )}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -258,7 +271,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                             transition={{ duration: 0.2 }}
                         >
                             {(error || otpError) && (
-                                <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-100 text-xs animate-shake">
+                                <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-800 text-xs animate-shake">
                                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                     <span>{error || otpError}</span>
                                 </div>
@@ -267,39 +280,39 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                             {requireOtp ? (
                                 <form onSubmit={handleVerifyOTP} className="space-y-4">
                                     <div className="text-center mb-6">
-                                        <p className="text-sm text-white/80">Enter the verification code sent to <strong className="text-white">{email}</strong></p>
+                                        <p className="text-sm text-black/80">Enter the verification code sent to <strong className="text-black">{email}</strong></p>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">6-Digit Code</label>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
                                         <div className="relative group">
                                             <Input
                                                 value={otp}
                                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                className="bg-white/10 border-white/20 text-white rounded-xl h-14 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
+                                                className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                 placeholder="••••••"
                                                 required
                                             />
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-[#FFB347]" />
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
                                         </div>
                                     </div>
                                     
                                     <Button
                                         type="submit"
                                         disabled={loading || otp.length !== 6}
-                                        className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#FFB347] hover:from-[#ff591c] hover:to-[#ffa830] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(255,107,53,0.3)] transition-all hover:-translate-y-0.5"
+                                        className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
                                     </Button>
 
                                     <div className="text-center mt-6 flex flex-col items-center gap-2">
-                                        <p className="text-sm text-white/70">
+                                        <p className="text-sm text-black/70">
                                             Didn&apos;t receive code?
                                         </p>
                                         <button
                                             type="button"
                                             onClick={handleResendOTP}
                                             disabled={resendCooldown > 0 || loading}
-                                            className="text-[#FFB347] font-bold text-sm hover:underline disabled:opacity-50 disabled:hover:no-underline flex items-center justify-center gap-2"
+                                            className="text-black font-bold text-sm hover:underline disabled:opacity-50 disabled:hover:no-underline flex items-center justify-center gap-2"
                                         >
                                             {resendCooldown > 0 ? (
                                                 `Resend in ${resendCooldown}s`
@@ -307,61 +320,34 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                                 'Resend OTP'
                                             )}
                                         </button>
-                                        <div className="text-[10px] text-white/40 font-mono tracking-wider mt-2 bg-black/20 px-3 py-1 rounded-full">
+                                        <div className="text-[10px] text-black/40 font-mono tracking-wider mt-2 bg-black/5 px-3 py-1 rounded-full">
                                             Code valid for: {getTimeRemaining()}
                                         </div>
                                     </div>
                                 </form>
                             ) : (
-                                <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
-                                {activeTab === 'register' && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5 peer">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">First Name</label>
-                                            <div className="relative group">
-                                                <Input
-                                                    value={firstName}
-                                                    onChange={(e) => setFirstName(e.target.value)}
-                                                    className="bg-white/10 border-white/20 text-white rounded-xl h-11 pl-10 focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
-                                                    placeholder="John"
-                                                />
-                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#FFB347]" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">Last Name</label>
-                                            <div className="relative group">
-                                                <Input
-                                                    value={lastName}
-                                                    onChange={(e) => setLastName(e.target.value)}
-                                                    className="bg-white/10 border-white/20 text-white rounded-xl h-11 pl-10 focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
-                                                    placeholder="Doe"
-                                                />
-                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#FFB347]" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+                                <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-3">
 
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">Email ID</label>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
                                     <div className="relative group">
                                         <Input
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="bg-white/10 border-white/20 text-white rounded-xl h-11 pl-10 focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
+                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                             placeholder="traveler@example.com"
                                         />
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#FFB347]" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5 text-orange-200">
+                                <div className="space-y-1 text-black">
                                     <div className="flex justify-between items-center px-1">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Password</label>
+                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest">Password</label>
                                         {activeTab === 'login' && (
-                                            <button type="button" className="text-[10px] font-bold text-[#FFB347] hover:underline uppercase tracking-tight">Forgot?</button>
+                                            <button type="button" className="text-[10px] font-bold text-black hover:underline uppercase tracking-tight">Forgot?</button>
                                         )}
                                     </div>
                                     <div className="relative group">
@@ -369,33 +355,33 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                             type={showPassword ? "text" : "password"}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="bg-white/10 border-white/20 text-white rounded-xl h-11 pl-10 pr-10 focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
+                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 pr-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                             placeholder="••••••••"
                                         />
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#FFB347]" />
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black transition-colors"
                                         >
-                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
                                     </div>
                                 </div>
 
                                 {activeTab === 'register' && (
                                     <>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest ml-1">Confirm Password</label>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm Password</label>
                                             <div className="relative group">
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={confirmPassword}
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="bg-white/10 border-white/20 text-white rounded-xl h-11 pl-10 focus:ring-[#FF6B35]/30 focus:border-[#FF6B35] transition-all"
+                                                    className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                     placeholder="••••••••"
                                                 />
-                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-[#FFB347]" />
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
                                             </div>
                                         </div>
 
@@ -419,10 +405,10 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                             })}
                                         </div>
 
-                                        <div className="flex flex-wrap gap-3 px-1 pt-1 opacity-80">
+                                        <div className="flex flex-wrap gap-2 px-1 pt-1 opacity-80 mb-2">
                                             {getPasswordRequirements().map((req, i) => (
-                                                <div key={i} className={cn("flex items-center gap-1.5 text-[10px] font-bold tracking-tight", req.valid ? "text-green-400" : "text-white/40")}>
-                                                    {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-white/20" />}
+                                                <div key={i} className={cn("flex items-center gap-1 text-[11px] font-bold tracking-tight", req.valid ? "text-green-600" : "text-black/40")}>
+                                                    {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-black/20" />}
                                                     {req.label}
                                                 </div>
                                             ))}
@@ -433,7 +419,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
+                                    className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
                                 >
                                     {loading ? (
                                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -446,16 +432,16 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
                         </motion.div>
                     </AnimatePresence>
 
-                    <div className="relative my-6">
+                    <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                        <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold text-white/30"><span className="bg-transparent px-3">secure social sign-in</span></div>
+                        <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold text-black/30"><span className="bg-transparent px-3">secure social sign-in</span></div>
                     </div>
 
                     <Button
                         onClick={() => googleLogin()}
                         disabled={loading}
                         variant="outline"
-                        className="w-full h-11 bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-2xl transition-all font-bold flex items-center justify-center gap-3"
+                        className="w-full h-10 bg-black/5 border-black/10 text-black hover:bg-black/10 rounded-2xl transition-all font-bold flex items-center justify-center gap-3"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#EA4335" d="M12 5.04c1.86 0 3.53.64 4.84 1.89l3.63-3.63C18.23 1.23 15.35 0 12 0 7.31 0 3.32 2.69 1.41 6.63l4.24 3.29C6.65 7.15 9.1 5.04 12 5.04z" />
@@ -469,11 +455,11 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess }: BookingAuthModa
 
                 {/* Footer Section */}
                 <div className="bg-white/5 border-t border-white/10 px-6 py-4 text-center">
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
+                    <p className="text-[10px] text-black/40 font-bold uppercase tracking-wider">
                         {activeTab === 'login' ? "New around here?" : "Already have an account?"}{' '}
                         <button
                             onClick={() => { setActiveTab(activeTab === 'login' ? 'register' : 'login'); setError(''); }}
-                            className="text-[#FFB347] hover:underline"
+                            className="text-black hover:underline"
                         >
                             {activeTab === 'login' ? "Join the adventure" : "Welcome back"}
                         </button>

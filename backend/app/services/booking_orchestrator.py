@@ -66,14 +66,14 @@ class BookingOrchestrator:
             return booking
 
         # Update Payment Status
-        booking.payment_status = PaymentStatus.SUCCEEDED
+        booking.payment_status = PaymentStatus.PAID
         
         # Update associated Payment record
         stmt = select(Payment).where(Payment.booking_id == booking.id).order_by(Payment.created_at.desc())
         result = await self.db.execute(stmt)
         payment_record = result.scalars().first()
         if payment_record:
-            payment_record.status = PaymentStatus.SUCCEEDED
+            payment_record.status = PaymentStatus.PAID
             payment_record.razorpay_payment_id = razorpay_payment_id
             await self.db.flush()
 
@@ -169,7 +169,7 @@ class BookingOrchestrator:
         # 1. Check for mock mode override
         if "order_mock_" in verification.get("razorpay_order_id", ""):
              logger.info(f"Skipping verification for mock order: {booking.id}")
-             booking.payment_status = PaymentStatus.SUCCEEDED
+             booking.payment_status = PaymentStatus.PAID
              return
 
         # 2. Verify Signature
@@ -249,7 +249,7 @@ class BookingOrchestrator:
                  raise HTTPException(status_code=400, detail=f"Payment Verification Failed: {str(e)}")
 
         # 4. Update Status if passed
-        booking.payment_status = PaymentStatus.SUCCEEDED
+        booking.payment_status = PaymentStatus.PAID
         
         # Also update the Payment record if it exists
         stmt = select(Payment).where(Payment.razorpay_order_id == verification['razorpay_order_id'])
@@ -257,7 +257,7 @@ class BookingOrchestrator:
         payment_record = result.scalar_one_or_none()
         
         if payment_record:
-            payment_record.status = PaymentStatus.SUCCEEDED
+            payment_record.status = PaymentStatus.PAID
             payment_record.razorpay_payment_id = verification['razorpay_payment_id']
             payment_record.razorpay_signature = verification['razorpay_signature']
             # We don't commit here, relying on outer scope commit or we flush
@@ -280,7 +280,7 @@ class BookingOrchestrator:
             
             # 3. Payment Receipt (Invoice PDF - only if paid)
             status_str = str(booking.payment_status).lower()
-            is_paid = "succeeded" in status_str or "captured" in status_str or booking.payment_status == PaymentStatus.SUCCEEDED
+            is_paid = "succeeded" in status_str or "captured" in status_str or "paid" in status_str or booking.payment_status == PaymentStatus.PAID or booking.payment_status == PaymentStatus.SUCCEEDED
             
             if is_paid:
                 payment_details = {

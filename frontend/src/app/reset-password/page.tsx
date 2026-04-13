@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { authAPI } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { Plane, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle, ShieldAlert } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -73,7 +73,7 @@ function ResetPasswordForm() {
                 router.push('/login')
             }, 3000)
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Failed to reset password. Please try again.')
+            setError(formatError(err))
             setLoading(false)
         }
     }

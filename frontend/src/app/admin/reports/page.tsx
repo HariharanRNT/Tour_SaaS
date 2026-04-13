@@ -29,10 +29,6 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex items-center gap-4">
                             <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-                            <Button className="h-[44px] px-6 bg-gradient-to-br from-[#6366F1] to-[#7C3AED] hover:from-[#5558E3] hover:to-[#6D28D9] text-white font-bold rounded-[10px] shadow-[0_4px_16px_rgba(99,102,241,0.30)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.40)] hover:-translate-y-[2px] transition-all duration-200">
-                                <Download className="h-4 w-4 mr-2" />
-                                Export
-                            </Button>
                         </div>
                     </div>
                 </div>

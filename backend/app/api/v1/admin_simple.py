@@ -9,7 +9,11 @@ import json
 
 from app.database import get_db
 from app.database import get_db
-from app.models import Package, PackageStatus, ItineraryItem, Booking, User, UserRole, BookingStatus, Payment, PaymentStatus, Agent, Subscription
+from app.models import (
+    Package, PackageStatus, ItineraryItem, Booking, User, UserRole, 
+    BookingStatus, Payment, PaymentStatus, Agent, Subscription,
+    BookingType, EnquiryPaymentType
+)
 from sqlalchemy import func, desc, asc, outerjoin
 
 router = APIRouter()
@@ -599,6 +603,9 @@ async def list_packages_simple(db: AsyncSession = Depends(get_db)):
             "price_per_person": float(p.price_per_person),
             "max_group_size": p.max_group_size,
             "description": p.description,
+            "booking_type": p.booking_type.value if hasattr(p.booking_type, 'value') else str(p.booking_type),
+            "price_label": p.price_label,
+            "enquiry_payment": p.enquiry_payment.value if hasattr(p.enquiry_payment, 'value') else str(p.enquiry_payment),
             "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
             "created_at": p.created_at.isoformat() if p.created_at else None
         }
@@ -628,6 +635,9 @@ async def create_package_simple(
             price_per_person=float(data['price_per_person']),
             max_group_size=int(data.get('max_group_size', 20)),
             description=data.get('description', ''),
+            booking_type=data.get('booking_type', BookingType.INSTANT),
+            price_label=data.get('price_label'),
+            enquiry_payment=data.get('enquiry_payment', EnquiryPaymentType.OFFLINE),
             status=PackageStatus.DRAFT,
             is_template=False
         )
@@ -648,6 +658,9 @@ async def create_package_simple(
             "price_per_person": float(new_package.price_per_person),
             "max_group_size": new_package.max_group_size,
             "description": new_package.description,
+            "booking_type": new_package.booking_type.value if hasattr(new_package.booking_type, 'value') else str(new_package.booking_type),
+            "price_label": new_package.price_label,
+            "enquiry_payment": new_package.enquiry_payment.value if hasattr(new_package.enquiry_payment, 'value') else str(new_package.enquiry_payment),
             "status": new_package.status.value if hasattr(new_package.status, 'value') else str(new_package.status),
             "created_at": new_package.created_at.isoformat() if new_package.created_at else None
         }
@@ -689,6 +702,12 @@ async def update_package_simple(
             package.max_group_size = int(data['max_group_size'])
         if 'description' in data:
             package.description = data['description']
+        if 'booking_type' in data:
+            package.booking_type = data['booking_type']
+        if 'price_label' in data:
+            package.price_label = data['price_label']
+        if 'enquiry_payment' in data:
+            package.enquiry_payment = data['enquiry_payment']
         
         await db.commit()
         await db.refresh(package)
@@ -705,6 +724,9 @@ async def update_package_simple(
             "price_per_person": float(package.price_per_person),
             "max_group_size": package.max_group_size,
             "description": package.description,
+            "booking_type": package.booking_type.value if hasattr(package.booking_type, 'value') else str(package.booking_type),
+            "price_label": package.price_label,
+            "enquiry_payment": package.enquiry_payment.value if hasattr(package.enquiry_payment, 'value') else str(package.enquiry_payment),
             "status": package.status.value if hasattr(package.status, 'value') else str(package.status),
             "created_at": package.created_at.isoformat() if package.created_at else None
         }
@@ -794,6 +816,9 @@ async def get_package_with_itinerary_simple(
                 "price_per_person": float(package.price_per_person),
                 "max_group_size": package.max_group_size,
                 "description": package.description,
+                "booking_type": package.booking_type.value if hasattr(package.booking_type, 'value') else str(package.booking_type),
+                "price_label": package.price_label,
+                "enquiry_payment": package.enquiry_payment.value if hasattr(package.enquiry_payment, 'value') else str(package.enquiry_payment),
                 "status": package.status.value if hasattr(package.status, 'value') else str(package.status)
             },
             "itinerary_by_day": list(itinerary_by_day.values())

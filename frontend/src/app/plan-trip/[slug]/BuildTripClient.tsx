@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, Map as MapIcon } from 'lucide-react'
+import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -15,7 +15,7 @@ import { ServiceCard } from '@/components/itinerary/service-card'
 import { flightsAPI, API_URL } from '@/lib/api'
 import { FlightCard, Flight } from '@/components/itinerary/flight-card'
 import { FlightFilters, FlightFilterState } from '@/components/itinerary/flight-filters'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,7 +27,12 @@ import {
     AlertDialogTitle
 } from "@/components/ui/alert-dialog"
 import { DayPlanner } from '@/components/itinerary/DayPlanner'
-import { BookingAuthModal } from '@/components/auth/BookingAuthModal'
+import { useAuthModal } from '@/context/AuthModalContext'
+import { useAuth } from '@/context/AuthContext'
+import { toast } from 'sonner'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Activity {
     id?: string
@@ -137,8 +142,19 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const [isOnwardModalOpen, setIsOnwardModalOpen] = useState(false)
     const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+    const { openAuthModal, openAgentSelector } = useAuthModal()
+    const { user } = useAuth()
     const [showMobileFilters, setShowMobileFilters] = useState(false)
+
+    // Enquiry Modal State
+    const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false)
+    const [enquiryForm, setEnquiryForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+    })
+    const [sendingEnquiry, setSendingEnquiry] = useState(false)
 
     // GST Settings State
     const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
@@ -609,13 +625,37 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     }
 
     const handleCheckout = async () => {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-
-        if (!token) {
-            setIsAuthModalOpen(true)
+        // If it's an enquiry package, open enquiry modal directly - NO login required
+        if ((session?.booking_type || '').toUpperCase() === 'ENQUIRY') {
+            setIsEnquiryModalOpen(true)
             return
         }
 
+        // For instant booking, require authentication
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+        if (!token) {
+            openAuthModal({ 
+                mode: 'login',
+                redirectUrl: window.location.href 
+            })
+            return
+        }
+
+        // === Agent / Sub-User booking flow ===
+        // Agents must pick a customer BEFORE proceeding to checkout
+        const role = user?.role?.toUpperCase()
+        if (role === 'AGENT' || role === 'SUB_USER') {
+            openAgentSelector(async (selectedCustomer) => {
+                // Customer selected — now save the itinerary then redirect
+                const sid = await saveItinerary()
+                if (sid) {
+                    router.push(`/checkout?sessionId=${sid}&customerId=${selectedCustomer.id}`)
+                }
+            })
+            return
+        }
+
+        // Standard customer checkout flow
         // Always sync the current state (itinerary, travelers, etc.) to the session
         // before redirecting to checkout to ensure data consistency.
         const sid = await saveItinerary();
@@ -626,10 +666,55 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         }
     }
 
-    const handleAuthSuccess = () => {
-        setIsAuthModalOpen(false)
-        handleCheckout()
+    const handleSendEnquiry = async () => {
+        if (!enquiryForm.name || !enquiryForm.email || !enquiryForm.phone) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
+        // Get travel date from URL param or session
+        const travelDate = queryDate || session?.start_date || new Date().toISOString().split('T')[0]
+        const totalTravellers = Math.max(travelers.adults + travelers.children, 1)
+
+        setSendingEnquiry(true)
+        try {
+            const token = localStorage.getItem('token')
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+            }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+
+            const response = await fetch(`${API_URL}/api/v1/enquiries`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    package_id: session?.id || session?.package_id,
+                    customer_name: enquiryForm.name,
+                    email: enquiryForm.email,
+                    phone: enquiryForm.phone,
+                    travel_date: travelDate,
+                    travellers: totalTravellers,
+                    message: enquiryForm.message || undefined
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to send enquiry')
+            }
+
+            toast.success('Your enquiry has been sent! The agent will contact you shortly.')
+            setIsEnquiryModalOpen(false)
+            setEnquiryForm({ name: '', email: '', phone: '', message: '' })
+        } catch (err: any) {
+            console.error('Enquiry error:', err)
+            toast.error(err.message || 'Failed to send enquiry. Please try again.')
+        } finally {
+            setSendingEnquiry(false)
+        }
     }
+
+
 
 
 
@@ -1234,6 +1319,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     disabled={mode === 'preview'}
                                     gstSettings={gstSettings || undefined}
                                     cancellationEnabled={session.cancellation_enabled}
+                                    bookingType={session.booking_type}
+                                    priceLabel={session.price_label}
                                 />
                             </div>
                         </div>
@@ -1244,34 +1331,41 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             {/* Mobile Sticky Footer */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--color-primary-font)]/10 p-4 z-40 lg:hidden flex items-center justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div className="flex flex-col">
-                    <span className="text-xs text-[var(--color-primary-font)] font-medium">Total Trip Cost {gstSettings && !gstSettings.inclusive && <span className="text-[10px] text-blue-600 font-bold">(+GST)</span>}</span>
+                    <span className="text-xs text-[var(--color-primary-font)] font-medium">
+                        {(session.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Price Status' : 'Total Trip Cost'}
+                        {((session.booking_type || '').toUpperCase() !== 'ENQUIRY' && gstSettings && !gstSettings.inclusive) && <span className="text-[10px] text-blue-600 font-bold"> (+GST)</span>}
+                    </span>
                     <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-[var(--color-primary-font)]">
-                            ₹{(() => {
-                                const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
-                                const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
-                                const services = [
-                                    ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
-                                    ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
-                                    ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
-                                    ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
-                                ]
-                                const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
-                                let subTotal = totalBasePrice + totalServicesPrice
-
-                                if (gstSettings && !gstSettings.inclusive) {
-                                    const gstAmount = (subTotal * gstSettings.percentage) / 100
-                                    subTotal += gstAmount
-                                }
-
-                                return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                            })()}
+                            {(session.booking_type || '').toUpperCase() === 'ENQUIRY' ? (
+                                session.price_label || 'Request for enquiry'
+                            ) : (
+                                `₹${(() => {
+                                    const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
+                                    const totalBasePrice = (session.price_per_person || 18000) * totalTravelers
+                                    const services = [
+                                        ...(selectedOnwardFlight ? [{ price: session.flight_price_included ? 0 : selectedOnwardFlight.price * (travelers.adults + travelers.children) }] : []),
+                                        ...(selectedReturnFlight ? [{ price: session.flight_price_included ? 0 : selectedReturnFlight.price * (travelers.adults + travelers.children) }] : []),
+                                        ...(hotelSelected ? [{ price: HOTEL_ESTIMATE * (travelers.adults + travelers.children) }] : []),
+                                        ...(transferSelected ? [{ price: TRANSFER_ESTIMATE * (travelers.adults + travelers.children) }] : [])
+                                    ]
+                                    const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
+                                    let subTotal = totalBasePrice + totalServicesPrice
+                                    
+                                    if (gstSettings && !gstSettings.inclusive) {
+                                        const gstAmount = (subTotal * gstSettings.percentage) / 100
+                                        subTotal += gstAmount
+                                    }
+                                    
+                                    return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                                })()}`
+                            )}
                         </span>
                         <Button variant="link" size="sm" className="h-auto p-0 text-[var(--primary)] text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
                     </div>
                 </div>
                 <Button onClick={handleCheckout} className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--primary-glow)]">
-                    Book Now
+                    {(session.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Send Enquiry' : 'Book Now'}
                 </Button>
             </div>
 
@@ -1302,16 +1396,113 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             disabled={mode === 'preview'}
                             gstSettings={gstSettings || undefined}
                             cancellationEnabled={session.cancellation_enabled}
+                            bookingType={session.booking_type}
+                            priceLabel={session.price_label}
                         />
                     </div>
                 </DialogContent>
             </Dialog>
 
-            <BookingAuthModal
-                isOpen={isAuthModalOpen}
-                onClose={() => setIsAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
+
+
+            {/* Enquiry Modal */}
+            <Dialog open={isEnquiryModalOpen} onOpenChange={setIsEnquiryModalOpen}>
+                <DialogContent className="max-w-[500px] glass-panel bg-white/80 p-0 overflow-hidden border-white/40 z-[1100]">
+                    <div className="absolute top-4 right-4 z-10">
+                        <DialogClose asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/50 hover:bg-white/80">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
+
+                    <div className="flex flex-col h-full max-h-[90vh]">
+                        <div className="bg-gradient-to-br from-[var(--primary-soft)] to-white p-6 border-b border-white/50">
+                            <h3 className="font-bold text-xl text-[var(--color-primary-font)]">Inquire About This Journey</h3>
+                            <p className="text-sm text-[var(--color-primary-font)]/70 mt-1">{session?.title}</p>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[var(--color-primary-font)]">Your Name <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        placeholder="Full Name"
+                                        value={enquiryForm.name}
+                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
+                                        className="h-11 bg-white/50 border-white/40"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[var(--color-primary-font)]">Phone Number <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        placeholder="+91 ..."
+                                        value={enquiryForm.phone}
+                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, phone: e.target.value }))}
+                                        className="h-11 bg-white/50 border-white/40"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[var(--color-primary-font)]">Email Address <span className="text-red-500">*</span></Label>
+                                <Input
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    value={enquiryForm.email}
+                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
+                                    className="h-11 bg-white/50 border-white/40"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[var(--color-primary-font)]">Message (Optional)</Label>
+                                <Textarea
+                                    placeholder="Tell us about special requirements..."
+                                    value={enquiryForm.message}
+                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
+                                    className="min-h-[100px] bg-white/50 border-white/40 resize-none"
+                                />
+                            </div>
+
+                            <div className="bg-[var(--primary)]/5 p-4 rounded-xl border border-[var(--primary)]/10 text-xs text-[var(--color-primary-font)]/70 space-y-2">
+                                <div className="flex justify-between font-bold">
+                                    <span>Travel Date:</span>
+                                    <span>{session?.start_date}</span>
+                                </div>
+                                <div className="flex justify-between font-bold">
+                                    <span>Travelers:</span>
+                                    <span>{travelers.adults + travelers.children + travelers.infants} People</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-white/50 border-t border-white/40 mt-auto flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-12 rounded-xl"
+                                onClick={() => setIsEnquiryModalOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                className="flex-1 h-12 rounded-xl bg-[var(--primary)] hover:opacity-90 font-bold"
+                                disabled={sendingEnquiry}
+                                onClick={handleSendEnquiry}
+                            >
+                                {sendingEnquiry ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    'Submit Enquiry'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

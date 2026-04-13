@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { authAPI } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowLeft, Clock, MapPin, Compass, Globe, Wind, Check, Copy, Key, ChevronRight, ShieldCheck, Plane } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGoogleLogin } from '@react-oauth/google'
@@ -69,6 +69,21 @@ function LoginContent() {
         fetchAgentInfo()
     }, [])
 
+    // Route guard: Redirect customers to home if they access /login while logged in
+    useEffect(() => {
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr)
+                if (user.role?.toLowerCase() === 'customer') {
+                    router.push('/')
+                }
+            } catch (e) {
+                console.error('Error checking user role for redirect:', e)
+            }
+        }
+    }, [router])
+
     useEffect(() => {
         if (resendCooldown > 0) {
             const t = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
@@ -109,18 +124,35 @@ function LoginContent() {
         try {
             const response = await authAPI.login(email, password)
             if (response.require_otp) {
+                // Block customers immediately — even before showing OTP screen
+                if (response.role?.toUpperCase() === 'CUSTOMER') {
+                    setError('This portal is for travel agents only. Are you a traveler? Use the booking page.')
+                    shake()
+                    setLoading(false)
+                    return
+                }
                 setOtpExpiresAt(Date.now() + (response.expires_in || 300) * 1000)
                 setResendCooldown(60)
                 setOtpSent(true)
                 setLoading(false)
             } else {
+                const user = response.user
+                const role = user?.role?.toUpperCase()
+
+                // Block customers from the Agent Portal
+                if (role === 'CUSTOMER') {
+                    setError('This portal is for travel agents only. Are you a traveler? Use the booking page.')
+                    shake()
+                    setLoading(false)
+                    return
+                }
+
                 authLogin(response.access_token, response.user)
                 setIsSuccess(true)
                 setTimeout(() => {
-                    const user = response.user
                     if (nextUrl) router.push(nextUrl)
-                    if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toUpperCase() === 'AGENT' || user?.role?.toUpperCase() === 'SUB_USER') {
+                    if (role === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                    else if (role === 'AGENT' || role === 'SUB_USER') {
                         const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')
@@ -132,7 +164,7 @@ function LoginContent() {
                 }, 900)
             }
         } catch (err: any) {
-            setError(err.response?.data?.detail || err.message || 'Invalid email or password')
+            setError(formatError(err))
             shake()
             setLoading(false)
         }
@@ -145,12 +177,22 @@ function LoginContent() {
         setOtpLoading(true)
         try {
             const data = await authAPI.verifyLoginOTP(email, otp)
+            const role = data.user.role?.toUpperCase()
+
+            // Block customers from the Agent Portal
+            if (role === 'CUSTOMER') {
+                setOtpError('This portal is for travel agents only. Are you a traveler? Use the booking page.')
+                shake()
+                setOtpLoading(false)
+                return
+            }
+
             authLogin(data.access_token, data.user)
             setIsSuccess(true)
             setTimeout(() => {
                 if (nextUrl) router.push(nextUrl)
-                else if (data.user.role.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                else if (data.user.role?.toUpperCase() === 'AGENT' || data.user.role?.toUpperCase() === 'SUB_USER') {
+                else if (role === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                else if (role === 'AGENT' || role === 'SUB_USER') {
                     const hasActiveSub = data.user.has_active_subscription || data.user.subscription_status === 'active';
                     if (hasActiveSub) {
                         router.push('/agent/dashboard')
@@ -161,7 +203,7 @@ function LoginContent() {
                 else router.push('/')
             }, 900)
         } catch (err: any) {
-            setOtpError(err.response?.data?.detail || 'Invalid or expired OTP')
+            setOtpError(formatError(err))
             shake()
             setOtpLoading(false)
         }
@@ -191,13 +233,23 @@ function LoginContent() {
             setError('')
             try {
                 const data = await authAPI.googleLogin(tokenResponse.access_token)
+                const role = data.user?.role?.toUpperCase()
+
+                // Block customers from the Agent Portal
+                if (role === 'CUSTOMER') {
+                    setError('This portal is for travel agents only. Are you a traveler? Use the booking page.')
+                    shake()
+                    setLoading(false)
+                    return
+                }
+
                 authLogin(data.access_token, data.user)
                 setIsSuccess(true)
                 setTimeout(() => {
                     const user = data.user
                     if (nextUrl) router.push(nextUrl)
-                    else if (user?.role?.toUpperCase() === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
-                    else if (user?.role?.toUpperCase() === 'AGENT' || user?.role?.toUpperCase() === 'SUB_USER') {
+                    else if (role === 'ADMIN') { localStorage.setItem('isAdmin', 'true'); router.push('/admin/dashboard') }
+                    else if (role === 'AGENT' || role === 'SUB_USER') {
                         const hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
                         if (hasActiveSub) {
                             router.push('/agent/dashboard')
@@ -208,7 +260,7 @@ function LoginContent() {
                     else router.push('/')
                 }, 900)
             } catch (err: any) {
-                setError(err.response?.data?.detail || 'Google Login failed')
+                setError(formatError(err))
                 shake()
                 setLoading(false)
             }
@@ -244,7 +296,7 @@ function LoginContent() {
                         <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
                             <Plane className="h-5 w-5 text-[var(--primary)]" />
                         </div>
-                        <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                        <span className="font-bold text-xl tracking-tight text-black">TourSaaS</span>
                     </div>
                 </div>
 
@@ -263,16 +315,16 @@ function LoginContent() {
                                 <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
                                     <Plane className="h-6 w-6 text-[var(--primary)]" />
                                 </div>
-                                <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                                <span className="font-bold text-2xl tracking-tight text-black">TourSaaS</span>
                             </div>
 
                             <div className="space-y-3">
-                                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
+                                <h1 className="text-3xl lg:text-4xl font-extrabold text-black leading-tight">
                                     Your Global<br />
-                                    <span className="text-[var(--primary)]">Command Center.</span>
+                                    <span className="text-black">Command Center.</span>
                                 </h1>
 
-                                <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
+                                <p className="text-[15px] text-black font-medium leading-relaxed max-w-sm opacity-90">
                                     Monitor bookings, manage multi-destination packages, and scale your travel empire from one unified portal.
                                 </p>
                             </div>
@@ -286,7 +338,7 @@ function LoginContent() {
                             ].map((pill, i) => (
                                 <div key={i} className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md border border-white/50 h-8 px-3 rounded-full shadow-sm">
                                     <span className="text-xs">{pill.icon}</span>
-                                    <span className="text-[12px] font-bold text-[#5C2500] whitespace-nowrap">{pill.text}</span>
+                                    <span className="text-[12px] font-bold text-black whitespace-nowrap">{pill.text}</span>
                                 </div>
                             ))}
                         </div>
@@ -308,11 +360,11 @@ function LoginContent() {
                                 </div>
 
                                 <div className="text-center space-y-2 w-full">
-                                    <CardTitle className="text-[11px] text-center font-bold text-[var(--primary)] tracking-[0.2em] uppercase">
-                                        {agentInfo?.agency_name ? agentInfo.agency_name : 'Customer & Agent Login'}
+                                    <CardTitle className="text-[11px] text-center font-bold text-black tracking-[0.2em] uppercase">
+                                        {agentInfo?.agency_name ? `${agentInfo.agency_name} — Agent Portal` : 'TourSaaS — Agent Portal'}
                                     </CardTitle>
-                                    <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
-                                        {otpSent ? 'Enter security code' : 'Enter credentials to access your portal'}
+                                    <CardDescription className="text-center font-medium text-black text-[13px] leading-snug">
+                                        {otpSent ? 'Enter security code' : 'This login is for registered travel agents only.'}
                                     </CardDescription>
                                 </div>
                             </div>
@@ -331,7 +383,7 @@ function LoginContent() {
                                             <CheckCircle className="w-8 h-8 text-white" />
                                         </div>
                                         <h3 className="text-xl font-bold text-[#1a1a2e]">Welcome</h3>
-                                        <p className="text-[#6B3F2A] text-sm font-medium">Boarding your dashboard... ✈️</p>
+                                        <p className="text-black text-sm font-medium">Boarding your dashboard... ✈️</p>
                                     </motion.div>
                                 ) : !otpSent ? (
                                     <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
@@ -346,16 +398,16 @@ function LoginContent() {
                                             <div className="space-y-2.5">
                                                 {/* Email Field with Floating Label */}
                                                 <div className="relative group/input">
-                                                    <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-[var(--primary)]' : 'text-orange-900/30'}`} />
+                                                    <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-black' : 'text-black/30'}`} />
                                                     <Input
                                                         id="email" type="email" value={email}
                                                         onChange={handleEmailChange} onBlur={handleEmailBlur}
                                                         onFocus={() => setEmailFocused(true)}
                                                         className={`
                                                             pl-11 pr-10 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
-                                                            transition-all duration-300 text-[#5C2500] font-medium text-sm
+                                                            transition-all duration-300 text-black font-medium text-sm
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${emailFocused ? 'border-[var(--primary)] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                            ${emailFocused ? 'border-black shadow-[0_0_8px_rgba(0,0,0,0.1)] bg-white/40' : ''}
                                                             ${emailValid === false ? 'border-red-300' : ''}
                                                         `}
                                                         required
@@ -364,7 +416,7 @@ function LoginContent() {
                                                         htmlFor="email"
                                                         className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
                                                             ${emailFocused || email
-                                                                ? '-top-2 text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-[var(--primary-soft)] px-1.5 rounded-full'
+                                                                ? '-top-2 text-[10px] font-bold text-black uppercase tracking-wider bg-white px-1.5 rounded-full'
                                                                 : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
                                                             }`}
                                                     >
@@ -374,7 +426,7 @@ function LoginContent() {
 
                                                 {/* Password Field with Floating Label */}
                                                 <div className="relative group/input">
-                                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-[var(--primary)]' : 'text-orange-900/30'}`} />
+                                                    <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-black' : 'text-black/30'}`} />
                                                     <Input
                                                         id="password" type={showPassword ? 'text' : 'password'}
                                                         value={password} onChange={(e) => setPassword(e.target.value)}
@@ -382,15 +434,15 @@ function LoginContent() {
                                                         onBlur={() => setPasswordFocused(false)}
                                                         className={`
                                                             pl-11 pr-11 h-12 bg-white/30 backdrop-blur-[8px] border border-white/40 rounded-[14px] 
-                                                            transition-all duration-300 text-[#5C2500] font-medium text-sm
+                                                            transition-all duration-300 text-black font-medium text-sm
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${passwordFocused ? 'border-[var(--primary)] shadow-[0_0_8px_rgba(255,122,69,0.25)] bg-white/40' : ''}
+                                                            ${passwordFocused ? 'border-black shadow-[0_0_8px_rgba(0,0,0,0.1)] bg-white/40' : ''}
                                                         `}
                                                         required
                                                     />
                                                     <button
                                                         type="button" onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[var(--primary)]/50 hover:text-[var(--primary)] transition-colors focus:outline-none"
+                                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-black transition-colors focus:outline-none"
                                                     >
                                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                     </button>
@@ -398,7 +450,7 @@ function LoginContent() {
                                                         htmlFor="password"
                                                         className={`absolute left-11 transition-all duration-300 pointer-events-none origin-left
                                                             ${passwordFocused || password
-                                                                ? '-top-2 text-[10px] font-bold text-[var(--primary)] uppercase tracking-wider bg-[var(--primary-soft)] px-1.5 rounded-full'
+                                                                ? '-top-2 text-[10px] font-bold text-black uppercase tracking-wider bg-white px-1.5 rounded-full'
                                                                 : 'top-1/2 -translate-y-1/2 text-[14px] text-[#888]'
                                                             }`}
                                                     >
@@ -409,10 +461,10 @@ function LoginContent() {
 
                                             <div className="flex items-center justify-between px-1">
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} className="w-4 h-4 border-[var(--primary)] data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]" />
-                                                    <label htmlFor="remember-me" className="text-[13px] font-bold text-[#6B3F2A]/70 cursor-pointer">Remember me</label>
+                                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} className="w-4 h-4 border-black data-[state=checked]:bg-black data-[state=checked]:border-black" />
+                                                    <label htmlFor="remember-me" className="text-[13px] font-bold text-black/70 cursor-pointer">Remember me</label>
                                                 </div>
-                                                <Link href="/forgot-password" core-link="true" className="text-[13px] font-bold text-[var(--primary)] hover:underline transition-all">
+                                                <Link href="/forgot-password" core-link="true" className="text-[13px] font-bold text-black hover:underline transition-all">
                                                     Forgot?
                                                 </Link>
                                             </div>
@@ -437,7 +489,7 @@ function LoginContent() {
 
                                             <div className="relative my-3">
                                                 <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#FFCBA4]/20" /></div>
-                                                <div className="relative flex justify-center"><span className="bg-transparent px-3 text-[10px] text-[#FFCBA4] uppercase tracking-widest font-black">or</span></div>
+                                                <div className="relative flex justify-center"><span className="bg-transparent px-3 text-[10px] text-black uppercase tracking-widest font-black">or</span></div>
                                             </div>
 
                                             <Button
@@ -449,14 +501,14 @@ function LoginContent() {
                                             </Button>
 
                                             <div className="text-center pt-2.5 border-t border-[#FFCBA4]/10 mt-2.5">
-                                                <p className="text-[13px] font-bold text-[#6B3F2A]/60">
-                                                    New traveler?{' '}
-                                                    <Link href="/register" className="text-[var(--primary)] hover:underline">Create account</Link>
+                                                <p className="text-[13px] font-bold text-black/60">
+                                                    Are you a traveler?{' '}
+                                                    <Link href="/" className="text-black hover:underline">Book your trip here</Link>
                                                 </p>
 
                                                 <div className="mt-2.5 pt-2.5 border-t border-[#FFCBA4]/10 relative">
                                                     <div className="bg-white/5 backdrop-blur-sm p-2 rounded-[14px] border border-white/10 flex flex-col gap-1.5">
-                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-[var(--primary)] hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-[var(--primary)]/20 hover:bg-[var(--primary)] transition-all group/agent">
+                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-black hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-black/20 hover:bg-black transition-all group/agent">
                                                             Register as Agent
                                                             <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                                         </Link>
@@ -486,22 +538,22 @@ function LoginContent() {
                                                         className={`
                                                             h-16 text-center text-3xl font-bold tracking-[0.5em] 
                                                             bg-white/35 backdrop-blur-[10px] border border-white/40 rounded-[18px] 
-                                                            transition-all duration-300 text-[#5C2500]
+                                                            transition-all duration-300 text-black
                                                             focus-visible:ring-0 focus-visible:ring-offset-0 
-                                                            ${otpFocused ? 'border-[var(--primary)] shadow-[0_0_12px_rgba(255,122,69,0.4)] bg-white/50' : ''}
+                                                            ${otpFocused ? 'border-black shadow-[0_0_12px_rgba(0,0,0,0.2)] bg-white/50' : ''}
                                                         `}
                                                         autoComplete="one-time-code"
                                                     />
                                                 </div>
 
-                                                <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#6B3F2A]/60">
+                                                <div className="flex items-center justify-center gap-2 text-xs font-bold text-black/60">
                                                     <Clock className="w-4 h-4" />
-                                                    <span>Expires in <span className="text-[var(--primary)]">{getTimeRemaining()}</span></span>
+                                                    <span>Expires in <span className="text-black">{getTimeRemaining()}</span></span>
                                                 </div>
 
                                                 <div className="flex justify-center gap-3">
                                                     {[...Array(6)].map((_, i) => (
-                                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < otp.length ? 'bg-[var(--primary)] scale-125' : 'bg-[#FFCBA4]/40'}`} />
+                                                        <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300 ${i < otp.length ? 'bg-black scale-125' : 'border border-black/20'}`} />
                                                     ))}
                                                 </div>
                                             </div>
@@ -516,13 +568,13 @@ function LoginContent() {
                                             <div className="flex flex-col gap-4 text-center mt-6">
                                                 <button type="button" onClick={handleResendOTP}
                                                     disabled={resendCooldown > 0 || loading}
-                                                    className={`text-sm font-bold transition-colors ${resendCooldown > 0 ? 'text-[#6B3F2A]/30 cursor-not-allowed' : 'text-[var(--primary)] hover:text-[#E66230]'}`}
+                                                    className={`text-sm font-bold transition-colors ${resendCooldown > 0 ? 'text-black/30 cursor-not-allowed' : 'text-black hover:text-gray-700'}`}
                                                 >
                                                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
                                                 </button>
 
                                                 <button type="button" onClick={handleBackToStep1}
-                                                    className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#6B3F2A]/60 hover:text-[var(--primary)] transition-colors"
+                                                    className="w-full flex items-center justify-center gap-2 text-sm font-bold text-black/60 hover:text-black transition-colors"
                                                 >
                                                     <ArrowLeft className="w-4 h-4" />
                                                     Back to login

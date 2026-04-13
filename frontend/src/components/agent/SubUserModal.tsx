@@ -109,19 +109,19 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-black/5 flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white/60 backdrop-blur-[30px] w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl border border-white/50 flex flex-col animate-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="p-6 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+                <div className="p-6 border-b border-black/5 flex items-center justify-between sticky top-0 bg-white/40 backdrop-blur-xl z-20">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                             <UserPlus className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-black leading-tight">
+                            <h2 className="text-xl font-black text-black leading-tight tracking-tight">
                                 {isEdit ? 'Edit Staff Member' : 'Add New Sub-User'}
                             </h2>
-                            <p className="text-xs text-black/50 font-medium tracking-tight">
+                            <p className="text-xs text-black font-bold tracking-tight opacity-70">
                                 Delegate portal access to your team members
                             </p>
                         </div>
@@ -129,9 +129,9 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                     <button 
                         type="button"
                         onClick={onClose} 
-                        className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                        className="p-2 hover:bg-black/10 rounded-full transition-colors group"
                     >
-                        <X className="w-5 h-5 text-black/40" />
+                        <X className="w-5 h-5 text-black/60 group-hover:text-black" />
                     </button>
                 </div>
 
@@ -139,7 +139,7 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                     {/* Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest pl-1">First Name</label>
+                            <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">First Name</label>
                             <Input 
                                 required
                                 value={formData.first_name}
@@ -149,7 +149,7 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest pl-1">Last Name</label>
+                            <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">Last Name</label>
                             <Input 
                                 required
                                 value={formData.last_name}
@@ -159,7 +159,7 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest pl-1">Email Address (Login ID)</label>
+                            <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">Email Address (Login ID)</label>
                             <Input 
                                 required
                                 type="email"
@@ -171,14 +171,14 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest pl-1">Phone Number</label>
+                            <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">Phone Number</label>
                             <div className="phone-input-container">
                                 <PhoneInput
                                     country={'in'}
                                     value={formData.phone}
                                     onChange={phone => setFormData({ ...formData, phone })}
                                     containerClass="!w-full !rounded-xl"
-                                    inputClass="!w-full !h-10 !pl-12 !bg-white/50 !border-black/10 !rounded-xl focus:!border-orange-500/50 focus:!bg-white !transition-all !text-sm !font-medium !placeholder-black/20"
+                                    inputClass="!w-full !h-10 !pl-12 !bg-white/40 !border-black/20 !rounded-xl focus:!border-orange-500/50 focus:!bg-white !transition-all !text-sm !font-bold !text-black !placeholder-black/30"
                                     buttonClass="!bg-transparent !border-none !rounded-l-xl !pl-2 hover:!bg-black/5 !transition-colors"
                                     dropdownClass="rounded-2xl shadow-xl border-black/5"
                                 />
@@ -191,11 +191,11 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                     {/* Role & Permissions Header */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h3 className="text-sm font-bold flex items-center gap-2">
+                            <h3 className="text-sm font-black text-black flex items-center gap-2">
                                 <ShieldCheck className="w-4 h-4 text-orange-500" />
                                 Role & Permissions
                             </h3>
-                            <p className="text-[11px] text-black/40 font-medium">Choose a preset or configure custom module access</p>
+                            <p className="text-[11px] text-black font-bold opacity-60">Choose a preset or configure custom module access</p>
                         </div>
 
                         <select 
@@ -232,7 +232,7 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             type="button"
                             variant="ghost"
                             onClick={onClose}
-                            className="rounded-xl font-bold text-black/50"
+                            className="rounded-xl font-black text-black/70 hover:text-black hover:bg-black/5"
                         >
                             Cancel
                         </Button>

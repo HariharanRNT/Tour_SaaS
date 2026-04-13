@@ -179,9 +179,27 @@ async def list_all_subscriptions(
 ):
     """List all user subscriptions (Admin only)"""
     from sqlalchemy.orm import selectinload
-    stmt = select(Subscription).options(selectinload(Subscription.plan))
+    from datetime import date
+    
+    stmt = select(Subscription).options(
+        selectinload(Subscription.plan),
+        selectinload(Subscription.user)
+    )
     result = await db.execute(stmt)
     subscriptions = result.scalars().all()
+    
+    # Auto-expire active subscriptions that have passed their end date
+    updated = False
+    today = date.today()
+    for sub in subscriptions:
+        if sub.status == 'active' and sub.end_date < today:
+            sub.status = 'expired'
+            db.add(sub)
+            updated = True
+            
+    if updated:
+        await db.commit()
+        
     return subscriptions
 
 # --- User Endpoints ---

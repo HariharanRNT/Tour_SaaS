@@ -4,7 +4,7 @@ from sqlalchemy import select, func, extract, case, desc, asc, text
 from typing import Optional, List
 from datetime import datetime
 from app.database import get_db
-from app.models import Subscription, SubscriptionPlan, Booking, Package, User, Agent, Payment, PaymentStatus, BookingStatus
+from app.models import Subscription, SubscriptionPlan, Booking, Package, User, Agent, Payment, PaymentStatus, BookingStatus, Enquiry
 from app.api.deps import get_current_admin
 
 router = APIRouter()
@@ -58,6 +58,8 @@ async def get_subscription_summary(
 @router.get("/subscriptions/trends")
 async def get_subscription_trends(
     period: str = Query("month", regex="^(month|year)$"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -67,8 +69,14 @@ async def get_subscription_trends(
         month_col = extract('month', Subscription.created_at).label('month')
         count_col = func.count(Subscription.id).label('count')
         
-        stmt = select(year_col, month_col, count_col)\
-            .group_by(year_col, month_col)\
+        stmt = select(year_col, month_col, count_col)
+        
+        if start_date:
+            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            
+        stmt = stmt.group_by(year_col, month_col)\
             .order_by(year_col, month_col)\
             .limit(12)
         
@@ -86,8 +94,14 @@ async def get_subscription_trends(
         year_col = extract('year', Subscription.created_at).label('year')
         count_col = func.count(Subscription.id).label('count')
         
-        stmt = select(year_col, count_col)\
-            .group_by(year_col)\
+        stmt = select(year_col, count_col)
+        
+        if start_date:
+            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            
+        stmt = stmt.group_by(year_col)\
             .order_by(year_col)
         
         result = await db.execute(stmt)
@@ -103,6 +117,8 @@ async def get_subscription_trends(
 
 @router.get("/subscriptions/plans")
 async def get_plan_analytics(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -112,8 +128,14 @@ async def get_plan_analytics(
         SubscriptionPlan.name,
         func.count(Subscription.id).label('subscription_count'),
         func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .group_by(SubscriptionPlan.id, SubscriptionPlan.name)
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
+
+    if start_date:
+        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        
+    stmt = stmt.group_by(SubscriptionPlan.id, SubscriptionPlan.name)
      
     result = await db.execute(stmt)
     plan_stats = result.all()
@@ -139,16 +161,24 @@ async def get_plan_analytics(
 
 @router.get("/subscriptions/renewals")
 async def get_renewal_stats(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
     """Get subscription renewal vs cancellation statistics"""
-    total = (await db.execute(select(func.count(Subscription.id)))).scalar() or 0
+    base_query = select(func.count(Subscription.id))
+    if start_date:
+        base_query = base_query.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        base_query = base_query.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+
+    total = (await db.execute(base_query)).scalar() or 0
     renewals = (await db.execute(
-        select(func.count(Subscription.id)).filter(Subscription.status == 'active')
+        base_query.filter(Subscription.status == 'active')
     )).scalar() or 0
     cancellations = (await db.execute(
-        select(func.count(Subscription.id)).filter(Subscription.status == 'cancelled')
+        base_query.filter(Subscription.status == 'cancelled')
     )).scalar() or 0
     
     return {
@@ -186,6 +216,8 @@ async def get_revenue_summary(
 @router.get("/revenue/trends")
 async def get_revenue_trends(
     period: str = Query("month", regex="^(month|year)$"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -196,8 +228,14 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, month_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .group_by(year_col, month_col)\
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+
+        if start_date:
+            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            
+        stmt = stmt.group_by(year_col, month_col)\
             .order_by(year_col, month_col)\
             .limit(12)
         
@@ -216,8 +254,14 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .group_by(year_col)\
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+
+        if start_date:
+            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        if end_date:
+            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            
+        stmt = stmt.group_by(year_col)\
             .order_by(year_col)
         
         result = await db.execute(stmt)
@@ -233,6 +277,8 @@ async def get_revenue_trends(
 
 @router.get("/revenue/by-agent")
 async def get_revenue_by_agent(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -246,8 +292,14 @@ async def get_revenue_by_agent(
         func.sum(SubscriptionPlan.price).label('total_revenue')
     ).join(Subscription, Subscription.user_id == Agent.user_id)\
      .join(User, User.id == Agent.user_id)\
-     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-     .group_by(Agent.id, Agent.first_name, Agent.last_name, User.email)
+     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+
+    if start_date:
+        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        
+    stmt = stmt.group_by(Agent.id, Agent.first_name, Agent.last_name, User.email)
      
     result = await db.execute(stmt)
     agent_revenue = result.all()
@@ -265,6 +317,8 @@ async def get_revenue_by_agent(
 
 @router.get("/revenue/by-plan")
 async def get_revenue_by_plan(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -275,8 +329,14 @@ async def get_revenue_by_plan(
         SubscriptionPlan.price,
         func.count(Subscription.id).label('subscription_count'),
         func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .group_by(SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price)
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
+
+    if start_date:
+        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+    
+    stmt = stmt.group_by(SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price)
     
     result = await db.execute(stmt)
     plan_revenue = result.all()
@@ -294,6 +354,8 @@ async def get_revenue_by_plan(
 
 @router.get("/revenue/payment-status")
 async def get_payment_status_breakdown(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -302,7 +364,14 @@ async def get_payment_status_breakdown(
         Payment.status,
         func.count(Payment.id).label('count'),
         func.sum(Payment.amount).label('total_amount')
-    ).group_by(Payment.status)
+    )
+
+    if start_date:
+        stmt = stmt.filter(Payment.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Payment.created_at <= datetime.fromisoformat(end_date))
+        
+    stmt = stmt.group_by(Payment.status)
     
     result = await db.execute(stmt)
     payment_stats = result.all()
@@ -361,24 +430,39 @@ async def get_booking_summary(
 
 @router.get("/bookings/by-agent")
 async def get_bookings_by_agent(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
-    """Get booking performance metrics by agent"""
+    """Get booking and enquiry performance metrics by agent"""
+    # Subquery for enquiry counts
+    enquiry_sub = select(
+        Enquiry.agent_id,
+        func.count(Enquiry.id).label('total_enquiries')
+    ).group_by(Enquiry.agent_id).subquery()
+
+    # Main query joining Agents with Bookings and Enquiry subquery
     stmt = select(
         Agent.id,
         Agent.first_name,
         Agent.last_name,
         User.email,
         func.count(Booking.id).label('total_bookings'),
-        func.sum(case((Booking.status == BookingStatus.COMPLETED, 1), else_=0)).label('completed'),
-        func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)).label('cancelled')
-    ).join(Booking, Booking.agent_id == Agent.user_id)\
-     .join(User, User.id == Agent.user_id)\
-     .group_by(Agent.id, Agent.first_name, Agent.last_name, User.email)
+        func.coalesce(enquiry_sub.c.total_enquiries, 0).label('total_enquiries')
+    ).outerjoin(Booking, Booking.agent_id == Agent.user_id)\
+     .outerjoin(enquiry_sub, enquiry_sub.c.agent_id == Agent.user_id)\
+     .join(User, User.id == Agent.user_id)
+
+    if start_date:
+        stmt = stmt.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        
+    stmt = stmt.group_by(Agent.id, Agent.first_name, Agent.last_name, User.email, enquiry_sub.c.total_enquiries)
      
     result = await db.execute(stmt)
-    agent_bookings = result.all()
+    agent_stats = result.all()
     
     return [
         {
@@ -386,14 +470,15 @@ async def get_bookings_by_agent(
             "agent_name": f"{a.first_name} {a.last_name}",
             "email": a.email,
             "total_bookings": a.total_bookings,
-            "completed": a.completed,
-            "cancelled": a.cancelled
+            "total_enquiries": int(a.total_enquiries)
         }
-        for a in agent_bookings
+        for a in agent_stats
     ]
 
 @router.get("/bookings/by-package")
 async def get_bookings_by_package(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
@@ -406,8 +491,14 @@ async def get_bookings_by_package(
         total_bookings_col,
         func.sum(case((Booking.status == BookingStatus.COMPLETED, 1), else_=0)).label('completed'),
         func.sum(case((Booking.status == BookingStatus.CANCELLED, 1), else_=0)).label('cancelled')
-    ).join(Booking, Booking.package_id == Package.id)\
-     .group_by(Package.id, Package.title)\
+    ).join(Booking, Booking.package_id == Package.id)
+
+    if start_date:
+        stmt = stmt.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        stmt = stmt.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        
+    stmt = stmt.group_by(Package.id, Package.title)\
      .order_by(desc(total_bookings_col))\
      .limit(10)
      
@@ -427,13 +518,21 @@ async def get_bookings_by_package(
 
 @router.get("/bookings/conversion")
 async def get_booking_conversion(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_admin = Depends(get_current_admin)
 ):
     """Get booking conversion rates"""
-    total = (await db.execute(select(func.count(Booking.id)))).scalar() or 0
+    base_query = select(func.count(Booking.id))
+    if start_date:
+        base_query = base_query.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        base_query = base_query.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+
+    total = (await db.execute(base_query)).scalar() or 0
     completed = (await db.execute(
-        select(func.count(Booking.id)).filter(Booking.status == BookingStatus.COMPLETED)
+        base_query.filter(Booking.status == BookingStatus.COMPLETED)
     )).scalar() or 0
     
     return {

@@ -108,10 +108,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 </div>
                                 <p className="text-[11px] font-bold text-[#10B981] uppercase tracking-wider">Total Revenue</p>
                             </div>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${growthRate >= 0 ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>
-                                {growthRate >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
-                                <span className="text-[11px] font-bold">{Math.abs(growthRate).toFixed(1)}%</span>
-                            </div>
                         </div>
                         <div>
                             <div className="text-[32px] font-extrabold text-[#0F172A] tracking-tight fa-outfit">
@@ -128,7 +124,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                     { label: 'PENDING', value: pendingTotal, sub: 'Awaiting', icon: Clock, color: '#F59E0B', bg: '#FEF3C7' },
                     { label: 'FAILED', value: failedTotal, sub: 'Transactions', icon: XCircle, color: '#EF4444', bg: '#FEE2E2' }
                 ].map((item, index) => (
-                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
+                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
                                 <p className="text-[10px] font-bold text-[#1e293b] uppercase tracking-[1.2px]">{item.label}</p>
@@ -178,7 +174,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                     dx={-10}
                                 />
                                 <Tooltip
-                                    cursor={{ fill: '#F1F5F9' }}
                                     contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                     labelStyle={{ color: '#0f172a', fontSize: '12px', marginBottom: '4px' }}
                                     formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
@@ -259,7 +254,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 </thead>
                                 <tbody>
                                     {agentRevenue.map((agent: any) => (
-                                        <tr key={agent.agent_id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
+                                        <tr key={agent.agent_id} className="border-b border-[#F1F5F9] transition-colors">
                                             <td className="py-4 px-6">
                                                 <div className="text-[#0F172A] text-[14px] font-semibold">{agent.agent_name}</div>
                                                 <div className="text-[#0f172a] text-[12px]">{agent.email}</div>
@@ -294,7 +289,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 </thead>
                                 <tbody>
                                     {planRevenue.map((plan: any) => (
-                                        <tr key={plan.plan_id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
+                                        <tr key={plan.plan_id} className="border-b border-[#F1F5F9] transition-colors">
                                             <td className="py-4 px-6 text-[#0F172A] text-[14px] font-semibold">{plan.plan_name}</td>
                                             <td className="py-4 px-6 text-right text-[#0f172a] text-[13px]">₹{plan.price.toLocaleString()}</td>
                                             <td className="py-4 px-6 text-right text-[#0f172a] text-[13px]">{plan.subscription_count}</td>

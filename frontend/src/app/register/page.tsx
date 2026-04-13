@@ -15,7 +15,7 @@ import {
     ChevronRight, Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 
 export default function RegisterPage() {
@@ -103,7 +103,7 @@ export default function RegisterPage() {
             authLogin(data.access_token, data.user)
             router.push('/')
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Registration failed. Please try again.')
+            setError(formatError(err))
         } finally {
             setLoading(false)
         }
@@ -129,7 +129,7 @@ export default function RegisterPage() {
                         <div className="bg-white/40 p-2 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
                             <Plane className="h-5 w-5 text-[var(--primary)]" />
                         </div>
-                        <span className="font-bold text-xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                        <span className="font-bold text-xl tracking-tight text-black">TourSaaS</span>
                     </div>
                 </div>
 
@@ -148,16 +148,16 @@ export default function RegisterPage() {
                                 <div className="bg-white/40 p-2.5 rounded-xl backdrop-blur-md border border-white/50 shadow-sm flex items-center justify-center">
                                     <Plane className="h-6 w-6 text-[var(--primary)]" />
                                 </div>
-                                <span className="font-bold text-2xl tracking-tight text-[#5C2500]">TourSaaS</span>
+                                <span className="font-bold text-2xl tracking-tight text-black">TourSaaS</span>
                             </div>
 
                             <div className="space-y-3">
-                                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#3A1A08] leading-tight">
+                                <h1 className="text-3xl lg:text-4xl font-extrabold text-[#010203] leading-tight">
                                     Join Thousands of<br />
-                                    <span className="text-[var(--primary)]">Dream Travelers.</span>
+                                    <span className="text-black">Dream Travelers.</span>
                                 </h1>
 
-                                <p className="text-[15px] text-[#6B3F2A] font-medium leading-relaxed max-w-sm opacity-90">
+                                <p className="text-[15px] text-black font-medium leading-relaxed max-w-sm opacity-90">
                                     Create your account to start planning, booking, and managing your global travel adventures with ease.
                                 </p>
                             </div>
@@ -171,7 +171,7 @@ export default function RegisterPage() {
                             ].map((pill, i) => (
                                 <div key={i} className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md border border-white/50 h-8 px-3 rounded-full shadow-sm">
                                     <span className="text-xs">{pill.icon}</span>
-                                    <span className="text-[12px] font-bold text-[#5C2500] whitespace-nowrap">{pill.text}</span>
+                                    <span className="text-[12px] font-bold text-black whitespace-nowrap">{pill.text}</span>
                                 </div>
                             ))}
                         </div>
@@ -191,10 +191,10 @@ export default function RegisterPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <CardTitle className="text-[11px] text-center font-bold text-[var(--primary)] tracking-[0.2em] uppercase">
+                                    <CardTitle className="text-[11px] text-center font-bold text-black tracking-[0.2em] uppercase">
                                         Join TourSaaS Today
                                     </CardTitle>
-                                    <CardDescription className="text-center font-medium text-[#6B3F2A] text-[13px] leading-snug">
+                                    <CardDescription className="text-center font-medium text-black text-[13px] leading-snug">
                                         Create your account to start your journey
                                     </CardDescription>
                                 </div>
@@ -221,7 +221,7 @@ export default function RegisterPage() {
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-[var(--primary)]/30 text-[#5C2500] font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                            className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-black/30 text-black font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                                         >
                                             <svg className="h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
                                             Continue with Google
@@ -230,42 +230,42 @@ export default function RegisterPage() {
 
                                     <div className="relative my-2">
                                         <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#FFCBA4]/20" /></div>
-                                        <div className="relative flex justify-center text-[9px] uppercase tracking-widest font-black text-[#FFCBA4] bg-transparent"><span className="px-2">or join with email</span></div>
+                                        <div className="relative flex justify-center text-[9px] uppercase tracking-widest font-black text-black bg-transparent"><span className="px-2">or join with email</span></div>
                                     </div>
 
                                     <div className="space-y-2.5">
                                         <div className="grid grid-cols-2 gap-3">
                                             {/* First Name */}
                                             <div className="relative group/input">
-                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                                 <Input
                                                     value={formData.first_name}
                                                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                                                     placeholder="First Name"
-                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium placeholder:text-black/60"
                                                 />
                                             </div>
                                             {/* Last Name */}
                                             <div className="relative group/input">
-                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
+                                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                                 <Input
                                                     value={formData.last_name}
                                                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                                                     placeholder="Last Name"
-                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium placeholder:text-black/60"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Email */}
                                         <div className="relative group/input">
-                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
+                                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                             <Input
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="Email Address"
-                                                className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-black/60"
                                             />
                                         </div>
 
@@ -276,7 +276,7 @@ export default function RegisterPage() {
                                                 value={formData.phone}
                                                 onChange={phone => setFormData({ ...formData, phone })}
                                                 containerClass="!w-full !rounded-xl"
-                                                inputClass="!w-full !h-10 !pl-12 !bg-white/20 !backdrop-blur-md !border-white/30 !rounded-xl focus:!bg-white/40 focus:!border-[var(--primary)] !transition-all !text-sm !font-medium !placeholder-orange-900/40"
+                                                inputClass="!w-full !h-10 !pl-12 !bg-white/20 !backdrop-blur-md !border-white/30 !rounded-xl focus:!bg-white/40 focus:!border-black !transition-all !text-sm !font-medium !placeholder-black/70"
                                                 buttonClass="!bg-white/10 !border-none !rounded-l-xl !pl-2 hover:!bg-white/20 !transition-colors"
                                                 dropdownClass="glass-phone-dropdown"
                                             />
@@ -286,18 +286,18 @@ export default function RegisterPage() {
                                         {/* Password */}
                                         <div className="space-y-2">
                                             <div className="relative group/input">
-                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--primary)]/40 group-focus-within/input:text-[var(--primary)] transition-colors" />
+                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={formData.password}
                                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                     placeholder="Security Password"
-                                                    className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-orange-900/20"
+                                                    className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-black/60"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-900/20 hover:text-[var(--primary)] transition-colors"
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors"
                                                 >
                                                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                 </button>
@@ -312,7 +312,7 @@ export default function RegisterPage() {
                                                             "px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all flex items-center gap-1",
                                                             req.valid
                                                                 ? "bg-green-50 text-green-600 border-green-200"
-                                                                : "bg-orange-50/30 text-orange-900/40 border-orange-100/50"
+                                                                : "bg-orange-50/30 text-black/40 border-orange-100/50"
                                                         )}
                                                     >
                                                         {req.valid && <Check className="w-2.5 h-2.5" />}
@@ -330,10 +330,10 @@ export default function RegisterPage() {
                                             id="terms"
                                             checked={formData.terms}
                                             onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
-                                            className="w-4 h-4 rounded border-[var(--primary)] text-[var(--primary)] focus:ring-[var(--primary)]/20 transition-all cursor-pointer"
+                                            className="w-4 h-4 rounded border-black text-black focus:ring-black/20 transition-all cursor-pointer"
                                         />
-                                        <label htmlFor="terms" className="text-[11px] font-medium text-[#6B3F2A]/70 cursor-pointer">
-                                            I agree to the <Link href="/terms" className="text-[var(--primary)] font-bold hover:underline">Terms</Link> & <Link href="/privacy" className="text-[var(--primary)] font-bold hover:underline">Privacy Policy</Link>
+                                        <label htmlFor="terms" className="text-[11px] font-medium text-black/70 cursor-pointer">
+                                            I agree to the <Link href="/terms" className="text-black font-bold hover:underline">Terms</Link> & <Link href="/privacy" className="text-black font-bold hover:underline">Privacy Policy</Link>
                                         </label>
                                     </div>
 
@@ -361,9 +361,9 @@ export default function RegisterPage() {
                                     </div>
 
                                     <div className="text-center pt-3 mt-1 border-t border-[#FFCBA4]/10">
-                                        <p className="text-[13px] font-bold text-[#6B3F2A]/60">
+                                        <p className="text-[13px] font-bold text-black/60">
                                             Already a member?{' '}
-                                            <Link href="/login" className="text-[#FF7A45] font-black hover:underline">Sign in here</Link>
+                                            <Link href="/login" className="text-black font-black hover:underline">Sign in here</Link>
                                         </p>
                                     </div>
                                 </form>

@@ -64,7 +64,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                             "relative group rounded-2xl border transition-all duration-300 p-4 shrink-0 cursor-pointer",
                             isActive 
                                 ? "bg-white border-orange-500/30 shadow-lg shadow-orange-500/5 ring-1 ring-orange-500/10" 
-                                : "bg-black/5 border-transparent hover:border-black/10"
+                                : "bg-white/20 backdrop-blur-md border-white/40 hover:bg-white/30 hover:border-black/10 shadow-sm"
                         )}
                     >
                         <div className="flex items-start gap-3">
@@ -72,17 +72,17 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                             <div 
                                 className={cn(
                                     "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                                    isActive ? "bg-orange-500 text-white" : "bg-black/10 text-black/40"
+                                    isActive ? "bg-orange-500 text-white" : "bg-black/10 text-black"
                                 )}
                             >
                                 <mod.icon className="w-5 h-5" />
                             </div>
 
                             <div className="flex-1 min-w-0 pr-8">
-                                <h4 className={cn("text-sm font-bold uppercase tracking-tight", isActive ? "text-black" : "text-black/40")}>
+                                <h4 className={cn("text-sm font-black uppercase tracking-tight", isActive ? "text-black" : "text-black opacity-70")}>
                                     {mod.label}
                                 </h4>
-                                <p className={cn("text-[11px] leading-tight mt-0.5", isActive ? "text-black/60" : "text-black/30")}>
+                                <p className={cn("text-[11px] leading-tight mt-0.5 font-bold", isActive ? "text-black opacity-80" : "text-black opacity-50")}>
                                     {mod.desc}
                                 </p>
                             </div>
@@ -109,7 +109,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                                 onClick={(e) => e.stopPropagation()}
                                 className="mt-4 pt-3 border-t border-black/5 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300"
                             >
-                                <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest mr-1">Access:</span>
+                                <span className="text-[10px] font-black text-black uppercase tracking-widest mr-1">Access:</span>
                                 
                                 <button
                                     type="button"
@@ -118,7 +118,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                                         "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all",
                                         perm.access_level === 'view' 
                                             ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" 
-                                            : "bg-black/5 text-black/50 hover:bg-black/10"
+                                            : "bg-black/5 text-black hover:bg-black/10 font-bold"
                                     )}
                                 >
                                     <Eye className="w-3 h-3" /> View Only
@@ -131,7 +131,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                                         "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all",
                                         perm.access_level === 'edit' 
                                             ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
-                                            : "bg-black/5 text-black/50 hover:bg-black/10"
+                                            : "bg-black/5 text-black hover:bg-black/10 font-bold"
                                     )}
                                 >
                                     <Edit3 className="w-3 h-3" /> Edit
@@ -144,7 +144,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                                         "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all",
                                         perm.access_level === 'full' 
                                             ? "bg-purple-600 text-white shadow-md shadow-purple-600/20" 
-                                            : "bg-black/5 text-black/50 hover:bg-black/10"
+                                            : "bg-black/5 text-black hover:bg-black/10 font-bold"
                                     )}
                                 >
                                     <Shield className="w-3 h-3" /> Full

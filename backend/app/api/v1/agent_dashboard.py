@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
-from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, PaymentStatus, Notification
+from app.models import Package, Booking, User, UserRole, Subscription, PackageStatus, BookingStatus, PaymentStatus, Notification, Enquiry
 from app.schemas import BookingWithPackageResponse
 from app.api.deps import get_current_agent
 from app.services.notification_service import NotificationService
@@ -162,6 +162,14 @@ async def get_agent_dashboard_stats(
         res = await db.execute(today_query)
         today_bookings = res.scalar() or 0
 
+        # Enquiries Count (Scoped to Agent)
+        enquiry_query = select(func.count(Enquiry.id)).where(
+            Enquiry.agent_id == current_agent.agent_id
+        )
+        enquiry_query = apply_date_filter(enquiry_query, Enquiry.created_at)
+        res = await db.execute(enquiry_query)
+        total_enquiries = res.scalar() or 0
+
         # --- 2. Benchmark/Highlights (Filtered) ---
         
         # 1. My Top Performer (Agent's Most Booked Package in Period)
@@ -204,7 +212,8 @@ async def get_agent_dashboard_stats(
             Package.id,
             Package.title,
             Package.view_count,
-            func.count(Booking.id).label('count')
+            func.count(Booking.id).label('count'),
+            func.sum(Booking.total_amount).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
@@ -218,11 +227,11 @@ async def get_agent_dashboard_stats(
         least_popular = None
         
         if least_popular_row:
-             pkg_id, pkg_title, pkg_views, pkg_count = least_popular_row
+             pkg_id, pkg_title, pkg_views, pkg_count, pkg_revenue = least_popular_row
              least_popular = {
                  "title": pkg_title,
                  "bookings": pkg_count,
-                 "views": pkg_views or 0,
+                 "revenue": float(pkg_revenue) if pkg_revenue else 0,
                  "agent_sales": pkg_count
              }
 
@@ -341,6 +350,7 @@ async def get_agent_dashboard_stats(
             "pendingBookings": pending_bookings,
             "todayBookings": today_bookings,
             "cancelledBookings": cancelled_bookings,
+            "totalEnquiries": total_enquiries,
             "totalRevenue": float(total_revenue) if total_revenue else 0,
             
             # Recent Bookings

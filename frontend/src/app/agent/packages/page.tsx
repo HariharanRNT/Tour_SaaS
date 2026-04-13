@@ -154,7 +154,7 @@ export default function AgentPackagesPage() {
             if (context?.previousPackages) {
                 queryClient.setQueryData(['agent-packages'], context.previousPackages)
             }
-            
+
             const detail = error?.response?.data?.detail
             if (detail && detail.toLowerCase().includes('archive')) {
                 toast.error(detail, {
@@ -185,7 +185,7 @@ export default function AgentPackagesPage() {
                 if (!oldData || !oldData.items) return oldData
                 return {
                     ...oldData,
-                    items: oldData.items.map((pkg: any) => 
+                    items: oldData.items.map((pkg: any) =>
                         pkg.id === id ? { ...pkg, status: new_status.toLowerCase() } : pkg
                     )
                 }
@@ -330,8 +330,8 @@ export default function AgentPackagesPage() {
                     <div className="flex flex-col gap-4">
                         {/* Breadcrumb */}
                         <nav className="flex items-center text-sm text-[var(--color-primary-font)]">
-                            <span 
-                                className="hover:text-[var(--primary)] cursor-pointer transition-colors" 
+                            <span
+                                className="hover:text-[var(--primary)] cursor-pointer transition-colors"
                                 onClick={() => router.push('/agent/dashboard')}
                             >
                                 Dashboard
@@ -364,10 +364,10 @@ export default function AgentPackagesPage() {
                         {hasPermission('packages', 'edit') && (
                             <Button
                                 onClick={() => router.push('/agent/packages/new')}
-                                className="text-white px-6 py-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
-                                style={{ 
-                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', 
-                                    borderRadius: '12px', 
+                                className="text-white px-6 py-6  border-none shadow-lg"
+                                style={{
+                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+                                    borderRadius: '12px',
                                     boxShadow: '0 6px 20px var(--primary-glow)',
                                     fontWeight: '600'
                                 }}
@@ -539,10 +539,10 @@ export default function AgentPackagesPage() {
                                                             <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center flex-shrink-0 text-lg font-bold">
                                                                 {pkg.title.charAt(0)}
                                                             </div>
-                                                                <div>
-                                                                    <div className="font-semibold text-[var(--color-primary-font)]">{pkg.title}</div>
-                                                                    <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
-                                                                </div>
+                                                            <div>
+                                                                <div className="font-semibold text-[var(--color-primary-font)]">{pkg.title}</div>
+                                                                <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
+                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-5">
@@ -820,16 +820,16 @@ export default function AgentPackagesPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-8 gap-3 sm:gap-0">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => setDeleteId(null)}
                             className="flex-1 bg-white/20 hover:bg-white/40 border-white/40 text-gray-700 backdrop-blur-sm transition-all"
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            variant="destructive" 
-                            onClick={confirmDelete} 
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
                             disabled={deleteMutation.isPending}
                             className="flex-1 bg-red-500/90 hover:bg-red-600 shadow-lg shadow-red-200/50 transition-all"
                         >

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PassengerCounter } from '@/components/packages/PassengerCounter'
+import { toast } from 'sonner'
 import Image from 'next/image'
 
 interface Activity {
@@ -57,6 +58,9 @@ interface PackageDetail {
     flight_cabin_class: string
     flight_price_included: boolean
     flight_baggage_note: string
+    // Dual Booking
+    booking_type: 'INSTANT' | 'ENQUIRY'
+    price_label?: string
 }
 
 const timeSlotConfig = {
@@ -84,6 +88,16 @@ export default function PackageDetailPage() {
     const [travelers, setTravelers] = useState({ adults: 2, children: 0, infants: 0 })
     const [originCity, setOriginCity] = useState('')
     const [bookingConfirmed, setBookingConfirmed] = useState(false)
+
+    // Enquiry Modal State
+    const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false)
+    const [enquiryForm, setEnquiryForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+    })
+    const [sendingEnquiry, setSendingEnquiry] = useState(false)
 
     useEffect(() => {
         loadPackageDetails()
@@ -204,6 +218,47 @@ export default function PackageDetailPage() {
         router.push(`/plan-trip/${params_slug}?${queryParams}`)
     }
 
+    const handleSendEnquiry = async () => {
+        if (!selectedDate || !enquiryForm.name || !enquiryForm.email || !enquiryForm.phone) {
+            alert('Please fill in all required fields')
+            return
+        }
+
+        setSendingEnquiry(true)
+        try {
+            const token = localStorage.getItem('token')
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+            }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+
+            const response = await fetch(`${API_URL}/api/v1/enquiries`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    package_id: packageData?.id,
+                    customer_name: enquiryForm.name,
+                    email: enquiryForm.email,
+                    phone: enquiryForm.phone,
+                    travel_date: selectedDate,
+                    travellers: travelers.adults + travelers.children,
+                    message: enquiryForm.message
+                })
+            })
+
+            if (!response.ok) throw new Error('Failed to send enquiry')
+
+            toast.success('Your enquiry has been sent successfully! The agent will contact you soon.')
+            setIsEnquiryModalOpen(false)
+            setEnquiryForm({ name: '', email: '', phone: '', message: '' })
+        } catch (err) {
+            console.error('Enquiry error:', err)
+            toast.error('Failed to send enquiry. Please try again.')
+        } finally {
+            setSendingEnquiry(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -255,14 +310,22 @@ export default function PackageDetailPage() {
                             )}
                         </div>
                         <div className="text-right">
-                            <p className="text-white/80 text-sm">Starting from</p>
+                            <p className="text-white/80 text-sm">{packageData.booking_type === 'ENQUIRY' && packageData.price_label ? 'Starting from' : 'Starting from'}</p>
                             <p className="text-4xl font-bold">
-                                {packageData && effectiveGst && !effectiveGst.inclusive
-                                    ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                                    : `₹${packageData?.price_per_person.toLocaleString()}`
+                                {packageData.booking_type === 'ENQUIRY' && packageData.price_label 
+                                    ? packageData.price_label 
+                                    : (packageData && effectiveGst && !effectiveGst.inclusive
+                                        ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                        : `₹${packageData?.price_per_person.toLocaleString()}`
+                                      )
                                 }
                             </p>
-                            <p className="text-white/80 text-sm">per person {effectiveGst && !effectiveGst.inclusive ? '(inc. GST)' : ''}</p>
+                            <p className="text-white/80 text-sm">
+                                {packageData.booking_type === 'ENQUIRY' && packageData.price_label 
+                                    ? 'Contact for details' 
+                                    : `per person ${effectiveGst && !effectiveGst.inclusive ? '(inc. GST)' : ''}`
+                                }
+                            </p>
                         </div>
                     </div>
 
@@ -442,12 +505,15 @@ export default function PackageDetailPage() {
                                             <span className="text-gray-600">Price per person</span>
                                             <div className="text-right">
                                                 <span className="text-2xl font-bold text-[var(--primary)] block">
-                                                    {packageData && effectiveGst && !effectiveGst.inclusive
-                                                        ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                                                        : `₹${packageData?.price_per_person.toLocaleString()}`
+                                                    {packageData.booking_type === 'ENQUIRY' && packageData.price_label 
+                                                        ? packageData.price_label 
+                                                        : (packageData && effectiveGst && !effectiveGst.inclusive
+                                                            ? `₹${(packageData.price_per_person * (1 + effectiveGst.percentage / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                                            : `₹${packageData?.price_per_person.toLocaleString()}`
+                                                          )
                                                     }
                                                 </span>
-                                                {effectiveGst && !effectiveGst.inclusive && (
+                                                {(!packageData.price_label || packageData.booking_type === 'INSTANT') && effectiveGst && !effectiveGst.inclusive && (
                                                     <span className="text-xs text-gray-400 block">+ GST ({effectiveGst.percentage}%) included</span>
                                                 )}
                                             </div>
@@ -468,9 +534,9 @@ export default function PackageDetailPage() {
                                             className="w-full"
                                             size="lg"
                                             disabled={!packageData}
-                                            onClick={() => setIsBookingModalOpen(true)}
+                                            onClick={() => packageData.booking_type === 'ENQUIRY' ? setIsEnquiryModalOpen(true) : setIsBookingModalOpen(true)}
                                         >
-                                            Book Now
+                                            {packageData.booking_type === 'ENQUIRY' ? 'Send Enquiry' : 'Book Now'}
                                         </Button>
 
                                         <p className="text-xs text-gray-500 text-center">
@@ -677,6 +743,97 @@ export default function PackageDetailPage() {
                                     Confirm Book
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Enquiry Modal */}
+            <Dialog open={isEnquiryModalOpen} onOpenChange={setIsEnquiryModalOpen}>
+                <DialogContent className="sm:max-w-[500px] glass-panel bg-white/80 p-0 overflow-hidden border-white/40">
+                    <div className="absolute top-4 right-4 z-10">
+                        <DialogClose asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/50 hover:bg-white/80">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </DialogClose>
+                    </div>
+
+                    <div className="flex flex-col h-full max-h-[90vh]">
+                        <div className="bg-gradient-to-br from-indigo-50 to-white p-6 border-b border-white/50">
+                            <h3 className="font-bold text-xl text-gray-900">Inquire About This Tour</h3>
+                            <p className="text-sm text-gray-600 mt-1">{packageData?.title}</p>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Your Name <span className="text-red-500">*</span></Label>
+                                    <Input 
+                                        placeholder="Full Name" 
+                                        value={enquiryForm.name}
+                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone Number <span className="text-red-500">*</span></Label>
+                                    <Input 
+                                        placeholder="+91 ..." 
+                                        value={enquiryForm.phone}
+                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, phone: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Email Address <span className="text-red-500">*</span></Label>
+                                <Input 
+                                    type="email" 
+                                    placeholder="email@example.com" 
+                                    value={enquiryForm.email}
+                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Travel Date <span className="text-red-500">*</span></Label>
+                                    <Input 
+                                        type="date"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={selectedDate}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Adults <span className="text-red-500">*</span></Label>
+                                    <Input 
+                                        type="number" 
+                                        min="1" 
+                                        value={travelers.adults}
+                                        onChange={(e) => setTravelers(prev => ({ ...prev, adults: parseInt(e.target.value) || 1 }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Message / Special Requests</Label>
+                                <textarea 
+                                    className="w-full min-h-[100px] p-3 rounded-md border border-gray-200 focus:outline-[var(--primary)] text-sm"
+                                    placeholder="Tell us more about your travel plans..."
+                                    value={enquiryForm.message}
+                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
+                                />
+                            </div>
+
+                            <Button 
+                                className="w-full mt-2" 
+                                size="lg"
+                                disabled={sendingEnquiry}
+                                onClick={handleSendEnquiry}
+                            >
+                                {sendingEnquiry ? 'Sending...' : 'Submit Enquiry'}
+                            </Button>
                         </div>
                     </div>
                 </DialogContent>

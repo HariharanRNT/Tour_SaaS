@@ -20,7 +20,8 @@ from app.api.v1 import (
     admin_simple, trip_planner, agent_packages, admin_agents, 
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
-    reports, webhooks, activities, agent_reports, agent_subusers, locations
+    reports, webhooks, activities, agent_reports, agent_subusers, locations,
+    enquiries
 )
 import traceback
 import logging
@@ -76,7 +77,7 @@ cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")] i
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex="http://.*\.local(:[0-9]+)?",
+    allow_origin_regex=r"http://.*\.local(:[0-9]+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -132,6 +133,7 @@ app.include_router(activities.router, prefix=f"{settings.API_V1_PREFIX}/activiti
 app.include_router(agent_reports.router, prefix=f"{settings.API_V1_PREFIX}/agent/reports", tags=["Agent - Reports"])
 app.include_router(agent_subusers.router, prefix=f"{settings.API_V1_PREFIX}/agent/sub-users", tags=["Agent - Sub-Users"])
 app.include_router(locations.router, prefix=f"{settings.API_V1_PREFIX}/locations", tags=["Locations"])
+app.include_router(enquiries.router, prefix=f"{settings.API_V1_PREFIX}/enquiries", tags=["Enquiries"])
 
 
 @app.get("/")

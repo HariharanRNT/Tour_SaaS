@@ -23,6 +23,8 @@ interface PackageSearchResult {
     price_per_person: number
     description: string
     max_group_size?: number
+    booking_type?: 'INSTANT' | 'ENQUIRY'
+    price_label?: string
 }
 
 export default function MultiStepPackageSearch() {
@@ -383,7 +385,10 @@ export default function MultiStepPackageSearch() {
                                                         {formatDuration(pkg.duration_days)}
                                                     </Badge>
                                                     <Badge className="bg-[var(--primary)] text-white border-0 font-bold px-3 py-1">
-                                                        ₹{pkg.price_per_person.toLocaleString('en-IN')}
+                                                        {pkg.booking_type === 'ENQUIRY' && pkg.price_label 
+                                                            ? pkg.price_label 
+                                                            : `₹${pkg.price_per_person.toLocaleString('en-IN')}`
+                                                        }
                                                     </Badge>
                                                 </div>
                                             </div>

@@ -331,7 +331,7 @@ async def list_packages(
         query = query.where(or_(*country_conditions))
 
     # Complex Search
-    if search:
+    if search and search.lower() != 'all':
         search_term = f"%{search}%"
         # Check for European search alias
         european_countries = [
@@ -605,7 +605,11 @@ async def create_package(
         activities=json.dumps(package_data.activities or []),
         is_public=package_data.is_public,
         created_by=current_user.id,
-        status=PackageStatus.DRAFT
+        status=PackageStatus.DRAFT,
+        # Dual Booking
+        booking_type=package_data.booking_type,
+        price_label=package_data.price_label,
+        enquiry_payment=package_data.enquiry_payment
     )
     
     db.add(package)

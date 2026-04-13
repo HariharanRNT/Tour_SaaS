@@ -29,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RevenueChart } from '@/components/admin/dashboard/RevenueChart'
 import { RecentActivityFeed } from '@/components/admin/dashboard/RecentActivityFeed'
 import { fetchDashboardStats } from '@/lib/api'
+import { GlassCard } from '@/components/ui/GlassCard'
 
 const INITIAL_STATS = {
     totalPackages: 0,
@@ -117,16 +118,16 @@ export default function AdminDashboard() {
     const StatCard = ({ title, value, change, changeLabel, secondMetric, icon: Icon, colorClass, link, accentColor, sparkData }: any) => (
         <motion.div
             whileHover={{ y: -4 }}
-            className="flex-1"
+            className="flex-1 h-full"
         >
-            <Card className="h-full rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] hover:border-orange-500/30 group relative overflow-hidden">
+            <GlassCard className="h-full p-5 flex flex-col justify-between group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-[13px] font-bold tracking-[1px] uppercase text-black">{title}</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-black">{title}</h3>
                         <div className={cn(
-                            "p-2.5 rounded-xl bg-white/50 backdrop-blur-sm shadow-sm border border-white/40",
+                            "p-2.5 rounded-xl bg-white/50 backdrop-blur-sm shadow-sm border border-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1",
                             colorClass.replace('bg-', 'text-')
                         )}>
                             <Icon className="h-5 w-5" />
@@ -153,12 +154,12 @@ export default function AdminDashboard() {
                                 </div>
                             )}
                             {secondMetric && (
-                                <p className="text-[10px] text-black mt-3 font-medium uppercase tracking-wider">{secondMetric}</p>
+                                <p className="text-[10px] font-semibold text-orange-600 bg-orange-50 w-fit px-3 py-1 rounded-full mt-3 border border-orange-100">{secondMetric}</p>
                             )}
                         </div>
                         {sparkData && (
                             <div className="pb-1 group-hover:opacity-100 transition-opacity">
-                                <Sparkline data={sparkData} color={accentColor.includes('emerald') ? '#10b981' : accentColor.includes('blue') ? '#3b82f6' : '#FF6B2B'} />
+                                <Sparkline data={sparkData} color={accentColor?.includes('emerald') ? '#10b981' : accentColor?.includes('blue') ? '#3b82f6' : '#FF6B2B'} />
                             </div>
                         )}
                     </div>
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
                                 </Link>
                     </div>
                 )}
-            </Card>
+            </GlassCard>
         </motion.div>
     )
 
@@ -257,22 +258,36 @@ export default function AdminDashboard() {
                     />
                 </div>
 
-                {/* Quick Stats Row - SaaS Pills */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-1">
-                    {[
-                        { label: 'Total Bookings', value: stats.totalBookings, color: 'text-indigo-600', borderColor: 'border-l-indigo-500' },
-                        { label: 'Pending Payments', value: `₹${(stats.pendingPaymentsValue / 1000).toFixed(1)}k`, color: 'text-amber-600', borderColor: 'border-l-amber-500' },
-                        { label: 'Active Plans', value: stats.activeSubscriptions, color: 'text-emerald-600', borderColor: 'border-l-emerald-500' },
-                        { label: 'Conversion Rate', value: `${stats.conversionRate}%`, color: 'text-rose-600', borderColor: 'border-l-rose-500' },
-                    ].map((pill, i) => (
-                        <div key={i} className={cn(
-                            "bg-white/40 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/60 border-l-4 shadow-sm flex items-center justify-between group hover:bg-white transition-all cursor-default",
-                            pill.borderColor
-                        )}>
-                            <span className="text-xs font-[900] text-black uppercase tracking-tight">{pill.label}</span>
-                            <span className={cn("text-lg font-black tracking-tight", pill.color)}>{pill.value}</span>
-                        </div>
-                    ))}
+                {/* Quick Stats Row - Restyled as GlassCards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-1">
+                    <StatCard
+                        title="Total Bookings"
+                        value={stats.totalBookings}
+                        secondMetric="Lifetime count"
+                        icon={Calendar}
+                        colorClass="bg-indigo-600"
+                    />
+                    <StatCard
+                        title="Pending Payments"
+                        value={`₹${(stats.pendingPaymentsValue / 1000).toFixed(1)}k`}
+                        secondMetric="Awaiting clearing"
+                        icon={CreditCard}
+                        colorClass="bg-amber-600"
+                    />
+                    <StatCard
+                        title="Active Plans"
+                        value={stats.activeSubscriptions}
+                        secondMetric="Current subscribers"
+                        icon={CheckCircle2}
+                        colorClass="bg-emerald-600"
+                    />
+                    <StatCard
+                        title="Conversion Rate"
+                        value={`${stats.conversionRate}%`}
+                        secondMetric="Visit to booking"
+                        icon={TrendingUp}
+                        colorClass="bg-rose-600"
+                    />
                 </div>
 
                 {/* Charts & Activity Section */}
@@ -354,16 +369,6 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-black uppercase tracking-widest mb-1">Trials</p>
-                                <p className="text-xl font-black text-black">{stats.health.trialUsers}</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-black uppercase tracking-widest mb-1">Renewals</p>
-                                <p className="text-xl font-black text-black">92%</p>
-                            </div>
-                        </div>
                     </Card>
 
                     {/* Performance Ranking Card */}

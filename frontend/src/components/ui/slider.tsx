@@ -34,9 +34,9 @@ const Slider = React.forwardRef<
         {Array.from({ length: (props.value?.length || props.defaultValue?.length || 1) }).map((_, i) => (
             <SliderPrimitive.Thumb
                 key={i}
-                className="block h-5 w-5 rounded-full border-2 border-white bg-[var(--primary)] ring-offset-background transition-shadow shadow-[0_0_0_4px_var(--primary-glow)] hover:shadow-[0_0_0_6px_var(--primary-glow)] focus-visible:outline-none focus-visible:shadow-[0_0_0_6px_var(--primary-glow)] cursor-grab active:cursor-grabbing flex items-center justify-center disabled:pointer-events-none disabled:opacity-50 pointer-events-auto"
+                className="block h-6 w-6 rounded-full border-2 border-white bg-[var(--primary)] ring-offset-background transition-all shadow-[0_2px_10px_rgba(0,0,0,0.1),0_0_0_4px_var(--primary-glow)] hover:shadow-[0_2px_15px_rgba(0,0,0,0.15),0_0_0_6px_var(--primary-glow)] focus-visible:outline-none focus-visible:shadow-[0_0_0_6px_var(--primary-glow)] cursor-grab active:cursor-grabbing active:scale-110 flex items-center justify-center disabled:pointer-events-none disabled:opacity-50 pointer-events-auto"
             >
-                <div className="h-1.5 w-1.5 bg-white rounded-full" />
+                <div className="h-2 w-2 bg-white rounded-full shadow-inner" />
             </SliderPrimitive.Thumb>
         ))}
     </SliderPrimitive.Root>

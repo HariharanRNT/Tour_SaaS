@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import Payment, Booking, PaymentStatus, BookingStatus
 from app.schemas import (
     PaymentOrderCreate, PaymentOrderResponse,
-    PaymentVerification, PaymentResponse, MessageResponse
+    PaymentVerification, PaymentFailedRequest, PaymentResponse, MessageResponse
 )
 from app.api.deps import get_current_user
 from app.core.exceptions import NotFoundException, BadRequestException
@@ -181,13 +181,20 @@ async def verify_payment(
     except razorpay.errors.SignatureVerificationError:
         # Update payment status to failed
         payment.status = PaymentStatus.FAILED
+        if booking:
+            booking.payment_status = PaymentStatus.FAILED
+            booking.status = BookingStatus.INITIATED
         await db.commit()
         raise BadRequestException("Invalid payment signature")
     
     # Update payment status
     payment.razorpay_payment_id = verification_data.razorpay_payment_id
     payment.razorpay_signature = verification_data.razorpay_signature
-    payment.status = PaymentStatus.SUCCEEDED
+    payment.status = PaymentStatus.PAID
+    
+    if booking:
+        booking.payment_status = PaymentStatus.PAID
+        booking.status = BookingStatus.CONFIRMED
     
     # 4. Process Confirmation via Orchestrator (Robust & Consistent)
     from app.services.booking_orchestrator import BookingOrchestrator
@@ -233,8 +240,54 @@ async def verify_payment(
         )
         
     except Exception as e:
+        # 5. Handle Failure Explicitly
+        import logging
+        logger = logging.getLogger(__name__)
         logger.error(f"Orchestration failed during verify_payment: {e}")
+        
+        # Mark as FAILED on verification/orchestration error
+        booking.payment_status = PaymentStatus.FAILED
+        booking.status = BookingStatus.INITIATED
+        payment.status = PaymentStatus.FAILED
+        await db.commit()
+        
         raise HTTPException(status_code=500, detail=f"Booking confirmation failed: {str(e)}")
+
+
+@router.post("/payment-failed", response_model=MessageResponse)
+async def mark_payment_failed(
+    data: PaymentFailedRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Mark a booking payment as failed (e.g. on modal dismissal)"""
+    result = await db.execute(
+        select(Booking).where(Booking.id == data.booking_id)
+    )
+    booking = result.scalar_one_or_none()
+    
+    if not booking:
+        raise NotFoundException("Booking not found")
+        
+    if booking.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    # Update Statuses
+    booking.payment_status = PaymentStatus.FAILED
+    booking.status = BookingStatus.INITIATED
+    
+    # Also update associated Payment records if any
+    result_payments = await db.execute(
+        select(Payment).where(Payment.booking_id == booking.id)
+    )
+    payments = result_payments.scalars().all()
+    for p in payments:
+        if p.status == PaymentStatus.PENDING:
+            p.status = PaymentStatus.FAILED
+            
+    await db.commit()
+    
+    return MessageResponse(message="Payment marked as failed")
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)

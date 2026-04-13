@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Lock, Mail, Eye, EyeOff, Check, AlertCircle, Copy, Key, Lightbulb, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
+import { formatError } from '@/lib/utils'
 
 export default function AdminLoginPage() {
     const router = useRouter()
@@ -74,7 +75,7 @@ export default function AdminLoginPage() {
             router.push('/admin/dashboard')
         } catch (err: any) {
             console.error('Login error:', err)
-            setError(err.message || 'An error occurred during login')
+            setError(formatError(err))
             setFormShake(true)
             setTimeout(() => setFormShake(false), 500)
         } finally {

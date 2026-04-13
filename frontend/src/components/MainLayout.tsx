@@ -5,9 +5,12 @@ import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { PreviewBanner } from "@/components/PreviewBanner"
 import { Suspense } from 'react'
+import { BookingAuthModal } from "@/components/auth/BookingAuthModal"
+import { useAuthModal } from "@/context/AuthModalContext"
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const { isOpen, mode, closeAuthModal } = useAuthModal()
 
     // check if current path is a dashboard/auth route
     const isDashboardOrAuth =
@@ -29,6 +32,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </main>
 
             {!isDashboardOrAuth && <Footer />}
+
+            <BookingAuthModal 
+                isOpen={isOpen} 
+                onClose={closeAuthModal} 
+                initialTab={mode} 
+            />
         </div>
     )
 }

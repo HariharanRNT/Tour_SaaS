@@ -54,7 +54,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
     const getActivityType = (title: string) => {
         const t = title.toLowerCase()
         if (t.includes('visit') || t.includes('temple') || t.includes('museum') || t.includes('heritage') || t.includes('walk')) return { accent: 'bg-violet-500', border: 'border-l-violet-500', icon: '🏛️' }
-        if (t.includes('lunch') || t.includes('dinner') || t.includes('food') || t.includes('cafe') || t.includes('restaurant')) return { accent: 'bg-orange-500', border: 'border-l-orange-500', icon: '🍜' }
+        if (t.includes('lunch') || t.includes('dinner') || t.includes('food') || t.includes('cafe') || t.includes('restaurant')) return { accent: 'bg-black', border: 'border-l-black', icon: '🍜' }
         if (t.includes('transfer') || t.includes('pick up') || t.includes('drop')) return { accent: 'bg-sky-500', border: 'border-l-sky-500', icon: '🚕' }
         if (t.includes('hotel') || t.includes('check-in') || t.includes('check in') || t.includes('arrival')) return { accent: 'bg-purple-500', border: 'border-l-purple-500', icon: '🏨' }
         return { accent: 'bg-emerald-500', border: 'border-l-emerald-500', icon: '✨' }
@@ -75,14 +75,14 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
             className={`relative shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group touch-none hover:translate-x-1`}
         >
             {/* Left Color Accent Border */}
-            <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--primary)] rounded-l-2xl`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-black rounded-l-2xl`} />
 
             <div className="flex items-start gap-3 p-4 pl-5">
                 {/* Drag Handle */}
                 <div
                     {...attributes}
                     {...listeners}
-                    className="mt-1 cursor-grab active:cursor-grabbing text-[var(--primary)]/40 hover:text-[var(--primary)] flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/30 transition-colors flex-shrink-0"
+                    className="mt-1 cursor-grab active:cursor-grabbing text-black/40 hover:text-black flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-white/30 transition-colors flex-shrink-0"
                 >
                     <GripVertical className="h-4 w-4" />
                 </div>
@@ -92,20 +92,20 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                     {/* Title row */}
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-base">✨</span>
-                        <h4 className="font-bold text-[#5C2500] leading-tight text-[15px] font-serif tracking-tight flex-1">{activity.title}</h4>
+                        <h4 className="font-bold text-black leading-tight text-[15px] font-serif tracking-tight flex-1">{activity.title}</h4>
                     </div>
 
                     {/* Metadata chips */}
                     <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
                         {(activity.start_time || activity.end_time) && (
-                            <span className="flex items-center gap-1.5 font-bold text-[#A0522D] shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
-                                <Clock className="w-3 h-3 text-[var(--primary)]" />
+                            <span className="flex items-center gap-1.5 font-bold text-black shadow-sm" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
+                                <Clock className="w-3 h-3 text-black" />
                                 {activity.start_time || '?'} - {activity.end_time || '?'}
-                                {duration && <span className="text-[#A0522D]/60 font-medium">({duration})</span>}
+                                {duration && <span className="text-black/60 font-medium">({duration})</span>}
                             </span>
                         )}
-                        <span className="flex items-center gap-1.5 shadow-sm text-[#A0522D] font-bold" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
-                            <MapPin className="w-3 h-3 text-[var(--primary)]" />
+                        <span className="flex items-center gap-1.5 shadow-sm text-black font-bold" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
+                            <MapPin className="w-3 h-3 text-black" />
                             {activity.location || 'Location TBA'}
                         </span>
                         {activity.is_optional && (
@@ -169,7 +169,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] rounded-xl bg-white/20 transition-all duration-300"
+                    className="h-8 w-8 p-0 hover:bg-black/10 hover:text-black rounded-xl bg-white/20 transition-all duration-300"
                     onClick={() => onEdit(activity)}
                     title="Edit"
                 >

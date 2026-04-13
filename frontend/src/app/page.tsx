@@ -1,8 +1,7 @@
 'use client'
 
-import { API_URL } from '@/lib/api'
-
-import { useState, useEffect } from 'react'
+import { API_URL, api } from '@/lib/api'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -42,6 +41,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     const { themeData: theme, isLoading, publicSettings } = useTheme()
     const [packages, setPackages] = useState<Package[]>([])
     const [packagesLoading, setPackagesLoading] = useState(true)
+    const [cheapestPackageSlug, setCheapestPackageSlug] = useState<string | null>(null)
 
     const [hpSettings, setHpSettings] = useState<{
         headline1: string;
@@ -106,8 +106,8 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                     headline1: hs.headline1,
                     headline2: hs.headline2 || "",
                     subheading: hs.subheading || "",
-                    primaryBtnText: hs.primaryBtnText || "See Sample Itinerary",
-                    secondaryBtnText: hs.secondaryBtnText || "Start Your Journey",
+                    primaryBtnText: hs.primaryBtnText || "Start Your Journey",
+                    secondaryBtnText: hs.secondaryBtnText || "See Sample Itinerary",
                     backgroundImageUrl: hs.backgroundImageUrl || "",
                     badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
                     showAiBadge: hs.showAiBadge !== false
@@ -147,13 +147,17 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
         const fetchPackages = async () => {
             try {
-                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                const res = await fetch(`${API_URL}/api/v1/packages?page_size=6`, {
-                    headers: { 'X-Domain': domain }
+                const response = await api.get('/packages', {
+                    params: { page_size: 6 }
                 })
-                if (res.ok) {
-                    const data = await res.json()
-                    setPackages(data.packages)
+                setPackages(response.data.packages)
+                
+                // Fallback: If no cheapest slug yet from dedicated fetch, pick from these packages
+                if (response.data.packages && response.data.packages.length > 0 && !cheapestPackageSlug) {
+                    const localCheapest = [...response.data.packages].sort((a, b) => a.price_per_person - b.price_per_person)[0];
+                    if (localCheapest && localCheapest.slug) {
+                        setCheapestPackageSlug(localCheapest.slug);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch popular packages", error)
@@ -161,7 +165,20 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 setPackagesLoading(false)
             }
         }
+
+        const fetchCheapest = async () => {
+            try {
+                const response = await api.get('/packages/cheapest')
+                if (response.data && response.data.slug) {
+                    setCheapestPackageSlug(response.data.slug)
+                }
+            } catch (err) {
+                console.error("Failed to fetch cheapest package", err)
+            }
+        }
+
         fetchPackages()
+        fetchCheapest()
     }, [isLoading])
 
     const heroBgImage = hpSettings?.backgroundImageUrl ||
@@ -265,7 +282,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                         {/* CTA Section */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
                             <Button
-                                onClick={() => router.push('/plan-trip?search=all')}
+                                onClick={() => router.push(cheapestPackageSlug ? `/plan-trip/${cheapestPackageSlug}?mode=preview` : '/plan-trip?search=all')}
                                 variant="outline"
                                 size="lg"
                                 className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white bg-transparent rounded-[30px]"

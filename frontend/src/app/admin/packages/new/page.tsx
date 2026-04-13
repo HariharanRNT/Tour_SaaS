@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface PackageFormData {
     title: string
@@ -22,6 +23,9 @@ interface PackageFormData {
     price_per_person: number
     max_group_size: number
     description: string
+    booking_type: 'INSTANT' | 'ENQUIRY'
+    price_label: string
+    enquiry_payment: 'OFFLINE' | 'PAYMENT_LINK'
 }
 
 export default function CreatePackagePage() {
@@ -42,7 +46,10 @@ export default function CreatePackagePage() {
         category: 'Adventure',
         price_per_person: 0,
         max_group_size: 20,
-        description: ''
+        description: '',
+        booking_type: 'INSTANT',
+        price_label: '',
+        enquiry_payment: 'OFFLINE'
     })
 
     // Load existing package data if editing
@@ -71,7 +78,10 @@ export default function CreatePackagePage() {
                     category: data.package.category || 'Adventure',
                     price_per_person: data.package.price_per_person || 0,
                     max_group_size: data.package.max_group_size || 20,
-                    description: data.package.description || ''
+                    description: data.package.description || '',
+                    booking_type: data.package.booking_type || 'INSTANT',
+                    price_label: data.package.price_label || '',
+                    enquiry_payment: data.package.enquiry_payment || 'OFFLINE'
                 })
             }
         } catch (error) {
@@ -336,6 +346,89 @@ export default function CreatePackagePage() {
                                         rows={6}
                                         className="border-gray-200"
                                     />
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-100 space-y-6">
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-semibold text-gray-900">Booking Flow Configuration</Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div 
+                                                className={cn(
+                                                    "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                                                    formData.booking_type === 'INSTANT' 
+                                                        ? "border-blue-600 bg-blue-50/50 shadow-sm" 
+                                                        : "border-gray-200 hover:border-gray-300 bg-white"
+                                                )}
+                                                onClick={() => updateFormData('booking_type', 'INSTANT')}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={cn(
+                                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                                                        formData.booking_type === 'INSTANT' ? "border-blue-600" : "border-gray-300"
+                                                    )}>
+                                                        {formData.booking_type === 'INSTANT' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900">Instant Booking</p>
+                                                        <p className="text-xs text-gray-600 mt-0.5">Automated payment and confirmation</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div 
+                                                className={cn(
+                                                    "relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                                                    formData.booking_type === 'ENQUIRY' 
+                                                        ? "border-blue-600 bg-blue-50/50 shadow-sm" 
+                                                        : "border-gray-200 hover:border-gray-300 bg-white"
+                                                )}
+                                                onClick={() => updateFormData('booking_type', 'ENQUIRY')}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={cn(
+                                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                                                        formData.booking_type === 'ENQUIRY' ? "border-blue-600" : "border-gray-300"
+                                                    )}>
+                                                        {formData.booking_type === 'ENQUIRY' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900">Custom Enquiry</p>
+                                                        <p className="text-xs text-gray-600 mt-0.5">Consultative flow via enquiry form</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {formData.booking_type === 'ENQUIRY' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="price_label">Custom Price Label (Optional)</Label>
+                                                <Input
+                                                    id="price_label"
+                                                    placeholder="e.g. Price on request"
+                                                    value={formData.price_label}
+                                                    onChange={(e) => updateFormData('price_label', e.target.value)}
+                                                    className="border-gray-200"
+                                                />
+                                                <p className="text-[10px] text-gray-500">Replaces numeric price if provided</p>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="enquiry_payment">Conversion Payment Type</Label>
+                                                <select
+                                                    id="enquiry_payment"
+                                                    value={formData.enquiry_payment}
+                                                    onChange={(e) => updateFormData('enquiry_payment', e.target.value)}
+                                                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                                >
+                                                    <option value="OFFLINE">Offline Payment / Direct Bank Transfer</option>
+                                                    <option value="PAYMENT_LINK">Payment Link (Razorpay)</option>
+                                                </select>
+                                                <p className="text-[10px] text-gray-500">Method used if the enquiry converts to a booking</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex justify-end gap-2 pt-4 border-t border-gray-50">

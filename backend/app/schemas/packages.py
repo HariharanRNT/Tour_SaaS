@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
+from app.models import BookingType, EnquiryPaymentType
 import json as _json
 
 
@@ -59,6 +60,10 @@ class PackageBase(BaseModel):
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[CancellationRule] = []
+    # Dual Booking
+    booking_type: BookingType = BookingType.INSTANT
+    price_label: Optional[str] = None
+    enquiry_payment: EnquiryPaymentType = EnquiryPaymentType.OFFLINE
 
 
 class PackageCreate(PackageBase):
@@ -97,6 +102,10 @@ class PackageUpdate(BaseModel):
     # Cancellation Policy
     cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[CancellationRule]] = None
+    # Dual Booking
+    booking_type: Optional[BookingType] = None
+    price_label: Optional[str] = None
+    enquiry_payment: Optional[EnquiryPaymentType] = None
 
 
 # ---------------------------------------------------------------------------
@@ -263,6 +272,10 @@ class PackageResponse(PackageBase):
                 'flight_baggage_note': getattr(obj, 'flight_baggage_note', None),
                 'cancellation_enabled': getattr(obj, 'cancellation_enabled', False),
                 'cancellation_rules': getattr(obj, 'cancellation_rules', []) or [],
+                # Dual Booking
+                'booking_type': getattr(obj, 'booking_type', BookingType.INSTANT),
+                'price_label': getattr(obj, 'price_label', None),
+                'enquiry_payment': getattr(obj, 'enquiry_payment', EnquiryPaymentType.OFFLINE),
                 'itinerary_items': getattr(obj, 'itinerary_items', []),
                 'images': getattr(obj, 'images', []),
             }

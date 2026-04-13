@@ -18,24 +18,31 @@ class OTPService:
     OTP_EXPIRY = 300  # 5 minutes
     MAX_RESEND_ATTEMPTS = 100  # Maximum OTP requests per hour
     RESEND_WINDOW = 3600  # 1 hour window for resend limit
+    
+    @classmethod
+    def _normalize_email(cls, email: str) -> str:
+        """Strip and lowercase email for consistent Redis keys"""
+        if not email:
+            return ""
+        return email.strip().lower()
 
     @classmethod
     def _get_otp_key(cls, email: str) -> str:
-        return f"{cls.OTP_KEY_PREFIX}{email}"
+        return f"{cls.OTP_KEY_PREFIX}{cls._normalize_email(email)}"
 
     @classmethod
     def _get_resend_limit_key(cls, email: str) -> str:
-        return f"{cls.RESEND_LIMIT_PREFIX}{email}"
+        return f"{cls.RESEND_LIMIT_PREFIX}{cls._normalize_email(email)}"
     
     @classmethod
     def _get_login_otp_key(cls, email: str) -> str:
         """Get Redis key for agent login OTP"""
-        return f"{cls.LOGIN_OTP_KEY_PREFIX}{email}"
+        return f"{cls.LOGIN_OTP_KEY_PREFIX}{cls._normalize_email(email)}"
     
     @classmethod
     def _get_login_resend_limit_key(cls, email: str) -> str:
         """Get Redis key for agent login OTP resend limit"""
-        return f"{cls.LOGIN_RESEND_LIMIT_PREFIX}{email}"
+        return f"{cls.LOGIN_RESEND_LIMIT_PREFIX}{cls._normalize_email(email)}"
 
     @classmethod
     def generate_otp(cls) -> str:

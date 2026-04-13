@@ -5,8 +5,11 @@ import html
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Union
-from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator
-from app.models import UserRole, PackageStatus, BookingStatus, PaymentStatus, ApprovalStatus
+from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator, model_validator
+from app.models import (
+    UserRole, PackageStatus, BookingStatus, PaymentStatus, ApprovalStatus,
+    BookingType, EnquiryPaymentType, EnquiryStatus
+)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -267,6 +270,17 @@ class UserResponse(UserBase):
     sub_user_id: Optional[UUID4] = None
     
     created_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class UserMinimalResponse(BaseModel):
+    id: UUID4
+    email: EmailStr
+    first_name: str
+    last_name: str
+    agency_name: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -556,6 +570,10 @@ class PackageBase(BaseModel):
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[dict] = []
+    # Dual Booking
+    booking_type: BookingType = BookingType.INSTANT
+    price_label: Optional[str] = Field(None, max_length=100)
+    enquiry_payment: EnquiryPaymentType = EnquiryPaymentType.OFFLINE
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -607,6 +625,10 @@ class PackageUpdate(BaseModel):
     # Cancellation Policy
     cancellation_enabled: Optional[bool] = None
     cancellation_rules: Optional[List[dict]] = None
+    # Dual Booking
+    booking_type: Optional[BookingType] = None
+    price_label: Optional[str] = Field(None, max_length=100)
+    enquiry_payment: Optional[EnquiryPaymentType] = None
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -650,8 +672,32 @@ class PackageResponse(PackageBase):
                 return []
         return v if v is not None else []
     
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "use_enum_values": True
+    }
+
+    @model_validator(mode='before')
+    @classmethod
+    def parse_and_populate(cls, obj):
+        """Handle ORM objects robustly, ensuring booking_type and price_label are present."""
+        if hasattr(obj, '__dict__') or hasattr(obj, '_sa_instance_state'):
+            # It's an ORM object
+            return {
+                **{c.name: getattr(obj, c.name) for c in obj.__table__.columns if hasattr(obj, c.name)},
+                'id': obj.id,
+                'slug': obj.slug,
+                'status': obj.status,
+                'is_public': obj.is_public,
+                'created_at': obj.created_at,
+                'booking_type': getattr(obj, 'booking_type', BookingType.INSTANT),
+                'price_label': getattr(obj, 'price_label', None),
+                'enquiry_payment': getattr(obj, 'enquiry_payment', EnquiryPaymentType.OFFLINE),
+                'images': getattr(obj, 'images', []),
+                'itinerary_items': getattr(obj, 'itinerary_items', []),
+                'availability': getattr(obj, 'availability', [])
+            }
+        return obj
 
 
 class PackageListResponse(BaseModel):
@@ -737,6 +783,8 @@ class BookingResponse(BaseModel):
     payment_status: Optional[PaymentStatus] = None
     special_requests: Optional[str] = None
     tripjack_booking_id: Optional[str] = None
+    # Agent-on-behalf tracking
+    booked_by_user_id: Optional[UUID4] = None
     # Cancellation / Refund fields
     refund_amount: Optional[Decimal] = None
     cancelled_at: Optional[datetime] = None
@@ -761,6 +809,7 @@ class RefundInfo(BaseModel):
 class BookingWithPackageResponse(BookingResponse):
     package: Optional[PackageResponse] = None
     user: Optional[UserResponse] = None
+    booked_by: Optional[UserResponse] = None  # Who made the booking (agent/sub-user)
     refund: Optional[RefundInfo] = None  # Populated from BookingRefund relationship
     
     class Config:
@@ -792,7 +841,6 @@ class CancelActionResponse(BaseModel):
 class PaymentOrderCreate(BaseModel):
     booking_id: UUID4
 
-
 class PaymentOrderResponse(BaseModel):
     order_id: str
     amount: int
@@ -800,10 +848,85 @@ class PaymentOrderResponse(BaseModel):
     key_id: str
 
 
+# Enquiry Schemas
+class EnquiryBase(BaseModel):
+    package_id: Optional[UUID4] = None
+    customer_name: str = Field(..., min_length=1, max_length=200)
+    email: EmailStr
+    phone: str
+    travel_date: date
+    travellers: int = Field(..., ge=1)
+    message: Optional[str] = Field(None, max_length=2000)
+
+    @field_validator('customer_name', 'message', mode='before')
+    @classmethod
+    def sanitize_enquiry_text(cls, v):
+        if v is None or not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'field')
+        return v.strip()
+
+
+class EnquiryCreate(EnquiryBase):
+    pass
+
+
+class EnquiryUpdate(BaseModel):
+    status: Optional[EnquiryStatus] = None
+    agent_notes: Optional[str] = Field(None, max_length=5000)
+
+    @field_validator('agent_notes', mode='before')
+    @classmethod
+    def sanitize_notes(cls, v):
+        if v is None or not isinstance(v, str):
+            return v
+        v = strip_xss(v)
+        reject_sql(v, 'agent_notes')
+        return v.strip()
+
+
+class EnquiryResponse(EnquiryBase):
+    id: UUID4
+    package_name_snapshot: str
+    agent_id: UUID4
+    customer_id: Optional[UUID4] = None
+    status: EnquiryStatus
+    source: str
+    agent_notes: Optional[str] = None
+    agent_notified: bool
+    notification_count: int
+    last_contacted_at: Optional[datetime] = None
+    created_at: datetime
+    
+    # Optional booking info
+    booking_id: Optional[UUID4] = None
+
+    class Config:
+        from_attributes = True
+
+
+class EnquiryListResponse(BaseModel):
+    enquiries: List[EnquiryResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class EnquiryConversionResponse(BaseModel):
+    booking: Optional[BookingResponse] = None
+    payment_link: Optional[str] = None
+    message: str
+
+
 class PaymentVerification(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+
+
+class PaymentFailedRequest(BaseModel):
+    booking_id: UUID4
 
 
 class PaymentResponse(BaseModel):
@@ -900,12 +1023,12 @@ class TripSessionUpdate(BaseModel):
 # Subscription Schemas
 class SubscriptionPlanBase(BaseModel):
     name: str
-    price: Decimal
+    price: Decimal = Field(...)
     currency: str = "INR"
     billing_cycle: str = "monthly"
     duration_days: Optional[int] = None
     features: List[str] = []
-    booking_limit: int
+    booking_limit: int = Field(..., ge=-1)
     is_active: bool = True
 
 class SubscriptionPlanCreate(SubscriptionPlanBase):
@@ -918,7 +1041,7 @@ class SubscriptionPlanUpdate(BaseModel):
     billing_cycle: Optional[str] = None
     duration_days: Optional[int] = None
     features: Optional[List[str]] = None
-    booking_limit: Optional[int] = None
+    booking_limit: Optional[int] = Field(None, ge=-1)
     is_active: Optional[bool] = None
 
 class SubscriptionPlanResponse(SubscriptionPlanBase):
@@ -956,6 +1079,7 @@ class SubscriptionBase(BaseModel):
 class SubscriptionResponse(SubscriptionBase):
     id: UUID4
     user_id: UUID4
+    user: Optional[UserMinimalResponse] = None
     current_bookings_usage: int
     plan: SubscriptionPlanResponse
     created_at: datetime
@@ -1044,6 +1168,7 @@ class LoginResponse(BaseModel):
     message: Optional[str] = None
     email: Optional[str] = None
     expires_in: Optional[int] = None
+    role: Optional[str] = None  # User role, returned even in OTP flow for frontend role checks
 
 
 class NotificationResponse(BaseModel):
@@ -1131,3 +1256,46 @@ class SubUserListResponse(BaseModel):
     sub_users: List[SubUserResponse]
     total: int
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Agent → Customer Booking Flow Schemas
+# ──────────────────────────────────────────────────────────────────────────────
+
+class AgentQuickCreateCustomer(BaseModel):
+    """Schema for agent quick-creating a customer during the booking flow."""
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    phone: Optional[str] = None
+    send_credentials: bool = False  # Whether to email login creds to the customer
+
+    @field_validator('first_name', 'last_name', mode='before')
+    @classmethod
+    def sanitize_name(cls, v):
+        if not isinstance(v, str):
+            return v
+        v = strip_xss(v).strip()
+        reject_sql(v, 'name')
+        return v
+
+    @field_validator('phone', mode='before')
+    @classmethod
+    def validate_phone_optional(cls, v):
+        if v is None or v == '':
+            return None
+        v = str(v).strip()
+        if v and not _PHONE_RE.match(v):
+            raise ValueError('Phone number must be 7–15 digits.')
+        return v
+
+
+class CustomerSearchResult(BaseModel):
+    """Lightweight customer object returned by search."""
+    id: UUID4
+    first_name: str
+    last_name: str
+    email: str
+    phone: Optional[str] = None
+
+    class Config:
+        from_attributes = True

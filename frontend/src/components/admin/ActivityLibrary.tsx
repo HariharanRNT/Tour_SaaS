@@ -141,7 +141,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                     boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
                     zIndex: 10 }}
             >
-                <X style={{ width: '12px', height: '12px', color: '#A0522D' }} />
+                <X style={{ width: '12px', height: '12px', color: 'black' }} />
             </button>
 
             {/* Content */}
@@ -149,7 +149,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 <h4 style={{
                     fontSize: '15px',
                     fontWeight: 700,
-                    color: '#2D1A0E',
+                    color: 'black',
                     lineHeight: 1.3,
                     marginBottom: '6px',
                     fontFamily: 'serif' }}>
@@ -162,7 +162,7 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 <span style={{
                     fontSize: '10px',
                     fontWeight: 700,
-                    color: '#8B4513',
+                    color: 'black',
                     background: 'rgba(255,255,255,0.55)',
                     border: '1px solid rgba(255,255,255,0.65)',
                     borderRadius: '999px',
@@ -172,14 +172,14 @@ function ActivityPreviewPopup({ activity, cardRect, panelRect, onClose, isVisibl
                 <span style={{
                     fontSize: '10px',
                     fontWeight: 600,
-                    color: '#A0522D',
+                    color: 'black',
                     background: 'rgba(255,255,255,0.35)',
                     borderRadius: '999px',
                     padding: '2px 8px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '3px' }}>
-                    <Clock style={{ width: '10px', height: '10px', color: 'var(--primary)' }} />
+                    <Clock style={{ width: '10px', height: '10px', color: 'black' }} />
                     {activity.duration_hours}h
                 </span>
             </div>
@@ -278,8 +278,8 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
                 isDragging
                     ? "opacity-70 border-dashed border-[var(--primary)] rotate-2 shadow-2xl cursor-grabbing"
                     : isPreviewOpen
-                        ? "border-[var(--primary)]/50 shadow-[0_4px_20px_var(--primary-glow)]"
-                        : "border-white/35 hover:border-[var(--primary)]/35 cursor-pointer"
+                        ? "border-black/50 shadow-[0_4px_20px_var(--primary-glow)]"
+                        : "border-white/35 hover:border-black/35 cursor-pointer"
             )}
             style={{
                 ...dragStyle,
@@ -292,7 +292,7 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
             {showFirstHoverTip && (
                 <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none">
                     <div
-                        className="px-3 py-1 rounded-full text-[9px] font-bold text-[var(--primary)] shadow-lg"
+                        className="px-3 py-1 rounded-full text-[9px] font-bold text-black shadow-lg"
                         style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid var(--primary-soft)' }}
                     >
                         Drag to add · Click to preview
@@ -309,7 +309,7 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
                     onClick={e => e.stopPropagation()}
                     title="Drag to itinerary"
                 >
-                    <GripVertical className="w-4 h-4 text-[var(--primary)]" />
+                    <GripVertical className="w-4 h-4 text-black" />
                 </div>
 
                 {/* Thumbnail */}
@@ -325,13 +325,13 @@ function ActivityDraggableCard({ activity, onPreview, activePreviewId }: Activit
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-[#5C2500] truncate mb-1 font-serif">{activity.name}</h4>
+                    <h4 className="text-xs font-bold text-black truncate mb-1 font-serif">{activity.name}</h4>
                     <div className="flex flex-wrap gap-1 items-center">
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-bold bg-white/30 border-white/50 text-[#8B4513] rounded-full">
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-bold bg-white/30 border-white/50 text-black rounded-full">
                             {activity.category}
                         </Badge>
-                        <span className="text-[9px] text-[#A0522D] flex items-center gap-0.5 font-medium">
-                            <Clock className="w-2.5 h-2.5 text-[var(--primary)]" />
+                        <span className="text-[9px] text-black/60 flex items-center gap-0.5 font-medium">
+                            <Clock className="w-2.5 h-2.5 text-black" />
                             {activity.duration_hours}h
                         </span>
                     </div>
@@ -359,36 +359,36 @@ function DestinationCard({ city, activities, isExpanded, onToggle, onPreview, ac
                 className={cn(
                     "w-full flex items-center gap-3 p-3 rounded-[14px] border transition-all text-left",
                     isExpanded
-                        ? "border-[var(--primary)]/40 rounded-b-none border-b-0"
-                        : "border-white/35 hover:border-[var(--primary)]/40 hover:-translate-y-0.5"
+                        ? "border-black/40 rounded-b-none border-b-0"
+                        : "border-white/35 hover:border-black/40 hover:-translate-y-0.5"
                 )}
-                style={{ background: isExpanded ? 'var(--primary-glow)' : 'rgba(255,255,255,0.20)' }}
+                style={{ background: isExpanded ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.20)' }}
             >
                 <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
+                    style={{ background: 'black' }}
                 >
                     <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-[#2D1A0E] truncate">{city}</p>
+                    <p className="text-xs font-bold text-black truncate">{city}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-[var(--primary)]"
-                        style={{ background: 'var(--primary-glow)' }}>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full text-black"
+                        style={{ background: 'rgba(0,0,0,0.05)' }}>
                         {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'}
                     </span>
                     {isExpanded
-                        ? <ChevronUp className="w-3.5 h-3.5 text-[var(--primary)]" />
-                        : <ChevronDown className="w-3.5 h-3.5 text-[#A0522D]/60" />
+                        ? <ChevronUp className="w-3.5 h-3.5 text-black" />
+                        : <ChevronDown className="w-3.5 h-3.5 text-black/60" />
                     }
                 </div>
             </button>
 
             {isExpanded && (
                 <div
-                    className="border border-t-0 border-[var(--primary)]/40 rounded-b-[14px] p-2 space-y-2"
-                    style={{ background: 'var(--primary)]/5' }}
+                    className="border border-t-0 border-black/40 rounded-b-[14px] p-2 space-y-2"
+                    style={{ background: 'rgba(0,0,0,0.02)' }}
                 >
                     {activities.map(activity => (
                         <ActivityDraggableCard
@@ -540,7 +540,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                             <span className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]" />
                             Activity Library
                         </h3>
-                        <p className="text-[10px] text-[#A0522D] font-semibold italic mt-0.5 flex items-center gap-1">
+                        <p className="text-[10px] text-black font-semibold italic mt-0.5 flex items-center gap-1">
                             <GripVertical className="w-3 h-3" />
                             Drag activities into time slots
                         </p>
@@ -551,10 +551,10 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                 </div>
 
                 <div className="relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--primary)] group-focus-within:scale-110 transition-transform z-10" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black group-focus-within:scale-110 transition-transform z-10" />
                     <Input
                         placeholder="Search destinations..."
-                        className="pl-10 h-10 text-xs border-white/40 focus:border-[var(--primary)]/50 transition-all rounded-full placeholder:text-[#A0522D]/40 text-[#5C2500] font-medium"
+                        className="pl-10 h-10 text-xs border-white/40 focus:border-[var(--primary)]/50 transition-all rounded-full placeholder:text-black/40 text-black font-medium"
                         style={{ background: 'rgba(255,255,255,0.22)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)' }}
                         onFocus={e => { e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-glow), inset 0 1px 3px rgba(0,0,0,0.04)' }}
                         onBlur={e => { e.currentTarget.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.04)' }}
@@ -648,7 +648,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
                 ) : (
                     <div className="text-center py-10 flex flex-col items-center gap-2">
                         <MapPin className="w-5 h-5 text-[var(--primary)]/40" />
-                        <p className="text-xs font-semibold text-[#A0522D]/60">No destinations found</p>
+                        <p className="text-xs font-semibold text-black/60">No destinations found</p>
                     </div>
                 )}
             </div>
@@ -658,7 +658,7 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
             <div className="p-4 bg-white/10 backdrop-blur-md border-t border-white/20 flex-shrink-0">
                 <Button
                     variant="ghost"
-                    className="w-full h-10 text-[11px] font-bold gap-2 border-2 border-dashed border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--primary)]/5 rounded-xl transition-all"
+                    className="w-full h-10 text-[11px] font-bold gap-2 border-2 border-dashed border-black/40 text-black hover:bg-black/5 rounded-xl transition-all"
                     onClick={() => window.open('/agent/activities', '_blank')}
                 >
                     <Plus className="w-3.5 h-3.5" />

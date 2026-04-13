@@ -21,7 +21,8 @@ import {
     Plane,
     Package,
     Briefcase,
-    BarChart2
+    BarChart2,
+    MessageSquare
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -63,6 +64,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 ...(userRole !== 'admin' ? [
                     { icon: Package, label: 'Manage Packages', href: '/agent/packages', module: 'packages' },
                     { icon: Map, label: 'Activity Master', href: '/agent/activities', module: 'activities' },
+                    { icon: MessageSquare, label: 'Enquiries', href: '/agent/enquiries', module: 'packages' }, // Using packages permission as fallback
                     { icon: Calendar, label: 'Booking Report', href: '/agent/bookings', module: 'bookings' },
                 ] : []),
 
@@ -103,6 +105,12 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 }
                 if (isSubUser && !item.module) {
                     return false; // Sub-users shouldn't see modules without explicit permissions defined
+                }
+                return true;
+            }).filter(item => {
+                // Remove Settings for Admin
+                if (userRole === 'admin' && item.label === 'Settings') {
+                    return false;
                 }
                 return true;
             })
@@ -221,17 +229,6 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
 
             {/* Bottom Actions (Footer Section) */}
             <div className="shrink-0 mt-auto">
-                <Link
-                    href="/admin/help"
-                    className={cn(
-                        "nav-item flex items-center px-4 py-2.5 transition-all duration-200 group hover:bg-white/10",
-                        collapsed && "justify-center px-0"
-                    )}
-                    title="Help & Support"
-                >
-                    <HelpCircle className={cn("icon transition-colors group-hover:scale-110", !collapsed && "mr-2")} />
-                    {!collapsed && <span className="nav-label">Help & Support</span>}
-                </Link>
 
                 {/* User Avatar & Name */}
                 {!collapsed ? (

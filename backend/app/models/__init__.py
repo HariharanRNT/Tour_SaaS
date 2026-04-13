@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Optional
 from sqlalchemy import (
     Column, String, Boolean, Integer, Text, Date, DateTime, Numeric, Float,
-    ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint
+    ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint, CheckConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -35,6 +35,7 @@ class PackageStatus(str, enum.Enum):
 
 
 class BookingStatus(str, enum.Enum):
+    INITIATED = "INITIATED"
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
@@ -44,8 +45,26 @@ class BookingStatus(str, enum.Enum):
 class PaymentStatus(str, enum.Enum):
     PENDING = "PENDING"
     SUCCEEDED = "SUCCEEDED"
+    PAID = "PAID"
     FAILED = "FAILED"
     REFUNDED = "REFUNDED"
+
+
+class BookingType(str, enum.Enum):
+    INSTANT = "INSTANT"
+    ENQUIRY = "ENQUIRY"
+
+
+class EnquiryPaymentType(str, enum.Enum):
+    OFFLINE = "OFFLINE"
+    PAYMENT_LINK = "PAYMENT_LINK"
+
+
+class EnquiryStatus(str, enum.Enum):
+    NEW = "NEW"
+    CONTACTED = "CONTACTED"
+    CONFIRMED = "CONFIRMED"
+    REJECTED = "REJECTED"
 
 
 # Helper function to generate UUID as string
@@ -303,6 +322,11 @@ class Package(Base):
     status = Column(SQLEnum(PackageStatus), default=PackageStatus.DRAFT, nullable=False)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     
+    # Dual Booking Fields
+    booking_type = Column(SQLEnum(BookingType, native_enum=False), default=BookingType.INSTANT, nullable=False)
+    price_label = Column(String, nullable=True)
+    enquiry_payment = Column(SQLEnum(EnquiryPaymentType, native_enum=False), default=EnquiryPaymentType.OFFLINE, nullable=False)
+    
     # Enhanced Fields
     country = Column(String, index=True, nullable=True) # Making nullable first for migration, will validate in API
     is_public = Column(Boolean, default=True, index=True)
@@ -448,11 +472,15 @@ class Booking(Base):
     payment_status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
     special_requests = Column(Text, nullable=True)
     tripjack_booking_id = Column(String(50), nullable=True)
+    enquiry_id = Column(UUID(as_uuid=True), ForeignKey("enquiries.id"), nullable=True, unique=True)
     
     # Flight selection details (for booking intent)
     flight_origin = Column(String(50), nullable=True)
     flight_fare = Column(Numeric(10, 2), nullable=True)
     flight_details = Column(Text, nullable=True) # JSON with airline, flight_no, dep/arr times
+
+    # Agent-on-behalf tracking
+    booked_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
 
     # Cancellation / Refund
     refund_amount = Column(Numeric(10, 2), nullable=True)
@@ -465,9 +493,11 @@ class Booking(Base):
     package = relationship("Package", back_populates="bookings", lazy="selectin")
     user = relationship("User", back_populates="bookings", foreign_keys=[user_id], lazy="selectin")
     agent = relationship("User", foreign_keys=[agent_id], lazy="selectin")
+    booked_by = relationship("User", foreign_keys=[booked_by_user_id], lazy="selectin")
     travelers = relationship("Traveler", back_populates="booking", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
     refund = relationship("BookingRefund", back_populates="booking", uselist=False, cascade="all, delete-orphan")
+    enquiry = relationship("Enquiry", back_populates="booking", uselist=False)
 
 
 class Traveler(Base):
@@ -798,6 +828,40 @@ class Settlement(Base):
     description = Column(String, nullable=True)
     entity_id = Column(String, nullable=True) # Linked payment/order ID
     created_at = Column(DateTime(timezone=True), nullable=False) # Copied from Razorpay event
+
+
+class Enquiry(Base):
+    __tablename__ = "enquiries"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    package_id = Column(UUID(as_uuid=True), ForeignKey("packages.id", ondelete="SET NULL"), nullable=True)
+    package_name_snapshot = Column(String, nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    customer_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    travel_date = Column(Date, nullable=False)
+    travellers = Column(Integer, nullable=False)
+    message = Column(Text, nullable=True)
+    status = Column(SQLEnum(EnquiryStatus, native_enum=False), default=EnquiryStatus.NEW, nullable=False, index=True)
+    source = Column(String, default="WEB", nullable=False)
+    agent_notes = Column(Text, nullable=True)
+    agent_notified = Column(Boolean, default=True)
+    notification_count = Column(Integer, default=1)
+    last_contacted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Constraints
+    __table_args__ = (
+        CheckConstraint('travellers > 0', name='ck_enquiry_travellers_positive'),
+    )
+    
+    # Relationships
+    package = relationship("Package")
+    agent = relationship("User", foreign_keys=[agent_id])
+    customer = relationship("User", foreign_keys=[customer_id])
+    booking = relationship("Booking", back_populates="enquiry", uselist=False)
 
 
 class WebhookEvent(Base):

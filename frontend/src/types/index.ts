@@ -81,8 +81,8 @@ export interface Booking {
     travel_date: string
     number_of_travelers: number
     total_amount: number
-    status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-    payment_status: 'pending' | 'succeeded' | 'failed' | 'refunded'
+    status: 'initiated' | 'pending' | 'confirmed' | 'cancelled' | 'completed'
+    payment_status: 'pending' | 'succeeded' | 'paid' | 'failed' | 'refunded'
     special_requests?: string
     created_at: string
     booking_date?: string
@@ -95,6 +95,7 @@ export interface Booking {
     flight_fare?: number
     flight_details?: string
     refund?: BookingRefund
+    booked_by?: User
 }
 
 export interface BookingRefund {
@@ -129,7 +130,7 @@ export interface Payment {
     razorpay_payment_id?: string
     amount: number
     currency: string
-    status: 'pending' | 'succeeded' | 'failed' | 'refunded'
+    status: 'pending' | 'succeeded' | 'paid' | 'failed' | 'refunded'
     created_at: string
 }
 

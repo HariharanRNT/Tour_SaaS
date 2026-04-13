@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { 
-    fetchAdminNotifications, 
+import {
+    fetchAdminNotifications,
     markNotificationAsRead,
     fetchAgentNotifications,
-    markAgentNotificationAsRead
+    markAgentNotificationAsRead,
+    clearAdminNotifications,
+    clearAgentNotifications
 } from '@/lib/api'
+import { toast } from 'sonner'
 import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check, Plane } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
@@ -23,7 +26,8 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 
 interface AdminHeaderProps {
     onMenuClick?: () => void
@@ -68,6 +72,17 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         }
     })
 
+    const clearAllMutation = useMutation({
+        mutationFn: isAdmin ? clearAdminNotifications : clearAgentNotifications,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [isAdmin ? 'admin-notifications' : 'agent-notifications'] })
+            toast.success('All notifications cleared')
+        },
+        onError: () => {
+            toast.error('Failed to clear notifications')
+        }
+    })
+
     const unreadCount = notifications.filter((n: any) => !n.is_read).length
 
     useEffect(() => {
@@ -88,7 +103,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         localStorage.removeItem('user')
         localStorage.removeItem('isAdmin')
         localStorage.removeItem('adminEmail')
-        
+
         // If it was an agent or sub_user, go to agent login, else admin login
         const isAgentPortal = userRole === 'agent' || userRole === 'AGENT' || userRole === 'sub_user' || userRole === 'SUB_USER'
         router.push(isAgentPortal ? '/login' : '/admin/login')
@@ -144,7 +159,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             {/* Right Actions */}
             <div className="flex items-center gap-2">
                 {isAgent && <ThemeSwitcher />}
-                
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-black hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
@@ -157,22 +172,32 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden shadow-2xl glass-popover">
                         <div className="p-4 border-b border-white/20 bg-white/5 flex items-center justify-between backdrop-blur-md">
                             <DropdownMenuLabel className="font-bold text-slate-800">Notifications</DropdownMenuLabel>
-                            {unreadCount > 0 && (
-                                <Badge variant="secondary" className="bg-[var(--primary-soft)]/20 text-[var(--primary)] border-[var(--primary-soft)]/40">
-                                    {unreadCount} New
-                                </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {unreadCount > 0 && (
+                                    <Badge variant="secondary" className="bg-[var(--primary-soft)]/20 text-[var(--primary)] border-[var(--primary-soft)]/40">
+                                        {unreadCount} New
+                                    </Badge>
+                                )}
+                                {notifications.length > 0 && (
+                                    <button
+                                        onClick={() => clearAllMutation.mutate()}
+                                        className="text-[10px] text-gray-500 hover:text-[var(--primary)] hover:underline transition-colors"
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <ScrollArea className="max-h-[400px]">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center text-slate-900">
                                     <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-sm">No notifications yet</p>
+                                    <p className="text-sm">No new notifications</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-white/10">
                                     {notifications.map((notification: any) => (
-                                        <DropdownMenuItem 
+                                        <DropdownMenuItem
                                             key={notification.id}
                                             className={cn(
                                                 "p-4 cursor-pointer flex flex-col items-start gap-1 glass-popover-item",
@@ -206,17 +231,19 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         </ScrollArea>
                         <DropdownMenuSeparator />
                         <div className="p-2 border-t border-white/10">
-                             <Button variant="ghost" className="w-full text-xs font-bold text-[var(--primary)] hover:bg-white/10 rounded-xl py-4" 
+                            <Button variant="ghost" className="w-full text-xs font-bold text-[var(--primary)] hover:bg-white/10 rounded-xl py-4"
                                 onClick={() => router.push(isAgent ? '/agent/bookings' : '/admin/reports')}>
-                                {isAgent ? 'View All Bookings' : 'View All Activity'}
-                             </Button>
+                                {isAgent ? 'View All Notifications' : 'View All Activity'}
+                            </Button>
                         </div>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="ghost" size="icon" className="text-black hover:text-slate-800 hidden sm:flex">
-                    <HelpCircle className="h-5 w-5" />
-                </Button>
+                {!isAdmin && (
+                    <Button variant="ghost" size="icon" className="text-black hover:text-slate-800 hidden sm:flex">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                )}
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -226,8 +253,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             </div>
                             <div className="hidden sm:flex flex-col items-start gap-0.5">
                                 <span className="text-sm font-bold text-black leading-tight">
-                                    {(userRole === 'agent' || userRole === 'AGENT') ? 'Agent' : 
-                                     (userRole === 'sub_user' || userRole === 'SUB_USER') ? 'Staff' : 'Admin'}
+                                    {(userRole === 'agent' || userRole === 'AGENT') ? 'Agent' :
+                                        (userRole === 'sub_user' || userRole === 'SUB_USER') ? 'Staff' : 'Admin'}
                                 </span>
                                 <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-black text-white rounded-md uppercase tracking-wider">
                                     {userData?.role === 'SUB_USER' ? 'Sub-User' : (userRole || 'Role')}
@@ -243,10 +270,12 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="glass-popover-item">
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Settings</span>
-                        </DropdownMenuItem>
+                        {!isAdmin && (
+                            <DropdownMenuItem className="glass-popover-item">
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Settings</span>
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator className="bg-white/10" />
                         <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-400 glass-popover-item">
                             <LogOut className="mr-2 h-4 w-4" />

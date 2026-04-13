@@ -164,11 +164,12 @@ export default function BookingsPage() {
     }
 
     const getStatusConfig = (status: string) => {
-        switch (status) {
+        switch (status.toLowerCase()) {
             case 'confirmed':
                 return { border: 'border-l-emerald-500', bg: 'bg-emerald-50/30 hover:bg-emerald-50/50', badge: 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-emerald-200 text-white', icon: <Check className="h-3 w-3" />, text: 'CONFIRMED' }
             case 'pending':
-                return { border: 'border-l-amber-500', bg: 'bg-amber-50/30 hover:bg-amber-50/50', badge: 'bg-gradient-to-r from-amber-500 to-[var(--gradient-end)] shadow-amber-200 text-white animate-pulse', icon: <Clock className="h-3 w-3" />, text: 'PENDING' }
+            case 'initiated':
+                return { border: 'border-l-amber-500', bg: 'bg-amber-50/30 hover:bg-amber-50/50', badge: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-200 text-white animate-pulse', icon: <Clock className="h-3 w-3" />, text: 'PENDING' }
             case 'cancelled':
                 return { border: 'border-l-red-500', bg: 'bg-red-50/20 hover:bg-red-50/40', badge: 'bg-gradient-to-r from-red-500 to-rose-500 shadow-red-200 text-white', icon: <X className="h-3 w-3" />, text: 'CANCELLED' }
             case 'completed':
@@ -224,6 +225,8 @@ export default function BookingsPage() {
                             const imageUrl = booking.package?.images?.[0]?.image_url
                                 || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
                             const cancellable = isCancellable(booking)
+                            const isConfirmed = booking.status === 'confirmed' && booking.payment_status?.toLowerCase() === 'paid';
+                            const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
 
                             return (
                                 <Card
@@ -258,10 +261,17 @@ export default function BookingsPage() {
                                                         <h2 className="text-xl font-bold text-black hover:text-blue-600 transition-colors cursor-pointer">
                                                             {booking.package?.destination ? `🏖️ ${booking.package.title}` : booking.package?.title || 'Custom Trip'}
                                                         </h2>
-                                                        <div className="hidden md:block">
-                                                            <Badge className={`${statusConfig.badge} border-0 px-2.5 py-0.5 ml-2 text-xs`}>
-                                                                <span className="mr-1.5">{statusConfig.icon}</span> {statusConfig.text}
-                                                            </Badge>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <div className="hidden md:block">
+                                                                <Badge className={`${statusConfig.badge} border-0 px-2.5 py-0.5 ml-2 text-xs`}>
+                                                                    <span className="mr-1.5">{statusConfig.icon}</span> {statusConfig.text}
+                                                                </Badge>
+                                                            </div>
+                                                            {booking.payment_status?.toLowerCase() === 'failed' && (
+                                                                <Badge className="bg-red-100 text-red-700 border-red-200 border px-2 py-0.5 text-[10px] font-bold">
+                                                                    PAYMENT FAILED
+                                                                </Badge>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div
@@ -322,10 +332,12 @@ export default function BookingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-                                                    <CreditCard className="h-4 w-4 text-emerald-500" />
+                                                    <CreditCard className={`h-4 w-4 ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-500' : 'text-emerald-500'}`} />
                                                     <div>
-                                                        <p className="text-[10px] text-black/60 font-bold uppercase">Payment</p>
-                                                        <p className="text-sm font-semibold text-black capitalize">{booking.payment_status}</p>
+                                                        <p className="text-[10px] text-black/60 font-bold uppercase">Payment Status</p>
+                                                        <p className={`text-sm font-semibold capitalize ${booking.payment_status?.toLowerCase() === 'failed' ? 'text-red-600' : 'text-black'}`}>
+                                                            {booking.payment_status?.toLowerCase() === 'paid' ? 'Success' : booking.payment_status || 'Pending'}
+                                                        </p>
                                                     </div>
                                                 </div>
 
@@ -352,49 +364,67 @@ export default function BookingsPage() {
                                                 )}
                                             </div>
 
-                                            {/* Action Buttons */}
-                                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200/60 mt-auto">
-                                                <Link href={`/bookings/${booking.id}`} className="flex-1 sm:flex-none">
-                                                    <Button className="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-indigo-200 rounded-lg group">
-                                                        View Details <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                                    </Button>
-                                                </Link>
-
-                                                <Button
-                                                    variant="outline"
-                                                    className="flex-1 sm:flex-none gap-2 hover:bg-white/10 border-white/20 text-black glass-panel"
-                                                    onClick={(e) => downloadInvoice(booking, e)}
-                                                >
-                                                    <Download className="h-4 w-4" /> Invoice
-                                                </Button>
-
-                                                {/* Cancel Button — shown only for cancellable bookings */}
-                                                {cancellable && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="flex-1 sm:flex-none gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200"
-                                                        onClick={(e) => openCancelDialog(booking, e)}
-                                                    >
-                                                        <X className="h-4 w-4" /> Cancel Booking
-                                                    </Button>
+                                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-gray-200/60 mt-auto">
+                                                {booking.payment_status?.toLowerCase() === 'failed' && (
+                                                    <div className="flex items-center gap-2 mr-auto py-1 px-3 bg-red-50 rounded-lg border border-red-100">
+                                                        <AlertTriangle className="h-3 w-3 text-red-500 animate-pulse" />
+                                                        <span className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Payment Failed</span>
+                                                    </div>
                                                 )}
 
-                                                <div className="hidden sm:block ml-auto">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-10 w-10">
-                                                                <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                                                <div className="flex flex-1 sm:flex-none gap-3 w-full sm:w-auto ml-auto">
+                                                    {isFailed && (
+                                                        <Link href={`/bookings/${booking.id}`} className="flex-1 sm:flex-none">
+                                                            <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 rounded-lg font-bold text-[10px] uppercase tracking-widest px-4 h-10">
+                                                                Retry Payment
                                                             </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem>
-                                                                <Share2 className="mr-2 h-4 w-4" /> Share Trip
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                                                                Report Issue
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                        </Link>
+                                                    )}
+                                                    
+                                                    <Link href={`/bookings/${booking.id}`} className="flex-1 sm:flex-none">
+                                                        <Button className="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-indigo-200 rounded-lg group">
+                                                            View Details <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                                        </Button>
+                                                    </Link>
+
+                                                    {isConfirmed && (
+                                                        <Button
+                                                            variant="outline"
+                                                            className="flex-1 sm:flex-none gap-2 hover:bg-gray-50 border-gray-200 text-black h-10"
+                                                            onClick={(e) => downloadInvoice(booking, e)}
+                                                        >
+                                                            <Download className="h-4 w-4" /> Invoice
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Cancel Button — shown only for cancellable confirmed bookings */}
+                                                    {isConfirmed && cancellable && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="flex-1 sm:flex-none gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 h-10"
+                                                            onClick={(e) => openCancelDialog(booking, e)}
+                                                        >
+                                                            <X className="h-4 w-4" /> Cancel Booking
+                                                        </Button>
+                                                    )}
+
+                                                    <div className="hidden sm:block">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-10 w-10">
+                                                                    <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem>
+                                                                    <Share2 className="mr-2 h-4 w-4" /> Share Trip
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                                                                    Report Issue
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

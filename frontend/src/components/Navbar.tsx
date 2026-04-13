@@ -7,16 +7,22 @@ import { Button } from '@/components/ui/button'
 import { User, LogOut, Menu, X } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { useTheme } from '@/context/ThemeContext'
+import { useAuthModal } from '@/context/AuthModalContext'
+import { useAuth } from '@/context/AuthContext'
 
 export function Navbar() {
     const pathname = usePathname()
     const router = useRouter()
     const { publicSettings } = useTheme()
+    const { openAuthModal } = useAuthModal()
+    const { user, logout } = useAuth()
     const [isOpen, setIsOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const [userName, setUserName] = useState('')
-    const [userRole, setUserRole] = useState('')
+
+    // Derive auth state directly from AuthContext — updates instantly on login/logout
+    const isAuthenticated = !!user
+    const userName = user?.first_name || user?.email?.split('@')[0] || 'Traveler'
+    const userRole = user?.role || ''
 
     // Branding derived from publicSettings
     const agencyName = publicSettings?.agency_name || 'TourSaaS';
@@ -31,35 +37,10 @@ export function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
-
-    useEffect(() => {
-        // Only access localStorage on client side
-        const token = localStorage.getItem('token')
-        const user = localStorage.getItem('user')
-
-        if (token && user) {
-            setIsAuthenticated(true)
-            try {
-                const userData = JSON.parse(user)
-                setUserName(userData?.first_name || '')
-                setUserRole(userData?.role || '')
-            } catch (e) {
-                console.error('Error parsing user data:', e)
-            }
-        } else {
-            setIsAuthenticated(false)
-            setUserName('')
-        }
-    }, [pathname]) // Re-check auth state when route changes
-
     const handleLogout = () => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
         localStorage.removeItem('agent_theme') // Clear theme cache on logout
-        setIsAuthenticated(false)
-        setUserName('')
-        setUserRole('')
-        router.push('/login')
+        logout()
+        router.push('/')
     }
 
     // Hide global navbar for all admin and agent pages, and auth pages
@@ -165,20 +146,21 @@ export function Navbar() {
         return (
             <>
                 {showLogin && (
-                    <Link href="/login" onClick={() => setIsOpen(false)}>
-                        <Button variant="ghost" size="sm">
-                            {loginLabel}
-                        </Button>
-                    </Link>
-                )}
-                <Link href="/register" onClick={() => setIsOpen(false)}>
-                    <Button
-                        size="sm"
-                        className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white"
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => { setIsOpen(false); openAuthModal({ mode: 'login' }); }}
                     >
-                        {signupLabel}
+                        {loginLabel}
                     </Button>
-                </Link>
+                )}
+                <Button
+                    size="sm"
+                    className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white"
+                    onClick={() => { setIsOpen(false); openAuthModal({ mode: 'register' }); }}
+                >
+                    {signupLabel}
+                </Button>
             </>
         )
     }

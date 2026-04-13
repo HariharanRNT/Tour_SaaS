@@ -50,6 +50,9 @@ interface Package {
     flights_enabled?: boolean;
     flight_origin_cities?: string[];
     flight_cabin_class?: string;
+    // Dual Booking
+    booking_type?: 'INSTANT' | 'ENQUIRY';
+    price_label?: string;
 }
 
 export default function PlanTripPage() {
@@ -125,6 +128,8 @@ function PlanTripContent() {
     const [placeholderText, setPlaceholderText] = useState('Try Chennai...')
     const [visibleCount, setVisibleCount] = useState(9)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(true)
 
     // Cycle placeholders
     useEffect(() => {
@@ -187,9 +192,9 @@ function PlanTripContent() {
         return {
             package_mode: 'all',
             duration_min: 1,
-            duration_max: 30,
+            duration_max: 7,
             price_min: 0,
-            price_max: 500000,
+            price_max: 20000,
             trip_styles: style ? [style] : [] as string[],
             activities: [] as string[],
             countries: [] as string[]
@@ -255,17 +260,12 @@ function PlanTripContent() {
         const observer = new IntersectionObserver(
             (entries) => {
                 const target = entries[0]
-                if (target.isIntersecting && packages.length > visibleCount && !searching && !isLoadingMore) {
-                    setIsLoadingMore(true)
-                    // Simulate a small delay for better UX
-                    setTimeout(() => {
-                        setVisibleCount(prev => prev + 9)
-                        setIsLoadingMore(false)
-                    }, 400)
+                if (target.isIntersecting && hasMore && !searching && !isLoadingMore && packages.length > 0) {
+                    executeSearch(undefined, true, page + 1)
                 }
             },
             {
-                rootMargin: '200px',
+                rootMargin: '400px',
                 threshold: 0.1
             }
         )
@@ -279,7 +279,7 @@ function PlanTripContent() {
                 observer.unobserve(loaderRef.current)
             }
         }
-    }, [packages.length, visibleCount, searching, isLoadingMore])
+    }, [packages.length, page, hasMore, searching, isLoadingMore])
 
     // Global drag selection lock
     useEffect(() => {
@@ -395,16 +395,25 @@ function PlanTripContent() {
     }
 
     // Execute Search / Filter
-    const executeSearch = async (signal?: AbortSignal) => {
-        setSearching(true)
+    const executeSearch = async (signal?: AbortSignal, isLoadMore = false, pageNum = 1) => {
+        if (isLoadMore) {
+            setIsLoadingMore(true)
+        } else {
+            setSearching(true)
+            setPage(1)
+            setHasMore(true)
+        }
+        
         setShowSuggestions(false)
         setHasSearched(true)
-        setVisibleCount(9) // Reset pagination on new search
-
 
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
             const params = new URLSearchParams()
+            const pageSize = 9
+
+            params.append('page', pageNum.toString())
+            params.append('page_size', pageSize.toString())
 
             if (searchQuery) params.append('search', searchQuery)
             if (filters.package_mode !== 'all') params.append('package_mode', filters.package_mode)
@@ -432,8 +441,18 @@ function PlanTripContent() {
 
             if (res.ok) {
                 const data = await res.json()
-                setPackages(data.packages || [])
+                const newPackages = data.packages || []
+                
+                if (isLoadMore) {
+                    setPackages(prev => [...prev, ...newPackages])
+                    setPage(pageNum)
+                } else {
+                    setPackages(newPackages)
+                }
+                
                 setTotalPackages(data.total)
+                // If we got fewer than requested, or we've reached the total, there's no more
+                setHasMore(newPackages.length === pageSize && (isLoadMore ? packages.length + newPackages.length : newPackages.length) < data.total)
             } else {
                 toast.error("Failed to fetch packages")
             }
@@ -443,6 +462,7 @@ function PlanTripContent() {
             toast.error("Error connecting to server")
         } finally {
             setSearching(false)
+            setIsLoadingMore(false)
         }
     }
 
@@ -618,7 +638,7 @@ function PlanTripContent() {
                     {/* Package Type */}
                     <div className="space-y-4">
                         <p className="text-[10px] font-bold text-black uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
-                            <span className="text-[#FFB347]">📦</span> PACKAGE TYPE
+                            <span className="text-black">📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
                             {['all', 'single', 'multi'].map(type => {
@@ -635,7 +655,7 @@ function PlanTripContent() {
                                                 ? 'bg-gradient-to-r from-[var(--primary)] to-[#FF8C00] border-transparent text-white shadow-md'
                                                 : isDisabled
                                                     ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400'
-                                                    : 'bg-white/50 border-orange-100 text-[#7C3A10] hover:border-[var(--primary)] hover:bg-white'}
+                                                    : 'bg-white/50 border-orange-100 text-black hover:border-[var(--primary)] hover:bg-white'}
                                         `}
                                     >
                                         <span className="flex items-center gap-2">
@@ -699,6 +719,38 @@ function PlanTripContent() {
                                 step={1}
                                 onValueChange={(vals) => setFilters(prev => ({ ...prev, duration_min: vals[0], duration_max: vals[1] }))}
                             />
+                            
+                            {/* Manual Duration Inputs */}
+                            <div className="flex items-center gap-3 mt-2">
+                                <div className="flex-1 relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">MIN</span>
+                                    <Input 
+                                        type="number" 
+                                        min={1} 
+                                        max={filters.duration_max}
+                                        value={filters.duration_min} 
+                                        onChange={(e) => {
+                                            const val = Math.max(1, Math.min(filters.duration_max, parseInt(e.target.value) || 1));
+                                            setFilters(prev => ({ ...prev, duration_min: val }));
+                                        }}
+                                        className="h-9 pl-10 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
+                                    />
+                                </div>
+                                <div className="flex-1 relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">MAX</span>
+                                    <Input 
+                                        type="number" 
+                                        min={filters.duration_min} 
+                                        max={30}
+                                        value={filters.duration_max} 
+                                        onChange={(e) => {
+                                            const val = Math.max(filters.duration_min, Math.min(30, parseInt(e.target.value) || 30));
+                                            setFilters(prev => ({ ...prev, duration_max: val }));
+                                        }}
+                                        className="h-9 pl-10 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -754,6 +806,40 @@ function PlanTripContent() {
                                 step={5000}
                                 onValueChange={(vals) => setFilters(prev => ({ ...prev, price_min: vals[0], price_max: vals[1] }))}
                             />
+
+                            {/* Manual Budget Inputs */}
+                            <div className="flex items-center gap-3 mt-2">
+                                <div className="flex-1 relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">₹ MIN</span>
+                                    <Input 
+                                        type="number" 
+                                        min={0} 
+                                        max={filters.price_max}
+                                        step={1000}
+                                        value={filters.price_min} 
+                                        onChange={(e) => {
+                                            const val = Math.max(0, Math.min(filters.price_max, parseInt(e.target.value) || 0));
+                                            setFilters(prev => ({ ...prev, price_min: val }));
+                                        }}
+                                        className="h-9 pl-12 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
+                                    />
+                                </div>
+                                <div className="flex-1 relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">₹ MAX</span>
+                                    <Input 
+                                        type="number" 
+                                        min={filters.price_min} 
+                                        max={500000}
+                                        step={1000}
+                                        value={filters.price_max} 
+                                        onChange={(e) => {
+                                            const val = Math.max(filters.price_min, Math.min(500000, parseInt(e.target.value) || 500000));
+                                            setFilters(prev => ({ ...prev, price_max: val }));
+                                        }}
+                                        className="h-9 pl-12 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -892,7 +978,7 @@ function PlanTripContent() {
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSearchSubmit()
                 }}
-                className={`border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none font-bold text-[#3A1A08] bg-transparent flex-1 placeholder:text-[#A0501E]/40 placeholder:font-medium ${isCompact ? 'h-10 text-sm pl-1' : 'h-14 text-lg pl-2'}`}
+                className={`border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none font-bold text-[#3A1A08] bg-transparent flex-1 placeholder:text-black/40 placeholder:font-medium ${isCompact ? 'h-10 text-sm pl-1' : 'h-14 text-lg pl-2'}`}
             />
             <Button
                 onClick={() => handleSearchSubmit()}
@@ -1343,7 +1429,7 @@ function PlanTripContent() {
                                     ) : (
                                         <div className="space-y-12">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] items-stretch grid-auto-rows-[1fr]">
-                                                {packages.slice(0, visibleCount).map((pkg, idx) => (
+                                                {packages.map((pkg, idx) => (
                                                     <motion.div
                                                         key={pkg.id}
                                                         initial={{ opacity: 0, y: 20 }}
@@ -1404,9 +1490,11 @@ function PlanTripContent() {
                                                                         <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
                                                                             {formatDuration(pkg.duration_days)}
                                                                         </Badge>
-                                                                        <Badge className="bg-[var(--primary)] text-white border-0 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
-                                                                            ₹{pkg.price_per_person.toLocaleString('en-IN')}
-                                                                        </Badge>
+                                                                        {(pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' && (
+                                                                            <Badge className="bg-[var(--primary)] text-white border-0 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
+                                                                                {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
+                                                                            </Badge>
+                                                                        )}
                                                                     </div>
                                                                     {/* Wishlist Button */}
                                                                     <button
@@ -1470,11 +1558,17 @@ function PlanTripContent() {
                                                         <div className="p-4 pt-1 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
                                                             <div className="pt-3 border-t border-[var(--primary)]/40 flex items-center justify-between gap-2 w-full flex-nowrap">
                                                                 <div className="flex flex-col flex-1">
-                                                                    <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-0.5 drop-shadow-sm">Starting From</span>
-                                                                    <div className="flex items-baseline gap-1">
-                                                                        <span className="text-xl font-bold text-black">₹{pkg.price_per_person.toLocaleString('en-IN')}</span>
-                                                                        <span className="text-xs text-black/70 font-medium uppercase tracking-widest">/ pp</span>
-                                                                    </div>
+                                                                    {(pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' && (
+                                                                        <>
+                                                                            <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-0.5 drop-shadow-sm">Starting From</span>
+                                                                            <div className="flex items-baseline gap-1">
+                                                                                <span className="text-xl font-bold text-black">
+                                                                                    {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
+                                                                                </span>
+                                                                                <span className="text-xs text-black/70 font-medium uppercase tracking-widest">/ pp</span>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                                 <Button
                                                                     onClick={(e) => {
@@ -1486,7 +1580,7 @@ function PlanTripContent() {
                                                                     className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
                                                                 >
                                                                     <span className="relative z-10 flex items-center gap-2">
-                                                                        Book Now
+                                                                        {(pkg.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Enquire Now' : 'Book Now'}
                                                                         <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
                                                                     </span>
                                                                     <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
@@ -1677,7 +1771,7 @@ function PlanTripContent() {
                                     }
                                 }}
                             >
-                                Start Planning Journey
+                                {(selectedPackageForBooking?.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Start Planning Enquiry' : 'Start Planning Journey'}
                             </Button>
                         </div>
                     </div>

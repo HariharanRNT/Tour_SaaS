@@ -85,7 +85,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                     { label: 'PAUSED', value: summary?.paused || 0, sub: 'On hold', icon: Pause, color: '#1e293b', bg: '#F1F5F9', border: '#1e293b' },
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' }
                 ].map((item, index) => (
-                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 relative overflow-hidden h-[130px] rounded-[16px]">
+                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden h-[130px] rounded-[16px]">
                         <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
                             <div className="flex justify-between items-start">
                                 <p className="text-[10px] font-bold text-[#1e293b] uppercase tracking-[1.2px]">{item.label}</p>
@@ -263,18 +263,6 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-[11px] font-medium">
-                                    <span className="text-[#0f172a]">Market Share</span>
-                                    <span className="text-[#0F172A]">90%</span>
-                                </div>
-                                <div className="h-[6px] w-full bg-[#10B981]/10 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#10B981] w-[90%] rounded-full" />
-                                </div>
-                                <p className="text-[11px] text-[#10B981] font-semibold mt-1">
-                                    +340% above average
-                                </p>
-                            </div>
                         </CardContent>
                     </Card>
 
@@ -295,7 +283,6 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                             <p className="text-[#0f172a] text-[13px] font-medium mb-1">
                                 Only <span className="text-[#0F172A] font-bold">{planAnalytics?.least_purchased?.subscription_count || 0}</span> subscriptions
                             </p>
-                            <p className="text-[#EF4444] text-[12px] font-medium">vs avg: -80% below average</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -326,7 +313,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                         const color = colors[index % colors.length];
 
                                         return (
-                                            <tr key={plan.plan_id} className="border-b border-[#F8FAFC] hover:bg-[#F8FAFC] transition-colors duration-150 group">
+                                            <tr key={plan.plan_id} className="border-b border-[#F8FAFC] transition-colors duration-150 group">
                                                 <td className="py-4 px-6 relative">
                                                     <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-transparent group-hover:bg-[#6366F1] transition-colors" />
                                                     <div className="flex items-center gap-3">

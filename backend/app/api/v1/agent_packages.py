@@ -169,7 +169,11 @@ async def create_agent_package(
             cancellation_rules=_persist_cancellation_rules(
                 package_data.cancellation_enabled,
                 [r.dict() for r in package_data.cancellation_rules]
-            )
+            ),
+            # Dual Booking
+            booking_type=package_data.booking_type,
+            price_label=package_data.price_label,
+            enquiry_payment=package_data.enquiry_payment
         )
         
         db.add(new_package)

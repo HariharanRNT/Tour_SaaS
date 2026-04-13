@@ -57,6 +57,10 @@ interface PackageFormData {
     // Cancellation Policy
     cancellation_enabled: boolean
     cancellation_rules: { daysBefore: number; refundPercentage: number; fareType?: 'total_fare' | 'base_fare' }[]
+    // Dual Booking
+    booking_type: 'INSTANT' | 'ENQUIRY'
+    price_label?: string
+    enquiry_payment: 'OFFLINE'
 }
 
 const TRIP_STYLES = [
@@ -142,7 +146,11 @@ export default function CreatePackagePage() {
         flight_baggage_note: '',
         // Cancellation Policy
         cancellation_enabled: false,
-        cancellation_rules: []
+        cancellation_rules: [],
+        // Dual Booking
+        booking_type: 'INSTANT',
+        price_label: '',
+        enquiry_payment: 'OFFLINE'
     })
 
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
@@ -241,7 +249,11 @@ export default function CreatePackagePage() {
                         flight_baggage_note: '',
                         // Cancellation Policy
                         cancellation_enabled: false,
-                        cancellation_rules: []
+                        cancellation_rules: [],
+                        // Dual Booking
+                        booking_type: 'INSTANT',
+                        price_label: '',
+                        enquiry_payment: 'OFFLINE'
                     })
                     setOriginInput('')
 
@@ -358,7 +370,11 @@ export default function CreatePackagePage() {
                         daysBefore: r.daysBefore ?? 0,
                         refundPercentage: r.refundPercentage ?? 0,
                         ...(gstApplicable && { fareType: r.fareType || 'total_fare' }),
-                    }))
+                    })),
+                    // Dual Booking
+                    booking_type: pkg.booking_type || 'INSTANT',
+                    price_label: pkg.price_label || '',
+                    enquiry_payment: pkg.enquiry_payment || 'OFFLINE'
                 })
                 if (pkg.flight_origin_cities) {
                     setOriginInput(pkg.flight_origin_cities.join(', '))
@@ -379,7 +395,9 @@ export default function CreatePackagePage() {
     const updateFormData = (field: keyof PackageFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }))
         if (field === 'duration_days') {
-            setFormData(prev => ({ ...prev, duration_nights: value - 1 }))
+            setFormData(prev => ({ ...prev, duration_nights: Math.max(0, value - 1) }))
+        } else if (field === 'duration_nights') {
+            setFormData(prev => ({ ...prev, duration_days: value + 1 }))
         }
     }
 
@@ -513,7 +531,8 @@ export default function CreatePackagePage() {
                 if (!formData.destination) missingFields.push("Location City");
                 if (!formData.country) missingFields.push("Country");
             }
-            if (!formData.price_per_person || Number(formData.price_per_person) <= 0) missingFields.push("Price per Person");
+            const isPriceRequired = formData.booking_type === 'INSTANT';
+            if (isPriceRequired && (!formData.price_per_person || Number(formData.price_per_person) <= 0)) missingFields.push("Price per Person");
             if (formData.trip_styles.length === 0) missingFields.push("Trip Style");
 
             // Duplicate destination check
@@ -680,7 +699,8 @@ export default function CreatePackagePage() {
 
     const isBasicInfoValid = () => {
         const hasTitle = Boolean(formData.title);
-        const hasPrice = Number(formData.price_per_person) > 0;
+        const isPriceRequired = formData.booking_type === 'INSTANT';
+        const hasPrice = !isPriceRequired || Number(formData.price_per_person) > 0;
         const hasTripStyle = formData.trip_styles.length >= 1;
         const mode = (formData.package_mode || 'single').toLowerCase();
 
@@ -1246,32 +1266,33 @@ export default function CreatePackagePage() {
                                         <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Duration <span className="text-red-500">*</span></Label>
                                         {formData.package_mode === 'multi' && <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded uppercase font-bold tracking-widest">Auto</span>}
                                     </div>
-                                    <div className="flex rounded-xl glass-input overflow-hidden group/duration transition-all hover:border-[var(--primary)]/30">
-                                        <div className="flex-1 relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Calendar className="h-4 w-4 text-[var(--color-primary-font)]" />
-                                            </div>
-                                            <Input
-                                                type="number"
-                                                min="1"
-                                                readOnly={formData.package_mode === 'multi'}
-                                                value={formData.duration_days}
-                                                onChange={(e) => updateFormData('duration_days', parseInt(e.target.value))}
-                                                className={cn("pl-10 h-12 border-0 bg-transparent focus-visible:ring-0 text-center font-medium", formData.package_mode === 'multi' && "opacity-80 cursor-not-allowed")}
-                                            />
-                                            <span className="absolute right-3 top-3 text-xs text-[var(--color-primary-font)] font-medium pointer-events-none">Days</span>
-                                        </div>
-                                        <div className="w-px bg-white/30" />
-                                        <div className="flex-1 relative group">
+                                    <div className="duration-wrapper glass-input overflow-hidden group/duration transition-all hover:border-[var(--primary)]/30">
+                                        {/* Nights */}
+                                        <div className="duration-half flex-1 border-r border-white/30">
+                                            <Moon className="duration-icon text-[var(--color-primary-font)]" />
                                             <Input
                                                 type="number"
                                                 min="0"
                                                 readOnly={formData.package_mode === 'multi'}
                                                 value={formData.duration_nights}
                                                 onChange={(e) => updateFormData('duration_nights', parseInt(e.target.value))}
-                                                className={cn("pl-4 h-12 border-0 bg-transparent focus:ring-0 text-center font-bold text-[var(--color-primary-font)]", formData.package_mode === 'multi' && "bg-white/5 opacity-80 cursor-not-allowed")}
+                                                className={cn("duration-value border-0 focus-visible:ring-0", formData.package_mode === 'multi' && "opacity-80 cursor-not-allowed")}
                                             />
-                                            <span className="absolute right-3 top-3 text-xs text-[var(--color-primary-font)] font-medium pointer-events-none">Nights</span>
+                                            <span className="duration-unit text-[var(--color-primary-font)]">Nights</span>
+                                        </div>
+
+                                        {/* Days */}
+                                        <div className="duration-half flex-1">
+                                            <Calendar className="duration-icon text-[var(--color-primary-font)]" />
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                readOnly={formData.package_mode === 'multi'}
+                                                value={formData.duration_days}
+                                                onChange={(e) => updateFormData('duration_days', parseInt(e.target.value))}
+                                                className={cn("duration-value border-0 focus-visible:ring-0", formData.package_mode === 'multi' && "opacity-80 cursor-not-allowed")}
+                                            />
+                                            <span className="duration-unit text-[var(--color-primary-font)]">Days</span>
                                         </div>
                                     </div>
                                     <p className="text-xs text-[var(--color-primary-font)] opacity-80">{formData.package_mode === 'multi' ? "Auto-calculated from destination legs" : "Auto-calculates nights based on days"}</p>
@@ -1279,7 +1300,14 @@ export default function CreatePackagePage() {
 
                                 {/* Price - Enhanced Field */}
                                 <div className="space-y-2 md:col-span-1">
-                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Price per Person <span className="text-red-500">*</span></Label>
+                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider flex items-center">
+                                        Price per Person
+                                        {formData.booking_type === 'INSTANT' ? (
+                                            <span className="required-asterisk">*</span>
+                                        ) : (
+                                            <span className="optional-tag">Optional</span>
+                                        )}
+                                    </Label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <span className="text-[var(--color-primary-font)] font-bold">₹</span>
@@ -1292,17 +1320,87 @@ export default function CreatePackagePage() {
                                                 const val = e.target.value;
                                                 updateFormData('price_per_person', val === '' ? '' as any : Number(val));
                                             }}
-                                            className={cn("glass-input pl-8 h-12 font-mono font-medium text-lg", getInputStyle(formData.price_per_person, true))}
+                                            placeholder={formData.booking_type === 'INSTANT' ? "Enter price per person" : "Optional — leave blank for enquiry"}
+                                            className={cn("glass-input pl-8 h-12 font-mono font-medium text-lg", getInputStyle(formData.price_per_person, formData.booking_type === 'INSTANT'))}
                                         />
-                                        {formData.price_per_person > 0 && (
+                                        {Number(formData.price_per_person) > 0 && (
                                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                                 <Badge variant="secondary" className="text-xs font-normal">
-                                                    ~ ${(formData.price_per_person * 0.012).toFixed(0)} USD
+                                                    ~ ${(Number(formData.price_per_person) * 0.012).toFixed(0)} USD
                                                 </Badge>
                                             </div>
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Booking Type Selection */}
+                                <div className="space-y-3 md:col-span-2">
+                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Booking Type</Label>
+                                    <div 
+                                        className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.18)',
+                                            border: '1px solid rgba(255,255,255,0.35)',
+                                            borderRadius: '50px',
+                                        }}
+                                    >
+                                        <div
+                                            className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
+                                            style={{
+                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                borderRadius: '50px',
+                                                left: formData.booking_type === 'INSTANT' ? '4px' : 'calc(50%)',
+                                                boxShadow: '0 4px 16px var(--primary-glow)'
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => updateFormData('booking_type', 'INSTANT')}
+                                            className="relative z-10 py-4 px-6 flex flex-col items-center justify-center min-h-[70px]"
+                                        >
+                                            <div className={cn(
+                                                "text-sm tracking-wide font-bold transition-colors",
+                                                formData.booking_type === 'INSTANT' ? "text-white" : "text-[var(--color-primary-font)]"
+                                            )}>Instant Booking</div>
+                                            <div className={cn(
+                                                "text-[10px] opacity-80",
+                                                formData.booking_type === 'INSTANT' ? "text-white/80" : "text-[var(--color-primary-font)]/60"
+                                            )}>Customers pay and book immediately</div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateFormData('booking_type', 'ENQUIRY')}
+                                            className="relative z-10 py-4 px-6 flex flex-col items-center justify-center min-h-[70px]"
+                                        >
+                                            <div className={cn(
+                                                "text-sm tracking-wide font-bold transition-colors",
+                                                formData.booking_type === 'ENQUIRY' ? "text-white" : "text-[var(--color-primary-font)]"
+                                            )}>Custom Enquiry</div>
+                                            <div className={cn(
+                                                "text-[10px] opacity-80",
+                                                formData.booking_type === 'ENQUIRY' ? "text-white/80" : "text-[var(--color-primary-font)]/60"
+                                            )}>Customers send inquiry first</div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {formData.booking_type === 'ENQUIRY' && (
+                                    <>
+                                        {/* Price Label */}
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Price Label (Optional)</Label>
+                                            <Input
+                                                placeholder="e.g. Price on request"
+                                                value={formData.price_label}
+                                                onChange={(e) => updateFormData('price_label', e.target.value)}
+                                                className="glass-input h-12"
+                                            />
+                                            <p className="text-[10px] text-[var(--color-primary-font)]/60 px-1">Displays instead of numeric price if set</p>
+                                        </div>
+
+
+                                    </>
+                                )}
                                 {/* GST Configuration — visibility controlled by Agent Settings */}
                                 {agentGstApplicable === true && (
                                     <div className="space-y-3 md:col-span-2">
@@ -2236,7 +2334,7 @@ export default function CreatePackagePage() {
                                             {formData.trip_styles.map(styleId => {
                                                 const style = TRIP_STYLES.find(c => c.id === styleId);
                                                 return style ? (
-                                                    <Badge key={styleId} className="bg-[var(--primary)]/20 text-[var(--primary)] hover:bg-[var(--primary)]/30 border-0 flex items-center gap-1.5 py-1 px-3">
+                                                    <Badge key={styleId} className="bg-[var(--primary)]/20 text-white hover:bg-[var(--primary)]/30 border-0 flex items-center gap-1.5 py-1 px-3">
                                                         <span>{style.icon}</span>
                                                         {style.label}
                                                     </Badge>

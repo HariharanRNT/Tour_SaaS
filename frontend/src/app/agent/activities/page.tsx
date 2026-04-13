@@ -262,7 +262,9 @@ export default function ActivitiesMasterPage() {
                 {/* Search / Filter Area */}
                 <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="relative w-full max-w-2xl group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--primary)] opacity-60 group-focus-within:opacity-100 transition-opacity" />
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                            <Search className="h-5 w-5 text-[var(--primary)] font-bold opacity-70 group-focus-within:opacity-100 transition-all duration-300" />
+                        </div>
                         <Input
                             placeholder="Search destinations..."
                             value={searchTerm}

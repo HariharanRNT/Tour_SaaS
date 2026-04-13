@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { bookingsAPI, agentAPI } from '@/lib/api'
+import Script from 'next/script'
+import { bookingsAPI, agentAPI, paymentsAPI } from '@/lib/api'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -66,6 +67,7 @@ export default function BookingDetailsPage() {
         fare_type: string | null;
         message: string;
     } | null>(null)
+    const [isRetrying, setIsRetrying] = useState(false)
 
     const [gstSettings, setGstSettings] = useState({ inclusive: false, percentage: 18 })
 
@@ -171,6 +173,71 @@ export default function BookingDetailsPage() {
         }
     }
 
+    const handleRetryPayment = async () => {
+        if (!booking) return
+        setIsRetrying(true)
+        try {
+            const orderData = await paymentsAPI.createOrder(booking.id)
+            const isMock = orderData.key_id === 'rzp_test_1234567890' || orderData.key_id.includes('1234567890')
+
+            if (isMock) {
+                await paymentsAPI.verifyPayment({
+                    razorpay_order_id: orderData.order_id,
+                    razorpay_payment_id: "pay_mock_" + Math.random().toString(36).substring(7),
+                    razorpay_signature: "sig_mock_" + Math.random().toString(36).substring(7)
+                })
+                toast.success("Payment Received Successfully!")
+                loadBooking(booking.id)
+            } else {
+                const options = {
+                    key: orderData.key_id,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    name: "Tour SaaS",
+                    description: `Retry Booking ${booking.booking_reference}`,
+                    order_id: orderData.order_id,
+                    handler: async function (response: any) {
+                        try {
+                            await paymentsAPI.verifyPayment({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                            toast.success("Payment Successful!")
+                            loadBooking(booking.id)
+                        } catch (e) {
+                            console.error("Verification failed", e)
+                            toast.error("Payment verification failed")
+                        }
+                    },
+                    prefill: {
+                        name: userName,
+                        email: userEmail,
+                        contact: userPhone
+                    },
+                    theme: { color: "#3B82F6" },
+                    modal: {
+                        ondismiss: async function () {
+                            try {
+                                await paymentsAPI.markFailed(booking.id)
+                                loadBooking(booking.id)
+                            } catch (e) {
+                                console.error("Failed to mark payment as failed", e)
+                            }
+                        }
+                    }
+                };
+                const rzp = new (window as any).Razorpay(options);
+                rzp.open();
+            }
+        } catch (error: any) {
+            console.error("Retry payment failed", error)
+            toast.error(error.response?.data?.detail || "Failed to initialize payment")
+        } finally {
+            setIsRetrying(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -269,8 +336,15 @@ export default function BookingDetailsPage() {
 
     const heroImage = booking.package?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1582510003544-4d00b7f0bd44?q=80&w=2969&auto=format&fit=crop'
 
+    const isConfirmed = booking.status === 'confirmed' && (booking.payment_status?.toLowerCase() === 'paid' || booking.payment_status?.toLowerCase() === 'succeeded');
+    const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
+
     return (
         <div className="min-h-screen overflow-x-hidden">
+            <Script
+                src="https://checkout.razorpay.com/v1/checkout.js"
+                strategy="lazyOnload"
+            />
 
             {/* Header & Hero Section */}
             <div className="relative min-h-[500px] w-full group overflow-hidden">
@@ -296,8 +370,8 @@ export default function BookingDetailsPage() {
                         </Button>
 
                         <div className="hidden md:flex gap-3">
-                            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60">
-                                <Share2 className="h-4 w-4 text-black" />
+                            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60 text-black">
+                                <Share2 className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" onClick={handleDownloadInvoice} className="h-11 px-6 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60 font-black text-[10px] uppercase tracking-widest text-black">
                                 <Download className="h-4 w-4 mr-2" /> Invoice
@@ -325,12 +399,12 @@ export default function BookingDetailsPage() {
                                                 <div className={`w-8 h-px mx-1 ${isCompleted ? 'bg-blue-600/40' : 'bg-black/10'}`} />
                                             )}
                                             <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-500 ${isCurrent
-                                                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                                                    : isCompleted
-                                                        ? 'bg-blue-600/10 text-blue-700'
-                                                        : 'text-black/60'
+                                                ? 'bg-blue-600/20 border border-blue-600/30 text-black shadow-sm scale-105'
+                                                : isCompleted
+                                                    ? 'bg-blue-600/10 text-blue-700'
+                                                    : 'text-black/60'
                                                 }`}>
-                                                <div className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-white animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
+                                                <div className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-blue-600 animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
                                                     }`} />
                                                 <span className="text-[10px] font-black uppercase tracking-widest">{stage}</span>
                                             </div>
@@ -387,8 +461,8 @@ export default function BookingDetailsPage() {
                                         {/* Status & REF Column */}
                                         <div className="flex flex-col gap-4 w-full">
                                             <div className={`glass-pill-chip py-2 px-5 shadow-md border-2 transition-all duration-500 scale-105 ${booking.status === 'confirmed'
-                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
-                                                    : 'bg-white/60 border-black/10 text-black'
+                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-black shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+                                                : 'bg-white/60 border-black/10 text-black'
                                                 }`}>
                                                 <div className={`h-2.5 w-2.5 rounded-full mr-4 ${booking.status === 'confirmed' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]' : 'bg-black'
                                                     } animate-pulse-soft`} />
@@ -413,22 +487,36 @@ export default function BookingDetailsPage() {
 
                                         {/* Unified Action Footer (Internal) */}
                                         <div className="flex items-center gap-3 w-full lg:w-fit p-1.5 bg-black/5 rounded-[22px] border border-black/5">
-                                            <Button
-                                                variant="ghost"
-                                                className="flex-1 lg:flex-none bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 border-blue-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
-                                                disabled
-                                            >
-                                                <Edit className="h-3.5 w-3.5" /> Modify
-                                            </Button>
+                                            {isConfirmed && (
+                                                <>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="flex-1 lg:flex-none bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 border-blue-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
+                                                        onClick={handleDownloadInvoice}
+                                                    >
+                                                        <Receipt className="h-3.5 w-3.5" /> Invoice
+                                                    </Button>
 
-                                            <Button
-                                                variant="ghost"
-                                                className="flex-1 lg:flex-none bg-red-600/10 hover:bg-red-600/20 text-red-700 border-red-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
-                                                disabled={booking.status === 'cancelled' || booking.status === 'completed' || isFetchingPreview}
-                                                onClick={fetchCancelPreview}
-                                            >
-                                                {isFetchingPreview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancel
-                                            </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="flex-1 lg:flex-none bg-red-600/10 hover:bg-red-600/20 text-red-700 border-red-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
+                                                        disabled={booking.status === 'cancelled' || booking.status === 'completed' || isFetchingPreview}
+                                                        onClick={fetchCancelPreview}
+                                                    >
+                                                        {isFetchingPreview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancel
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {isFailed && (
+                                                <Button
+                                                    onClick={handleRetryPayment}
+                                                    disabled={isRetrying}
+                                                    className="flex-1 lg:flex-none glass-pill-chip bg-blue-600/10 hover:bg-blue-600/20 text-black border-blue-600/20 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm"
+                                                >
+                                                    {isRetrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Retry Payment
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -512,7 +600,7 @@ export default function BookingDetailsPage() {
                                             <details key={day} className="group glass-card-refinement bg-white/10 border-white/20 overflow-hidden rounded-[24px] shadow-sm" open={idx === 0}>
                                                 <summary className="flex items-center justify-between p-4 cursor-pointer list-none group-open:bg-black/[0.02] transition-colors">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="bg-indigo-600 text-white h-12 w-12 rounded-2xl flex flex-col items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] border border-white/30">
+                                                        <div className="bg-indigo-600/10 text-black h-12 w-12 rounded-2xl flex flex-col items-center justify-center border border-indigo-600/20">
                                                             <span className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-0.5">Day</span>
                                                             <span className="text-xl font-black leading-none">{day}</span>
                                                         </div>
@@ -675,7 +763,7 @@ export default function BookingDetailsPage() {
                                             <span className="text-[10px] font-black text-black uppercase tracking-[0.2em]">Traveler Roster</span>
                                         </div>
                                         {traveler.is_primary && (
-                                            <div className="glass-pill-chip bg-purple-600/10 border-purple-600/20 text-[9px] px-3 py-1 uppercase font-black text-purple-800 shadow-xs">Primary Contact</div>
+                                            <div className="glass-pill-chip bg-purple-600/10 border-purple-600/20 text-[9px] px-3 py-1 uppercase font-black text-black shadow-xs">Primary Contact</div>
                                         )}
                                     </div>
                                     <div className="p-6 flex items-start gap-5 w-full">
@@ -969,7 +1057,7 @@ export default function BookingDetailsPage() {
                         <button
                             disabled={isCancelling}
                             onClick={() => setIsCancelDialogOpen(false)}
-                            className="absolute right-6 top-6 h-8 w-8 rounded-full flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all z-10 border border-white/10"
+                            className="absolute right-6 top-6 h-8 w-8 rounded-full flex items-center justify-center text-black/40 hover:bg-black/10 hover:text-black transition-all z-10 border border-black/10"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -1046,7 +1134,7 @@ export default function BookingDetailsPage() {
                                 <Button
                                     disabled={isCancelling}
                                     onClick={handleCancelBooking}
-                                    className="h-12 rounded-xl font-black bg-gradient-to-tr from-red-600 to-red-500 text-white shadow-[0_8px_30px_rgba(220,38,38,0.3)] border-t border-white/20 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest group/confirm active:scale-95"
+                                    className="h-12 rounded-xl font-black bg-red-600/10 hover:bg-red-600/20 text-black border border-red-600/30 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest group/confirm active:scale-95 shadow-sm"
                                 >
                                     {isCancelling ? (
                                         <>

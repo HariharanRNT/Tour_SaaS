@@ -17,14 +17,27 @@ interface DatePickerWithRangeProps {
     className?: string
     date: DateRange | undefined
     setDate: (date: DateRange | undefined) => void
+    onPresetSelect?: (preset: string) => void
 }
 
 export function DatePickerWithRange({
     className,
     date,
-    setDate }: DatePickerWithRangeProps) {
+    setDate,
+    onPresetSelect }: DatePickerWithRangeProps) {
     const [open, setOpen] = React.useState(false)
     const [tempDate, setTempDate] = React.useState<DateRange | undefined>(date)
+    const [isMobile, setIsMobile] = React.useState(false)
+
+    // Handle mobile responsiveness
+    React.useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
 
     // Sync tempDate with prop date when opening or when prop changes externally
     React.useEffect(() => {
@@ -60,6 +73,7 @@ export function DatePickerWithRange({
                 break
         }
         setTempDate(newDate)
+        if (onPresetSelect) onPresetSelect(preset)
     }
 
     // Helper to check if a preset is active
@@ -99,41 +113,42 @@ export function DatePickerWithRange({
                         id="date"
                         variant={"outline"}
                         className={cn(
-                            "w-[260px] justify-start text-left font-normal bg-white border-[1.5px] border-[#E2E8F0] text-[#374151] hover:bg-white hover:border-[#94A3B8] transition-colors rounded-[10px] h-[44px] px-4",
-                            !date && "text-muted-foreground",
-                            open && "border-[#6366F1] ring-2 ring-[#6366F1]/10"
+                            "w-full md:w-[260px] justify-start text-left font-bold bg-white/20 backdrop-blur-md border-[1.5px] border-white/30 text-[#1a1a2e] hover:bg-white/30 hover:border-white/50 transition-colors rounded-xl h-[52px] px-5",
+                            !date && "text-muted-foreground font-medium",
+                            open && "border-[var(--primary)] ring-4 ring-[var(--primary)]/10"
                         )}
                     >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-[#6366F1]" />
+                        <CalendarIcon className="mr-3 h-4 w-4 text-[var(--primary)]" />
                         {date?.from ? (
                             date.to ? (
                                 <>
-                                    {format(date.from, "MMM dd, y")}
-                                    <span className="mx-2 text-[#94A3B8]">→</span>
-                                    {format(date.to, "MMM dd, y")}
+                                    {format(date.from, "MMM dd")}
+                                    <span className="mx-2 text-[var(--primary)]/40">→</span>
+                                    {format(date.to, "MMM dd")}
                                 </>
                             ) : (
                                 format(date.from, "MMM dd, y")
                             )
                         ) : (
-                            <span>Pick a date</span>
+                            <span>Filter by Date</span>
                         )}
-                        <ChevronDown className="ml-auto h-4 w-4 text-[#94A3B8] opacity-50" />
+                        <ChevronDown className="ml-auto h-4 w-4 text-[var(--primary)]/40 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white/15 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15)] rounded-[24px] overflow-hidden" align="end">
+                <PopoverContent className="w-auto p-0 bg-white/15 backdrop-blur-[20px] border border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.15)] rounded-[24px] overflow-hidden" align="start">
                     <div className="p-4 pb-0 flex gap-4">
                         <Calendar
                             initialFocus
                             mode="range"
-                            defaultMonth={tempDate?.from}
+                            defaultMonth={tempDate?.from || subDays(new Date(), 30)}
                             selected={tempDate}
                             onSelect={setTempDate}
-                            numberOfMonths={2}
+                            numberOfMonths={isMobile ? 1 : 2}
                             showOutsideDays={false}
+                            disabled={{ after: new Date() }}
                             className="bg-transparent"
                             classNames={{
-                                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                                months: "flex flex-col md:flex-row space-y-4 md:space-x-4 md:space-y-0",
                                 month: "space-y-4",
                                 caption: "flex justify-center pt-1 relative items-center mb-2",
                                 caption_label: "text-[16px] font-black text-[#1a1a2e]", // Month title
@@ -146,22 +161,26 @@ export function DatePickerWithRange({
                                 table: "w-full border-collapse space-y-1",
                                 head_row: "flex",
                                 head_cell:
-                                    "text-[#94A3B8] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
+                                    "text-[#1a1a2e] rounded-md w-9 font-black text-[10px] uppercase tracking-[1px]", // Day headers
                                 row: "flex w-full mt-2",
-                                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-[10px] [&:has([aria-selected].day-range-start)]:rounded-l-[10px] [&:has([aria-selected].day-outside)]:bg-transparent [&:has([aria-selected])]:bg-transparent first:[&:has([aria-selected])]:rounded-l-[10px] last:[&:has([aria-selected])]:rounded-r-[10px] focus-within:relative focus-within:z-20",
-                                day: cn(
-                                    "h-9 w-9 p-0 font-bold aria-selected:opacity-100 rounded-[10px] hover:bg-[#F97316]/10 hover:text-[#F97316] transition-all text-[#1a1a2e]"
+                                cell: cn(
+                                    "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                                    "[&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-range-start)]:rounded-l-full",
+                                    "[&:has([aria-selected].day-range-start.day-range-end)]:rounded-full"
                                 ),
-                                day_range_start: "day-range-start",
-                                day_range_end: "day-range-end",
+                                day: cn(
+                                    "h-9 w-9 p-0 font-bold aria-selected:opacity-100 transition-all text-[#1a1a2e] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] rounded-full"
+                                ),
+                                day_range_start: "day-range-start rounded-r-none rounded-l-full bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary-glow)]",
+                                day_range_end: "day-range-end rounded-l-none rounded-r-full bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary-glow)]",
                                 day_selected:
-                                    "bg-gradient-to-br from-[#F97316] to-[#FF8E53] text-white hover:bg-gradient-to-br hover:from-[#F97316] hover:to-[#FF8E53] hover:text-white focus:bg-gradient-to-br focus:from-[#F97316] focus:to-[#FF8E53] focus:text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] z-30 relative", // Selected start/end
-                                day_today: "text-[#F97316] font-black after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-[#F97316] after:rounded-full", // Today
+                                    "bg-[var(--primary)] text-white hover:bg-[var(--primary)] hover:text-white focus:bg-[var(--primary)] focus:text-white z-30 relative", 
+                                day_today: "border-2 border-[var(--primary)] font-black rounded-full", // Today
                                 day_outside:
-                                    "day-outside text-[#94A3B8] opacity-50 aria-selected:bg-transparent aria-selected:text-[#94A3B8] aria-selected:opacity-30",
-                                day_disabled: "text-[#94A3B8] opacity-20",
+                                    "day-outside text-[#1a1a2e] opacity-40 aria-selected:bg-transparent aria-selected:text-[#1a1a2e] aria-selected:opacity-30",
+                                day_disabled: "text-[#1a1a2e] opacity-10 pointer-events-none cursor-not-allowed",
                                 day_range_middle:
-                                    "aria-selected:bg-gradient-to-r aria-selected:from-[#F97316]/20 aria-selected:to-[#FF8E53]/20 aria-selected:backdrop-blur-[2px] aria-selected:text-[#F97316] aria-selected:font-black rounded-none", // Range middle - glassy gradient
+                                    "aria-selected:bg-[var(--primary)]/15 aria-selected:text-[var(--primary)] aria-selected:font-black rounded-none", // Range middle - glassy bar
                                 day_hidden: "invisible" }}
                         />
                     </div>
@@ -169,7 +188,7 @@ export function DatePickerWithRange({
                     {/* Presets */}
                     <div className="px-5 pt-2 pb-4 border-b border-white/10">
                         <div className="flex items-center gap-2">
-                            <span className="text-[12px] font-semibold text-[#94A3B8] mr-2">Presets:</span>
+                            <span className="text-[12px] font-semibold text-[#1a1a2e] mr-2">Presets:</span>
                             {[
                                 { label: 'Today', value: 'today' },
                                 { label: 'Last 7 days', value: 'last7' },
@@ -183,7 +202,7 @@ export function DatePickerWithRange({
                                         "text-[12px] font-bold px-3 py-1.5 rounded-full border transition-all",
                                         isPresetActive(preset.value)
                                             ? "bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]"
-                                            : "bg-white/10 border-white/20 text-[#1a1a2e] hover:bg-white/20 hover:border-white/30"
+                                            : "bg-white/10 border-[#1a1a2e]/20 text-[#1a1a2e] hover:bg-white/20 hover:border-[#1a1a2e]/30"
                                     )}
                                 >
                                     {preset.label}

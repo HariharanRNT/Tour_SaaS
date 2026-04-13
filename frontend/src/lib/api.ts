@@ -326,6 +326,7 @@ export const bookingsAPI = {
             is_primary: boolean
         }>
         special_requests?: string
+        customer_id?: string
     }) => {
         const response = await api.post('/bookings', data)
         return response.data
@@ -386,6 +387,11 @@ export const paymentsAPI = {
         razorpay_signature: string
     }) => {
         const response = await api.post('/payments/verify', data)
+        return response.data
+    },
+
+    markFailed: async (booking_id: string) => {
+        const response = await api.post('/payments/payment-failed', { booking_id })
         return response.data
     }
 }
@@ -585,6 +591,11 @@ export const deleteNotification = async (id: string) => {
     return response.data
 }
 
+export const clearAdminNotifications = async () => {
+    const response = await api.delete('/admin/notifications/clear-all')
+    return response.data
+}
+
 // Agent Notifications API
 export const fetchAgentNotifications = async () => {
     const response = await api.get('/agent/notifications')
@@ -598,6 +609,11 @@ export const markAgentNotificationAsRead = async (id: string) => {
 
 export const deleteAgentNotification = async (id: string) => {
     const response = await api.delete(`/agent/notifications/${id}`)
+    return response.data
+}
+
+export const clearAgentNotifications = async () => {
+    const response = await api.delete('/agent/notifications/clear-all')
     return response.data
 }
 
@@ -668,7 +684,7 @@ export const agentAPI = {
     },
 
     getPublicSettings: async () => {
-        const response = await api.get('/agent-settings/public')
+        const response = await api.get('/agent/settings/public')
         return response.data
     }
 }

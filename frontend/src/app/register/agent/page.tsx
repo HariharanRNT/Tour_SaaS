@@ -23,6 +23,7 @@ import { API_URL } from '@/lib/api'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { formatError } from '@/lib/utils'
 import {
     Select,
     SelectContent,
@@ -68,7 +69,7 @@ export default function AgentRegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [passwordStrength, setPasswordStrength] = useState(0)
-    const [activeStep, setActiveStep] = useState(2) // Defaults to Step 2 (Agency Profile) as per design
+
     const [showConflictModal, setShowConflictModal] = useState(false)
     const [conflictMessage, setConflictMessage] = useState('')
 
@@ -146,7 +147,7 @@ export default function AgentRegisterPage() {
             setSubmitted(true)
             toast.success('Registration request submitted successfully')
         } catch (error: any) {
-            toast.error(error.message)
+            toast.error(formatError(error))
         } finally {
             setSubmitting(false)
         }
@@ -175,10 +176,10 @@ export default function AgentRegisterPage() {
                 <nav className="glass-navbar sticky top-0 z-50 px-8 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2 group">
                         <Globe className="h-6 w-6 text-[var(--primary)] group-hover:rotate-12 transition-transform" />
-                        <span className="text-xl font-bold text-slate-900 font-display tracking-tight">TourSaaS</span>
+                        <span className="text-xl font-bold text-black font-display tracking-tight">TourSaaS</span>
                     </Link>
                     <div className="flex items-center gap-3">
-                        <span className="text-slate-400 text-[10px] sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
+                        <span className="text-black text-[10px] sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
                             Official Partner Portal
                         </span>
                         <div className="h-4 w-[1px] bg-slate-200 mx-2" />
@@ -209,8 +210,8 @@ export default function AgentRegisterPage() {
                                     <CheckCircle2 className="h-12 w-12 text-white" />
                                 </motion.div>
                                 <div className="space-y-4">
-                                    <h3 className="text-4xl font-[1000] text-slate-900 font-display tracking-tight">Request Sent!</h3>
-                                    <p className="text-slate-500 text-lg leading-relaxed font-bold px-4">
+                                    <h3 className="text-4xl font-[1000] text-black font-display tracking-tight">Request Sent!</h3>
+                                    <p className="text-black text-lg leading-relaxed font-bold px-4">
                                         Your registration is being reviewed. Check your email for activation details.
                                     </p>
                                 </div>
@@ -250,10 +251,10 @@ export default function AgentRegisterPage() {
             <nav className="glass-navbar sticky top-0 z-[100] px-8 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 group">
                     <Globe className="h-6 w-6 text-[var(--primary)] group-hover:rotate-12 transition-transform" />
-                    <span className="text-xl font-bold text-slate-900 font-display tracking-tight">TourSaaS</span>
+                    <span className="text-xl font-bold text-black font-display tracking-tight">TourSaaS</span>
                 </Link>
                 <div className="flex items-center gap-3">
-                    <span className="text-slate-400 text-[10px] hidden sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
+                    <span className="text-black text-[10px] hidden sm:flex items-center gap-1.5 font-black uppercase tracking-widest">
                         Official Partner Portal
                     </span>
                     <div className="h-4 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
@@ -281,48 +282,12 @@ export default function AgentRegisterPage() {
                         Empower Your <span className="text-orange-600/30">Travel</span> Vision
                     </h1>
 
-                    <p className="text-slate-600 text-lg font-bold max-w-xl mx-auto leading-relaxed font-body">
+                    <p className="text-black text-lg font-bold max-w-xl mx-auto leading-relaxed font-body">
                         Join the next generation of travel agencies using AI to craft perfect journeys. Seamlessly manage fleet, operations, and global inventory.
                     </p>
                 </div>
 
-                {/* Step Progress Bar */}
-                <div className="max-w-2xl mx-auto mb-20 px-4">
-                    <div className="relative flex justify-between items-center">
-                        {/* Connecting Lines */}
-                        <div className="absolute top-[16px] left-[20px] right-[20px] h-[2px] bg-slate-200 -z-10">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: activeStep >= 2 ? (activeStep === 2 ? '33%' : activeStep === 3 ? '66%' : '100%') : '0%' }}
-                                className="h-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary-glow)]"
-                            />
-                        </div>
 
-                        {[
-                            { step: 1, label: 'Account' },
-                            { step: 2, label: 'Agency Profile' },
-                            { step: 3, label: 'Contact' },
-                            { step: 4, label: 'Verification' }
-                        ].map((item) => (
-                            <div key={item.step} className="flex flex-col items-center gap-3">
-                                <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-black transition-all duration-500 shadow-xl ${item.step < activeStep
-                                        ? 'bg-[var(--primary)] text-white shadow-orange-500/20'
-                                        : item.step === activeStep
-                                            ? 'bg-white text-[var(--primary)] ring-4 ring-orange-500/10 border border-orange-100 shadow-orange-500/10'
-                                            : 'bg-white/40 text-slate-400 border border-white/60'
-                                        }`}
-                                >
-                                    {item.step < activeStep ? <Check size={18} strokeWidth={3} /> : item.step}
-                                </motion.div>
-                                <span className={`text-[11px] font-[1000] uppercase tracking-[0.15em] ${item.step === activeStep ? 'text-slate-900' : 'text-slate-400'}`}>
-                                    {item.label}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 <div className="max-w-[800px] mx-auto">
                     <form onSubmit={handleSubmit(handleRegister)} className="space-y-6">
@@ -336,8 +301,8 @@ export default function AgentRegisterPage() {
                                                 <Shield className="h-6 w-6" />
                                             </div>
                                             <div className="text-left">
-                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Agency Profile</h3>
-                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Primary business & legal information</p>
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-black font-display">Agency Profile</h3>
+                                                <p className="text-[12.5px] text-black font-bold mt-0.5">Primary business & legal information</p>
                                             </div>
                                         </div>
                                     </AccordionTrigger>
@@ -345,20 +310,20 @@ export default function AgentRegisterPage() {
                                         <div className="space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Agency Name</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Agency Name</Label>
                                                     <Input
                                                         {...register('agency_name')}
                                                         placeholder="e.g., Wanderlust Travels"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.agency_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.agency_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.agency_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.agency_name.message}</p>}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Legal Entity Name</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Legal Entity Name</Label>
                                                     <Input
                                                         {...register('company_legal_name')}
                                                         placeholder="Full legal entity name"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.company_legal_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.company_legal_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.company_legal_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.company_legal_name.message}</p>}
                                                 </div>
@@ -366,20 +331,20 @@ export default function AgentRegisterPage() {
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Business Domain</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Business Domain</Label>
                                                     <Input
                                                         {...register('domain')}
                                                         placeholder="https://wanderlust.com"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.domain ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.domain ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.domain && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.domain.message}</p>}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Headquarters Address</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Headquarters Address</Label>
                                                     <Input
                                                         {...register('business_address')}
                                                         placeholder="Full office address"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.business_address ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.business_address ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.business_address && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.business_address.message}</p>}
                                                 </div>
@@ -387,7 +352,7 @@ export default function AgentRegisterPage() {
 
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Country</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Country</Label>
                                                     <Controller
                                                         name="country"
                                                         control={control}
@@ -402,12 +367,12 @@ export default function AgentRegisterPage() {
                                                                 }} 
                                                                 value={field.value}
                                                             >
-                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
                                                                     <SelectValue placeholder="Select Country" />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="glass-select-content">
                                                                     {allCountries.map(c => (
-                                                                        <SelectItem key={c.isoCode} value={c.isoCode} className="text-slate-900 font-bold glass-select-item">
+                                                                        <SelectItem key={c.isoCode} value={c.isoCode} className="text-black font-bold glass-select-item">
                                                                             {c.name}
                                                                         </SelectItem>
                                                                     ))}
@@ -417,7 +382,7 @@ export default function AgentRegisterPage() {
                                                     />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">State</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">State</Label>
                                                     <Controller
                                                         name="state"
                                                         control={control}
@@ -431,12 +396,12 @@ export default function AgentRegisterPage() {
                                                                 value={field.value}
                                                                 disabled={!formValues.country}
                                                             >
-                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
                                                                     <SelectValue placeholder="Select State" />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="glass-select-content">
                                                                     {countryStates.map(s => (
-                                                                        <SelectItem key={s.isoCode} value={s.isoCode} className="text-slate-900 font-bold glass-select-item">
+                                                                        <SelectItem key={s.isoCode} value={s.isoCode} className="text-black font-bold glass-select-item">
                                                                             {s.name}
                                                                         </SelectItem>
                                                                     ))}
@@ -446,7 +411,7 @@ export default function AgentRegisterPage() {
                                                     />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">City</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">City</Label>
                                                     <Controller
                                                         name="city"
                                                         control={control}
@@ -456,12 +421,12 @@ export default function AgentRegisterPage() {
                                                                 value={field.value}
                                                                 disabled={!formValues.state}
                                                             >
-                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
+                                                                <SelectTrigger className="h-14 w-full bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm">
                                                                     <SelectValue placeholder="Select City" />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="glass-select-content">
                                                                     {stateCities.map(c => (
-                                                                        <SelectItem key={c.name} value={c.name} className="text-slate-900 font-bold glass-select-item">
+                                                                        <SelectItem key={c.name} value={c.name} className="text-black font-bold glass-select-item">
                                                                             {c.name}
                                                                         </SelectItem>
                                                                     ))}
@@ -485,8 +450,8 @@ export default function AgentRegisterPage() {
                                                 <UserPlus className="h-6 w-6" />
                                             </div>
                                             <div className="text-left">
-                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Primary Contact</h3>
-                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Authorised representative details</p>
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-black font-display">Primary Contact</h3>
+                                                <p className="text-[12.5px] text-black font-bold mt-0.5">Authorised representative details</p>
                                             </div>
                                         </div>
                                     </AccordionTrigger>
@@ -494,20 +459,20 @@ export default function AgentRegisterPage() {
                                         <div className="space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">First Name</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">First Name</Label>
                                                     <Input
                                                         {...register('first_name')}
                                                         placeholder="e.g., John"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.first_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.first_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.first_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.first_name.message}</p>}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Last Name</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Last Name</Label>
                                                     <Input
                                                         {...register('last_name')}
                                                         placeholder="e.g., Doe"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.last_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.last_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.last_name && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.last_name.message}</p>}
                                                 </div>
@@ -515,23 +480,23 @@ export default function AgentRegisterPage() {
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Work Email</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Work Email</Label>
                                                     <Input
                                                         {...register('email')}
                                                         type="email"
                                                         placeholder="contact@agency.com"
-                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.email ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                        className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.email ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
                                                     {errors.email && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.email.message}</p>}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mobile Number</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Mobile Number</Label>
                                                     <PhoneInput
                                                         country={'in'}
                                                         value={formValues.phone}
                                                         onChange={phone => setValue('phone', phone)}
                                                         containerClass="!w-full !rounded-2xl shadow-sm"
-                                                        inputClass={`!w-full !h-14 !pl-16 !bg-white/40 !border-white/60 !rounded-2xl !transition-all !text-[15px] !font-bold !text-slate-900 placeholder:!text-slate-300 focus:!bg-white focus:!border-[var(--primary)] focus:!ring-4 focus:!ring-orange-500/5 ${errors.phone ? '!border-red-400 !ring-1 !ring-red-400/20' : ''}`}
+                                                        inputClass={`!w-full !h-14 !pl-16 !bg-white/40 !border-white/60 !rounded-2xl !transition-all !text-[15px] !font-bold !text-black placeholder:!text-slate-500 focus:!bg-white focus:!border-[var(--primary)] focus:!ring-4 focus:!ring-orange-500/5 ${errors.phone ? '!border-red-400 !ring-1 !ring-red-400/20' : ''}`}
                                                         buttonClass="!bg-transparent !border-white/20 !rounded-l-2xl !pl-4 hover:!bg-white/10 !transition-colors"
                                                         dropdownClass="glass-phone-dropdown"
                                                     />
@@ -552,8 +517,8 @@ export default function AgentRegisterPage() {
                                                 <Shield className="h-6 w-6" />
                                             </div>
                                             <div className="text-left">
-                                                <h3 className="font-[1000] text-2xl tracking-tight text-slate-900 font-display">Security</h3>
-                                                <p className="text-[12.5px] text-slate-500 font-bold mt-0.5">Secure your agency account</p>
+                                                <h3 className="font-[1000] text-2xl tracking-tight text-black font-display">Security</h3>
+                                                <p className="text-[12.5px] text-black font-bold mt-0.5">Secure your agency account</p>
                                             </div>
                                         </div>
                                     </AccordionTrigger>
@@ -561,18 +526,18 @@ export default function AgentRegisterPage() {
                                         <div className="space-y-8">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Enter Password</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Enter Password</Label>
                                                     <div className="relative">
                                                         <Input
                                                             {...register('password')}
                                                             type={showPassword ? "text" : "password"}
                                                             placeholder="••••••••"
-                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowPassword(!showPassword)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--primary)] transition-colors"
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-black hover:text-[var(--primary)] transition-colors"
                                                         >
                                                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                         </button>
@@ -590,18 +555,18 @@ export default function AgentRegisterPage() {
                                                     {errors.password && <p className="text-[11px] font-bold text-red-500 mt-1 ml-1">{errors.password.message}</p>}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Confirm Password</Label>
+                                                    <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Confirm Password</Label>
                                                     <div className="relative">
                                                         <Input
                                                             {...register('confirm_password')}
                                                             type={showConfirmPassword ? "text" : "password"}
                                                             placeholder="••••••••"
-                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.confirm_password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                            className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.confirm_password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--primary)] transition-colors"
+                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-black hover:text-[var(--primary)] transition-colors"
                                                         >
                                                             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                         </button>
@@ -611,14 +576,14 @@ export default function AgentRegisterPage() {
                                             </div>
 
                                             <div className="p-8 bg-white/40 rounded-[32px] border border-white/60 backdrop-blur-md space-y-6 shadow-sm">
-                                                <Label className="text-[14px] font-[1000] text-slate-900 flex items-center gap-3">
+                                                <Label className="text-[14px] font-[1000] text-black flex items-center gap-3">
                                                     <Sparkles className="h-4 w-4 text-[var(--primary)]" />
                                                     Intelligence Check: What is {captchaQuest.num1} + {captchaQuest.num2}?
                                                 </Label>
                                                 <Input
                                                     {...register('captcha')}
                                                     placeholder="Solve"
-                                                    className={`h-20 bg-white shadow-inner border border-slate-100 rounded-3xl transition-all font-[1000] text-5xl text-center tracking-[0.3em] text-slate-900 placeholder:text-slate-100 focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 ${errors.captcha ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
+                                                    className={`h-20 bg-white shadow-inner border border-slate-100 rounded-3xl transition-all font-[1000] text-5xl text-center tracking-[0.3em] text-black placeholder:text-slate-400 focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 ${errors.captcha ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                 />
                                                 {errors.captcha && <p className="text-[11px] font-bold text-red-500 mt-1 text-center">{errors.captcha.message}</p>}
                                             </div>
@@ -646,7 +611,7 @@ export default function AgentRegisterPage() {
                                     </span>
                                 )}
                             </Button>
-                            <p className="text-center text-slate-500 font-bold text-sm uppercase tracking-widest">
+                            <p className="text-center text-black font-bold text-sm uppercase tracking-widest">
                                 Already a partner? <Link href="/login" className="text-[var(--primary)] hover:underline underline-offset-4 font-black transition-all ml-1">Log in to Portal</Link>
                             </p>
                         </div>
@@ -661,10 +626,10 @@ export default function AgentRegisterPage() {
                         <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center">
                             <Mail className="h-8 w-8 text-[var(--primary)]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-[1000] text-slate-900 font-display text-center">
+                        <AlertDialogTitle className="text-2xl font-[1000] text-black font-display text-center">
                             Email Already Registered
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-500 font-bold text-center leading-relaxed">
+                        <AlertDialogDescription className="text-black font-bold text-center leading-relaxed">
                             {conflictMessage}. Would you like to log in to your existing account instead?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -675,7 +640,7 @@ export default function AgentRegisterPage() {
                         >
                             Log In to Portal
                         </AlertDialogAction>
-                        <AlertDialogCancel className="w-full h-12 border-slate-100 text-slate-400 font-bold rounded-2xl hover:bg-slate-50 transition-colors">
+                        <AlertDialogCancel className="w-full h-12 border-slate-100 text-black font-bold rounded-2xl hover:bg-slate-50 transition-colors">
                             Try Another Email
                         </AlertDialogCancel>
                     </AlertDialogFooter>

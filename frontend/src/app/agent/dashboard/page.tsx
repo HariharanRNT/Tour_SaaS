@@ -63,7 +63,8 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue } from "@/components/ui/select"
+    SelectValue
+} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from '@/components/ui/badge'
@@ -73,20 +74,23 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger } from "@/components/ui/dialog"
+    DialogTrigger
+} from "@/components/ui/dialog"
 import {
     Carousel,
     CarouselContent,
     CarouselItem,
     CarouselNext,
-    CarouselPrevious } from "@/components/ui/carousel"
+    CarouselPrevious
+} from "@/components/ui/carousel"
 
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useScroll, useSpring } from 'framer-motion'
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts"
@@ -95,6 +99,7 @@ import { fetchAgentDashboardStats, sendAIChatMessage, generateAIPackage as gener
 import AIAssistantCard from '@/components/agent/AIAssistantCard'
 import { DashboardSkeleton } from '@/components/agent/DashboardSkeleton'
 import { useAuth } from '@/context/AuthContext'
+import { GlassCard } from '@/components/ui/GlassCard'
 
 // Custom Rupee Icon Component
 const RupeeIcon = ({ className }: { className?: string }) => (
@@ -176,6 +181,7 @@ interface DashboardStats {
     pendingBookings: number
     todayBookings: number
     cancelledBookings: number
+    totalEnquiries: number
     totalRevenue: number
     recentBookings?: {
         upcoming: any[]
@@ -238,7 +244,7 @@ export default function AgentDashboard() {
 
     const queryClient = useQueryClient()
     const { hasPermission, isSubUser } = useAuth()
-    
+
     // Check permissions
     const canViewPackages = hasPermission('packages', 'view') || hasPermission('packages', 'edit') || hasPermission('packages', 'full')
     const canCreatePackage = hasPermission('packages', 'edit') || hasPermission('packages', 'full')
@@ -262,7 +268,7 @@ export default function AgentDashboard() {
             });
         },
         enabled: dateFilter !== 'CUSTOM' || (!!customStart && !!customEnd),
-        staleTime: 10000, 
+        staleTime: 10000,
     })
 
     const stats = {
@@ -274,6 +280,7 @@ export default function AgentDashboard() {
         pendingBookings: backendStats?.pendingBookings || 0,
         todayBookings: backendStats?.todayBookings || 0,
         cancelledBookings: backendStats?.cancelledBookings || 0,
+        totalEnquiries: backendStats?.totalEnquiries || 0,
         totalRevenue: backendStats?.totalRevenue || 0,
         recentBookings: backendStats?.recentBookings || { upcoming: [], completed: [] },
         highlights: backendStats?.highlights,
@@ -551,6 +558,18 @@ export default function AgentDashboard() {
             gradientTo: "to-rose-600",
             bgGradient: "from-rose-500/5 to-red-500/5",
             shadowColor: "shadow-red-500/20"
+        },
+        {
+            title: "Enquiries",
+            value: stats.totalEnquiries,
+            subtext: "Total Enquiries Count",
+            icon: MessageSquare,
+            color: "text-violet-600",
+            bgColor: "bg-violet-50",
+            gradientFrom: "from-violet-500",
+            gradientTo: "to-purple-600",
+            bgGradient: "from-violet-500/5 to-purple-500/5",
+            shadowColor: "shadow-violet-500/20"
         }
     ]
 
@@ -599,11 +618,13 @@ export default function AgentDashboard() {
                             width: Math.random() * 400 + 300,
                             height: Math.random() * 400 + 300,
                             top: `${Math.random() * 80}%`,
-                            left: `${Math.random() * 80}%` }}
+                            left: `${Math.random() * 80}%`
+                        }}
                         animate={{
                             y: [0, Math.random() * 100 - 50, 0],
                             x: [0, Math.random() * 100 - 50, 0],
-                            scale: [1, 1.05, 1] }}
+                            scale: [1, 1.05, 1]
+                        }}
                         transition={{
                             duration: Math.random() * 10 + 15,
                             repeat: Infinity,
@@ -794,10 +815,10 @@ export default function AgentDashboard() {
                             <CarouselContent>
                                 {statCards.map((card, index) => (
                                     <CarouselItem key={index} className="basis-10/12 pl-4">
-                                        <Card className="relative overflow-hidden rounded-[20px] h-full">
+                                        <GlassCard className="h-full">
                                             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`} />
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest">{card.title}</CardTitle>
+                                                <CardTitle className="text-xs font-bold uppercase tracking-widest">{card.title}</CardTitle>
                                                 <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2 rounded-xl shadow-md ${card.shadowColor}`}>
                                                     <card.icon className="h-4 w-4 text-white" />
                                                 </div>
@@ -806,7 +827,7 @@ export default function AgentDashboard() {
                                                 <div className="text-3xl font-extrabold text-[var(--color-primary-font)] tracking-tight">{card.value}</div>
                                                 <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-2.5 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                             </CardContent>
-                                        </Card>
+                                        </GlassCard>
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
@@ -816,14 +837,14 @@ export default function AgentDashboard() {
                     {/* Desktop View */}
                     <div className="hidden md:grid grid-cols-6 gap-8">
                         {statCards.map((card, index) => (
-                            <TiltCard 
-                                key={index} 
-                                className={`h-full ${index < 3 ? 'col-span-2' : 'col-span-3'}`}
+                            <TiltCard
+                                key={index}
+                                className="h-full col-span-2"
                             >
-                                <Card className="relative overflow-hidden rounded-[20px] h-full transition-all duration-300 group hover:shadow-xl" style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', boxShadow: '0 8px 32px rgba(180, 100, 60, 0.08)' }}>
+                                <GlassCard className="h-full">
                                     <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                        <CardTitle className="text-xs font-bold  uppercase tracking-widest">{card.title}</CardTitle>
+                                        <CardTitle className="text-xs font-bold uppercase tracking-widest">{card.title}</CardTitle>
                                         <div className={`bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} p-2.5 rounded-xl shadow-lg ${card.shadowColor} group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300`}>
                                             <card.icon className="h-5 w-5 text-white" />
                                         </div>
@@ -832,7 +853,7 @@ export default function AgentDashboard() {
                                         <div className="text-3xl font-extrabold text-[var(--color-primary-font)] mt-1 tracking-tight">{card.value}</div>
                                         <p className={`text-xs font-semibold ${card.color} ${card.bgColor} w-fit px-3 py-1 rounded-full mt-3 border border-current/10`}>{card.subtext}</p>
                                     </CardContent>
-                                </Card>
+                                </GlassCard>
                             </TiltCard>
                         ))}
                     </div>
@@ -958,8 +979,8 @@ export default function AgentDashboard() {
 
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-100">
-                                                            <p className="text-[10px] uppercase tracking-wide text-blue-600 font-bold mb-0.5">Views</p>
-                                                            <p className="text-sm font-extrabold text-blue-800">{stats.highlights.leastPopular.views}</p>
+                                                            <p className="text-[10px] uppercase tracking-wide text-blue-600 font-bold mb-0.5">Revenue</p>
+                                                            <p className="text-sm font-extrabold text-blue-800">₹{stats.highlights.leastPopular.revenue?.toLocaleString()}</p>
                                                         </div>
                                                         <div className="bg-blue-50/80 p-2.5 rounded-lg border border-blue-100">
                                                             <p className="text-[10px] uppercase tracking-wide text-blue-600 font-bold mb-0.5">Sales</p>
@@ -1219,9 +1240,9 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                        Manage Plan
-                                                    </Button>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                    Manage Plan
+                                                </Button>
                                             </CardContent>
                                         </Link>
                                     </Card>
@@ -1243,9 +1264,9 @@ export default function AgentDashboard() {
                                                     </div>
                                                 </CardHeader>
                                                 <CardContent>
-                                                        <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                            Configure Settings
-                                                        </Button>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                        Configure Settings
+                                                    </Button>
                                                 </CardContent>
                                             </Link>
                                         </Card>
@@ -1268,9 +1289,9 @@ export default function AgentDashboard() {
                                                     </div>
                                                 </CardHeader>
                                                 <CardContent>
-                                                        <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
-                                                            View Reports
-                                                        </Button>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                        View Reports
+                                                    </Button>
                                                 </CardContent>
                                             </Link>
                                         </Card>

@@ -244,6 +244,7 @@
   .glass-pill-chip {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 9999px;
     padding: 0.25rem 0.75rem;
@@ -252,7 +253,6 @@
     gap: 0.5rem;
     font-size: 0.75rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
   }
 
   .glass-pill-glow-dot {
@@ -1083,6 +1083,198 @@
     background: rgba(255, 255, 255, 0.25) !important;
     backdrop-filter: blur(8px) !important;
   }
+
+  /* ══════════════════════════════════════════════════════════
+     3D GLASSMORPHISM SYSTEM — My Booking / Premium Pages
+     True 3D glass: inset top-highlight, bevel edges, depth shadows
+  ══════════════════════════════════════════════════════════ */
+
+  /* Card — elevated 3D glass pane */
+  .glass-3d-card {
+    background: linear-gradient(
+      158deg,
+      rgba(255, 255, 255, 0.58) 0%,
+      rgba(255, 255, 255, 0.24) 100%
+    );
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-bottom-color: rgba(255, 255, 255, 0.30);
+    border-right-color: rgba(255, 255, 255, 0.30);
+    box-shadow:
+      /* Top bevel — glass edge light */
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.92),
+      /* Left bevel */
+      inset 1.5px 0 0 rgba(255, 255, 255, 0.42),
+      /* Bottom inner shadow — depth */
+      inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+      /* Primary elevation */
+      0 24px 48px rgba(0, 0, 0, 0.10),
+      /* Secondary soft shadow */
+      0 6px 16px rgba(0, 0, 0, 0.06),
+      /* Specular highlight ring  */
+      0 1px 0 rgba(255, 255, 255, 0.5);
+    border-radius: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Inner sheen — top-half light reflection */
+  .glass-3d-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 55%
+    );
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-3d-card > * { position: relative; z-index: 1; }
+
+  .glass-3d-card:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+      inset 1.5px 0 0 rgba(255, 255, 255, 0.45),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.07),
+      0 36px 72px rgba(0, 0, 0, 0.14),
+      0 12px 28px rgba(0, 0, 0, 0.08),
+      0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Hero Card — the most prominent 3D glass surface */
+  .glass-3d-hero {
+    background: linear-gradient(
+      158deg,
+      rgba(255, 255, 255, 0.68) 0%,
+      rgba(255, 255, 255, 0.32) 100%
+    );
+    backdrop-filter: blur(48px) saturate(220%);
+    -webkit-backdrop-filter: blur(48px) saturate(220%);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-bottom-color: rgba(255, 255, 255, 0.30);
+    border-right-color: rgba(255, 255, 255, 0.30);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.96),
+      inset 2px 0 0 rgba(255, 255, 255, 0.48),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+      0 48px 96px rgba(0, 0, 0, 0.12),
+      0 16px 40px rgba(0, 0, 0, 0.07),
+      0 1px 0 rgba(255, 255, 255, 0.7);
+    border-radius: 40px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-3d-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      transparent 45%
+    );
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Diagonal shimmer stripe */
+  .glass-3d-hero::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -40%;
+    width: 80%;
+    height: 80%;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 60%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-3d-hero > * { position: relative; z-index: 1; }
+
+  /* Surface — lighter inner section glass (for inner panels) */
+  .glass-3d-surface {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 255, 255, 0.22) 100%
+    );
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.56);
+    border-bottom-color: rgba(255, 255, 255, 0.24);
+    border-right-color: rgba(255, 255, 255, 0.24);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.88),
+      inset 1px 0 0 rgba(255, 255, 255, 0.38),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+      0 12px 28px rgba(0, 0, 0, 0.08),
+      0 3px 8px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-3d-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 50%);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-3d-surface > * { position: relative; z-index: 1; }
+
+  .glass-3d-surface:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      inset 1px 0 0 rgba(255, 255, 255, 0.42),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+      0 20px 40px rgba(0, 0, 0, 0.10),
+      0 6px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Pill badge 3D version */
+  .glass-3d-pill {
+    background: linear-gradient(145deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.30) 100%);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* ── Agent font inheritance for booking portal pages ─────── */
+body.is-branded {
+  font-family: var(--project-font-family, var(--font-inter)), sans-serif !important;
 }
 
 
@@ -1666,3 +1858,70 @@ body.font-playful h3 {
   .btn-save-continue:active {
     transform: translateY(0);
   }
+
+/* Dynamic Price Validation Styles */
+.optional-tag {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-left: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.required-asterisk {
+  color: #DC2626;
+  margin-left: 4px;
+}
+
+/* Duration Layout Fixes */
+.duration-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.duration-half {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 12px !important;
+  min-width: 0;
+  position: relative;
+}
+
+.duration-icon {
+  flex-shrink: 0;
+  width: 16px !important;
+  height: 16px !important;
+  opacity: 0.7;
+}
+
+.duration-value {
+  min-width: 32px;
+  max-width: 48px;
+  text-align: center;
+  font-weight: 700 !important;
+  flex-shrink: 0;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  height: 48px !important;
+  color: inherit !important;
+}
+
+.duration-unit {
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: rgba(0,0,0,0.6);
+  font-size: 13px;
+  font-weight: 600;
+}

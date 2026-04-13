@@ -256,14 +256,15 @@ async def login(
             if user.sub_user_profile and user.sub_user_profile.agent:
                 agent_profile = user.sub_user_profile.agent.agent_profile
                 
-        # Validate Sub-User Domain
-        if user.role == UserRole.SUB_USER and agent_profile:
+        # Validate Agent or Sub-User Domain
+        # Both AGENT and SUB_USER must log in from their own domain
+        if agent_profile and agent_profile.domain:
             agent_domain = agent_profile.domain
-            if agent_domain and agent_domain.lower() != domain.lower():
-                # Allow strict localhost/IP bypass for development, but enforce for rnt.local or production domains
+            if agent_domain.lower() != domain.lower():
+                # Allow strict localhost/IP bypass for development, but enforce for production domains
                 if domain not in ["localhost", "127.0.0.1"]:
                     raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN, 
+                        status_code=status.HTTP_403_FORBIDDEN,
                         detail="Access denied. You must login from your authorized agency domain."
                     )
 
@@ -342,7 +343,8 @@ async def login(
             require_otp=True,
             message="OTP sent successfully to your registered email",
             email=user.email,
-            expires_in=300
+            expires_in=300,
+            role=user.role.value
         )
 
     # 4. Handle Customer/Admin (Direct Login)
@@ -450,7 +452,8 @@ async def login(
             require_otp=True,
             message="OTP sent successfully to your registered email",
             email=user.email,
-            expires_in=300
+            expires_in=300,
+            role=user.role.value
         )
     
     # Create access token (for Admin)
@@ -603,7 +606,8 @@ from app.schemas import SendLoginOTPRequest, VerifyLoginOTPRequest, SendLoginOTP
 @router.post("/send-login-otp", response_model=SendLoginOTPResponse)
 async def send_login_otp(
     data: SendLoginOTPRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
 ):
     """Send OTP for agent login after verifying credentials"""
     import sys
@@ -656,7 +660,24 @@ async def send_login_otp(
         raise HTTPException(status_code=400, detail="Account is inactive")
     
     logger.warning(f"✅ Step 4: User is active")
-    
+
+    # 4b. Validate Agent or Sub-User Domain restriction on resend
+    if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
+        _resend_agent_profile = None
+        if user.role == UserRole.AGENT:
+            _resend_agent_profile = user.agent_profile
+        elif user.sub_user_profile and user.sub_user_profile.agent:
+            _resend_agent_profile = user.sub_user_profile.agent.agent_profile
+
+        if _resend_agent_profile and _resend_agent_profile.domain:
+            agent_domain = _resend_agent_profile.domain
+            if agent_domain.lower() != domain.lower():
+                if domain not in ["localhost", "127.0.0.1"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Access denied. You must login from your authorized agency domain."
+                    )
+
     # 5. Check rate limiting
     if not await OTPService.check_login_rate_limit(data.email):
         logger.warning(f"❌ Rate limit exceeded for {data.email}")
@@ -787,9 +808,14 @@ async def verify_login_otp(
     from app.services.otp_service import OTPService
     
     # 1. Verify OTP from Redis
+    # Diagnostic Log
+    _otp_key = OTPService._get_login_otp_key(data.email)
+    logger.warning(f"🔍 VERIFYING OTP: Email={data.email}, Key={_otp_key}, OTP_Sent={data.otp}")
+    
     is_valid = await OTPService.verify_login_otp(data.email, data.otp)
     
     if not is_valid:
+        logger.warning(f"❌ OTP VERIFICATION FAILED for {data.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired OTP"
@@ -816,15 +842,21 @@ async def verify_login_otp(
     if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:
         raise HTTPException(status_code=403, detail="Access denied")
         
-    # Validate Sub-User Domain
-    if user.role == UserRole.SUB_USER and user.sub_user_profile and user.sub_user_profile.agent:
-        agent_profile = user.sub_user_profile.agent.agent_profile
-        if agent_profile and agent_profile.domain:
-            agent_domain = agent_profile.domain
+    # Validate Agent or Sub-User Domain at OTP verification
+    # Both AGENT and SUB_USER must be verified against their registered domain
+    if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
+        _otp_agent_profile = None
+        if user.role == UserRole.AGENT:
+            _otp_agent_profile = user.agent_profile
+        elif user.sub_user_profile and user.sub_user_profile.agent:
+            _otp_agent_profile = user.sub_user_profile.agent.agent_profile
+
+        if _otp_agent_profile and _otp_agent_profile.domain:
+            agent_domain = _otp_agent_profile.domain
             if agent_domain.lower() != domain.lower():
                 if domain not in ["localhost", "127.0.0.1"]:
                     raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN, 
+                        status_code=status.HTTP_403_FORBIDDEN,
                         detail="Access denied. You must login from your authorized agency domain."
                     )
     

@@ -80,6 +80,7 @@ import { Country, State, City } from 'country-state-city'
 import { ICountry, IState, ICity } from 'country-state-city'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import * as XLSX from 'xlsx'
 
 
 interface Agent {
@@ -536,6 +537,45 @@ export default function AdminAgentsPage() {
         dateFilter !== 'all' ? 1 : 0,
         searchQuery ? 1 : 0
     ].reduce((a: number, b: number) => a + b, 0)
+
+    const handleExport = () => {
+        if (filteredAndSortedAgents.length === 0) {
+            toast.error('No agents to export')
+            return
+        }
+
+        const data = filteredAndSortedAgents.map((agent: any) => ({
+            'Agent Name': `${agent.first_name} ${agent.last_name}`,
+            'Email': agent.email,
+            'Phone': agent.phone || 'N/A',
+            'Agency Name': agent.agency_name || 'N/A',
+            'Approval Status': agent.approval_status.toUpperCase(),
+            'Access Status': agent.is_active ? 'ACTIVE' : 'INACTIVE',
+            'GST No': agent.gst_no || 'N/A',
+            'City': agent.city || 'N/A',
+            'State': agent.state || 'N/A',
+            'Country': agent.country || 'N/A',
+            'Joined Date': new Date(agent.created_at).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            })
+        }))
+
+        const ws = XLSX.utils.json_to_sheet(data)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Agents')
+
+        const fileName = `agents-directory-${new Date().toISOString().split('T')[0]}.xlsx`
+        
+        try {
+            XLSX.writeFile(wb, fileName)
+            toast.success(`Successfully exported ${filteredAndSortedAgents.length} agents to Excel`)
+        } catch (error) {
+            console.error('Export failed:', error)
+            toast.error('Failed to export agents list')
+        }
+    }
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -1105,7 +1145,12 @@ export default function AdminAgentsPage() {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <Button variant="outline" size="sm" className="rounded-xl border-white/60 bg-white/40 backdrop-blur-md font-black h-11 px-6 hover:bg-white text-[11px] uppercase tracking-wider text-slate-600 shadow-sm transition-all duration-300">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={handleExport}
+                                            className="rounded-xl border-white/60 bg-white/40 backdrop-blur-md font-black h-11 px-6 hover:bg-white text-[11px] uppercase tracking-wider text-slate-600 shadow-sm transition-all duration-300"
+                                        >
                                             <Download className="h-4 w-4 mr-2 text-orange-500" />
                                             Export List
                                         </Button>
@@ -1447,10 +1492,7 @@ export default function AdminAgentsPage() {
                                                                             <Check className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
                                                                             <span>Edit Agent Details</span>
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuItem className="glass-popover-item">
-                                                                            <Shield className="mr-2.5 h-[16px] w-[16px] text-[#0f172a]" />
-                                                                            <span>Modify Permissions</span>
-                                                                        </DropdownMenuItem>
+
                                                                         <DropdownMenuSeparator className="my-1 bg-white/10" />
                                                                         <DropdownMenuItem
                                                                             onClick={() => handleDeleteClick(agent)}

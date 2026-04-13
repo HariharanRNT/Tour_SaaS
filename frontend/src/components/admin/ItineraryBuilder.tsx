@@ -81,12 +81,12 @@ interface ItineraryBuilderProps {
 }
 
 const timeSlotConfig = {
-    full_day: { icon: Calendar, label: 'Full Day', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
-    morning: { icon: Sun, label: 'Morning', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-    half_day: { icon: Clock, label: 'Half Day', color: 'text-teal-600', bgColor: 'bg-teal-50' },
-    afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    evening: { icon: Sunset, label: 'Evening', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    night: { icon: Moon, label: 'Night', color: 'text-purple-600', bgColor: 'bg-purple-50' }
+    full_day: { icon: Calendar, label: 'Full Day', color: 'text-black', bgColor: 'bg-indigo-50', theme: 'indigo' },
+    morning: { icon: Sun, label: 'Morning', color: 'text-black', bgColor: 'bg-yellow-50', theme: 'amber' },
+    half_day: { icon: Clock, label: 'Half Day', color: 'text-black', bgColor: 'bg-emerald-50', theme: 'emerald' },
+    afternoon: { icon: Cloud, label: 'Afternoon', color: 'text-black', bgColor: 'bg-blue-50', theme: 'blue' },
+    evening: { icon: Sunset, label: 'Evening', color: 'text-black', bgColor: 'bg-orange-50', theme: 'orange' },
+    night: { icon: Moon, label: 'Night', color: 'text-black', bgColor: 'bg-purple-50', theme: 'purple' }
 }
 
 const ACTIVITY_SUGGESTIONS = [
@@ -970,16 +970,16 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     "relative flex flex-col items-start min-w-[120px] transition-all duration-300 group flex-shrink-0"
                 )}
                 style={isActive ? {
-                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+                    background: 'black',
                     border: 'none',
-                    boxShadow: '0 8px 24px var(--primary-glow)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     color: 'white',
                     borderRadius: '50px',
                     padding: '8px 20px',
                 } : {
                     background: 'transparent',
                     border: 'none',
-                    color: '#5C2500',
+                    color: '#000000',
                     borderRadius: '50px',
                     padding: '8px 20px',
                 }}
@@ -988,7 +988,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     <div className="absolute top-1.5 right-4 w-1.5 h-1.5 rounded-full bg-[#22c55e]" style={{ boxShadow: '0 0 8px #22c55e' }} />
                 )}
                 <div className="flex items-center gap-2">
-                    <span className={cn("text-[13px] whitespace-nowrap", isActive ? "font-bold text-white" : "font-semibold text-[#5C2500]")}>Day {day}</span>
+                    <span className={cn("text-[13px] whitespace-nowrap", isActive ? "font-bold text-white" : "font-semibold text-black")}>Day {day}</span>
                     {!isActive && activityCount > 0 && (
                         <div className="w-1 h-1 rounded-full bg-[#22c55e]" />
                     )}
@@ -1074,13 +1074,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     <div className="flex-1 flex flex-col overflow-hidden bg-white/5">
                         <div className="px-8 py-6 border-b border-white/20 bg-white/10 backdrop-blur-md flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-bold text-[#5C2500] font-serif tracking-tight">Day-wise Itinerary</h2>
-                                <p className="text-[10px] text-[#A0522D]/60 font-bold uppercase tracking-wider mt-0.5">Craft the perfect journey</p>
+                                <h2 className="text-xl font-bold text-black font-serif tracking-tight">Day-wise Itinerary</h2>
+                                <p className="text-[10px] text-black/60 font-bold uppercase tracking-wider mt-0.5">Craft the perfect journey</p>
                             </div>
 
                             {/* Itinerary Overview Stats */}
                             <div className="hidden lg:flex items-center gap-4">
-                                <div className="flex items-center gap-2 px-4 py-2 bg-white/18 backdrop-blur-md border border-white/30 rounded-full text-[11px] font-bold text-[var(--primary)] shadow-sm">
+                                <div className="flex items-center gap-2 px-4 py-2 bg-white/18 backdrop-blur-md border border-white/30 rounded-full text-[11px] font-bold text-black shadow-sm">
                                     <BarChart3 className="w-4 h-4" />
                                     {Object.values(activities).reduce((acc, day) => acc + Object.values(day).reduce((dAcc, slot) => dAcc + slot.length, 0), 0)} Activities
                                 </div>
@@ -1148,18 +1148,18 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                                                                     <div className="flex items-center justify-between mb-4">
                                                                         <div className="flex items-center gap-4">
-                                                                            <div className="flex justify-center items-center shadow-inner" style={{ background: 'var(--primary-glow)', borderRadius: '12px', padding: '10px', border: '1px solid var(--primary-soft)' }}>
-                                                                                <Icon className={`h-5 w-5 ${config.color.replace('indigo', '[var(--primary)]').replace('sky', '[#0EA5E9]').replace('orange', '[#F59E0B]').replace('emerald', '[#10B981]')}`} style={{ color: config.color.includes('indigo') ? 'var(--primary)' : undefined }} />
+                                                                            <div className="flex justify-center items-center shadow-inner" style={{ background: 'rgba(0,0,0,0.05)', borderRadius: '12px', padding: '10px', border: '1px solid rgba(0,0,0,0.1)' }}>
+                                                                                <Icon className="h-5 w-5 text-black" style={{ color: 'black' }} />
                                                                             </div>
                                                                             <div>
-                                                                                <h3 className="font-bold text-[#5C2500] flex items-center gap-2.5 text-[15px] font-serif tracking-tight">
+                                                                                <h3 className="font-bold text-black flex items-center gap-2.5 text-[15px] font-serif tracking-tight">
                                                                                     {config.label}
-                                                                                    <span className="text-[10px] font-bold text-[#A0522D]/60 bg-white/20 px-2.5 py-1 rounded-full border border-white/30 uppercase tracking-widest">
+                                                                                    <span className="text-[10px] font-bold text-black/60 bg-white/20 px-2.5 py-1 rounded-full border border-white/30 uppercase tracking-widest">
                                                                                         {totalCapacityHours}h Limit
                                                                                     </span>
                                                                                 </h3>
                                                                                 {slotActivities.length > 0 && (
-                                                                                    <p className="text-[10px] text-[#A0522D]/60 mt-1 font-bold uppercase tracking-wider">
+                                                                                    <p className="text-[10px] text-black/60 mt-1 font-bold uppercase tracking-wider">
                                                                                         Usage: {estimatedHoursUsed}h / {totalCapacityHours}h
                                                                                     </p>
                                                                                 )}
@@ -1170,7 +1170,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                                 size="sm"
                                                                                 variant="ghost"
                                                                                 onClick={() => handleOpenAddForm(slot)}
-                                                                                className="h-9 gap-2 bg-white/10 border-2 border-dashed border-[var(--primary)]/30 hover:bg-[var(--primary)]/5 text-[var(--primary)] font-bold rounded-xl text-[11px] transition-all px-4"
+                                                                                className="h-9 gap-2 bg-white/10 border-2 border-dashed border-black/30 hover:bg-black/5 text-black font-bold rounded-xl text-[11px] transition-all px-4"
                                                                             >
                                                                                 <Plus className="w-3.5 h-3.5" />
                                                                                 Add Manual
@@ -1210,13 +1210,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                             ) : (
                                                                                 <div
                                                                                     id={`${day}-${slot}`}
-                                                                                    className="py-12 border-2 border-dashed border-white/30 rounded-3xl flex flex-col items-center justify-center text-slate-700 bg-white/5 backdrop-blur-sm hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/30 transition-all duration-500 group/drop mt-4"
+                                                                                    className="py-12 border-2 border-dashed border-white/30 rounded-3xl flex flex-col items-center justify-center text-slate-700 bg-white/5 backdrop-blur-sm hover:bg-black/5 hover:border-black/30 transition-all duration-500 group/drop mt-4"
                                                                                 >
                                                                                     <div className="w-12 h-12 rounded-2xl bg-white/10 shadow-lg flex items-center justify-center mb-4 group-hover/drop:scale-110 group-hover/drop:rotate-6 transition-all duration-500 backdrop-blur-md border border-white/20">
                                                                                         <Icon className={cn("h-5 w-5 opacity-40 group-hover/drop:opacity-100 transition-opacity", config.color)} style={{ color: config.color.includes('indigo') ? 'var(--primary)' : undefined }} />
                                                                                     </div>
-                                                                                    <p className="text-[11px] font-bold text-[#5C2500]/40 uppercase tracking-[0.2em]">Ready for activities</p>
-                                                                                    <p className="text-[10px] text-[var(--primary)]/60 mt-1 font-black underline decoration-dashed underline-offset-4">DRAG & DROP</p>
+                                                                                    <p className="text-[11px] font-bold text-black/40 uppercase tracking-[0.2em]">Ready for activities</p>
+                                                                                    <p className="text-[10px] text-black/60 mt-1 font-black underline decoration-dashed underline-offset-4">DRAG & DROP</p>
                                                                                 </div>
                                                                             )}
                                                                         </SortableContext>
@@ -1237,13 +1237,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                 <DragOverlay>
                     {activeDragItem && activeDragItem.data.current?.type === 'library-activity' ? (
-                        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_var(--primary-glow)] border-2 border-[var(--primary)] scale-105 pointer-events-none w-[360px] flex items-center gap-5 rotate-2">
+                        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-5 shadow-[0_20px_50px_var(--primary-glow)] border-2 border-black scale-105 pointer-events-none w-[360px] flex items-center gap-5 rotate-2">
                             <div className="w-16 h-16 rounded-2xl bg-[var(--primary-soft)]/20 flex items-center justify-center flex-shrink-0 border border-[var(--primary-soft)]/40">
                                 <span className="text-2xl">✨</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-[15px] font-bold text-[#5C2500] font-serif line-clamp-1">{activeDragItem.data.current.activity.name}</h4>
-                                <p className="text-[10px] text-[var(--primary)] font-black uppercase tracking-widest mt-1">Ready to post</p>
+                                <h4 className="text-[15px] font-bold text-black font-serif line-clamp-1">{activeDragItem.data.current.activity.name}</h4>
+                                <p className="text-[10px] text-black font-black uppercase tracking-widest mt-1">Ready to post</p>
                             </div>
                         </div>
                     ) : null}
@@ -1277,15 +1277,19 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                     <div className="p-8 pb-4 relative shrink-0">
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-1.5 text-left">
-                                                <h2 className="text-4xl font-black tracking-tight text-slate-800 font-playfair leading-tight">
+                                                <h2 className="text-4xl font-black tracking-tight text-black font-playfair leading-tight">
                                                     {editingId ? 'Edit Activity' : 'Add Activity'}
                                                 </h2>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-100 flex items-center gap-2 shadow-sm animate-pulse-teal">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.1em]">NEW FULL DAY ACTIVITY</span>
+                                                {selectedTimeSlot && (
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={cn("px-4 py-1.5 rounded-full border flex items-center gap-2 shadow-sm", `bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-50 border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-100`)}>
+                                                            <div className={cn("w-1.5 h-1.5 rounded-full", `bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-400`)} />
+                                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", `text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-600`)}>
+                                                                {editingId ? 'EDITING' : 'NEW'} {timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].label} ACTIVITY
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
                                             <Button
                                                 variant="ghost"
@@ -1306,116 +1310,122 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                                     <CardContent className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
                                         {/* Section 1: Basic Info */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between border-b border-teal-100 pb-2 px-1">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(42,157,143,0.5)]" />
-                                                    <h3 className="text-[11px] font-black text-teal-700/80 uppercase tracking-[0.2em] font-playfair">Activity Information</h3>
-                                                </div>
-                                                <button
-                                                    onClick={() => setNewActivity({ ...newActivity, is_optional: !newActivity.is_optional })}
-                                                    className={cn(
-                                                        "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95 flex items-center gap-2",
-                                                        newActivity.is_optional
-                                                            ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-transparent shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
-                                                            : "bg-white/40 text-teal-600/70 border-teal-100 hover:border-teal-500/40 hover:text-teal-600"
-                                                    )}
-                                                >
-                                                    {newActivity.is_optional ? (
-                                                        <>
-                                                            <CheckCircle2 className="w-3 h-3" />
-                                                            OPTIONAL ENTRY
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-teal-300" />
-                                                            SET AS OPTIONAL
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                            <div className="space-y-2 relative">
-                                                <div className="relative group/title">
-                                                    <Input
-                                                        id="activity-title"
-                                                        placeholder="e.g., Majestic Sunset at Tokyo Sky Tree..."
-                                                        className="h-[60px] text-lg font-bold bg-white/30 backdrop-blur-md border-white/60 focus:border-teal-400/50 focus:ring-4 focus:ring-teal-400/5 transition-all rounded-[20px] placeholder:text-slate-400 placeholder:italic text-slate-800 shadow-inner px-6"
-                                                        value={newActivity.title}
-                                                        onChange={(e) => {
-                                                            if (e.target.value.length <= 100) {
-                                                                setNewActivity({ ...newActivity, title: e.target.value })
-                                                                setShowSuggestions(true)
-                                                            }
-                                                        }}
-                                                        onFocus={() => setShowSuggestions(true)}
-                                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                                                    />
-                                                    <div className={cn(
-                                                        "absolute right-5 bottom-0 -translate-y-[18px] text-[10px] font-black px-2 py-0.5 rounded-md border backdrop-blur-md",
-                                                        newActivity.title.length > 80 ? "bg-red-50 text-red-600 border-red-100" : "bg-white/60 text-teal-600 border-teal-100/50"
-                                                    )}>
-                                                        {newActivity.title.length}/100
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between border-b border-slate-100 pb-2 px-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-black shadow-[0_0_8px_rgba(0,0,0,0.1)]" />
+                                                        <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] font-playfair">Activity Information</h3>
                                                     </div>
-
-                                                    {showSuggestions && (
-                                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-2xl border border-teal-50 shadow-[0_20px_50px_rgba(42,157,143,0.1)] rounded-2xl z-[120] overflow-hidden animate-in slide-in-from-top-2 duration-300">
-                                                            <div className="p-3 border-b border-teal-50 bg-teal-50/30 flex items-center gap-2">
-                                                                <Zap className="w-3.5 h-3.5 text-teal-500" />
-                                                                <span className="text-[10px] font-black text-teal-700/50 uppercase tracking-widest">Smart Suggestions</span>
-                                                            </div>
-                                                            <div className="max-h-[220px] overflow-y-auto p-1.5 custom-scrollbar">
-                                                                {ACTIVITY_SUGGESTIONS
-                                                                    .filter(s => !newActivity.title || s.toLowerCase().includes(newActivity.title.toLowerCase()))
-                                                                    .map((suggestion, i) => (
-                                                                        <button
-                                                                            key={i}
-                                                                            onClick={() => {
-                                                                                setNewActivity({ ...newActivity, title: suggestion })
-                                                                                setShowSuggestions(false)
-                                                                            }}
-                                                                            className="w-full text-left px-4 py-3 text-[13px] font-bold text-slate-700 hover:bg-teal-500 hover:text-white rounded-xl transition-all flex items-center gap-3 group/sug"
-                                                                        >
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-teal-500/30 group-hover/sug:bg-white/50" />
-                                                                            {suggestion}
-                                                                        </button>
-                                                                    ))}
-                                                            </div>
+                                                    <button
+                                                        onClick={() => setNewActivity({ ...newActivity, is_optional: !newActivity.is_optional })}
+                                                        className={cn(
+                                                            "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95 flex items-center gap-2",
+                                                            newActivity.is_optional
+                                                                ? ("text-[var(--primary)]")
+                                                                : ("text-[var(--primary)]")
+                                                        )}
+                                                    >
+                                                        {newActivity.is_optional ? (
+                                                            <>
+                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                OPTIONAL ENTRY
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className={cn("w-1.5 h-1.5 rounded-full", "bg-[var(--primary)]")} />
+                                                                SET AS OPTIONAL
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <div className="space-y-2 relative">
+                                                    <div className="relative group/title">
+                                                        <Input
+                                                            id="activity-title"
+                                                            placeholder="e.g., Majestic Sunset at Tokyo Sky Tree..."
+                                                            className={cn(
+                                                                "h-[60px] text-lg font-bold bg-white/30 backdrop-blur-md border-white/60 transition-all rounded-[20px] placeholder:text-slate-400 placeholder:italic text-slate-800 shadow-inner px-6",
+                                                                "text-[var(--primary)]"
+                                                            )}
+                                                            value={newActivity.title}
+                                                            onChange={(e) => {
+                                                                if (e.target.value.length <= 100) {
+                                                                    setNewActivity({ ...newActivity, title: e.target.value })
+                                                                    setShowSuggestions(true)
+                                                                }
+                                                            }}
+                                                            onFocus={() => setShowSuggestions(true)}
+                                                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                                        />
+                                                        <div className={cn(
+                                                            "absolute right-5 bottom-0 -translate-y-[18px] text-[10px] font-black px-2 py-0.5 rounded-md border backdrop-blur-md",
+                                                            newActivity.title.length > 80 ? "bg-red-50 text-red-600 border-red-100" : ("text-[var(--primary)]")
+                                                        )}>
+                                                            {newActivity.title.length}/100
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between border-b border-teal-100 pb-2 px-1">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-1 px-1.5 bg-teal-50 rounded-lg">
-                                                        <Clock className="w-3.5 h-3.5 text-teal-600" />
+ 
+                                                        {showSuggestions && (
+                                                            <div className={cn("absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-2xl border shadow-2xl rounded-2xl z-[120] overflow-hidden animate-in slide-in-from-top-2 duration-300", "border-[var(--primary)]")}>
+                                                                <div className={cn("p-3 border-b flex items-center gap-2", "text-[var(--primary)]")}>
+                                                                    <Zap className={cn("w-3.5 h-3.5", "text-[var(--primary)]")} />
+                                                                    <span className={cn("text-[10px] font-black uppercase tracking-widest", "text-[var(--primary)]")}>Smart Suggestions</span>
+                                                                </div>
+                                                                <div className="max-h-[220px] overflow-y-auto p-1.5 custom-scrollbar">
+                                                                    {ACTIVITY_SUGGESTIONS
+                                                                        .filter(s => !newActivity.title || s.toLowerCase().includes(newActivity.title.toLowerCase()))
+                                                                        .map((suggestion, i) => (
+                                                                            <button
+                                                                                key={i}
+                                                                                onClick={() => {
+                                                                                    setNewActivity({ ...newActivity, title: suggestion })
+                                                                                    setShowSuggestions(false)
+                                                                                }}
+                                                                                className={cn(
+                                                                                    "w-full text-left px-4 py-3 text-[13px] font-bold text-slate-700 rounded-xl transition-all flex items-center gap-3 group/sug",
+                                                                                    "text-[var(--primary)]"
+                                                                                )}
+                                                                            >
+                                                                                <div className={cn("w-1.5 h-1.5 rounded-full group-hover/sug:bg-white/50", "bg-[var(--primary)]")} />
+                                                                                {suggestion}
+                                                                            </button>
+                                                                        ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <h3 className="text-[11px] font-black text-teal-700/80 uppercase tracking-[0.2em] font-playfair">Timing & Duration</h3>
                                                 </div>
-                                                <button
-                                                    onClick={toggleAllDay}
-                                                    className={cn(
-                                                        "px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95",
-                                                        isAllDay
-                                                            ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent shadow-[0_4px_12px_rgba(42,157,143,0.3)]"
-                                                            : "bg-white/40 text-teal-600/70 border-teal-100 hover:border-teal-500/40 hover:text-teal-600"
-                                                    )}
-                                                >
-                                                    {isAllDay ? '✨ ALL DAY' : 'ALL DAY'}
-                                                </button>
                                             </div>
+ 
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between border-b border-slate-100 pb-2 px-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="p-1 px-1.5 bg-slate-50 rounded-lg">
+                                                            <Clock className="w-3.5 h-3.5 text-black" />
+                                                        </div>
+                                                        <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] font-playfair">Timing & Duration</h3>
+                                                    </div>
+                                                    <button
+                                                        onClick={toggleAllDay}
+                                                        className={cn(
+                                                            "px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95",
+                                                            isAllDay
+                                                                ? ("text-[var(--primary)]")
+                                                                : ("text-[var(--primary)]")
+                                                        )}
+                                                    >
+                                                        {isAllDay ? '✨ ALL DAY' : 'ALL DAY'}
+                                                    </button>
+                                                </div>
 
-                                            <div className="bg-teal-50/20 p-6 rounded-[28px] border border-white/60 space-y-6 relative overflow-hidden group/timing-container">
+                                            <div className="bg-emerald-50/20 p-6 rounded-[28px] border border-white/60 space-y-6 relative overflow-hidden group/timing-container">
                                                 <div className="grid grid-cols-2 gap-8 relative items-end">
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="start-time" className="text-[10px] font-black text-teal-700/40 uppercase tracking-widest ml-1">START TIME</Label>
+                                                        <Label htmlFor="start-time" className="text-[10px] font-black text-emerald-700/40 uppercase tracking-widest ml-1">START TIME</Label>
                                                         <div className="relative group/time">
                                                             <Input
                                                                 id="start-time"
                                                                 type="time"
-                                                                className="h-[56px] border-white/60 bg-white/40 backdrop-blur-md focus:border-teal-400/50 transition-all pl-12 text-base font-black text-slate-800 rounded-[18px] shadow-sm"
+                                                                className="h-[56px] border-white/60 bg-white/40 backdrop-blur-md focus:border-emerald-400/50 transition-all pl-12 text-base font-black text-slate-800 rounded-[18px] shadow-sm"
                                                                 value={newActivity.start_time}
                                                                 onChange={(e) => {
                                                                     const startTime = e.target.value;
@@ -1434,36 +1444,36 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                     setIsAutoCalculated(autoCalc);
                                                                 }}
                                                             />
-                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-teal-500/10 transition-colors group-focus-within/time:bg-teal-500 group-focus-within/time:text-white text-teal-600">
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-emerald-500/10 transition-colors group-focus-within/time:bg-emerald-500 group-focus-within/time:text-white text-emerald-600">
                                                                 <Sun className="w-4 h-4" />
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center">
-                                                        <div className="w-10 h-10 rounded-full bg-white border border-teal-100 shadow-xl flex items-center justify-center text-teal-500 animate-in zoom-in-0 duration-500 delay-300">
+                                                        <div className={cn("w-10 h-10 rounded-full bg-white border shadow-xl flex items-center justify-center animate-in zoom-in-0 duration-500 delay-300", "text-[var(--primary)]")}>
                                                             <ArrowRight className="w-5 h-5 animate-pulse" />
                                                         </div>
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="end-time" className="text-[10px] font-black text-teal-700/40 uppercase tracking-widest ml-1">END TIME</Label>
+                                                        <Label htmlFor="end-time" className="text-[10px] font-black text-emerald-700/40 uppercase tracking-widest ml-1">END TIME</Label>
                                                         <div className="relative group/time">
                                                             <Input
                                                                 id="end-time"
                                                                 type="time"
-                                                                className="h-[56px] border-white/60 bg-white/40 backdrop-blur-md focus:border-teal-400/50 transition-all pl-12 text-base font-black text-slate-800 rounded-[18px] shadow-sm"
+                                                                className="h-[56px] border-white/60 bg-white/40 backdrop-blur-md focus:border-emerald-400/50 transition-all pl-12 text-base font-black text-slate-800 rounded-[18px] shadow-sm"
                                                                 value={newActivity.end_time}
                                                                 onChange={(e) => {
                                                                     setNewActivity({ ...newActivity, end_time: e.target.value });
                                                                     setIsAutoCalculated(false);
                                                                 }}
                                                             />
-                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-orange-500/10 transition-colors group-focus-within/time:bg-orange-500 group-focus-within/time:text-white text-orange-600">
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-black/5 transition-colors group-focus-within/time:bg-black group-focus-within/time:text-white text-black">
                                                                 <Sunset className="w-4 h-4" />
                                                             </div>
                                                             {isAutoCalculated && activityDuration && (
-                                                                <p className="absolute -bottom-5 left-1 text-[9px] text-teal-600/70 font-medium italic animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                <p className={cn("absolute -bottom-5 left-1 text-[9px] font-medium italic animate-in fade-in slide-in-from-top-1 duration-300", "text-[var(--primary)]")}>
                                                                     ⚡ Calculated from activity duration ({formatDuration(activityDuration)})
                                                                 </p>
                                                             )}
@@ -1473,20 +1483,30 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
 
                                                 <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest mr-1">Presets:</span>
+                                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mr-1">Presets:</span>
                                                         <div className="flex gap-2">
                                                             {[1, 2, 3].map((h) => (
                                                                 <button
                                                                     key={h}
                                                                     onClick={() => handlePresetTime(h)}
-                                                                    className="px-4 py-1.5 rounded-full bg-white/40 border border-teal-100 text-[11px] font-black text-teal-700 hover:bg-teal-500 hover:text-white hover:border-teal-500 transition-all shadow-sm active:scale-95"
+                                                                    className={cn(
+                                                                        "px-4 py-1.5 rounded-full bg-white/40 border text-[11px] font-black transition-all shadow-sm active:scale-95",
+                                                                        selectedTimeSlot 
+                                                                            ? `border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-100 text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-700 hover:bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500 hover:text-white hover:border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500`
+                                                                            : "border-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white hover:border-emerald-500"
+                                                                    )}
                                                                 >
                                                                     +{h}H
                                                                 </button>
                                                             ))}
                                                             <button
                                                                 onClick={() => handlePresetTime(12)}
-                                                                className="px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-[11px] font-black text-teal-600 hover:bg-gradient-to-r hover:from-teal-500 hover:to-cyan-500 hover:text-white hover:border-transparent transition-all shadow-sm active:scale-95"
+                                                                className={cn(
+                                                                    "px-4 py-1.5 rounded-full border text-[11px] font-black transition-all shadow-sm active:scale-95",
+                                                                    selectedTimeSlot
+                                                                        ? `bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-50 border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-200 text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-600 hover:bg-gradient-to-r hover:from-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500 hover:to-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-600 hover:text-white hover:border-transparent`
+                                                                        : "bg-emerald-50 border border-emerald-200 text-[11px] font-black text-emerald-600 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-cyan-500 hover:text-white hover:border-transparent"
+                                                                )}
                                                             >
                                                                 HALF DAY
                                                             </button>
@@ -1494,7 +1514,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                     </div>
 
                                                     {durationMinutes > 0 && (
-                                                        <div className="flex items-center gap-2.5 bg-teal-500 text-white px-5 py-2.5 rounded-full shadow-lg shadow-teal-500/20 animate-in zoom-in-95 duration-500">
+                                                        <div className={cn("flex items-center gap-2.5 text-white px-5 py-2.5 rounded-full shadow-lg animate-in zoom-in-95 duration-500", "text-[var(--primary)]")}>
                                                             <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
                                                             <span className="text-[10px] font-black uppercase tracking-widest">DURATION: {formatDuration(durationMinutes)}</span>
                                                         </div>
@@ -1509,14 +1529,16 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                 className={cn(
                                                     "w-full flex items-center justify-between p-5 rounded-[24px] border transition-all duration-500 active:scale-[0.98] group/adv",
                                                     showAdvancedOptions
-                                                        ? "bg-teal-500/10 border-teal-200 text-teal-700 shadow-inner"
-                                                        : "bg-white/30 border-white/60 text-slate-500 hover:bg-white/50 hover:border-teal-300"
+                                                        ? ("text-[var(--primary)]")
+                                                        : ("text-[var(--primary)]")
                                                 )}
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <div className={cn(
                                                         "p-2.5 rounded-xl transition-all duration-700",
-                                                        showAdvancedOptions ? "bg-teal-500 text-white shadow-[0_8px_20px_rgba(42,157,143,0.3)]" : "bg-teal-50 text-teal-400 group-hover/adv:text-teal-600"
+                                                        showAdvancedOptions 
+                                                            ? ("bg-[var(--primary)] text-white shadow-[0_8px_20px_var(--primary)]")
+                                                            : ("bg-[var(--primary)]/10 text-[var(--primary)] group-hover/adv:text-[var(--primary)]")
                                                     )}>
                                                         <Settings className={cn("w-5 h-5", showAdvancedOptions && "animate-spin-slow")} />
                                                     </div>
@@ -1526,7 +1548,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                     "p-1.5 rounded-full transition-transform duration-500",
                                                     showAdvancedOptions ? "rotate-180 bg-white shadow-sm" : "bg-white/40 group-hover/adv:bg-white/60"
                                                 )}>
-                                                    <ChevronDown className="w-5 h-5 text-teal-600" />
+                                                    <ChevronDown className={cn("w-5 h-5", "text-[var(--primary)]")} />
                                                 </div>
                                             </button>
                                         </div>
@@ -1534,14 +1556,14 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                         {showAdvancedOptions && (
                                             <div className="space-y-8 animate-in slide-in-from-top-4 duration-700">
                                                 <div className="space-y-4">
-                                                    <div className="flex items-center gap-2 px-1 border-b border-teal-50 pb-2">
-                                                        <div className="p-1.5 bg-teal-50 rounded-lg">
-                                                            <FileText className="w-4 h-4 text-teal-600" />
+                                                    <div className={cn("flex items-center gap-2 px-1 border-b pb-2", "border-[var(--primary)]")}>
+                                                        <div className={cn("p-1.5 rounded-lg", "bg-[var(--primary)]")}>
+                                                            <FileText className={cn("w-4 h-4", "text-[var(--primary)]")} />
                                                         </div>
-                                                        <h3 className="text-[11px] font-black text-teal-700/80 uppercase tracking-[0.2em] font-playfair">Experience Narrative</h3>
+                                                        <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] font-playfair">Experience Narrative</h3>
                                                     </div>
 
-                                                    <div className="relative overflow-hidden rounded-[24px] border border-white/60 focus-within:ring-4 focus-within:ring-teal-400/5 focus-within:border-teal-400/40 transition-all bg-white/30 backdrop-blur-md shadow-inner">
+                                                    <div className="relative overflow-hidden rounded-[24px] border border-white/60 focus-within:ring-4 focus-within:ring-emerald-400/5 focus-within:border-emerald-400/40 transition-all bg-white/30 backdrop-blur-md shadow-inner">
                                                         <div className="relative">
                                                             <Textarea
                                                                 id="activity-description"
@@ -1558,7 +1580,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                             />
                                                             <div className={cn(
                                                                 "absolute right-4 bottom-4 text-[9px] font-black px-2 py-0.5 rounded-md border backdrop-blur-md",
-                                                                newActivity.description.length > 450 ? "bg-red-50 text-red-600 border-red-100" : "bg-white/60 text-teal-600 border-teal-100/50"
+                                                                newActivity.description.length > 450 ? "bg-red-50 text-red-600 border-red-100" : ("text-[var(--primary)]")
                                                             )}>
                                                                 {newActivity.description.length}/500
                                                             </div>
@@ -1567,22 +1589,22 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                 </div>
 
                                                 <div className="space-y-4">
-                                                    <div className="flex items-center justify-between border-b border-teal-50 pb-2 px-1">
+                                                    <div className={cn("flex items-center justify-between border-b pb-2 px-1", "border-[var(--primary)]")}>
                                                         <div className="flex items-center gap-2">
-                                                            <div className="p-1.5 bg-teal-50 rounded-lg">
-                                                                <ImageIcon className="w-4 h-4 text-teal-600" />
+                                                            <div className={cn("p-1.5 rounded-lg", "bg-[var(--primary)]")}>
+                                                                <ImageIcon className={cn("w-4 h-4", "text-[var(--primary)]")} />
                                                             </div>
-                                                            <h3 className="text-[11px] font-black text-teal-700/80 uppercase tracking-[0.2em] font-playfair">Visual Gallery</h3>
+                                                            <h3 className="text-[11px] font-black text-black uppercase tracking-[0.2em] font-playfair">Visual Gallery</h3>
                                                         </div>
-                                                        <div className="flex items-center gap-3 bg-white/40 px-3 py-1.5 rounded-full border border-teal-100 backdrop-blur-md">
-                                                            <span className="text-[9px] font-black text-teal-600/60 uppercase tracking-widest">Assets:</span>
+                                                        <div className={cn("flex items-center gap-3 bg-white/40 px-3 py-1.5 rounded-full border backdrop-blur-md", "border-[var(--primary)]")}>
+                                                            <span className={cn("text-[9px] font-black uppercase tracking-widest", "text-[var(--primary)]")}>Assets:</span>
                                                             <div className="w-16 h-1 bg-white/50 rounded-full overflow-hidden">
                                                                 <div
-                                                                    className="h-full bg-teal-500 transition-all duration-700 ease-out"
+                                                                    className={cn("h-full transition-all duration-700 ease-out", "bg-[var(--primary)]")}
                                                                     style={{ width: `${(newActivity.image_urls.filter(u => u).length / 5) * 100}%` }}
                                                                 />
                                                             </div>
-                                                            <span className="text-[10px] font-black text-teal-600">{newActivity.image_urls.filter(u => u).length}/5</span>
+                                                            <span className={cn("text-[10px] font-black", "text-[var(--primary)]")}>{newActivity.image_urls.filter(u => u).length}/5</span>
                                                         </div>
                                                     </div>
 
@@ -1594,8 +1616,8 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                             className={cn(
                                                                 "relative group/dropzone border-2 border-dashed rounded-[24px] transition-all p-12 flex flex-col items-center justify-center gap-5 bg-white/20 shadow-inner overflow-hidden",
                                                                 isDragging
-                                                                    ? "border-teal-500 bg-teal-500/5 scale-[0.985]"
-                                                                    : "border-teal-200 hover:bg-white/40 hover:border-teal-400/60"
+                                                                    ? ("text-[var(--primary)]")
+                                                                    : ("text-[var(--primary)]")
                                                             )}
                                                         >
                                                             <input
@@ -1606,22 +1628,22 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                 className="absolute inset-0 opacity-0 cursor-pointer z-50"
                                                             />
 
-                                                            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-teal-500 to-cyan-400 shadow-xl shadow-teal-500/30 flex items-center justify-center text-white group-hover/dropzone:scale-110 group-hover/dropzone:rotate-12 transition-all duration-700">
+                                                            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-emerald-500 to-cyan-400 shadow-xl shadow-emerald-500/30 flex items-center justify-center text-white group-hover/dropzone:scale-110 group-hover/dropzone:rotate-12 transition-all duration-700">
                                                                 <Upload className="w-7 h-7" />
                                                             </div>
 
                                                             <div className="text-center space-y-2">
                                                                 <p className="text-[16px] font-black text-slate-800 tracking-tight">Showcase the visual story</p>
-                                                                <p className="text-[11px] text-teal-700/40 font-bold uppercase tracking-[0.2em] italic">Drop images here or click to browse</p>
+                                                                <p className="text-[11px] text-emerald-700/40 font-bold uppercase tracking-[0.2em] italic">Drop images here or click to browse</p>
                                                             </div>
 
                                                             <div className="w-full max-w-[300px] relative mt-2 z-[60]">
                                                                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                                                    <Link className="w-3.5 h-3.5 text-teal-500" />
+                                                                    <Link className="w-3.5 h-3.5 text-emerald-500" />
                                                                 </div>
                                                                 <Input
                                                                     placeholder="PASTE ASSET URL HERE..."
-                                                                    className="h-12 pl-12 text-[10px] font-black tracking-widest border-white/60 bg-white/50 focus:bg-white/80 focus:border-teal-400 rounded-full shadow-inner placeholder:text-teal-900/30"
+                                                                    className="h-12 pl-12 text-[10px] font-black tracking-widest border-white/60 bg-white/50 focus:bg-white/80 focus:border-emerald-400 rounded-full shadow-inner placeholder:text-emerald-900/30"
                                                                     onKeyDown={(e) => {
                                                                         if (e.key === 'Enter') {
                                                                             const val = (e.target as HTMLInputElement).value;
@@ -1637,13 +1659,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                             {isUploading && (
                                                                 <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[70] flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
                                                                     <div className="w-full max-w-[240px] space-y-4">
-                                                                        <div className="flex justify-between items-center text-[10px] font-black text-teal-600 uppercase tracking-widest">
+                                                                        <div className="flex justify-between items-center text-[10px] font-black text-emerald-600 uppercase tracking-widest">
                                                                             <span>Optimizing Asset...</span>
                                                                             <span>{uploadProgress}%</span>
                                                                         </div>
                                                                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-50 shadow-inner">
                                                                             <div
-                                                                                className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all duration-300 ease-out shadow-[0_0_12px_rgba(42,157,143,0.4)]"
+                                                                                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-300 ease-out shadow-[0_0_12px_rgba(42,157,143,0.4)]"
                                                                                 style={{ width: `${uploadProgress}%` }}
                                                                             />
                                                                         </div>
@@ -1661,13 +1683,16 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                                         className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-1000"
                                                                         onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f1f5f9/94a3b8?text=INVALID+ASSET'}
                                                                     />
-                                                                    <div className="absolute inset-0 bg-teal-900/40 opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
+                                                                    <div className="absolute inset-0 bg-emerald-900/40 opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
                                                                         <button
                                                                             onClick={() => {
                                                                                 const newUrls = newActivity.image_urls.filter((_, i) => i !== index);
                                                                                 setNewActivity({ ...newActivity, image_urls: newUrls.length > 0 ? newUrls : [''] });
                                                                             }}
-                                                                            className="w-10 h-10 bg-white text-teal-600 rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:scale-110 transition-all shadow-xl active:scale-90"
+                                                                            className={cn(
+                                                                                "w-10 h-10 bg-white rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:scale-110 transition-all shadow-xl active:scale-90",
+                                                                                "text-[var(--primary)]"
+                                                                            )}
                                                                         >
                                                                             <Trash2 className="w-5 h-5" />
                                                                         </button>
@@ -1676,7 +1701,12 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                             ))}
                                                             {newActivity.image_urls.filter(url => url).length < 5 && (
                                                                 <button
-                                                                    className="aspect-square rounded-2xl border-2 border-dashed border-teal-200 bg-white/10 flex flex-col items-center justify-center text-teal-300 hover:border-teal-500 hover:text-teal-500 hover:bg-teal-50/50 transition-all group/add-thumb active:scale-[0.96] duration-500"
+                                                                    className={cn(
+                                                                        "aspect-square rounded-2xl border-2 border-dashed bg-white/10 flex flex-col items-center justify-center transition-all group/add-thumb active:scale-[0.96] duration-500",
+                                                                        selectedTimeSlot 
+                                                                            ? `border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-200 text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-300 hover:border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500 hover:text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500 hover:bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-50/50`
+                                                                            : "border-emerald-200 text-emerald-300 hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-50/50"
+                                                                    )}
                                                                     onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
                                                                 >
                                                                     <Plus className="w-10 h-10 group-hover/add-thumb:rotate-90 group-hover/add-thumb:scale-110 transition-all duration-700" />
@@ -1685,13 +1715,13 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                             )}
                                                         </div>
 
-                                                        <div className="flex items-start gap-4 p-5 bg-teal-50/30 border border-teal-100/50 rounded-[24px] backdrop-blur-md">
-                                                            <div className="w-10 h-10 rounded-2xl bg-teal-500/10 flex items-center justify-center">
-                                                                <Zap className="w-5 h-5 text-teal-600" />
+                                                        <div className={cn("flex items-start gap-4 p-5 rounded-[24px] backdrop-blur-md border", "text-[var(--primary)]")}>
+                                                            <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center", "bg-[var(--primary)]")}>
+                                                                <Zap className={cn("w-5 h-5", "text-[var(--primary)]")} />
                                                             </div>
                                                             <div className="flex-1 space-y-1">
-                                                                <p className="text-[12px] font-black text-teal-800 uppercase tracking-widest">Premium Asset Tips</p>
-                                                                <p className="text-[11px] text-teal-700/60 font-medium leading-relaxed">High-resolution JPGs (up to 5MB) provide the best premium experience. We recommend 1920px wide visuals for optimal clarity.</p>
+                                                                <p className="text-[12px] font-black text-black uppercase tracking-widest">Premium Asset Tips</p>
+                                                                <p className="text-[11px] text-black/60 font-medium leading-relaxed">High-resolution JPGs (up to 5MB) provide the best premium experience. We recommend 1920px wide visuals for optimal clarity.</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1701,7 +1731,7 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                     </CardContent>
 
                                     <div
-                                        className="p-8 border-t border-teal-100 flex gap-4 bg-white/60 backdrop-blur-2xl"
+                                        className="p-8 border-t border-slate-100 flex gap-4 bg-white/60 backdrop-blur-2xl"
                                     >
                                         <Button
                                             variant="ghost"
@@ -1713,23 +1743,27 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                                                 setEditingId(null)
                                                 setIsSuggestedLunch(false)
                                             }}
-                                            className="h-[56px] px-8 text-teal-600 font-black uppercase tracking-widest border-2 border-teal-100 hover:bg-teal-50/50 rounded-full group transition-all"
+                                            className={cn(
+                                                "h-[56px] px-8 font-black uppercase tracking-widest border-2 rounded-full group transition-all",
+                                                selectedTimeSlot 
+                                                    ? `text-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-600 border-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-100 hover:bg-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-50/50`
+                                                    : "text-emerald-600 border-emerald-100 hover:bg-emerald-50/50"
+                                            )}
                                         >
                                             Cancel
-                                            <span className="ml-3 text-[10px] font-black text-teal-300 group-hover:text-teal-500 px-2 py-1 rounded-lg border border-teal-50 hidden sm:inline-block bg-white/20">ESC</span>
+                                            <span className={cn("ml-3 text-[10px] font-black px-2 py-1 rounded-lg border hidden sm:inline-block bg-white/20", "text-[var(--primary)]")}>ESC</span>
                                         </Button>
                                         <Button
                                             onClick={handleAddActivity}
                                             disabled={loading || !newActivity.title || isSuccess}
                                             className={cn(
-                                                "flex-1 h-[56px] font-black uppercase tracking-widest transition-all active:scale-[0.98] group relative overflow-hidden rounded-full",
+                                                "flex-1 h-[56px] font-black uppercase tracking-widest transition-all active:scale-[0.98] group relative overflow-hidden rounded-full shadow-lg",
                                                 isSuccess
                                                     ? "bg-emerald-500 text-white"
-                                                    : "text-white shadow-[0_12px_24px_rgba(42,157,143,0.3)] hover:shadow-[0_16px_32px_rgba(42,157,143,0.4)]"
+                                                    : (selectedTimeSlot 
+                                                        ? `bg-gradient-to-r from-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500 to-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-600 text-white shadow-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500/30 hover:shadow-${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].theme}-500/40`
+                                                        : "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-emerald-500/30 hover:shadow-emerald-500/40")
                                             )}
-                                            style={!isSuccess ? {
-                                                background: 'linear-gradient(135deg, #2A9D8F, #48CAE4)',
-                                            } : {}}
                                         >
                                             {loading ? (
                                                 <div className="flex items-center gap-3">
@@ -1763,6 +1797,6 @@ export function ItineraryBuilder({ packageId, durationDays, packageMode = 'singl
                     )
                 }
             </AnimatePresence>
-        </div >
+        </div>
     );
 }

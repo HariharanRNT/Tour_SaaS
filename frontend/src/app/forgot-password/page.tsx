@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { authAPI } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { Plane, Mail, ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
             // Redirect to OTP verification page with email as query param
             router.push(`/verify-otp?email=${encodeURIComponent(email)}`)
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Failed to send OTP. Please try again.')
+            setError(formatError(err))
             setLoading(false)
         }
     }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { authAPI } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, formatError } from '@/lib/utils'
 import { Plane, ShieldCheck, ArrowLeft, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -54,7 +54,7 @@ function OTPVerificationForm() {
             // Success - Redirect to Reset Password page with email and otp as token
             router.push(`/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(otp)}`)
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Invalid or expired OTP')
+            setError(formatError(err))
             setLoading(false)
         }
     }
@@ -69,7 +69,7 @@ function OTPVerificationForm() {
             setTimer(60)
             toast.success("OTP resent successfully")
         } catch (err: any) {
-            setError('Failed to resend OTP')
+            setError(formatError(err))
         } finally {
             setResending(false)
         }

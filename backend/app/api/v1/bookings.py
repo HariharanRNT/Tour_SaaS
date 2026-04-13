@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole
+from app.models import Booking, Package, Traveler, BookingStatus, PaymentStatus, UserRole, User
 from app.schemas import (
     BookingCreate, BookingResponse, BookingWithPackageResponse,
     CancelPreviewResponse, CancelActionResponse
@@ -107,6 +107,23 @@ async def create_booking(
                 detail="A duplicate booking was detected. Please wait a moment before trying again."
             )
 
+        # === Agent / Sub-User must book ON BEHALF OF a customer ===
+        AGENT_ROLES = [UserRole.AGENT, UserRole.SUB_USER]
+        if current_user.role in AGENT_ROLES:
+            if not booking_data.customer_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Agents must select or create a customer before booking."
+                )
+            # Verify the customer_id refers to an actual CUSTOMER-role user
+            cust_result = await db.execute(select(User).where(User.id == booking_data.customer_id))
+            customer_user = cust_result.scalar_one_or_none()
+            if not customer_user or customer_user.role != UserRole.CUSTOMER:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid customer selected. The selected user is not a customer."
+                )
+
         # Get package
         result = await db.execute(select(Package).where(Package.id == booking_data.package_id))
         package = result.scalar_one_or_none()
@@ -120,7 +137,7 @@ async def create_booking(
 
         # --- Subscription Check (Agents & Customers) ---
         if current_user.role != "admin":
-            from app.models import Subscription, SubscriptionPlan, UserRole
+            from app.models import Subscription, SubscriptionPlan
             
             # Determine whose subscription to check
             subscription_user_id = current_user.id
@@ -131,6 +148,10 @@ async def create_booking(
                      # For SaaS model, usually block if not linked to active agent
                      raise HTTPException(status_code=403, detail="No agent associated with this account. Cannot make bookings.")
                 subscription_user_id = current_user.customer_profile.agent_id
+            elif current_user.role == UserRole.SUB_USER:
+                # Sub-user: use parent agent's subscription
+                if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:
+                    subscription_user_id = current_user.sub_user_profile.agent_id
             
             # Check and Auto-Activate Subscription
             from app.services.subscription_service import SubscriptionService
@@ -145,10 +166,8 @@ async def create_booking(
                 )
                 
             # If we have a subscription, we still need to check if the *current* booking pushes it over limit
-            # (The service check handled "already full", but we double check for the incremental booking)
             plan = subscription.plan
             if plan.booking_limit != -1 and subscription.current_bookings_usage >= plan.booking_limit:
-                 # This case implies no upcoming plan was available to activate, or the new one is also full (unlikely)
                  raise HTTPException(
                      status_code=status.HTTP_402_PAYMENT_REQUIRED,
                      detail="Booking limit reached for your agent's plan."
@@ -181,11 +200,16 @@ async def create_booking(
         total_amount = subtotal
         
         # Apply GST Logic
-        # Fetch Agent Settings to determine GST application
-        # We determined agent_id above efficiently, but we need the actual Agent object settings
-        # The subscription logic above might have fetched subscription, but not the Agent profile specifically if it was a customer.
-        
-        real_agent_id = current_user.id if current_user.role == UserRole.AGENT else current_user.agent_id
+        real_agent_id = None
+        if current_user.role in [UserRole.AGENT]:
+            real_agent_id = current_user.id
+        elif current_user.role in [UserRole.SUB_USER]:
+            # Sub-user's parent agent
+            if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:
+                real_agent_id = current_user.sub_user_profile.agent_id
+        else:
+            # Customer booking directly: The package creator is the "Supplier Agent"
+            real_agent_id = package.created_by or current_user.agent_id
         
         if real_agent_id:
             from app.models import Agent
@@ -200,42 +224,50 @@ async def create_booking(
                 if not is_gst_inclusive:
                     gst_amount = subtotal * (gst_percentage / 100)
                     total_amount = subtotal + gst_amount
-                    
-                    # Store calculation details in special_requests or structured if needed?
-                    # For now just updating total_amount as that is what Payment uses.
-                    # Ideally we should store tax_amount separate column, but schema update is heavy.
-                    # We can append to special_requests metadata if needed for invoice?
-                    # Invoice generation logic likely needs this breakdown too.
-                    
-                    # Let's verify InvoiceService logic later. For now, fixing Payment.
         
         # Generate booking reference
         booking_reference = generate_booking_reference()
-        
+
+        # Determine effective user_id (who the booking belongs to)
+        AGENT_ROLES = [UserRole.AGENT, UserRole.SUB_USER]
+        effective_user_id = (
+            booking_data.customer_id
+            if current_user.role in AGENT_ROLES and booking_data.customer_id
+            else current_user.id
+        )
+
+        # Determine effective agent_id
+        effective_agent_id = None
+        if current_user.role == UserRole.AGENT:
+            effective_agent_id = current_user.id
+        elif current_user.role == UserRole.SUB_USER:
+            if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:
+                effective_agent_id = current_user.sub_user_profile.agent_id
+        else:
+            # Customer booking directly: The package creator is the owner of this booking record
+            effective_agent_id = package.created_by or current_user.agent_id
+
         # Create booking
         booking = Booking(
             booking_reference=booking_reference,
             package_id=package.id,
-            user_id=(
-                booking_data.customer_id if (current_user.role == UserRole.AGENT and booking_data.customer_id) 
-                else current_user.id
-            ),
-            booking_date=date.today(), # Fix: Explicitly set booking_date
+            user_id=effective_user_id,
+            booking_date=date.today(),
             travel_date=booking_data.travel_date,
             number_of_travelers=booking_data.number_of_travelers,
             total_amount=total_amount,
             special_requests=booking_data.special_requests,
-
             status=BookingStatus.PENDING,
             payment_status=PaymentStatus.PENDING,
-            # Assign booking to the agent:
-            # 1. If user is an agent, they are the agent for this booking
-            # 2. If user is a customer, use their associated agent (if any)
-            agent_id=(
-                current_user.id if current_user.role == UserRole.AGENT 
-                else current_user.agent_id
-            )
+            agent_id=effective_agent_id,
+            # Track the actual person who made the booking (agent/sub-user)
+            booked_by_user_id=(
+                current_user.id
+                if current_user.role in [UserRole.AGENT, UserRole.SUB_USER]
+                else None
+            ),
         )
+
         
         db.add(booking)
         await db.flush()
