@@ -150,6 +150,7 @@ export function Navbar() {
                         variant="ghost" 
                         size="sm" 
                         onClick={() => { setIsOpen(false); openAuthModal({ mode: 'login' }); }}
+                        className="text-black font-bold hover:text-black hover:bg-black/5"
                     >
                         {loginLabel}
                     </Button>
