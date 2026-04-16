@@ -124,7 +124,9 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                     .then(function(data) {
                         if (data && data.homepage_settings) {
                             apply(data.homepage_settings);
-                            localStorage.setItem('agentTheme', JSON.stringify(data.homepage_settings));
+                            try {
+                                localStorage.setItem('agentTheme', JSON.stringify(data.homepage_settings));
+                            } catch(e) {}
                         }
                     })
                     .catch(function() {});

@@ -1016,6 +1016,171 @@ async def update_package_status(
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
+@router.post("/packages-simple/{package_id}/days/{day_number}/duplicate")
+async def duplicate_itinerary_day(
+    package_id: UUID,
+    day_number: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Duplicate all items from a day and shift subsequent days"""
+    try:
+        # 1. Get package to update duration
+        stmt = select(Package).where(Package.id == package_id)
+        result = await db.execute(stmt)
+        package = result.scalar_one_or_none()
+        if not package:
+            raise HTTPException(status_code=404, detail="Package not found")
+
+        # 2. Shift subsequent days up by 1
+        from sqlalchemy import update
+        await db.execute(
+            update(ItineraryItem)
+            .where(ItineraryItem.package_id == package_id, ItineraryItem.day_number > day_number)
+            .values(day_number=ItineraryItem.day_number + 1)
+        )
+
+        # 3. Get items to duplicate
+        stmt = select(ItineraryItem).where(
+            ItineraryItem.package_id == package_id,
+            ItineraryItem.day_number == day_number
+        )
+        result = await db.execute(stmt)
+        items = result.scalars().all()
+
+        # 4. Create copies for the new day
+        for item in items:
+            new_item = ItineraryItem(
+                package_id=package_id,
+                day_number=day_number + 1,
+                title=item.title,
+                description=item.description,
+                image_url=item.image_url,
+                time_slot=item.time_slot,
+                start_time=item.start_time,
+                end_time=item.end_time,
+                activities=item.activities,
+                meals_included=item.meals_included,
+                display_order=item.display_order,
+                is_optional=item.is_optional
+            )
+            db.add(new_item)
+
+        # 5. Update package duration
+        package.duration_days += 1
+        if package.duration_nights is not None:
+             package.duration_nights += 1
+        
+        await db.commit()
+        return {"message": f"Day {day_number} duplicated successfully. New duration: {package.duration_days}"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/packages-simple/{package_id}/days/{day_number}/delete")
+async def delete_itinerary_day(
+    package_id: UUID,
+    day_number: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete all items for a day and shift subsequent days down"""
+    try:
+        # 1. Get package to update duration
+        stmt = select(Package).where(Package.id == package_id)
+        result = await db.execute(stmt)
+        package = result.scalar_one_or_none()
+        if not package:
+            raise HTTPException(status_code=404, detail="Package not found")
+
+        # 2. Delete items for this day
+        await db.execute(
+            delete(ItineraryItem).where(
+                ItineraryItem.package_id == package_id,
+                ItineraryItem.day_number == day_number
+            )
+        )
+
+        # 3. Shift subsequent days down by 1
+        from sqlalchemy import update
+        await db.execute(
+            update(ItineraryItem)
+            .where(ItineraryItem.package_id == package_id, ItineraryItem.day_number > day_number)
+            .values(day_number=ItineraryItem.day_number - 1)
+        )
+
+        # 4. Update package duration
+        if package.duration_days > 1:
+            package.duration_days -= 1
+            if package.duration_nights is not None and package.duration_nights > 0:
+                package.duration_nights -= 1
+        
+        await db.commit()
+        return {"message": f"Day {day_number} deleted successfully. New duration: {package.duration_days}"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/packages-simple/{package_id}/days/{day_number}/clear")
+async def clear_itinerary_day(
+    package_id: UUID,
+    day_number: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete all items for a day without shifting"""
+    try:
+        await db.execute(
+            delete(ItineraryItem).where(
+                ItineraryItem.package_id == package_id,
+                ItineraryItem.day_number == day_number
+            )
+        )
+        await db.commit()
+        return {"message": f"Day {day_number} cleared successfully"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/packages-simple/{package_id}/days/{day_number}/copy-to/{target_day}")
+async def copy_itinerary_day(
+    package_id: UUID,
+    day_number: int,
+    target_day: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Copy all items from one day to another (Merge)"""
+    try:
+        # Get items to copy
+        stmt = select(ItineraryItem).where(
+            ItineraryItem.package_id == package_id,
+            ItineraryItem.day_number == day_number
+        )
+        result = await db.execute(stmt)
+        items = result.scalars().all()
+
+        # Create copies for the target day
+        for item in items:
+            new_item = ItineraryItem(
+                package_id=package_id,
+                day_number=target_day,
+                title=item.title,
+                description=item.description,
+                image_url=item.image_url,
+                time_slot=item.time_slot,
+                start_time=item.start_time,
+                end_time=item.end_time,
+                activities=item.activities,
+                meals_included=item.meals_included,
+                display_order=item.display_order,
+                is_optional=item.is_optional
+            )
+            db.add(new_item)
+
+        await db.commit()
+        return {"message": f"Day {day_number} copied to Day {target_day} successfully"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.delete("/packages-simple/{package_id}")
 async def delete_package_simple(
     package_id: UUID,

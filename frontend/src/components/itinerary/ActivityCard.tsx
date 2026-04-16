@@ -45,7 +45,7 @@ export function ActivityCard({ activity, onAddToDay, compact = false }: Activity
                         className="aspect-video bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] rounded-t-lg flex items-center justify-center cursor-pointer"
                         onClick={() => setShowDetails(true)}
                     >
-                        <MapPin className="h-16 w-16 text-white opacity-50" />
+                        <MapPin className="h-16 w-16 text-white" />
                     </div>
                 )}
 
@@ -75,16 +75,16 @@ export function ActivityCard({ activity, onAddToDay, compact = false }: Activity
                 </CardHeader>
 
                 <CardContent className="flex-1 flex flex-col pt-0">
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
+                    <p className="text-sm text-black font-semibold line-clamp-2 mb-4 flex-1">
                         {activity.description.replace(/<[^>]*>/g, '').substring(0, 120)}...
                     </p>
 
                     <div className="flex items-center justify-between pt-3 border-t">
                         <div>
-                            <p className="text-xl font-bold text-primary">
+                            <p className="text-xl font-bold text-black font-display">
                                 {activity.currency} {activity.price_per_person}
                             </p>
-                            <p className="text-xs text-muted-foreground">per person</p>
+                            <p className="text-xs text-black font-bold uppercase tracking-wider">per person</p>
                         </div>
                         <Button
                             onClick={() => onAddToDay(activity)}

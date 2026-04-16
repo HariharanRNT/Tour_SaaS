@@ -176,8 +176,8 @@ export function CityAutocomplete({
                     role="combobox"
                     aria-expanded={open}
                     className={cn(
-                        "w-full justify-between glass-input h-11 border-gray-200 rounded-xl px-3 font-normal",
-                        !value && "text-black opacity-60",
+                        "w-full justify-between glass-input h-11 border-gray-200 rounded-xl px-3 !text-black !font-bold",
+                        !value && "opacity-60 !font-normal",
                         className
                     )}
                 >
@@ -192,7 +192,7 @@ export function CityAutocomplete({
                 <div className="flex items-center border-b px-3 border-white/10">
                     <Input
                         placeholder="Search city..."
-                        className="h-10 border-0 focus-visible:ring-0 bg-transparent text-sm"
+                        className="h-10 border-0 focus-visible:ring-0 bg-transparent text-sm !text-black !font-bold"
                         value={inputValue}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
@@ -213,7 +213,7 @@ export function CityAutocomplete({
                                         key={`${result.name}-${result.country}`}
                                         className={cn(
                                             "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--primary)]/10 text-left",
-                                            value === result.name ? "bg-[var(--primary)]/20 text-[var(--primary)] font-bold" : "text-black font-medium"
+                                            value === result.name ? "bg-[var(--primary)]/20 !text-black !font-bold" : "!text-black !font-bold"
                                         )}
                                         onClick={() => handleSelect(result.name)}
                                     >
@@ -223,16 +223,16 @@ export function CityAutocomplete({
                                                 value === result.name ? "opacity-100" : "opacity-0"
                                             )}
                                         />
-                                        <div className="flex flex-col">
-                                            <span>{result.name}</span>
-                                            {!countryName && <span className="text-[10px] text-black font-bold opacity-60">{result.country}</span>}
+                                        <div className="flex flex-col !text-black">
+                                            <span className="!text-black !font-bold">{result.name}</span>
+                                            {!countryName && <span className="text-[10px] !text-black !font-bold opacity-60">{result.country}</span>}
                                         </div>
                                     </button>
                                 ))}
 
                                 {inputValue.trim() && !filteredResults.some(r => r.name.toLowerCase() === inputValue.trim().toLowerCase()) && (
                                     <button
-                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--primary)]/10 text-left text-[var(--primary)] font-medium bg-[var(--primary)]/5 mt-1 border border-dashed border-[var(--primary)]/20"
+                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--primary)]/10 text-left !text-black !font-bold bg-[var(--primary)]/5 mt-1 border border-dashed border-[var(--primary)]/20"
                                         onClick={() => handleSelect(inputValue)}
                                     >
                                         <Check className="h-4 w-4 opacity-0" />

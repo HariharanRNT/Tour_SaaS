@@ -366,7 +366,7 @@ function DestinationCard({ city, activities, isExpanded, onToggle, onPreview, ac
             >
                 <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                    style={{ background: 'black' }}
+                    style={{ background: 'var(--primary)' }}
                 >
                     <MapPin className="w-4 h-4 text-white" />
                 </div>

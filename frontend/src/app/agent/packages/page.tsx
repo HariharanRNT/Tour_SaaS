@@ -364,7 +364,7 @@ export default function AgentPackagesPage() {
                         {hasPermission('packages', 'edit') && (
                             <Button
                                 onClick={() => router.push('/agent/packages/new')}
-                                className="text-white px-6 py-6  border-none shadow-lg"
+                                className="text-white px-6 py-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
                                 style={{
                                     background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
                                     borderRadius: '12px',
@@ -595,10 +595,13 @@ export default function AgentPackagesPage() {
                                                                         <MoreVertical className="h-4 w-4" />
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end" className="w-56 shadow-xl border-gray-100 rounded-xl p-1">
+                                                                <DropdownMenuContent
+                                                                    align="end"
+                                                                    className="w-56 !bg-white/40 backdrop-blur-2xl border border-white/50 shadow-[0_25px_60px_rgba(0,0,0,0.25)] rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-200"
+                                                                >
                                                                     {hasPermission('packages', 'edit') && (
                                                                         <DropdownMenuItem
-                                                                            className="glass-popover-item"
+                                                                            className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
                                                                             onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                         >
                                                                             <Edit className="mr-2 h-4 w-4 text-indigo-500" />
@@ -606,16 +609,16 @@ export default function AgentPackagesPage() {
                                                                         </DropdownMenuItem>
                                                                     )}
                                                                     <DropdownMenuItem
-                                                                        className="glass-popover-item"
+                                                                        className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
                                                                         onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}
                                                                     >
                                                                         <Eye className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
                                                                         <span className="font-medium text-[var(--color-primary-font)]">Preview Listing</span>
                                                                     </DropdownMenuItem>
-                                                                    <div className="h-px bg-gray-100 my-1" />
+                                                                    <DropdownMenuSeparator className="bg-black/5 mx-2 my-1" />
                                                                     {hasPermission('packages', 'edit') && (
                                                                         <DropdownMenuItem
-                                                                            className="glass-popover-item"
+                                                                            className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
                                                                             onClick={() => handleToggleStatus(pkg.id, pkg.status)}
                                                                         >
                                                                             {pkg.status.toLowerCase() === 'published' ? (
@@ -631,11 +634,11 @@ export default function AgentPackagesPage() {
                                                                             )}
                                                                         </DropdownMenuItem>
                                                                     )}
-                                                                    <div className="h-px bg-gray-100 my-1" />
+                                                                    <DropdownMenuSeparator className="bg-black/5 mx-2 my-1" />
                                                                     {hasPermission('packages', 'full') && (
                                                                         <>
                                                                             <DropdownMenuItem
-                                                                                className="glass-popover-item text-[var(--color-primary-font)] focus:text-[var(--color-primary-font)] font-semibold"
+                                                                                className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
                                                                                 onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
                                                                             >
                                                                                 <Archive className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
@@ -643,7 +646,7 @@ export default function AgentPackagesPage() {
                                                                             </DropdownMenuItem>
 
                                                                             <DropdownMenuItem
-                                                                                className="group/delete glass-popover-item text-red-600 focus:text-red-400"
+                                                                                className="gap-2 cursor-pointer py-2 px-3 text-red-600 focus:text-red-700 focus:bg-red-50/50 rounded-lg transition-all duration-200"
                                                                                 onClick={() => handleDeleteClick(pkg.id)}
                                                                             >
                                                                                 <Trash2 className="mr-2 h-4 w-4 text-gray-400 group-hover/delete:text-red-500 transition-colors" />
@@ -689,7 +692,10 @@ export default function AgentPackagesPage() {
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-52 !bg-white/40 backdrop-blur-2xl border border-white/50 shadow-[0_25px_60px_rgba(0,0,0,0.25)] rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-200"
+                                                    >
                                                         {hasPermission('packages', 'edit') && (
                                                             <DropdownMenuItem onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}>
                                                                 Edit

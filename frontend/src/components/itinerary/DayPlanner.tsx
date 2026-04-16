@@ -122,12 +122,12 @@ export function DayPlanner({
 
         // Enhanced Color themes
         const themeMap = {
-            morning: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-amber-600', iconBg: 'bg-gradient-to-br from-[#F59E0B] to-[#FCD34D]', iconColor: 'text-white' },
-            afternoon: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-[var(--itinerary-primary,var(--primary))]', iconBg: 'bg-gradient-to-br from-[var(--itinerary-primary,var(--primary))] to-[var(--itinerary-secondary,var(--primary))]', iconColor: 'text-white' },
-            evening: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-orange-600', iconBg: 'bg-gradient-to-br from-[#E11D48] to-[#FB7185]', iconColor: 'text-white' },
-            night: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-black/20', iconBg: 'bg-gradient-to-br from-[#451A03] to-[#92400E]', iconColor: 'text-white' },
-            half_day: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-teal-200', iconBg: 'bg-teal-500', iconColor: 'text-white' },
-            full_day: { text: 'text-[var(--color-primary-font)]', bg: 'bg-white', border: 'border-blue-200', iconBg: 'bg-blue-500', iconColor: 'text-white' }
+            morning: { text: 'text-black', bg: 'bg-white', border: 'border-amber-600', iconBg: 'bg-gradient-to-br from-[#F59E0B] to-[#FCD34D]', iconColor: 'text-black' },
+            afternoon: { text: 'text-black', bg: 'bg-white', border: 'border-[var(--itinerary-primary,var(--primary))]', iconBg: 'bg-gradient-to-br from-[var(--itinerary-primary,var(--primary))] to-[var(--itinerary-secondary,var(--primary))]', iconColor: 'text-black' },
+            evening: { text: 'text-black', bg: 'bg-white', border: 'border-orange-600', iconBg: 'bg-gradient-to-br from-[#E11D48] to-[#FB7185]', iconColor: 'text-black' },
+            night: { text: 'text-black', bg: 'bg-white', border: 'border-black/20', iconBg: 'bg-gradient-to-br from-[#451A03] to-[#92400E]', iconColor: 'text-black' },
+            half_day: { text: 'text-black', bg: 'bg-white', border: 'border-teal-200', iconBg: 'bg-teal-500', iconColor: 'text-black' },
+            full_day: { text: 'text-black', bg: 'bg-white', border: 'border-blue-200', iconBg: 'bg-blue-500', iconColor: 'text-black' }
         }
 
         const theme = themeMap[timeSlot]
@@ -158,18 +158,18 @@ export function DayPlanner({
                     <div className="absolute -left-1 w-2.5 h-2.5 rounded-full bg-[var(--itinerary-primary,var(--primary))] hidden md:block" />
                 </div>
 
-                {/* Frosted Time-Strip Header */}
+                {/* Frosted Time-Strip Header - 3D Glassy */}
                 <div className="flex items-center gap-4 mb-8 translate-x-1 md:translate-x-2">
                     <div className={cn(
-                        "flex items-center gap-4 bg-white/20 backdrop-blur-md border border-white/30 px-6 py-2.5 rounded-[1rem] shadow-sm",
+                        "flex items-center gap-4 bg-white/40 backdrop-blur-xl border border-white/40 px-6 py-2.5 rounded-[1.25rem] shadow-sm",
                         cardStyle === 'minimal' && "bg-white/80 border-black/5",
                         cardStyle === 'classic' && "bg-black/5 border-black/10 shadow-none"
                     )}>
-                        <h4 className={cn("font-display text-xl md:text-2xl italic font-bold", theme.text)}>
+                        <h4 className={cn("font-display text-xl md:text-2xl font-bold tracking-tight", theme.text)}>
                             {label}
                         </h4>
                         <div className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full border border-[var(--itinerary-primary,var(--primary-glow))]">
-                            <span className="text-[var(--color-primary-font)] font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
+                            <span className="text-black font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
                                 {timeRange}
                             </span>
                         </div>
@@ -186,7 +186,7 @@ export function DayPlanner({
                                 key={index}
                                 className={cn(
                                     "group/card relative overflow-hidden transition-all duration-500 cursor-pointer ml-1",
-                                    cardStyle === 'glassy' ? "rounded-[2.5rem] border border-[var(--itinerary-primary,var(--primary))]/20 bg-white/60 backdrop-blur-[16px] shadow-[0_8px_24px_rgba(180,80,20,0.1)] hover:shadow-[0_20px_50px_rgba(200,80,20,0.18)] hover:-translate-y-2" :
+                                    cardStyle === 'glassy' ? "rounded-[2.5rem] border border-white/40 bg-white/40 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] hover:-translate-y-2" :
                                         cardStyle === 'minimal' ? "rounded-xl border border-black/5 bg-white shadow-sm hover:shadow-md hover:border-black/10" :
                                             cardStyle === 'rounded' ? "rounded-3xl border border-black/10 bg-white shadow-md hover:shadow-lg" :
                                                 "rounded-lg border border-black/10 bg-black/5 shadow-none hover:bg-white" // classic
@@ -213,8 +213,8 @@ export function DayPlanner({
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
 
                                                 {images.length > 1 && (
-                                                    <div className="absolute bottom-3 right-3 bg-white/20 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-md flex items-center gap-1 border border-white/30">
-                                                        <ImageIcon className="h-3 w-3" />
+                                                    <div className="absolute bottom-3 right-3 bg-white/40 text-black text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-md flex items-center gap-1 border border-white/40 shadow-sm">
+                                                        <ImageIcon className="h-3 w-3" stroke="black" />
                                                         <span>+{images.length - 1}</span>
                                                     </div>
                                                 )}
@@ -235,7 +235,7 @@ export function DayPlanner({
                                                     ✨ Experience
                                                 </div>
 
-                                                <h5 className="font-display text-lg md:text-xl text-[var(--color-primary-font)] leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-words">
+                                                <h5 className="font-display text-lg md:text-xl text-black leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-words">
                                                     {activity.title}
                                                 </h5>
                                                 {(activity.start_time || activity.end_time) && (
@@ -247,7 +247,7 @@ export function DayPlanner({
                                             </div>
                                         </div>
 
-                                        <p className="text-black mt-1 line-clamp-2 text-[11px] leading-relaxed font-light opacity-80 mb-auto">
+                                        <p className="text-black mt-1 line-clamp-2 text-[11px] leading-relaxed font-bold mb-auto">
                                             {activity.description.replace(/<[^>]*>/g, '').substring(0, 100)}...
                                         </p>
 
@@ -294,32 +294,35 @@ export function DayPlanner({
 
     return (
         <div className="relative group/main">
-            {/* Main Glass Container */}
-            <div className="bg-[var(--primary-soft)]/35 backdrop-blur-[20px] rounded-[2rem] border border-[var(--primary)]/30 shadow-[inset_0_1px_0_rgba(255,220,160,0.5),0_20px_60px_rgba(200,80,20,0.12)] overflow-hidden transition-all duration-500">
+            {/* Main 3D Glassy Container */}
+            <div className="bg-white/40 backdrop-blur-[24px] rounded-[3rem] border border-white/40 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] overflow-hidden transition-all duration-500 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] relative">
+                {/* Background Depth Glow */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+
                 {/* Header */}
-                <div className="px-8 py-10 border-b border-[var(--primary)]/20 flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
-                    <div className="flex items-center gap-8">
-                        {/* Pulsing Day Badge */}
+                <div className="px-8 py-12 border-b border-white/20 flex flex-col md:flex-row md:items-center justify-between gap-8 relative">
+                    <div className="flex items-center gap-8 md:gap-10">
+                        {/* 3D Circular Day Badge */}
                         <div className="relative shrink-0">
                             {/* Outer pulsing ring */}
-                            <div className="absolute inset-[-8px] rounded-full bg-[var(--primary)]/10 animate-pulse" />
+                            <div className="absolute inset-[-12px] rounded-full bg-blue-500/10 animate-pulse" />
 
-                            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#C2440A] text-white flex flex-col items-center justify-center shadow-[0_12px_30px_var(--primary-glow)] relative z-10 border-4 border-white">
-                                <span className="text-[9px] font-bold opacity-90 uppercase tracking-[0.2em] mb-0.5 mt-1">Day</span>
+                            <div className="h-24 w-24 rounded-full bg-blue-600 text-white flex flex-col items-center justify-center shadow-[0_20px_40px_rgba(37,99,235,0.3)] relative z-10 border-4 border-white ring-[12px] ring-blue-500/10 transition-transform duration-500 hover:scale-105">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 mt-1">Day</span>
                                 <span className="text-4xl leading-none font-display font-black">{day.day_number}</span>
                             </div>
                         </div>
 
                         <div className="relative group">
-                            {/* Decorative left accent bar */}
-                            <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-gradient-to-b from-[var(--primary)] to-[#C2440A] rounded-full hidden md:block" />
+                            {/* Decorative accent */}
+                            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-blue-600 rounded-full hidden md:block" />
 
-                            <h3 className="font-display text-4xl leading-none">
-                                <span className="text-black font-bold">Destination</span>{' '}
-                                <span className="text-[var(--primary)] italic font-medium">Highlights</span>
+                            <h3 className="font-display text-4xl md:text-5xl leading-none tracking-tight">
+                                <span className="text-black font-extrabold">Destination</span>{' '}
+                                <span className="text-blue-600 italic font-medium">Highlights</span>
                             </h3>
 
-                            <div className="flex flex-wrap items-center gap-3 mt-4">
+                            <div className="flex flex-wrap items-center gap-4 mt-5">
                                 <span className="flex items-center gap-2 bg-[var(--primary)]/10 px-4 py-1.5 rounded-full border border-[var(--primary)]/30 transition-all hover:bg-[var(--primary)]/20">
                                     <div className="w-2 h-2 rounded-full bg-[var(--primary)]" />
                                     <span className="font-bold text-[var(--primary)] text-[10px] uppercase tracking-widest">{totalActivities} Experiences</span>
@@ -436,7 +439,7 @@ export function DayPlanner({
                                                                     className="object-cover"
                                                                     unoptimized
                                                                 />
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90 pointer-events-none" />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                                                             </div>
                                                         </CarouselItem>
                                                     ))}
@@ -489,11 +492,11 @@ export function DayPlanner({
                                 {/* Content */}
                                 <div className="p-8 md:p-10 space-y-6 bg-[var(--primary-soft)]/30 backdrop-blur-xl flex-1">
                                     <div className="space-y-6">
-                                        <h3 className="font-bold text-2xl text-[var(--color-primary-font)] flex items-center gap-3">
+                                        <h3 className="font-bold text-2xl text-black flex items-center gap-3">
                                             <div className="h-8 w-1.5 bg-[var(--primary)] rounded-full"></div>
                                             About this activity
                                         </h3>
-                                        <div className="text-[var(--color-primary-font)] leading-relaxed text-lg whitespace-pre-wrap">
+                                        <div className="text-black leading-relaxed text-lg whitespace-pre-wrap font-medium">
                                             {selectedActivity.description}
                                         </div>
                                     </div>

@@ -35,8 +35,11 @@ export default function AgentLayout({
 
                         <div
                             className="flex-1 flex flex-col min-w-0 min-h-[100vh] w-full transition-all duration-300 ease-in-out max-lg:!ml-0 overflow-hidden"
-                        style={{ marginLeft: isSidebarCollapsed ? '70px' : '260px' }}
-                    >
+                            style={{ 
+                                marginLeft: isSidebarCollapsed ? '70px' : '260px',
+                                '--sidebar-width': isSidebarCollapsed ? '70px' : '260px'
+                            } as React.CSSProperties}
+                        >
                         {/* Header */}
                         <div
                             className="z-50 transition-all duration-300 ease-in-out w-full"

@@ -18,7 +18,7 @@ interface ThemeContextType {
     publicSettings: any;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({
     children,
@@ -62,7 +62,10 @@ export function ThemeProvider({
         if (s.navbarSettings?.textColor) root.style.setProperty('--navbar-text', s.navbarSettings.textColor);
         
         if (s.buttonStyle?.bgColor) root.style.setProperty('--button-bg', s.buttonStyle.bgColor);
-        if (s.buttonStyle?.textColor) root.style.setProperty('--button-text', s.buttonStyle.textColor);
+        if (s.buttonStyle?.textColor) {
+            root.style.setProperty('--button-text', s.buttonStyle.textColor);
+            root.style.setProperty('--button-text-color', s.buttonStyle.textColor);
+        }
         if (s.buttonStyle?.borderRadius) root.style.setProperty('--button-radius', s.buttonStyle.borderRadius);
 
         if (s.bg_color) root.style.setProperty('--page-bg', s.bg_color);

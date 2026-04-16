@@ -47,7 +47,7 @@ export function DestinationSearch({ onDestinationSelected, loading }: Destinatio
                     <MapPin className="h-5 w-5" />
                     Choose Your Destination
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-black font-semibold">
                     Search for a city or destination to start planning your itinerary
                 </CardDescription>
             </CardHeader>

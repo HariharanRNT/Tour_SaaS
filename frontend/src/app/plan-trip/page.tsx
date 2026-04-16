@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
+import { useState, useEffect, useRef, Suspense, useMemo, useContext } from 'react'
+import { ThemeContext } from '@/context/ThemeContext'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
@@ -66,6 +67,8 @@ export default function PlanTripPage() {
 function PlanTripContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { publicSettings } = useContext(ThemeContext) || {}
+    const hpSettings = publicSettings?.homepage_settings || {}
 
     // Helper to parse and format tags (trip styles, activities) from various data formats
     const parsePackageTags = (tags: string | string[] | undefined | null): string[] => {
@@ -133,6 +136,10 @@ function PlanTripContent() {
 
     // Cycle placeholders
     useEffect(() => {
+        if (hpSettings?.plan_trip_search_placeholder) {
+            setPlaceholderText(hpSettings.plan_trip_search_placeholder);
+            return;
+        }
         const placeholders = ['Try Chennai...', 'Try Kochi...', 'Try Manali...', 'Search an experience you love...']
         let i = 0
         const interval = setInterval(() => {
@@ -140,12 +147,13 @@ function PlanTripContent() {
             setPlaceholderText(placeholders[i])
         }, 2500)
         return () => clearInterval(interval)
-    }, [])
+    }, [hpSettings?.plan_trip_search_placeholder])
 
     // Read destination and style from URL (handles navigation changes)
     useEffect(() => {
         const dest = searchParams.get('destination')
         const style = searchParams.get('trip_style')
+        const pkgId = searchParams.get('packageId')
         const searchAll = searchParams.get('search') === 'all'
 
         if (dest) {
@@ -159,7 +167,7 @@ function PlanTripContent() {
             setHasSearched(true)
         }
 
-        if (searchAll) {
+        if (searchAll || pkgId) {
             setHasSearched(true)
         }
     }, [searchParams])
@@ -183,7 +191,8 @@ function PlanTripContent() {
         const dest = searchParams.get('destination')
         const style = searchParams.get('trip_style')
         const searchQuery = searchParams.get('search')
-        return !!(dest || style || searchQuery)
+        const pkgId = searchParams.get('packageId')
+        return !!(dest || style || searchQuery || pkgId)
     })
 
     // Filter State — initialize from URL so first render is correct
@@ -403,7 +412,7 @@ function PlanTripContent() {
             setPage(1)
             setHasMore(true)
         }
-        
+
         setShowSuggestions(false)
         setHasSearched(true)
 
@@ -442,14 +451,14 @@ function PlanTripContent() {
             if (res.ok) {
                 const data = await res.json()
                 const newPackages = data.packages || []
-                
+
                 if (isLoadMore) {
                     setPackages(prev => [...prev, ...newPackages])
                     setPage(pageNum)
                 } else {
                     setPackages(newPackages)
                 }
-                
+
                 setTotalPackages(data.total)
                 // If we got fewer than requested, or we've reached the total, there's no more
                 setHasMore(newPackages.length === pageSize && (isLoadMore ? packages.length + newPackages.length : newPackages.length) < data.total)
@@ -541,26 +550,26 @@ function PlanTripContent() {
 
         if (searchQuery) {
             chips.push(
-                <Badge key="sq" variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key="sq" variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 text-[var(--pt-filter-text, black)] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default" style={{ background: 'var(--pt-filter-chip-active, #FFD6B9)' }}>
                     <span className="capitalize">{searchQuery}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('searchQuery')} />
+                    <X className="h-3 w-3 cursor-pointer hover:opacity-70 transition-colors" onClick={() => removeFilter('searchQuery')} />
                 </Badge>
             )
         }
 
         filters.trip_styles.forEach(ts => {
             chips.push(
-                <Badge key={`ts-${ts}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[#FFD6B9]/60 hover:bg-[#FFD6B9] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key={`ts-${ts}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 text-[var(--pt-filter-text, black)] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default" style={{ background: 'var(--pt-filter-chip-active, #FFD6B9)' }}>
                     <span>{ts}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('trip_styles', ts)} />
+                    <X className="h-3 w-3 cursor-pointer hover:opacity-70 transition-colors" onClick={() => removeFilter('trip_styles', ts)} />
                 </Badge>
             )
         })
         filters.activities.forEach(act => {
             chips.push(
-                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 bg-[var(--primary-soft)] text-black rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default">
+                <Badge key={`act-${act}`} variant="outline" className="px-4 py-1.5 flex items-center gap-2 border-0 text-[var(--pt-filter-text, black)] rounded-md font-bold text-[11px] shadow-sm transition-all cursor-default" style={{ background: 'var(--pt-filter-chip-inactive, var(--primary-soft))' }}>
                     <span>{act}</span>
-                    <X className="h-3 w-3 cursor-pointer hover:text-[var(--primary)] transition-colors" onClick={() => removeFilter('activities', act)} />
+                    <X className="h-3 w-3 cursor-pointer hover:opacity-70 transition-colors" onClick={() => removeFilter('activities', act)} />
                 </Badge>
             )
         })
@@ -588,14 +597,36 @@ function PlanTripContent() {
         const pkgId = searchParams.get('packageId')
         const openPopup = searchParams.get('openPopup') === 'true'
 
-        if (pkgId && openPopup && !autoOpenAttempted && packages.length > 0 && !searching) {
+        if (pkgId && openPopup && !autoOpenAttempted && !searching) {
+            // 1. Check if we already have it in search results
             const pkg = packages.find(p => p.id === pkgId)
             if (pkg) {
                 handleContinueToBook(pkg)
                 setAutoOpenAttempted(true)
+                return
+            }
+
+            // 2. If not found in current page of results, fetch specifically by ID
+            if (packages.length > 0 || totalPackages === 0) {
+                const fetchSpecificPackage = async () => {
+                   try {
+                       const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                       const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}`, {
+                           headers: { 'X-Domain': domain }
+                       });
+                       if (res.ok) {
+                           const data = await res.json();
+                           handleContinueToBook(data);
+                           setAutoOpenAttempted(true);
+                       }
+                   } catch (err) {
+                       console.error("Failed to fetch specific package for auto-open", err);
+                   }
+                };
+                fetchSpecificPackage();
             }
         }
-    }, [searchParams, packages, searching, autoOpenAttempted, handleContinueToBook])
+    }, [searchParams, packages, totalPackages, searching, autoOpenAttempted, handleContinueToBook])
 
     // Sub-components
     const FilterPanel = () => {
@@ -609,16 +640,16 @@ function PlanTripContent() {
         );
 
         return (
-            <div className="flex flex-col h-full relative w-full">
+            <div className="flex flex-col h-full relative w-full" style={{ color: 'var(--pt-filter-text, inherit)' }}>
                 <div className="px-6 pt-6 pb-8 space-y-6">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-[var(--color-primary-font)] flex items-center gap-2.5 text-[17px] font-display">
-                            <div className="bg-orange-50 p-2 rounded-xl shadow-inner border border-orange-100">
+                        <h3 className="font-bold flex items-center gap-2.5 text-[17px] font-display" style={{ color: 'var(--pt-filter-text, var(--color-primary-font))' }}>
+                            <div className="p-2 rounded-xl shadow-inner border border-white/20" style={{ background: 'var(--pt-filter-chip-inactive, rgba(0,0,0,0.05))' }}>
                                 <Filter className="h-4 w-4 text-[var(--primary)]" />
                             </div>
                             <span>Filters</span>
                             {activeFilterCount > 0 && (
-                                <span className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[10px] min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center font-black shadow-sm border border-white/20">
+                                <span className="text-white text-[10px] min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center font-black shadow-sm border border-white/20" style={{ background: 'var(--pt-filter-chip-active, var(--primary))' }}>
                                     {activeFilterCount}
                                 </span>
                             )}
@@ -628,8 +659,9 @@ function PlanTripContent() {
                             disabled={activeFilterCount === 0}
                             className={`flex items-center gap-1.5 text-[12px] font-bold transition-all uppercase tracking-wider
                                 ${activeFilterCount > 0
-                                    ? 'text-black hover:text-gray-700 cursor-pointer'
+                                    ? 'text-black hover:opacity-70 cursor-pointer'
                                     : 'text-gray-300 cursor-not-allowed opacity-60'}`}
+                            style={{ color: activeFilterCount > 0 ? 'var(--pt-filter-text, black)' : undefined }}
                         >
                             Reset <RotateCcw className="h-3.5 w-3.5" />
                         </button>
@@ -637,13 +669,14 @@ function PlanTripContent() {
 
                     {/* Package Type */}
                     <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-black uppercase tracking-widest border-b border-[var(--primary)]/50 pb-2 flex items-center gap-1.5">
-                            <span className="text-black">📦</span> PACKAGE TYPE
+                        <p className="text-[10px] font-bold uppercase tracking-widest pb-2 flex items-center gap-1.5" style={{ color: 'var(--pt-filter-text, black)', borderBottomColor: 'var(--pt-filter-chip-active, var(--primary))', borderBottomWidth: '1px' }}>
+                            <span>📦</span> PACKAGE TYPE
                         </p>
                         <div className="flex flex-col gap-2">
                             {['all', 'single', 'multi'].map(type => {
                                 const count = type === 'all' ? packages.length : packages.filter(p => p.package_mode === type).length;
                                 const isDisabled = count === 0 && type !== 'all';
+                                const isActive = filters.package_mode === type;
 
                                 return (
                                     <div
@@ -651,18 +684,23 @@ function PlanTripContent() {
                                         onClick={() => !isDisabled && setFilters(prev => ({ ...prev, package_mode: type }))}
                                         className={`
                                             py-2.5 px-4 rounded-xl text-[13px] font-bold cursor-pointer border transition-all duration-300 flex items-center justify-between group
-                                            ${filters.package_mode === type
-                                                ? 'bg-gradient-to-r from-[var(--primary)] to-[#FF8C00] border-transparent text-white shadow-md'
+                                            ${isActive
+                                                ? 'shadow-md'
                                                 : isDisabled
                                                     ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400'
-                                                    : 'bg-white/50 border-orange-100 text-black hover:border-[var(--primary)] hover:bg-white'}
+                                                    : 'hover:border-[var(--primary)]'}
                                         `}
+                                        style={{
+                                            background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)',
+                                            borderColor: isActive ? 'transparent' : 'rgba(0,0,0,0.1)',
+                                            color: isActive ? 'white' : 'var(--pt-filter-text, black)'
+                                        }}
                                     >
                                         <span className="flex items-center gap-2">
                                             {type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}
-                                            {!isDisabled && <span className={`text-[10px] ${filters.package_mode === type ? 'text-white/80' : 'text-[var(--color-primary-font)]/50'}`}>({count})</span>}
+                                            {!isDisabled && <span className={`text-[10px] ${isActive ? 'text-white/80' : 'opacity-50'}`}>({count})</span>}
                                         </span>
-                                        {filters.package_mode === type && <CheckCircle2 className="h-4 w-4 text-white" />}
+                                        {isActive && <CheckCircle2 className="h-4 w-4 text-white" />}
                                     </div>
                                 );
                             })}
@@ -670,9 +708,9 @@ function PlanTripContent() {
                     </div>
 
                     {/* Duration */}
-                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
-                        <p className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider flex justify-between items-center gap-1.5 mb-3">
-                            <span className="flex items-center gap-1.5"><span className="text-[#4F46E5]">⏱️</span> DURATION</span>
+                    <div className="space-y-4 pt-4 border-t" style={{ borderTopColor: 'rgba(0,0,0,0.1)' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wider flex justify-between items-center gap-1.5 mb-3" style={{ color: 'var(--pt-filter-text, black)' }}>
+                            <span className="flex items-center gap-1.5"><span>⏱️</span> DURATION</span>
                         </p>
 
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -690,9 +728,14 @@ function PlanTripContent() {
                                             setFilters(prev => ({ ...prev, duration_min: minLabel, duration_max: maxLabel }));
                                         }}
                                         className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border 
-                                            ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_0_12px_var(--primary-glow)]' :
+                                            ${isActive ? 'text-white shadow-lg' :
                                                 isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
-                                                    'border-white/40 bg-white/25 text-[var(--primary)] hover:bg-[var(--primary-soft)]'}`}
+                                                    'hover:opacity-80'}`}
+                                        style={{
+                                            background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)',
+                                            borderColor: isActive ? 'transparent' : 'rgba(0,0,0,0.1)',
+                                            color: isActive ? 'white' : 'var(--pt-filter-text, black)'
+                                        }}
                                     >
                                         {range} Days {count > 0 && <span className="text-[10px] opacity-60 ml-0.5">({count})</span>}
                                     </button>
@@ -700,158 +743,24 @@ function PlanTripContent() {
                             })}
                         </div>
 
-                        <div
-                            className="pt-2 px-2 flex flex-col gap-4 relative"
-                            style={{ touchAction: 'none' }}
-                            onPointerDown={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onTouchStart={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onMouseDown={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onPointerUp={() => setIsSliderDragging(false)}
-                            onPointerCancel={() => setIsSliderDragging(false)}
-                        >
-                            <div className="bg-[var(--primary)]/85 text-white text-[11px] font-bold rounded-full py-1 px-3 mx-auto shadow-[0_2px_8px_var(--primary-glow)] tracking-wide w-max">
+                        <div className="pt-2 px-2 flex flex-col gap-4 relative" style={{ touchAction: 'none' }}>
+                            <div className="text-white text-[11px] font-bold rounded-full py-1 px-3 mx-auto shadow-md tracking-wide w-max" style={{ background: 'var(--pt-filter-chip-active, var(--primary))' }}>
                                 {filters.duration_min} - {filters.duration_max} Days
                             </div>
                             <Slider
                                 value={[filters.duration_min, filters.duration_max]}
-                                min={1}
-                                max={30}
-                                step={1}
+                                min={1} max={30} step={1}
                                 onValueChange={(vals) => setFilters(prev => ({ ...prev, duration_min: vals[0], duration_max: vals[1] }))}
                             />
-                            
-                            {/* Manual Duration Inputs */}
-                            <div className="flex items-center gap-3 mt-2">
-                                <div className="flex-1 relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">MIN</span>
-                                    <Input 
-                                        type="number" 
-                                        min={1} 
-                                        max={filters.duration_max}
-                                        value={filters.duration_min} 
-                                        onChange={(e) => {
-                                            const val = Math.max(1, Math.min(filters.duration_max, parseInt(e.target.value) || 1));
-                                            setFilters(prev => ({ ...prev, duration_min: val }));
-                                        }}
-                                        className="h-9 pl-10 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
-                                    />
-                                </div>
-                                <div className="flex-1 relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">MAX</span>
-                                    <Input 
-                                        type="number" 
-                                        min={filters.duration_min} 
-                                        max={30}
-                                        value={filters.duration_max} 
-                                        onChange={(e) => {
-                                            const val = Math.max(filters.duration_min, Math.min(30, parseInt(e.target.value) || 30));
-                                            setFilters(prev => ({ ...prev, duration_max: val }));
-                                        }}
-                                        className="h-9 pl-10 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Budget */}
-                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30">
-                        <p className="text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="text-[#10B981]">💰</span> BUDGET (PER PERSON)
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                            {[
-                                { label: 'Under ₹5K', min: 0, max: 5000 },
-                                { label: '₹5K–₹20K', min: 5000, max: 20000 },
-                                { label: '₹20K–₹50K', min: 20000, max: 50000 },
-                                { label: '₹50K+', min: 50000, max: 500000 }
-                            ].map(range => {
-                                const isActive = filters.price_min === range.min && filters.price_max === range.max;
-                                const count = packages.filter(p => p.price_per_person >= range.min && p.price_per_person <= range.max).length;
-                                const isDisabled = count === 0;
-
-                                return (
-                                    <button
-                                        key={range.label}
-                                        disabled={isDisabled}
-                                        onClick={() => setFilters(prev => ({ ...prev, price_min: range.min, price_max: range.max }))}
-                                        className={`px-3 py-2 h-[36px] rounded-full text-[11px] font-bold transition-all border 
-                                            ${isActive ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-[0_4px_12px_var(--primary-glow)]' :
-                                                isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
-                                                    'border-white/40 bg-white/25 text-[var(--color-primary-font)]/80 hover:bg-[#FFD6B9]/50'}`}
-                                    >
-                                        {range.label} {count > 0 && <span className="opacity-50 text-[9px]">({count})</span>}
-                                    </button>
-                                )
-                            })}
-                        </div>
-
-                        <div
-                            className="pt-2 px-1 flex flex-col gap-6 relative"
-                            style={{ touchAction: 'none' }}
-                            onPointerDown={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onTouchStart={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onMouseDown={(e) => { e.stopPropagation(); setIsSliderDragging(true); }}
-                            onPointerUp={() => setIsSliderDragging(false)}
-                            onPointerCancel={() => setIsSliderDragging(false)}
-                        >
-                            <div className="bg-gradient-to-br from-[var(--primary)] to-[#FF8C00] text-white text-[11px] font-black rounded-xl py-2 px-4 mx-auto shadow-lg tracking-wider w-max border border-white/30 mb-2">
-                                ₹{filters.price_min.toLocaleString('en-IN')} — ₹{filters.price_max.toLocaleString('en-IN')}
-                            </div>
-                            <Slider
-                                value={[filters.price_min, filters.price_max]}
-                                min={0}
-                                max={500000}
-                                step={5000}
-                                onValueChange={(vals) => setFilters(prev => ({ ...prev, price_min: vals[0], price_max: vals[1] }))}
-                            />
-
-                            {/* Manual Budget Inputs */}
-                            <div className="flex items-center gap-3 mt-2">
-                                <div className="flex-1 relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">₹ MIN</span>
-                                    <Input 
-                                        type="number" 
-                                        min={0} 
-                                        max={filters.price_max}
-                                        step={1000}
-                                        value={filters.price_min} 
-                                        onChange={(e) => {
-                                            const val = Math.max(0, Math.min(filters.price_max, parseInt(e.target.value) || 0));
-                                            setFilters(prev => ({ ...prev, price_min: val }));
-                                        }}
-                                        className="h-9 pl-12 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
-                                    />
-                                </div>
-                                <div className="flex-1 relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">₹ MAX</span>
-                                    <Input 
-                                        type="number" 
-                                        min={filters.price_min} 
-                                        max={500000}
-                                        step={1000}
-                                        value={filters.price_max} 
-                                        onChange={(e) => {
-                                            const val = Math.max(filters.price_min, Math.min(500000, parseInt(e.target.value) || 500000));
-                                            setFilters(prev => ({ ...prev, price_max: val }));
-                                        }}
-                                        className="h-9 pl-12 pr-2 text-xs font-bold border-orange-100 bg-white/50 focus:bg-white transition-all rounded-lg"
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     {/* Trip Style */}
-                    <div className="pt-4 border-t border-[var(--primary)]/30">
-                        <div
-                            className="flex justify-between items-center cursor-pointer group"
-                            onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}
-                        >
-                            <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
-                                <span className="text-pink-400 text-sm drop-shadow-sm">🌺</span> TRIP STYLE
-                                {filters.trip_styles.length > 0 && <span className="bg-orange-100 text-black text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.trip_styles.length})</span>}
+                    <div className="pt-4 border-t" style={{ borderTopColor: 'rgba(0,0,0,0.1)' }}>
+                        <div className="flex justify-between items-center cursor-pointer group" onClick={() => setIsTripStyleOpen(!isTripStyleOpen)}>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:opacity-70 transition-colors" style={{ color: 'var(--pt-filter-text, black)' }}>
+                                <span>🌺</span> TRIP STYLE
+                                {filters.trip_styles.length > 0 && <span className="text-white text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm" style={{ background: 'var(--pt-filter-chip-active, var(--primary))' }}>({filters.trip_styles.length})</span>}
                             </p>
                             <ChevronDown className={`h-4 w-4 text-black/50 transition-transform duration-500 ${isTripStyleOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -861,6 +770,7 @@ function PlanTripContent() {
                                     {TRIP_STYLES.map(style => {
                                         const count = facets.styleCounts[style] || 0;
                                         const isDisabled = count === 0 && !filters.trip_styles.includes(style);
+                                        const isActive = filters.trip_styles.includes(style);
 
                                         return (
                                             <div
@@ -868,10 +778,10 @@ function PlanTripContent() {
                                                 className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                                                 onClick={() => !isDisabled && toggleFilterArray('trip_styles', style)}
                                             >
-                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.trip_styles.includes(style) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
-                                                    {filters.trip_styles.includes(style) && <Check className="h-3 w-3 text-white" />}
+                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${isActive ? 'border-transparent' : 'border-black/10'}`} style={{ background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)' }}>
+                                                    {isActive && <Check className="h-3 w-3 text-white" />}
                                                 </div>
-                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.trip_styles.includes(style) ? 'text-[var(--primary)]' : 'text-[var(--color-primary-font)]/80'}`}>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2`} style={{ color: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-text, black)' }}>
                                                     {style}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>
@@ -879,20 +789,16 @@ function PlanTripContent() {
                                         );
                                     })}
                                 </div>
-
                             </div>
                         )}
                     </div>
 
                     {/* Activities */}
-                    <div className="pt-4 border-t border-[var(--primary)]/30">
-                        <div
-                            className="flex justify-between items-center cursor-pointer group"
-                            onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-                        >
-                            <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:text-[var(--primary)] transition-colors">
-                                <span className="text-blue-500 text-sm drop-shadow-sm">🏄</span> ACTIVITIES
-                                {filters.activities.length > 0 && <span className="bg-orange-100 text-black text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm border border-[var(--primary)]/50">({filters.activities.length})</span>}
+                    <div className="pt-4 border-t" style={{ borderTopColor: 'rgba(0,0,0,0.1)' }}>
+                        <div className="flex justify-between items-center cursor-pointer group" onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 group-hover:opacity-70 transition-colors" style={{ color: 'var(--pt-filter-text, black)' }}>
+                                <span>🏄</span> ACTIVITIES
+                                {filters.activities.length > 0 && <span className="text-white text-[9px] px-1.5 py-0.5 rounded-md font-black shadow-sm" style={{ background: 'var(--pt-filter-chip-active, var(--primary))' }}>({filters.activities.length})</span>}
                             </p>
                             <ChevronDown className={`h-4 w-4 text-black/50 transition-transform duration-500 ${isActivitiesOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -902,6 +808,7 @@ function PlanTripContent() {
                                     {ACTIVITIES.map(act => {
                                         const count = facets.activityCounts[act] || 0;
                                         const isDisabled = count === 0 && !filters.activities.includes(act);
+                                        const isActive = filters.activities.includes(act);
 
                                         return (
                                             <div
@@ -909,10 +816,10 @@ function PlanTripContent() {
                                                 className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                                                 onClick={() => !isDisabled && toggleFilterArray('activities', act)}
                                             >
-                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${filters.activities.includes(act) ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-white/50 border-[var(--primary)]'}`}>
-                                                    {filters.activities.includes(act) && <Check className="h-3 w-3 text-white" />}
+                                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${isActive ? 'border-transparent' : 'border-black/10'}`} style={{ background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)' }}>
+                                                    {isActive && <Check className="h-3 w-3 text-white" />}
                                                 </div>
-                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2 ${filters.activities.includes(act) ? 'text-[var(--primary)]' : 'text-[var(--color-primary-font)]/80'}`}>
+                                                <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2`} style={{ color: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-text, black)' }}>
                                                     {act}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>
@@ -920,38 +827,8 @@ function PlanTripContent() {
                                         );
                                     })}
                                 </div>
-
                             </div>
                         )}
-                    </div>
-
-                    {/* Country */}
-                    <div className="space-y-4 pt-4 border-t border-[var(--primary)]/30 pb-4">
-                        <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
-                            <span className="text-cyan-500 text-sm drop-shadow-sm">🌍</span> COUNTRY
-                        </p>
-                        <div className="flex overflow-x-auto gap-2.5 pb-2 scrollbar-hide -mx-2 px-2 snap-x">
-                            {AVAILABLE_COUNTRIES.map(c => {
-                                const count = facets.countryCounts[c] || 0;
-                                const isDisabled = count === 0 && !filters.countries.includes(c);
-
-                                return (
-                                    <Badge
-                                        key={c}
-                                        variant={filters.countries.includes(c) ? "default" : "outline"}
-                                        className={`cursor-pointer px-4 py-2 rounded-xl transition-all border snap-start whitespace-nowrap text-xs
-                                            ${filters.countries.includes(c)
-                                                ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-[0_4px_12px_var(--primary-glow)]'
-                                                : isDisabled
-                                                    ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed pointer-events-none'
-                                                    : 'bg-white/60 border-orange-100/50 text-[#8B5030] hover:bg-white hover:border-[var(--primary)]'}`}
-                                        onClick={() => !isDisabled && toggleFilterArray('countries', c)}
-                                    >
-                                        {c} {count > 0 && <span className="opacity-50 text-[10px] ml-1">({count})</span>}
-                                    </Badge>
-                                );
-                            })}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -965,10 +842,17 @@ function PlanTripContent() {
 
     // Reusable Search Bar
     const renderSearchBar = (isCompact: boolean) => (
-        <div className={`relative flex items-center shadow-[0_8px_32px_var(--primary-glow)] bg-white/95 backdrop-blur-lg rounded-full overflow-visible ${isCompact ? 'p-1 pl-4 mx-auto w-full max-w-4xl' : 'p-2 pl-6'}`}>
-            <Search className={`text-blue-500 ${isCompact ? 'h-5 w-5' : 'h-6 w-6'} mr-2`} />
+        <div
+            className={`relative flex items-center shadow-lg backdrop-blur-lg rounded-full overflow-visible ${isCompact ? 'p-1 pl-4 mx-auto w-full max-w-4xl' : 'p-2 pl-6'}`}
+            style={{
+                background: 'var(--pt-search-bg, rgba(255, 255, 255, 0.95))',
+                border: '1px solid var(--pt-search-border, rgba(0,0,0,0.05))',
+                boxShadow: '0 8px 32px var(--primary-glow)'
+            }}
+        >
+            <Search className={`text-[var(--primary)] ${isCompact ? 'h-5 w-5' : 'h-6 w-6'} mr-2`} />
             <Input
-                placeholder="Search destination, package, or activity..."
+                placeholder={hpSettings?.plan_trip_search_placeholder || "Search destination, package, or activity..."}
                 value={inputValue}
                 onChange={(e) => {
                     setInputValue(e.target.value)
@@ -978,11 +862,16 @@ function PlanTripContent() {
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSearchSubmit()
                 }}
-                className={`border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none font-bold text-[#3A1A08] bg-transparent flex-1 placeholder:text-black/40 placeholder:font-medium ${isCompact ? 'h-10 text-sm pl-1' : 'h-14 text-lg pl-2'}`}
+                className={`border-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none font-bold text-[var(--pt-filter-text, #3A1A08)] bg-transparent flex-1 placeholder:text-black/40 placeholder:font-medium ${isCompact ? 'h-10 text-sm pl-1' : 'h-14 text-lg pl-2'}`}
             />
             <Button
                 onClick={() => handleSearchSubmit()}
-                className={`rounded-full text-white font-bold transition-all shadow-sm ${isCompact ? 'h-10 px-8 text-sm bg-[#2563EB] hover:bg-blue-700 ml-2 rounded-[20px]' : 'h-12 px-8 text-md bg-[#2563EB] hover:bg-blue-700 shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-lg mt-4 md:mt-0 md:ml-4 w-full md:w-auto'}`}
+                className={`rounded-full font-bold transition-all shadow-sm ${isCompact ? 'h-10 px-8 text-sm  ml-2 rounded-[20px]' : 'h-12 px-8 text-md mt-4 md:mt-0 md:ml-4 w-full md:w-auto'}`}
+                style={{
+                    background: 'var(--pt-search-btn-bg, var(--primary))',
+                    color: 'var(--pt-search-btn-text, white)',
+                    boxShadow: '0 4px 15px var(--primary-glow)'
+                }}
             >
                 Search
             </Button>
@@ -1320,9 +1209,9 @@ function PlanTripContent() {
                         <div className="relative -mx-4 px-4 py-8 bg-white/30 backdrop-blur-sm rounded-t-[48px] border-t border-orange-100">
                             <div className="flex flex-col md:flex-row gap-8">
 
-                                {/* Desktop Sidebar Filter */}
                                 <div className="hidden md:block w-[280px] shrink-0">
-                                    <div className="glass-filter-panel shadow-[0_8px_32px_var(--primary-glow)] bg-white/50 backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl">
+                                    <div className="shadow-lg backdrop-blur-xl sticky top-24 flex flex-col z-10 border border-white/40 rounded-3xl overflow-hidden"
+                                        style={{ background: 'var(--pt-filter-bg, rgba(255, 255, 255, 0.5))', boxShadow: '0 8px 32px var(--primary-glow)' }}>
                                         <FilterPanel />
                                     </div>
                                 </div>
@@ -1335,23 +1224,17 @@ function PlanTripContent() {
                                     </div>
                                     {/* Context Header & Mobile Filter Trigger */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                                        <div className="bg-[#FFE4CC]/20 backdrop-blur-md rounded-2xl h-[90px] pt-4 px-6 border border-white/20 shadow-[0_4px_24px_var(--primary-glow)] flex-1 flex flex-col justify-center relative overflow-hidden">
-                                            {/* faint texture overlay */}
-                                            <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
-
+                                        <div className="backdrop-blur-md rounded-2xl h-[90px] pt-4 px-6 border border-white/20 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden"
+                                            style={{ background: 'var(--pt-results-bg, rgba(255, 228, 204, 0.2))' }}>
                                             <div className="flex items-center gap-4 relative z-10">
                                                 <div className="bg-white/60 p-2.5 rounded-xl shadow-sm">
-                                                    <Search className="h-5 w-5 text-indigo-500 stroke-[2.5]" />
+                                                    <Search className="h-5 w-5 text-[var(--primary)] stroke-[2.5]" />
                                                 </div>
                                                 <div className="flex items-baseline gap-3">
-                                                    <h2 className="text-2xl md:text-3xl tracking-tight font-bold text-[var(--color-primary-font)] font-display capitalize">
-                                                        {searching ? 'Searching...' : (searchQuery || 'All Destinations')}
+                                                    <h2 className="text-2xl md:text-3xl tracking-tight font-bold font-display capitalize" style={{ color: 'var(--pt-results-text, var(--color-primary-font))' }}>
+                                                        {searching ? 'Searching...' : (searchQuery || hpSettings?.plan_trip_page_title || 'All Destinations')}
                                                     </h2>
-                                                    {!searching && (
-                                                        <span className="text-[13px] font-bold text-black/60 uppercase tracking-widest border-l border-[var(--primary)]/50 pl-3">
-                                                            {packages.length} {packages.length === 1 ? 'Result' : 'Results'} Found
-                                                        </span>
-                                                    )}
+
                                                 </div>
                                             </div>
                                         </div>
@@ -1379,8 +1262,8 @@ function PlanTripContent() {
 
                                             {/* Sort Dropdown */}
                                             <Select value={sort} onValueChange={setSort}>
-                                                <SelectTrigger className="w-[200px] h-14 bg-white/70 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold text-black">
-                                                    <span className="text-[10px] text-black mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
+                                                <SelectTrigger className="w-[200px] h-14 backdrop-blur-md border border-white/40 shadow-sm rounded-full px-5 text-sm font-bold" style={{ background: 'var(--pt-sort-bg, white)', color: 'var(--pt-sort-text, black)' }}>
+                                                    <span className="text-[10px] mr-2 uppercase tracking-widest opacity-80 font-bold">Sort:</span>
                                                     <SelectValue placeholder="Recommended" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-xl border-white/50 bg-white/95 backdrop-blur-md shadow-[0_8px_32px_var(--primary-glow)]">
@@ -1413,7 +1296,9 @@ function PlanTripContent() {
                                                         <MapPin className="absolute -top-2 -right-2 h-5 w-5 text-indigo-400" />
                                                     </div>
                                                 </div>
-                                                <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4 font-display">No hidden gems found</h3>
+                                                <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4 font-display">
+                                                    {hpSettings?.plan_trip_empty_state_message || "No hidden gems found"}
+                                                </h3>
                                                 <p className="text-[var(--color-primary-font)]/80 max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
                                                     We couldn&apos;t find any packages matching your current filters. Try broadening your search!
                                                 </p>
@@ -1429,166 +1314,123 @@ function PlanTripContent() {
                                     ) : (
                                         <div className="space-y-12">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] items-stretch grid-auto-rows-[1fr]">
-                                                {packages.map((pkg, idx) => (
-                                                    <motion.div
-                                                        key={pkg.id}
-                                                        initial={{ opacity: 0, y: 20 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        transition={{ duration: 0.5, delay: idx % 9 * 0.1 }}
-                                                        className="glass-pkg-card group flex flex-col h-full relative overflow-hidden"
-                                                    >
-                                                        <div className="flex flex-col flex-1 h-full p-2 overflow-hidden rounded-2xl">
-                                                            {/* Image Header */}
-                                                            <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
-
-                                                                {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
-                                                                    <>
-                                                                        <img
-                                                                            src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
-                                                                            alt={pkg.title}
-                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                                        />
-                                                                        <div className="absolute inset-0 bg-gradient-to-t from-[#2a1106]/80 via-transparent to-transparent opacity-80" />
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="absolute inset-0 bg-gradient-to-br from-[#FFD4A8]/40 to-[var(--primary)]/40 flex items-center justify-center p-6 text-center z-0">
-                                                                        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/topography.png')] mix-blend-overlay"></div>
-                                                                        {/* Fallback real-world image based on destination if available */}
-                                                                        <img
-                                                                            src={`https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=1200`}
-                                                                            alt="Destination fallback"
-                                                                            className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
-                                                                        />
-                                                                        <div className="relative z-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                                                                            <div className="text-white font-black text-xl mb-1.5 drop-shadow-md font-display leading-tight uppercase tracking-tight">
-                                                                                {pkg.package_mode === 'multi' && pkg.destinations?.length > 0
-                                                                                    ? pkg.destinations.length > 1
-                                                                                        ? `${pkg.destinations[0].city} → ${pkg.destinations[pkg.destinations.length - 1].city}`
-                                                                                        : pkg.destinations[0].city
-                                                                                    : pkg.destination}
-                                                                            </div>
-                                                                            {pkg.package_mode !== 'multi' && (
-                                                                                <div className="text-orange-50 font-black tracking-[0.14em] text-[10px] flex items-center justify-center gap-1.5 uppercase drop-shadow-sm opacity-90">
-                                                                                    📍 {pkg.country || 'Destination'}
-                                                                                </div>
-                                                                            )}
+                                                {packages.map((pkg, idx) => {
+                                                    const cardStyle = hpSettings?.plan_trip_card_options?.style || 'glass';
+                                                    return (
+                                                        <motion.div
+                                                            key={pkg.id}
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ duration: 0.5, delay: idx % 9 * 0.1 }}
+                                                            className={`group flex flex-col h-full relative overflow-hidden transition-all duration-300 ${cardStyle === 'glass' ? 'glass-pkg-card' :
+                                                                cardStyle === 'flat' ? 'bg-white shadow-sm border border-black/5 rounded-[24px]' :
+                                                                    cardStyle === 'bordered' ? 'bg-transparent border border-black/10 rounded-[24px]' :
+                                                                        cardStyle === 'elevated' ? 'bg-white shadow-xl rounded-[24px] border-none' :
+                                                                            cardStyle === 'tinted' ? 'bg-[var(--primary-soft)] rounded-[24px] border-none' : 'glass-pkg-card'
+                                                                }`}
+                                                        >
+                                                            <div className="flex flex-col flex-1 h-full p-2 overflow-hidden">
+                                                                {/* Image Header */}
+                                                                <div className="relative h-56 overflow-hidden bg-gray-100 cursor-pointer rounded-2xl" onClick={() => handleContinueToBook(pkg)}>
+                                                                    {pkg.feature_image_url || pkg.destination_image_url || (pkg.images && pkg.images.length > 0) ? (
+                                                                        <>
+                                                                            <img
+                                                                                src={pkg.feature_image_url || pkg.destination_image_url || pkg.images![0]?.url}
+                                                                                alt={pkg.title}
+                                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                                            />
+                                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                                                                            <ImageIcon className="h-10 w-10 text-gray-400" />
                                                                         </div>
-                                                                    </div>
-                                                                )}
+                                                                    )}
 
-                                                                {/* Overlays */}
-                                                                {pkg.package_mode === 'multi' && (
-                                                                    <div className="absolute top-4 left-4 z-10">
-                                                                        <Badge className="bg-gradient-to-r from-[#FFB347] to-[#FF8C00] text-white border-0 shadow-lg font-bold flex items-center gap-1.5 rounded-full px-3.5 py-1.5">
-                                                                            🌐 Multi-City Tour
-                                                                        </Badge>
+                                                                    <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+                                                                        {pkg.package_mode === 'multi' && (
+                                                                            <Badge className="text-white border-0 shadow-lg font-bold flex items-center gap-1.5 rounded-full px-3.5 py-1.5" style={{ background: 'var(--pt-card-multi-bg, #FF8C00)' }}>
+                                                                                🌐 Multi-City
+                                                                            </Badge>
+                                                                        )}
                                                                     </div>
-                                                                )}
 
-                                                                <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
-                                                                    <div className="flex flex-col gap-2 items-end">
-                                                                        <Badge className="bg-black text-white hover:bg-black/80 border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
+                                                                    <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
+                                                                        <Badge className="shadow-lg border-0 font-bold rounded-full px-3 py-1" style={{ background: 'var(--pt-card-duration-bg, black)', color: 'var(--pt-card-duration-text, white)' }}>
                                                                             {formatDuration(pkg.duration_days)}
                                                                         </Badge>
-                                                                        {(pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' && (
-                                                                            <Badge className="bg-[var(--primary)] text-white border-0 shadow-[0_4px_10px_rgba(0,0,0,0.1)] font-bold rounded-full px-3 py-1">
-                                                                                {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
-                                                                            </Badge>
-                                                                        )}
                                                                     </div>
-                                                                    {/* Wishlist Button */}
-                                                                    <button
-                                                                        className="group/wishlist mt-1"
-                                                                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                                                    >
-                                                                        <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all hover:bg-white/40 hover:scale-110 active:scale-90 shadow-sm">
-                                                                            <Heart className="h-5 w-5 text-white group-hover/wishlist:text-red-400 transition-colors" />
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="p-4 pt-2.5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between" onClick={() => handleContinueToBook(pkg)}>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <h3 className="font-bold text-[var(--color-primary-font)] text-lg line-clamp-2 leading-tight transition-colors font-display" style={{ color: 'var(--pt-filter-text, inherit)' }}>
+                                                                            {pkg.title}
+                                                                        </h3>
+                                                                        <div className="mb-2 text-sm text-black/60 mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
+                                                                            <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--primary)]" />
+                                                                            <span className="truncate">{pkg.destination}</span>
                                                                         </div>
-                                                                    </button>
+
+                                                                        <div className="flex flex-wrap gap-2 mb-1.5">
+                                                                            {parsePackageTags(pkg.activities).slice(0, 2).map((act, aIdx) => (
+                                                                                <Badge key={`act-${aIdx}`} variant="outline" className="font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[9px] tracking-wider border-0"
+                                                                                    style={{ background: 'var(--pt-card-activity-bg, rgba(0,0,0,0.05))', color: 'var(--pt-card-activity-text, black)' }}>
+                                                                                    {act}
+                                                                                </Badge>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
-                                                            {/* Content */}
-                                                            <div className="p-4 pt-2.5 flex flex-col flex-1 cursor-pointer bg-transparent justify-between" onClick={() => handleContinueToBook(pkg)}>
-                                                                <div className="flex flex-col gap-1">
-                                                                    <div className="flex items-start justify-between gap-3 mb-1.5">
-                                                                        <div className="custom-tooltip-container mb-1.5 h-auto">
-                                                                            <h3 className="font-bold text-[var(--color-primary-font)] text-xl line-clamp-2 leading-tight transition-colors font-display min-h-[2.5rem] overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }} title={pkg.title}>
-                                                                                {pkg.title}
-                                                                            </h3>
-                                                                            <span className="custom-tooltip-content">{pkg.title}</span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Destination Route */}
-                                                                    <div className="mb-2 text-sm text-[var(--color-primary-font)]/90 mt-0.5 flex items-center gap-2 line-clamp-1 font-medium">
-                                                                        <MapPin className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-                                                                        {pkg.package_mode === 'multi' && pkg.destinations && pkg.destinations.length > 0 ? (
-                                                                            <span className="truncate">
-                                                                                {pkg.destinations.length > 1
-                                                                                    ? `${pkg.destinations[0].city} → ${pkg.destinations[pkg.destinations.length - 1].city}`
-                                                                                    : pkg.destinations[0].city}
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span>{pkg.destination} · {pkg.country || "Asia"}</span>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Tags */}
-                                                                    <div className="flex flex-wrap gap-2 mb-1.5 min-h-[24px] items-center">
-                                                                        {parsePackageTags((pkg as any).trip_styles || pkg.trip_style).map((style, sIdx) => (
-                                                                            <Badge key={`style-${sIdx}`} variant="outline" className="bg-white/50 text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                                                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
-                                                                                {style}
-                                                                            </Badge>
-                                                                        ))}
-
-                                                                        {parsePackageTags(pkg.activities).slice(0, 3).map((act, aIdx) => (
-                                                                            <Badge key={`act-${aIdx}`} variant="outline" className="text-black border-orange-100/50 font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[10px] tracking-wider bg-white/40 flex items-center gap-1.5 backdrop-blur-sm">
-                                                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-300"></span>
-                                                                                {act}
-                                                                            </Badge>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Price and Action Section */}
-                                                        <div className="p-4 pt-1 mt-auto relative z-20 bg-transparent" onClick={(e) => e.stopPropagation()}>
-                                                            <div className="pt-3 border-t border-[var(--primary)]/40 flex items-center justify-between gap-2 w-full flex-nowrap">
-                                                                <div className="flex flex-col flex-1">
-                                                                    {(pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' && (
-                                                                        <>
-                                                                            <span className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.15em] mb-0.5 drop-shadow-sm">Starting From</span>
-                                                                            <div className="flex items-baseline gap-1">
-                                                                                <span className="text-xl font-bold text-black">
-                                                                                    {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
+                                                            {/* Price and Action Section */}
+                                                            <div className="p-4 pt-1 mt-auto relative z-20" onClick={(e) => e.stopPropagation()}>
+                                                                <div className="pt-3 border-t flex items-center justify-between gap-2 w-full" style={{ borderTopColor: 'rgba(0,0,0,0.05)' }}>
+                                                                    <div className="flex flex-col flex-1">
+                                                                        {(pkg.booking_type || '').toUpperCase() !== 'ENQUIRY' ? (
+                                                                            <>
+                                                                                <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-0.5">
+                                                                                    {hpSettings?.plan_trip_price_label || "Starting From"}
                                                                                 </span>
-                                                                                <span className="text-xs text-black/70 font-medium uppercase tracking-widest">/ pp</span>
-                                                                            </div>
-                                                                        </>
-                                                                    )}
+                                                                                <div className="flex items-baseline gap-1">
+                                                                                    <span className="text-lg font-bold" style={{ color: 'var(--pt-filter-text, black)' }}>
+                                                                                        {`₹${pkg.price_per_person.toLocaleString('en-IN')}`}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </>
+                                                                        ) : (
+                                                                            <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">Pricing on Request</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <Button
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            setSelectedPackageForBooking(pkg);
+                                                                            setIsBookingModalOpen(true);
+                                                                        }}
+                                                                        className="hover:opacity-90 text-white px-4 py-2 h-9 rounded-full text-xs font-bold transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-sm"
+                                                                        style={{
+                                                                            background: (pkg.booking_type || '').toUpperCase() === 'ENQUIRY'
+                                                                                ? 'var(--pt-btn-enquire-bg, #64748b)'
+                                                                                : 'var(--pt-btn-book-bg, var(--primary))',
+                                                                            color: (pkg.booking_type || '').toUpperCase() === 'ENQUIRY'
+                                                                                ? 'var(--pt-btn-enquire-text, white)'
+                                                                                : 'white'
+                                                                        }}
+                                                                    >
+                                                                        {(pkg.booking_type || '').toUpperCase() === 'ENQUIRY' 
+                                                                            ? (hpSettings?.plan_trip_secondary_btn_text || 'Enquire Now') 
+                                                                            : (hpSettings?.plan_trip_primary_btn_text || 'Book Now')}
+                                                                        <ArrowRight className="h-3 w-3" />
+                                                                    </Button>
                                                                 </div>
-                                                                <Button
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        setSelectedPackageForBooking(pkg);
-                                                                        setIsBookingModalOpen(true);
-                                                                    }}
-                                                                    className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light,var(--primary))] hover:opacity-90 text-white min-w-[110px] px-4 py-2 h-10 rounded-full text-sm font-bold shadow-[0_4px_15px_var(--primary-glow)] transition-all hover:scale-105 active:scale-95 group/btn flex items-center gap-2 overflow-hidden relative flex-shrink-0"
-                                                                >
-                                                                    <span className="relative z-10 flex items-center gap-2">
-                                                                        {(pkg.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Enquire Now' : 'Book Now'}
-                                                                        <ArrowRight className="h-3 w-3 group-hover/btn:translate-x-1 transition-transform" />
-                                                                    </span>
-                                                                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out z-0"></div>
-                                                                </Button>
                                                             </div>
-                                                        </div>
-                                                    </motion.div>
-                                                ))}
+                                                        </motion.div>
+                                                    );
+                                                })}
                                             </div>
 
                                             {/* Infinite Scroll Sentinel & Loader */}
@@ -1627,14 +1469,14 @@ function PlanTripContent() {
                 >
                     <div className="relative flex flex-col h-full max-h-[90vh]">
                         {/* Glassy Header Card */}
-                        <div className="bg-gradient-to-br from-[var(--primary-light,var(--primary))] to-[var(--primary)] py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg">
+                        <div className="py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg" style={{ background: 'var(--pt-btn-book-bg, var(--primary))' }}>
                             <DialogClose className="absolute top-2 right-2 text-white/90 hover:text-white hover:bg-white/20 p-2.5 rounded-full transition-all z-[1010] outline-none border-none shadow-none">
                                 <X className="h-5 w-5" />
                                 <span className="sr-only">Close</span>
                             </DialogClose>
 
                             <h2 className="text-xl font-extrabold text-white mb-1 font-display tracking-tight drop-shadow-md">Trip Details</h2>
-                            <p className="text-orange-50/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider">
+                            <p className="text-white/90 text-[10px] font-bold leading-relaxed max-w-[240px] mx-auto opacity-90 drop-shadow-sm uppercase tracking-wider">
                                 {selectedPackageForBooking?.title}
                             </p>
                         </div>
@@ -1756,8 +1598,16 @@ function PlanTripContent() {
                         {/* Modal Footer */}
                         <div className="p-2 pt-4 mt-auto">
                             <Button
-                                className="w-full h-auto py-3 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl text-sm font-black shadow-[0_8px_16px_var(--primary-glow)] transition-all active:scale-[0.98] border-none"
+                                className="w-full h-auto py-3 hover:opacity-90 text-white rounded-xl text-sm font-black shadow-lg transition-all active:scale-[0.98] border-none"
                                 disabled={!selectedDate || travelers.adults < 1 || (selectedPackageForBooking?.flights_enabled && !originCity)}
+                                style={{
+                                    background: (selectedPackageForBooking?.booking_type || '').toUpperCase() === 'ENQUIRY'
+                                        ? 'var(--pt-btn-enquire-bg, #64748b)'
+                                        : 'var(--pt-btn-book-bg, var(--primary))',
+                                    color: (selectedPackageForBooking?.booking_type || '').toUpperCase() === 'ENQUIRY'
+                                        ? 'var(--pt-btn-enquire-text, white)'
+                                        : 'white'
+                                }}
                                 onClick={() => {
                                     if (selectedPackageForBooking) {
                                         const url = new URL(`/plan-trip/${selectedPackageForBooking.slug}`, window.location.origin);

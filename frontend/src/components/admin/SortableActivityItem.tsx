@@ -104,10 +104,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                                 {duration && <span className="text-black/60 font-medium">({duration})</span>}
                             </span>
                         )}
-                        <span className="flex items-center gap-1.5 shadow-sm text-black font-bold" style={{ background: 'rgba(255, 255, 255, 0.20)', border: '1px solid rgba(255, 255, 255, 0.30)', borderRadius: '100px', padding: '4px 12px' }}>
-                            <MapPin className="w-3 h-3 text-black" />
-                            {activity.location || 'Location TBA'}
-                        </span>
+
                         {activity.is_optional && (
                             <span className="flex items-center gap-1 shadow-sm text-teal-700 font-black tracking-widest text-[9px]" style={{ background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.30)', borderRadius: '100px', padding: '4px 10px' }}>
                                 <span className="text-teal-600">●</span>
@@ -118,7 +115,7 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
 
                     {/* Description */}
                     <div className="relative">
-                        <p className={`text-xs text-slate-900 leading-relaxed transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
+                        <p className={`text-xs text-black leading-relaxed transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}>
                             {activity.description}
                         </p>
                         {activity.description && activity.description.length > 100 && (
@@ -132,11 +129,6 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                         )}
                     </div>
 
-                    {/* Feature tags */}
-                    <div className="flex items-center gap-2 mt-3">
-                        <span className="text-[9px] uppercase font-black tracking-widest rounded-full shadow-sm" style={{ background: 'rgba(16, 185, 129, 0.10)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.20)', padding: '3px 10px' }}>✓ GUIDE</span>
-                        <span className="text-[9px] uppercase font-black tracking-widest rounded-full shadow-sm" style={{ background: 'rgba(16, 185, 129, 0.10)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.20)', padding: '3px 10px' }}>✓ TICKETS</span>
-                    </div>
 
                     {/* Activity Images */}
                     {((Array.isArray(activity.image_url) && activity.image_url.length > 0) ||
@@ -169,32 +161,21 @@ export function SortableActivityItem({ activity, config, idx, onDelete, onEdit }
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-black/10 hover:text-black rounded-xl bg-white/20 transition-all duration-300"
+                    className="h-8 w-8 p-0 hover:bg-black/10 text-black rounded-xl bg-white/20 transition-all duration-300 shadow-sm"
                     onClick={() => onEdit(activity)}
                     title="Edit"
                 >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4" strokeWidth={2.5} />
                 </Button>
+
                 <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-sky-100/50 hover:text-sky-700 rounded-xl bg-white/20 transition-all duration-300"
-                    onClick={() => {
-                        const duplicate = { ...activity, id: undefined, title: `${activity.title} (Copy)` }
-                        onEdit(duplicate)
-                    }}
-                    title="Duplicate"
-                >
-                    <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 hover:bg-rose-100/50 hover:text-rose-600 rounded-xl bg-white/20 border border-transparent transition-all duration-300 shadow-sm hover:border-rose-200"
+                    className="h-8 w-8 p-0 hover:bg-rose-100 text-rose-600 rounded-xl bg-white/20 border border-transparent transition-all duration-300 shadow-sm hover:border-rose-200"
                     onClick={() => activity.id && onDelete(activity.id)}
                     title="Remove from slot"
                 >
-                    <X className="h-4.5 w-4.5" />
+                    <X className="h-4.5 w-4.5" strokeWidth={2.5} />
                 </Button>
             </div>
         </div>

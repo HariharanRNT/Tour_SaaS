@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Script from 'next/script'
 import { bookingsAPI, agentAPI, paymentsAPI } from '@/lib/api'
+import { useTheme } from '@/context/ThemeContext'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -32,8 +33,6 @@ import {
     Receipt,
     Hotel,
     Info,
-    Share2,
-    Download,
     Edit,
     MoreHorizontal,
     Copy,
@@ -53,6 +52,8 @@ export default function BookingDetailsPage() {
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
     const [showFullItinerary, setShowFullItinerary] = useState(false)
+    const { publicSettings } = useTheme()
+    const hpSettings = publicSettings?.homepage_settings || {}
 
     // Cancellation States
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
@@ -70,6 +71,19 @@ export default function BookingDetailsPage() {
     const [isRetrying, setIsRetrying] = useState(false)
 
     const [gstSettings, setGstSettings] = useState({ inclusive: false, percentage: 18 })
+
+    // Apply agent-chosen font from theme settings
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('agent-ui-style')
+            if (stored) {
+                const parsed = JSON.parse(stored)
+                if (parsed.font_family) {
+                    document.documentElement.style.setProperty('--project-font-family', parsed.font_family)
+                }
+            }
+        } catch { }
+    }, [])
 
     useEffect(() => {
         if (params.id) {
@@ -340,14 +354,14 @@ export default function BookingDetailsPage() {
     const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
 
     return (
-        <div className="min-h-screen overflow-x-hidden">
+        <div className="min-h-screen overflow-x-hidden booking-page-root">
             <Script
                 src="https://checkout.razorpay.com/v1/checkout.js"
                 strategy="lazyOnload"
             />
 
-            {/* Header & Hero Section */}
-            <div className="relative min-h-[500px] w-full group overflow-hidden">
+            {/* Header & Hero Section — naturally sized */}
+            <div className="relative w-full group overflow-hidden">
                 <div className="absolute inset-0">
                     <img
                         src={heroImage}
@@ -357,9 +371,9 @@ export default function BookingDetailsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
                 </div>
 
-                <div className="container mx-auto px-4 h-full relative flex flex-col justify-between py-4">
+                <div className="container mx-auto px-4 relative flex flex-col pt-12 pb-12 gap-8">
                     {/* Top Navigation Row */}
-                    <div className="flex justify-between items-center animate-fade-in mb-8">
+                    <div className="flex justify-between items-center animate-fade-in">
                         <Button
                             variant="ghost"
                             onClick={() => router.push('/bookings')}
@@ -368,56 +382,11 @@ export default function BookingDetailsPage() {
                             <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
                             <span className="text-xs font-black uppercase tracking-[0.15em]">My Bookings</span>
                         </Button>
-
-                        <div className="hidden md:flex gap-3">
-                            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60 text-black">
-                                <Share2 className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" onClick={handleDownloadInvoice} className="h-11 px-6 rounded-2xl glass-pill-chip bg-white/40 border-white/60 hover:bg-white/60 font-black text-[10px] uppercase tracking-widest text-black">
-                                <Download className="h-4 w-4 mr-2" /> Invoice
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Booking Progress Indicator */}
-                    <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-1000">
-                        <div className="glass-card-refinement bg-white/30 border-white/40 backdrop-blur-sm p-1 rounded-full max-w-fit mx-auto shadow-sm">
-                            <div className="flex items-center gap-1">
-                                {['Booked', 'Confirmed', 'Trip Date', 'Completed'].map((stage, idx) => {
-                                    const isCompleted = (booking.status === 'completed' && idx <= 3) ||
-                                        (new Date() >= new Date(booking.travel_date) && idx <= 2) ||
-                                        (booking.status === 'confirmed' && idx <= 1) ||
-                                        (idx === 0);
-                                    const isCurrent = (booking.status === 'completed' && idx === 3) ||
-                                        (booking.status !== 'completed' && new Date() >= new Date(booking.travel_date) && idx === 2) ||
-                                        (booking.status === 'confirmed' && new Date() < new Date(booking.travel_date) && idx === 1) ||
-                                        (booking.status === 'pending' && idx === 0);
-
-                                    return (
-                                        <div key={stage} className="flex items-center">
-                                            {idx > 0 && (
-                                                <div className={`w-8 h-px mx-1 ${isCompleted ? 'bg-blue-600/40' : 'bg-black/10'}`} />
-                                            )}
-                                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-500 ${isCurrent
-                                                ? 'bg-blue-600/20 border border-blue-600/30 text-black shadow-sm scale-105'
-                                                : isCompleted
-                                                    ? 'bg-blue-600/10 text-blue-700'
-                                                    : 'text-black/60'
-                                                }`}>
-                                                <div className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-blue-600 animate-pulse' : isCompleted ? 'bg-blue-600' : 'bg-black/20'
-                                                    }`} />
-                                                <span className="text-[10px] font-black uppercase tracking-widest">{stage}</span>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
                     </div>
 
                     {/* Unified Hero Card */}
-                    <div className="w-full mt-auto pb-4">
-                        <div className="glass-card-refinement bg-white/50 border-white/40 backdrop-blur-md shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] rounded-[32px] overflow-hidden">
+                    <div className="w-full">
+                        <div className="booking-glass-hero overflow-hidden">
                             <div className="p-6 md:p-6 md:pb-5">
                                 <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
                                     {/* Left: Title & Meta */}
@@ -526,7 +495,7 @@ export default function BookingDetailsPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 -mt-8 relative z-10 pb-16">
+            <div className="container mx-auto px-4 relative z-10 pb-16">
 
                 {/* Main Content Grid 60/40 */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -535,7 +504,7 @@ export default function BookingDetailsPage() {
                     <div className="lg:col-span-3 space-y-8">
 
                         {/* Package Details Card */}
-                        <Card className="glass-card-refinement bg-white/40 border-black/10 overflow-hidden group shadow-lg min-h-0">
+                        <Card className="booking-glass-card overflow-hidden group shadow-none min-h-0 border-0 p-0">
                             <CardContent className="p-6">
                                 <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 ${booking.package?.included_items?.length ? 'border-b border-black/5 pb-6' : ''}`}>
                                     <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -580,7 +549,7 @@ export default function BookingDetailsPage() {
 
 
 
-                        <Card className="glass-card-refinement bg-white/40 border-black/10 overflow-hidden shadow-xl backdrop-blur-md">
+                        <Card className="booking-glass-card overflow-hidden shadow-none border-0 p-0">
                             <CardContent className="p-6">
                                 <div className="mb-6 border-b border-black/5 pb-4">
                                     <h3 className="text-xl font-bold flex items-center gap-4 text-black uppercase tracking-[0.12em]">
@@ -588,7 +557,7 @@ export default function BookingDetailsPage() {
                                     </h3>
                                 </div>
                                 {booking.package?.itinerary_items && booking.package.itinerary_items.length > 0 ? (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         {Object.entries(
                                             booking.package.itinerary_items.reduce((acc, item) => {
                                                 const day = item.day_number;
@@ -597,10 +566,10 @@ export default function BookingDetailsPage() {
                                                 return acc;
                                             }, {} as Record<number, typeof booking.package.itinerary_items>)
                                         ).sort(([a], [b]) => Number(a) - Number(b)).map(([day, items], idx) => (
-                                            <details key={day} className="group glass-card-refinement bg-white/10 border-white/20 overflow-hidden rounded-[24px] shadow-sm" open={idx === 0}>
-                                                <summary className="flex items-center justify-between p-4 cursor-pointer list-none group-open:bg-black/[0.02] transition-colors">
+                                            <details key={day} className="group booking-glass-inner overflow-hidden rounded-[24px] shadow-none border-0" open={idx === 0}>
+                                                <summary className="flex items-center justify-between p-4 cursor-pointer list-none group-open:bg-indigo-600/[0.03] transition-colors rounded-t-[24px]">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="bg-indigo-600/10 text-black h-12 w-12 rounded-2xl flex flex-col items-center justify-center border border-indigo-600/20">
+                                                        <div className="bg-indigo-600/10 text-black h-12 w-12 rounded-2xl flex flex-col items-center justify-center border border-indigo-600/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                                                             <span className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-0.5">Day</span>
                                                             <span className="text-xl font-black leading-none">{day}</span>
                                                         </div>
@@ -612,16 +581,16 @@ export default function BookingDetailsPage() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="h-10 w-10 rounded-xl flex items-center justify-center p-2 glass-pill-chip group-open:rotate-180 transition-all bg-white/60 border-black/5 group-open:text-indigo-600 group-open:border-indigo-600/30 group-open:shadow-inner">
+                                                    <div className="h-10 w-10 rounded-xl flex items-center justify-center p-2 booking-glass-inner border-0 group-open:rotate-180 transition-all group-open:border-indigo-600/20 group-open:text-indigo-600 shadow-none">
                                                         <MoreHorizontal className="h-5 w-5" />
                                                     </div>
                                                 </summary>
-                                                <div className="px-4 pb-6 pt-2 border-t border-black/5 space-y-4 relative overflow-hidden">
+                                                <div className="px-4 pb-6 pt-2 border-t border-white/40 space-y-3 relative overflow-hidden">
                                                     <div className="absolute left-[35px] top-6 bottom-10 w-0.5 bg-gradient-to-b from-indigo-600 via-indigo-600/20 to-transparent opacity-30" />
                                                     {items.map((item, i) => (
                                                         <div key={item.id} className="relative pl-12 group/activity">
                                                             <div className="absolute left-[31.5px] top-[1.35rem] -translate-y-1/2 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)] z-10" />
-                                                            <div className="p-4 glass-card-refinement border-white/40 bg-white/40 hover:bg-white/60 border-l-4 border-l-indigo-600/40 transition-all rounded-2xl shadow-sm relative">
+                                                            <div className="booking-glass-activity p-4 relative">
                                                                 <div className="flex items-center justify-between mb-3">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="h-2 w-2 rounded-full bg-indigo-600" />
@@ -642,7 +611,7 @@ export default function BookingDetailsPage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-16 glass-card-refinement border-black/10 border-dashed bg-black/[0.01]">
+                                    <div className="text-center py-16 booking-glass-inner border-0 border-dashed">
                                         <MapPin className="h-12 w-12 text-blue-600/20 mx-auto mb-4" />
                                         <p className="text-black font-black uppercase tracking-[0.2em] text-sm leading-loose text-center">
                                             Detailed itinerary will be<br />available 48 hours before<br />departure.
@@ -756,7 +725,7 @@ export default function BookingDetailsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {booking.travelers?.map((traveler, index) => (
-                                <div key={traveler.id} className={`glass-card-refinement bg-white/40 border-black/10 p-0 flex flex-col items-start relative group hover:scale-[1.01] transition-all duration-500 rounded-[24px] shadow-lg ${booking.travelers?.length === 1 ? 'md:col-span-2' : ''}`}>
+                                <div key={traveler.id} className={`booking-glass-card border-0 shadow-none p-0 flex flex-col items-start relative group transition-all duration-500 rounded-[24px] ${booking.travelers?.length === 1 ? 'md:col-span-2' : ''}`}>
                                     <div className="w-full px-6 py-4 border-b border-black/5 flex items-center justify-between bg-black/[0.02]">
                                         <div className="flex items-center gap-3">
                                             <Users className="h-4 w-4 text-purple-600" />
@@ -803,20 +772,20 @@ export default function BookingDetailsPage() {
                     <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24 self-start">
 
                         {/* Payment Summary */}
-                        <Card className="glass-card-refinement bg-white/40 border-white/60 overflow-hidden shadow-lg">
-                            <CardHeader className="bg-black/5 border-b border-black/5 p-4 px-6">
+                        <Card className="booking-glass-sidebar border-0 shadow-none overflow-hidden">
+                            <CardHeader className="booking-glass-header-band border-0 p-4 px-6">
                                 <CardTitle className="text-lg font-black flex items-center gap-3 text-black uppercase tracking-wider">
-                                    <CreditCard className="h-5 w-5 text-blue-600" /> Payment Summary
+                                    <CreditCard className="h-5 w-5 text-blue-600" /> {hpSettings.payment_summary_title || 'Payment Summary'}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center text-sm font-black">
-                                        <span className="text-black uppercase tracking-widest text-[10px]">Package Base Cost</span>
+                                        <span className="text-black uppercase tracking-widest text-[10px]">{hpSettings.payment_summary_base_cost_label || 'Package Base Cost'}</span>
                                         <span className="text-black font-mono">{formatCurrency(booking.total_amount)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-black">
-                                        <span className="text-black uppercase tracking-widest text-[10px]">Taxes & Service Fees</span>
+                                        <span className="text-black uppercase tracking-widest text-[10px]">{hpSettings.payment_summary_taxes_label || 'Taxes & Service Fees'}</span>
                                         <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20 text-emerald-700 text-[9px] uppercase font-black">Inclusive</div>
                                     </div>
                                 </div>
@@ -824,13 +793,13 @@ export default function BookingDetailsPage() {
                                 <div className="h-px bg-gradient-to-r from-transparent via-black/5 to-transparent" />
 
                                 <div className="flex justify-between items-baseline py-1">
-                                    <span className="font-black text-[10px] text-slate-800 uppercase tracking-[0.2em]">Total Investment</span>
+                                    <span className="font-black text-[10px] text-slate-800 uppercase tracking-[0.2em]">{hpSettings.payment_summary_total_label || 'Total Investment'}</span>
                                     <span className="font-black text-3xl tracking-tighter transition-all duration-500 hover:scale-105 inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                                         {formatCurrency(booking.total_amount)}
                                     </span>
                                 </div>
 
-                                <div className="glass-card-refinement border-black/5 bg-black/[0.02] p-5 space-y-4">
+                                <div className="booking-glass-inner p-5 space-y-4 border-0 shadow-none">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] text-black font-black uppercase tracking-widest">Transaction Status</span>
                                         <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20">
@@ -865,7 +834,7 @@ export default function BookingDetailsPage() {
                             const IconComp = spec.icon
 
                             return (
-                                <Card className={`glass-card-refinement border-white/60 bg-white/40 overflow-hidden shadow-lg ${spec.tint.replace('600/5', '100/10')}`}>
+                                <Card className={`booking-glass-card border-0 shadow-none overflow-hidden`}>
                                     <CardHeader className="border-b border-black/5 pb-4 px-8">
                                         <CardTitle className={`text-sm font-black flex items-center gap-2 uppercase tracking-widest ${spec.text}`}>
                                             <Receipt className="h-4 w-4" /> Refund Logistics
@@ -873,7 +842,7 @@ export default function BookingDetailsPage() {
                                     </CardHeader>
                                     <CardContent className="p-8 space-y-6">
                                         {/* Main Status Block */}
-                                        <div className={`p-6 glass-card-refinement border-black/5 bg-black/[0.02] flex items-center justify-between`}>
+                                        <div className={`p-6 booking-glass-inner border-0 flex items-center justify-between`}>
                                             <div className="flex items-center gap-4">
                                                 <div className={`h-12 w-12 rounded-2xl ${spec.tint} border ${spec.border} flex items-center justify-center ${spec.text}`}>
                                                     <IconComp className="h-6 w-6" />
@@ -890,7 +859,7 @@ export default function BookingDetailsPage() {
                                         </div>
 
                                         {refundId && (
-                                            <div className="flex justify-between items-center glass-pill-chip w-full py-2.5 px-4 bg-black/5 border-black/10">
+                                            <div className="flex justify-between items-center glass-3d-pill w-full py-2.5 px-4">
                                                 <span className="text-[10px] font-black text-black uppercase tracking-widest">Gateway Refund ID</span>
                                                 <span className="font-mono text-[10px] text-black font-black">{refundId}</span>
                                             </div>
@@ -913,8 +882,8 @@ export default function BookingDetailsPage() {
 
 
                         {/* Cancellation Policy */}
-                        <Card className="glass-card-warning-red border-red-200 bg-red-50/30 overflow-hidden shadow-lg">
-                            <CardHeader className="bg-red-600/5 border-b border-red-600/10 p-4 px-6">
+                        <Card className="booking-glass-danger border-0 shadow-none overflow-hidden">
+                            <CardHeader className="bg-red-600/5 border-b border-red-600/5 p-4 px-6">
                                 <CardTitle className="text-lg font-black flex items-center gap-3 text-red-700 uppercase tracking-wider">
                                     <XCircle className="h-5 w-5 animate-pulse-soft" /> Cancellation Terms
                                 </CardTitle>
@@ -946,7 +915,7 @@ export default function BookingDetailsPage() {
 
                                                 if (rule.refundPercentage === 0) {
                                                     return (
-                                                        <div key={idx} className="glass-card-refinement border-black/10 bg-black/5 p-8 flex justify-between items-center group/rule rounded-[28px] opacity-60">
+                                                        <div key={idx} className="booking-glass-inner border-0 p-8 flex justify-between items-center group/rule rounded-[28px] opacity-60">
                                                             <div>
                                                                 <p className="text-[11px] text-black font-black uppercase tracking-[0.3em] mb-2">Window</p>
                                                                 <p className="text-2xl font-black text-black tracking-tight">{rule.daysBefore}+ Days Prior</p>
@@ -960,7 +929,7 @@ export default function BookingDetailsPage() {
                                                 }
 
                                                 return (
-                                                    <div key={idx} className="glass-card-refinement border-white/40 bg-white/20 p-8 flex justify-between items-center hover:bg-white/40 transition-all group/rule rounded-[28px] shadow-sm">
+                                                    <div key={idx} className="booking-glass-inner border-0 p-8 flex justify-between items-center hover:scale-[1.01] transition-all group/rule rounded-[28px]">
                                                         <div>
                                                             <p className="text-[11px] text-red-600 font-black uppercase tracking-[0.3em] mb-2 group-hover/rule:text-red-700 transition-colors">Window</p>
                                                             <p className="text-2xl font-black text-black tracking-tight">{rule.daysBefore}+ Days Prior</p>
@@ -981,7 +950,7 @@ export default function BookingDetailsPage() {
                                             {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 0 &&
                                                 booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 &&
                                                 !booking.package.cancellation_rules.some((r: any) => r.refundPercentage === 0) && (
-                                                    <div className="glass-card-refinement border-red-600/10 bg-red-600/5 p-8 flex justify-between items-center rounded-[28px] opacity-90">
+                                                    <div className="booking-glass-inner border-0 p-8 flex justify-between items-center rounded-[28px] opacity-90 bg-red-600/5">
                                                         <div>
                                                             <p className="text-[11px] text-red-600/60 font-black uppercase tracking-[0.3em] mb-2">Window</p>
                                                             <p className="text-2xl font-black text-black tracking-tight">Under {booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore} Days</p>
@@ -996,7 +965,7 @@ export default function BookingDetailsPage() {
 
                                         <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
                                             <p className="text-[10px] text-black font-black italic leading-relaxed">
-                                                * Estimated refund values are calculated based on your total transaction. The final amount may vary slightly due to gateway rounding.
+                                                {hpSettings.payment_summary_support_text || '* Estimated refund values are calculated based on your total transaction. The final amount may vary slightly due to gateway rounding.'}
                                             </p>
                                         </div>
                                     </div>
@@ -1015,7 +984,7 @@ export default function BookingDetailsPage() {
                         </Card>
 
                         {/* Need Help Section - Inline Strip */}
-                        <div className="glass-card-refinement bg-white/60 border-black/10 p-6 flex flex-col md:flex-row items-center justify-between gap-6 rounded-[32px] shadow-lg backdrop-blur-md transition-all group/help">
+                        <div className="booking-glass-support p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all group/help">
                             <div className="flex items-center gap-4 w-full md:w-auto">
                                 <div className="h-14 w-14 rounded-[22px] bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20 shadow-sm group-hover/help:scale-110 transition-transform duration-500 shrink-0">
                                     <Phone className="h-6 w-6" />
@@ -1029,11 +998,11 @@ export default function BookingDetailsPage() {
                             <div className="hidden md:block w-px h-10 bg-black/10 mx-2 shrink-0" />
 
                             <div className="flex flex-col items-center md:items-end gap-2 font-black text-black w-full md:w-auto">
-                                <a href="tel:+9118001234567" className="flex items-center gap-3 hover:text-blue-600 transition-all text-sm tracking-tight hover:scale-105">
-                                    <Phone className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>+91 1800-123-4567</span>
+                                <a href={`tel:${hpSettings.priority_support_phone || '+9118001234567'}`} className="flex items-center gap-3 hover:text-blue-600 transition-all text-sm tracking-tight hover:scale-105">
+                                    <Phone className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>{hpSettings.priority_support_phone || '+91 1800-123-4567'}</span>
                                 </a>
-                                <a href="mailto:support@toursaas.com" className="flex items-center gap-3 hover:text-blue-600 transition-all text-[0.7rem] opacity-60 tracking-[0.2em] hover:scale-105">
-                                    <Mail className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>support@toursaas.com</span>
+                                <a href={`mailto:${hpSettings.priority_support_email || 'support@toursaas.com'}`} className="flex items-center gap-3 hover:text-blue-600 transition-all text-[0.7rem] opacity-60 tracking-[0.2em] hover:scale-105">
+                                    <Mail className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>{hpSettings.priority_support_email || 'support@toursaas.com'}</span>
                                 </a>
                             </div>
                         </div>
@@ -1045,96 +1014,191 @@ export default function BookingDetailsPage() {
             {/* Cancellation Confirmation Dialog */}
             {isCancelDialogOpen && cancelPreview && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-                    {/* Backdrop */}
+                    {/* Backdrop — deep blur + subtle color tint */}
                     <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        className="absolute inset-0 backdrop-blur-md"
+                        style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(220,38,38,0.08) 0%, rgba(0,0,0,0.45) 100%)' }}
                         onClick={() => !isCancelling && setIsCancelDialogOpen(false)}
                     />
 
-                    {/* Dialog Content */}
-                    <div className="relative w-full max-w-lg bg-[rgba(255,255,255,0.15)] backdrop-blur-[20px] border border-white/30 rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.2)] overflow-hidden animate-in zoom-in-95 duration-500">
+                    {/* Dialog — 3D Glass Outer Card */}
+                    <div
+                        className="relative w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-500"
+                        style={{
+                            background: 'linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.52) 50%, rgba(255,255,255,0.34) 100%)',
+                            backdropFilter: 'blur(48px) saturate(200%) brightness(1.05)',
+                            WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(1.05)',
+                            border: '1px solid rgba(255,255,255,0.80)',
+                            borderRadius: '32px',
+                            boxShadow: 'inset 0 2px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.04), 0 12px 48px rgba(220,38,38,0.12), 0 4px 16px rgba(0,0,0,0.10), 0 40px 80px rgba(0,0,0,0.10)',
+                        }}
+                    >
+                        {/* Inner top shine layer */}
+                        <div className="absolute inset-0 pointer-events-none rounded-[32px]"
+                            style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 40%)', zIndex: 0 }} />
+
                         {/* Close button */}
                         <button
                             disabled={isCancelling}
                             onClick={() => setIsCancelDialogOpen(false)}
-                            className="absolute right-6 top-6 h-8 w-8 rounded-full flex items-center justify-center text-black/40 hover:bg-black/10 hover:text-black transition-all z-10 border border-black/10"
+                            className="absolute right-5 top-5 h-9 w-9 rounded-2xl flex items-center justify-center text-black/40 hover:bg-red-600/10 hover:text-red-600 transition-all z-20 border border-black/10"
+                            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}
                         >
                             <X className="h-4 w-4" />
                         </button>
 
-                        <div className="p-8">
+                        <div className="p-8 relative z-10">
+
                             {/* Header */}
                             <div className="flex gap-4 mb-6">
-                                <div className="h-12 w-12 rounded-xl bg-red-600/20 flex items-center justify-center text-red-500 shrink-0 border border-red-500/30 shadow-[0_0_20px_rgba(220,38,38,0.3)]">
+                                <div
+                                    className="h-13 w-13 rounded-2xl flex items-center justify-center text-red-500 shrink-0"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(254,226,226,0.90) 0%, rgba(252,165,165,0.50) 100%)',
+                                        border: '1px solid rgba(252,165,165,0.60)',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 4px 16px rgba(220,38,38,0.20), 0 0 24px rgba(220,38,38,0.12)',
+                                        padding: '10px',
+                                    }}
+                                >
                                     <AlertCircle className="h-7 w-7" />
                                 </div>
                                 <div className="flex flex-col justify-center">
                                     <h3 className="text-xl font-black text-black tracking-tight leading-none">Initiate Cancellation</h3>
-                                    <div className="inline-flex items-center px-2 py-1 rounded-md bg-black/5 backdrop-blur-sm border border-black/10 mt-1.5 w-fit">
-                                        <p className="text-[9px] text-black/60 font-black uppercase tracking-[0.2em]">
+                                    <div
+                                        className="inline-flex items-center px-3 py-1 rounded-full mt-2 w-fit"
+                                        style={{
+                                            background: 'linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.35) 100%)',
+                                            border: '1px solid rgba(255,255,255,0.75)',
+                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 2px 6px rgba(0,0,0,0.06)',
+                                        }}
+                                    >
+                                        <p className="text-[9px] text-black/60 font-black uppercase tracking-[0.25em]">
                                             REF: {booking.booking_reference}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Refund Status Banner - Glassy Pill with Glow */}
-                            <div className={`relative overflow-hidden rounded-[24px] p-6 text-center mb-6 transition-all duration-700 bg-[rgba(255,255,255,0.1)] backdrop-blur-md border border-white/20 shadow-[0_0_30px_rgba(16,185,129,0.2)] group`}>
-                                <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+                            {/* Refund Status Banner — 3D Glass with glow */}
+                            <div
+                                className="relative overflow-hidden p-6 text-center mb-5 transition-all duration-700"
+                                style={{
+                                    background: cancelPreview.refund_amount > 0
+                                        ? 'linear-gradient(145deg, rgba(209,250,229,0.70) 0%, rgba(167,243,208,0.40) 50%, rgba(255,255,255,0.28) 100%)'
+                                        : 'linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(254,226,226,0.42) 50%, rgba(255,255,255,0.28) 100%)',
+                                    backdropFilter: 'blur(24px)',
+                                    WebkitBackdropFilter: 'blur(24px)',
+                                    border: cancelPreview.refund_amount > 0
+                                        ? '1px solid rgba(167,243,208,0.65)'
+                                        : '1px solid rgba(252,165,165,0.45)',
+                                    borderRadius: '24px',
+                                    boxShadow: cancelPreview.refund_amount > 0
+                                        ? 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.08)'
+                                        : 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 20px rgba(220,38,38,0.10), 0 0 40px rgba(220,38,38,0.06)',
+                                }}
+                            >
+                                {/* Shine streak */}
+                                <div className="absolute inset-0 pointer-events-none rounded-[24px]"
+                                    style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 45%)' }} />
 
-                                <div className={`h-12 w-12 mx-auto rounded-2xl flex items-center justify-center mb-4 border bg-black/5 backdrop-blur-sm border-black/10 text-black`}>
-                                    {cancelPreview.refund_amount > 0 ? (
-                                        <Check className="h-6 w-6 stroke-[3]" />
-                                    ) : (
-                                        <X className="h-6 w-6 stroke-[3]" />
-                                    )}
+                                <div
+                                    className="h-12 w-12 mx-auto rounded-2xl flex items-center justify-center mb-4 text-black relative"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.40) 100%)',
+                                        border: '1px solid rgba(255,255,255,0.70)',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(0,0,0,0.08)',
+                                    }}
+                                >
+                                    {cancelPreview.refund_amount > 0
+                                        ? <Check className="h-6 w-6 stroke-[3] text-emerald-600" />
+                                        : <X className="h-6 w-6 stroke-[3] text-red-500" />
+                                    }
                                 </div>
 
-                                <h4 className={`text-4xl font-black mb-1 tracking-tighter text-black flex items-center justify-center gap-1`}>
+                                <h4 className="text-4xl font-black mb-1 tracking-tighter text-black flex items-center justify-center gap-1 relative">
                                     {cancelPreview.refund_amount > 0
                                         ? formatCurrency(cancelPreview.refund_amount)
                                         : 'Final Terms'}
                                 </h4>
-                                <p className={`text-[9px] font-black uppercase tracking-[0.4em] text-black/60`}>
+                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/55 relative">
                                     {cancelPreview.refund_amount > 0
                                         ? `${cancelPreview.refund_percentage}% REFUNDABLE VALUE`
                                         : 'NON-REFUNDABLE TRANSACTION'}
                                 </p>
                             </div>
 
-                            {/* Policy Message - Frosted Box */}
-                            <div className="bg-black/5 backdrop-blur-md rounded-2xl p-4 mb-6 border border-black/5">
+                            {/* Policy Message — 3D inner glass */}
+                            <div
+                                className="rounded-2xl p-4 mb-5"
+                                style={{
+                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.28) 100%)',
+                                    backdropFilter: 'blur(16px)',
+                                    WebkitBackdropFilter: 'blur(16px)',
+                                    border: '1px solid rgba(255,255,255,0.68)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 3px 10px rgba(0,0,0,0.05)',
+                                }}
+                            >
                                 <p className="text-[13px] text-black/90 leading-relaxed text-center font-bold tracking-tight">
                                     {cancelPreview.message}
                                 </p>
                             </div>
 
-                            {/* Meta Info - Frosted Glas Pills */}
-                            <div className="flex items-center justify-center gap-3 mb-8 border-b border-black/10 pb-6">
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/5 backdrop-blur-md border border-black/10 text-black/90 shadow-sm">
+                            {/* Meta Info — glass-3d pills */}
+                            <div className="flex items-center justify-center gap-3 mb-7 pb-6 border-b border-white/50">
+                                <div
+                                    className="flex items-center gap-2 px-4 py-2 text-black/80"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)',
+                                        border: '1px solid rgba(255,255,255,0.72)',
+                                        borderRadius: '9999px',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.92), 0 3px 10px rgba(0,0,0,0.06)',
+                                    }}
+                                >
                                     <Calendar className="h-3.5 w-3.5 text-black/40" />
                                     <span className="text-[9px] font-black uppercase tracking-widest leading-none">{cancelPreview.days_before} DAYS UNTIL TRAVEL</span>
                                 </div>
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/5 backdrop-blur-md border border-black/10 text-black/90 shadow-sm">
+                                <div
+                                    className="flex items-center gap-2 px-4 py-2 text-black/80"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)',
+                                        border: '1px solid rgba(255,255,255,0.72)',
+                                        borderRadius: '9999px',
+                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.92), 0 3px 10px rgba(0,0,0,0.06)',
+                                    }}
+                                >
                                     <CreditCard className="h-3.5 w-3.5 text-black/40" />
                                     <span className="text-[9px] font-black uppercase tracking-widest leading-none">PAID: {formatCurrency(cancelPreview.paid_amount)}</span>
                                 </div>
                             </div>
 
-                            {/* Actions */}
+                            {/* Actions — 3D glass buttons */}
                             <div className="grid grid-cols-2 gap-3">
                                 <Button
                                     variant="ghost"
                                     disabled={isCancelling}
                                     onClick={() => setIsCancelDialogOpen(false)}
-                                    className="h-12 rounded-xl font-black bg-black/5 hover:bg-black/10 text-black border border-black/30 text-xs uppercase tracking-widest transition-all"
+                                    className="h-12 rounded-2xl font-black text-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
+                                        border: '1px solid rgba(255,255,255,0.72)',
+                                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(0,0,0,0.08)',
+                                    }}
                                 >
                                     Stay Active
                                 </Button>
                                 <Button
                                     disabled={isCancelling}
                                     onClick={handleCancelBooking}
-                                    className="h-12 rounded-xl font-black bg-red-600/10 hover:bg-red-600/20 text-black border border-red-600/30 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest group/confirm active:scale-95 shadow-sm"
+                                    className="h-12 rounded-2xl font-black text-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/confirm active:scale-95"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(254,202,202,0.85) 0%, rgba(252,165,165,0.55) 50%, rgba(255,255,255,0.35) 100%)',
+                                        border: '1px solid rgba(252,165,165,0.65)',
+                                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.90), 0 4px 16px rgba(220,38,38,0.18), 0 0 24px rgba(220,38,38,0.08)',
+                                    }}
                                 >
                                     {isCancelling ? (
                                         <>
@@ -1143,14 +1207,17 @@ export default function BookingDetailsPage() {
                                         </>
                                     ) : (
                                         <>
-                                            <XCircle className="h-4 w-4 group-hover/confirm:scale-110 transition-transform" />
+                                            <XCircle className="h-4 w-4 group-hover/confirm:scale-110 transition-transform text-red-600" />
                                             Confirm
                                         </>
                                     )}
                                 </Button>
                             </div>
+
                             {!cancelPreview.cancellation_enabled && (
-                                <p className="text-[9px] text-red-500 font-black text-center mt-5 uppercase tracking-[0.2em] animate-pulse">Note: This action is irreversible once confirmed.</p>
+                                <p className="text-[9px] text-red-500 font-black text-center mt-5 uppercase tracking-[0.2em] animate-pulse">
+                                    Note: This action is irreversible once confirmed.
+                                </p>
                             )}
                         </div>
                     </div>

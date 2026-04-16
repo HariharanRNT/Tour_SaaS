@@ -74,7 +74,7 @@ const SelectContent = React.forwardRef<
         <SelectPrimitive.Content
             ref={ref}
             className={cn(
-                "relative z-[1100] max-h-96 min-w-[8rem] overflow-hidden text-popover-foreground glass-select-content",
+                "relative z-[1100] max-h-96 min-w-[8rem] overflow-hidden text-popover-foreground glass-select-content !text-black",
                 position === "popper" &&
                 "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
                 className
@@ -115,7 +115,7 @@ const SelectItem = React.forwardRef<
     <SelectPrimitive.Item
         ref={ref}
         className={cn(
-            "relative flex w-full select-none items-center py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 glass-select-item",
+            "relative flex w-full select-none items-center py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 glass-select-item !text-black",
             className
         )}
         {...props}

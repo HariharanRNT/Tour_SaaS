@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import User, UserRole
 from app.core.security import decode_access_token
+from app.config import settings
 
 
 async def get_current_domain(
@@ -128,9 +129,9 @@ async def get_current_agent(
     
     # Strict multi-tenancy check
     if current_user.domain and current_user.domain != current_domain:
-        # Only enforce if domain is set. Skip check for known dev/local domains
-        dev_domains = ['localhost', 'rnt.local', 'aaa.local', '127.0.0.1']
-        if current_domain not in dev_domains:
+        # Only enforce if domain is set. Skip check for known dev/local domains or DEBUG mode
+        is_dev = settings.DEBUG or settings.APP_ENV == "development" or current_domain in ['localhost', 'rnt.local', 'aaa.local', '127.0.0.1']
+        if not is_dev:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access denied: This account belongs to {current_user.domain}, but you are on {current_domain}"

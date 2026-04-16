@@ -751,10 +751,10 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             {mode === 'preview' && (
                 <div className="glass-panel border-b border-amber-200/50 px-4 py-3 sticky top-0 z-50">
                     <div className="container mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[var(--color-primary-font)]">
+                        <div className="flex items-center gap-2 text-black">
                             <Sparkles className="h-5 w-5" />
                             <span className="font-bold">Sample Itinerary Preview</span>
-                            <span className="text-sm opacity-80 hidden md:inline"> - This is a read-only view of our curated package.</span>
+                            <span className="text-sm font-bold hidden md:inline"> - This is a read-only view of our curated package.</span>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => router.push('/')} className="bg-white/50 hover:bg-white text-[var(--color-primary-font)] border-amber-300">
                             Exit Preview
@@ -823,7 +823,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     <Clock className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
+                                    <p className="text-[9px] text-white font-black uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
                                     <p className="font-bold text-white text-sm whitespace-nowrap">
                                         {formatDuration(session.duration_days)}
                                     </p>
@@ -835,7 +835,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     <Users className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Travelers</p>
+                                    <p className="text-[9px] text-white font-black uppercase tracking-[0.15em] leading-none mb-1">Travelers</p>
                                     <p className="font-bold text-white text-sm whitespace-nowrap">{travelers.adults + travelers.children + travelers.infants} People</p>
                                 </div>
                             </div>
@@ -863,11 +863,11 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     </div>
                                 </div>
                                 <div className="space-y-6">
-                                    <h2 className="text-3xl md:text-4xl font-black text-[var(--color-primary-font)] leading-tight">
+                                    <h2 className="text-3xl md:text-4xl font-black text-black leading-tight">
                                         {session.title}
                                     </h2>
                                     <div 
-                                        className="text-[var(--color-primary-font)]/90 leading-relaxed text-lg max-w-5xl"
+                                        className="text-black font-medium leading-relaxed text-lg max-w-5xl"
                                         dangerouslySetInnerHTML={{ __html: session.description || '' }}
                                     />
                                 </div>
@@ -1004,7 +1004,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                         <div className="space-y-4">
                                                                             {filteredOnwardFlights.length === 0 ? (
                                                                                 <div className="text-center py-12 glass-panel rounded-xl border-dashed border-0">
-                                                                                    <p className="text-[var(--color-primary-font)] mb-2">No flights found matching your filters.</p>
+                                                                                    <p className="text-black font-bold mb-2">No flights found matching your filters.</p>
                                                                                     <Button variant="link" onClick={() => setFilters({ refundType: 'all', stops: [], dates: [], timeRanges: [], airlines: [] })}>Clear Filters</Button>
                                                                                 </div>
                                                                             ) : (
@@ -1224,16 +1224,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                                 <Clock className="h-4 w-4 text-emerald-600" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Timing</p>
-                                                                <span className="font-bold text-[var(--color-primary-font)]">Cancel before {rule.daysBefore} days</span>
+                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Timing</p>
+                                                                <span className="font-bold text-black">Cancel before {rule.daysBefore} days</span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                             <div className="text-right flex flex-col items-end">
-                                                                <p className="text-xs text-[var(--color-primary-font)]/60 font-bold uppercase tracking-wider">Refund</p>
+                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Refund</p>
                                                                 <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
                                                                 {fareLabel && (
-                                                                    <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 max-w-[120px] leading-tight text-right">
+                                                                    <span className="text-[10px] text-emerald-700 font-bold mt-0.5 max-w-[120px] leading-tight text-right">
                                                                         {fareLabel}
                                                                     </span>
                                                                 )}

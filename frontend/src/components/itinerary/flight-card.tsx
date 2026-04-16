@@ -96,9 +96,9 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                             {flight.airline_code}
                         </div>
                         <div>
-                            <div className="font-black text-[var(--color-primary-font)] text-lg leading-tight">{flight.airline}</div>
-                            <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-primary-font)]/50 mt-0.5">
-                                <span className="bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded text-[var(--color-primary-font)]/80 ring-1 ring-white/10">{flight.airline_code}-{flight.flight_number}</span>
+                            <div className="font-extrabold text-black text-lg leading-tight">{flight.airline}</div>
+                            <div className="flex items-center gap-2 text-xs font-bold text-black mt-0.5">
+                                <span className="bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded text-black ring-1 ring-white/10">{flight.airline_code}-{flight.flight_number}</span>
                                 <span>•</span>
                                 <span>{formatDate(flight.departure_time)}</span>
                             </div>
@@ -106,7 +106,7 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                     </div>
 
                     <div className="text-right">
-                        <div className="text-2xl font-extrabold text-[var(--color-primary-font)]">₹{flight.price.toLocaleString('en-IN')}</div>
+                        <div className="text-2xl font-extrabold text-black">₹{flight.price.toLocaleString('en-IN')}</div>
                         <div className={`text-[10px] font-bold uppercase tracking-wide ${flight.is_refundable ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {flight.is_refundable ? 'Refundable' : 'Non-refundable'}
                         </div>
@@ -116,12 +116,12 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                 {/* Timeline Visualization */}
                 <div className="flex items-center justify-between bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                     <div className="text-center min-w-[60px]">
-                        <div className="text-2xl font-bold text-[var(--color-primary-font)]">{depTime}</div>
-                        <div className="text-xs font-bold text-slate-500 uppercase">{flight.origin}</div>
+                        <div className="text-2xl font-bold text-black">{depTime}</div>
+                        <div className="text-xs font-bold text-black uppercase">{flight.origin}</div>
                     </div>
 
                     <div className="flex-1 px-6 flex flex-col items-center">
-                        <div className="text-xs font-medium text-slate-400 mb-2">{flight.duration}</div>
+                        <div className="text-xs font-bold text-black mb-2">{flight.duration}</div>
                         <div className="w-full relative flex items-center">
                             <div className="h-[3px] w-full bg-gradient-to-r from-[var(--primary)] via-[#FB923C] to-[var(--primary)] rounded-full opacity-60"></div>
                             {/* Start Dot */}
@@ -139,8 +139,8 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                     </div>
 
                     <div className="text-center min-w-[60px]">
-                        <div className="text-2xl font-bold text-[var(--color-primary-font)]">{arrTime}</div>
-                        <div className="text-xs font-bold text-slate-500 uppercase">{flight.destination}</div>
+                        <div className="text-2xl font-bold text-black">{arrTime}</div>
+                        <div className="text-xs font-bold text-black uppercase">{flight.destination}</div>
                     </div>
                 </div>
 
@@ -148,14 +148,14 @@ export function FlightCard({ flight, isSelected, onSelect, isBestValue }: Flight
                 <div className="flex flex-col gap-4 mt-auto">
                     {/* Row 1: Amenity Pills */}
                     <div className="flex flex-wrap gap-2 items-center">
-                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-primary-font)]/80 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
-                            <span className="opacity-70">🧳</span> {flight.baggage.split(',')[0]}
+                        <div className="flex items-center gap-1.5 text-[10px] text-black bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span>🧳</span> {flight.baggage.split(',')[0]}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-primary-font)]/80 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
-                            <span className="opacity-70">📦</span> {flight.raw_data?.class || 'Economy'}
+                        <div className="flex items-center gap-1.5 text-[10px] text-black bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span>📦</span> {flight.raw_data?.class || 'Economy'}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-primary-font)]/80 bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
-                            <span className="opacity-70">🍽️</span> Meals
+                        <div className="flex items-center gap-1.5 text-[10px] text-black bg-white/20 backdrop-blur-sm px-2.5 py-1.5 rounded-full border border-white/30 shadow-sm font-black whitespace-nowrap">
+                            <span>🍽️</span> Meals
                         </div>
                     </div>
 

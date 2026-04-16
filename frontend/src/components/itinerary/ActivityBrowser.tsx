@@ -24,8 +24,8 @@ export function ActivityBrowser({ activities, loading, onAddToDay }: ActivityBro
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-16">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-lg font-medium">Loading activities...</p>
+                <Loader2 className="h-12 w-12 animate-spin text-black mb-4" />
+                <p className="text-lg font-bold text-black">Loading activities...</p>
             </div>
         )
     }
@@ -34,8 +34,8 @@ export function ActivityBrowser({ activities, loading, onAddToDay }: ActivityBro
         return (
             <div className="text-center py-16">
                 <div className="text-6xl mb-4">🎯</div>
-                <p className="text-xl font-semibold mb-2">No activities available</p>
-                <p className="text-muted-foreground">
+                <p className="text-xl font-black text-black mb-2">No activities available</p>
+                <p className="text-black font-bold">
                     Please search for a destination first
                 </p>
             </div>
@@ -54,7 +54,7 @@ export function ActivityBrowser({ activities, loading, onAddToDay }: ActivityBro
                         className="pl-10"
                     />
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-black font-bold mt-2">
                     {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'} available
                 </p>
             </div>
@@ -72,7 +72,7 @@ export function ActivityBrowser({ activities, loading, onAddToDay }: ActivityBro
 
             {filteredActivities.length === 0 && searchTerm && (
                 <div className="text-center py-8">
-                    <p className="text-muted-foreground">
+                    <p className="text-black font-bold">
                         No activities match "{searchTerm}"
                     </p>
                 </div>

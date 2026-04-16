@@ -444,6 +444,23 @@ class HomepageSettingsUpdate(BaseModel):
     default_email_message: Optional[str] = None
     email_templates: Optional[dict] = None
 
+    # My Booking Customization
+    priority_support_phone: Optional[str] = Field(None, max_length=20)
+    priority_support_email: Optional[str] = Field(None, max_length=100)
+    payment_summary_title: Optional[str] = Field(None, max_length=100)
+    payment_summary_base_cost_label: Optional[str] = Field(None, max_length=100)
+    payment_summary_taxes_label: Optional[str] = Field(None, max_length=100)
+    payment_summary_total_label: Optional[str] = Field(None, max_length=100)
+    payment_summary_support_text: Optional[str] = Field(None, max_length=500)
+
+    # All Destinations (Plan Trip) Customization
+    plan_trip_page_title: Optional[str] = Field(None, max_length=100)
+    plan_trip_search_placeholder: Optional[str] = Field(None, max_length=200)
+    plan_trip_primary_btn_text: Optional[str] = Field(None, max_length=50)
+    plan_trip_secondary_btn_text: Optional[str] = Field(None, max_length=50)
+    plan_trip_price_label: Optional[str] = Field(None, max_length=50)
+    plan_trip_empty_state_message: Optional[str] = Field(None, max_length=200)
+
     @field_validator(
         'agency_name', 'headline1', 'headline2', 'subheading', 
         'primaryBtnText', 'secondaryBtnText', 'badgeText',
@@ -455,6 +472,11 @@ class HomepageSettingsUpdate(BaseModel):
         'ai_optimized_text', 'morning_label', 'afternoon_label', 
         'evening_label', 'night_label', 'cart_summary_title', 
         'cart_cta_text', 'modal_cta_text', 'package_cta_text',
+        'priority_support_phone', 'priority_support_email', 'payment_summary_title',
+        'payment_summary_base_cost_label', 'payment_summary_taxes_label', 
+        'payment_summary_total_label', 'payment_summary_support_text',
+        'plan_trip_page_title', 'plan_trip_search_placeholder', 'plan_trip_primary_btn_text',
+        'plan_trip_secondary_btn_text', 'plan_trip_price_label', 'plan_trip_empty_state_message',
         mode='before'
     )
     @classmethod

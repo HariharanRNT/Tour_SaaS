@@ -109,7 +109,7 @@ export function TripCart({
                 </CardTitle>
                 <CardDescription className={cn(
                     "font-bold pl-1 relative z-10 text-[11px] italic",
-                    cardStyle === 'glassy' ? "text-white/60" : "text-slate-500"
+                    cardStyle === 'glassy' ? "text-white" : "text-black"
                 )}>
                     Ready for your dream escape?
                 </CardDescription>
@@ -127,15 +127,15 @@ export function TripCart({
                     )}>
                         <Users className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
-                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-[var(--color-primary-font)]/60")}>Travelers</span>
-                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>{totalTravelers} People</span>
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>Travelers</span>
+                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-black")}>{totalTravelers} People</span>
                         </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-xl ml-1">
                         <Clock className="h-3.5 w-3.5 text-[var(--primary)]" />
                         <div className="flex flex-col leading-none">
-                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-[var(--color-primary-font)]/60")}>Duration</span>
-                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>{formatDuration(duration.days)}</span>
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest mb-0.5", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>Duration</span>
+                            <span className={cn("font-bold text-xs", cardStyle === 'glassy' ? "text-white" : "text-black")}>{formatDuration(duration.days)}</span>
                         </div>
                     </div>
                 </div>
@@ -146,23 +146,23 @@ export function TripCart({
                         <>
                             {/* Base Price Section */}
                             <div className="group">
-                                <div className={cn("flex justify-between text-[10px] mb-1 uppercase tracking-widest font-black", cardStyle === 'glassy' ? "text-white/40" : "text-slate-400")}>
+                                <div className={cn("flex justify-between text-[10px] mb-1 uppercase tracking-widest font-black", cardStyle === 'glassy' ? "text-white" : "text-black")}>
                                     <span>Base Package (Per Person)</span>
-                                    <span className={cardStyle === 'glassy' ? "text-white/80" : "text-[var(--color-primary-font)]/80"}>₹{basePrice.toLocaleString()}</span>
+                                    <span className={cardStyle === 'glassy' ? "text-white" : "text-black"}>₹{basePrice.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className={cn("font-bold flex items-center gap-2 text-xs", cardStyle === 'glassy' ? "text-white/60" : "text-slate-500")}>
-                                        <Users className="h-3 w-3 opacity-50 text-[var(--primary)]" />
+                                    <span className={cn("font-bold flex items-center gap-2 text-xs", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>
+                                        <Users className="h-3 w-3 opacity-100 text-[var(--primary)]" />
                                         <span className="text-[10px]">x {travelers.adults + travelers.children} Adults/Children</span>
                                     </span>
-                                    <span className={cn("font-black text-lg", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>₹{totalBasePrice.toLocaleString()}</span>
+                                    <span className={cn("font-black text-lg", cardStyle === 'glassy' ? "text-white" : "text-black")}>₹{totalBasePrice.toLocaleString()}</span>
                                 </div>
                                 {travelers.infants > 0 && (
                                     <div className="flex justify-between items-center mt-1.5 px-2 py-1 bg-[var(--primary)]/5 rounded-lg border border-[var(--primary)]/10">
-                                        <span className={cn("font-bold text-[10px]", cardStyle === 'glassy' ? "text-white/60" : "text-slate-500")}>
+                                        <span className={cn("font-bold text-[10px]", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>
                                             Infants ({travelers.infants})
                                         </span>
-                                        <span className="text-[10px] font-black text-[var(--primary)]">FREE</span>
+                                        <span className="text-[10px] font-black text-emerald-500">FREE</span>
                                     </div>
                                 )}
                             </div>
@@ -178,7 +178,7 @@ export function TripCart({
                                             cardStyle === 'glassy' ? "border-white/10" : "border-slate-100"
                                         )}>
                                             <div className="flex justify-between items-start text-xs">
-                                                <span className={cn("flex items-center gap-2 font-bold", cardStyle === 'glassy' ? "text-white/70" : "text-[var(--color-primary-font)]/70")}>
+                                                <span className={cn("flex items-center gap-2 font-black", cardStyle === 'glassy' ? "text-white" : "text-black")}>
                                                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
                                                     <div className="flex flex-col">
                                                         <span>{service.name}</span>
@@ -187,7 +187,7 @@ export function TripCart({
                                                         )}
                                                     </div>
                                                 </span>
-                                                <span className={cn("font-black whitespace-nowrap", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>₹{service.price.toLocaleString()}</span>
+                                                <span className={cn("font-black whitespace-nowrap", cardStyle === 'glassy' ? "text-white" : "text-black")}>₹{service.price.toLocaleString()}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -202,7 +202,7 @@ export function TripCart({
                         "flex justify-between items-center p-3 rounded-xl border shadow-sm",
                         cardStyle === 'glassy' ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100"
                     )}>
-                        <span className={cn("font-black text-[9px] uppercase tracking-[0.2em]", cardStyle === 'glassy' ? "text-white/60" : "text-[var(--color-primary-font)]/60")}>
+                        <span className={cn("font-black text-[9px] uppercase tracking-[0.2em]", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>
                             {isEnquiry ? "Taxes & Fees" : gstSettings && !gstSettings.inclusive ? "Net Amount" : "Taxes & Fees"}
                         </span>
                         {isEnquiry || (gstSettings && gstSettings.inclusive) || !gstSettings ? (
@@ -211,7 +211,7 @@ export function TripCart({
                                 <span className="text-[9px] font-bold tracking-widest uppercase">Included</span>
                             </div>
                         ) : (
-                            <span className={cn("font-black text-sm", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>₹{subTotal.toLocaleString()}</span>
+                            <span className={cn("font-black text-sm", cardStyle === 'glassy' ? "text-white" : "text-black")}>₹{subTotal.toLocaleString()}</span>
                         )}
                     </div>
 
@@ -224,7 +224,7 @@ export function TripCart({
                             <span className="flex items-center gap-2 text-[var(--primary)] font-black uppercase tracking-widest">
                                 GST ({gstSettings.percentage}%)
                             </span>
-                            <span className={cn("font-black", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span className={cn("font-black", cardStyle === 'glassy' ? "text-white" : "text-black")}>₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
                 </div>
@@ -251,7 +251,7 @@ export function TripCart({
                                         cardStyle === 'glassy' ? "bg-white/10 border-white/20" : "bg-white border-slate-200"
                                     )}>
                                         <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                                        <span className={cn("text-[8px] font-black uppercase tracking-wider", cardStyle === 'glassy' ? "text-white/80" : "text-[var(--color-primary-font)]/80")}>
+                                        <span className={cn("text-[8px] font-black uppercase tracking-wider", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>
                                             {isEnquiry ? 'Price Locked' : 'Price Locked'}
                                         </span>
                                     </div>

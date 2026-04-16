@@ -762,8 +762,8 @@ export default function CreatePackagePage() {
             <div className="pkg-creation-root min-h-screen flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)] animate-spin mx-auto" />
-                    <p className="text-[var(--color-primary-font)] font-semibold text-lg">Loading package details...</p>
-                    <p className="text-[var(--color-primary-font)]/60 text-sm">Please wait while we fetch your saved data</p>
+                    <p className="text-black font-semibold text-lg">Loading package details...</p>
+                    <p className="text-black/60 text-sm">Please wait while we fetch your saved data</p>
                 </div>
             </div>
         )
@@ -780,7 +780,7 @@ export default function CreatePackagePage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => router.push('/agent/packages')}
-                                className="text-[var(--color-primary-font)] hover:text-[var(--color-primary-font)] -ml-2 hover:bg-white/50"
+                                className="text-black hover:text-black -ml-2 hover:bg-white/50"
                             >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Packages
@@ -790,7 +790,7 @@ export default function CreatePackagePage() {
                         {/* Title & Metadata */}
                         <div className="flex items-end justify-between pb-0">
                             <div>
-                                <h1 className="text-3xl font-bold text-[var(--color-primary-font)] flex items-center gap-3">
+                                <h1 className="text-3xl font-bold text-black flex items-center gap-3">
                                     <span className="text-3xl">🗺️</span>
                                     {packageId ? (
                                         <span className="truncate max-w-xl block" title={formData.title}>
@@ -798,7 +798,7 @@ export default function CreatePackagePage() {
                                         </span>
                                     ) : 'Create New Package'}
                                 </h1>
-                                <p className="text-sm text-[var(--color-primary-font)] mt-1 ml-12">
+                                <p className="text-sm text-black mt-1 ml-12">
                                     Fill in the details to create a tour package
                                 </p>
                             </div>
@@ -858,9 +858,9 @@ export default function CreatePackagePage() {
                                             {/* Circle */}
                                             <div className={cn(
                                                 "relative w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-700 flex-shrink-0",
-                                                isCompleted ? "bg-emerald-500 border-white text-white shadow-[0_0_15px_var(--primary-glow)]" :
-                                                    isCurrent ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] border-white text-white shadow-[0_0_20px_var(--primary-glow)] scale-110" :
-                                                        "bg-white/20 backdrop-blur-md border-white/30 text-[var(--color-primary-font)] font-medium"
+                                                isCompleted ? "bg-[#085B1F] border-white text-white shadow-[0_0_15px_rgba(8,91,31,0.3)]" :
+                                                    isCurrent ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] border-white text-black shadow-[0_0_20px_var(--primary-glow)] scale-110" :
+                                                        "bg-white/20 backdrop-blur-md border-white/30 text-black font-medium"
                                             )}>
                                                 {isCompleted ? <Check className="w-5 h-5" /> : (
                                                     <span className={cn("text-sm font-bold", isCurrent && "animate-pulse")}>{item.step}</span>
@@ -879,11 +879,14 @@ export default function CreatePackagePage() {
                                             )}>
                                                 <span className={cn(
                                                     "text-[11px] font-bold whitespace-nowrap tracking-tight",
-                                                    isCurrent ? "text-[var(--primary)]" : isCompleted ? "text-emerald-500" : "text-[var(--color-primary-font)]"
+                                                    isCurrent ? "text-[var(--primary)]" : isCompleted ? "text-[#085B1F]" : "text-black"
                                                 )}>
                                                     {item.label}
                                                 </span>
-                                                <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-primary-font)] mt-0.5 whitespace-nowrap">
+                                                <span className={cn(
+                                                    "text-[10px] uppercase font-bold tracking-wider mt-0.5 whitespace-nowrap",
+                                                    isCompleted ? "text-[#085B1F]" : "text-black"
+                                                )}>
                                                     {isCompleted ? 'Completed' : isCurrent ? 'In Progress' : 'Pending'}
                                                 </span>
                                             </div>
@@ -910,15 +913,15 @@ export default function CreatePackagePage() {
                                     <Briefcase className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-[var(--color-primary-font)]">Overview</h3>
-                                    <p className="text-xs text-[var(--color-primary-font)] opacity-80">Essential package details</p>
+                                    <h3 className="font-semibold text-black">Overview</h3>
+                                    <p className="text-xs text-black opacity-80">Essential package details</p>
                                 </div>
                                 {agentGstApplicable !== null && (
                                     <div className={cn(
                                         "text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-2",
                                         agentGstApplicable
                                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                            : "bg-white text-[var(--color-primary-font)] border-[var(--color-primary-font)]/20"
+                                            : "bg-white text-black border-black/20"
                                     )}>
                                         <span>GST {agentGstApplicable ? 'Applicable' : 'Not Applicable'}</span>
                                         <div className={cn("w-2 h-2 rounded-full", agentGstApplicable ? "bg-emerald-500 animate-pulse" : "bg-black/30")} />
@@ -928,7 +931,7 @@ export default function CreatePackagePage() {
                             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Package Type Toggle & Title Row */}
                                 <div className="space-y-3 mb-2">
-                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Package Type <span className="text-red-500">*</span></Label>
+                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">Package Type <span className="text-red-500">*</span></Label>
                                     <div className="relative flex p-1 rounded-full max-w-sm" style={{ background: 'rgba(255, 255, 255, 0.12)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
                                         {/* Sliding Background Indicator */}
                                         <div
@@ -945,10 +948,10 @@ export default function CreatePackagePage() {
                                             onClick={() => updateFormData('package_mode', 'single')}
                                             className={cn(
                                                 "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
-                                                formData.package_mode === 'single' ? "text-white" : "text-[var(--color-primary-font)] hover:text-[var(--primary)] hover:bg-white/10"
+                                                formData.package_mode === 'single' ? "text-white" : "text-black hover:text-[var(--primary)] hover:bg-white/10"
                                             )}
                                         >
-                                            <MapPin className="w-4 h-4" />
+                                            <MapPin className={cn("w-4 h-4", formData.package_mode === 'single' ? "text-white" : "text-black")} />
                                             Single
                                         </button>
 
@@ -958,22 +961,22 @@ export default function CreatePackagePage() {
                                             onClick={() => updateFormData('package_mode', 'multi')}
                                             className={cn(
                                                 "relative z-10 flex-1 py-2 px-4 text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
-                                                formData.package_mode === 'multi' ? "text-white" : "text-[var(--color-primary-font)] hover:text-[var(--primary)] hover:bg-white/10"
+                                                formData.package_mode === 'multi' ? "text-white" : "text-black hover:text-[var(--primary)] hover:bg-white/10"
                                             )}
                                         >
-                                            <Globe className="w-4 h-4" />
+                                            <Globe className={cn("w-4 h-4", formData.package_mode === 'multi' ? "text-white" : "text-black")} />
                                             Multi-Destinations
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className={cn("text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider", formData.title ? "text-[var(--primary)]" : "")}>
+                                    <Label className={cn("text-xs font-bold text-black uppercase tracking-wider", formData.title ? "text-[var(--primary)]" : "")}>
                                         Package Title <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <FileText className={cn("h-4 w-4 transition-colors", formData.title ? "text-[var(--primary)]" : "text-[var(--color-primary-font)] group-focus-within/input:text-[var(--primary)]")} />
+                                            <FileText className={cn("h-4 w-4 transition-colors", formData.title ? "text-[var(--primary)]" : "text-black/40 group-focus-within/input:text-[var(--primary)]")} />
                                         </div>
                                         <Input
                                             placeholder="e.g., Tokyo Adventure 7 Days"
@@ -981,25 +984,25 @@ export default function CreatePackagePage() {
                                             onChange={(e) => updateFormData('title', e.target.value)}
                                             className={cn("glass-input pl-10 h-12 rounded-xl", getInputStyle(formData.title, true))}
                                         />
-                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs text-[var(--color-primary-font)]">
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs text-black/40">
                                             {formData.title.length}/100
                                         </div>
                                     </div>
-                                    <p className="text-xs text-[var(--color-primary-font)] opacity-80">Create an engaging title that highlights the experience</p>
+                                    <p className="text-xs text-black/80">Create an engaging title that highlights the experience</p>
                                 </div>
 
                                 {formData.package_mode === 'single' && (
                                     <>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Country <span className="text-red-500">*</span></Label>
+                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Country <span className="text-red-500">*</span></Label>
                                             <div className="relative group">
                                                 <Select
                                                     value={formData.country}
                                                     onValueChange={(value) => updateFormData('country', value)}
                                                 >
-                                                    <SelectTrigger className="glass-input pl-10 h-11 border-gray-200 rounded-xl">
+                                                    <SelectTrigger className="glass-input pl-10 h-11 border-gray-200 rounded-xl text-black font-bold">
                                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                            <Globe className="h-4 w-4 text-[var(--color-primary-font)] group-focus-within:text-[var(--primary)] transition-colors" />
+                                                            <Globe className="h-4 w-4 text-black group-focus-within:text-[var(--primary)] transition-colors" />
                                                         </div>
                                                         <SelectValue placeholder="Select a country" />
                                                     </SelectTrigger>
@@ -1015,14 +1018,14 @@ export default function CreatePackagePage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Location <span className="text-red-500">*</span></Label>
+                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Location <span className="text-red-500">*</span></Label>
                                             <div className="relative group">
                                                 <CityAutocomplete
                                                     countryName={formData.country}
                                                     value={formData.destination}
                                                     onChange={(val) => updateFormData('destination', val)}
                                                     placeholder="Search city..."
-                                                    className={cn(!formData.country && "opacity-60 cursor-not-allowed")}
+                                                    className={cn("!font-bold !text-black", !formData.country && "opacity-60 cursor-not-allowed")}
                                                 />
                                             </div>
                                         </div>
@@ -1035,7 +1038,7 @@ export default function CreatePackagePage() {
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
-                                                    <Label className="text-xs font-bold text-[#1e293b] uppercase tracking-[0.15em]">Destination Legs</Label>
+                                                    <Label className="text-xs font-bold text-black uppercase tracking-[0.15em]">Destination Legs</Label>
                                                 </div>
                                                 <div className="px-2.5 py-1 text-[10px] font-bold text-[var(--primary)] bg-white/20 border border-[var(--primary-soft)] tracking-wide rounded-full shadow-sm">
                                                     {formData.destinations.length} Leg{formData.destinations.length !== 1 ? 's' : ''}
@@ -1054,8 +1057,8 @@ export default function CreatePackagePage() {
                                         {formData.destinations.length === 0 && (
                                             <div className="text-center py-8 bg-transparent rounded-xl border border-dashed border-gray-200">
                                                 <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                                <p className="text-sm text-[var(--color-primary-font)] font-medium">No destinations added yet.</p>
-                                                <p className="text-xs text-[var(--color-primary-font)] opacity-70">Click the button above to start building your multi-destination tour.</p>
+                                                <p className="text-sm text-black font-medium">No destinations added yet.</p>
+                                                <p className="text-xs text-black opacity-70">Click the button above to start building your multi-destination tour.</p>
                                             </div>
                                         )}
 
@@ -1101,12 +1104,12 @@ export default function CreatePackagePage() {
                                                         <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-5 mt-2 sm:mt-0 pl-2">
                                                             <div className="sm:col-span-4 relative flex items-center">
                                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                                                                    <Globe className="h-4 w-4 text-[var(--primary)]" />
+                                                                    <Globe className="h-4 w-4 text-black" />
                                                                 </div>
                                                                 <Select value={dest.country} onValueChange={(val) => handleUpdateDestination(index, 'country', val)}>
                                                                     <SelectTrigger
                                                                         className={cn(
-                                                                            "pl-9 h-11 text-sm font-medium transition-all focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] relative",
+                                                                            "pl-9 h-11 text-sm font-bold text-black transition-all focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] relative",
                                                                             !dest.country ? "border-red-500/50 bg-red-50/5" : "border-white/45 bg-white/25"
                                                                         )}
                                                                         style={{ borderRadius: '14px' }}
@@ -1126,7 +1129,7 @@ export default function CreatePackagePage() {
                                                                     value={dest.city}
                                                                     onChange={(val) => handleUpdateDestination(index, 'city', val)}
                                                                     placeholder="City / Area"
-                                                                    className={cn("pl-4 h-11 text-sm font-medium", !dest.country && "opacity-60 cursor-not-allowed")}
+                                                                    className={cn("pl-4 h-11 text-sm !font-bold !text-black", !dest.country && "opacity-60 cursor-not-allowed")}
                                                                 />
                                                             </div>
                                                             <div className="sm:col-span-3 relative flex items-center">
@@ -1137,10 +1140,10 @@ export default function CreatePackagePage() {
                                                                     type="number" min="1"
                                                                     value={dest.days}
                                                                     onChange={(e) => handleUpdateDestination(index, 'days', parseInt(e.target.value) || 1)}
-                                                                    className="pl-9 h-11 text-sm font-bold text-[var(--color-primary-font)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] pr-12 text-center"
+                                                                    className="pl-9 h-11 text-sm font-bold text-black focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:border-[var(--primary)]/50 w-full hover:bg-[rgba(255,255,255,0.4)] pr-12 text-center"
                                                                     style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '14px' }}
                                                                 />
-                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-wider font-bold text-[var(--color-primary-font)] pointer-events-none">Days</span>
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] uppercase tracking-wider font-bold text-black pointer-events-none">Days</span>
                                                             </div>
                                                         </div>
 
@@ -1220,24 +1223,24 @@ export default function CreatePackagePage() {
                                                 </div>
                                                 <div className="flex flex-wrap gap-2 text-[11px] font-medium">
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
-                                                        <Calendar className="w-3.5 h-3.5 text-[var(--color-primary-font)] opacity-80" />
+                                                        <Calendar className="w-3.5 h-3.5 text-black opacity-80" />
                                                         <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0)}</span>
-                                                        <span className="text-[var(--color-primary-font)] font-bold uppercase tracking-wider">Days</span>
+                                                        <span className="text-black font-bold uppercase tracking-wider">Days</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
-                                                        <Moon className="w-3.5 h-3.5 text-[var(--color-primary-font)] opacity-80" />
+                                                        <Moon className="w-3.5 h-3.5 text-black opacity-80" />
                                                         <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.max(0, formData.destinations.reduce((sum, d) => sum + (parseInt(d.days as any) || 0), 0) - 1)}</span>
-                                                        <span className="text-[var(--color-primary-font)] font-bold uppercase tracking-wider">Nights</span>
+                                                        <span className="text-black font-bold uppercase tracking-wider">Nights</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
-                                                        <Globe className="w-3.5 h-3.5 text-[var(--color-primary-font)] opacity-80" />
+                                                        <Globe className="w-3.5 h-3.5 text-black opacity-80" />
                                                         <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{new Set(formData.destinations.filter(d => d.country).map(d => d.country)).size}</span>
-                                                        <span className="text-[var(--color-primary-font)] font-bold uppercase tracking-wider">Countries</span>
+                                                        <span className="text-black font-bold uppercase tracking-wider">Countries</span>
                                                     </div>
                                                     <div className="px-3 py-1.5 bg-[rgba(255,255,255,0.5)] border border-white/50 rounded-full flex items-center gap-1.5 shadow-sm transition-all duration-300">
-                                                        <Building2 className="w-3.5 h-3.5 text-[var(--color-primary-font)] opacity-80" />
+                                                        <Building2 className="w-3.5 h-3.5 text-black opacity-80" />
                                                         <span className="text-[var(--primary)] font-bold text-sm tracking-tight min-w-[12px] text-center" style={{ fontVariantNumeric: 'tabular-nums' }}>{formData.destinations.filter(d => d.city).length}</span>
-                                                        <span className="text-[var(--color-primary-font)] font-bold uppercase tracking-wider">Cities</span>
+                                                        <span className="text-black font-bold uppercase tracking-wider">Cities</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1254,22 +1257,21 @@ export default function CreatePackagePage() {
                                     <Banknote className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-[var(--color-primary-font)]">Pricing</h3>
-                                    <p className="text-xs text-[var(--color-primary-font)] opacity-80">Timeline and costs</p>
+                                    <h3 className="font-semibold text-black">Pricing</h3>
+                                    <p className="text-xs text-black opacity-80">Timeline and costs</p>
                                 </div>
                             </div>
                             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                                {/* Duration - Combined Field */}
                                 <div className="space-y-2 col-span-2 md:col-span-1">
                                     <div className="flex items-center justify-between">
-                                        <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Duration <span className="text-red-500">*</span></Label>
+                                        <Label className="text-xs font-bold text-black uppercase tracking-wider">Duration <span className="text-red-500">*</span></Label>
                                         {formData.package_mode === 'multi' && <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded uppercase font-bold tracking-widest">Auto</span>}
                                     </div>
                                     <div className="duration-wrapper glass-input overflow-hidden group/duration transition-all hover:border-[var(--primary)]/30">
                                         {/* Nights */}
                                         <div className="duration-half flex-1 border-r border-white/30">
-                                            <Moon className="duration-icon text-[var(--color-primary-font)]" />
+                                            <Moon className="duration-icon text-black" />
                                             <Input
                                                 type="number"
                                                 min="0"
@@ -1278,12 +1280,12 @@ export default function CreatePackagePage() {
                                                 onChange={(e) => updateFormData('duration_nights', parseInt(e.target.value))}
                                                 className={cn("duration-value border-0 focus-visible:ring-0", formData.package_mode === 'multi' && "opacity-80 cursor-not-allowed")}
                                             />
-                                            <span className="duration-unit text-[var(--color-primary-font)]">Nights</span>
+                                            <span className="duration-unit text-black">Nights</span>
                                         </div>
-
+ 
                                         {/* Days */}
                                         <div className="duration-half flex-1">
-                                            <Calendar className="duration-icon text-[var(--color-primary-font)]" />
+                                            <Calendar className="duration-icon text-black" />
                                             <Input
                                                 type="number"
                                                 min="1"
@@ -1292,15 +1294,15 @@ export default function CreatePackagePage() {
                                                 onChange={(e) => updateFormData('duration_days', parseInt(e.target.value))}
                                                 className={cn("duration-value border-0 focus-visible:ring-0", formData.package_mode === 'multi' && "opacity-80 cursor-not-allowed")}
                                             />
-                                            <span className="duration-unit text-[var(--color-primary-font)]">Days</span>
+                                            <span className="duration-unit text-black">Days</span>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-[var(--color-primary-font)] opacity-80">{formData.package_mode === 'multi' ? "Auto-calculated from destination legs" : "Auto-calculates nights based on days"}</p>
+                                    <p className="text-xs text-black opacity-80">{formData.package_mode === 'multi' ? "Auto-calculated from destination legs" : "Auto-calculates nights based on days"}</p>
                                 </div>
 
                                 {/* Price - Enhanced Field */}
                                 <div className="space-y-2 md:col-span-1">
-                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider flex items-center">
+                                    <Label className="text-xs font-bold text-black uppercase tracking-wider flex items-center">
                                         Price per Person
                                         {formData.booking_type === 'INSTANT' ? (
                                             <span className="required-asterisk">*</span>
@@ -1310,7 +1312,7 @@ export default function CreatePackagePage() {
                                     </Label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span className="text-[var(--color-primary-font)] font-bold">₹</span>
+                                            <span className="text-black font-bold">₹</span>
                                         </div>
                                         <Input
                                             type="text"
@@ -1335,7 +1337,7 @@ export default function CreatePackagePage() {
 
                                 {/* Booking Type Selection */}
                                 <div className="space-y-3 md:col-span-2">
-                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Booking Type</Label>
+                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">Booking Type</Label>
                                     <div 
                                         className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
                                         style={{
@@ -1360,11 +1362,11 @@ export default function CreatePackagePage() {
                                         >
                                             <div className={cn(
                                                 "text-sm tracking-wide font-bold transition-colors",
-                                                formData.booking_type === 'INSTANT' ? "text-white" : "text-[var(--color-primary-font)]"
+                                                formData.booking_type === 'INSTANT' ? "text-white" : "text-black"
                                             )}>Instant Booking</div>
                                             <div className={cn(
                                                 "text-[10px] opacity-80",
-                                                formData.booking_type === 'INSTANT' ? "text-white/80" : "text-[var(--color-primary-font)]/60"
+                                                formData.booking_type === 'INSTANT' ? "text-white/90" : "text-black/80"
                                             )}>Customers pay and book immediately</div>
                                         </button>
                                         <button
@@ -1374,11 +1376,11 @@ export default function CreatePackagePage() {
                                         >
                                             <div className={cn(
                                                 "text-sm tracking-wide font-bold transition-colors",
-                                                formData.booking_type === 'ENQUIRY' ? "text-white" : "text-[var(--color-primary-font)]"
+                                                formData.booking_type === 'ENQUIRY' ? "text-white" : "text-black"
                                             )}>Custom Enquiry</div>
                                             <div className={cn(
                                                 "text-[10px] opacity-80",
-                                                formData.booking_type === 'ENQUIRY' ? "text-white/80" : "text-[var(--color-primary-font)]/60"
+                                                formData.booking_type === 'ENQUIRY' ? "text-white/90" : "text-black/80"
                                             )}>Customers send inquiry first</div>
                                         </button>
                                     </div>
@@ -1388,14 +1390,14 @@ export default function CreatePackagePage() {
                                     <>
                                         {/* Price Label */}
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Price Label (Optional)</Label>
+                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Price Label (Optional)</Label>
                                             <Input
                                                 placeholder="e.g. Price on request"
                                                 value={formData.price_label}
                                                 onChange={(e) => updateFormData('price_label', e.target.value)}
                                                 className="glass-input h-12"
                                             />
-                                            <p className="text-[10px] text-[var(--color-primary-font)]/60 px-1">Displays instead of numeric price if set</p>
+                                            <p className="text-[10px] text-black/60 px-1">Displays instead of numeric price if set</p>
                                         </div>
 
 
@@ -1404,12 +1406,12 @@ export default function CreatePackagePage() {
                                 {/* GST Configuration — visibility controlled by Agent Settings */}
                                 {agentGstApplicable === true && (
                                     <div className="space-y-3 md:col-span-2">
-                                        <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">GST Configuration</Label>
+                                        <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Configuration</Label>
                                         <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-4">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-2">
                                                 {/* GST Percentage */}
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">GST Percentage</Label>
+                                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Percentage</Label>
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         {[5, 12, 18].map(pct => (
                                                             <button
@@ -1444,7 +1446,7 @@ export default function CreatePackagePage() {
 
                                                 {/* GST Mode */}
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">GST Mode</Label>
+                                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Mode</Label>
 
                                                     {/* Segmented Pill Container */}
                                                     <div
@@ -1491,7 +1493,7 @@ export default function CreatePackagePage() {
                                                             <div
                                                                 className="text-[12px] mt-0.5 transition-colors duration-300"
                                                                 style={{
-                                                                    color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.6)'
+                                                                    color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.8)'
                                                                 }}
                                                             >
                                                                 GST added on top of price
@@ -1513,7 +1515,7 @@ export default function CreatePackagePage() {
                                                             <div
                                                                 className="text-sm tracking-wide transition-colors duration-300"
                                                                 style={{
-                                                                    color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : 'var(--color-primary-font)',
+                                                                    color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : 'rgba(0,0,0,0.6)',
                                                                     fontWeight: formData.gst_mode === 'inclusive' ? 700 : 600
                                                                 }}
                                                             >
@@ -1522,7 +1524,7 @@ export default function CreatePackagePage() {
                                                             <div
                                                                 className="text-[12px] mt-0.5 transition-colors duration-300"
                                                                 style={{
-                                                                    color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'var(--color-primary-font)/60'
+                                                                    color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.4)'
                                                                 }}
                                                             >
                                                                 Price already includes GST
@@ -1545,20 +1547,20 @@ export default function CreatePackagePage() {
                                                 >
                                                     {(agentGstApplicable && formData.gst_mode === 'exclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="font-bold text-[var(--color-primary-font)] text-[11px] uppercase tracking-wider">Preview:</span>
-                                                            <span className="font-bold text-[var(--color-primary-font)]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
+                                                            <span className="font-bold text-black">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="text-[var(--primary)] font-bold">+</span>
-                                                            <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'var(--color-primary-font)' }}>
+                                                            <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'black' }}>
                                                                 ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
                                                         </div>
                                                     ) : (agentGstApplicable && formData.gst_mode === 'inclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="font-bold text-[var(--color-primary-font)] text-[11px] uppercase tracking-wider">Preview:</span>
-                                                            <span className="text-[var(--color-primary-font)] opacity-50 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
+                                                            <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
+                                                            <span className="text-black opacity-50 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
                                                             <ArrowRight className="w-3 h-3 text-[var(--primary)]" />
-                                                            <span className="font-bold text-[var(--color-primary-font)]">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
-                                                            <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'var(--color-primary-font)' }}>
+                                                            <span className="font-bold text-black">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
+                                                            <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'black' }}>
                                                                 Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
                                                             </span>
                                                         </div>
@@ -1573,7 +1575,7 @@ export default function CreatePackagePage() {
                                                     )}
 
                                                     <div className="text-right flex flex-col sm:items-end">
-                                                        <div className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider mb-0.5">Final Total</div>
+                                                        <div className="text-[10px] font-bold text-black uppercase tracking-wider mb-0.5">Final Total</div>
                                                         <div className="text-lg font-black" style={{ color: 'var(--primary)' }}>
                                                             ₹{(agentGstApplicable && formData.gst_mode === 'exclusive')
                                                                 ? (formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })
@@ -1593,12 +1595,12 @@ export default function CreatePackagePage() {
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                    <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-black group-hover:scale-110 transition-transform">
                                         <ShieldCheck className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-[var(--color-primary-font)]">Cancellation Policy</h3>
-                                        <p className="text-xs text-[var(--color-primary-font)] opacity-80">Define refund rules based on days before travel</p>
+                                        <h3 className="font-semibold text-black">Cancellation Policy</h3>
+                                        <p className="text-xs text-black opacity-80">Define refund rules based on days before travel</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -1627,7 +1629,7 @@ export default function CreatePackagePage() {
 
                             {formData.cancellation_enabled && (
                                 <CardContent className="p-6 space-y-4">
-                                    <p className="text-xs text-[var(--color-primary-font)] font-medium leading-relaxed">
+                                    <p className="text-xs text-black font-medium leading-relaxed">
                                         Refund rules are applied based on how many days before travel the cancellation is made. Rules are shown from highest to lowest days.
                                         {agentGstApplicable && <span className="ml-1"> The refund percentage depends on the selected <b>fare type</b>.</span>}
                                         {!agentGstApplicable && <span className="ml-1"> The refund percentage applies to the total amount paid.</span>}
@@ -1638,13 +1640,13 @@ export default function CreatePackagePage() {
                                         "grid gap-3 px-4",
                                         agentGstApplicable ? "grid-cols-[1fr_1fr_1.4fr_auto]" : "grid-cols-[1fr_1fr_auto]"
                                     )}>
-                                        <Label className="text-[10px] font-bold uppercase text-[var(--color-primary-font)] tracking-wider">Days Before Travel</Label>
-                                        <Label className="text-[10px] font-bold uppercase text-[var(--color-primary-font)] tracking-wider">Refund %</Label>
+                                        <Label className="text-[10px] font-bold uppercase text-black tracking-wider">Days Before Travel</Label>
+                                        <Label className="text-[10px] font-bold uppercase text-black tracking-wider">Refund %</Label>
                                         {agentGstApplicable && (
                                             <div className="flex items-center gap-1">
-                                                <Label className="text-[10px] font-bold uppercase text-[var(--color-primary-font)] opacity-80 tracking-wider">Fare Type</Label>
+                                                <Label className="text-[10px] font-bold uppercase text-black opacity-80 tracking-wider">Fare Type</Label>
                                                 <div className="relative group/tooltip">
-                                                    <Info className="w-3 h-3 text-[var(--color-primary-font)] cursor-help" />
+                                                    <Info className="w-3 h-3 text-black cursor-help" />
                                                     <div className="absolute left-0 bottom-5 z-20 w-64 bg-gray-900 text-white text-[11px] leading-relaxed rounded-lg px-3 py-2 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none shadow-xl">
                                                         <b>Base Fare</b> excludes GST from refund — GST portion is forfeited.<br />
                                                         <b>Total Fare</b> refunds both base and GST proportionally.
@@ -1716,17 +1718,17 @@ export default function CreatePackagePage() {
                                                             setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                         }}
                                                     >
-                                                        <SelectTrigger className="h-8 text-sm bg-white/80">
+                                                        <SelectTrigger className="h-8 text-sm bg-white/80 text-black font-bold">
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="total_fare">
                                                                 <span className="font-medium">Total Fare</span>
-                                                                <span className="text-[10px] text-[var(--color-primary-font)] opacity-70 ml-1">(Base + GST)</span>
+                                                                <span className="text-[10px] text-black opacity-70 ml-1">(Base + GST)</span>
                                                             </SelectItem>
                                                             <SelectItem value="base_fare">
                                                                 <span className="font-medium">Base Fare</span>
-                                                                <span className="text-[10px] text-[var(--color-primary-font)] opacity-70 ml-1">(GST forfeited)</span>
+                                                                <span className="text-[10px] text-black opacity-70 ml-1">(GST forfeited)</span>
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -1768,18 +1770,18 @@ export default function CreatePackagePage() {
                                     </Button>
 
                                     {/* Example hint */}
-                                    <div className="bg-[var(--primary)]/5 border border-[var(--primary)]/10 rounded-lg p-3 text-xs text-[var(--primary)] space-y-1">
+                                    <div className="bg-black/5 border border-black/10 rounded-lg p-3 text-xs !text-black space-y-1">
                                         {agentGstApplicable ? (
                                             <>
-                                                <p><b>Example:</b> Package Price = ₹1,000 + ₹180 GST (18%) = ₹1,180 Total</p>
-                                                <p className="mt-1">1) Cancel 10 days before travel → 100% refund on <b>Base Fare</b> (₹1,000 refundable)</p>
-                                                <p>2) Cancel 5 days before travel → 25% refund on <b>Total Fare</b> (₹295 refundable)</p>
+                                                <p className="!text-black font-semibold">Example: <span className="font-normal">Package Price = ₹1,000 + ₹180 GST (18%) = ₹1,180 Total</span></p>
+                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> on <b>Base Fare</b> (₹1,000 refundable)</p>
+                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> on <b>Total Fare</b> (₹295 refundable)</p>
                                             </>
                                         ) : (
                                             <>
-                                                <p><b>Example:</b> Package Price = ₹1,000 Total</p>
-                                                <p className="mt-1">1) Cancel 10 days before travel → 100% refund (₹1,000 refundable)</p>
-                                                <p>2) Cancel 5 days before travel → 25% refund (₹250 refundable)</p>
+                                                <p className="!text-black font-semibold">Example: <span className="font-normal">Package Price = ₹1,000 Total</span></p>
+                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> (₹1,000 refundable)</p>
+                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> (₹250 refundable)</p>
                                             </>
                                         )}
                                     </div>
@@ -1791,12 +1793,12 @@ export default function CreatePackagePage() {
                         {/* Trip Categorization */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-black group-hover:scale-110 transition-transform">
                                     <Briefcase className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-[var(--color-primary-font)]">Trip Style</h3>
-                                    <p className="text-xs text-[var(--color-primary-font)]/60">Categorize your package for the right audience</p>
+                                    <h3 className="font-semibold text-black">Trip Style</h3>
+                                    <p className="text-xs text-black opacity-60">Categorize your package for the right audience</p>
                                 </div>
                             </div>
                             <CardContent className="p-6">
@@ -1805,7 +1807,7 @@ export default function CreatePackagePage() {
                                     <Label
                                         className={cn(
                                             "text-xs font-bold uppercase tracking-wider transition-colors",
-                                            tripStyleError ? "text-red-500" : "text-[var(--color-primary-font)]"
+                                            tripStyleError ? "text-red-500" : "text-black"
                                         )}
                                     >
                                         TRIP STYLE <span className="text-red-500">*</span>
@@ -1841,7 +1843,7 @@ export default function CreatePackagePage() {
                                     )}
                                 </div>
 
-                                <p className="text-[11px] text-[var(--color-primary-font)] font-medium -mt-1">Who is this package designed for? Select all that apply.</p>
+                                <p className="text-[11px] text-black font-medium -mt-1">Who is this package designed for? Select all that apply.</p>
 
                                 {/* Validation error border flash */}
                                 <div
@@ -1881,7 +1883,7 @@ export default function CreatePackagePage() {
                                                         className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-150"
                                                         style={{ background: 'var(--primary)', flexShrink: 0 }}
                                                     >
-                                                        <Check className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />
+                                                        <Check className="w-3 h-3 text-black" style={{ strokeWidth: 3 }} />
                                                     </div>
                                                 )}
 
@@ -1904,7 +1906,7 @@ export default function CreatePackagePage() {
                                                 {/* Label */}
                                                 <span className={cn(
                                                     "text-xs font-bold text-center tracking-wide transition-colors z-10",
-                                                    isSelected ? "text-[var(--primary)] font-semibold" : "text-[var(--color-primary-font)] group-hover:text-[var(--primary)]"
+                                                    isSelected ? "text-[var(--primary)] font-semibold" : "text-black group-hover:text-[var(--primary)]"
                                                 )}>
                                                     {style.label}
                                                 </span>
@@ -1926,20 +1928,20 @@ export default function CreatePackagePage() {
                         {/* Experiences & Activities */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-black group-hover:scale-110 transition-transform">
                                     <Mountain className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-[var(--color-primary-font)]">Experiences & Activities</h3>
-                                    <p className="text-xs text-[var(--color-primary-font)]/60">Help travelers discover what they will experience</p>
+                                    <h3 className="font-semibold text-black">Experiences & Activities</h3>
+                                    <p className="text-xs text-black opacity-60">Help travelers discover what they will experience</p>
                                 </div>
                             </div>
                             <CardContent className="p-6">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
                                         <div>
-                                            <Label className="text-xs font-bold text-[var(--color-primary-font)] uppercase tracking-wider">ACTIVITIES <span className="text-[var(--color-primary-font)]/60 font-medium normal-case">(Optional)</span></Label>
-                                            <p className="text-[11px] text-[var(--color-primary-font)] font-medium mt-0.5">What will customers do on this trip? (Helps with search & discovery)</p>
+                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">ACTIVITIES <span className="text-black/60 font-medium normal-case">(Optional)</span></Label>
+                                            <p className="text-[11px] text-black font-medium mt-0.5">What will customers do on this trip? (Helps with search & discovery)</p>
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -1953,7 +1955,7 @@ export default function CreatePackagePage() {
                                                         "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
                                                         isSelected
                                                             ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
-                                                            : "bg-white/10 backdrop-blur-md text-[var(--color-primary-font)] border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+                                                            : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
                                                     )}
                                                     onClick={() => toggleActivity(activity.id)}
                                                 >
@@ -1983,12 +1985,12 @@ export default function CreatePackagePage() {
                         {/* Flight Configuration */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-black group-hover:scale-110 transition-transform">
                                     <Plane className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-[var(--color-primary-font)]">Include Flights</h3>
-                                    <p className="text-xs text-[var(--color-primary-font)]/80">Manage air travel availability and preferences</p>
+                                    <h3 className="font-semibold text-black">Include Flights</h3>
+                                    <p className="text-xs text-black opacity-80">Manage air travel availability and preferences</p>
                                 </div>
                             </div>
                             <CardContent className="p-6">
@@ -2005,13 +2007,13 @@ export default function CreatePackagePage() {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
                                                     "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
-                                                    formData.flights_enabled ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20" : "bg-white/50 text-[#8C6B5D]"
+                                                    formData.flights_enabled ? "bg-[var(--primary)] text-black shadow-lg shadow-[var(--primary)]/20" : "bg-white/50 text-black"
                                                 )}>
-                                                    <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} />
+                                                    <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} stroke="black" />
                                                 </div>
                                                  <div>
-                                                    <h4 className="font-bold text-[var(--color-primary-font)]">Include Flights</h4>
-                                                    <p className="text-xs text-[var(--color-primary-font)]/80">Enable live fare search for customers</p>
+                                                    <h4 className="font-bold text-black">Include Flights</h4>
+                                                    <p className="text-xs text-black opacity-80">Enable live fare search for customers</p>
                                                 </div>
                                             </div>
                                             <div
@@ -2031,7 +2033,7 @@ export default function CreatePackagePage() {
                                         {formData.flights_enabled && (
                                             <div className="px-5 pb-6 pt-2 border-t border-[var(--primary)]/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
                                                  <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Supported Origin Airports</Label>
+                                                    <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Supported Origin Airports</Label>
                                                     <Textarea
                                                         placeholder="e.g. MAA, BOM, DEL (Comma separated)"
                                                         value={originInput}
@@ -2043,12 +2045,12 @@ export default function CreatePackagePage() {
                                                         }}
                                                         className="glass-input min-h-[80px] text-sm font-mono"
                                                     />
-                                                    <p className="text-[10px] text-[var(--color-primary-font)]/70">Add common codes like MAA, BOM, DEL to restrict search origins.</p>
+                                                    <p className="text-[10px] text-black opacity-70">Add common codes like MAA, BOM, DEL to restrict search origins.</p>
                                                 </div>
 
                                                 <div className="space-y-4">
                                                      <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Cabin Class Preference</Label>
+                                                        <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Cabin Class Preference</Label>
                                                         <div className="flex gap-2">
                                                             {['ECONOMY', 'BUSINESS'].map(cls => (
                                                                 <button
@@ -2059,7 +2061,7 @@ export default function CreatePackagePage() {
                                                                         "flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
                                                                         formData.flight_cabin_class === cls
                                                                             ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/20"
-                                                                            : "bg-white border-gray-200 text-[var(--color-primary-font)] font-bold hover:border-[var(--primary)]/30"
+                                                                            : "bg-white border-gray-200 text-black font-bold hover:border-[var(--primary)]/30"
                                                                     )}
                                                                 >
                                                                     {cls}
@@ -2068,10 +2070,10 @@ export default function CreatePackagePage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/40 border border-[var(--color-primary-font)]/10">
+                                                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/40 border border-black/10">
                                                          <div>
-                                                            <Label className="text-[11px] font-bold text-[var(--color-primary-font)]">Flight Price Included?</Label>
-                                                            <p className="text-[10px] text-[var(--color-primary-font)]/70">Check if price is part of base package</p>
+                                                            <Label className="text-[11px] font-bold text-black">Flight Price Included?</Label>
+                                                            <p className="text-[10px] text-black opacity-70">Check if price is part of base package</p>
                                                         </div>
                                                         <Checkbox
                                                             checked={formData.flight_price_included}
@@ -2081,7 +2083,7 @@ export default function CreatePackagePage() {
                                                 </div>
 
                                                  <div className="md:col-span-2 space-y-2">
-                                                    <Label className="text-[10px] font-bold text-[var(--color-primary-font)] uppercase tracking-wider">Baggage & Additional Notes</Label>
+                                                    <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Baggage & Additional Notes</Label>
                                                     <Input
                                                         placeholder="e.g. 15kg Check-in + 7kg Cabin included"
                                                         value={formData.flight_baggage_note}
@@ -2102,12 +2104,12 @@ export default function CreatePackagePage() {
                             <Card className="glass-description-card md:col-span-2 border-0 shadow-lg rounded-3xl overflow-hidden group">
                                 <div className="bg-gradient-to-r from-purple-50/10 to-transparent px-6 py-5 border-b border-white/20 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2.5 orange-gradient-badge rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform">
-                                            <FileText className="w-5 h-5" />
+                                        <div className="p-2.5 orange-gradient-badge rounded-xl text-black shadow-lg group-hover:scale-110 transition-transform">
+                                            <FileText className="w-5 h-5" stroke="black" />
                                         </div>
                                          <div>
-                                            <h3 className="font-serif text-lg font-bold text-[var(--color-primary-font)]">Description</h3>
-                                            <p className="text-[11px] text-[var(--color-primary-font)] font-bold opacity-80">Craft a compelling story for your travelers</p>
+                                            <h3 className="font-serif text-lg font-bold text-black">Description</h3>
+                                            <p className="text-[11px] text-black font-bold opacity-80">Craft a compelling story for your travelers</p>
                                         </div>
                                     </div>
                                 </div>
@@ -2127,7 +2129,7 @@ export default function CreatePackagePage() {
                                             "absolute bottom-3 right-3 z-20 px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-md border shadow-sm transition-all animate-in fade-in zoom-in",
                                             (formData.description?.length || 0) > 400
                                                 ? "bg-orange-500/20 text-orange-600 border-orange-500/30"
-                                                : "bg-white/20 text-[var(--color-primary-font)] border-white/30"
+                                                : "bg-white/20 text-black border-white/30"
                                         )}>
                                             {formData.description?.length || 0} characters
                                         </div>
@@ -2135,7 +2137,7 @@ export default function CreatePackagePage() {
 
                                     {/* Word Count Progress Bar */}
                                     <div className="space-y-1.5">
-                                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary-font)]/60">
+                                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-black/60">
                                             <span>Content Quality</span>
                                             <span>{Math.min(100, Math.round(((formData.description?.length || 0) / 500) * 100))}%</span>
                                         </div>
@@ -2153,17 +2155,17 @@ export default function CreatePackagePage() {
                             <div className="space-y-8">
                                 <Card className="glass-description-card border-0 shadow-lg group">
                                     <div className="bg-gradient-to-r from-white/10 to-transparent px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                        <div className="p-2 orange-gradient-badge rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg">
-                                            <Settings className="w-5 h-5" />
+                                        <div className="p-2 orange-gradient-badge rounded-xl text-black group-hover:scale-110 transition-transform shadow-lg">
+                                            <Settings className="w-5 h-5" stroke="black" />
                                         </div>
-                                        <h3 className="font-serif text-lg font-bold text-[var(--color-primary-font)]">Settings</h3>
+                                        <h3 className="font-serif text-lg font-bold text-black">Settings</h3>
                                     </div>
                                     <CardContent className="p-6 space-y-8">
                                         {/* Public Visibility Toggle */}
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="space-y-1">
-                                                <Label className="text-sm font-bold text-[var(--color-primary-font)]">Public Visibility</Label>
-                                                <p className="text-[11px] text-[var(--color-primary-font)] font-bold opacity-80 leading-relaxed">
+                                                <Label className="text-sm font-bold text-black">Public Visibility</Label>
+                                                <p className="text-[11px] text-black font-bold opacity-80 leading-relaxed">
                                                     Show this package to customers in search results catalog
                                                 </p>
                                             </div>
@@ -2180,8 +2182,8 @@ export default function CreatePackagePage() {
                                         <div className="space-y-6">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="space-y-1">
-                                                    <Label className="text-sm font-bold text-[var(--color-primary-font)]">Custom Feature Image</Label>
-                                                    <p className="text-[11px] text-[var(--color-primary-font)] font-bold opacity-80 leading-relaxed">
+                                                    <Label className="text-sm font-bold text-black">Custom Feature Image</Label>
+                                                    <p className="text-[11px] text-black font-bold opacity-80 leading-relaxed">
                                                         Upload a custom banner image for this specific package
                                                     </p>
                                                 </div>
@@ -2206,8 +2208,8 @@ export default function CreatePackagePage() {
                                                                 <Upload className="w-6 h-6" />
                                                             </div>
                                                             <div className="space-y-1">
-                                                                <p className="text-xs font-bold text-[var(--color-primary-font)]">Drag & drop or Click to upload</p>
-                                                                <p className="text-[10px] text-[var(--color-primary-font)] opacity-80">PNG, JPG up to 5MB</p>
+                                                                <p className="text-xs font-bold text-black">Drag & drop or Click to upload</p>
+                                                                <p className="text-[10px] text-black opacity-80">PNG, JPG up to 5MB</p>
                                                             </div>
                                                         </div>
                                                         <input
@@ -2262,7 +2264,7 @@ export default function CreatePackagePage() {
 
                                                     <div className="relative">
                                                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                                            <Link2 className="w-3.5 h-3.5 text-[var(--color-primary-font)]" />
+                                                            <Link2 className="w-3.5 h-3.5 text-black" />
                                                         </div>
                                                         <Input
                                                             placeholder="Or paste image URL here..."
@@ -2306,6 +2308,13 @@ export default function CreatePackagePage() {
                             <ItineraryBuilder
                                 packageId={packageId}
                                 durationDays={formData.duration_days}
+                                onDurationChange={(newDuration) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        duration_days: newDuration,
+                                        duration_nights: Math.max(0, newDuration - 1)
+                                    }));
+                                }}
                                 packageMode={formData.package_mode}
                                 destinations={formData.destinations}
                                 singleDestination={formData.destination}
@@ -2313,8 +2322,8 @@ export default function CreatePackagePage() {
                         ) : (
                             <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
                                 <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-                                <h3 className="text-lg font-bold text-[var(--color-primary-font)]">Package not saved</h3>
-                                <p className="text-[var(--color-primary-font)] font-medium mb-6">Please save the basic details first to start building the itinerary.</p>
+                                <h3 className="text-lg font-bold text-black">Package not saved</h3>
+                                <p className="text-black font-medium mb-6">Please save the basic details first to start building the itinerary.</p>
                                 <Button onClick={() => setActiveStep(1)} variant="outline">
                                     Go to Basic Info
                                 </Button>
@@ -2367,15 +2376,15 @@ export default function CreatePackagePage() {
                             <CardContent className="p-8 space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div>
-                                        <h3 className="font-bold text-[var(--color-primary-font)] border-b pb-2 mb-4 uppercase tracking-wider text-xs">Description</h3>
-                                        <p className="text-[var(--color-primary-font)] whitespace-pre-wrap leading-relaxed font-medium">
+                                        <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Description</h3>
+                                        <p className="text-black whitespace-pre-wrap leading-relaxed font-medium">
                                             {formData.description || "No description provided."}
                                         </p>
                                     </div>
                                     <div className="space-y-6">
                                          {formData.activities.length > 0 && (
                                             <div>
-                                                <h3 className="font-bold text-[var(--color-primary-font)] border-b pb-2 mb-4 uppercase tracking-wider text-xs">Activities</h3>
+                                                <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Activities</h3>
                                                 <div className="flex flex-wrap gap-2">
                                                     {formData.activities.map(activityId => {
                                                         const activityInfo = ACTIVITIES.find(a => a.id === activityId)
@@ -2390,10 +2399,10 @@ export default function CreatePackagePage() {
                                         )}
                                         {formData.included_items.length > 0 && (
                                             <div>
-                                                <h3 className="font-bold text-[var(--color-primary-font)] border-b pb-2 mb-4 uppercase tracking-wider text-xs">Price Includes</h3>
+                                                <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Price Includes</h3>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     {formData.included_items.map(item => (
-                                                        <div key={item} className="flex items-center gap-2 text-sm text-[var(--color-primary-font)] font-bold">
+                                                        <div key={item} className="flex items-center gap-2 text-sm text-black font-bold">
                                                             <CheckCircle className="w-4 h-4 text-emerald-500" />
                                                             {item}
                                                         </div>
@@ -2431,15 +2440,15 @@ export default function CreatePackagePage() {
                                 else if (activeStep === 2) setActiveStep(1)
                                 else if (activeStep === 3) setActiveStep(2)
                             }}
-                            className="text-[var(--color-primary-font)] hover:text-[var(--primary)] font-bold px-4 h-11"
+                            className="text-black hover:text-[var(--primary)] font-bold px-4 h-11"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             {activeStep === 1 && 'Back to Packages'}
                             {activeStep === 2 && 'Back to Basic Info'}
                             {activeStep === 3 && 'Back to Itinerary'}
                         </Button>
-                        <div className="h-6 w-px bg-[var(--color-primary-font)]/20 hidden sm:block" />
-                        <span className="text-sm text-[var(--color-primary-font)] flex items-center gap-2 font-bold bg-transparent px-3 py-1.5 rounded-full border border-[var(--color-primary-font)]/20">
+                        <div className="h-6 w-px bg-black/20 hidden sm:block" />
+                        <span className="text-sm text-black flex items-center gap-2 font-bold bg-transparent px-3 py-1.5 rounded-full border border-black/20">
                             <span className="relative flex h-2 w-2">
                                 <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", packageId ? "bg-emerald-400 animate-ping" : "bg-gray-400")}></span>
                                 <span className={cn("relative inline-flex rounded-full h-2 w-2", packageId ? "bg-emerald-500" : "bg-gray-400")}></span>
@@ -2453,7 +2462,7 @@ export default function CreatePackagePage() {
                             <Button
                                 variant="ghost"
                                 onClick={() => window.open(`/plan-trip/${formData.slug}?mode=preview`, '_blank')}
-                                className="h-11 px-4 text-[var(--color-primary-font)] hover:text-[var(--primary)] hover:bg-black/5 font-bold"
+                                className="h-11 px-4 text-black hover:text-[var(--primary)] hover:bg-black/5 font-bold"
                             >
                                 <Eye className="w-4 h-4 mr-2" />
                                 Preview
@@ -2479,7 +2488,7 @@ export default function CreatePackagePage() {
                             className={cn(
                                 "h-11 px-8 font-bold shadow-lg transition-all active:scale-95 rounded-full",
                                 (isBasicInfoValid() || Boolean(packageId))
-                                    ? "orange-gradient-badge text-white hover:shadow-orange-500/25"
+                                    ? "orange-gradient-badge text-black hover:shadow-orange-500/25"
                                     : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                             )}
                         >

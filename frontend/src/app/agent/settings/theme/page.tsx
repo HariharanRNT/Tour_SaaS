@@ -13,7 +13,7 @@ import {
     Car, Hotel, Compass, Sun, Mountain, Waves, Umbrella, Gift,
     Award, Zap, CheckCircle, Headphones, Wallet, Coffee, Luggage,
     Ticket, Navigation, Flag, Search, CheckCircle2, Info, ArrowRight,
-    Trees, Palmtree, MapPin, Mail, Moon
+    Trees, Palmtree, MapPin, Mail, Moon, CreditCard, Phone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -209,6 +209,37 @@ interface PageSettings {
     itinerary_font_family: string;
     itinerary_button_style: string;
     itinerary_wcu_cards: FeatureCard[];
+
+    // My Booking Customization
+    priority_support_phone: string;
+    priority_support_email: string;
+    payment_summary_title: string;
+    payment_summary_base_cost_label: string;
+    payment_summary_taxes_label: string;
+    payment_summary_total_label: string;
+    payment_summary_support_text: string;
+
+    // All Destinations (Plan Trip) Customization
+    plan_trip_page_title: string;
+    plan_trip_search_placeholder: string;
+    plan_trip_primary_btn_text: string;
+    plan_trip_secondary_btn_text: string;
+    plan_trip_price_label: string;
+    plan_trip_empty_state_message: string;
+
+    // Design System (Missing fields causing TS errors)
+    buttonStyle?: {
+        bgColor?: string;
+        textColor?: string;
+        borderRadius?: string;
+    };
+    navbarSettings?: {
+        bgColor?: string;
+        textColor?: string;
+    };
+    activeTheme?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
 }
 
 const DEFAULT_PAGE_SETTINGS: PageSettings = {
@@ -262,7 +293,38 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     itinerary_secondary_color: '',
     itinerary_font_family: 'Inter, sans-serif',
     itinerary_button_style: 'pill',
-    itinerary_wcu_cards: [...DEFAULT_WCU_CARDS].slice(0, 3) // Default to 3 cards
+    itinerary_wcu_cards: [...DEFAULT_WCU_CARDS].slice(0, 3),
+
+    // My Booking Customization
+    priority_support_phone: '+91 1800-123-4567',
+    priority_support_email: 'support@toursaas.com',
+    payment_summary_title: 'Payment Summary',
+    payment_summary_base_cost_label: 'Package Base Cost',
+    payment_summary_taxes_label: 'Taxes & Service Fees',
+    payment_summary_total_label: 'Total Investment',
+    payment_summary_support_text: '* Estimated refund values are calculated based on your total transaction. The final amount may vary slightly due to gateway rounding.',
+
+    // All Destinations (Plan Trip) Customization
+    plan_trip_page_title: 'All Destinations',
+    plan_trip_search_placeholder: 'Search destination, package, or activity...',
+    plan_trip_primary_btn_text: 'Book Now',
+    plan_trip_secondary_btn_text: 'Enquire Now',
+    plan_trip_price_label: 'Starting From',
+    plan_trip_empty_state_message: 'No packages found',
+
+    // Design System Defaults
+    buttonStyle: {
+        bgColor: '',
+        textColor: '#ffffff',
+        borderRadius: '0.75rem'
+    },
+    navbarSettings: {
+        bgColor: '',
+        textColor: '#ffffff'
+    },
+    activeTheme: 'default',
+    primaryColor: '',
+    secondaryColor: ''
 };
 
 // ─── Tab Definitions ─────────────────────────────────────────────────────────
@@ -272,6 +334,7 @@ const TABS = [
     { id: 'plantrip', icon: <MapIcon className="h-4 w-4" />, label: 'Plan Trip', count: 3 },
     { id: 'itinerary', icon: <ClipboardList className="h-4 w-4" />, label: 'Itinerary', count: 4 },
     { id: 'cart', icon: <ShoppingCart className="h-4 w-4" />, label: 'Cart', count: 3 },
+    { id: 'mybooking', icon: <Ticket className="h-4 w-4" />, label: 'My Booking', count: 2 },
     { id: 'uistyle', icon: <Sliders className="h-4 w-4" />, label: 'UI Style', count: 5 },
 ] as const;
 type TabId = typeof TABS[number]['id'];
@@ -296,7 +359,7 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-[var(--primary-glow)] rounded-xl text-[var(--primary)]">{icon}</div>
-                    <div><CardTitle className="text-base font-bold text-[var(--color-primary-font)]">{title}</CardTitle><CardDescription className="text-xs text-[var(--color-primary-font)]/50">{subtitle}</CardDescription></div>
+                    <div><CardTitle className="text-base font-bold text-[var(--color-primary-font)]">{title}</CardTitle><CardDescription className="text-xs text-black font-semibold">{subtitle}</CardDescription></div>
                 </div>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">{children}</CardContent>
@@ -325,6 +388,7 @@ export default function AgentThemeSettingsPage() {
     const [fontPairing, setFontPairing] = useState('serif-sans');
     const [fontFamily, setFontFamily] = useState('var(--font-inter)');
     const [fontColor, setFontColor] = useState('var(--color-primary-font)');
+    const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
 
     // Homepage state
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
@@ -353,7 +417,7 @@ export default function AgentThemeSettingsPage() {
     const getIconCmp = (name: string) => ICON_MAP[name] || Sparkles;
 
     const getSelectedFontFamily = (value: string) => {
-        switch(value) {
+        switch (value) {
             case 'var(--font-inter)': return "'DM Sans', sans-serif";
             case 'var(--font-playfair)': return "'Playfair Display', serif";
             case 'var(--font-mono)': return "'Courier New', monospace";
@@ -385,7 +449,7 @@ export default function AgentThemeSettingsPage() {
         b.add(`btn-${btn}`, `icon-${icon}`, `card-${card}`, `density-${dens}`, `font-${font}`);
     };
 
-    const saveUiStyle = (updates: Partial<{ buttonShape: string; iconStyle: string; cardStyle: string; density: string; fontPairing: string; font_family: string; font_color: string }>) => {
+    const saveUiStyle = (updates: Partial<{ buttonShape: string; iconStyle: string; cardStyle: string; density: string; fontPairing: string; font_family: string; font_color: string, buttonTextColor: string }>) => {
         const next = {
             buttonShape: updates.buttonShape ?? buttonShape,
             iconStyle: updates.iconStyle ?? iconStyle,
@@ -393,7 +457,8 @@ export default function AgentThemeSettingsPage() {
             density: updates.density ?? density,
             fontPairing: updates.fontPairing ?? fontPairing,
             font_family: updates.font_family ?? fontFamily,
-            font_color: updates.font_color ?? fontColor
+            font_color: updates.font_color ?? fontColor,
+            buttonTextColor: updates.buttonTextColor ?? buttonTextColor,
         };
         if (updates.buttonShape !== undefined) setButtonShape(updates.buttonShape);
         if (updates.iconStyle !== undefined) setIconStyle(updates.iconStyle);
@@ -402,9 +467,10 @@ export default function AgentThemeSettingsPage() {
         if (updates.fontPairing !== undefined) setFontPairing(updates.fontPairing);
         if (updates.font_family !== undefined) setFontFamily(updates.font_family);
         if (updates.font_color !== undefined) setFontColor(updates.font_color);
+        if (updates.buttonTextColor !== undefined) setButtonTextColor(updates.buttonTextColor);
 
         applyBodyClasses(next.buttonShape, next.iconStyle, next.cardStyle, next.density, next.fontPairing);
-        
+
         // Apply font variables immediately to root for preview
         const root = document.documentElement;
         if (next.font_family) {
@@ -413,8 +479,13 @@ export default function AgentThemeSettingsPage() {
             root.style.setProperty('--project-font-family', next.font_family);
         }
         if (next.font_color) root.style.setProperty('--color-primary-font', next.font_color);
+        if (next.buttonTextColor) root.style.setProperty('--button-text-color', next.buttonTextColor);
 
-        localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
+        try {
+            localStorage.setItem(UI_STYLE_KEY, JSON.stringify(next));
+        } catch (e) {
+            console.error('UI style localStorage quota exceeded:', e);
+        }
         toast.success('UI style updated!', { position: 'bottom-right' });
     };
 
@@ -435,6 +506,7 @@ export default function AgentThemeSettingsPage() {
                 setCardStyle(u.cardStyle || 'glass'); setDensity(u.density || 'spacious'); setFontPairing(u.fontPairing || 'serif-sans');
                 setFontFamily(u.font_family || 'var(--font-inter)');
                 setFontColor(u.font_color || 'var(--color-primary-font)');
+                setButtonTextColor(u.buttonTextColor || '#ffffff');
                 applyBodyClasses(u.buttonShape || 'pill', u.iconStyle || 'filled-circle', u.cardStyle || 'glass', u.density || 'spacious', u.fontPairing || 'serif-sans');
             } else { applyBodyClasses('pill', 'filled-circle', 'glass', 'spacious', 'serif-sans'); }
         } catch { }
@@ -548,14 +620,19 @@ export default function AgentThemeSettingsPage() {
 
         root.style.setProperty('--primary', customColors.primary);
         root.style.setProperty('--primary-light', customColors.secondary);
+        root.style.setProperty('--button-text-color', customColors.buttonStyle.textColor);
         root.style.setProperty('--primary-soft', customColors.glass);
         root.style.setProperty('--primary-glow', hexToRgba(customColors.primary, 0.25));
         root.style.setProperty('--gradient-start', customColors.primary);
         root.style.setProperty('--gradient-mid', customColors.secondary);
         root.style.setProperty('--gradient-end', customColors.glass);
 
-        localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(customColors));
-        localStorage.setItem('app-theme', 'custom');
+        try {
+            localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(customColors));
+            localStorage.setItem('app-theme', 'custom');
+        } catch (e) {
+            console.error('Custom theme localStorage quota exceeded:', e);
+        }
         setActiveTheme('custom');
 
         // Sync to pageSettings so "Save Changes" works too
@@ -594,7 +671,11 @@ export default function AgentThemeSettingsPage() {
             if (res.ok) {
                 // Update the combined agentTheme cache
                 const data = await res.json();
-                localStorage.setItem('agentTheme', JSON.stringify(data.settings));
+                try {
+                    localStorage.setItem('agentTheme', JSON.stringify(data.settings));
+                } catch (e) {
+                    console.error('agentTheme localStorage quota exceeded:', e);
+                }
                 toast.success('Custom theme saved to cloud!', { position: 'bottom-right' });
             }
         } catch (err) {
@@ -749,10 +830,14 @@ export default function AgentThemeSettingsPage() {
         console.log("Saving Homepage Payload:", fullPayload);
 
         setHpSettings(heroData);
-        localStorage.setItem(HOMEPAGE_SETTINGS_KEY, JSON.stringify(heroData));
-        localStorage.setItem(HOMEPAGE_CARDS_KEY, JSON.stringify(featureCards));
-        localStorage.setItem(HOMEPAGE_WCU_KEY, JSON.stringify(wcuCards));
-        localStorage.setItem(HOMEPAGE_CARD_STYLE_KEY, JSON.stringify(cardAppearance));
+        try {
+            localStorage.setItem(HOMEPAGE_SETTINGS_KEY, JSON.stringify(heroData));
+            localStorage.setItem(HOMEPAGE_CARDS_KEY, JSON.stringify(featureCards));
+            localStorage.setItem(HOMEPAGE_WCU_KEY, JSON.stringify(wcuCards));
+            localStorage.setItem(HOMEPAGE_CARD_STYLE_KEY, JSON.stringify(cardAppearance));
+        } catch (e) {
+            console.error('Homepage settings localStorage quota exceeded:', e);
+        }
 
         try {
             const token = localStorage.getItem('token') || '';
@@ -781,7 +866,25 @@ export default function AgentThemeSettingsPage() {
     const pgField = (field: keyof PageSettings, value: any) => setPageSettings(prev => ({ ...prev, [field]: value }));
     const handleSavePageSettings = async () => {
         setPageSaving(true);
-        localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(pageSettings));
+        try {
+            localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(pageSettings));
+        } catch (e) {
+            console.error('LocalStorage quota exceeded:', e);
+
+            // Attempt to clear non-essential temporary data
+            const keysToRemove = [
+                'ai_itinerary_data', 'ai_highlights', 'ai_inclusions', 'ai_exclusions',
+                'ai_generated_package', 'ai_package_search_id'
+            ];
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+            // Try saving again after cleanup
+            try {
+                localStorage.setItem(PAGE_SETTINGS_KEY, JSON.stringify(pageSettings));
+            } catch (innerE) {
+                console.warn('LocalStorage still full after cleanup. Continuing to cloud save only.');
+            }
+        }
 
         try {
             const token = localStorage.getItem('token') || '';
@@ -793,7 +896,11 @@ export default function AgentThemeSettingsPage() {
                 density,
                 fontPairing,
                 font_family: fontFamily,
-                font_color: fontColor
+                font_color: fontColor,
+                buttonStyle: {
+                    ...pageSettings.buttonStyle,
+                    textColor: buttonTextColor
+                }
             };
 
             const res = await fetch(`${API_URL}/api/v1/agent/settings/homepage`, {
@@ -1108,8 +1215,8 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
                                         <IconC className="h-5 w-5 text-white" />
                                     </div>
-                                    <p className="text-sm font-bold text-[var(--color-primary-font)] leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-[var(--color-primary-font)]/60 leading-tight">{card.description || 'Description'}</p>
+                                    <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
+                                    <p className="text-xs text-black leading-tight">{card.description || 'Description'}</p>
                                 </div>
 
                                 {/* Icon picker button */}
@@ -1117,20 +1224,20 @@ export default function AgentThemeSettingsPage() {
                                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: 'var(--primary)' }}>
                                         <IconC className="h-5 w-5" />
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-[var(--color-primary-font)]/70 flex-1">
+                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black flex-1">
                                         Change Icon ({card.icon})
                                     </Button>
                                 </div>
 
                                 {/* Title */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                    <Label className="text-[11px] font-bold text-black">Title <span className="font-normal">({card.title.length}/30)</span></Label>
                                     <Input maxLength={30} value={card.title} onChange={e => updateWcuCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
                                 </div>
 
                                 {/* Description */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                    <Label className="text-[11px] font-bold text-black">Description <span className="font-normal">({card.description.length}/100)</span></Label>
                                     <Textarea maxLength={100} value={card.description} onChange={e => updateWcuCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
                                 </div>
                             </div>
@@ -1214,7 +1321,7 @@ export default function AgentThemeSettingsPage() {
                                             {l === 'horizontal' && <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-orange-400" /><div className="w-5 h-1 rounded-full bg-slate-300" /></div>}
                                             {l === 'minimal' && <div className="flex flex-col items-center gap-1"><div className="w-8 h-1 rounded-full bg-slate-400" /><div className="w-10 h-1.5 rounded-full bg-slate-200" /></div>}
                                         </div>
-                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize">{l}</span>
+                                        <span className="text-[10px] font-bold text-black capitalize">{l}</span>
                                     </button>
                                 ))}
                             </div>
@@ -1252,137 +1359,149 @@ export default function AgentThemeSettingsPage() {
     );
 
     const renderPlanTripTab = () => (
-        <div className="space-y-5">
-            <SectionCard icon={<MapIcon className="h-5 w-5" />} title="Hero Section" subtitle="Customize the top banner and search bar">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Main Heading</Label>
-                        <Input value={pageSettings.plan_trip_heading} onChange={e => pgField('plan_trip_heading', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Italic Highlight Word</Label>
-                        <Input value={pageSettings.plan_trip_italic} onChange={e => pgField('plan_trip_italic', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Subheading</Label>
-                    <Textarea value={pageSettings.plan_trip_subheading} onChange={e => pgField('plan_trip_subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Search Placeholder</Label>
-                        <Input value={pageSettings.plan_trip_placeholder} onChange={e => pgField('plan_trip_placeholder', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Search Button Text</Label>
-                        <Input value={pageSettings.plan_trip_button_text} onChange={e => pgField('plan_trip_button_text', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Sliders className="h-5 w-5" />} title="Discovery & Categories" subtitle="Filters and secondary sections">
-                <ToggleSwitch checked={pageSettings.show_category_pills} onChange={v => pgField('show_category_pills', v)} label="Show Category Pills" />
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Browse Section Heading</Label>
-                    <Input value={pageSettings.plan_trip_section_heading} onChange={e => pgField('plan_trip_section_heading', e.target.value)} className="h-10 rounded-xl glass-input" />
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Browse Section Subtext</Label>
-                    <Textarea value={pageSettings.plan_trip_section_subtext} onChange={e => pgField('plan_trip_section_subtext', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Globe className="h-5 w-5" />} title="Popular Destinations" subtitle="Customize the destinations grid content">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Destinations Heading</Label>
-                        <Input value={pageSettings.destinations_heading} onChange={e => pgField('destinations_heading', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Destinations Link Text (View All)</Label>
-                        <Input value={pageSettings.destinations_link_text} onChange={e => pgField('destinations_link_text', e.target.value)} className="h-10 rounded-xl glass-input" />
-                    </div>
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Destinations Subtext</Label>
-                    <Textarea value={pageSettings.destinations_subtext} onChange={e => pgField('destinations_subtext', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-600">Explore Button Text (on Cards)</Label>
-                    <Input value={pageSettings.destinations_cta_text} onChange={e => pgField('destinations_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" />
-                </div>
-            </SectionCard>
-
-            <SectionCard icon={<Sliders className="h-5 w-5" />} title="Trip Style Cards" subtitle="Customize the 4 cards on your Plan Trip page">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {pageSettings.trip_style_cards.map((card, idx) => (
-                        <div key={idx} className="p-5 glass-trip-card space-y-4">
-                            <div className="flex items-center justify-between pointer-events-none">
-                                <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest opacity-70">Card {idx + 1}</span>
-                                <div className="flex gap-1 pointer-events-auto">
-                                    {[
-                                        { name: 'Mountain', icon: <Mountain className="h-3 w-3" /> },
-                                        { name: 'Waves', icon: <Waves className="h-3 w-3" /> },
-                                        { name: 'Heart', icon: <Heart className="h-3 w-3" /> },
-                                        { name: 'Users', icon: <Users className="h-3 w-3" /> },
-                                        { name: 'Trees', icon: <Trees className="h-3 w-3" /> },
-                                        { name: 'Palmtree', icon: <Palmtree className="h-3 w-3" /> },
-                                        { name: 'Compass', icon: <Compass className="h-3 w-3" /> },
-                                        { name: 'MapPin', icon: <MapPin className="h-3 w-3" /> },
-                                        { name: 'Camera', icon: <Camera className="h-3 w-3" /> }
-                                    ].map(ico => (
-                                        <button
-                                            key={ico.name}
-                                            onClick={() => {
-                                                const newCards = [...pageSettings.trip_style_cards];
-                                                newCards[idx] = { ...newCards[idx], icon_name: ico.name };
-                                                pgField('trip_style_cards', newCards);
-                                            }}
-                                            className={`p-1.5 rounded-lg border transition-all ${card.icon_name === ico.name ? 'bg-[var(--primary)] text-white border-transparent shadow-[0_4px_12px_var(--primary-glow)]' : 'bg-white/40 border-white/40 text-slate-500 hover:border-[var(--primary)] hover:bg-white/60'}`}
-                                            title={ico.name}
-                                        >
-                                            {ico.icon}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-slate-500">Label</Label>
+        <div className="space-y-6">
+            <SectionCard icon={<MapIcon className="h-5 w-5" />} title="Plan Trip Text Customization" subtitle="Customize the text for your package listing page (All Destinations view)">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Editable Fields */}
+                    <div className="space-y-6">
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Page Title</Label>
                                 <Input
-                                    value={card.title}
-                                    onChange={e => {
-                                        const newCards = [...pageSettings.trip_style_cards];
-                                        newCards[idx] = { ...newCards[idx], title: e.target.value };
-                                        pgField('trip_style_cards', newCards);
-                                    }}
-                                    className="h-8 text-xs rounded-lg glass-input"
+                                    value={pageSettings.plan_trip_page_title}
+                                    onChange={e => pgField('plan_trip_page_title', e.target.value)}
+                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                    placeholder="All Destinations"
                                 />
                             </div>
-                            <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-slate-500">Description</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Search Placeholder</Label>
                                 <Input
-                                    value={card.description}
-                                    onChange={e => {
-                                        const newCards = [...pageSettings.trip_style_cards];
-                                        newCards[idx] = { ...newCards[idx], description: e.target.value };
-                                        pgField('trip_style_cards', newCards);
-                                    }}
-                                    className="h-8 text-xs rounded-lg glass-input"
+                                    value={pageSettings.plan_trip_search_placeholder}
+                                    onChange={e => pgField('plan_trip_search_placeholder', e.target.value)}
+                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                    placeholder="Search destination, package, or activity..."
                                 />
                             </div>
                         </div>
-                    ))}
-                </div>
-            </SectionCard>
 
-            <SectionCard icon={<Sparkles className="h-5 w-5" />} title="Social Proof" subtitle="Trust indicators below search">
-                <ToggleSwitch checked={pageSettings.show_stat_bar} onChange={v => pgField('show_stat_bar', v)} label="Show Stats Bar" />
-                {pageSettings.show_stat_bar && (
-                    <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-600">Stats Text</Label>
-                        <Input value={pageSettings.plan_trip_stats_text} onChange={e => pgField('plan_trip_stats_text', e.target.value)} className="h-10 rounded-xl glass-input" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Primary Button Text</Label>
+                                <Input
+                                    value={pageSettings.plan_trip_primary_btn_text}
+                                    onChange={e => pgField('plan_trip_primary_btn_text', e.target.value)}
+                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                    placeholder="Book Now"
+                                />
+                                <p className="text-[10px] text-black font-medium italic">Used for Instant Booking packages</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-bold text-black">Secondary Button Text</Label>
+                                <Input
+                                    value={pageSettings.plan_trip_secondary_btn_text}
+                                    onChange={e => pgField('plan_trip_secondary_btn_text', e.target.value)}
+                                    className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                    placeholder="Enquire Now"
+                                />
+                                <p className="text-[10px] text-black font-medium italic">Used for Request Enquiry packages</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-bold text-black">Price Label</Label>
+                            <Input
+                                value={pageSettings.plan_trip_price_label}
+                                onChange={e => pgField('plan_trip_price_label', e.target.value)}
+                                className="h-11 rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all"
+                                placeholder="Starting From"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-bold text-black">Empty State Message</Label>
+                            <Textarea
+                                value={pageSettings.plan_trip_empty_state_message}
+                                onChange={e => pgField('plan_trip_empty_state_message', e.target.value)}
+                                className="rounded-xl glass-input border-slate-200 focus:border-[var(--primary)] transition-all min-h-[80px] resize-none"
+                                placeholder="No packages found"
+                            />
+                        </div>
                     </div>
-                )}
+
+                    {/* Live Preview Section */}
+                    <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-3 px-1">
+                            <Label className="text-xs font-black text-black uppercase tracking-[0.1em]">Instant Preview</Label>
+                            <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full border border-green-100">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                LIVE
+                            </div>
+                        </div>
+
+                        <div className="flex-1 rounded-[24px] border-2 border-slate-100 bg-slate-50/50 p-6 flex flex-col gap-6 overflow-hidden">
+                            {/* Title & Search Preview */}
+                            <div className="space-y-3">
+                                <h4 className="text-xl font-bold font-display text-black border-l-4 border-[var(--primary)] pl-3">
+                                    {pageSettings.plan_trip_page_title || "All Destinations"}
+                                </h4>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                        <Search className="h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
+                                    </div>
+                                    <Input
+                                        readOnly
+                                        placeholder={pageSettings.plan_trip_search_placeholder || "Search destination..."}
+                                        className="h-10 rounded-full pl-11 bg-white border-slate-200 text-xs shadow-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Package Card Preview */}
+                            <div className="mx-auto w-full max-w-[260px] bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden group">
+                                <div className="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                                    <MapPin className="h-10 w-10 text-slate-300 opacity-50" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <div className="space-y-1.5">
+                                        <div className="h-3 w-5/6 bg-slate-100 rounded-full animate-pulse" />
+                                        <div className="h-2 w-1/2 bg-slate-50 rounded-full animate-pulse" />
+                                    </div>
+                                    <div className="pt-3 border-t border-slate-50 flex items-center justify-between gap-2">
+                                        <div className="shrink-0">
+                                            <p className="text-[8px] font-black text-black uppercase tracking-widest leading-none mb-1">
+                                                {pageSettings.plan_trip_price_label || "Starting From"}
+                                            </p>
+                                            <p className="text-sm font-bold text-black leading-none">₹24,999</p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            className="h-8 px-4 rounded-full text-[10px] font-black transition-transform active:scale-95 shadow-sm"
+                                            style={{ background: 'var(--primary)', boxShadow: '0 4px 12px var(--primary-glow)' }}
+                                        >
+                                            {pageSettings.plan_trip_primary_btn_text || "Book Now"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Empty State Preview */}
+                            <div className="mt-auto pt-6 border-t border-slate-100 text-center">
+                                <div className="bg-slate-100/50 rounded-2xl p-4 border border-dashed border-slate-200">
+                                    <Search className="h-5 w-5 mx-auto text-slate-300 mb-2 opacity-70" />
+                                    <p className="text-[10px] font-bold text-black italic mb-1 opacity-60 uppercase tracking-widest">Example Empty State View</p>
+                                    <p className="text-xs font-semibold text-black line-clamp-2">
+                                        {pageSettings.plan_trip_empty_state_message || "No packages found"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </SectionCard>
         </div>
     );
@@ -1392,13 +1511,44 @@ export default function AgentThemeSettingsPage() {
             <SectionCard icon={<Palette className="h-5 w-5" />} title="Itinerary Page Theme" subtitle="Modernize the look and feel of your customer-facing itinerary">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 uppercase">Card Style</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {(['glassy', 'minimal', 'rounded', 'classic'] as const).map(s => (
-                                <button key={s} onClick={() => pgField('itinerary_card_style', s)}
-                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${pageSettings.itinerary_card_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                    <div className={`w-full h-8 rounded-lg border border-slate-200 ${s === 'glassy' ? 'bg-white/40 backdrop-blur-sm' : s === 'minimal' ? 'bg-white border-slate-100 shadow-sm' : s === 'rounded' ? 'bg-white rounded-xl' : 'bg-slate-50'}`} />
-                                    <span className="text-[10px] font-bold text-slate-600 capitalize">{s}</span>
+                        <Label className="text-xs font-bold text-black uppercase">Card Style</Label>
+                        <div className="grid grid-cols-4 gap-3 mt-1">
+                            {[
+                                { id: 'glassy', label: 'Glassy' },
+                                { id: 'flat', label: 'Flat' },
+                                { id: 'rounded', label: 'Rounded' },
+                                { id: 'elevated', label: 'Elevated' }
+                            ].map(s => (
+                                <button
+                                    key={s.id}
+                                    onClick={() => pgField('itinerary_card_style', s.id)}
+                                    className={cn(
+                                        "flex flex-col items-center gap-2 p-1 rounded-2xl transition-all duration-200 group relative",
+                                        "hover:-translate-y-0.5",
+                                        pageSettings.itinerary_card_style === s.id 
+                                            ? "outline outline-2 outline-[#1D4ED8] outline-offset-2 scale-[1.02] z-10" 
+                                            : "opacity-90 hover:opacity-100"
+                                    )}
+                                >
+                                    <div 
+                                        className={cn(
+                                            "w-full h-10 rounded-xl border-0 transition-all duration-300",
+                                            s.id === 'glassy' && "bg-white/20 backdrop-blur-[10px] border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.1)]",
+                                            s.id === 'flat' && "bg-[#E2E8F0] shadow-none",
+                                            s.id === 'rounded' && "bg-[#FFFFFF] border border-[#CBD5E1] shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-[24px]",
+                                            s.id === 'elevated' && "bg-[#FFFFFF] shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+                                        )}
+                                    />
+                                    <span 
+                                        className={cn(
+                                            "text-[12px] font-medium transition-colors",
+                                            pageSettings.itinerary_card_style === s.id 
+                                                ? "text-white font-bold" 
+                                                : "text-white/50"
+                                        )}
+                                    >
+                                        {s.label}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -1406,7 +1556,7 @@ export default function AgentThemeSettingsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <Label className="text-xs font-bold text-slate-600">Primary Theme Color</Label>
+                            <Label className="text-xs font-bold text-black">Primary Theme Color</Label>
                             <div className="flex items-center gap-2">
                                 <div className="relative cursor-pointer">
                                     <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_primary_color || customColors.primary }} />
@@ -1416,7 +1566,7 @@ export default function AgentThemeSettingsPage() {
                             </div>
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs font-bold text-slate-600">Secondary Color</Label>
+                            <Label className="text-xs font-bold text-black">Secondary Color</Label>
                             <div className="flex items-center gap-2">
                                 <div className="relative cursor-pointer">
                                     <div className="w-10 h-10 rounded-xl shadow-md border-2 border-white ring-2 ring-slate-100" style={{ backgroundColor: pageSettings.itinerary_secondary_color || customColors.secondary }} />
@@ -1428,12 +1578,12 @@ export default function AgentThemeSettingsPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 uppercase">Button & Font Style</Label>
+                        <Label className="text-xs font-bold text-black uppercase">Button & Font Style</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="grid grid-cols-3 gap-2">
                                 {(['pill', 'rounded', 'square'] as const).map(s => (
                                     <button key={s} onClick={() => pgField('itinerary_button_style', s)}
-                                        className={`p-2 rounded-xl border-2 transition-all text-[10px] font-bold ${pageSettings.itinerary_button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}>
+                                        className={`p-2 rounded-xl border-2 transition-all text-[10px] font-bold ${pageSettings.itinerary_button_style === s ? 'border-[var(--primary)] bg-[var(--primary-glow)] text-[var(--primary)]' : 'border-slate-100 bg-white text-black hover:border-slate-200'}`}>
                                         {s.charAt(0).toUpperCase() + s.slice(1)}
                                     </button>
                                 ))}
@@ -1480,7 +1630,7 @@ export default function AgentThemeSettingsPage() {
                                                     newCards[idx] = { ...newCards[idx], icon: iconName };
                                                     pgField('itinerary_wcu_cards', newCards);
                                                 }}
-                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}
                                             >
                                                 {IconComp && <IconComp className="h-3 w-3" />}
                                             </button>
@@ -1489,7 +1639,7 @@ export default function AgentThemeSettingsPage() {
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-slate-500">Title</Label>
+                                <Label className="text-[10px] font-bold text-black">Title</Label>
                                 <Input
                                     value={card.title}
                                     onChange={e => {
@@ -1501,7 +1651,7 @@ export default function AgentThemeSettingsPage() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <Label className="text-[10px] font-bold text-slate-500">Description</Label>
+                                <Label className="text-[10px] font-bold text-black">Description</Label>
                                 <Textarea
                                     value={card.description}
                                     onChange={e => {
@@ -1522,10 +1672,10 @@ export default function AgentThemeSettingsPage() {
     const renderCartTab = () => (
         <div className="space-y-5">
             <SectionCard icon={<ShoppingCart className="h-5 w-5" />} title="Trip Summary & Checkout" subtitle="Customize the booking summary in the cart/checkout">
-                <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Card Title</Label><Input value={pageSettings.cart_summary_title} onChange={e => pgField('cart_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                <div className="space-y-1"><Label className="text-xs font-bold text-black">Card Title</Label><Input value={pageSettings.cart_summary_title} onChange={e => pgField('cart_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Checkout CTA Text</Label><Input value={pageSettings.cart_cta_text} onChange={e => pgField('cart_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Modal Start Button</Label><Input value={pageSettings.modal_cta_text} onChange={e => pgField('modal_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Checkout CTA Text</Label><Input value={pageSettings.cart_cta_text} onChange={e => pgField('cart_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Modal Start Button</Label><Input value={pageSettings.modal_cta_text} onChange={e => pgField('modal_cta_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                 </div>
             </SectionCard>
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Price Display" subtitle="Control what pricing details are shown">
@@ -1536,6 +1686,48 @@ export default function AgentThemeSettingsPage() {
                 <ToggleSwitch checked={pageSettings.show_verified_badge} onChange={v => pgField('show_verified_badge', v)} label='"Verified & Secure" badge' />
                 <ToggleSwitch checked={pageSettings.show_support_badge} onChange={v => pgField('show_support_badge', v)} label='"24/7 Support" badge' />
                 <ToggleSwitch checked={pageSettings.show_flexible_badge} onChange={v => pgField('show_flexible_badge', v)} label='"Flexible Plans" badge' />
+            </SectionCard>
+        </div>
+    );
+
+    const renderMyBookingTab = () => (
+        <div className="space-y-5">
+            <SectionCard icon={<Phone className="h-5 w-5" />} title="Priority Support" subtitle="Customize the contact details shown in the Priority Support section">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <Label className="text-xs font-bold text-black">Phone Number</Label>
+                        <Input value={pageSettings.priority_support_phone} onChange={e => pgField('priority_support_phone', e.target.value)} className="h-10 rounded-xl glass-input" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs font-bold text-black">Email Address</Label>
+                        <Input value={pageSettings.priority_support_email} onChange={e => pgField('priority_support_email', e.target.value)} className="h-10 rounded-xl glass-input" />
+                    </div>
+                </div>
+            </SectionCard>
+
+            <SectionCard icon={<CreditCard className="h-5 w-5" />} title="Payment Summary Labels" subtitle="Customize the text labels in the Payment Summary card">
+                <div className="space-y-1">
+                    <Label className="text-xs font-bold text-black">Section Title</Label>
+                    <Input value={pageSettings.payment_summary_title} onChange={e => pgField('payment_summary_title', e.target.value)} className="h-10 rounded-xl glass-input" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <Label className="text-xs font-bold text-black">Base Cost Label</Label>
+                        <Input value={pageSettings.payment_summary_base_cost_label} onChange={e => pgField('payment_summary_base_cost_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs font-bold text-black">Taxes Label</Label>
+                        <Input value={pageSettings.payment_summary_taxes_label} onChange={e => pgField('payment_summary_taxes_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                    </div>
+                </div>
+                <div className="space-y-1">
+                    <Label className="text-xs font-bold text-black">Total Investment Label</Label>
+                    <Input value={pageSettings.payment_summary_total_label} onChange={e => pgField('payment_summary_total_label', e.target.value)} className="h-10 rounded-xl glass-input" />
+                </div>
+                <div className="space-y-1">
+                    <Label className="text-xs font-bold text-black">Supporting Text</Label>
+                    <Textarea value={pageSettings.payment_summary_support_text} onChange={e => pgField('payment_summary_support_text', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" />
+                </div>
             </SectionCard>
         </div>
     );
@@ -1594,38 +1786,33 @@ export default function AgentThemeSettingsPage() {
                 {/* Card Style */}
                 <div className="space-y-2">
                     <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Card Style</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                         {([
-                            { key: 'glass', label: 'Glass', s: { background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.35)' } },
-                            { key: 'flat', label: 'Flat', s: { background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: '1px solid #f0f0f0' } },
-                            { key: 'bordered', label: 'Bordered', s: { background: '#fff', borderTop: '3px solid var(--primary)', border: '1px solid #f0f0f0' } },
-                            { key: 'elevated', label: 'Elevated', s: { background: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' } },
-                            { key: 'tinted', label: 'Tinted', s: { background: 'var(--primary-soft)', border: '1px solid var(--primary-light)' } },
-                        ] as { key: string; label: string; s: React.CSSProperties }[]).map(opt => (
-                            <button key={opt.key} onClick={() => saveUiStyle({ cardStyle: opt.key })}
-                                className={`flex flex-col items-center gap-1.5 p-1.5 rounded-2xl border-2 transition-all ${cardStyle === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                <div className="w-[80px] h-[54px] rounded-lg overflow-hidden" style={opt.s}>
-                                    <div className="p-1.5 space-y-1"><div className="h-2 w-10 rounded bg-slate-300/60" /><div className="h-1.5 w-full rounded bg-slate-200/60" /><div className="h-1.5 w-2/3 rounded bg-slate-200/60" /></div>
+                            { key: 'glass', label: 'Glass' },
+                            { key: 'flat', label: 'Flat' },
+                            { key: 'bordered', label: 'Bordered' },
+                            { key: 'tinted', label: 'Tinted' },
+                        ] as const).map(opt => (
+                            <button
+                                key={opt.key}
+                                onClick={() => saveUiStyle({ cardStyle: opt.key })}
+                                className={cn(
+                                    "card-option-wrapper flex flex-col items-center transition-all",
+                                    cardStyle === opt.key && "active"
+                                )}
+                            >
+                                <div className={cn("card-style-option", opt.key)}>
+                                    <div className="mock-text mb-2" />
+                                    <div className="mock-line" />
+                                    <div className="mock-line" />
                                 </div>
-                                <span className="text-[10px] font-bold text-[var(--color-primary-font)]/60">{opt.label}</span>
+                                <span className="card-style-label">{opt.label}</span>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Density */}
-                <div className="space-y-2">
-                    <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Spacing</p>
-                    <div className="flex rounded-xl overflow-hidden border border-slate-200 w-fit">
-                        {(['spacious', 'comfortable', 'compact'] as const).map((opt, i) => (
-                            <button key={opt} onClick={() => saveUiStyle({ density: opt })}
-                                className={`px-5 py-2 text-xs font-bold transition-all ${density === opt ? 'text-white' : 'text-[var(--color-primary-font)]/70 bg-white hover:bg-slate-50'} ${i > 0 ? 'border-l border-slate-200' : ''}`}
-                                style={density === opt ? { background: 'var(--primary)' } : {}}>
-                                {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+
 
                 {/* Font Theme Selector */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -1633,15 +1820,15 @@ export default function AgentThemeSettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
-                                {( [
+                                {([
                                     { label: 'Modern Sans', value: 'var(--font-inter)', preview: 'The quick brown fox' },
                                     { label: 'Classic Serif', value: 'var(--font-playfair)', preview: 'The quick brown fox' },
                                     { label: 'Mono Tech', value: 'var(--font-mono)', preview: 'The quick brown fox' },
                                     { label: 'Elegant Script', value: 'var(--font-script)', preview: 'The quick brown fox' },
                                     { label: 'Rounded Friendly', value: 'var(--font-rounded)', preview: 'The quick brown fox' },
                                 ] as const).map((opt) => (
-                                    <button 
-                                        key={opt.value} 
+                                    <button
+                                        key={opt.value}
                                         onClick={() => saveUiStyle({ font_family: opt.value })}
                                         className={cn(
                                             "flex flex-col items-start gap-1 px-4 py-3 rounded-2xl border-2 transition-all min-w-[140px]",
@@ -1658,30 +1845,65 @@ export default function AgentThemeSettingsPage() {
                                 <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Primary Font Color</p>
                                 <div className="flex flex-wrap gap-3 items-center">
                                     <div className="relative group">
-                                        <input 
-                                            type="color" 
-                                            value={fontColor} 
+                                        <input
+                                            type="color"
+                                            value={fontColor}
                                             onChange={(e) => saveUiStyle({ font_color: e.target.value })}
                                             className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
                                         />
                                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
                                     </div>
-                                    
+
                                     <div className="h-6 w-px bg-slate-200 mx-1" />
 
-                                    {( [
+                                    {([
                                         { name: 'Midnight Black', value: '#1e293b' },
                                         { name: 'Slate Gray', value: '#475569' },
                                         { name: 'Ocean Blue', value: '#1e40af' },
                                         { name: 'Warm Crimson', value: '#991b1b' },
                                         { name: 'Forest Green', value: '#166534' }
                                     ] as const).map((color) => (
-                                        <button 
+                                        <button
                                             key={color.value}
                                             onClick={() => saveUiStyle({ font_color: color.value })}
                                             className={cn(
                                                 "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
                                                 fontColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
+                                            )}
+                                            style={{ backgroundColor: color.value }}
+                                            title={color.name}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 pt-4 border-t border-slate-100">
+                                <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Button Text Color</p>
+                                <div className="flex flex-wrap gap-3 items-center">
+                                    <div className="relative group">
+                                        <input
+                                            type="color"
+                                            value={buttonTextColor}
+                                            onChange={(e) => saveUiStyle({ buttonTextColor: e.target.value })}
+                                            className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white shadow-sm transition-transform group-hover:scale-105"
+                                        />
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity">Custom</div>
+                                    </div>
+
+                                    <div className="h-6 w-px bg-slate-200 mx-1" />
+
+                                    {([
+                                        { name: 'Pure White', value: '#ffffff' },
+                                        { name: 'Soft White', value: '#f8fafc' },
+                                        { name: 'Steel Gray', value: '#334155' },
+                                        { name: 'Jet Black', value: '#000000' }
+                                    ] as const).map((color) => (
+                                        <button
+                                            key={color.value}
+                                            onClick={() => saveUiStyle({ buttonTextColor: color.value })}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
+                                                buttonTextColor === color.value ? "border-[var(--primary)] ring-2 ring-[var(--primary-glow)]" : "border-white shadow-sm"
                                             )}
                                             style={{ backgroundColor: color.value }}
                                             title={color.name}
@@ -1696,16 +1918,16 @@ export default function AgentThemeSettingsPage() {
                             <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-white text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
                                 <Eye className="h-3 w-3" /> LIVE PREVIEW
                             </div>
-                            <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden" 
-                                 style={{ 
-                                     fontFamily: getSelectedFontFamily(fontFamily),
-                                     color: fontColor
-                                 }}>
+                            <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden"
+                                style={{
+                                    fontFamily: getSelectedFontFamily(fontFamily),
+                                    color: fontColor
+                                }}>
                                 <div className="space-y-1">
                                     <h3 className="text-2xl font-medium leading-tight">Majestic Maldives</h3>
                                     <p className="text-sm opacity-80 font-medium">Escape to paradise with our curated getaway.</p>
                                 </div>
-                                
+
                                 <div className="flex gap-2">
                                     <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
                                         5D / 4N
@@ -1724,7 +1946,7 @@ export default function AgentThemeSettingsPage() {
                                         <p className="text-[10px] font-bold opacity-50 uppercase tracking-wider">Starts from</p>
                                         <p className="text-lg font-black">$1,250</p>
                                     </div>
-                                    <button className="px-5 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-bold shadow-lg shadow-[var(--primary-glow)]">
+                                    <button className="px-5 py-2 rounded-xl bg-[var(--primary)] text-xs font-bold shadow-lg shadow-[var(--primary-glow)]" style={{ color: buttonTextColor }}>
                                         Book Now
                                     </button>
                                 </div>
@@ -1737,7 +1959,7 @@ export default function AgentThemeSettingsPage() {
     );
 
     // Tabs that have a save/reset bar
-    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'uistyle'];
+    const SAVEABLE_TABS: TabId[] = ['homepage', 'plantrip', 'itinerary', 'cart', 'mybooking', 'uistyle'];
 
     const handleSave = () => {
         if (activeTab === 'homepage') { handleSaveHomepage(); return; }
@@ -1766,6 +1988,7 @@ export default function AgentThemeSettingsPage() {
                                 {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
                                 {activeTab === 'itinerary' && 'Customize the itinerary detail page'}
                                 {activeTab === 'cart' && 'Adjust the cart and checkout experience'}
+                                {activeTab === 'mybooking' && 'Customize text content for the My Booking page'}
                                 {activeTab === 'uistyle' && 'Instantly change button shapes, card styles, and typography'}
                             </p>
                         </div>
@@ -1802,29 +2025,56 @@ export default function AgentThemeSettingsPage() {
                         {activeTab === 'plantrip' && renderPlanTripTab()}
                         {activeTab === 'itinerary' && renderItineraryTab()}
                         {activeTab === 'cart' && renderCartTab()}
+                        {activeTab === 'mybooking' && renderMyBookingTab()}
                         {activeTab === 'uistyle' && renderUiStyleTab()}
                     </div>
                 </div>
 
                 {/* ── Sticky Save Bar ────────────────────────────────────── */}
                 {SAVEABLE_TABS.includes(activeTab) && (
-                    <div className="fixed bottom-0 left-0 right-0 z-50 px-6 py-3 border-t border-white/20 bg-white/70 backdrop-blur-xl">
-                        <div className="max-w-5xl mx-auto flex items-center gap-3">
-                            <p className="text-xs text-[var(--color-primary-font)]/70 flex items-center gap-1.5">
-                                <span className="p-1 rounded bg-slate-100">ℹ️</span> Changes apply after you save
-                            </p>
-                            <Button variant="ghost" onClick={handleReset} className="h-9 text-sm text-[var(--color-primary-font)]/60 hover:text-[var(--color-primary-font)]/90 rounded-xl">
-                                <RotateCcw className="h-4 w-4 mr-1.5" />Reset
-                            </Button>
-                            {activeTab === 'homepage' && (
-                                <Button variant="outline" onClick={() => window.open('http://rnt.local:3000', '_blank')} className="h-9 text-sm rounded-xl border-slate-200">
-                                    <ExternalLink className="h-4 w-4 mr-1.5" />Preview
+                    <div className="theme-save-bar">
+                        <div className="max-w-5xl mx-auto flex items-center w-full">
+                            {/* Info Text - Leftmost */}
+                            <div className="save-info flex items-center gap-2">
+                                <Info className="h-4 w-4" />
+                                <span>Changes apply after you save</span>
+                            </div>
+
+                            {/* Spacer */}
+                            <div className="flex-1" />
+
+                            {/* Buttons - Rightmost */}
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    variant="ghost"
+                                    onClick={handleReset}
+                                    className="h-10 text-sm text-black hover:text-black/80 rounded-2xl px-4"
+                                >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Reset
                                 </Button>
-                            )}
-                            <Button onClick={handleSave} disabled={hpSaving || pageSaving} className="h-9 text-sm text-white font-bold rounded-xl px-5" style={{ background: 'var(--primary)' }}>
-                                <Save className="h-4 w-4 mr-1.5" />
-                                {(hpSaving || pageSaving) ? 'Saving…' : 'Save Changes'}
-                            </Button>
+
+                                {activeTab === 'homepage' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.open(window.location.origin, '_blank')}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview
+                                    </Button>
+                                )}
+
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={hpSaving || pageSaving}
+                                    className="h-10 text-sm text-white font-bold rounded-2xl px-8 shadow-lg shadow-[var(--primary-glow)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    style={{ background: 'var(--primary)' }}
+                                >
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {(hpSaving || pageSaving) ? 'Saving…' : 'Save Changes'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}

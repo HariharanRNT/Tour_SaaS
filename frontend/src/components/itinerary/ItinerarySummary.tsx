@@ -58,16 +58,16 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                 </CardHeader>
                 <CardContent className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Activities</span>
-                        <Badge variant="secondary">{totalActivities}</Badge>
+                        <span className="text-sm text-black font-semibold">Total Activities</span>
+                        <Badge variant="secondary" className="bg-black text-white">{totalActivities}</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Estimated Cost</span>
-                        <span className="text-lg font-bold text-primary">
+                        <span className="text-sm text-black font-semibold">Estimated Cost</span>
+                        <span className="text-lg font-black text-black">
                             ₹{totalCost.toFixed(2)}
                         </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-black font-bold uppercase tracking-wider">
                         * Per person pricing
                     </p>
                 </CardContent>
@@ -102,7 +102,7 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                             return (
                                 <TabsContent key={day.dayNumber} value={`day-${day.dayNumber}`} className="space-y-3">
                                     {dayActivities.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground text-center py-8">
+                                        <p className="text-sm text-black font-bold text-center py-8">
                                             No activities scheduled for this day
                                         </p>
                                     ) : (
@@ -112,17 +112,17 @@ export function ItinerarySummary({ days, destination, locationInfo }: ItineraryS
                                                     <h4 className="font-semibold text-sm mb-1">
                                                         {activity!.title}
                                                     </h4>
-                                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                    <div className="flex items-center justify-between text-xs text-black font-bold">
                                                         <span>{activity!.duration}</span>
-                                                        <span className="font-semibold text-primary">
+                                                        <span className="font-extrabold text-black">
                                                             ₹{activity!.price_per_person}
                                                         </span>
                                                     </div>
                                                 </div>
                                             ))}
                                             <div className="pt-2 border-t flex items-center justify-between">
-                                                <span className="text-sm font-medium">Day Total</span>
-                                                <span className="font-bold text-primary">
+                                                <span className="text-sm font-bold text-black">Day Total</span>
+                                                <span className="font-black text-black">
                                                     ₹{dayCost.toFixed(2)}
                                                 </span>
                                             </div>

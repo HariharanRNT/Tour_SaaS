@@ -65,7 +65,7 @@ export function ServiceCard({
             <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                     {/* Icon Box */}
-                    <div className={`p-3 rounded-xl transition-colors ${status === 'selected' ? 'bg-[var(--primary-soft)] text-[var(--primary)]' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-3 rounded-xl transition-colors ${status === 'selected' ? 'bg-[var(--primary-soft)] text-[var(--primary)]' : 'bg-gray-100 text-black'}`}>
                         <Icon className="h-6 w-6" />
                     </div>
 
@@ -80,26 +80,26 @@ export function ServiceCard({
                             )}
                         </div>
 
-                        <p className="text-[var(--color-primary-font)]/60 text-sm mb-4 font-medium">{description}</p>
+                        <p className="text-black text-sm mb-4 font-bold">{description}</p>
 
                         {/* Details Grid */}
                         {details && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-[var(--color-primary-font)]/70 bg-white/60 p-3 rounded-lg border border-gray-100/50 mb-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-black bg-white/60 p-3 rounded-lg border border-gray-100/50 mb-4 font-bold">
                                 {details.from && details.to && (
                                     <div className="col-span-full flex items-center gap-2">
-                                        <span className="font-semibold text-[var(--color-primary-font)]/90">{details.from}</span>
-                                        <ArrowRight className="h-3 w-3 text-gray-400" />
-                                        <span className="font-semibold text-[var(--color-primary-font)]/90">{details.to}</span>
+                                        <span className="font-semibold text-black">{details.from}</span>
+                                        <ArrowRight className="h-3 w-3 text-black" />
+                                        <span className="font-semibold text-black">{details.to}</span>
                                     </div>
                                 )}
                                 {details.date && (
-                                    <div className="flex items-center gap-2"><span className="opacity-75">📅</span> {details.date}</div>
+                                    <div className="flex items-center gap-2"><span>📅</span> {details.date}</div>
                                 )}
                                 {details.duration && (
-                                    <div className="flex items-center gap-2"><span className="opacity-75">⏱️</span> {details.duration}</div>
+                                    <div className="flex items-center gap-2"><span>⏱️</span> {details.duration}</div>
                                 )}
                                 {details.rating && (
-                                    <div className="flex items-center gap-2"><span className="opacity-75">⭐</span> {details.rating} / 5</div>
+                                    <div className="flex items-center gap-2"><span>⭐</span> {details.rating} / 5</div>
                                 )}
                             </div>
                         )}

@@ -12,7 +12,7 @@ import {
     clearAgentNotifications
 } from '@/lib/api'
 import { toast } from 'sonner'
-import { Bell, Search, HelpCircle, Settings, User, LogOut, Menu, Check, Plane } from 'lucide-react'
+import { Bell, Search, Settings, User, LogOut, Menu, Check, Plane } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -163,7 +163,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-black hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors relative">
-                            <Bell className="h-5 w-5" />
+                            <Bell className="h-5 w-5" stroke="black" />
                             {unreadCount > 0 && (
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-white shadow-[0_0_8px_var(--primary-glow)]"></span>
                             )}
@@ -239,11 +239,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {!isAdmin && (
-                    <Button variant="ghost" size="icon" className="text-black hover:text-slate-800 hidden sm:flex">
-                        <HelpCircle className="h-5 w-5" />
-                    </Button>
-                )}
+
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

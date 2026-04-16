@@ -26,6 +26,7 @@
     --gradient-start: #F97316;
     --gradient-mid: #FDBA74;
     --gradient-end: #FED7AA;
+    --button-text-color: #ffffff;
     
     /* Activity Redesign Palette (Teal-to-Sky) */
     --teal-primary: #2A9D8F;
@@ -932,6 +933,7 @@
     border: 1px solid rgba(255, 255, 255, 0.5) !important;
     border-radius: 16px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1) !important;
+    color: #000000 !important;
   }
 
   @keyframes selectFadeDown {
@@ -954,6 +956,7 @@
     border-radius: 8px;
     margin: 2px 4px;
     cursor: pointer;
+    color: #000000 !important; /* Force black text for readability on glassy background */
   }
   
   .glass-select-item[data-highlighted] {
@@ -1924,4 +1927,323 @@ body.font-playful h3 {
   color: rgba(0,0,0,0.6);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* Global Button Typography & Text Logic */
+button, 
+.btn,
+[role="button"]:not(.ignore-branding) {
+  color: var(--button-text, var(--button-text-color, #ffffff));
+}
+
+/* Specific overrides for status-based buttons */
+.bg-primary, 
+[class*="bg-[var(--primary)]"],
+.bg-\[var\(--primary\)\] {
+  color: var(--button-text, var(--button-text-color, #ffffff)) !important;
+}
+
+/* Ensure outline buttons keep their primary border/text color */
+.border-primary,
+.border-\[var\(--primary\)\] {
+  color: var(--primary) !important;
+}
+
+/* Theme Save Bar Fix */
+.theme-save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive Left Offset based on Sidebar */
+@media (min-width: 1024px) {
+    .theme-save-bar {
+        /* Default to collapsed width if not specified, 
+           but usually we want it to react to the actual sidebar */
+        left: var(--sidebar-width, 70px);
+    }
+}
+
+.save-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-primary-font);
+    opacity: 0.7;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.save-info span {
+    white-space: nowrap;
+}
+
+/* ── Card Style Options ── */
+.card-style-option {
+    width: 84px;
+    height: 60px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.card-style-option .mock-text {
+    height: 6px;
+    width: 24px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.card-style-option .mock-line {
+    height: 4px;
+    width: 100%;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Variants */
+.card-style-option.glass {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-style-option.flat {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    box-shadow: none;
+}
+
+.card-style-option.bordered {
+    background: #FFFFFF;
+    border: 2px solid #CBD5E1;
+    box-shadow: none;
+}
+
+.card-style-option.tinted {
+    background: rgba(var(--primary-rgb, 59, 130, 246), 0.08);
+    border: 1px solid rgba(var(--primary-rgb, 59, 130, 246), 0.15);
+}
+
+.card-style-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 4px;
+    transition: color 0.2s ease;
+}
+
+/* Active State */
+.card-option-wrapper.active .card-style-option {
+    border-color: var(--primary) !important;
+    transform: scale(1.05);
+}
+
+.card-option-wrapper.active .card-style-label {
+    color: var(--primary);
+}
+
+
+/* ── My Booking Page — 3D Glass System ─────────────────── */
+.booking-glass-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0.30) 100%);
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 28px;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06), 0 32px 64px rgba(0,0,0,0.06);
+  transition: box-shadow 0.4s cubic-bezier(0.16,1,0.3,1), transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.booking-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 45%);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.booking-glass-card > * { position: relative; z-index: 1; }
+.booking-glass-card:hover {
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.13), 0 4px 12px rgba(0,0,0,0.08), 0 48px 80px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
+
+.booking-glass-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.38) 60%, rgba(255,255,255,0.22) 100%);
+  backdrop-filter: blur(48px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.08);
+  border: 1px solid rgba(255,255,255,0.78);
+  border-radius: 40px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.03), 0 12px 48px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.07), 0 40px 80px rgba(0,0,0,0.07);
+}
+.booking-glass-hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.50) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.booking-glass-hero > * { position: relative; z-index: 1; }
+
+.booking-glass-sidebar {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.52) 60%, rgba(255,255,255,0.34) 100%);
+  backdrop-filter: blur(44px) saturate(200%) brightness(1.04);
+  -webkit-backdrop-filter: blur(44px) saturate(200%) brightness(1.04);
+  border: 1px solid rgba(255,255,255,0.82);
+  border-radius: 28px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.03), 0 12px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.07), 0 40px 70px rgba(0,0,0,0.06);
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+.booking-glass-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0) 40%);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.booking-glass-sidebar > * { position: relative; z-index: 1; }
+
+.booking-glass-header-band {
+  background: linear-gradient(90deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.55);
+}
+
+.booking-glass-danger {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(255,255,255,0.78) 0%, rgba(255,230,230,0.52) 50%, rgba(255,210,210,0.34) 100%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255,200,200,0.68);
+  border-radius: 28px;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.92), 0 8px 32px rgba(220,38,38,0.08), 0 4px 12px rgba(0,0,0,0.06), 0 30px 60px rgba(220,38,38,0.05);
+}
+.booking-glass-danger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.50) 0%, rgba(255,255,255,0) 45%);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.booking-glass-danger > * { position: relative; z-index: 1; }
+
+.booking-glass-inner {
+  background: linear-gradient(145deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.28) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.68);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.90), 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.booking-glass-activity {
+  background: linear-gradient(145deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0.35) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.68);
+  border-left: 3px solid rgba(99,102,241,0.40);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.88), 0 4px 16px rgba(0,0,0,0.06);
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.booking-glass-activity:hover {
+  background: linear-gradient(145deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.52) 100%);
+  border-left-color: rgba(99,102,241,0.65);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 8px 24px rgba(99,102,241,0.10);
+  transform: translateX(3px);
+}
+
+.booking-glass-support {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.58) 50%, rgba(255,255,255,0.40) 100%);
+  backdrop-filter: blur(36px) saturate(180%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.82);
+  border-radius: 32px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,1), 0 8px 30px rgba(0,0,0,0.08), 0 3px 10px rgba(0,0,0,0.05);
+}
+.booking-glass-support::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.55) 0%, transparent 50%);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.booking-glass-support > * { position: relative; z-index: 1; }
+
+@keyframes booking-shine {
+  0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+}
+.booking-glass-card:hover::after,
+.booking-glass-sidebar:hover::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.20) 50%, transparent 100%);
+  pointer-events: none;
+  animation: booking-shine 0.9s ease forwards;
+  z-index: 2;
+}
+
+/* Booking page font inheritance */
+.booking-page-root {
+  font-family: var(--project-font-family, var(--font-inter)), sans-serif;
+}
+
+/* Persistent fix for Select items text color */
+.glass-select-item,
+.glass-select-item *,
+.glass-select-item [data-radix-select-item-text] {
+  color: #000000 !important;
+}
+
+.glass-select-item[data-highlighted],
+.glass-select-item[data-highlighted] *,
+.glass-select-item[data-state="checked"],
+.glass-select-item[data-state="checked"] * {
+  color: var(--primary) !important;
 }

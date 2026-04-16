@@ -121,7 +121,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-black tracking-wider">Duration</p>
-                                    <p className="text-sm font-semibold text-slate-700">{activity.duration || 'Flexible'}</p>
+                                    <p className="text-sm font-bold text-black">{activity.duration || 'Flexible'}</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 flex items-center gap-3 justify-center md:justify-start">
@@ -130,7 +130,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-black tracking-wider">Group Size</p>
-                                    <p className="text-sm font-semibold text-slate-700">{activity.max_group_size ? `Up to ${activity.max_group_size}` : 'Varies'}</p>
+                                    <p className="text-sm font-bold text-black">{activity.max_group_size ? `Up to ${activity.max_group_size}` : 'Varies'}</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 flex items-center gap-3 justify-center md:justify-start">
@@ -139,7 +139,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-black tracking-wider">Type</p>
-                                    <p className="text-sm font-semibold text-slate-700">Instant Confirm</p>
+                                    <p className="text-sm font-bold text-black">Instant Confirm</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 flex items-center gap-3 justify-center md:justify-start">
@@ -148,7 +148,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-black tracking-wider">Location</p>
-                                    <p className="text-sm font-semibold text-slate-700 truncate max-w-[100px]" title="View Map">View on Map</p>
+                                    <p className="text-sm font-bold text-black truncate max-w-[100px]" title="View Map">View on Map</p>
                                 </div>
                             </div>
                         </div>
@@ -160,19 +160,19 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                             <div className="grid md:grid-cols-[2fr,1fr] gap-8">
                                 <div className="space-y-6">
                                     <section>
-                                        <h3 className="text-xl font-bold text-[#3A1A08] flex items-center gap-3 mb-4">
+                                        <h3 className="text-xl font-bold text-black flex items-center gap-3 mb-4">
                                             <div className="h-7 w-1.5 bg-[var(--primary)] rounded-full" />
                                             About this activity
                                         </h3>
                                         <div
-                                            className="text-[#5D4037] leading-relaxed text-base space-y-4"
+                                            className="text-black leading-relaxed text-base space-y-4 font-medium"
                                             dangerouslySetInnerHTML={{ __html: activity.description || 'Experience the best of this destination with our guided activity.' }}
                                         />
                                     </section>
 
                                     {/* Highlights Section (Visualized) */}
                                     <section>
-                                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                                        <h3 className="text-lg font-bold text-black flex items-center gap-2 mb-4">
                                             <span className="h-6 w-1 bg-amber-500 rounded-full" />
                                             Highlights
                                         </h3>
@@ -183,12 +183,12 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                                     <div className="h-6 w-6 shrink-0 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mt-0.5">
                                                         <Star className="h-3.5 w-3.5 fill-current" />
                                                     </div>
-                                                    <span className="text-slate-700 text-sm font-medium">{item}</span>
+                                                    <span className="text-black text-sm font-bold">{item}</span>
                                                 </div>
                                             ))}
                                             {/* Fallback if no specific highlights data - typically parsed from desc or separate field */}
                                             {(!activity.included_items || activity.included_items.length === 0) && (
-                                                <div className="p-4 bg-slate-50 rounded-lg text-slate-500 text-sm italic">
+                                                <div className="p-4 bg-slate-50 rounded-lg text-black text-sm italic font-bold">
                                                     Detailed highlights available upon booking.
                                                 </div>
                                             )}
@@ -200,7 +200,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                 <div className="space-y-6">
                                     {/* What's Included Card */}
                                     <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                        <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                        <h4 className="font-bold text-black mb-4 flex items-center gap-2">
                                             Quick Check
                                         </h4>
                                         <div className="space-y-3">
@@ -208,19 +208,19 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                                 <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                                                     <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                 </div>
-                                                <span className="text-sm text-slate-600">Free Cancellation (24h)</span>
+                                                <span className="text-sm text-black font-bold">Free Cancellation (24h)</span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                                                     <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                 </div>
-                                                <span className="text-sm text-slate-600">Mobile Voucher</span>
+                                                <span className="text-sm text-black font-bold">Mobile Voucher</span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                                                     <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                 </div>
-                                                <span className="text-sm text-slate-600">Instant Confirmation</span>
+                                                <span className="text-sm text-black font-bold">Instant Confirmation</span>
                                             </div>
                                         </div>
                                     </div>
@@ -245,7 +245,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                             {/* Detailed Includes/Excludes Split */}
                             <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
                                 <div className="space-y-4">
-                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <h3 className="font-bold text-black flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
                                             <Plus className="h-4 w-4" />
                                         </div>
@@ -253,7 +253,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                     </h3>
                                     <ul className="space-y-2">
                                         {activity.included_items?.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-black font-medium">
                                                 <svg className="h-5 w-5 text-green-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                                 <span className="leading-relaxed">{item}</span>
                                             </li>
@@ -261,7 +261,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                     </ul>
                                 </div>
                                 <div className="space-y-4">
-                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <h3 className="font-bold text-black flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                                         </div>
@@ -269,7 +269,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                     </h3>
                                     <ul className="space-y-2">
                                         {activity.excluded_items?.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-black font-medium">
                                                 <svg className="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                                 <span className="leading-relaxed">{item}</span>
                                             </li>
@@ -285,10 +285,10 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                 {/* 3. Sticky Footer Action Bar */}
                 <div className="p-4 bg-white/40 backdrop-blur-2xl border-t border-[var(--primary)]/10 flex items-center justify-between z-20 shadow-[0_-5px_25px_rgba(0,0,0,0.05)]">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-[#A0501E] uppercase tracking-wider opacity-60">Total Price</span>
+                        <span className="text-[10px] font-bold text-black uppercase tracking-wider">Total Price</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-[#3A1A08]">₹{activity.price_per_person?.toLocaleString()}</span>
-                            <span className="text-sm font-bold text-[#A0501E]/40">/ person</span>
+                            <span className="text-3xl font-black text-black">₹{activity.price_per_person?.toLocaleString()}</span>
+                            <span className="text-sm font-bold text-black">/ person</span>
                         </div>
                     </div>
 
@@ -296,7 +296,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                         <Button
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="hidden sm:flex border-[var(--primary)]/20 text-[#A0501E] hover:bg-[var(--primary)]/5 px-8 h-12 rounded-xl font-bold transition-all"
+                            className="hidden sm:flex border-black text-black hover:bg-black hover:text-white px-8 h-12 rounded-xl font-bold transition-all"
                         >
                             Close Details
                         </Button>
