@@ -341,9 +341,13 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
     };
 
     const loadingRef = useRef(false)
+    // Permanent guard: track which packageId we have already fetched
+    // so React Strict Mode double-mount does NOT trigger a second API call.
+    const fetchedForPackageRef = useRef<string | null>(null)
 
     useEffect(() => {
-        if (packageId && !loadingRef.current) {
+        if (packageId && fetchedForPackageRef.current !== packageId) {
+            fetchedForPackageRef.current = packageId
             loadItinerary()
         }
     }, [packageId])

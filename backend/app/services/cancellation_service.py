@@ -69,8 +69,8 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
         float(p.amount)
         for p in (booking.payments or [])
         if (
-            p.status == PaymentStatus.SUCCEEDED
-            or str(p.status) in ("succeeded", "PaymentStatus.SUCCEEDED", "SUCCEEDED")
+            p.status in (PaymentStatus.SUCCEEDED, PaymentStatus.PAID)
+            or str(p.status).lower() in ("succeeded", "paid", "paymentstatus.succeeded", "paymentstatus.paid")
         )
     )
 
@@ -250,8 +250,8 @@ async def process_cancellation(
             (
                 p for p in reversed(booking.payments or [])
                 if (
-                    p.status == PaymentStatus.SUCCEEDED
-                    or str(p.status) in ("succeeded", "PaymentStatus.SUCCEEDED", "SUCCEEDED")
+                    p.status in (PaymentStatus.SUCCEEDED, PaymentStatus.PAID)
+                    or str(p.status).lower() in ("succeeded", "paid", "paymentstatus.succeeded", "paymentstatus.paid")
                 )
             ),
             None,

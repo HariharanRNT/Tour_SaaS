@@ -36,7 +36,10 @@ import {
     Edit,
     MoreHorizontal,
     Copy,
-    AlertCircle
+    AlertCircle,
+    Package,
+    IndianRupee,
+    AlertTriangle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -45,6 +48,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function BookingDetailsPage() {
     const params = useParams()
@@ -69,6 +73,7 @@ export default function BookingDetailsPage() {
         message: string;
     } | null>(null)
     const [isRetrying, setIsRetrying] = useState(false)
+    const [isCancelled, setIsCancelled] = useState(false)
 
     const [gstSettings, setGstSettings] = useState({ inclusive: false, percentage: 18 })
 
@@ -161,6 +166,7 @@ export default function BookingDetailsPage() {
         try {
             const data = await bookingsAPI.getCancelPreview(booking.id)
             setCancelPreview(data)
+            setIsCancelled(false) // Reset state when opening
             setIsCancelDialogOpen(true)
         } catch (error: any) {
             console.error("Failed to fetch cancel preview", error)
@@ -175,9 +181,9 @@ export default function BookingDetailsPage() {
         setIsCancelling(true)
         try {
             const response = await bookingsAPI.cancel(booking.id)
+            setIsCancelled(true)
             toast.success(response.message || "Booking cancelled successfully")
-            setIsCancelDialogOpen(false)
-            // Reload booking to show cancelled state
+            // Reload booking in background
             loadBooking(booking.id)
         } catch (error: any) {
             console.error("Cancellation failed", error)
@@ -266,7 +272,7 @@ export default function BookingDetailsPage() {
         return (
             <div className="container mx-auto px-4 py-8 text-center">
                 <h1 className="text-2xl font-bold text-red-600">Booking Not Found</h1>
-                <Button onClick={() => router.push('/bookings')} className="mt-4">
+                <Button onClick={() => router.push('/bookings')} className="mt-4 bg-[var(--button-bg)] hover:bg-[var(--button-bg)]/90 text-white rounded-xl">
                     Back to My Bookings
                 </Button>
             </div>
@@ -354,142 +360,228 @@ export default function BookingDetailsPage() {
     const isFailed = booking.payment_status?.toLowerCase() === 'failed' || booking.status === 'initiated' || booking.payment_status?.toLowerCase() === 'pending';
 
     return (
-        <div className="min-h-screen overflow-x-hidden booking-page-root">
+        <div className="min-h-screen overflow-x-hidden booking-page-root" style={{
+            '--premium-bg': 'rgba(255,255,255,0.45)',
+            '--premium-border': 'rgba(255,255,255,0.3)',
+            '--premium-blur': '40px',
+            '--premium-card-px': '24px',
+            '--premium-card-py': '24px',
+            '--premium-radius': '32px',
+        } as any}>
+            <style jsx global>{`
+                .booking-page-root {
+                    background: radial-gradient(circle at 50% 0%, var(--primary-soft) 0%, var(--page-bg, #f8fafc) 100%), var(--page-bg, #f8fafc);
+                    color: black;
+                    min-height: 100vh;
+                }
+                .premium-glass-card {
+                    backdrop-filter: blur(var(--premium-blur)) saturate(160%);
+                    background: var(--premium-bg);
+                    border: 1px solid var(--premium-border);
+                    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+                    border-radius: var(--premium-radius);
+                    padding: var(--premium-card-py) var(--premium-card-px);
+                    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .premium-glass-card:hover {
+                    background: rgba(255,255,255,0.55);
+                    transform: translateY(-4px);
+                    box-shadow: 0 20px 50px -15px rgba(0,0,0,0.12);
+                }
+                .card-accent-icon {
+                    position: absolute;
+                    top: 24px;
+                    right: 24px;
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 8px 20px -5px rgba(0,0,0,0.1);
+                }
+                .status-pulse {
+                    position: relative;
+                }
+                .status-pulse::after {
+                    content: '';
+                    position: absolute;
+                    inset: -4px;
+                    border-radius: 999px;
+                    background: currentColor;
+                    opacity: 0.2;
+                    animation: pulse-soft 2s infinite;
+                }
+                @keyframes pulse-soft {
+                    0% { transform: scale(1); opacity: 0.2; }
+                    50% { transform: scale(1.5); opacity: 0; }
+                    100% { transform: scale(1); opacity: 0.2; }
+                }
+                .timeline-line {
+                    position: absolute;
+                    left: 22px;
+                    top: 24px;
+                    bottom: 24px;
+                    width: 1px;
+                    background: rgba(0,0,0,0.1);
+                }
+                
+                /* Warning Icon Pulse */
+                @keyframes warning-pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                }
+                .warning-icon-pulse {
+                    animation: warning-pulse 2s infinite;
+                }
+
+                /* Button Shake */
+                @keyframes button-shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-2px) rotate(-1deg); }
+                    50% { transform: translateX(2px) rotate(1deg); }
+                    75% { transform: translateX(-2px) rotate(-1deg); }
+                }
+                .hover-shake:hover:not(:disabled) {
+                    animation: button-shake 0.3s ease-in-out infinite;
+                }
+                .timeline-dot {
+                    position: absolute;
+                    left: -14px;
+                    top: 13px;
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: var(--button-bg, black);
+                    z-index: 10;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                    border: 2px solid white;
+                }
+                /* Typography Hierarchy Refinement — High Contrast Black */
+                .page-title { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; color: black; }
+                .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: black; opacity: 0.8; }
+                .label-text { font-size: 11px; font-weight: 600; color: black; opacity: 0.7; letter-spacing: 0.02em; }
+                .value-text { font-size: 15px; font-weight: 700; color: black; letter-spacing: -0.01em; }
+                .meta-text { font-size: 11px; font-weight: 500; color: black; opacity: 0.6; }
+                .pill-badge {
+                    background: rgba(255,255,255,0.8);
+                    backdrop-filter: blur(10px);
+                    padding: 6px 16px;
+                    border-radius: 999px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    box-shadow: 0 2px 10px -2px rgba(0,0,0,0.05);
+                }
+                
+                /* Tabs customization */
+                .premium-tabs-list {
+                    background: rgba(0,0,0,0.03);
+                    border: 1px solid rgba(0,0,0,0.05);
+                    border-radius: 12px;
+                    padding: 4px;
+                }
+                .premium-tabs-trigger {
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    border-radius: 8px;
+                    color: rgba(0,0,0,0.5);
+                }
+                .premium-tabs-trigger[data-state='active'] {
+                    background: white;
+                    color: black;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                }
+            `}</style>
             <Script
                 src="https://checkout.razorpay.com/v1/checkout.js"
                 strategy="lazyOnload"
             />
 
-            {/* Header & Hero Section — naturally sized */}
-            <div className="relative w-full group overflow-hidden">
-                <div className="absolute inset-0">
-                    <img
-                        src={heroImage}
-                        alt={booking.package?.destination || 'Destination'}
-                        className="w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                </div>
-
-                <div className="container mx-auto px-4 relative flex flex-col pt-12 pb-12 gap-8">
-                    {/* Top Navigation Row */}
-                    <div className="flex justify-between items-center animate-fade-in">
-                        <Button
-                            variant="ghost"
-                            onClick={() => router.push('/bookings')}
-                            className="glass-pill-chip bg-black/5 hover:bg-black/10 border-black/10 text-black pl-3 pr-5 h-11 group"
-                        >
-                            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-xs font-black uppercase tracking-[0.15em]">My Bookings</span>
-                        </Button>
-                    </div>
-
-                    {/* Unified Hero Card */}
-                    <div className="w-full">
-                        <div className="booking-glass-hero overflow-hidden">
-                            <div className="p-6 md:p-6 md:pb-5">
-                                <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-                                    {/* Left: Title & Meta */}
-                                    <div className="flex-1 space-y-6">
-                                        <div>
-                                            <h1 className="text-3xl md:text-5xl font-black text-[#0f172a] mb-4 tracking-tighter leading-[1.05] animate-in slide-in-from-left duration-700 capitalize">
-                                                {booking.package?.title || 'Custom Trip Package'}
-                                            </h1>
-
-                                            <div className="flex flex-wrap items-center gap-y-4 gap-x-8 text-black text-sm md:text-base font-black">
-                                                <div className="flex items-center gap-4 group/meta">
-                                                    <div className="h-12 w-12 rounded-[20px] bg-blue-600/10 flex items-center justify-center border border-blue-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
-                                                        <MapPin className="h-6 w-6 text-blue-600" />
-                                                    </div>
-                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{booking.package?.destination || 'Destination'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-4 group/meta">
-                                                    <div className="h-12 w-12 rounded-[20px] bg-indigo-600/10 flex items-center justify-center border border-indigo-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
-                                                        <Calendar className="h-6 w-6 text-indigo-600" />
-                                                    </div>
-                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{formatDate(booking.travel_date)}</span>
-                                                </div>
-                                                <div className="flex items-center gap-4 group/meta">
-                                                    <div className="h-12 w-12 rounded-[20px] bg-purple-600/10 flex items-center justify-center border border-purple-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
-                                                        <Clock className="h-6 w-6 text-purple-600" />
-                                                    </div>
-                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{formatDuration(booking.package?.duration_days || 0)}</span>
-                                                </div>
-                                                <div className="flex items-center gap-4 group/meta">
-                                                    <div className="h-12 w-12 rounded-[20px] bg-emerald-600/10 flex items-center justify-center border border-emerald-600/20 shadow-sm group-hover/meta:scale-110 transition-transform">
-                                                        <Users className="h-6 w-6 text-emerald-600" />
-                                                    </div>
-                                                    <span className="uppercase tracking-[0.2em] text-xs font-black">{booking.number_of_travelers} Traveler{booking.number_of_travelers > 1 ? 's' : ''}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Badges & Actions */}
-                                    <div className="flex flex-col items-start lg:items-end gap-6 min-w-fit">
-                                        {/* Status & REF Column */}
-                                        <div className="flex flex-col gap-4 w-full">
-                                            <div className={`glass-pill-chip py-2 px-5 shadow-md border-2 transition-all duration-500 scale-105 ${booking.status === 'confirmed'
-                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-black shadow-[0_0_30px_rgba(16,185,129,0.2)]'
-                                                : 'bg-white/60 border-black/10 text-black'
-                                                }`}>
-                                                <div className={`h-2.5 w-2.5 rounded-full mr-4 ${booking.status === 'confirmed' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]' : 'bg-black'
-                                                    } animate-pulse-soft`} />
-                                                <span className="text-xs font-black tracking-[0.3em] uppercase">
-                                                    {statusConfig.label}
-                                                </span>
-                                            </div>
-
-                                            <div className="glass-pill-chip bg-white/80 backdrop-blur-md border-black/10 h-14 pl-6 pr-8 shadow-sm group/ref">
-                                                <div>
-                                                    <p className="text-[9px] text-blue-600 font-black uppercase tracking-[0.3em] mb-0.5">Booking Reference</p>
-                                                    <p className="font-mono font-black text-base text-black tracking-tight">{booking.booking_reference}</p>
-                                                </div>
-                                                <button
-                                                    className="ml-6 p-2 hover:bg-blue-600/10 rounded-xl transition-all hover:scale-110"
-                                                    onClick={() => copyToClipboard(booking.booking_reference)}
-                                                >
-                                                    <Copy className="h-4 w-4 text-blue-600" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Unified Action Footer (Internal) */}
-                                        <div className="flex items-center gap-3 w-full lg:w-fit p-1.5 bg-black/5 rounded-[22px] border border-black/5">
-                                            {isConfirmed && (
-                                                <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="flex-1 lg:flex-none bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 border-blue-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
-                                                        onClick={handleDownloadInvoice}
-                                                    >
-                                                        <Receipt className="h-3.5 w-3.5" /> Invoice
-                                                    </Button>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="flex-1 lg:flex-none bg-red-600/10 hover:bg-red-600/20 text-red-700 border-red-600/10 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:gap-1.5"
-                                                        disabled={booking.status === 'cancelled' || booking.status === 'completed' || isFetchingPreview}
-                                                        onClick={fetchCancelPreview}
-                                                    >
-                                                        {isFetchingPreview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancel
-                                                    </Button>
-                                                </>
-                                            )}
-
-                                            {isFailed && (
-                                                <Button
-                                                    onClick={handleRetryPayment}
-                                                    disabled={isRetrying}
-                                                    className="flex-1 lg:flex-none glass-pill-chip bg-blue-600/10 hover:bg-blue-600/20 text-black border-blue-600/20 gap-2.5 h-12 px-8 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm"
-                                                >
-                                                    {isRetrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />} Retry Payment
-                                                </Button>
-                                            )}
-                                        </div>
+            {/* Header Section — Compact & Sharp */}
+            <div className="relative w-full border-b border-black/5 bg-black/2 pt-8 pb-6">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push('/bookings')}
+                                    className="h-8 w-8 rounded-full bg-black/5 hover:bg-black/10 p-0"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <h1 className="page-title">{booking.package?.title || 'Custom Trip Package'}</h1>
+                                    <div className={`pill-badge border-[0.5px] ${
+                                        booking.status === 'confirmed' 
+                                        ? 'border-emerald-500/20 text-emerald-700' 
+                                        : 'border-amber-500/20 text-amber-700'
+                                    }`}>
+                                        <div className={`h-1.5 w-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-emerald-600' : 'bg-amber-600'}`} />
+                                        {statusConfig.label}
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 !text-black font-semibold">
+                                <div className="flex items-center gap-1.5">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    <span className="text-[12px]">{booking.package?.destination}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 border-l border-black/10 pl-3">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span className="text-[12px]">{formatDate(booking.travel_date)}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 border-l border-black/10 pl-3">
+                                    <Users className="h-3.5 w-3.5" />
+                                    <span className="text-[12px]">{booking.number_of_travelers} Traveler{booking.number_of_travelers > 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="pill-badge border-[0.5px] border-black/20 !text-black">
+                                    <span className="uppercase text-[9px] tracking-widest font-bold">Booking ID</span>
+                                    <span className="font-mono text-[11px] font-bold">{booking.booking_reference}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {isConfirmed && (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-9 px-4 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-semibold gap-2"
+                                        onClick={handleDownloadInvoice}
+                                    >
+                                        <Receipt className="h-3.5 w-3.5 opacity-60" /> Invoice
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-9 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 text-xs font-semibold gap-2"
+                                        disabled={booking.status === 'cancelled' || booking.status === 'completed' || isFetchingPreview}
+                                        onClick={fetchCancelPreview}
+                                    >
+                                        {isFetchingPreview ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5 opacity-60" />} Cancel
+                                    </Button>
+                                </>
+                            )}
+                            {isFailed && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleRetryPayment}
+                                    className="h-9 px-6 bg-[var(--button-bg)] hover:bg-[var(--button-bg)]/90 text-white border-0 shadow-lg shadow-[var(--button-glow)] text-xs font-bold gap-2"
+                                >
+                                    <CreditCard className="h-3.5 w-3.5" /> Retry Payment
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -503,265 +595,188 @@ export default function BookingDetailsPage() {
                     {/* LEFT COLUMN (Main Details) - spans 3 columns (60%) */}
                     <div className="lg:col-span-3 space-y-8">
 
-                        {/* Package Details Card */}
-                        <Card className="booking-glass-card overflow-hidden group shadow-none min-h-0 border-0 p-0">
-                            <CardContent className="p-6">
-                                <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-6 ${booking.package?.included_items?.length ? 'border-b border-black/5 pb-6' : ''}`}>
-                                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                        <div className="space-y-1">
-                                            <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">Package Overview</h2>
-                                            <p className="text-black text-sm font-black flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-blue-600" /> Trip starts on {formatDate(booking.travel_date)}
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <div className="glass-pill-chip px-4 py-2 h-auto flex items-center gap-3 border-blue-600/10 bg-blue-600/5">
-                                                <span className="text-[9px] text-blue-600 font-black uppercase tracking-widest">Duration</span>
-                                                <span className="font-black text-sm text-black">{formatDuration(booking.package?.duration_days || 0)}</span>
-                                            </div>
-                                            <div className="glass-pill-chip px-4 py-2 h-auto flex items-center gap-3 border-purple-600/10 bg-purple-600/5">
-                                                <span className="text-[9px] text-purple-600 font-black uppercase tracking-widest">Travelers</span>
-                                                <span className="font-black text-sm text-black">{booking.number_of_travelers}</span>
-                                            </div>
-                                        </div>
+                        {/* Package Overview Card */}
+                        <div className="premium-glass-card group min-h-[160px]">
+                            <div className="card-accent-icon bg-black/5 text-black border border-black/10">
+                                <Package className="h-7 w-7" />
+                            </div>
+                            
+                            <div className="flex flex-col mb-8">
+                                <h3 className="section-title mb-4">Package Overview</h3>
+                                <h4 className="text-3xl font-extrabold tracking-tight text-black mb-1">
+                                    {booking.package?.title?.split(' ')[0]} <span className="opacity-60">{booking.package?.title?.split(' ').slice(1).join(' ')}</span>
+                                </h4>
+                                <div className="flex gap-2 mt-4">
+                                    <div className="pill-badge border-[0.5px] border-black/10">
+                                        <span className="text-[10px] font-bold text-black">{formatDuration(booking.package?.duration_days || 0)}</span>
+                                    </div>
+                                    <div className="pill-badge border-[0.5px] border-black/10">
+                                        <span className="text-[10px] font-bold text-black">{booking.number_of_travelers} Travelers</span>
                                     </div>
                                 </div>
-
-                                {booking.package?.included_items && booking.package.included_items.length > 0 ? (
-                                    <div className="space-y-4 mt-6">
-                                        <h4 className="font-black text-black flex items-center gap-2 text-[10px] uppercase tracking-[0.25em]">
-                                            <CheckCircle className="h-4 w-4 text-emerald-600" /> Package Inclusions
-                                        </h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                            {booking.package.included_items.map((item, i) => (
-                                                <div key={i} className="flex items-center gap-4 p-4 glass-card-refinement border-white/40 bg-white/40 group/item hover:bg-white/60 transition-all rounded-2xl shadow-sm">
-                                                    <div className="flex-shrink-0 h-7 w-7 rounded-xl bg-emerald-600/10 flex items-center justify-center text-emerald-600 border border-emerald-600/20 shadow-sm">
-                                                        <Check className="h-4 w-4 stroke-[3]" />
-                                                    </div>
-                                                    <span className="font-black text-xs text-black uppercase tracking-wide">{item}</span>
-                                                </div>
-                                            ))}
+                            </div>
+                            
+                            {booking.package?.included_items && (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {booking.package.included_items.map((item, i) => (
+                                        <div key={i} className="flex items-center gap-2 p-2 bg-black/2 rounded-lg border border-black/5 hover:bg-black/10 transition-colors">
+                                            <div className="h-5 w-5 rounded bg-black/5 flex items-center justify-center text-black">
+                                                <Check className="h-3 w-3" />
+                                            </div>
+                                            <span className="label-text !text-black">{item}</span>
                                         </div>
-                                    </div>
-                                ) : null}
-                            </CardContent>
-                        </Card>
-
-
-
-                        <Card className="booking-glass-card overflow-hidden shadow-none border-0 p-0">
-                            <CardContent className="p-6">
-                                <div className="mb-6 border-b border-black/5 pb-4">
-                                    <h3 className="text-xl font-bold flex items-center gap-4 text-black uppercase tracking-[0.12em]">
-                                        <MapPin className="h-6 w-6 text-indigo-600" /> Itinerary Overview
-                                    </h3>
+                                    ))}
                                 </div>
-                                {booking.package?.itinerary_items && booking.package.itinerary_items.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {Object.entries(
-                                            booking.package.itinerary_items.reduce((acc, item) => {
-                                                const day = item.day_number;
-                                                if (!acc[day]) acc[day] = [];
-                                                acc[day].push(item);
-                                                return acc;
-                                            }, {} as Record<number, typeof booking.package.itinerary_items>)
-                                        ).sort(([a], [b]) => Number(a) - Number(b)).map(([day, items], idx) => (
-                                            <details key={day} className="group booking-glass-inner overflow-hidden rounded-[24px] shadow-none border-0" open={idx === 0}>
-                                                <summary className="flex items-center justify-between p-4 cursor-pointer list-none group-open:bg-indigo-600/[0.03] transition-colors rounded-t-[24px]">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="bg-indigo-600/10 text-black h-12 w-12 rounded-2xl flex flex-col items-center justify-center border border-indigo-600/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                                                            <span className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-0.5">Day</span>
-                                                            <span className="text-xl font-black leading-none">{day}</span>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-black text-black text-lg tracking-tight">{items[0].title}</h4>
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <div className="h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)]" />
-                                                                <p className="text-[10px] font-black text-black uppercase tracking-[0.2em]">{items.length} Planned Activities</p>
-                                                            </div>
-                                                        </div>
+                            )}
+                        </div>
+
+                        {/* Itinerary Timeline */}
+                        <div className="premium-glass-card">
+                            <div className="card-accent-icon bg-black/5 text-black border border-black/10">
+                                <MapPin className="h-7 w-7" />
+                            </div>
+                            <h3 className="section-title mb-6 flex items-center gap-2">
+                                Itinerary Timeline
+                            </h3>
+                            
+                            {booking.package?.itinerary_items && booking.package.itinerary_items.length > 0 ? (
+                                <div className="space-y-4">
+                                    {Object.entries(
+                                        booking.package.itinerary_items.reduce((acc, item) => {
+                                            const day = item.day_number;
+                                            if (!acc[day]) acc[day] = [];
+                                            acc[day].push(item);
+                                            return acc;
+                                        }, {} as Record<number, typeof booking.package.itinerary_items>)
+                                    ).sort(([a], [b]) => Number(a) - Number(b)).map(([day, items], idx) => (
+                                        <details key={day} className="group overflow-hidden bg-black/2 rounded-xl border border-black/5 transition-all" open={idx === 0}>
+                                            <summary className="flex items-center justify-between p-3 cursor-pointer list-none hover:bg-black/5 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 text-primary value-text text-[12px]">
+                                                        D{day}
                                                     </div>
-                                                    <div className="h-10 w-10 rounded-xl flex items-center justify-center p-2 booking-glass-inner border-0 group-open:rotate-180 transition-all group-open:border-indigo-600/20 group-open:text-indigo-600 shadow-none">
-                                                        <MoreHorizontal className="h-5 w-5" />
+                                                    <div>
+                                                        <h4 className="value-text text-[13px] !text-black">{items[0].title}</h4>
+                                                        <p className="label-text text-[10px] !text-black">{items.length} Activities</p>
                                                     </div>
-                                                </summary>
-                                                <div className="px-4 pb-6 pt-2 border-t border-white/40 space-y-3 relative overflow-hidden">
-                                                    <div className="absolute left-[35px] top-6 bottom-10 w-0.5 bg-gradient-to-b from-indigo-600 via-indigo-600/20 to-transparent opacity-30" />
-                                                    {items.map((item, i) => (
-                                                        <div key={item.id} className="relative pl-12 group/activity">
-                                                            <div className="absolute left-[31.5px] top-[1.35rem] -translate-y-1/2 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)] z-10" />
-                                                            <div className="booking-glass-activity p-4 relative">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="h-2 w-2 rounded-full bg-indigo-600" />
-                                                                        <h5 className="text-[11px] font-black text-black uppercase tracking-[0.25em]">
-                                                                            {item.title}
-                                                                        </h5>
-                                                                    </div>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-indigo-600/10 mr-1">
-                                                                        <MoreHorizontal className="h-4 w-4 text-black" />
-                                                                    </Button>
-                                                                </div>
-                                                                <p className="text-[0.78rem] text-black/80 leading-relaxed font-medium">{item.description}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
                                                 </div>
-                                            </details>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-16 booking-glass-inner border-0 border-dashed">
-                                        <MapPin className="h-12 w-12 text-blue-600/20 mx-auto mb-4" />
-                                        <p className="text-black font-black uppercase tracking-[0.2em] text-sm leading-loose text-center">
-                                            Detailed itinerary will be<br />available 48 hours before<br />departure.
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                                <MoreHorizontal className="h-4 w-4 opacity-30 group-open:rotate-90 transition-transform" />
+                                            </summary>
+                                            <div className="pl-8 pr-4 pb-4 pt-2 border-t border-black/5 flex flex-col gap-3 relative">
+                                                <div className="timeline-line" />
+                                                {items.map((item, i) => (
+                                                    <div key={item.id} className="relative pl-8 py-2">
+                                                        <div className="timeline-dot" />
+                                                        <div className="space-y-1">
+                                                            <h5 className="value-text text-[12px] !text-black font-semibold">{item.title}</h5>
+                                                            <p className="meta-text leading-relaxed line-clamp-2 hover:line-clamp-none transition-all">{item.description}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </details>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 opacity-30">
+                                    <MapPin className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                    <p className="label-text">Itinerary available 48h before travel</p>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Flight Information */}
                         {booking.package?.flights_enabled && (
-                            <div className="space-y-6">
-                                <h3 className="text-xl font-black text-black flex items-center gap-3 uppercase tracking-wider">
-                                    <Plane className="h-6 w-6 text-blue-600" /> Flight Information
+                            <div className="premium-glass-card">
+                                <h3 className="section-title mb-6 flex items-center gap-2">
+                                    <Plane className="h-4 w-4 opacity-50" /> Flight Details
                                 </h3>
 
                                 {flightConfirmation ? (
-                                    <div className="glass-card-refinement bg-white/40 border-white/60 overflow-hidden shadow-lg">
-                                        <div className="bg-blue-600/10 backdrop-blur-md px-8 py-4 flex justify-between items-center border-b border-black/5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse-soft" />
-                                                <span className="text-xs font-black text-blue-700 uppercase tracking-[0.2em]">Confirmed Flight Details</span>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between p-3 bg-black/5 rounded-xl border border-black/10">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-black animate-pulse" />
+                                                <span className="section-title !text-black">Confirmed</span>
                                             </div>
-                                            <div className="glass-pill-chip bg-blue-600/10 border-blue-600/20">
-                                                <span className="text-[10px] text-blue-800 font-black">PNR:</span>
-                                                <span className="text-black font-mono font-bold ml-1">{flightConfirmation.pnr || 'GENERATED'}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="label-text">PNR:</span>
+                                                <span className="value-text font-mono uppercase !text-black">{flightConfirmation.pnr || 'GENERATED'}</span>
                                             </div>
                                         </div>
-                                        <div className="p-8">
-                                            <div className="space-y-8">
-                                                <div>
-                                                    <div className="flex items-center gap-3 mb-5">
-                                                        <span className="glass-pill-chip bg-black/5 text-[10px] uppercase font-black tracking-tighter text-black">Outbound</span>
-                                                        <span className="text-sm font-black text-black">{formatDate(booking.travel_date)}</span>
-                                                    </div>
-                                                    <div className="flex flex-col md:flex-row justify-between items-center glass-card-refinement border-black/5 bg-black/[0.02] p-8">
-                                                        <div className="text-center md:text-left mb-6 md:mb-0">
-                                                            <p className="text-4xl font-black text-black tracking-tighter">{flightConfirmation.from_code || 'MAA'}</p>
-                                                            <p className="text-xs font-black text-blue-600 uppercase tracking-widest mt-1">{flightConfirmation.from_city || 'Chennai'}</p>
-                                                            <div className="glass-pill-chip mt-3 bg-black/5 border-black/10">
-                                                                <Clock className="h-3 w-3 text-blue-600" />
-                                                                <span className="text-[10px] font-black text-black">{flightConfirmation.departure_time || '10:30 AM'}</span>
-                                                            </div>
-                                                        </div>
 
-                                                        <div className="flex-1 px-12 flex flex-col items-center max-w-[280px]">
-                                                            <div className="w-full flex items-center justify-between relative text-black">
-                                                                <div className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.3)]" />
-                                                                <div className="flex-1 h-px bg-gradient-to-r from-blue-600 via-indigo-400 to-indigo-600 mx-2 opacity-30" />
-                                                                <div className="p-2 glass-pill-chip bg-indigo-600/10 border-indigo-600/20">
-                                                                    <Plane className="h-5 w-5 text-indigo-600 rotate-90" />
-                                                                </div>
-                                                                <div className="flex-1 h-px bg-gradient-to-r from-indigo-600 to-purple-400 mx-2 opacity-30" />
-                                                                <div className="h-2.5 w-2.5 rounded-full bg-purple-600 shadow-[0_0_10px_rgba(168,85,247,0.3)]" />
-                                                            </div>
-                                                            <p className="text-[10px] font-black text-black mt-4 uppercase tracking-[0.3em] opacity-80">{flightConfirmation.duration || '2h 45m'}</p>
-                                                        </div>
+                                        <div className="flex items-center justify-between py-2">
+                                            <div className="text-center md:text-left">
+                                                <p className="text-[24px] font-bold tracking-tight text-black">{flightConfirmation.from_code || 'MAA'}</p>
+                                                <p className="label-text lowercase">{flightConfirmation.from_city || 'Chennai'}</p>
+                                                <p className="value-text text-[11px] mt-1 opacity-60">{flightConfirmation.departure_time || '10:30 AM'}</p>
+                                            </div>
 
-                                                        <div className="text-center md:text-right mt-6 md:mt-0">
-                                                            <p className="text-4xl font-black text-black tracking-tighter">{flightConfirmation.to_code || 'DEL'}</p>
-                                                            <p className="text-xs font-black text-purple-600 uppercase tracking-widest mt-1">{flightConfirmation.to_city || 'Delhi'}</p>
-                                                            <div className="glass-pill-chip mt-3 bg-black/5 border-black/10">
-                                                                <Clock className="h-3 w-3 text-purple-600" />
-                                                                <span className="text-[10px] font-black text-black">{flightConfirmation.arrival_time || '1:15 PM'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                            <div className="flex-1 px-8 flex flex-col items-center">
+                                                <div className="w-full flex items-center gap-2">
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />
+                                                    <Plane className="h-4 w-4 opacity-40 rotate-90" />
+                                                    <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
                                                 </div>
+                                                <p className="meta-text text-[9px] mt-1 uppercase tracking-widest">{flightConfirmation.duration || '2h 45m'}</p>
+                                            </div>
+
+                                            <div className="text-center md:text-right">
+                                                <p className="text-[24px] font-bold tracking-tight text-black">{flightConfirmation.to_code || 'DEL'}</p>
+                                                <p className="label-text lowercase">{flightConfirmation.to_city || 'Delhi'}</p>
+                                                <p className="value-text text-[11px] mt-1 opacity-60">{flightConfirmation.arrival_time || '1:15 PM'}</p>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="glass-card-refinement bg-white/40 border-white/60 overflow-hidden shadow-lg p-10 text-center">
-                                        <div className="inline-flex h-20 w-20 bg-blue-600/10 rounded-3xl items-center justify-center mb-6 border border-blue-600/20 relative group">
-                                            <div className="absolute inset-0 bg-blue-600/10 blur-2xl rounded-full scale-50 group-hover:scale-100 transition-transform" />
-                                            <Plane className="h-10 w-10 text-blue-600 animate-pulse-soft relative" />
+                                    <div className="text-center py-10 bg-black/2 rounded-xl border border-black/5">
+                                        <div className="h-10 w-10 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-3 border border-black/10">
+                                            <Plane className="h-5 w-5 opacity-40 animate-pulse" />
                                         </div>
-                                        <h4 className="text-2xl font-black text-black tracking-tight mb-2 uppercase">Flight Finalization</h4>
-                                        <p className="text-black text-sm font-bold max-w-sm mx-auto leading-relaxed mb-10">We are currently securing your flight path. Final arrangements will be updated within 24 hours.</p>
-
-                                        {/* Progress Steps */}
-                                        <div className="flex justify-between items-start max-w-md mx-auto relative mb-8">
-                                            <div className="absolute top-6 left-0 right-0 h-0.5 bg-black/5 z-0" />
-                                            <div className="absolute top-6 left-0 w-1/2 h-0.5 bg-gradient-to-r from-emerald-500 to-blue-500 z-0" />
-
-                                            <div className="flex flex-col items-center z-10 w-1/3">
-                                                <div className="h-12 w-12 glass-pill-chip bg-emerald-600/10 border-emerald-600/20 text-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                                                    <Check className="h-6 w-6 stroke-[3]" />
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mt-4 text-center">Verified</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center z-10 w-1/3">
-                                                <div className="h-12 w-12 glass-pill-chip bg-blue-600/10 border-blue-600/20 text-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.15)] animate-pulse-soft">
-                                                    <Clock className="h-6 w-6" />
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-4 text-center">Finalizing</span>
-                                            </div>
-
-                                            <div className="flex flex-col items-center z-10 w-1/3">
-                                                <div className="h-12 w-12 glass-pill-chip bg-black/5 border-black/10 text-black">
-                                                    <div className="h-2.5 w-2.5 rounded-full bg-black" />
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-black mt-4 text-center">Dispatched</span>
-                                            </div>
-                                        </div>
+                                        <p className="value-text text-[13px]">Finalizing Flight Path</p>
+                                        <p className="meta-text mt-1">Confirmed details within 24 hours</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {booking.travelers?.map((traveler, index) => (
-                                <div key={traveler.id} className={`booking-glass-card border-0 shadow-none p-0 flex flex-col items-start relative group transition-all duration-500 rounded-[24px] ${booking.travelers?.length === 1 ? 'md:col-span-2' : ''}`}>
-                                    <div className="w-full px-6 py-4 border-b border-black/5 flex items-center justify-between bg-black/[0.02]">
-                                        <div className="flex items-center gap-3">
-                                            <Users className="h-4 w-4 text-purple-600" />
-                                            <span className="text-[10px] font-black text-black uppercase tracking-[0.2em]">Traveler Roster</span>
-                                        </div>
-                                        {traveler.is_primary && (
-                                            <div className="glass-pill-chip bg-purple-600/10 border-purple-600/20 text-[9px] px-3 py-1 uppercase font-black text-black shadow-xs">Primary Contact</div>
-                                        )}
-                                    </div>
-                                    <div className="p-6 flex items-start gap-5 w-full">
-                                        <div className="flex flex-col items-start gap-4 shrink-0">
-                                            <div className="h-14 w-14 rounded-[18px] bg-purple-600/10 flex items-center justify-center text-purple-600 border border-purple-600/20 group-hover:scale-110 transition-transform duration-700 shadow-sm">
-                                                <span className="text-lg font-black uppercase text-purple-800">{traveler.first_name[0]}{traveler.last_name[0]}</span>
+                        {/* Traveler Roster */}
+                        <div className="premium-glass-card">
+                            <div className="card-accent-icon bg-black/5 text-black border border-black/10">
+                                <Users className="h-7 w-7" />
+                            </div>
+                            <h3 className="section-title mb-6 flex items-center gap-2">
+                                Traveler Roster
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {booking.travelers?.map((traveler, index) => (
+                                    <div key={traveler.id} className="p-4 bg-black/5 rounded-xl border border-black/5 hover:bg-black/10 transition-colors group">
+                                        <div className="flex items-start gap-4">
+                                            <div className="h-10 w-10 rounded-lg bg-black/5 flex items-center justify-center text-black/40 border border-black/10 group-hover:scale-110 transition-transform">
+                                                <span className="text-sm font-bold uppercase">{traveler.first_name[0]}{traveler.last_name[0]}</span>
                                             </div>
-                                        </div>
-                                        <div className="flex-1 pt-1">
-                                            <h4 className="font-black text-[#0f172a] text-xl tracking-tight leading-tight mb-4">{traveler.first_name} {traveler.last_name}</h4>
-
-                                            <div className="grid grid-cols-1 gap-2">
-                                                <div className="flex items-center justify-between py-1 border-b border-black/5">
-                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Category</span>
-                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.date_of_birth ? 'Adult' : 'Child'}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <h4 className="value-text text-[13px] truncate">{traveler.first_name} {traveler.last_name}</h4>
+                                                    {traveler.is_primary && (
+                                                        <span className="text-[8px] font-bold uppercase tracking-widest bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">Primary</span>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center justify-between py-1 border-b border-black/5">
-                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Gender</span>
-                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.gender}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between py-1">
-                                                    <span className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">Region</span>
-                                                    <span className="text-[10px] font-black text-black uppercase tracking-widest">{traveler.nationality}</span>
+                                                <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                                                    <div>
+                                                        <p className="label-text text-[9px] uppercase tracking-wider">Gender</p>
+                                                        <p className="value-text text-[11px]">{traveler.gender}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="label-text text-[9px] uppercase tracking-wider">Region</p>
+                                                        <p className="value-text text-[11px]">{traveler.nationality}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
 
 
@@ -769,457 +784,332 @@ export default function BookingDetailsPage() {
 
 
                     {/* RIGHT COLUMN (Sidebar) - spans 2 columns (40%) */}
-                    <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24 self-start">
-
-                        {/* Payment Summary */}
-                        <Card className="booking-glass-sidebar border-0 shadow-none overflow-hidden">
-                            <CardHeader className="booking-glass-header-band border-0 p-4 px-6">
-                                <CardTitle className="text-lg font-black flex items-center gap-3 text-black uppercase tracking-wider">
-                                    <CreditCard className="h-5 w-5 text-blue-600" /> {hpSettings.payment_summary_title || 'Payment Summary'}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6 space-y-4">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center text-sm font-black">
-                                        <span className="text-black uppercase tracking-widest text-[10px]">{hpSettings.payment_summary_base_cost_label || 'Package Base Cost'}</span>
-                                        <span className="text-black font-mono">{formatCurrency(booking.total_amount)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm font-black">
-                                        <span className="text-black uppercase tracking-widest text-[10px]">{hpSettings.payment_summary_taxes_label || 'Taxes & Service Fees'}</span>
-                                        <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20 text-emerald-700 text-[9px] uppercase font-black">Inclusive</div>
-                                    </div>
-                                </div>
-
-                                <div className="h-px bg-gradient-to-r from-transparent via-black/5 to-transparent" />
-
-                                <div className="flex justify-between items-baseline py-1">
-                                    <span className="font-black text-[10px] text-slate-800 uppercase tracking-[0.2em]">{hpSettings.payment_summary_total_label || 'Total Investment'}</span>
-                                    <span className="font-black text-3xl tracking-tighter transition-all duration-500 hover:scale-105 inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                                        {formatCurrency(booking.total_amount)}
-                                    </span>
-                                </div>
-
-                                <div className="booking-glass-inner p-5 space-y-4 border-0 shadow-none">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] text-black font-black uppercase tracking-widest">Transaction Status</span>
-                                        <div className="glass-pill-chip bg-emerald-600/10 border-emerald-600/20">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-600 shadow-[0_0_8px_rgba(5,150,105,0.4)]" />
-                                            <span className="text-[10px] font-black text-emerald-700 uppercase ml-1">
-                                                {booking.payment_status === 'succeeded' ? 'SUCCESS' : booking.payment_status?.toUpperCase()}
-                                            </span>
+                    <div className="lg:col-span-2 space-y-4 lg:sticky lg:top-8 self-start">
+                        <div className="premium-glass-card p-4">
+                            <Tabs defaultValue="summary" className="w-full">
+                                <TabsList className="premium-tabs-list w-full mb-4">
+                                    <TabsTrigger value="summary" className="premium-tabs-trigger flex-1">Summary</TabsTrigger>
+                                    <TabsTrigger value="refund" className="premium-tabs-trigger flex-1" disabled={!booking.refund_amount && booking.status !== 'cancelled'}>Refund</TabsTrigger>
+                                    <TabsTrigger value="policy" className="premium-tabs-trigger flex-1">Policy</TabsTrigger>
+                                    <TabsTrigger value="support" className="premium-tabs-trigger flex-1">Support</TabsTrigger>
+                                </TabsList>
+                                
+                                <TabsContent value="summary" className="mt-0 space-y-6">
+                                    <div className="relative">
+                                        <div className="card-accent-icon bg-black/5 text-black border border-black/10 !w-12 !h-12 !top-0 !right-0">
+                                            <IndianRupee className="h-6 w-6" />
                                         </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] text-black font-black uppercase tracking-widest">Timestamp</span>
-                                        <span className="text-[10px] font-black text-black uppercase tracking-widest">{formatDate(booking.created_at)}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Refund Status Card */}
-                        {booking.status === 'cancelled' && (booking.refund_amount || 0) > 0 ? (() => {
-                            const refund = booking.refund
-                            const refundStatus: string = refund?.status || 'pending'
-                            const refundId: string | null = refund?.razorpay_refund_id || null
-                            const refundAmount: number = Number(booking.refund_amount || 0)
-
-                            const statusSpecs: Record<string, { tint: string; border: string; text: string; label: string; icon: any }> = {
-                                succeeded: { tint: 'bg-emerald-600/5', border: 'border-emerald-600/20', text: 'text-emerald-700', label: 'Refund Completed', icon: CheckCircle },
-                                failed: { tint: 'bg-red-600/5', border: 'border-red-600/20', text: 'text-red-700', label: 'Refund Failed', icon: XCircle },
-                                pending: { tint: 'bg-amber-600/5', border: 'border-amber-600/20', text: 'text-amber-700', label: 'Processing Refund', icon: Clock },
-                                initiated: { tint: 'bg-amber-600/5', border: 'border-amber-600/20', text: 'text-amber-700', label: 'Payment Initiated', icon: Clock },
-                            }
-                            const spec = statusSpecs[refundStatus] || statusSpecs.pending
-                            const IconComp = spec.icon
-
-                            return (
-                                <Card className={`booking-glass-card border-0 shadow-none overflow-hidden`}>
-                                    <CardHeader className="border-b border-black/5 pb-4 px-8">
-                                        <CardTitle className={`text-sm font-black flex items-center gap-2 uppercase tracking-widest ${spec.text}`}>
-                                            <Receipt className="h-4 w-4" /> Refund Logistics
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-8 space-y-6">
-                                        {/* Main Status Block */}
-                                        <div className={`p-6 booking-glass-inner border-0 flex items-center justify-between`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`h-12 w-12 rounded-2xl ${spec.tint} border ${spec.border} flex items-center justify-center ${spec.text}`}>
-                                                    <IconComp className="h-6 w-6" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className={`text-sm font-black uppercase tracking-widest ${spec.text}`}>{spec.label}</p>
-                                                    <p className="text-[10px] font-black text-black uppercase tracking-tighter">REF: {booking.booking_reference}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black text-black uppercase tracking-widest mb-1">Return Value</p>
-                                                <p className={`text-2xl font-black tracking-tighter ${spec.text}`}>₹{refundAmount.toLocaleString('en-IN')}</p>
+                                        <div className="space-y-1">
+                                            <span className="section-title">Total Cost</span>
+                                            <h2 className="text-3xl font-black text-black tracking-tight">{formatCurrency(booking.total_amount)}</h2>
+                                            <div className="pill-badge bg-black/5 !text-black !px-3 !py-1 !mt-2 border border-black/10">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-black" />
+                                                <span className="text-[10px] font-bold">Payment {booking.payment_status === 'succeeded' ? 'Successful' : booking.payment_status}</span>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {refundId && (
-                                            <div className="flex justify-between items-center glass-3d-pill w-full py-2.5 px-4">
-                                                <span className="text-[10px] font-black text-black uppercase tracking-widest">Gateway Refund ID</span>
-                                                <span className="font-mono text-[10px] text-black font-black">{refundId}</span>
+                                    <div className="space-y-3 pt-6 border-t border-black/5">
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="label-text">Base Fare</span>
+                                            <span className="value-text">{formatCurrency(booking.total_amount)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="label-text">GST & Platform Fee</span>
+                                            <span className="text-[9px] font-bold text-black bg-black/5 px-2 py-0.5 rounded border border-black/10 uppercase tracking-widest">Included</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[12px]">
+                                            <span className="label-text">Reference</span>
+                                            <span className="meta-text font-mono">{booking.booking_reference}</span>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="refund" className="mt-0">
+                                    {booking.status === 'cancelled' && (booking.refund_amount || 0) > 0 ? (() => {
+                                        const refund = booking.refund;
+                                        const refundStatus = refund?.status || 'pending';
+                                        const refundAmount = Number(booking.refund_amount || 0);
+                                        
+                                        return (
+                                            <div className="space-y-4">
+                                                <div className="text-center py-6 bg-black/5 rounded-[24px] border border-black/10 relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                                                        <IndianRupee className="h-12 w-12" />
+                                                    </div>
+                                                    <p className="label-text mb-2 uppercase tracking-widest text-[10px]">Refund Estimated</p>
+                                                    <h3 className="text-3xl font-black text-black">{formatCurrency(refundAmount)}</h3>
+                                                    <div className="pill-badge !bg-black/10 !text-black !mt-3 !px-4 border-0">
+                                                        <span className="text-[10px] uppercase tracking-widest">{refundStatus}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="meta-text leading-relaxed p-3 bg-black/2 rounded flex gap-2">
+                                                    <Info className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                                                    <span>Funds will reflect in your account within 5–7 business days per banking standards.</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })() : (
+                                        <div className="text-center py-8 opacity-40">
+                                            <Receipt className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                            <p className="label-text">No active refund</p>
+                                        </div>
+                                    )}
+                                </TabsContent>
+
+                                <TabsContent value="policy" className="mt-0">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="h-8 w-1 rounded-full bg-black/20" />
+                                            <h4 className="section-title">Cancellation Rules</h4>
+                                        </div>
+
+                                        {booking.package?.cancellation_enabled ? (
+                                            <div className="space-y-3">
+                                                {/* Parent Container with subtle tint */}
+                                                <div className="bg-emerald-500/5 border border-black/5 rounded-[24px] p-4 space-y-3">
+                                                    <div className="flex items-center gap-2 mb-2 text-emerald-800/80 px-2">
+                                                        <CheckCircle className="h-4 w-4" />
+                                                        <span className="font-bold text-xs uppercase tracking-widest">Cancellable Package</span>
+                                                    </div>
+
+                                                    {(() => {
+                                                        const rules = [...(booking.package.cancellation_rules || [])].sort((a, b) => b.daysBefore - a.daysBefore);
+                                                        const totalAmount = booking.total_amount;
+                                                        const gstApplicable = true; // Bookings always have GST calculated at checkout
+                                                        let gstAmount = 0;
+                                                        let realBase = totalAmount;
+
+                                                        if (gstSettings.inclusive) {
+                                                            realBase = totalAmount / (1 + gstSettings.percentage / 100);
+                                                            gstAmount = totalAmount - realBase;
+                                                        } else {
+                                                            // For exclusive, the total_amount already includes GST from checkout
+                                                            // We derive the base back
+                                                            realBase = totalAmount / (1 + gstSettings.percentage / 100);
+                                                            gstAmount = totalAmount - realBase;
+                                                        }
+
+                                                        const renderedRules = rules.map((rule, idx) => {
+                                                            const amount = calculateRefundAmount(rule, realBase, gstAmount, gstApplicable);
+                                                            return (
+                                                                <div key={idx} className="flex items-center justify-between p-4 bg-white/60 rounded-xl border border-black/5 shadow-sm transition-all hover:bg-white/80 gap-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-black/5 rounded-lg">
+                                                                            <Clock className="h-4 w-4 opacity-40" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-black font-bold uppercase tracking-wider opacity-40">Timing</p>
+                                                                            <span className="font-black text-black text-[13px]">{rule.daysBefore}+ Days Prior</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="text-right">
+                                                                            <p className="text-[10px] text-black font-bold uppercase tracking-wider opacity-40">Refund</p>
+                                                                            <span className="text-black font-black text-[13px]">{rule.refundPercentage}% back</span>
+                                                                        </div>
+                                                                        <div className="px-3 py-1.5 bg-black/5 text-black rounded-lg text-[11px] font-black min-w-[70px] text-center border border-black/5">
+                                                                            {formatCurrency(amount)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        });
+
+                                                        // Fallback rule: Less than last rule days
+                                                        const lastRule = rules[rules.length - 1];
+                                                        const hasZeroPercent = rules.some(r => r.refundPercentage === 0);
+
+                                                        if (lastRule && lastRule.daysBefore > 0 && !hasZeroPercent) {
+                                                            renderedRules.push(
+                                                                <div key="fallback" className="flex items-center justify-between p-4 bg-red-50/50 rounded-xl border border-red-500/10 shadow-sm gap-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-red-500/10 rounded-lg">
+                                                                            <XCircle className="h-4 w-4 text-red-600 opacity-60" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-red-800 font-bold uppercase tracking-wider">Condition</p>
+                                                                            <span className="font-black text-red-900 text-[13px]">Less than {lastRule.daysBefore} days</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="text-right">
+                                                                            <p className="text-[10px] text-red-800 font-bold uppercase tracking-wider">Refund</p>
+                                                                            <span className="text-red-900 font-black text-[13px]">0% back</span>
+                                                                        </div>
+                                                                        <div className="px-3 py-1.5 bg-red-500/10 text-red-700 rounded-lg text-[10px] font-black uppercase tracking-widest min-w-[70px] text-center border border-red-500/10">
+                                                                            Non-Refundable
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        return renderedRules;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-10 bg-red-500/5 rounded-[24px] border border-red-500/10">
+                                                <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-3 opacity-40 animate-pulse" />
+                                                <p className="value-text text-red-900 mb-1">Non-Refundable Package</p>
+                                                <p className="meta-text text-red-800/60 px-6">This booking is under a strict non-refundable policy and cannot be cancelled for a refund.</p>
                                             </div>
                                         )}
+                                    </div>
+                                </TabsContent>
 
-                                        <div className={`p-4 glass-card-refinement border-black/5 bg-black/[0.01] flex gap-3 text-[11px] font-black leading-relaxed ${refundStatus === 'failed' ? 'text-red-700' : 'text-black'}`}>
-                                            <span className="h-4 w-4 shrink-0 mt-0.5 opacity-60">⚠️</span>
-                                            <span>
-                                                {refundStatus === 'succeeded'
-                                                    ? "Funds have been released. Credit will reflect in your account within 5–7 business days per banking standards."
-                                                    : refundStatus === 'failed'
-                                                        ? "An error occurred during fund release. Our recovery team has been notified. Please quote your Refund ID for support."
-                                                        : "Security audit in progress. Funds will be routed to your original payment method within the next 48–72 hours."}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })() : null}
-
-
-                        {/* Cancellation Policy */}
-                        <Card className="booking-glass-danger border-0 shadow-none overflow-hidden">
-                            <CardHeader className="bg-red-600/5 border-b border-red-600/5 p-4 px-6">
-                                <CardTitle className="text-lg font-black flex items-center gap-3 text-red-700 uppercase tracking-wider">
-                                    <XCircle className="h-5 w-5 animate-pulse-soft" /> Cancellation Terms
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6 space-y-4">
-                                {booking.package?.cancellation_enabled ? (
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2.5 text-emerald-700 mb-2">
-                                            <div className="h-5 w-5 rounded-full bg-emerald-600/10 flex items-center justify-center border border-emerald-600/20">
-                                                <Check className="h-3 w-3 stroke-[3]" />
+                                <TabsContent value="support" className="mt-0 space-y-4">
+                                    <div className="p-4 bg-black/5 rounded-xl border border-black/5 space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center text-black border border-black/10">
+                                                <Phone className="h-5 w-5" />
                                             </div>
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Cancellable Package</span>
+                                            <div>
+                                                <p className="value-text text-[12px]">24/7 Priority Support</p>
+                                                <p className="label-text text-[10px]">Dedicated Concierge</p>
+                                            </div>
                                         </div>
-
-                                        <div className="space-y-3">
-                                            {booking.package.cancellation_rules?.map((rule: any, idx: number) => {
-                                                const isGstApplicable = booking.package?.gst_applicable !== null && booking.package?.gst_applicable !== undefined
-                                                    ? Boolean(booking.package.gst_applicable)
-                                                    : Boolean(gstSettings);
-                                                const activeGstPct = booking.package?.gst_percentage || gstSettings.percentage || 0;
-                                                let baseFare = Number(booking.total_amount);
-                                                let gstAmount = 0;
-                                                if (isGstApplicable && activeGstPct > 0) {
-                                                    baseFare = Number(booking.total_amount) / (1 + (activeGstPct / 100));
-                                                    gstAmount = Number(booking.total_amount) - baseFare;
-                                                }
-                                                const refundAmount = calculateRefundAmount(rule, baseFare, gstAmount, isGstApplicable);
-                                                const fareLabel = getFareTypeLabel(rule.fareType, isGstApplicable, rule.refundPercentage);
-
-                                                if (rule.refundPercentage === 0) {
-                                                    return (
-                                                        <div key={idx} className="booking-glass-inner border-0 p-8 flex justify-between items-center group/rule rounded-[28px] opacity-60">
-                                                            <div>
-                                                                <p className="text-[11px] text-black font-black uppercase tracking-[0.3em] mb-2">Window</p>
-                                                                <p className="text-2xl font-black text-black tracking-tight">{rule.daysBefore}+ Days Prior</p>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className="text-3xl font-black text-black tracking-tighter mb-1 line-through opacity-50">₹0 Return</p>
-                                                                <div className="glass-pill-chip bg-black/10 border-black/10 text-[10px] font-black text-black uppercase px-4 py-1.5 tracking-widest">No Refund Applied</div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-
-                                                return (
-                                                    <div key={idx} className="booking-glass-inner border-0 p-8 flex justify-between items-center hover:scale-[1.01] transition-all group/rule rounded-[28px]">
-                                                        <div>
-                                                            <p className="text-[11px] text-red-600 font-black uppercase tracking-[0.3em] mb-2 group-hover/rule:text-red-700 transition-colors">Window</p>
-                                                            <p className="text-2xl font-black text-black tracking-tight">{rule.daysBefore}+ Days Prior</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-4xl font-black text-emerald-700 tracking-tighter mb-1">{rule.refundPercentage}% Return</p>
-                                                            <div className="flex items-center justify-end gap-2 mt-1.5 font-black text-black uppercase tracking-widest text-[10px]">
-                                                                <span className="opacity-60">{fareLabel}</span>
-                                                                <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                                                <span>≈ {formatCurrency(refundAmount)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-
-                                            {/* Final No-Refund fallback */}
-                                            {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 0 &&
-                                                booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore > 0 &&
-                                                !booking.package.cancellation_rules.some((r: any) => r.refundPercentage === 0) && (
-                                                    <div className="booking-glass-inner border-0 p-8 flex justify-between items-center rounded-[28px] opacity-90 bg-red-600/5">
-                                                        <div>
-                                                            <p className="text-[11px] text-red-600/60 font-black uppercase tracking-[0.3em] mb-2">Window</p>
-                                                            <p className="text-2xl font-black text-black tracking-tight">Under {booking.package.cancellation_rules[booking.package.cancellation_rules.length - 1].daysBefore} Days</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-3xl font-black text-red-700 tracking-tighter uppercase mb-1">No Refund</p>
-                                                            <p className="text-[10px] font-black text-red-700/50 uppercase tracking-[0.2em]">Locked Policy</p>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                        </div>
-
-                                        <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/5">
-                                            <p className="text-[10px] text-black font-black italic leading-relaxed">
-                                                {hpSettings.payment_summary_support_text || '* Estimated refund values are calculated based on your total transaction. The final amount may vary slightly due to gateway rounding.'}
-                                            </p>
+                                        <div className="space-y-2 pt-2 border-t border-white/10">
+                                            <a href={`tel:${hpSettings.priority_support_phone || '+9118001234567'}`} className="flex items-center justify-between hover:bg-black/5 p-2 rounded transition-colors group">
+                                                <span className="label-text group-hover:text-black transition-colors">Call Support</span>
+                                                <span className="value-text text-[12px] !text-black">{hpSettings.priority_support_phone || '+91 1800-123-4567'}</span>
+                                            </a>
+                                            <a href={`mailto:${hpSettings.priority_support_email || 'support@toursaas.com'}`} className="flex items-center justify-between hover:bg-black/5 p-2 rounded transition-colors group">
+                                                <span className="label-text group-hover:text-black transition-colors">Email Support</span>
+                                                <span className="value-text text-[12px] lowercase !text-black">{hpSettings.priority_support_email || 'support@toursaas.com'}</span>
+                                            </a>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="glass-card-refinement border-red-600/10 bg-red-600/5 p-6 text-center rounded-[24px]">
-                                        <div className="h-12 w-12 bg-red-600/10 rounded-2xl flex items-center justify-center text-red-600 mx-auto mb-4 border border-red-600/20 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
-                                            <AlertCircle className="h-6 w-6 animate-pulse-soft" />
-                                        </div>
-                                        <h4 className="text-lg font-black text-black tracking-tight uppercase mb-2">Non-Cancellable</h4>
-                                        <p className="text-[10px] font-black text-black max-w-[200px] mx-auto leading-relaxed uppercase tracking-[0.15em] opacity-80">
-                                            Strict non-refundable policy applied to this package.
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Need Help Section - Inline Strip */}
-                        <div className="booking-glass-support p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all group/help">
-                            <div className="flex items-center gap-4 w-full md:w-auto">
-                                <div className="h-14 w-14 rounded-[22px] bg-blue-600/10 flex items-center justify-center text-blue-600 border border-blue-600/20 shadow-sm group-hover/help:scale-110 transition-transform duration-500 shrink-0">
-                                    <Phone className="h-6 w-6" />
-                                </div>
-                                <div className="text-left w-full">
-                                    <p className="text-lg font-black text-[#0f172a] uppercase tracking-[0.1em]">Priority Support</p>
-                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.3em] mt-1">24/7 Dedicated Concierge</p>
-                                </div>
-                            </div>
-
-                            <div className="hidden md:block w-px h-10 bg-black/10 mx-2 shrink-0" />
-
-                            <div className="flex flex-col items-center md:items-end gap-2 font-black text-black w-full md:w-auto">
-                                <a href={`tel:${hpSettings.priority_support_phone || '+9118001234567'}`} className="flex items-center gap-3 hover:text-blue-600 transition-all text-sm tracking-tight hover:scale-105">
-                                    <Phone className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>{hpSettings.priority_support_phone || '+91 1800-123-4567'}</span>
-                                </a>
-                                <a href={`mailto:${hpSettings.priority_support_email || 'support@toursaas.com'}`} className="flex items-center gap-3 hover:text-blue-600 transition-all text-[0.7rem] opacity-60 tracking-[0.2em] hover:scale-105">
-                                    <Mail className="h-4 w-4 text-blue-600/60 shrink-0" /> <span>{hpSettings.priority_support_email || 'support@toursaas.com'}</span>
-                                </a>
-                            </div>
+                                </TabsContent>
+                            </Tabs>
                         </div>
-
                     </div>
                 </div>
-            </div>
-
-            {/* Cancellation Confirmation Dialog */}
+            </div>            {/* Cancellation Confirmation Dialog */}
             {isCancelDialogOpen && cancelPreview && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-                    {/* Backdrop — deep blur + subtle color tint */}
-                    <div
-                        className="absolute inset-0 backdrop-blur-md"
-                        style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(220,38,38,0.08) 0%, rgba(0,0,0,0.45) 100%)' }}
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         onClick={() => !isCancelling && setIsCancelDialogOpen(false)}
                     />
-
-                    {/* Dialog — 3D Glass Outer Card */}
-                    <div
-                        className="relative w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-500"
-                        style={{
-                            background: 'linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.52) 50%, rgba(255,255,255,0.34) 100%)',
-                            backdropFilter: 'blur(48px) saturate(200%) brightness(1.05)',
-                            WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(1.05)',
-                            border: '1px solid rgba(255,255,255,0.80)',
-                            borderRadius: '32px',
-                            boxShadow: 'inset 0 2px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.04), 0 12px 48px rgba(220,38,38,0.12), 0 4px 16px rgba(0,0,0,0.10), 0 40px 80px rgba(0,0,0,0.10)',
-                        }}
-                    >
-                        {/* Inner top shine layer */}
-                        <div className="absolute inset-0 pointer-events-none rounded-[32px]"
-                            style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 40%)', zIndex: 0 }} />
-
-                        {/* Close button */}
+                    
+                    <div className="relative w-full max-w-md premium-glass-card p-6 animate-in zoom-in-95 duration-400">
                         <button
                             disabled={isCancelling}
                             onClick={() => setIsCancelDialogOpen(false)}
-                            className="absolute right-5 top-5 h-9 w-9 rounded-2xl flex items-center justify-center text-black/40 hover:bg-red-600/10 hover:text-red-600 transition-all z-20 border border-black/10"
-                            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)' }}
+                            className="absolute right-4 top-4 h-8 w-8 rounded-full flex items-center justify-center text-black/20 hover:bg-black/5 hover:text-black transition-all"
                         >
                             <X className="h-4 w-4" />
                         </button>
 
-                        <div className="p-8 relative z-10">
-
-                            {/* Header */}
-                            <div className="flex gap-4 mb-6">
-                                <div
-                                    className="h-13 w-13 rounded-2xl flex items-center justify-center text-red-500 shrink-0"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(254,226,226,0.90) 0%, rgba(252,165,165,0.50) 100%)',
-                                        border: '1px solid rgba(252,165,165,0.60)',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 4px 16px rgba(220,38,38,0.20), 0 0 24px rgba(220,38,38,0.12)',
-                                        padding: '10px',
-                                    }}
-                                >
-                                    <AlertCircle className="h-7 w-7" />
+                        {!isCancelled ? (
+                            <div className="flex flex-col items-center text-center">
+                                {/* 1. Icon Area */}
+                                <div className="h-14 w-14 rounded-2xl bg-red-500/15 flex items-center justify-center text-red-500 border border-red-500/30 shadow-2xl shadow-red-900/10 mb-4 warning-icon-pulse">
+                                    <AlertTriangle className="h-7 w-7 fill-red-500/10" />
                                 </div>
-                                <div className="flex flex-col justify-center">
-                                    <h3 className="text-xl font-black text-black tracking-tight leading-none">Initiate Cancellation</h3>
-                                    <div
-                                        className="inline-flex items-center px-3 py-1 rounded-full mt-2 w-fit"
-                                        style={{
-                                            background: 'linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.35) 100%)',
-                                            border: '1px solid rgba(255,255,255,0.75)',
-                                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 2px 6px rgba(0,0,0,0.06)',
-                                        }}
-                                    >
-                                        <p className="text-[9px] text-black/60 font-black uppercase tracking-[0.25em]">
-                                            REF: {booking.booking_reference}
-                                        </p>
+
+                                {/* 2. Title & 3. Reference */}
+                                <div className="mb-4">
+                                    <h3 className="page-title !text-[#EF4444] mb-2 text-xl uppercase tracking-tight">Cancel Booking</h3>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#F8F9FA] border border-[#E8E8F0] rounded-lg">
+                                        <span className="text-[#A0A8C8] uppercase text-[8px] tracking-[0.1em] font-bold">Reference</span>
+                                        <span className="font-mono text-[10px] font-black text-[#1A1A2E]">{booking.booking_reference}</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Refund Status Banner — 3D Glass with glow */}
-                            <div
-                                className="relative overflow-hidden p-6 text-center mb-5 transition-all duration-700"
-                                style={{
-                                    background: cancelPreview.refund_amount > 0
-                                        ? 'linear-gradient(145deg, rgba(209,250,229,0.70) 0%, rgba(167,243,208,0.40) 50%, rgba(255,255,255,0.28) 100%)'
-                                        : 'linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(254,226,226,0.42) 50%, rgba(255,255,255,0.28) 100%)',
-                                    backdropFilter: 'blur(24px)',
-                                    WebkitBackdropFilter: 'blur(24px)',
-                                    border: cancelPreview.refund_amount > 0
-                                        ? '1px solid rgba(167,243,208,0.65)'
-                                        : '1px solid rgba(252,165,165,0.45)',
-                                    borderRadius: '24px',
-                                    boxShadow: cancelPreview.refund_amount > 0
-                                        ? 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.08)'
-                                        : 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 20px rgba(220,38,38,0.10), 0 0 40px rgba(220,38,38,0.06)',
-                                }}
-                            >
-                                {/* Shine streak */}
-                                <div className="absolute inset-0 pointer-events-none rounded-[24px]"
-                                    style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 45%)' }} />
-
-                                <div
-                                    className="h-12 w-12 mx-auto rounded-2xl flex items-center justify-center mb-4 text-black relative"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.40) 100%)',
-                                        border: '1px solid rgba(255,255,255,0.70)',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(0,0,0,0.08)',
-                                    }}
-                                >
-                                    {cancelPreview.refund_amount > 0
-                                        ? <Check className="h-6 w-6 stroke-[3] text-emerald-600" />
-                                        : <X className="h-6 w-6 stroke-[3] text-red-500" />
-                                    }
+                                {/* 4. Estimated Refund Card */}
+                                <div className="w-full p-5 bg-[#FDFDFF] rounded-[24px] border border-black/5 mb-4 shadow-sm">
+                                    <div className="flex flex-col items-center">
+                                        <p className="text-[#A0A8C8] text-[9px] font-bold uppercase tracking-[0.15em] mb-2">Estimated Refund</p>
+                                        <h4 className="text-3xl font-black tracking-tighter mb-2 text-[#22C55E]">
+                                            {formatCurrency(cancelPreview.refund_amount)}
+                                        </h4>
+                                        <div className="px-3 py-1 bg-[#FEF9C3] border border-[#FDE68A] text-[#A16207] rounded-full text-[10px] font-bold shadow-sm">
+                                            {cancelPreview.refund_percentage}% <span className="opacity-60 font-medium lowercase">of total paid</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <Separator className="bg-black/5 my-4" />
+                                    
+                                    {/* 5. Description Text Implementation */}
+                                    <p 
+                                        className="text-[#6B7280] leading-relaxed text-[12px] px-1"
+                                        dangerouslySetInnerHTML={{ 
+                                            __html: cancelPreview.message
+                                                .replace(/(₹[\d,]+\.?\d*)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
+                                                .replace(/(\d+%\s*refund)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
+                                                .replace(/(\d+\s*day\(s\))/g, '<span class="text-[#F97316] font-bold">$1</span>')
+                                        }}
+                                    />
                                 </div>
 
-                                <h4 className="text-4xl font-black mb-1 tracking-tighter text-black flex items-center justify-center gap-1 relative">
-                                    {cancelPreview.refund_amount > 0
-                                        ? formatCurrency(cancelPreview.refund_amount)
-                                        : 'Final Terms'}
-                                </h4>
-                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/55 relative">
-                                    {cancelPreview.refund_amount > 0
-                                        ? `${cancelPreview.refund_percentage}% REFUNDABLE VALUE`
-                                        : 'NON-REFUNDABLE TRANSACTION'}
-                                </p>
-                            </div>
-
-                            {/* Policy Message — 3D inner glass */}
-                            <div
-                                className="rounded-2xl p-4 mb-5"
-                                style={{
-                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.28) 100%)',
-                                    backdropFilter: 'blur(16px)',
-                                    WebkitBackdropFilter: 'blur(16px)',
-                                    border: '1px solid rgba(255,255,255,0.68)',
-                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.90), 0 3px 10px rgba(0,0,0,0.05)',
-                                }}
-                            >
-                                <p className="text-[13px] text-black/90 leading-relaxed text-center font-bold tracking-tight">
-                                    {cancelPreview.message}
-                                </p>
-                            </div>
-
-                            {/* Meta Info — glass-3d pills */}
-                            <div className="flex items-center justify-center gap-3 mb-7 pb-6 border-b border-white/50">
-                                <div
-                                    className="flex items-center gap-2 px-4 py-2 text-black/80"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
-                                        backdropFilter: 'blur(12px)',
-                                        WebkitBackdropFilter: 'blur(12px)',
-                                        border: '1px solid rgba(255,255,255,0.72)',
-                                        borderRadius: '9999px',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.92), 0 3px 10px rgba(0,0,0,0.06)',
-                                    }}
-                                >
-                                    <Calendar className="h-3.5 w-3.5 text-black/40" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">{cancelPreview.days_before} DAYS UNTIL TRAVEL</span>
+                                {/* 7. Warning Notice Strip */}
+                                <div className="w-full bg-[#FFF7ED] border-l-[3px] border-[#F97316] rounded-r-xl p-3 mb-5 flex items-start gap-3 text-left">
+                                    <AlertCircle className="h-4 w-4 text-[#F97316] mt-0.5" />
+                                    <div>
+                                        <p className="text-[#92400E] font-bold text-[11px] leading-tight">This action cannot be undone.</p>
+                                        <p className="text-[#92400E]/70 text-[10px] leading-tight">Permanent cancellation after confirmation.</p>
+                                    </div>
                                 </div>
-                                <div
-                                    className="flex items-center gap-2 px-4 py-2 text-black/80"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
-                                        backdropFilter: 'blur(12px)',
-                                        WebkitBackdropFilter: 'blur(12px)',
-                                        border: '1px solid rgba(255,255,255,0.72)',
-                                        borderRadius: '9999px',
-                                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.92), 0 3px 10px rgba(0,0,0,0.06)',
-                                    }}
-                                >
-                                    <CreditCard className="h-3.5 w-3.5 text-black/40" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">PAID: {formatCurrency(cancelPreview.paid_amount)}</span>
-                                </div>
-                            </div>
 
-                            {/* Actions — 3D glass buttons */}
-                            <div className="grid grid-cols-2 gap-3">
+                                {/* 6. Buttons */}
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                    <Button
+                                        variant="ghost"
+                                        disabled={isCancelling}
+                                        onClick={() => setIsCancelDialogOpen(false)}
+                                        className="h-11 rounded-xl bg-transparent hover:bg-[#F3F4F6] border-[1.5px] border-[#D1D5DB] text-[#6B7280] text-[10px] font-bold uppercase tracking-widest transition-colors"
+                                    >
+                                        Go Back
+                                    </Button>
+                                    <Button
+                                        disabled={isCancelling || !cancelPreview.cancellation_enabled}
+                                        onClick={handleCancelBooking}
+                                        className="h-11 rounded-xl bg-[#EF4444] hover:bg-red-700 text-white border-0 shadow-[0_4px_12px_rgba(239,68,68,0.3)] text-[10px] font-bold uppercase tracking-[0.05em] gap-2 hover-shake"
+                                    >
+                                        {isCancelling ? (
+                                            <>
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                <span>Cancelling...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <XCircle className="h-3.5 w-3.5" />
+                                                <span>Confirm</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+
+                                {!cancelPreview.cancellation_enabled && (
+                                    <p className="mt-3 meta-text text-red-600/60 text-center text-[8px] uppercase tracking-widest animate-pulse">
+                                        Cancellation is currently locked
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            /* 8. Success State Flow */
+                            <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-500 p-4">
+                                <div className="h-14 w-14 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 mb-6">
+                                    <CheckCircle className="h-7 w-7" />
+                                </div>
+                                
+                                <h3 className="text-xl font-black text-black mb-3">Booking Cancelled</h3>
+                                <div className="w-full p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 mb-6">
+                                    <p className="text-emerald-900 font-bold text-base mb-1">Refund of {formatCurrency(cancelPreview.refund_amount)}</p>
+                                    <p className="label-text opacity-60 text-[10px]">Expected in 5-7 business days</p>
+                                </div>
+
                                 <Button
-                                    variant="ghost"
-                                    disabled={isCancelling}
                                     onClick={() => setIsCancelDialogOpen(false)}
-                                    className="h-12 rounded-2xl font-black text-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.38) 100%)',
-                                        border: '1px solid rgba(255,255,255,0.72)',
-                                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(0,0,0,0.08)',
-                                    }}
+                                    className="w-full h-11 rounded-xl bg-[var(--button-bg)] text-white hover:bg-[var(--button-bg)]/90 text-[10px] font-bold uppercase tracking-widest"
                                 >
-                                    Stay Active
-                                </Button>
-                                <Button
-                                    disabled={isCancelling}
-                                    onClick={handleCancelBooking}
-                                    className="h-12 rounded-2xl font-black text-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/confirm active:scale-95"
-                                    style={{
-                                        background: 'linear-gradient(145deg, rgba(254,202,202,0.85) 0%, rgba(252,165,165,0.55) 50%, rgba(255,255,255,0.35) 100%)',
-                                        border: '1px solid rgba(252,165,165,0.65)',
-                                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.90), 0 4px 16px rgba(220,38,38,0.18), 0 0 24px rgba(220,38,38,0.08)',
-                                    }}
-                                >
-                                    {isCancelling ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Processing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <XCircle className="h-4 w-4 group-hover/confirm:scale-110 transition-transform text-red-600" />
-                                            Confirm
-                                        </>
-                                    )}
+                                    Close Dashboard
                                 </Button>
                             </div>
-
-                            {!cancelPreview.cancellation_enabled && (
-                                <p className="text-[9px] text-red-500 font-black text-center mt-5 uppercase tracking-[0.2em] animate-pulse">
-                                    Note: This action is irreversible once confirmed.
-                                </p>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -203,7 +203,7 @@ export default function AdminPackagesPage() {
                                                             View/Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={() => router.push(`/packages/${pkg.id}`)}
+                                                            onClick={() => router.push(`/plan-trip?packageId=${pkg.id}&openPopup=true`)}
                                                             className="cursor-pointer"
                                                         >
                                                             <Eye className="mr-2 h-4 w-4" />

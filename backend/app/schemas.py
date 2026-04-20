@@ -372,6 +372,7 @@ class HomepageSettingsUpdate(BaseModel):
     secondaryBtnText: Optional[str] = Field(None, max_length=50)
     backgroundImageUrl: Optional[str] = None
     navbar_logo_image: Optional[str] = None
+    favicon_url: Optional[str] = None
     badgeText: Optional[str] = Field(None, max_length=100)
     showAiBadge: Optional[bool] = None
     feature_cards: Optional[List[dict]] = None
@@ -487,7 +488,7 @@ class HomepageSettingsUpdate(BaseModel):
         reject_sql(v, 'field')
         return v
 
-    @field_validator('backgroundImageUrl', 'navbar_logo_image', mode='before')
+    @field_validator('backgroundImageUrl', 'navbar_logo_image', 'favicon_url', mode='before')
     @classmethod
     def validate_urls(cls, v):
         if not v or not isinstance(v, str):

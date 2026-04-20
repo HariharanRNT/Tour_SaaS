@@ -22,7 +22,8 @@ import {
     Package,
     Briefcase,
     BarChart2,
-    MessageSquare
+    MessageSquare,
+    FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -70,7 +71,8 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
 
                 // Admin Specific Items
                 ...(userRole === 'admin' ? [
-                    { icon: Users, label: 'Agents', href: '/admin/agents' },
+                    { icon: Users,    label: 'Agents',   href: '/admin/agents' },
+                    { icon: FileText, label: 'API Logs', href: '/admin/logs' },
                 ] : []),
 
                 { 

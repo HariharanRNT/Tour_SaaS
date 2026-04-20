@@ -17,12 +17,13 @@ from app.config import settings
 from app.api.v1 import (
     auth, packages, bookings, payments, tours, flights, templates, 
     user_itineraries, packages_enhanced, bookings_custom, admin_packages, 
-    admin_simple, trip_planner, agent_packages, admin_agents, 
+    admin_simple, admin_logs, trip_planner, agent_packages, admin_agents, 
     admin_notifications, agent_notifications, agent_bookings, agent_customers, 
     agent_dashboard, subscriptions, agent_settings, ai_assistant, upload, 
     reports, webhooks, activities, agent_reports, agent_subusers, locations,
     enquiries
 )
+from app.middleware.api_logger import APILoggerMiddleware
 import traceback
 import logging
 import sys
@@ -86,6 +87,9 @@ app.add_middleware(
 # Add GZip compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# Centralized API Logger (fire-and-forget, non-blocking)
+app.add_middleware(APILoggerMiddleware)
+
 @app.on_event("startup")
 async def startup():
     redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
@@ -134,6 +138,7 @@ app.include_router(agent_reports.router, prefix=f"{settings.API_V1_PREFIX}/agent
 app.include_router(agent_subusers.router, prefix=f"{settings.API_V1_PREFIX}/agent/sub-users", tags=["Agent - Sub-Users"])
 app.include_router(locations.router, prefix=f"{settings.API_V1_PREFIX}/locations", tags=["Locations"])
 app.include_router(enquiries.router, prefix=f"{settings.API_V1_PREFIX}/enquiries", tags=["Enquiries"])
+app.include_router(admin_logs.router, prefix=f"{settings.API_V1_PREFIX}/admin-simple", tags=["Admin - Logs"])
 
 
 @app.get("/")

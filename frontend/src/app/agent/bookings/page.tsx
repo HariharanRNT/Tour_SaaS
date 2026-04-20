@@ -457,7 +457,7 @@ export default function AgentBookingsPage() {
                         </div>
 
                         <Button
-                            className="h-[52px] px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
+                            className="h-[52px] px-8 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-full shadow-lg shadow-[var(--button-glow)] hover:shadow-[var(--button-glow)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 shrink-0"
                             onClick={() => loadBookings()}
                         >
                             <Filter className="h-4 w-4" />
@@ -472,13 +472,13 @@ export default function AgentBookingsPage() {
                         <TabsList className="h-[52px] bg-white/15 backdrop-blur-xl p-1.5 rounded-full border border-white/30 shadow-sm inline-flex relative overflow-hidden">
                             <TabsTrigger
                                 value="upcoming"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--button-bg)] data-[state=active]:shadow-[0_4px_12px_var(--button-glow)]"
                             >
                                 Upcoming Trips
                             </TabsTrigger>
                             <TabsTrigger
                                 value="completed"
-                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:shadow-[0_4px_12px_var(--primary-glow)]"
+                                className="relative z-10 px-10 rounded-full h-full text-sm font-bold text-[var(--color-primary-font)]/60 data-[state=active]:text-white transition-all duration-300 data-[state=active]:bg-[var(--button-bg)] data-[state=active]:shadow-[0_4px_12px_var(--button-glow)]"
                             >
                                 Past Travels
                             </TabsTrigger>
@@ -713,7 +713,7 @@ export default function AgentBookingsPage() {
                                     <p className="text-2xl font-black text-[var(--primary)]">₹{booking.total_amount.toLocaleString()}</p>
                                 </div>
                                 <Button
-                                    className="h-12 px-8 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-black rounded-full shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)] transition-all flex items-center gap-3"
+                                    className="h-12 px-8 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-full shadow-lg shadow-[var(--button-glow)] hover:shadow-[var(--button-glow)] transition-all flex items-center gap-3"
                                     onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }}
                                 >
                                     Details <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -1151,7 +1151,7 @@ export default function AgentBookingsPage() {
                                         <Edit className="h-4 w-4 mr-2" /> Modify Trip
                                     </Button>
                                 )}
-                                <Button className="h-12 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 transition-all text-[11px] uppercase tracking-widest gap-2">
+                                <Button className="h-12 px-10 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-2xl shadow-xl shadow-[var(--button-glow)] transition-all text-[11px] uppercase tracking-widest gap-2">
                                     <Download className="h-4 w-4" /> Download Full Invoice
                                 </Button>
                             </div>

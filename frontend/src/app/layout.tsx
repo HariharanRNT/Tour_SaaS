@@ -25,6 +25,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { headers } from "next/headers";
+import { FaviconHandler } from "@/components/FaviconHandler";
 
 export const dynamic = 'force-dynamic';
 
@@ -84,10 +85,23 @@ function generateThemeStyles(settings: any) {
         return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
     };
 
+    const lightenHex = (hex: string, amount: number) => {
+        if (!hex || hex.length < 7) return hex;
+        let r_ = parseInt(hex.slice(1, 3), 16);
+        let g_ = parseInt(hex.slice(3, 5), 16);
+        let b_ = parseInt(hex.slice(5, 7), 16);
+        r_ = Math.min(255, Math.floor(r_ + (255 - r_) * amount));
+        g_ = Math.min(255, Math.floor(g_ + (255 - g_) * amount));
+        b_ = Math.min(255, Math.floor(b_ + (255 - b_) * amount));
+        const getHex = (n: number) => n.toString(16).padStart(2, '0');
+        return `#${getHex(r_)}${getHex(g_)}${getHex(b_)}`;
+    };
+
     const p = settings.primaryColor || settings.primary_color || settings.primary || '#F97316';
     const sec = settings.secondaryColor || settings.secondary_color || settings.secondary || '#FB923C';
     const soft = settings.primarySoft || settings.glass || hexToRgba(p, 0.45);
     const hsl = hexToHsl(p);
+    const btnBg = settings.buttonStyle?.bgColor || p;
 
     return `
         body.is-branded {
@@ -107,7 +121,9 @@ function generateThemeStyles(settings: any) {
             --navbar-text: ${settings.navbarSettings?.textColor || '#0a0a0a'};
             
             /* Button Settings */
-            --button-bg: ${settings.buttonStyle?.bgColor || p};
+            --button-bg: ${btnBg};
+            --button-bg-light: ${lightenHex(btnBg, 0.2)};
+            --button-glow: ${hexToRgba(btnBg, 0.25)};
             --button-text: ${settings.buttonStyle?.textColor || '#ffffff'};
             --button-radius: ${settings.buttonStyle?.borderRadius || '0.75rem'};
             
@@ -134,6 +150,10 @@ export default async function RootLayout({
             <head>
                 {initialTheme?.id && <meta name="agent-id" content={initialTheme.id} />}
                 <ThemeInitializer initialSettings={homepageSettings} />
+                <FaviconHandler 
+                    agentLogo={homepageSettings?.navbar_logo_image} 
+                    agentFavicon={homepageSettings?.favicon_url} 
+                />
                 {homepageSettings && (
                     <style dangerouslySetInnerHTML={{ __html: generateThemeStyles(homepageSettings) }} />
                 )}

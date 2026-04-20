@@ -245,107 +245,107 @@ async def login(
              raise HTTPException(status_code=400, detail="Your registration request was rejected. Please contact support.")
         raise HTTPException(status_code=400, detail="Account is inactive")
 
-    # 3. Handle Role-Based Logic
-    if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
-        # Identify the relevant profiles for notification/SMTP
-        agent_profile = None
-        if user.role == UserRole.AGENT:
-            agent_profile = user.agent_profile
-        else:
-            # Sub-user inherits parent agent's profile for branding/SMTP
-            if user.sub_user_profile and user.sub_user_profile.agent:
-                agent_profile = user.sub_user_profile.agent.agent_profile
-                
-        # Validate Agent or Sub-User Domain
-        # Both AGENT and SUB_USER must log in from their own domain
-        if agent_profile and agent_profile.domain:
-            agent_domain = agent_profile.domain
-            if agent_domain.lower() != domain.lower():
-                # Allow strict localhost/IP bypass for development, but enforce for production domains
-                if domain not in ["localhost", "127.0.0.1"]:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Access denied. You must login from your authorized agency domain."
-                    )
-
-        # Check rate limiting
-        if not await OTPService.check_login_rate_limit(user.email):
-            logger.warning(f"Agent login OTP rate limit exceeded for: {user.email}")
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="OTP request limit exceeded. Please try again after 1 hour."
-            )
-        
-        # Generate and store OTP
-        otp = OTPService.generate_otp()
-        
-        # DIAGNOSTIC: Write to file to verify OTP generation
-        import os
-        try:
-            log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
-            with open(log_file, "a") as f:
-                from datetime import datetime
-                f.write(f"\n{'='*60}\n")
-                f.write(f"Timestamp: {datetime.now()}\n")
-                f.write(f"Email: {user.email}\n")
-                f.write(f"OTP: {otp}\n")
-                f.write(f"{'='*60}\n")
-        except Exception as e:
-            # Silently fail if file write fails - don't crash the login
-            pass
-        
-        # Log to terminal securely via Uvicorn logger
-        otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
-        logger.warning(otp_msg)
-        print(otp_msg, flush=True)
-        
-        if not await OTPService.store_login_otp(user.email, otp):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to generate OTP. Please try again."
-            )
-        
-        # Send OTP email
-        agent_name = f"{user.first_name} {user.last_name}" if user.first_name else "Agent Staff"
-        
-        subject = "Your Login OTP for RNT Tour"
-        body = f"""
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
-            <p>Hello {agent_name},</p>
-            <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
-            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
-                {otp}
-            </div>
-            <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
-        </div>
-        """
-        
-        # Use agent's SMTP settings if available
-        smtp_config = None
-        if agent_profile and agent_profile.smtp_settings:
-            s = agent_profile.smtp_settings
-            smtp_config = {
-                "host": s.host,
-                "port": s.port,
-                "user": s.username,
-                "password": decrypt_value(s.password),
-                "from_email": s.from_email,
-                "from_name": s.from_name,
-                "encryption_type": s.encryption_type
-            }
-        
-        await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
-        
-        return LoginResponse(
-            require_otp=True,
-            message="OTP sent successfully to your registered email",
-            email=user.email,
-            expires_in=300,
-            role=user.role.value
-        )
+    # 3. Handle Role-Based Logic (OTP DISABLED FOR AGENTS)
+    # if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
+    #     # Identify the relevant profiles for notification/SMTP
+    #     agent_profile = None
+    #     if user.role == UserRole.AGENT:
+    #         agent_profile = user.agent_profile
+    #     else:
+    #         # Sub-user inherits parent agent's profile for branding/SMTP
+    #         if user.sub_user_profile and user.sub_user_profile.agent:
+    #             agent_profile = user.sub_user_profile.agent.agent_profile
+    #             
+    #     # Validate Agent or Sub-User Domain
+    #     # Both AGENT and SUB_USER must log in from their own domain
+    #     if agent_profile and agent_profile.domain:
+    #         agent_domain = agent_profile.domain
+    #         if agent_domain.lower() != domain.lower():
+    #             # Allow strict localhost/IP bypass for development, but enforce for production domains
+    #             if domain not in ["localhost", "127.0.0.1"]:
+    #                 raise HTTPException(
+    #                     status_code=status.HTTP_403_FORBIDDEN,
+    #                     detail="Access denied. You must login from your authorized agency domain."
+    #                 )
+    # 
+    #     # Check rate limiting
+    #     if not await OTPService.check_login_rate_limit(user.email):
+    #         logger.warning(f"Agent login OTP rate limit exceeded for: {user.email}")
+    #         raise HTTPException(
+    #             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #             detail="OTP request limit exceeded. Please try again after 1 hour."
+    #         )
+    #     
+    #     # Generate and store OTP
+    #     otp = OTPService.generate_otp()
+    #     
+    #     # DIAGNOSTIC: Write to file to verify OTP generation
+    #     import os
+    #     try:
+    #         log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
+    #         with open(log_file, "a") as f:
+    #             from datetime import datetime
+    #             f.write(f"\n{'='*60}\n")
+    #             f.write(f"Timestamp: {datetime.now()}\n")
+    #             f.write(f"Email: {user.email}\n")
+    #             f.write(f"OTP: {otp}\n")
+    #             f.write(f"{'='*60}\n")
+    #     except Exception as e:
+    #         # Silently fail if file write fails - don't crash the login
+    #         pass
+    #     
+    #     # Log to terminal securely via Uvicorn logger
+    #     otp_msg = f"\n{'='*50}\n🔑 AGENT LOGIN OTP: {otp} (for {user.email})\n{'='*50}\n"
+    #     logger.warning(otp_msg)
+    #     print(otp_msg, flush=True)
+    #     
+    #     if not await OTPService.store_login_otp(user.email, otp):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #             detail="Failed to generate OTP. Please try again."
+    #         )
+    #     
+    #     # Send OTP email
+    #     agent_name = f"{user.first_name} {user.last_name}" if user.first_name else "Agent Staff"
+    #     
+    #     subject = "Your Login OTP for RNT Tour"
+    #     body = f"""
+    #     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+    #         <h2 style="color: #2563eb; text-align: center;">RNT Tour - Agent Portal</h2>
+    #         <p>Hello {agent_name},</p>
+    #         <p>You requested to login to your agent account. Use the OTP below to complete your login. This OTP is valid for 5 minutes.</p>
+    #         <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+    #             {otp}
+    #         </div>
+    #         <p style="color: #64748b; font-size: 14px;">For security reasons, never share this OTP with anyone.</p>
+    #         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+    #         <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
+    #     </div>
+    #     """
+    #     
+    #     # Use agent's SMTP settings if available
+    #     smtp_config = None
+    #     if agent_profile and agent_profile.smtp_settings:
+    #         s = agent_profile.smtp_settings
+    #         smtp_config = {
+    #             "host": s.host,
+    #             "port": s.port,
+    #             "user": s.username,
+    #             "password": decrypt_value(s.password),
+    #             "from_email": s.from_email,
+    #             "from_name": s.from_name,
+    #             "encryption_type": s.encryption_type
+    #         }
+    #     
+    #     await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
+    #     
+    #     return LoginResponse(
+    #         require_otp=True,
+    #         message="OTP sent successfully to your registered email",
+    #         email=user.email,
+    #         expires_in=300,
+    #         role=user.role.value
+    #     )
 
     # 4. Handle Customer/Admin (Direct Login)
     if user.role == UserRole.CUSTOMER:

@@ -1,0 +1,20 @@
+# Disable OTP for Agent Login
+
+The goal is to stop the OTP (One-Time Password) requirement for Agent logins, allowing them to log in directly with their credentials.
+
+## Proposed Changes
+
+### [Backend] [auth.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/auth.py)
+
+#### [MODIFY] [auth.py](file:///d:/Hariharan/G-Project/RNT_Tour/backend/app/api/v1/auth.py)
+- Comment out the block in the `login` function that checks for `UserRole.AGENT` or `UserRole.SUB_USER` to trigger OTP.
+- This will allow agents to fall through to the direct login logic that issues a JWT token immediately.
+- We will keep the OTP flow for `UserRole.CUSTOMER` as the user specifically requested disabling it for "Agent Login".
+
+## Verification Plan
+
+### Automated Tests
+- I will check the code logic to ensure that `UserRole.AGENT` and `UserRole.SUB_USER` now reach the token generation part of the `login` endpoint.
+
+### Manual Verification
+- The user can verify by trying to log in as an Agent. They should be logged in immediately without being prompted for an OTP.

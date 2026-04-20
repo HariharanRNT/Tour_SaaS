@@ -809,7 +809,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         {/* Trip Details Grid - Info Chips */}
                         <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
-                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
+                                <div className="p-2 bg-[var(--button-bg)] rounded-xl shadow-inner">
                                     <Calendar className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
@@ -858,7 +858,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary-soft)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 transition-transform duration-700 group-hover:scale-110" />
                             <div className="flex flex-col md:flex-row gap-8 relative z-10 items-center md:items-start text-center md:text-left">
                                 <div className="shrink-0">
-                                    <div className="p-5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-[2rem] text-white shadow-[0_12px_30px_var(--primary-glow)] ring-4 ring-white/50">
+                                    <div className="p-5 bg-gradient-to-br from-[var(--button-bg)] to-[var(--button-bg-light)] rounded-[2rem] text-white shadow-[0_12px_30px_var(--button-glow)] ring-4 ring-white/50">
                                         <Sparkles className="h-9 w-9 animate-pulse" />
                                     </div>
                                 </div>
@@ -958,7 +958,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
-                                            <div className="p-1 bg-[var(--primary)]/10 rounded-md">
+                                            <div className="p-1 bg-[var(--button-bg)]/10 rounded-md">
                                                 <Plane className="h-3 w-3" />
                                             </div>
                                             Onward Journey
@@ -974,7 +974,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                     <div className="border-t border-dashed border-black/10 p-2 flex justify-center">
                                                         <Dialog open={isOnwardModalOpen} onOpenChange={setIsOnwardModalOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button variant="link" size="sm" className="text-[var(--primary)] hover:text-[var(--primary)] w-full mb-1 font-black underline decoration-[var(--primary)]/0 hover:decoration-[var(--primary)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
+                                                                <Button variant="link" size="sm" className="text-[var(--button-bg)] hover:text-[var(--button-bg)] w-full mb-1 font-black underline decoration-[var(--button-bg)]/0 hover:decoration-[var(--button-bg)]/40 underline-offset-4 transition-all duration-300" disabled={mode === 'preview'}>
                                                                     Change Onward Flight
                                                                 </Button>
                                                             </DialogTrigger>
@@ -1142,7 +1142,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         </div>
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] rounded-lg shadow-sm">
+                                                <div className="p-1.5 bg-gradient-to-br from-[var(--button-bg)] to-[var(--button-bg-light)] rounded-lg shadow-sm">
                                                     <Plane className="h-4 w-4 text-white" />
                                                 </div>
                                                 <h3 className="font-black text-[var(--color-primary-font)] uppercase tracking-widest text-sm">Onward Journey</h3>
@@ -1175,7 +1175,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         {/* Cancellation Policy Section */}
                         <section className="pt-16 pb-8 border-t border-gray-100">
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="h-10 w-1.5 rounded-full bg-[var(--primary)]" />
+                                <div className="h-10 w-1.5 rounded-full bg-[var(--button-bg)]" />
                                 <h2 className="text-3xl font-bold text-[var(--color-primary-font)] font-display">Cancellation Policy</h2>
                             </div>
 
@@ -1364,7 +1364,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         <Button variant="link" size="sm" className="h-auto p-0 text-[var(--primary)] text-xs ml-2" onClick={() => setIsMobileCartOpen(true)}>View Details</Button>
                     </div>
                 </div>
-                <Button onClick={handleCheckout} className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--primary-glow)]">
+                <Button onClick={handleCheckout} className="bg-[var(--button-bg)] hover:bg-[var(--button-bg)]/90 font-bold px-6 py-2 h-auto rounded-xl shadow-lg shadow-[var(--button-glow)]">
                     {(session.booking_type || '').toUpperCase() === 'ENQUIRY' ? 'Send Enquiry' : 'Book Now'}
                 </Button>
             </div>
@@ -1486,7 +1486,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 Cancel
                             </Button>
                             <Button
-                                className="flex-1 h-12 rounded-xl bg-[var(--primary)] hover:opacity-90 font-bold"
+                                className="flex-1 h-12 rounded-xl bg-[var(--button-bg)] hover:opacity-90 font-bold"
                                 disabled={sendingEnquiry}
                                 onClick={handleSendEnquiry}
                             >

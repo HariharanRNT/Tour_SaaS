@@ -564,8 +564,8 @@ export default function ReportsPage() {
                                         : 'text-[var(--color-primary-font)]/50 hover:text-[var(--color-primary-font)]'
                                     }`}
                                     style={activePeriod === p ? { 
-                                        background: 'linear-gradient(135deg, #475569, #1e293b)',
-                                        boxShadow: '0 4px 15px rgba(30, 41, 59, 0.4)'
+                                        background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                        boxShadow: '0 4px 15px var(--button-glow)'
                                     } : {}}
                                 >
                                     {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -637,7 +637,7 @@ export default function ReportsPage() {
 
                             <Button 
                                 className="h-10 hover:scale-[1.03] active:scale-95 text-white text-[12.5px] font-black px-6 rounded-xl shadow-xl transition-all relative group overflow-hidden" 
-                                style={{ background: 'linear-gradient(135deg, #475569, #1e293b)', boxShadow: '0 8px 20px rgba(30, 41, 59, 0.3)' }}
+                                style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', boxShadow: '0 8px 20px var(--button-glow)' }}
                                 onClick={() => setActivePeriod('custom')}
                             >
                                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />

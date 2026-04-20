@@ -1,0 +1,288 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); color: var(--color-text-primary); }
+  .wrap { padding: 1.5rem 0; max-width: 860px; }
+  .section { margin-bottom: 1.5rem; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+  .sec-head { padding: 10px 16px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; background: var(--color-background-secondary); }
+  .sec-head .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; margin-left: auto; }
+  .badge-blue { background: #E6F1FB; color: #0C447C; }
+  .badge-teal { background: #E1F5EE; color: #085041; }
+  .badge-amber { background: #FAEEDA; color: #633806; }
+  .badge-purple { background: #EEEDFE; color: #3C3489; }
+  .badge-coral { background: #FAECE7; color: #712B13; }
+  .sec-body { padding: 16px; background: var(--color-background-primary); display: none; }
+  .sec-body.open { display: block; }
+  pre { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: var(--color-text-primary); border: 0.5px solid var(--color-border-tertiary); overflow-x: auto; }
+  .label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .copy-btn { font-size: 12px; padding: 5px 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-primary); cursor: pointer; float: right; margin-bottom: 6px; }
+  .copy-btn:hover { background: var(--color-background-secondary); }
+  .arrow { font-size: 12px; color: var(--color-text-secondary); transition: transform 0.15s; display: inline-block; }
+  .arrow.open { transform: rotate(90deg); }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .step { font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); white-space: nowrap; }
+  .arrow-sep { color: var(--color-text-secondary); font-size: 12px; }
+  h2 { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1.5rem; line-height: 1.5; }
+  .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .filter-chip { font-size: 12px; padding: 6px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); background: var(--color-background-secondary); }
+  .filter-chip strong { display: block; font-size: 11px; color: var(--color-text-primary); font-weight: 500; margin-bottom: 2px; }
+</style>
+
+<div class="wrap">
+  <h2>AI search feature — developer prompt</h2>
+  <p class="subtitle">Click each section to expand. Copy the prompts and use them with your dev tool or AI coding assistant.</p>
+
+  <div class="flow">
+    <span class="step">User types query</span>
+    <span class="arrow-sep">→</span>
+    <span class="step">Gemini 2.5 Flash parses intent</span>
+    <span class="arrow-sep">→</span>
+    <span class="step">Extract filter params</span>
+    <span class="arrow-sep">→</span>
+    <span class="step">Build URL query string</span>
+    <span class="arrow-sep">→</span>
+    <span class="step">Redirect to /plan-trip</span>
+  </div>
+
+  <div class="section" id="s1">
+    <div class="sec-head" onclick="toggle('s1')">
+      <span class="arrow" id="a-s1">▶</span>
+      UI component — AI search button & modal
+      <span class="badge badge-blue">React / JSX</span>
+    </div>
+    <div class="sec-body" id="b-s1">
+      <p class="desc">Add an "AI Search" button on the homepage and in the Plan Trip navbar. On click, open a modal with a textarea input and submit button.</p>
+      <button class="copy-btn" onclick="copySection('p1')">Copy</button>
+      <pre id="p1">Build an AI-powered natural language search modal for our React travel booking app (TourSaaS / RNT Travel).
+
+TRIGGER:
+- Add an "AI Search" button (sparkle icon ✦ + label "AI Search") in the navbar beside the existing search bar on the /plan-trip page.
+- Also place a secondary "Try AI Search" button in the homepage hero section below the existing CTA buttons.
+
+MODAL UI:
+- Open a centered modal overlay on click.
+- Title: "Search with AI" with a small sparkle icon.
+- Subtitle: "Describe your trip in plain language — budget, destination, dates, interests."
+- A large textarea (min 3 rows) with placeholder: "e.g. I plan to travel to Japan next month for 4 days with a minimum ₹17,000 budget. Suggest packages."
+- A "Search" button (primary, full width) and a close/cancel button.
+- Show a loading spinner inside the button while waiting for the API response.
+- On error, show an inline error message below the textarea in red.
+- Use the same design tokens as the existing app (dark navy buttons, white modal card, matching border-radius and fonts).</pre>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <div class="sec-head" onclick="toggle('s2')">
+      <span class="arrow" id="a-s2">▶</span>
+      Gemini API call — intent extraction
+      <span class="badge badge-teal">Prompt engineering</span>
+    </div>
+    <div class="sec-body" id="b-s2">
+      <p class="desc">This is the system prompt to send to Gemini 2.5 Flash. It must return a strict JSON object — no markdown, no prose.</p>
+      <button class="copy-btn" onclick="copySection('p2')">Copy</button>
+      <pre id="p2">SYSTEM PROMPT (send as system role to Gemini 2.5 Flash):
+
+You are a travel package filter extraction engine for a tour booking platform.
+Your ONLY job is to parse a user's natural-language travel query and return a single valid JSON object — no markdown, no explanation, no extra text, just the raw JSON.
+
+Extract the following fields. Use null for any field not mentioned or unclear:
+
+{
+  "destination": string | null,          // city or country name  e.g. "Japan", "Goa", "Mumbai"
+  "country": string | null,              // ISO country name if separable from destination
+  "minBudget": number | null,            // minimum budget in INR (₹)
+  "maxBudget": number | null,            // maximum budget in INR (₹). If user says "minimum X" treat X as minBudget and set maxBudget to null
+  "minDays": number | null,              // minimum trip duration in days
+  "maxDays": number | null,              // maximum trip duration in days
+  "nights": number | null,               // number of nights if specifically mentioned
+  "tripStyle": string[] | null,          // e.g. ["beach", "adventure", "cultural", "luxury", "budget", "family", "honeymoon", "solo"]
+  "activities": string[] | null,         // e.g. ["hiking", "snorkeling", "sightseeing", "food tour", "temple visit"]
+  "packageType": "single_city" | "multi_city" | null,
+  "travelMonth": string | null,          // e.g. "May", "next month" → resolve to actual month name if possible
+  "groupSize": number | null             // number of travellers
+}
+
+Rules:
+- If user says "4 days", set minDays=4 and maxDays=4.
+- If user says "4-6 days", set minDays=4 and maxDays=6.
+- If user says "minimum ₹17000 budget", set minBudget=17000 and maxBudget=null.
+- Always return valid JSON. Never return explanatory prose.
+- If the entire query is unrelated to travel, return: {"error": "not_travel_query"}</pre>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="sec-head" onclick="toggle('s3')">
+      <span class="arrow" id="a-s3">▶</span>
+      Frontend API handler — call Gemini &amp; build redirect URL
+      <span class="badge badge-amber">JavaScript / Next.js</span>
+    </div>
+    <div class="sec-body" id="b-s3">
+      <p class="desc">Call Gemini using the existing env API key, parse the JSON response, map each field to a URL query param, then push to /plan-trip.</p>
+      <button class="copy-btn" onclick="copySection('p3')">Copy</button>
+      <pre id="p3">Create a utility function `parseAISearchAndRedirect(userQuery, router)` in `/lib/aiSearch.js`.
+
+STEPS:
+1. Read NEXT_PUBLIC_GEMINI_API_KEY (or the existing env var name already used in this project for Gemini) from process.env.
+
+2. Call the Gemini 2.5 Flash API:
+   - Model: gemini-2.5-flash (use the same model string already in the project)
+   - Send the system prompt (see section 2) as a system instruction.
+   - Send the userQuery as the user message.
+   - Set temperature: 0.1 for deterministic output.
+   - Parse the response text as JSON (strip any accidental backtick fences first).
+
+3. MAP JSON fields → URL query params:
+   destination       → ?destination=Japan
+   country           → ?country=Japan
+   minBudget         → ?minPrice=17000
+   maxBudget         → ?maxPrice=30000
+   minDays           → ?minDays=4
+   maxDays           → ?maxDays=4
+   tripStyle[]       → ?tripStyle=beach&tripStyle=adventure
+   activities[]      → ?activities=hiking&activities=snorkeling
+   packageType       → ?packageType=single_city  OR  multi_city
+   travelMonth       → ?month=May
+   groupSize         → ?groupSize=2
+
+4. Build the URL: /plan-trip?search=all&{params}
+   Always include search=all so the existing page logic triggers a full listing.
+
+5. Call router.push(builtUrl) to navigate.
+
+6. Error handling:
+   - If JSON contains "error: not_travel_query" → show inline modal error: "Please describe a travel plan."
+   - If the Gemini call fails (network / quota) → show inline modal error with the raw message.
+   - Wrap in try/catch, never crash the page.
+
+Export the function as default. Keep API key only server-side if using Next.js API routes; otherwise use the existing pattern in this codebase for Gemini calls.</pre>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="sec-head" onclick="toggle('s4')">
+      <span class="arrow" id="a-s4">▶</span>
+      Plan Trip page — read URL params &amp; apply filters
+      <span class="badge badge-purple">Filter wiring</span>
+    </div>
+    <div class="sec-body" id="b-s4">
+      <p class="desc">The /plan-trip page must read the injected query params on mount and apply them to the existing filter state.</p>
+      <div class="filter-grid">
+        <div class="filter-chip"><strong>minPrice / maxPrice</strong>Price range slider</div>
+        <div class="filter-chip"><strong>minDays / maxDays</strong>Duration slider</div>
+        <div class="filter-chip"><strong>tripStyle[]</strong>Trip style checkboxes</div>
+        <div class="filter-chip"><strong>activities[]</strong>Activities checkboxes</div>
+        <div class="filter-chip"><strong>packageType</strong>Single / multi city tabs</div>
+        <div class="filter-chip"><strong>destination / country</strong>Search bar prefill</div>
+      </div>
+      <button class="copy-btn" onclick="copySection('p4')">Copy</button>
+      <pre id="p4">In the existing /plan-trip page component, add a useEffect that runs on mount (or whenever router.query changes) to read AI-injected URL params and hydrate the filter state.
+
+Read these params from router.query (Next.js) or useSearchParams (React Router):
+
+  const {
+    destination, country,
+    minPrice, maxPrice,
+    minDays, maxDays,
+    tripStyle,      // may be array or single string — normalise with [].concat()
+    activities,     // same
+    packageType,
+    month, groupSize
+  } = router.query;
+
+Apply to existing filter state setters:
+- setSearchQuery(destination || country || "")
+- setPriceRange([Number(minPrice) || 0, Number(maxPrice) || MAX_PRICE])
+- setDurationRange([Number(minDays) || 1, Number(maxDays) || MAX_DAYS])
+- setSelectedTripStyles([].concat(tripStyle || []))
+- setSelectedActivities([].concat(activities || []))
+- if packageType === "single_city" → setActivePackageType("Single City")
+- if packageType === "multi_city"  → setActivePackageType("Multi-City Tours")
+
+Also:
+- Show a dismissible banner at the top of the results: "AI filtered results for: [original query snippet]" with a × to reset all filters.
+- Highlight the filter panel as "active" (e.g. badge count) so the user sees filters were auto-applied.
+- Preserve the existing manual filter behaviour — AI params are just initial state.
+
+Do not break the existing RESET button; it should clear both manual and AI-applied filters.</pre>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="sec-head" onclick="toggle('s5')">
+      <span class="arrow" id="a-s5">▶</span>
+      Example query → expected output
+      <span class="badge badge-coral">Test case</span>
+    </div>
+    <div class="sec-body" id="b-s5">
+      <p class="desc">Use this to verify your Gemini prompt is working correctly before wiring the UI.</p>
+      <button class="copy-btn" onclick="copySection('p5')">Copy</button>
+      <pre id="p5">USER QUERY:
+"I plan to travel to Japan next month with four days and a minimum ₹17,000 budget. Give me package options."
+
+EXPECTED GEMINI JSON OUTPUT:
+{
+  "destination": "Japan",
+  "country": "Japan",
+  "minBudget": 17000,
+  "maxBudget": null,
+  "minDays": 4,
+  "maxDays": 4,
+  "nights": null,
+  "tripStyle": null,
+  "activities": null,
+  "packageType": null,
+  "travelMonth": "May",
+  "groupSize": null
+}
+
+EXPECTED REDIRECT URL:
+/plan-trip?search=all&destination=Japan&country=Japan&minPrice=17000&minDays=4&maxDays=4&month=May
+
+---
+
+USER QUERY:
+"Beach honeymoon in Maldives for 5-7 nights under ₹80,000 for 2 people"
+
+EXPECTED JSON:
+{
+  "destination": "Maldives",
+  "country": "Maldives",
+  "minBudget": null,
+  "maxBudget": 80000,
+  "minDays": 5,
+  "maxDays": 7,
+  "nights": 7,
+  "tripStyle": ["beach", "honeymoon"],
+  "activities": null,
+  "packageType": null,
+  "travelMonth": null,
+  "groupSize": 2
+}
+
+EXPECTED REDIRECT URL:
+/plan-trip?search=all&destination=Maldives&country=Maldives&maxPrice=80000&minDays=5&maxDays=7&tripStyle=beach&tripStyle=honeymoon&groupSize=2</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggle(id) {
+    const body = document.getElementById('b-' + id);
+    const arrow = document.getElementById('a-' + id);
+    const open = body.classList.toggle('open');
+    arrow.classList.toggle('open', open);
+  }
+
+  function copySection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const text = el.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.parentElement.querySelector('.copy-btn');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); }
+    });
+  }
+</script>

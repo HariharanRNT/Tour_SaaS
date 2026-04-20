@@ -357,7 +357,7 @@ export default function AgentEnquiriesPage() {
                                                     Received {format(new Date(enquiry.created_at), 'dd MMM')}
                                                 </div>
                                                 <Button
-                                                    className="w-full md:w-auto h-12 px-8 rounded-full bg-[var(--primary)] text-white font-bold shadow-lg shadow-[var(--primary-glow)]"
+                                                    className="w-full md:w-auto h-12 px-8 rounded-full bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-bold shadow-lg shadow-[var(--button-glow)]"
                                                     onClick={() => { setSelectedEnquiry(enquiry); setIsDetailsOpen(true); }}
                                                 >
                                                     View Details

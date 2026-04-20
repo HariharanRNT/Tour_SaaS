@@ -224,8 +224,8 @@ export default function ActivitiesMasterPage() {
                                     setIsEditing(false)
                                     setIsNewDestModalOpen(true)
                                 }}
-                                className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_30px_var(--primary-glow)]"
-                                style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '50px' }}
+                                className="group text-white tracking-wide font-semibold px-7 py-6 transition-all duration-300 hover:-translate-y-1 border border-white/20"
+                                style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '50px', boxShadow: '0 8px 24px var(--button-glow)' }}
                             >
                                 <Plus className="mr-2 h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
                                 Add Destination
@@ -672,6 +672,33 @@ export default function ActivitiesMasterPage() {
                                         className="pl-11 h-10 text-[11px] font-semibold bg-white/30 backdrop-blur-md border-white/40 rounded-xl focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/50 transition-all"
                                     />
                                 </div>
+
+                                {/* Popular Destination Toggle */}
+                                <div 
+                                    className="flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border border-white/40 bg-white/20 backdrop-blur-md cursor-pointer hover:bg-white/30 group/toggle"
+                                    onClick={() => setIsPopular(!isPopular)}
+                                >
+                                    <div className="flex flex-col gap-0.5">
+                                        <label className="text-[11px] font-bold text-[#3A1A08] uppercase tracking-wider">
+                                            Show on Homepage
+                                        </label>
+                                        <p className="text-[10px] text-[#3A1A08]/60 font-medium whitespace-nowrap">
+                                            Include in Popular Destinations section
+                                        </p>
+                                    </div>
+                                    <div 
+                                        className={cn(
+                                            "w-12 h-6 rounded-full p-1 transition-colors duration-300 flex items-center shadow-inner",
+                                            isPopular ? "bg-[var(--primary)]" : "bg-slate-300"
+                                        )}
+                                    >
+                                        <motion.div 
+                                            animate={{ x: isPopular ? 24 : 0 }}
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            className="w-4 h-4 bg-white rounded-full shadow-lg"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                         </div>
@@ -706,11 +733,11 @@ export default function ActivitiesMasterPage() {
                                 className="flex-1 transition-all duration-300 border-0 relative overflow-hidden group"
                                 style={{
                                     height: '40px',
-                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+                                    background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
                                     borderRadius: '20px',
                                     color: 'white',
                                     fontWeight: 600,
-                                    boxShadow: '0 8px 25px rgba(255,122,69,0.35)',
+                                    boxShadow: '0 8px 25px var(--button-glow)',
                                     transform: 'translateY(0)'
                                 }}
                                 onMouseEnter={(e) => {
@@ -749,14 +776,14 @@ export default function ActivitiesMasterPage() {
                         <AlertDialogTitle className="text-2xl font-bold tracking-tight text-[var(--color-primary-font)]">
                             Delete Destination
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-500 text-base mt-2">
+                        <AlertDialogDescription className="text-black text-base mt-2">
                             This will permanently delete <strong>{cityToDelete?.city}</strong> and all of its <strong>{cityToDelete?.count}</strong> activities.
                             <br /><br />
                             Are you absolutely sure you want to proceed? This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6">
-                        <AlertDialogCancel className="rounded-full text-[var(--color-primary-font)]/60 hover:text-[var(--color-primary-font)] hover:bg-slate-100 border-none">
+                        <AlertDialogCancel className="rounded-full text-black hover:bg-slate-100 border-none">
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction

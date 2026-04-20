@@ -15,6 +15,10 @@ const nextConfig = {
                 hostname: 'upload.wikimedia.org',
             },
             {
+                protocol: 'https',
+                hostname: '**.trycloudflare.com',
+            },
+            {
                 protocol: 'http',
                 hostname: 'localhost',
             },

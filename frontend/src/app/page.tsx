@@ -18,6 +18,7 @@ import { motion } from 'framer-motion'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import PackageSearchChat from '@/components/ai/PackageSearchChat'
 import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
+import AISearchModal from '@/components/ai/AISearchModal'
 import { useTheme } from '@/context/ThemeContext'
 import Image from 'next/image'
 
@@ -34,14 +35,25 @@ interface Package {
     view_count: number
 }
 
+interface PopularDestination {
+    name: string
+    country: string
+    image_url?: string
+    pkg_count: number
+}
+
 export default function Home({ searchParams }: { searchParams: { site?: string } }) {
     const site = searchParams.site || 'default';
 
     const router = useRouter()
     const { themeData: theme, isLoading, publicSettings } = useTheme()
     const [packages, setPackages] = useState<Package[]>([])
+    const [popularDestinations, setPopularDestinations] = useState<PopularDestination[]>([])
     const [packagesLoading, setPackagesLoading] = useState(true)
+    const [destinationsLoading, setDestinationsLoading] = useState(true)
     const [cheapestPackageSlug, setCheapestPackageSlug] = useState<string | null>(null)
+    const [showAISearch, setShowAISearch] = useState(false)
+    const hasFetchedRef = useRef(false)
 
     const [hpSettings, setHpSettings] = useState<{
         headline1: string;
@@ -50,8 +62,9 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         primaryBtnText: string;
         secondaryBtnText: string;
         backgroundImageUrl: string;
-        badgeText: string;
-        showAiBadge: boolean;
+        showAISearch: boolean;
+        aiSearchBtnText: string;
+        aiSearchTagline: string;
     } | null>(null)
 
     const [agentFeatureCards, setAgentFeatureCards] = useState<{
@@ -109,8 +122,9 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                     primaryBtnText: hs.primaryBtnText || "Start Your Journey",
                     secondaryBtnText: hs.secondaryBtnText || "See Sample Itinerary",
                     backgroundImageUrl: hs.backgroundImageUrl || "",
-                    badgeText: hs.badgeText || "AI-POWERED TRIP PLANNING",
-                    showAiBadge: hs.showAiBadge !== false
+                    showAISearch: hs.showAISearch ?? hs.showAiBadge !== false,
+                    aiSearchBtnText: hs.aiSearchBtnText || "Try AI Search",
+                    aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip"
                 });
             }
             if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
@@ -144,6 +158,9 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
     useEffect(() => {
         if (isLoading) return;
+        // Prevent duplicate API calls (React Strict Mode double-mount)
+        if (hasFetchedRef.current) return;
+        hasFetchedRef.current = true;
 
         const fetchPackages = async () => {
             try {
@@ -177,8 +194,20 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
             }
         }
 
+        const fetchDestinations = async () => {
+            try {
+                const response = await api.get('/locations/popular')
+                setPopularDestinations(response.data)
+            } catch (error) {
+                console.error("Failed to fetch popular destinations", error)
+            } finally {
+                setDestinationsLoading(false)
+            }
+        }
+
         fetchPackages()
         fetchCheapest()
+        fetchDestinations()
     }, [isLoading])
 
     const heroBgImage = hpSettings?.backgroundImageUrl ||
@@ -222,13 +251,13 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                         className="object-cover bg-fixed"
                         sizes="100vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/20 mix-blend-multiply" />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, var(--primary-glow), rgba(255,180,100,0.2))' }} />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/5 mix-blend-multiply" />
+                    <div className="absolute inset-0 opacity-30" style={{ background: 'linear-gradient(to bottom, var(--primary-glow), var(--primary-soft))' }} />
                 </div>
 
                 {/* Blurred ambient orbs */}
-                <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-[var(--primary-glow)] blur-[80px] z-0 pointer-events-none" />
-                <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-[rgba(255,180,100,0.2)] blur-[100px] z-0 pointer-events-none" />
+                <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-[var(--primary-glow)] blur-[80px] z-0 pointer-events-none opacity-30" />
+                <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-[var(--primary-glow)] blur-[100px] z-0 pointer-events-none opacity-30" />
 
                 {/* Animated Floating Icons */}
                 <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none opacity-15">
@@ -254,12 +283,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="max-w-5xl mx-auto text-center p-6 md:p-8 relative mb-0"
                     >
-                        {(hpSettings?.showAiBadge !== false) && (
-                            <Badge className="mb-6 bg-white/15 backdrop-blur-md border-white/25 text-white hover:bg-white/25 px-6 py-2.5 rounded-full inline-flex items-center gap-2.5 shadow-xl ring-1 ring-white/10 group transition-all duration-300">
-                                <Sparkles className="h-4 w-4 text-amber-300 group-hover:scale-125 transition-transform" />
-                                <span className="font-bold tracking-widest text-[11px] uppercase drop-shadow-sm">{hpSettings?.badgeText || 'AI-Powered Trip Planning'}</span>
-                            </Badge>
-                        )}
+                        {/* AI Badge Removed per request */}
                         <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.05] text-white drop-shadow-md" style={{ color: "var(--heading, white)" }}>
                             {isLoading ? (
                                 <span className="h-20 w-3/4 bg-white/10 rounded-2xl animate-pulse mx-auto block" />
@@ -280,29 +304,51 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                         </p>
 
                         {/* CTA Section */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
-                            <Button
-                                onClick={() => router.push(cheapestPackageSlug ? `/plan-trip/${cheapestPackageSlug}?mode=preview` : '/plan-trip?search=all')}
-                                variant="outline"
-                                size="lg"
-                                className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white bg-transparent rounded-[30px]"
-                            >
-                                <PlayCircle className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
-                                {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
-                            </Button>
-
-                            <Link href="/plan-trip?search=all">
-                                <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
-                                    style={{
-                                        background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))',
-                                        boxShadow: '0 10px 30px var(--primary-glow)',
-                                        borderRadius: "30px",
-                                        border: 'none'
-                                    }}>
-                                    {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.primaryBtnText || theme.hero_cta_primary_text || "Start Your Journey")}
-                                    <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        <div className="flex flex-col items-center justify-center gap-4 mb-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <Button
+                                    onClick={() => router.push(cheapestPackageSlug ? `/plan-trip/${cheapestPackageSlug}?mode=preview` : '/plan-trip?search=all')}
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white bg-transparent rounded-[30px]"
+                                >
+                                    <PlayCircle className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
+                                    {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
                                 </Button>
-                            </Link>
+
+                                <Link href="/plan-trip?search=all">
+                                    <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
+                                        style={{
+                                            background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                            boxShadow: '0 10px 30px var(--button-glow)',
+                                            borderRadius: "30px",
+                                            border: 'none'
+                                        }}>
+                                        {isLoading ? <span className="h-6 w-32 bg-white/20 rounded animate-pulse inline-block" /> : (hpSettings?.primaryBtnText || theme.hero_cta_primary_text || "Start Your Journey")}
+                                        <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            {/* AI Search CTA */}
+                            {hpSettings?.showAISearch !== false && (
+                                <button
+                                    id="homepage-ai-search-btn"
+                                    onClick={() => setShowAISearch(true)}
+                                    className="flex items-center gap-2.5 px-7 py-3 rounded-full text-white text-[14px] font-bold transition-all hover:-translate-y-[2px] hover:shadow-2xl active:scale-95 border border-white/25 group"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.15)',
+                                        backdropFilter: 'blur(12px)',
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                                    }}
+                                >
+                                    <span className="w-6 h-6 rounded-full flex items-center justify-center bg-white/20 group-hover:bg-white/30 transition-colors">
+                                        <Sparkles className="h-3.5 w-3.5 text-white" />
+                                    </span>
+                                    {hpSettings?.aiSearchBtnText || 'Try AI Search'}
+                                    <span className="text-[11px] font-normal text-white/60">{hpSettings?.aiSearchTagline || '— just describe your dream trip'}</span>
+                                </button>
+                            )}
                         </div>
                     </motion.div>
 
@@ -371,11 +417,11 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     whileInView={{ opacity: 1, x: 0 }}
                                     viewport={{ once: true }}
                                 >
-                                    <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-orange-50 font-bold px-4 py-1.5 uppercase tracking-wider text-[10px]">
+                                    <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-glow)] font-bold px-4 py-1.5 uppercase tracking-wider text-[10px]">
                                         Discover Your Next Adventure
                                     </Badge>
                                     <h2 className="text-4xl md:text-6xl font-black text-slate-900 font-display mb-4 tracking-tight">
-                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[#FF8C00]">Packages</span>
+                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">Packages</span>
                                     </h2>
 
                                 </motion.div>
@@ -454,19 +500,97 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 </section>
             )}
 
+            {/* Popular Destinations Section */}
+            {popularDestinations.length > 0 && (
+                <section id="popular-destinations" className="pb-24 bg-white relative overflow-hidden">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 md:px-0">
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <Badge variant="outline" className="mb-4 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-glow)] font-bold px-4 py-1.5 uppercase tracking-wider text-[10px]">
+                                        Discover Your Next Adventure
+                                    </Badge>
+                                    <h2 className="text-4xl md:text-5xl font-black text-slate-900 font-display mb-4 tracking-tight">
+                                        Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]">Destinations</span>
+                                    </h2>
+                                </motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <button
+                                        onClick={() => router.push('/plan-trip?search=all')}
+                                        className="text-[var(--primary)] font-black text-xs tracking-widest uppercase flex items-center gap-2 group hover:gap-3 transition-all"
+                                    >
+                                        View All Destinations
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </motion.div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                                {popularDestinations.slice(0, 6).map((dest, idx) => (
+                                    <motion.div
+                                        key={dest.name}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        onClick={() => router.push(`/plan-trip?search=${encodeURIComponent(dest.name)}`)}
+                                        className="group relative h-[220px] w-full rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+                                    >
+                                        {dest.image_url ? (
+                                            <Image
+                                                src={dest.image_url}
+                                                alt={dest.name}
+                                                fill
+                                                className="absolute inset-0 object-cover group-hover:scale-110 transition-transform duration-700"
+                                                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 16vw"
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary)] to-[var(--primary-light)]" />
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                        
+                                        <div className="absolute top-3 right-3 z-10">
+                                            <Badge className="bg-black/40 backdrop-blur-md text-white border-white/10 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                {dest.pkg_count} {dest.pkg_count === 1 ? 'Package' : 'Packages'}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:bottom-6">
+                                            <h3 className="text-lg font-bold text-white leading-tight mb-2">{dest.name}</h3>
+                                            
+                                            <div className="flex items-center gap-1 text-[10px] font-bold text-[#f4f4f6] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                                                Explore <ArrowRight className="h-3 w-3" />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Why Choose Us Section */}
             {
                 theme.show_wcu_section !== false && (
                     <section className="bg-[#FFF3E8] relative overflow-hidden" style={{ paddingTop: "1rem", paddingBottom: "1rem" }}>
                         {/* Floating Blobs */}
                         <div className="absolute inset-0 pointer-events-none z-0" style={{
-                            background: 'radial-gradient(circle at 20% 30%, #FFD8B5 0%, transparent 40%), radial-gradient(circle at 80% 70%, var(--primary-light) 0%, transparent 40%)',
+                            background: 'radial-gradient(circle at 20% 30%, var(--primary-soft) 0%, transparent 40%), radial-gradient(circle at 80% 70%, var(--primary-glow) 0%, transparent 40%)',
                             opacity: 0.6
                         }} />
 
                         <div className="container mx-auto px-4 relative z-10">
                             <div className="text-center mb-10">
-                                <Badge variant="outline" className="mb-4 border-2 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-glow)] px-5 py-2 uppercase tracking-widest text-xs font-black shadow-[0_4px_15px_var(--primary-glow)] border-opacity-50" style={{ background: 'var(--primary-glow)', color: 'var(--primary)' }}>Why Choose Us</Badge>
+                                <Badge variant="outline" className="mb-4 border-2 border-[var(--primary)] text-[var(--primary)] bg-[var(--primary-glow)] px-5 py-2 uppercase tracking-widest text-xs font-black shadow-[0_4px_15px_var(--primary-glow)] border-opacity-50">Why Choose Us</Badge>
                             </div>
 
                             <div className={`grid ${cardAppearance?.layout === 'horizontal' ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-8 
@@ -528,6 +652,9 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
             }
 
             <CustomerAIChatCard />
+
+            {/* AI Search Modal */}
+            <AISearchModal open={showAISearch} onClose={() => setShowAISearch(false)} />
         </div>
     )
 }

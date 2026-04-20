@@ -429,20 +429,36 @@ export function ActivityLibrary({ onAddActivity, currentCity }: ActivityLibraryP
     const DEST_LIMIT = 6
 
     useEffect(() => {
+        // AbortController so rapid city-switches cancel the previous in-flight request
+        const controller = new AbortController()
+        let isCancelled = false
+
         const fetchAll = async () => {
             setLoading(true)
             try {
                 const data = await activitiesAPI.getAll({
                     city: currentCity === 'All Cities' ? undefined : currentCity
                 })
-                setAllActivities(data)
+                // Only update state if this request was NOT aborted
+                if (!isCancelled) {
+                    setAllActivities(data)
+                }
             } catch (error) {
-                console.error('Failed to fetch activities:', error)
+                if (!isCancelled) {
+                    console.error('Failed to fetch activities:', error)
+                }
             } finally {
-                setLoading(false)
+                if (!isCancelled) {
+                    setLoading(false)
+                }
             }
         }
         fetchAll()
+
+        return () => {
+            isCancelled = true
+            controller.abort()
+        }
     }, [currentCity])
 
     const destinationGroups = useMemo(() => {

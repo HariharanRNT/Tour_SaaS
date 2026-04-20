@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, update, delete, func
+from sqlalchemy import select, or_, and_, update, delete, func, over, text, union
 from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Activity, ActivityImage, User, UserRole, Destination, Package, PackageStatus
@@ -86,53 +86,81 @@ async def get_destinations(
     """
     Get all unique destinations and their activity counts with pagination.
     """
-    # Base cities from activities
-    base_cities_stmt = (
-        select(Activity.destination_city)
-        .where(
-            or_(
-                Activity.agent_id == None,
-                Activity.agent_id == current_user.agent_id
-            )
+    # 1. Cities from activities
+    act_cities = select(Activity.destination_city.label("city")).where(
+        or_(
+            Activity.agent_id == None,
+            Activity.agent_id == current_user.agent_id
         )
-        .group_by(Activity.destination_city)
+    )
+    # 2. Cities from metadata override list
+    meta_cities = select(Destination.name.label("city")).where(
+        Destination.agent_id == current_user.agent_id
     )
     
+    combined_cities_stmt = union(act_cities, meta_cities).subquery()
+    base_cities = select(combined_cities_stmt.c.city).group_by(combined_cities_stmt.c.city).subquery()
+    
     # Get total count
-    count_stmt = select(func.count()).select_from(base_cities_stmt.subquery())
+    count_stmt = select(func.count()).select_from(base_cities)
     count_result = await db.execute(count_stmt)
     total_count = count_result.scalar() or 0
     
-    # Get paginated results with metadata and package counts
+    # Metadata resolution subquery: prioritize agent-specific records over system defaults
+    metadata_priority = select(
+        Destination.name,
+        Destination.country,
+        Destination.description,
+        Destination.image_url,
+        Destination.is_popular,
+        Destination.is_active,
+        Destination.display_order,
+        over(
+            func.row_number(),
+            partition_by=Destination.name,
+            order_by=Destination.agent_id.desc() # Non-null agent_id comes first
+        ).label("rn")
+    ).where(
+        or_(Destination.agent_id == current_user.agent_id, Destination.agent_id == None)
+    ).subquery()
+    
+    resolved_dest = select(metadata_priority).where(text("rn = 1")).subquery()
+
+    # Get paginated results with metadata and activity counts
+    # DRIVE the query from the UNION above ensuring we find cities without activities (like Tokyo)
     stmt = (
         select(
-            Activity.destination_city, 
+            base_cities.c.city.label("destination_city"),
             func.count(Activity.id).label("activity_count"),
-            Destination.country,
-            Destination.description,
-            Destination.image_url,
-            Destination.is_popular,
-            Destination.is_active,
-            Destination.display_order
+            resolved_dest.c.country,
+            resolved_dest.c.description,
+            resolved_dest.c.image_url,
+            resolved_dest.c.is_popular,
+            resolved_dest.c.is_active,
+            resolved_dest.c.display_order
         )
-        .outerjoin(Destination, Activity.destination_city == Destination.name)
-        .where(
-            or_(
-                Activity.agent_id == None,
-                Activity.agent_id == current_user.agent_id
+        .select_from(base_cities)
+        .outerjoin(
+            Activity,
+            and_(
+                base_cities.c.city == Activity.destination_city,
+                or_(Activity.agent_id == None, Activity.agent_id == current_user.agent_id)
             )
         )
-        .group_by(
-            Activity.destination_city, 
-            Destination.id, # Include ID for uniqueness if name is not enough
-            Destination.country, 
-            Destination.description, 
-            Destination.image_url, 
-            Destination.is_popular, 
-            Destination.is_active, 
-            Destination.display_order
+        .outerjoin(
+            resolved_dest, 
+            base_cities.c.city == resolved_dest.c.name
         )
-        .order_by(Activity.destination_city)
+        .group_by(
+            base_cities.c.city, 
+            resolved_dest.c.country, 
+            resolved_dest.c.description, 
+            resolved_dest.c.image_url, 
+            resolved_dest.c.is_popular, 
+            resolved_dest.c.is_active, 
+            resolved_dest.c.display_order
+        )
+        .order_by(base_cities.c.city)
         .offset((page - 1) * limit)
         .limit(limit)
     )
@@ -140,11 +168,16 @@ async def get_destinations(
     result = await db.execute(stmt)
     rows = result.all()
     
-    # Get package counts for these cities
+    # Get package counts for these cities (Agency-wide packages)
     cities = [row.destination_city for row in rows]
     pkg_count_stmt = (
         select(Package.destination, func.count(Package.id).label("pkg_count"))
-        .where(Package.destination.in_(cities))
+        .where(
+            and_(
+                Package.destination.in_(cities),
+                Package.created_by == current_user.agent_id
+            )
+        )
         .group_by(Package.destination)
     )
     pkg_result = await db.execute(pkg_count_stmt)
@@ -182,8 +215,13 @@ async def update_destination_metadata(
     Create or update destination metadata (image, description, etc.)
     """
 
-    # Check if exists
-    stmt = select(Destination).where(Destination.name == metadata.name)
+    # Check if exists (specifically for this agent)
+    stmt = select(Destination).where(
+        and_(
+            Destination.name == metadata.name,
+            Destination.agent_id == current_user.id
+        )
+    )
     result = await db.execute(stmt)
     db_dest = result.scalar_one_or_none()
     
@@ -216,8 +254,9 @@ async def update_destination_metadata(
             package_count=pkg_count
         )
     else:
-        # Create
+        # Create new agent-specific metadata
         db_dest = Destination(**metadata.model_dump())
+        db_dest.agent_id = current_user.id
         db.add(db_dest)
     
     await db.commit()
@@ -256,8 +295,13 @@ async def update_destination(
     Update destination metadata and handle renaming across the system.
     """
 
-    # Check if exists
-    stmt = select(Destination).where(Destination.name == old_name)
+    # Check if exists for this agent
+    stmt = select(Destination).where(
+        and_(
+            Destination.name == old_name,
+            Destination.agent_id == current_user.agent_id
+        )
+    )
     result = await db.execute(stmt)
     db_dest = result.scalar_one_or_none()
     
@@ -273,26 +317,41 @@ async def update_destination(
         if not act_res.scalar_one_or_none() and not pkg_res.scalar_one_or_none():
             raise HTTPException(status_code=404, detail=f"Destination '{old_name}' not found in activities or metadata")
             
-        # Create the metadata record
-        db_dest = Destination(name=old_name, country=metadata.country or "Unknown")
+        # Create the metadata record for this agent
+        db_dest = Destination(
+            name=old_name, 
+            country=metadata.country or "Unknown",
+            agent_id=current_user.agent_id
+        )
         db.add(db_dest)
 
     new_name = metadata.name
     
     # If name is being changed, we need to update references
     if new_name and new_name != old_name:
-        # Check if new name already exists elsewhere
-        check_stmt = select(Destination).where(Destination.name == new_name)
+        # Check if new name already exists for this agent
+        check_stmt = select(Destination).where(
+            and_(
+                Destination.name == new_name,
+                Destination.agent_id == current_user.agent_id
+            )
+        )
         check_result = await db.execute(check_stmt)
         if check_result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail=f"Destination '{new_name}' already exists")
 
         # Update activities
-        act_update_stmt = update(Activity).where(Activity.destination_city == old_name).values(destination_city=new_name)
+        act_update_stmt = update(Activity).where(
+            Activity.destination_city == old_name,
+            Activity.agent_id == current_user.agent_id
+        ).values(destination_city=new_name)
         await db.execute(act_update_stmt)
 
         # Update packages
-        pkg_update_stmt = update(Package).where(Package.destination == old_name).values(destination=new_name)
+        pkg_update_stmt = update(Package).where(
+            Package.destination == old_name,
+            Package.created_by == current_user.agent_id
+        ).values(destination=new_name)
         await db.execute(pkg_update_stmt)
 
     # Update Destination metadata
@@ -303,12 +362,18 @@ async def update_destination(
     await db.commit()
     await db.refresh(db_dest)
     
-    # Get counts for return
-    act_count_stmt = select(func.count()).where(Activity.destination_city == db_dest.name)
+    # Get counts for return (Agency-wide)
+    act_count_stmt = select(func.count()).where(
+        Activity.destination_city == db_dest.name,
+        or_(Activity.agent_id == None, Activity.agent_id == current_user.agent_id)
+    )
     act_count_res = await db.execute(act_count_stmt)
     act_count = act_count_res.scalar() or 0
     
-    pkg_count_stmt = select(func.count()).where(Package.destination == db_dest.name)
+    pkg_count_stmt = select(func.count()).where(
+        Package.destination == db_dest.name,
+        Package.created_by == current_user.agent_id
+    )
     pkg_count_res = await db.execute(pkg_count_stmt)
     pkg_count = pkg_count_res.scalar() or 0
     

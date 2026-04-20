@@ -391,7 +391,8 @@ class Destination(Base):
     __tablename__ = "popular_destinations" # Re-use existing table name for simplicity or we can migrate later
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, index=True, nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     country = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     image_url = Column(String, nullable=True)
@@ -400,6 +401,8 @@ class Destination(Base):
     display_order = Column(Integer, default=999) # Added to match trip_planner.py query
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint("name", "agent_id", name="uq_destination_name_agent"),)
 
     # Relationships
     packages = relationship("Package", back_populates="dest_metadata", primaryjoin="Destination.name == Package.destination", foreign_keys="[Package.destination]", viewonly=True)
@@ -976,3 +979,46 @@ class SubUserPermission(Base):
 
     # Relationships
     sub_user = relationship("SubUser", back_populates="permissions")
+
+
+# ─────────────────────────────────────────────────────────────
+# Centralized API Logging
+# ─────────────────────────────────────────────────────────────
+class APILog(Base):
+    """
+    Stores a structured log entry for every API request/response.
+    Written asynchronously by APILoggerMiddleware so it never
+    impacts API response time.
+    """
+    __tablename__ = "api_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Request metadata
+    method          = Column(String(10),  nullable=False, index=True)
+    endpoint        = Column(String(500), nullable=False, index=True)
+    query_params    = Column(JSON,        nullable=True)
+    request_body    = Column(JSON,        nullable=True)
+    request_headers = Column(JSON,        nullable=True)
+
+    # Response metadata
+    status_code   = Column(Integer, nullable=False, index=True)
+    status        = Column(String(10), nullable=False, index=True)   # "success" | "error"
+    response_body = Column(JSON,       nullable=True)
+    duration_ms   = Column(Float,      nullable=True)
+
+    # Error details
+    error_type    = Column(String(50), nullable=True, index=True)
+    error_message = Column(Text,       nullable=True)
+    stack_trace   = Column(Text,       nullable=True)
+
+    # Caller context
+    user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_role  = Column(String(30),  nullable=True)
+    ip_address = Column(String(50),  nullable=True)
+    user_agent = Column(String(500), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], lazy="noload")

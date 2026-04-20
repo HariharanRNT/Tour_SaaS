@@ -471,7 +471,7 @@ export default function AgentDashboard() {
             const user = JSON.parse(userStr)
             const role = user.role?.toLowerCase()
             if (role !== 'agent' && role !== 'sub_user') {
-                router.push('/packages') // Redirect non-agent staff/owners
+                router.push('/plan-trip') // Redirect non-agent staff/owners
                 return
             }
             setAgentName(user.first_name || 'Agent')
@@ -688,7 +688,7 @@ export default function AgentDashboard() {
                             {showCreateNew && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 shadow-lg shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow)]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
+                                        <Button className="bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white border-0 shadow-lg shadow-[var(--button-glow)] hover:shadow-[var(--button-glow)]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-200 rounded-full px-6">
                                             <Plus className="mr-2 h-4 w-4" />
                                             Create New
                                             <ChevronDown className="ml-2 h-3 w-3 opacity-70" />
@@ -1191,7 +1191,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                     Go to Packages
                                                 </Button>
                                             </CardContent>
@@ -1217,7 +1217,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                     View Bookings
                                                 </Button>
                                             </CardContent>
@@ -1240,7 +1240,7 @@ export default function AgentDashboard() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                     Manage Plan
                                                 </Button>
                                             </CardContent>
@@ -1264,7 +1264,7 @@ export default function AgentDashboard() {
                                                     </div>
                                                 </CardHeader>
                                                 <CardContent>
-                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                         Configure Settings
                                                     </Button>
                                                 </CardContent>
@@ -1289,7 +1289,7 @@ export default function AgentDashboard() {
                                                     </div>
                                                 </CardHeader>
                                                 <CardContent>
-                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--primary-glow)', padding: '12px 24px' }}>
+                                                    <Button className="w-full text-white text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', borderRadius: '100px', border: 'none', boxShadow: '0 6px 20px var(--button-glow)', padding: '12px 24px' }}>
                                                         View Reports
                                                     </Button>
                                                 </CardContent>

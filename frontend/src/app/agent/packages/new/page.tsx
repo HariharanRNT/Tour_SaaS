@@ -154,7 +154,7 @@ export default function CreatePackagePage() {
     })
 
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
-    
+
     // Duplicate day validation for cancellation rules
     const duplicateDayIndices = formData.cancellation_rules
         .map((r, i) => ({ days: r.daysBefore, index: i }))
@@ -591,14 +591,14 @@ export default function CreatePackagePage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
-                    ...formData, 
+                body: JSON.stringify({
+                    ...formData,
                     gst_applicable: gstApplicableFinal,
                     // Clear GST details when not applicable — prevents default values (18%, exclusive)
                     // from being persisted to the database
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
-                    cancellation_rules: sanitisedRules 
+                    cancellation_rules: sanitisedRules
                 })
             })
 
@@ -761,7 +761,7 @@ export default function CreatePackagePage() {
         return (
             <div className="pkg-creation-root min-h-screen flex items-center justify-center">
                 <div className="text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)] animate-spin mx-auto" />
+                    <div className="w-16 h-16 rounded-full border-4 border-[var(--button-glow)] border-t-[var(--button-bg)] animate-spin mx-auto" />
                     <p className="text-black font-semibold text-lg">Loading package details...</p>
                     <p className="text-black/60 text-sm">Please wait while we fetch your saved data</p>
                 </div>
@@ -937,7 +937,7 @@ export default function CreatePackagePage() {
                                         <div
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
-                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                background: 'linear-gradient(135deg, var(--button-bg) 0%, var(--button-bg-light) 100%)',
                                                 left: formData.package_mode === 'single' ? '4px' : 'calc(50%)'
                                             }}
                                         />
@@ -1096,7 +1096,7 @@ export default function CreatePackagePage() {
                                                         {/* Leg Number Badge */}
                                                         <div
                                                             className="absolute -top-3 -left-3 w-7 h-7 flex items-center justify-center rounded-full text-white text-xs font-bold shadow-md z-10"
-                                                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
+                                                            style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))' }}
                                                         >
                                                             {index + 1}
                                                         </div>
@@ -1282,7 +1282,7 @@ export default function CreatePackagePage() {
                                             />
                                             <span className="duration-unit text-black">Nights</span>
                                         </div>
- 
+
                                         {/* Days */}
                                         <div className="duration-half flex-1">
                                             <Calendar className="duration-icon text-black" />
@@ -1338,7 +1338,7 @@ export default function CreatePackagePage() {
                                 {/* Booking Type Selection */}
                                 <div className="space-y-3 md:col-span-2">
                                     <Label className="text-xs font-bold text-black uppercase tracking-wider">Booking Type</Label>
-                                    <div 
+                                    <div
                                         className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
                                         style={{
                                             background: 'rgba(255,255,255,0.18)',
@@ -1349,10 +1349,10 @@ export default function CreatePackagePage() {
                                         <div
                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
                                             style={{
-                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                background: 'linear-gradient(135deg, var(--button-bg) 0%, var(--button-bg-light) 100%)',
                                                 borderRadius: '50px',
                                                 left: formData.booking_type === 'INSTANT' ? '4px' : 'calc(50%)',
-                                                boxShadow: '0 4px 16px var(--primary-glow)'
+                                                boxShadow: '0 4px 16px var(--button-glow)'
                                             }}
                                         />
                                         <button
@@ -1462,10 +1462,10 @@ export default function CreatePackagePage() {
                                                         <div
                                                             className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
                                                             style={{
-                                                                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)',
+                                                                background: 'linear-gradient(135deg, var(--button-bg) 0%, var(--button-bg-light) 100%)',
                                                                 borderRadius: '50px',
                                                                 left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
-                                                                boxShadow: '0 4px 16px var(--primary-glow)'
+                                                                boxShadow: '0 4px 16px var(--button-glow)'
                                                             }}
                                                         />
 
@@ -1678,8 +1678,8 @@ export default function CreatePackagePage() {
                                                         }}
                                                         className={cn(
                                                             "h-8 text-sm transition-all duration-300",
-                                                            duplicateDayIndices.includes(idx) 
-                                                                ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10" 
+                                                            duplicateDayIndices.includes(idx)
+                                                                ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10"
                                                                 : "bg-white/80"
                                                         )}
                                                         placeholder="e.g. 7"
@@ -1774,14 +1774,14 @@ export default function CreatePackagePage() {
                                         {agentGstApplicable ? (
                                             <>
                                                 <p className="!text-black font-semibold">Example: <span className="font-normal">Package Price = ₹1,000 + ₹180 GST (18%) = ₹1,180 Total</span></p>
-                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> on <b>Base Fare</b> (₹1,000 refundable)</p>
-                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> on <b>Total Fare</b> (₹295 refundable)</p>
+                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> on <b>Base Fare</b> (₹1,000 is refundable)</p>
+                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> on <b>Total Fare</b> (₹295 is refundable)</p>
                                             </>
                                         ) : (
                                             <>
                                                 <p className="!text-black font-semibold">Example: <span className="font-normal">Package Price = ₹1,000 Total</span></p>
-                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> (₹1,000 refundable)</p>
-                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> (₹250 refundable)</p>
+                                                <p className="mt-1 !text-black">1) Cancel 10 days before travel → <span className="font-bold">100% refund</span> (₹1,000 is refundable)</p>
+                                                <p className="!text-black">2) Cancel 5 days before travel → <span className="font-bold">25% refund</span> (₹250 is refundable)</p>
                                             </>
                                         )}
                                     </div>
@@ -2011,7 +2011,7 @@ export default function CreatePackagePage() {
                                                 )}>
                                                     <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} stroke="black" />
                                                 </div>
-                                                 <div>
+                                                <div>
                                                     <h4 className="font-bold text-black">Include Flights</h4>
                                                     <p className="text-xs text-black opacity-80">Enable live fare search for customers</p>
                                                 </div>
@@ -2032,7 +2032,7 @@ export default function CreatePackagePage() {
 
                                         {formData.flights_enabled && (
                                             <div className="px-5 pb-6 pt-2 border-t border-[var(--primary)]/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
-                                                 <div className="space-y-2">
+                                                <div className="space-y-2">
                                                     <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Supported Origin Airports</Label>
                                                     <Textarea
                                                         placeholder="e.g. MAA, BOM, DEL (Comma separated)"
@@ -2049,7 +2049,7 @@ export default function CreatePackagePage() {
                                                 </div>
 
                                                 <div className="space-y-4">
-                                                     <div className="space-y-2">
+                                                    <div className="space-y-2">
                                                         <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Cabin Class Preference</Label>
                                                         <div className="flex gap-2">
                                                             {['ECONOMY', 'BUSINESS'].map(cls => (
@@ -2071,7 +2071,7 @@ export default function CreatePackagePage() {
                                                     </div>
 
                                                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/40 border border-black/10">
-                                                         <div>
+                                                        <div>
                                                             <Label className="text-[11px] font-bold text-black">Flight Price Included?</Label>
                                                             <p className="text-[10px] text-black opacity-70">Check if price is part of base package</p>
                                                         </div>
@@ -2082,7 +2082,7 @@ export default function CreatePackagePage() {
                                                     </div>
                                                 </div>
 
-                                                 <div className="md:col-span-2 space-y-2">
+                                                <div className="md:col-span-2 space-y-2">
                                                     <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Baggage & Additional Notes</Label>
                                                     <Input
                                                         placeholder="e.g. 15kg Check-in + 7kg Cabin included"
@@ -2107,7 +2107,7 @@ export default function CreatePackagePage() {
                                         <div className="p-2.5 orange-gradient-badge rounded-xl text-black shadow-lg group-hover:scale-110 transition-transform">
                                             <FileText className="w-5 h-5" stroke="black" />
                                         </div>
-                                         <div>
+                                        <div>
                                             <h3 className="font-serif text-lg font-bold text-black">Description</h3>
                                             <p className="text-[11px] text-black font-bold opacity-80">Craft a compelling story for your travelers</p>
                                         </div>
@@ -2382,7 +2382,7 @@ export default function CreatePackagePage() {
                                         </p>
                                     </div>
                                     <div className="space-y-6">
-                                         {formData.activities.length > 0 && (
+                                        {formData.activities.length > 0 && (
                                             <div>
                                                 <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Activities</h3>
                                                 <div className="flex flex-wrap gap-2">
@@ -2440,7 +2440,7 @@ export default function CreatePackagePage() {
                                 else if (activeStep === 2) setActiveStep(1)
                                 else if (activeStep === 3) setActiveStep(2)
                             }}
-                            className="text-black hover:text-[var(--primary)] font-bold px-4 h-11"
+                            className="text-black hover:text-[var(--button-bg)] font-bold px-4 h-11"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             {activeStep === 1 && 'Back to Packages'}
@@ -2462,7 +2462,7 @@ export default function CreatePackagePage() {
                             <Button
                                 variant="ghost"
                                 onClick={() => window.open(`/plan-trip/${formData.slug}?mode=preview`, '_blank')}
-                                className="h-11 px-4 text-black hover:text-[var(--primary)] hover:bg-black/5 font-bold"
+                                className="h-11 px-4 text-black hover:text-[var(--button-bg)] hover:bg-black/5 font-bold"
                             >
                                 <Eye className="w-4 h-4 mr-2" />
                                 Preview
@@ -2473,7 +2473,7 @@ export default function CreatePackagePage() {
                                 variant="outline"
                                 onClick={handleSaveDraftOnly}
                                 disabled={saving}
-                                className="h-11 px-6 rounded-full border border-[var(--primary)]/20 text-[var(--primary)] bg-white/50 hover:bg-[var(--primary)]/5 font-medium shadow-sm mr-2"
+                                className="h-11 px-6 rounded-full border border-[var(--button-bg)]/20 text-[var(--button-bg)] bg-white/50 hover:bg-[var(--button-bg)]/5 font-medium shadow-sm mr-2"
                             >
                                 <Save className="w-4 h-4 mr-2" />
                                 Save Draft

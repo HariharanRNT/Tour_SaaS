@@ -39,7 +39,7 @@ export function ThemeProvider({
 
     // Helper to apply root variables
     const applyColors = (s: any) => {
-        const root = document.body;
+        const root = document.documentElement;
         if (!root || !s) return;
 
         if (!isExemptPath) {
@@ -54,6 +54,18 @@ export function ThemeProvider({
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         };
 
+        const lightenHex = (hex: string, amount: number) => {
+            if (!hex || hex.length < 7) return hex;
+            let r_ = parseInt(hex.slice(1, 3), 16);
+            let g_ = parseInt(hex.slice(3, 5), 16);
+            let b_ = parseInt(hex.slice(5, 7), 16);
+            r_ = Math.min(255, Math.floor(r_ + (255 - r_) * amount));
+            g_ = Math.min(255, Math.floor(g_ + (255 - g_) * amount));
+            b_ = Math.min(255, Math.floor(b_ + (255 - b_) * amount));
+            const getHex = (n: number) => n.toString(16).padStart(2, '0');
+            return `#${getHex(r_)}${getHex(g_)}${getHex(b_)}`;
+        };
+
         // Direct mappings from Design File
         if (s.primaryColor) root.style.setProperty('--primary-color', s.primaryColor);
         if (s.secondaryColor) root.style.setProperty('--secondary-color', s.secondaryColor);
@@ -61,7 +73,12 @@ export function ThemeProvider({
         if (s.navbarSettings?.bgColor) root.style.setProperty('--navbar-bg', s.navbarSettings.bgColor);
         if (s.navbarSettings?.textColor) root.style.setProperty('--navbar-text', s.navbarSettings.textColor);
         
-        if (s.buttonStyle?.bgColor) root.style.setProperty('--button-bg', s.buttonStyle.bgColor);
+        const btnBg = s.buttonStyle?.bgColor || s.button_color;
+        if (btnBg) {
+            root.style.setProperty('--button-bg', btnBg);
+            root.style.setProperty('--button-bg-light', lightenHex(btnBg, 0.2));
+            root.style.setProperty('--button-glow', hexToRgba(btnBg, 0.25));
+        }
         if (s.buttonStyle?.textColor) {
             root.style.setProperty('--button-text', s.buttonStyle.textColor);
             root.style.setProperty('--button-text-color', s.buttonStyle.textColor);

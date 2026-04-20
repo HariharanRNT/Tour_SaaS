@@ -107,11 +107,11 @@ const DEFAULT_CUSTOM: CustomThemeColors = {
     glass: '#ccfbf1',
     navbarSettings: {
         bgColor: '',
-        textColor: '#ffffff'
+        textColor: ''
     },
     buttonStyle: {
         bgColor: '',
-        textColor: '#ffffff',
+        textColor: '',
         borderRadius: '0.75rem'
     },
     bg_color: '',
@@ -141,7 +141,10 @@ interface HomepageSettings {
     headline1: string; headline2: string; subheading: string;
     primaryBtnText: string; secondaryBtnText: string; backgroundImageUrl: string;
     navbar_logo_image: string;
-    badgeText: string; showAiBadge: boolean;
+    favicon_url?: string;
+    showAISearch: boolean;
+    aiSearchBtnText: string;
+    aiSearchTagline: string;
     agency_name?: string;
 }
 const DEFAULT_HOMEPAGE: HomepageSettings = {
@@ -150,7 +153,10 @@ const DEFAULT_HOMEPAGE: HomepageSettings = {
     primaryBtnText: 'Start Your Journey', secondaryBtnText: 'See Sample Itinerary',
     backgroundImageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop',
     navbar_logo_image: 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png',
-    badgeText: 'AI-Powered Trip Planning', showAiBadge: true
+    favicon_url: '',
+    showAISearch: true,
+    aiSearchBtnText: 'Try AI Search',
+    aiSearchTagline: '— just describe your dream trip'
 };
 
 interface PageSettings {
@@ -315,12 +321,12 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
     // Design System Defaults
     buttonStyle: {
         bgColor: '',
-        textColor: '#ffffff',
+        textColor: '',
         borderRadius: '0.75rem'
     },
     navbarSettings: {
         bgColor: '',
-        textColor: '#ffffff'
+        textColor: ''
     },
     activeTheme: 'default',
     primaryColor: '',
@@ -343,7 +349,7 @@ type TabId = typeof TABS[number]['id'];
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
     return (
         <div className="flex items-center justify-between py-2">
-            <span className="text-sm font-semibold text-[var(--color-primary-font)]/70">{label}</span>
+            <span className="text-sm font-semibold text-black">{label}</span>
             <button onClick={() => onChange(!checked)}
                 className={`relative w-11 h-6 rounded-full transition-all duration-200 focus:outline-none ${checked ? 'bg-[var(--primary)]' : 'bg-slate-200'}`}>
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -359,7 +365,7 @@ function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNod
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-[var(--primary-glow)] rounded-xl text-[var(--primary)]">{icon}</div>
-                    <div><CardTitle className="text-base font-bold text-[var(--color-primary-font)]">{title}</CardTitle><CardDescription className="text-xs text-black font-semibold">{subtitle}</CardDescription></div>
+                    <div><CardTitle className="text-base font-bold text-black">{title}</CardTitle><CardDescription className="text-xs text-black font-semibold">{subtitle}</CardDescription></div>
                 </div>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">{children}</CardContent>
@@ -394,11 +400,17 @@ export default function AgentThemeSettingsPage() {
     const [hpSettings, setHpSettings] = useState<HomepageSettings>(DEFAULT_HOMEPAGE);
     const [showUrlInput, setShowUrlInput] = useState(false);
     const [imageUrlDraft, setImageUrlDraft] = useState('');
+    const [showLogoUrlInput, setShowLogoUrlInput] = useState(false);
+    const [logoUrlDraft, setLogoUrlDraft] = useState('');
+    const [showFaviconUrlInput, setShowFaviconUrlInput] = useState(false);
+    const [faviconUrlDraft, setFaviconUrlDraft] = useState('');
     const [hpSaving, setHpSaving] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
     const [logoUploading, setLogoUploading] = useState(false);
+    const [faviconUploading, setFaviconUploading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const logoRef = useRef<HTMLInputElement>(null);
+    const faviconRef = useRef<HTMLInputElement>(null);
 
     // Feature cards state
     const [featureCards, setFeatureCards] = useState<FeatureCard[]>(DEFAULT_FEATURE_CARDS);
@@ -486,7 +498,6 @@ export default function AgentThemeSettingsPage() {
         } catch (e) {
             console.error('UI style localStorage quota exceeded:', e);
         }
-        toast.success('UI style updated!', { position: 'bottom-right' });
     };
 
     // Mount: restore all settings
@@ -544,12 +555,12 @@ export default function AgentThemeSettingsPage() {
                                 primary: hs.primaryColor || hs.primary_color || '#F97316',
                                 secondary: hs.secondaryColor || hs.secondary_color || prev.secondary,
                                 navbarSettings: {
-                                    bgColor: hs.navbarSettings?.bgColor || hs.nav_bg || '',
-                                    textColor: hs.navbarSettings?.textColor || '#ffffff'
+                                    bgColor: hs.navbarSettings?.bgColor || '',
+                                    textColor: hs.navbarSettings?.textColor || ''
                                 },
                                 buttonStyle: {
-                                    bgColor: hs.buttonStyle?.bgColor || hs.button_color || '',
-                                    textColor: hs.buttonStyle?.textColor || '#ffffff',
+                                    bgColor: hs.buttonStyle?.bgColor || '',
+                                    textColor: hs.buttonStyle?.textColor || '',
                                     borderRadius: hs.buttonStyle?.borderRadius || '0.75rem'
                                 },
                                 bg_color: hs.bg_color || '',
@@ -614,6 +625,26 @@ export default function AgentThemeSettingsPage() {
 
         toast.success('Theme updated!', { position: 'bottom-right' });
     };
+    const hexToRgba = (hex: string, alpha: number) => {
+        if (!hex || hex.length < 7) return `rgba(0,0,0,${alpha})`;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    const lightenHex = (hex: string, amount: number) => {
+        if (!hex || hex.length < 7) return hex;
+        let r_ = parseInt(hex.slice(1, 3), 16);
+        let g_ = parseInt(hex.slice(3, 5), 16);
+        let b_ = parseInt(hex.slice(5, 7), 16);
+        r_ = Math.min(255, Math.floor(r_ + (255 - r_) * amount));
+        g_ = Math.min(255, Math.floor(g_ + (255 - g_) * amount));
+        b_ = Math.min(255, Math.floor(b_ + (255 - b_) * amount));
+        const getHex = (n: number) => n.toString(16).padStart(2, '0');
+        return `#${getHex(r_)}${getHex(g_)}${getHex(b_)}`;
+    };
+
     const handleApplyCustomTheme = async () => {
         const root = document.documentElement;
         const glassColor = customColors.secondary + '20'; // Standardize glass color
@@ -621,6 +652,10 @@ export default function AgentThemeSettingsPage() {
         root.style.setProperty('--primary', customColors.primary);
         root.style.setProperty('--primary-light', customColors.secondary);
         root.style.setProperty('--button-text-color', customColors.buttonStyle.textColor);
+        root.style.setProperty('--button-bg', customColors.buttonStyle.bgColor || customColors.primary);
+        root.style.setProperty('--button-bg-light', lightenHex(customColors.buttonStyle.bgColor || customColors.primary, 0.2));
+        root.style.setProperty('--button-glow', hexToRgba(customColors.buttonStyle.bgColor || customColors.primary, 0.25));
+        root.style.setProperty('--button-radius', customColors.buttonStyle.borderRadius);
         root.style.setProperty('--primary-soft', customColors.glass);
         root.style.setProperty('--primary-glow', hexToRgba(customColors.primary, 0.25));
         root.style.setProperty('--gradient-start', customColors.primary);
@@ -639,7 +674,11 @@ export default function AgentThemeSettingsPage() {
         setPageSettings(prev => ({
             ...prev,
             primary_color: customColors.primary,
-            secondary_color: customColors.secondary
+            secondary_color: customColors.secondary,
+            buttonStyle: customColors.buttonStyle,
+            navbarSettings: customColors.navbarSettings,
+            bg_color: customColors.bg_color,
+            accent_color: customColors.accent_color
         }));
 
         // PERSIST TO BACKEND IMMEDIATELY (Aligning with Design File)
@@ -804,7 +843,54 @@ export default function AgentThemeSettingsPage() {
         }
     };
 
+    const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setFaviconUploading(true);
+        const toastId = toast.loading('Optimizing and uploading favicon...');
+
+        try {
+            // Favicon should be small and square
+            const compressedFile = await compressImage(file, {
+                maxWidthOrHeight: 128, 
+                initialQuality: 0.9
+            });
+
+            const token = localStorage.getItem('token') || '';
+            const presignedRes = await fetch(`${API_URL}/api/v1/upload/presigned-url`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    file_name: compressedFile.name,
+                    content_type: compressedFile.type,
+                    folder: 'favicons'
+                })
+            });
+
+            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+            const { upload_url, file_url } = await presignedRes.json();
+
+            const success = await uploadToS3(compressedFile, upload_url);
+            if (!success) throw new Error('S3 upload failed');
+
+            hpField('favicon_url', file_url);
+            toast.success('Favicon updated successfully ✓', { id: toastId });
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || 'Favicon upload failed', { id: toastId });
+        } finally {
+            setFaviconUploading(false);
+            if (faviconRef.current) faviconRef.current.value = '';
+        }
+    };
+
     const handleApplyImageUrl = () => { if (imageUrlDraft.trim()) { hpField('backgroundImageUrl', imageUrlDraft.trim()); setShowUrlInput(false); setImageUrlDraft(''); } };
+    const handleApplyLogoUrl = () => { if (logoUrlDraft.trim()) { hpField('navbar_logo_image', logoUrlDraft.trim()); setShowLogoUrlInput(false); setLogoUrlDraft(''); } };
+    const handleApplyFaviconUrl = () => { if (faviconUrlDraft.trim()) { hpField('favicon_url', faviconUrlDraft.trim()); setShowFaviconUrlInput(false); setFaviconUrlDraft(''); } };
     const handleSaveHomepage = async () => {
         setHpSaving(true);
         const heroData = {
@@ -815,8 +901,10 @@ export default function AgentThemeSettingsPage() {
             secondaryBtnText: hpSettings.secondaryBtnText.trim() || DEFAULT_HOMEPAGE.secondaryBtnText,
             backgroundImageUrl: hpSettings.backgroundImageUrl || DEFAULT_HOMEPAGE.backgroundImageUrl,
             navbar_logo_image: hpSettings.navbar_logo_image || DEFAULT_HOMEPAGE.navbar_logo_image,
-            badgeText: hpSettings.badgeText.trim() || DEFAULT_HOMEPAGE.badgeText,
-            showAiBadge: hpSettings.showAiBadge,
+            favicon_url: hpSettings.favicon_url || DEFAULT_HOMEPAGE.favicon_url,
+            showAISearch: hpSettings.showAISearch,
+            aiSearchBtnText: hpSettings.aiSearchBtnText?.trim() || DEFAULT_HOMEPAGE.aiSearchBtnText,
+            aiSearchTagline: hpSettings.aiSearchTagline?.trim() || DEFAULT_HOMEPAGE.aiSearchTagline,
             agency_name: hpSettings.agency_name
         };
 
@@ -899,7 +987,14 @@ export default function AgentThemeSettingsPage() {
                 font_color: fontColor,
                 buttonStyle: {
                     ...pageSettings.buttonStyle,
-                    textColor: buttonTextColor
+                    bgColor: customColors.buttonStyle.bgColor || pageSettings.buttonStyle?.bgColor || '',
+                    textColor: buttonTextColor || '',
+                    borderRadius: customColors.buttonStyle.borderRadius || pageSettings.buttonStyle?.borderRadius || '0.75rem'
+                },
+                navbarSettings: {
+                    ...pageSettings.navbarSettings,
+                    bgColor: customColors.navbarSettings.bgColor || pageSettings.navbarSettings?.bgColor || '',
+                    textColor: customColors.navbarSettings.textColor || pageSettings.navbarSettings?.textColor || ''
                 }
             };
 
@@ -915,7 +1010,7 @@ export default function AgentThemeSettingsPage() {
                 const err = await res.json().catch(() => ({ detail: 'Save failed' }));
                 throw new Error(err.detail || 'Save failed');
             }
-            toast.success('Settings saved to cloud!', { position: 'bottom-right' });
+            toast.success(activeTab === 'uistyle' ? 'UI style updated!' : 'Settings saved to cloud!', { position: 'bottom-right' });
         } catch (err: any) {
             toast.error(`Cloud save failed: ${err.message}. Saved locally only.`);
         } finally {
@@ -991,9 +1086,9 @@ export default function AgentThemeSettingsPage() {
 
                             return (
                                 <div key={id} className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white/60 border border-white/60">
-                                    <div><p className="text-sm font-bold text-[var(--color-primary-font)]">{label}</p><p className="text-xs text-[var(--color-primary-font)]/70">{desc}</p></div>
+                                    <div><p className="text-sm font-bold text-black">{label}</p><p className="text-xs text-black/70">{desc}</p></div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono text-[var(--color-primary-font)]/70 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
+                                        <span className="text-xs font-mono text-black/70 uppercase">{currentVal || (isText ? '' : 'Auto')}</span>
                                         {isText ? (
                                             <Input
                                                 value={currentVal}
@@ -1015,22 +1110,22 @@ export default function AgentThemeSettingsPage() {
                             );
                         })}
                         <div className="flex gap-2 pt-1">
-                            <Button onClick={handleApplyCustomTheme} className="flex-1 h-10 text-white font-bold rounded-xl" style={{ background: `linear-gradient(135deg, ${previewColors.primary}, ${previewColors.secondary})` }}>
+                            <Button onClick={handleApplyCustomTheme} className="flex-1 h-10 text-black font-bold rounded-xl" style={{ background: `linear-gradient(135deg, ${previewColors.primary}, ${previewColors.secondary})` }}>
                                 <Wand2 className="h-4 w-4 mr-2" />Apply Theme
                             </Button>
-                            <Button onClick={handleRestoreDefault} variant="outline" className="h-10 rounded-xl text-slate-600">
+                            <Button onClick={handleRestoreDefault} variant="outline" className="h-10 rounded-xl text-black">
                                 <RotateCcw className="h-4 w-4 mr-1" />Reset
                             </Button>
                         </div>
                     </div>
                     {/* Live preview */}
-                    <div className="rounded-2xl p-4 text-white overflow-hidden mt-2" style={{ background: `linear-gradient(135deg, ${previewColors.primary}, ${previewColors.secondary})` }}>
+                    <div className="rounded-2xl p-4 text-black overflow-hidden mt-2" style={{ background: `linear-gradient(135deg, ${previewColors.primary}, ${previewColors.secondary})` }}>
                         <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Preview</p>
-                        <p className="text-lg font-extrabold">Agent Portal</p>
+                        <p className="text-lg font-extrabold text-black">Agent Portal</p>
                         <div className="flex gap-2 mt-3 flex-wrap">
-                            <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 border border-white/30">Primary</button>
-                            <button className="px-4 py-1.5 rounded-full text-xs font-bold border-2 border-white text-white bg-transparent">Outline</button>
-                            <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: hexToRgba(previewColors.glass, 0.3) }}>Badge</span>
+                            <button className="px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 border border-white/30 text-black">Primary</button>
+                            <button className="px-4 py-1.5 rounded-full text-xs font-bold border-2 border-black text-black bg-transparent">Outline</button>
+                            <span className="px-3 py-1 rounded-full text-xs font-bold text-black" style={{ background: hexToRgba(previewColors.glass, 0.3) }}>Badge</span>
                         </div>
                     </div>
                 </SectionCard>
@@ -1042,26 +1137,26 @@ export default function AgentThemeSettingsPage() {
         <div className="space-y-5">
             <SectionCard icon={<Home className="h-5 w-5" />} title="Hero Content" subtitle="Customize the hero text and buttons customers see">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Headline Line 1 <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Headline Line 2 <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 1 <span className="font-normal text-black/80">({hpSettings.headline1.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline1} onChange={e => hpField('headline1', e.target.value)} placeholder="Adventure Awaits—" className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Headline Line 2 <span className="font-normal text-black/80">({hpSettings.headline2.length}/40)</span></Label><Input maxLength={40} value={hpSettings.headline2} onChange={e => hpField('headline2', e.target.value)} placeholder="Tailored Just for You" className="h-10 rounded-xl glass-input" /></div>
                 </div>
-                <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Subheading <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
+                <div className="space-y-1"><Label className="text-xs font-bold text-black">Subheading <span className="font-normal text-black/80">({hpSettings.subheading.length}/160)</span></Label><Textarea maxLength={160} value={hpSettings.subheading} onChange={e => hpField('subheading', e.target.value)} className="rounded-xl glass-input resize-none min-h-[72px]" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Primary Button <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
-                    <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Secondary Button <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Primary Button <span className="font-normal text-black/80">({hpSettings.primaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.primaryBtnText} onChange={e => hpField('primaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
+                    <div className="space-y-1"><Label className="text-xs font-bold text-black">Secondary Button <span className="font-normal text-black/80">({hpSettings.secondaryBtnText.length}/25)</span></Label><Input maxLength={25} value={hpSettings.secondaryBtnText} onChange={e => hpField('secondaryBtnText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>
                 </div>
             </SectionCard>
 
             <SectionCard icon={<Palette className="h-5 w-5" />} title="Agency Brand Name" subtitle="The official name of your agency displayed across the platform">
                 <div className="space-y-1">
-                    <Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Company / Agency Name</Label>
+                    <Label className="text-xs font-bold text-black">Company / Agency Name</Label>
                     <Input
                         value={hpSettings.agency_name || ''}
                         onChange={e => hpField('agency_name', e.target.value)}
                         placeholder="e.g. Dream Travels"
                         className="h-10 rounded-xl glass-input w-full max-w-md"
                     />
-                    <p className="text-xs text-[var(--color-primary-font)]/60 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
+                    <p className="text-xs text-black/60 mt-1">This name will appear on the navbar, booking emails, and invoices.</p>
                 </div>
             </SectionCard>
 
@@ -1071,7 +1166,7 @@ export default function AgentThemeSettingsPage() {
                         {hpSettings.navbar_logo_image ? (
                             <img src={hpSettings.navbar_logo_image} alt="Logo Preview" className="w-full h-full object-contain p-2" />
                         ) : (
-                            <div className="text-[var(--color-primary-font)]/30 flex flex-col items-center">
+                            <div className="text-black/30 flex flex-col items-center">
                                 <Plane className="h-8 w-8 mb-1" />
                                 <span className="text-[10px] font-bold">DEFAULT</span>
                             </div>
@@ -1079,55 +1174,134 @@ export default function AgentThemeSettingsPage() {
                     </div>
                     <div className="flex-1 space-y-3 w-full">
                         <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-[var(--color-primary-font)]">Agency Logo</h4>
-                            <p className="text-xs text-[var(--color-primary-font)]/60">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
+                            <h4 className="text-sm font-bold text-black">Agency Logo</h4>
+                            <p className="text-xs text-black/60">Recommended size: 200x200px or higher. PNG with transparency preferred.</p>
                         </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70 bg-white">
-                                {logoUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" /> : <Upload className="h-4 w-4 mr-1.5" />}
+                        <div className="flex gap-2 flex-wrap">
+                            <Button variant="outline" onClick={() => logoRef.current?.click()} disabled={logoUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
+                                {logoUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
                                 {logoUploading ? 'Uploading…' : 'Upload Logo'}
                             </Button>
                             <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoUpload} />
+                            <Button variant="outline" onClick={() => setShowLogoUrlInput(!showLogoUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
                             {hpSettings.navbar_logo_image !== DEFAULT_HOMEPAGE.navbar_logo_image && (
-                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset to Default</Button>
+                                <Button variant="ghost" onClick={() => hpField('navbar_logo_image', DEFAULT_HOMEPAGE.navbar_logo_image)} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
                             )}
                         </div>
+                        {showLogoUrlInput && (
+                            <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
+                                <Input 
+                                    value={logoUrlDraft} 
+                                    onChange={e => setLogoUrlDraft(e.target.value)} 
+                                    placeholder="https://example.com/logo.png" 
+                                    className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                    onKeyDown={(e) => e.key === 'Enter' && handleApplyLogoUrl()}
+                                />
+                                <Button onClick={handleApplyLogoUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Favicon Section */}
+                <div className="mt-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-white/40 border border-white/60">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center">
+                        {hpSettings.favicon_url || hpSettings.navbar_logo_image ? (
+                            <img src={hpSettings.favicon_url || hpSettings.navbar_logo_image} alt="Favicon Preview" className="w-full h-full object-contain p-2" />
+                        ) : (
+                            <div className="text-black/30 flex flex-col items-center">
+                                <Globe className="h-6 w-6 mb-1" />
+                                <span className="text-[8px] font-bold uppercase">Favicon</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 space-y-3 w-full">
+                        <div className="space-y-1">
+                            <h4 className="text-sm font-bold text-black">Agency Favicon</h4>
+                            <p className="text-xs text-black/60">Recommended size: 32x32px or higher. Square (1:1) ratio is required.</p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            <Button variant="outline" onClick={() => faviconRef.current?.click()} disabled={faviconUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white">
+                                {faviconUploading ? <RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" /> : <Upload className="h-4 w-4 mr-1.5 text-black" />}
+                                {faviconUploading ? 'Uploading…' : 'Upload Favicon'}
+                            </Button>
+                            <input ref={faviconRef} type="file" accept="image/x-icon,image/png,image/jpeg,image/webp" className="hidden" onChange={handleFaviconUpload} />
+                            <Button variant="outline" onClick={() => setShowFaviconUrlInput(!showFaviconUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70 bg-white"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
+                            {hpSettings.favicon_url && (
+                                <Button variant="ghost" onClick={() => hpField('favicon_url', '')} className="h-9 rounded-xl text-xs text-[var(--color-primary-font)]/70 hover:text-red-500">Reset</Button>
+                            )}
+                        </div>
+                        {showFaviconUrlInput && (
+                            <div className="flex gap-2 pt-2 animate-in slide-in-from-top-1 duration-200">
+                                <Input 
+                                    value={faviconUrlDraft} 
+                                    onChange={e => setFaviconUrlDraft(e.target.value)} 
+                                    placeholder="https://example.com/favicon.png" 
+                                    className="h-9 rounded-xl glass-input flex-1 text-xs" 
+                                    onKeyDown={(e) => e.key === 'Enter' && handleApplyFaviconUrl()}
+                                />
+                                <Button onClick={handleApplyFaviconUrl} className="h-9 rounded-xl px-4 !text-black font-bold text-xs" style={{ background: 'var(--primary)' }}>Apply</Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </SectionCard>
 
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Background Image" subtitle="Set the hero section full-screen background">
                 <div className="relative w-full h-[160px] rounded-2xl overflow-hidden border border-white/40 bg-slate-100">
-                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-[var(--color-primary-font)]/70 text-sm">No image selected</div>}
-                    <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 text-white text-[10px] rounded backdrop-blur-sm">Preview</div>
+                    {hpSettings.backgroundImageUrl ? <img src={hpSettings.backgroundImageUrl} alt="Preview" className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-black/70 text-sm">No image selected</div>}
+                    <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-white/50 text-black text-[10px] rounded backdrop-blur-sm">Preview</div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70">
-                        {imageUploading ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />Uploading…</> : <><Upload className="h-4 w-4 mr-1.5" />Upload to S3</>}
+                    <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={imageUploading} className="h-9 rounded-xl text-sm border-slate-200 text-black/70">
+                        {imageUploading ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin text-black" />Uploading…</> : <><Upload className="h-4 w-4 mr-1.5 text-black" />Upload to S3</>}
                     </Button>
                     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileUpload} />
-                    <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-[var(--color-primary-font)]/70"><LinkIcon className="h-4 w-4 mr-1.5" />Use URL</Button>
+                    <Button variant="outline" onClick={() => setShowUrlInput(!showUrlInput)} className="h-9 rounded-xl text-sm border-slate-200 text-black/70"><LinkIcon className="h-4 w-4 mr-1.5 text-black" />Use URL</Button>
                 </div>
                 {showUrlInput && (
-                    <div className="flex gap-2"><Input value={imageUrlDraft} onChange={e => setImageUrlDraft(e.target.value)} placeholder="https://…" className="h-9 rounded-xl glass-input flex-1" /><Button onClick={handleApplyImageUrl} className="h-9 rounded-xl px-4 text-white" style={{ background: 'var(--primary)' }}>Apply</Button></div>
+                    <div className="flex gap-2"><Input value={imageUrlDraft} onChange={e => setImageUrlDraft(e.target.value)} placeholder="https://…" className="h-9 rounded-xl glass-input flex-1" /><Button onClick={handleApplyImageUrl} className="h-9 rounded-xl px-4 !text-black font-bold" style={{ background: 'var(--primary)' }}>Apply</Button></div>
                 )}
                 <div>
-                    <p className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase tracking-wider mb-2">Quick Presets</p>
+                    <p className="text-xs font-bold text-black/60 uppercase tracking-wider mb-2">Quick Presets</p>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                         {PRESET_IMAGES.map(img => (
                             <button key={img.label} onClick={() => hpField('backgroundImageUrl', img.url)}
                                 className={`relative rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${hpSettings.backgroundImageUrl === img.url ? 'border-[var(--primary)] shadow-lg' : 'border-transparent'}`}>
                                 <img src={img.url} alt={img.label} className="w-full h-14 object-cover" />
-                                <div className="absolute inset-0 bg-black/30 flex items-end p-1"><span className="text-white text-[9px] font-bold">{img.label}</span></div>
+                                <div className="absolute inset-0 bg-white/30 flex items-end p-1"><span className="text-black text-[9px] font-bold">{img.label}</span></div>
                             </button>
                         ))}
                     </div>
                 </div>
             </SectionCard>
 
-            <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-[var(--color-primary-font)]/70 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Badge" subtitle="Configure the badge pill shown in the hero section">
-                <ToggleSwitch checked={hpSettings.showAiBadge} onChange={v => hpField('showAiBadge', v)} label="Show AI Badge" />
-                {hpSettings.showAiBadge && <div className="space-y-1"><Label className="text-xs font-bold text-[var(--color-primary-font)]/70">Badge Text <span className="font-normal text-[var(--color-primary-font)]/80">({hpSettings.badgeText.length}/30)</span></Label><Input maxLength={30} value={hpSettings.badgeText} onChange={e => hpField('badgeText', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
+            <SectionCard icon={<Badge className="h-5 w-5 bg-transparent border-0 text-black/70 p-0"><Sparkles className="h-5 w-5" /></Badge>} title="AI Search Button" subtitle="Control the visibility and text of the AI search bar button in the hero section">
+                <ToggleSwitch checked={hpSettings.showAISearch} onChange={v => hpField('showAISearch', v)} label="Show AI Search button" />
+                {hpSettings.showAISearch && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-black/70">Button Label</Label>
+                            <Input 
+                                maxLength={30} 
+                                value={hpSettings.aiSearchBtnText} 
+                                onChange={e => hpField('aiSearchBtnText', e.target.value)} 
+                                className="h-10 rounded-xl glass-input"
+                                placeholder="Try AI Search"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-bold text-black/70">Tagline / Helper Text</Label>
+                            <Input 
+                                maxLength={60} 
+                                value={hpSettings.aiSearchTagline} 
+                                onChange={e => hpField('aiSearchTagline', e.target.value)} 
+                                className="h-10 rounded-xl glass-input"
+                                placeholder="— just describe your dream trip"
+                            />
+                        </div>
+                    </div>
+                )}
             </SectionCard>
 
             {/* Feature Cards Section */}
@@ -1137,8 +1311,8 @@ export default function AgentThemeSettingsPage() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setIconPickerOpen(null)}>
                         <div className="rounded-2xl p-5 max-w-sm w-full shadow-2xl" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.5)' }} onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-3">
-                                <p className="font-bold text-[var(--color-primary-font)]">Choose an Icon</p>
-                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-[var(--color-primary-font)]/70" /></button>
+                                <p className="font-bold text-black">Choose an Icon</p>
+                                <button onClick={() => setIconPickerOpen(null)} className="p-1 rounded-lg hover:bg-slate-100"><X className="h-4 w-4 text-black/70" /></button>
                             </div>
                             <Input placeholder="Search icons…" value={iconSearch} onChange={e => setIconSearch(e.target.value)} className="h-9 rounded-xl mb-3 glass-input" />
                             <div className="grid grid-cols-6 gap-1.5 max-h-56 overflow-y-auto">
@@ -1170,31 +1344,31 @@ export default function AgentThemeSettingsPage() {
                                 {/* Mini live preview */}
                                 <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
-                                        <IconC className="h-5 w-5 text-white" />
+                                        <IconC className="h-5 w-5 text-black" />
                                     </div>
-                                    <p className="text-sm font-bold text-[var(--color-primary-font)] leading-tight">{card.title || 'Card Title'}</p>
-                                    <p className="text-xs text-[var(--color-primary-font)]/60 leading-tight">{card.description || 'Description'}</p>
+                                    <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
+                                    <p className="text-xs text-black/60 leading-tight">{card.description || 'Description'}</p>
                                 </div>
 
                                 {/* Icon picker button */}
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: 'var(--primary)' }}>
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
                                         <IconC className="h-5 w-5" />
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-[var(--color-primary-font)]/70 flex-1">
+                                    <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'feature', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black/70 flex-1">
                                         Change Icon ({card.icon})
                                     </Button>
                                 </div>
 
                                 {/* Title */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
+                                    <Label className="text-[11px] font-bold text-black/60">Title <span className="font-normal">({card.title.length}/30)</span></Label>
                                     <Input maxLength={30} value={card.title} onChange={e => updateCard(idx, 'title', e.target.value)} className="h-9 rounded-lg glass-input text-sm" />
                                 </div>
 
                                 {/* Description */}
                                 <div className="space-y-0.5">
-                                    <Label className="text-[11px] font-bold text-[var(--color-primary-font)]/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
+                                    <Label className="text-[11px] font-bold text-black/60">Description <span className="font-normal">({card.description.length}/100)</span></Label>
                                     <Textarea maxLength={100} value={card.description} onChange={e => updateCard(idx, 'description', e.target.value)} className="rounded-lg glass-input resize-none min-h-[56px] text-sm" />
                                 </div>
                             </div>
@@ -1213,7 +1387,7 @@ export default function AgentThemeSettingsPage() {
                                 {/* Mini live preview */}
                                 <div className="rounded-xl p-3 flex flex-col items-center text-center gap-1.5" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.5)' }}>
                                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gradient-start), var(--gradient-mid))' }}>
-                                        <IconC className="h-5 w-5 text-white" />
+                                        <IconC className="h-5 w-5 text-black" />
                                     </div>
                                     <p className="text-sm font-bold text-black leading-tight">{card.title || 'Card Title'}</p>
                                     <p className="text-xs text-black leading-tight">{card.description || 'Description'}</p>
@@ -1221,7 +1395,7 @@ export default function AgentThemeSettingsPage() {
 
                                 {/* Icon picker button */}
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: 'var(--primary)' }}>
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-black flex-shrink-0" style={{ background: 'var(--primary)' }}>
                                         <IconC className="h-5 w-5" />
                                     </div>
                                     <Button variant="outline" size="sm" onClick={() => { setIconPickerOpen({ type: 'wcu', idx }); setIconSearch(''); }} className="h-8 rounded-lg text-xs border-slate-200 text-black flex-1">
@@ -1251,36 +1425,36 @@ export default function AgentThemeSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Icon Style</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Icon Style</Label>
                             <div className="grid grid-cols-5 gap-2">
                                 {(['filled-circle', 'outlined-circle', 'rounded-square', 'gradient-circle', 'soft-tinted'] as const).map(s => (
                                     <button key={s} onClick={() => updateCardStyle('iconStyle', s)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.iconStyle === s ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s === 'filled-circle' ? 'bg-orange-500 rounded-full' : s === 'outlined-circle' ? 'border-2 border-orange-500 rounded-full' : s === 'rounded-square' ? 'bg-orange-100 rounded-xl' : s === 'gradient-circle' ? 'bg-gradient-to-br from-orange-400 to-orange-600 rounded-full' : 'bg-orange-50 rounded-full'}`}>
-                                            <Sparkles className={`h-4 w-4 ${s === 'filled-circle' || s === 'gradient-circle' ? 'text-white' : 'text-orange-500'}`} />
+                                            <Sparkles className={`h-4 w-4 ${s === 'filled-circle' || s === 'gradient-circle' ? 'text-black' : 'text-orange-500'}`} />
                                         </div>
-                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize text-center leading-tight">{s.split('-')[0]}</span>
+                                        <span className="text-[10px] font-bold text-black/70 capitalize text-center leading-tight">{s.split('-')[0]}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Card Background</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Background</Label>
                             <div className="grid grid-cols-5 gap-2">
                                 {(['soft-white', 'glass', 'tinted', 'pure-white', 'transparent'] as const).map(bg => (
                                     <button key={bg} onClick={() => updateCardStyle('background', bg)} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${cardAppearance.background === bg ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                         <div className={`w-full aspect-video rounded-lg border border-slate-200 ${bg === 'pure-white' ? 'bg-white' : bg === 'tinted' ? 'bg-orange-50' : bg === 'transparent' ? 'bg-transparent border-dashed' : 'bg-slate-50'}`} />
-                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 capitalize text-center leading-tight">{bg.split('-')[0]}</span>
+                                        <span className="text-[10px] font-bold text-black/70 capitalize text-center leading-tight">{bg.split('-')[0]}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Card Border & Effect</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Card Border & Effect</Label>
                             <div className="flex flex-wrap gap-2">
                                 {(['none', 'subtle', 'primary', 'top-accent', 'glow'] as const).map(b => (
-                                    <Button key={b} variant={cardAppearance.border === b ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('border', b)} className="h-8 rounded-lg text-xs px-3 capitalize" style={cardAppearance.border === b ? { background: 'var(--primary)' } : {}}>
+                                    <Button key={b} variant={cardAppearance.border === b ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('border', b)} className={`h-8 rounded-lg text-xs px-3 capitalize ${cardAppearance.border === b ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.border === b ? { background: 'var(--primary)' } : {}}>
                                         {b.replace('-', ' ')}
                                     </Button>
                                 ))}
@@ -1290,10 +1464,10 @@ export default function AgentThemeSettingsPage() {
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Hover Effect</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Hover Effect</Label>
                             <div className="flex flex-wrap gap-2">
                                 {(['lift', 'glow', 'scale', 'border', 'none'] as const).map(h => (
-                                    <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className="h-8 rounded-lg text-xs px-4 capitalize" style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
+                                    <Button key={h} variant={cardAppearance.hover === h ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('hover', h)} className={`h-8 rounded-lg text-xs px-4 capitalize ${cardAppearance.hover === h ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.hover === h ? { background: 'var(--primary)' } : {}}>
                                         {h}
                                     </Button>
                                 ))}
@@ -1301,10 +1475,10 @@ export default function AgentThemeSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Title Color</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Title Color</Label>
                             <div className="flex gap-2">
                                 {(['dark', 'primary', 'gradient'] as const).map(c => (
-                                    <Button key={c} variant={cardAppearance.titleColor === c ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('titleColor', c)} className="h-8 rounded-lg text-xs px-4 capitalize flex-1" style={cardAppearance.titleColor === c ? { background: 'var(--primary)' } : {}}>
+                                    <Button key={c} variant={cardAppearance.titleColor === c ? 'default' : 'outline'} size="sm" onClick={() => updateCardStyle('titleColor', c)} className={`h-8 rounded-lg text-xs px-4 capitalize flex-1 ${cardAppearance.titleColor === c ? '!text-black font-bold' : 'text-black'}`} style={cardAppearance.titleColor === c ? { background: 'var(--primary)' } : {}}>
                                         {c}
                                     </Button>
                                 ))}
@@ -1312,7 +1486,7 @@ export default function AgentThemeSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-[var(--color-primary-font)]/60 uppercase">Layout Direction</Label>
+                            <Label className="text-xs font-bold text-black/60 uppercase tracking-wider">Layout Direction</Label>
                             <div className="grid grid-cols-3 gap-2">
                                 {(['top', 'horizontal', 'minimal'] as const).map(l => (
                                     <button key={l} onClick={() => updateCardStyle('layout', l)} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${cardAppearance.layout === l ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
@@ -1329,7 +1503,7 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Live Preview Panel */}
                         <div className="mt-2 p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                            <p className="text-[10px] font-bold text-[var(--color-primary-font)]/70 uppercase tracking-widest mb-3">Live Result Preview</p>
+                            <p className="text-[10px] font-bold text-black/70 uppercase tracking-widest mb-3">Live Result Preview</p>
                             <div className={`grid gap-3 ${cardAppearance.layout === 'horizontal' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                                 {[1, 2].map(i => (
                                     <div key={i} className={`p-4 rounded-xl shadow-sm border border-white transition-all ${cardAppearance.layout === 'horizontal' ? 'flex items-center gap-3' : 'flex flex-col items-center text-center'}`} style={{
@@ -1341,12 +1515,12 @@ export default function AgentThemeSettingsPage() {
                                     }}>
                                         {cardAppearance.layout !== 'minimal' && (
                                             <div className={`flex items-center justify-center shrink-0 ${cardAppearance.iconStyle === 'rounded-square' ? 'w-10 h-10 rounded-xl bg-[var(--primary-soft)]' : 'w-10 h-10 rounded-full'} ${cardAppearance.iconStyle === 'filled-circle' ? 'bg-[var(--primary)]' : cardAppearance.iconStyle === 'outlined-circle' ? 'border-2 border-[var(--primary)]' : cardAppearance.iconStyle === 'gradient-circle' ? 'bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-mid)]' : ''}`}>
-                                                <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-white' : 'text-[var(--primary)]'}`} />
+                                                <Sparkles className={`h-5 w-5 ${cardAppearance.iconStyle === 'filled-circle' || cardAppearance.iconStyle === 'gradient-circle' ? 'text-black' : 'text-[var(--primary)]'}`} />
                                             </div>
                                         )}
                                         <div className={cardAppearance.layout === 'horizontal' ? 'flex-1' : ''}>
-                                            <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-[var(--color-primary-font)]'}`}>Card Title</h4>
-                                            <p className="text-[10px] text-[var(--color-primary-font)]/60 leading-tight">Short tagline goes here.</p>
+                                            <h4 className={`text-sm font-bold leading-tight mb-0.5 ${cardAppearance.titleColor === 'primary' ? 'text-[var(--primary)]' : cardAppearance.titleColor === 'gradient' ? 'text-transparent bg-clip-text bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-mid)]' : 'text-black'}`}>Card Title</h4>
+                                            <p className="text-[10px] text-black/60 leading-tight">Short tagline goes here.</p>
                                         </div>
                                     </div>
                                 ))}
@@ -1543,8 +1717,8 @@ export default function AgentThemeSettingsPage() {
                                         className={cn(
                                             "text-[12px] font-medium transition-colors",
                                             pageSettings.itinerary_card_style === s.id 
-                                                ? "text-white font-bold" 
-                                                : "text-white/50"
+                                                ? "text-black font-bold" 
+                                                : "text-black/50"
                                         )}
                                     >
                                         {s.label}
@@ -1598,12 +1772,12 @@ export default function AgentThemeSettingsPage() {
 
             <SectionCard icon={<ClipboardList className="h-5 w-5" />} title="Hero Section" subtitle="The top banner on the itinerary detail page">
                 <ToggleSwitch checked={pageSettings.show_ai_optimized_badge} onChange={v => pgField('show_ai_optimized_badge', v)} label="Show 'AI Optimized' badge" />
-                {pageSettings.show_ai_optimized_badge && <div className="space-y-1"><Label className="text-xs font-bold text-slate-600">Badge Text</Label><Input value={pageSettings.ai_optimized_text} onChange={e => pgField('ai_optimized_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
+                {pageSettings.show_ai_optimized_badge && <div className="space-y-1"><Label className="text-xs font-bold text-black">Badge Text</Label><Input value={pageSettings.ai_optimized_text} onChange={e => pgField('ai_optimized_text', e.target.value)} className="h-10 rounded-xl glass-input" /></div>}
             </SectionCard>
             <SectionCard icon={<Eye className="h-5 w-5" />} title="Time Slot Labels" subtitle="Rename the time-of-day categories in the itinerary timeline">
                 <div className="grid grid-cols-2 gap-3">
                     {([['morning_label', 'Morning'], ['afternoon_label', 'Afternoon'], ['evening_label', 'Evening'], ['night_label', 'Night']] as [keyof PageSettings, string][]).map(([field, label]) => (
-                        <div key={field} className="space-y-1"><Label className="text-xs font-bold text-slate-600">{label}</Label><Input value={pageSettings[field] as string} onChange={e => pgField(field, e.target.value)} className="h-9 rounded-xl glass-input" /></div>
+                        <div key={field} className="space-y-1"><Label className="text-xs font-bold text-black">{label}</Label><Input value={pageSettings[field] as string} onChange={e => pgField(field, e.target.value)} className="h-9 rounded-xl glass-input" /></div>
                     ))}
                 </div>
             </SectionCard>
@@ -1630,7 +1804,7 @@ export default function AgentThemeSettingsPage() {
                                                     newCards[idx] = { ...newCards[idx], icon: iconName };
                                                     pgField('itinerary_wcu_cards', newCards);
                                                 }}
-                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-white' : 'bg-slate-100 text-black hover:bg-slate-200'}`}
+                                                className={`p-1 rounded transition-all ${card.icon === iconName ? 'bg-[var(--primary)] text-black' : 'bg-slate-100 text-black hover:bg-slate-200'}`}
                                             >
                                                 {IconComp && <IconComp className="h-3 w-3" />}
                                             </button>
@@ -1738,7 +1912,7 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Button Shape */}
                 <div className="space-y-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Button Style</p>
+                    <p className="text-xs font-bold text-black uppercase tracking-wider">Button Style</p>
                     <div className="flex flex-wrap gap-2">
                         {([
                             { key: 'pill', label: 'Pill', r: '999px' },
@@ -1753,9 +1927,9 @@ export default function AgentThemeSettingsPage() {
                                     borderRadius: opt.r,
                                     background: opt.key === 'underline' ? 'transparent' : 'var(--primary)',
                                     borderBottom: opt.key === 'underline' ? '2px solid var(--primary)' : undefined,
-                                    color: opt.key === 'underline' ? 'var(--primary)' : 'white'
+                                    color: opt.key === 'underline' ? 'var(--primary)' : 'black'
                                 }}>Book Now</span>
-                                <span className="text-[10px] font-bold text-slate-500">{opt.label}</span>
+                                <span className="text-[10px] font-bold text-black">{opt.label}</span>
                             </button>
                         ))}
                     </div>
@@ -1763,7 +1937,7 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Icon Style */}
                 <div className="space-y-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Icon Style</p>
+                    <p className="text-xs font-bold text-black uppercase tracking-wider">Icon Style</p>
                     <div className="flex flex-wrap gap-2">
                         {([
                             { key: 'filled-circle', label: 'Filled', bg: { background: 'var(--primary)', borderRadius: '50%', padding: '6px' } },
@@ -1775,9 +1949,9 @@ export default function AgentThemeSettingsPage() {
                             <button key={opt.key} onClick={() => saveUiStyle({ iconStyle: opt.key })}
                                 className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border-2 transition-all ${iconStyle === opt.key ? 'border-[var(--primary)] bg-[var(--primary-glow)]' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                 <span className="w-8 h-8 flex items-center justify-center" style={opt.bg}>
-                                    <Sparkles className="h-3.5 w-3.5" style={{ color: ['outlined-circle', 'plain'].includes(opt.key) ? 'var(--primary)' : 'white' }} />
+                                    <Sparkles className="h-3.5 w-3.5" style={{ color: ['outlined-circle', 'plain'].includes(opt.key) ? 'var(--primary)' : 'black' }} />
                                 </span>
-                                <span className="text-[10px] font-bold text-slate-500">{opt.label}</span>
+                                <span className="text-[10px] font-bold text-black">{opt.label}</span>
                             </button>
                         ))}
                     </div>
@@ -1785,7 +1959,7 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Card Style */}
                 <div className="space-y-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Card Style</p>
+                    <p className="text-xs font-bold text-black uppercase tracking-wider">Card Style</p>
                     <div className="flex flex-wrap gap-3">
                         {([
                             { key: 'glass', label: 'Glass' },
@@ -1816,7 +1990,7 @@ export default function AgentThemeSettingsPage() {
 
                 {/* Font Theme Selector */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Font Theme</p>
+                    <p className="text-xs font-bold text-black uppercase tracking-wider">Font Theme</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
@@ -1835,14 +2009,14 @@ export default function AgentThemeSettingsPage() {
                                             fontFamily === opt.value ? "border-[var(--primary)] bg-[var(--primary-glow)]" : "border-slate-100 bg-white hover:border-slate-200"
                                         )}
                                     >
-                                        <span className="text-sm font-medium text-[var(--color-primary-font)]" style={{ fontFamily: opt.value }}>{opt.preview}</span>
-                                        <span className="text-[10px] font-bold text-[var(--color-primary-font)]/70 uppercase">{opt.label}</span>
+                                        <span className="text-sm font-medium text-black" style={{ fontFamily: opt.value }}>{opt.preview}</span>
+                                        <span className="text-[10px] font-bold text-black/70 uppercase">{opt.label}</span>
                                     </button>
                                 ))}
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Primary Font Color</p>
+                                <p className="text-xs font-bold text-black uppercase tracking-wider">Primary Font Color</p>
                                 <div className="flex flex-wrap gap-3 items-center">
                                     <div className="relative group">
                                         <input
@@ -1878,7 +2052,7 @@ export default function AgentThemeSettingsPage() {
                             </div>
 
                             <div className="space-y-2 pt-4 border-t border-slate-100">
-                                <p className="text-xs font-bold text-[var(--color-primary-font)]/70 uppercase tracking-wider">Button Text Color</p>
+                                <p className="text-xs font-bold text-black uppercase tracking-wider">Button Text Color</p>
                                 <div className="flex flex-wrap gap-3 items-center">
                                     <div className="relative group">
                                         <input
@@ -1915,7 +2089,7 @@ export default function AgentThemeSettingsPage() {
 
                         {/* Live Preview Panel */}
                         <div className="relative">
-                            <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-white text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
+                            <div className="absolute -top-3 -right-3 z-10 px-3 py-1 bg-[var(--primary)] text-black text-[10px] font-bold rounded-full shadow-lg flex items-center gap-1">
                                 <Eye className="h-3 w-3" /> LIVE PREVIEW
                             </div>
                             <div className="glass-panel border-white/40 shadow-xl rounded-[32px] p-6 h-full flex flex-col justify-center space-y-4 overflow-hidden"
@@ -1932,7 +2106,7 @@ export default function AgentThemeSettingsPage() {
                                     <div className="px-3 py-1 rounded-full bg-[var(--primary-glow)] text-[var(--primary)] text-[10px] font-bold border border-[var(--primary-soft)]">
                                         5D / 4N
                                     </div>
-                                    <div className="px-3 py-1 rounded-full bg-[var(--color-primary-font)]/5 text-[var(--color-primary-font)]/60 text-[10px] font-bold">
+                                    <div className="px-3 py-1 rounded-full bg-black/5 text-black/60 text-[10px] font-bold">
                                         Best Seller
                                     </div>
                                 </div>
@@ -1976,13 +2150,13 @@ export default function AgentThemeSettingsPage() {
             <main className="flex-1 overflow-y-auto px-6 py-8 pb-24">
                 <div className="max-w-5xl mx-auto">
                     {/* Modern Page Header Card */}
-                    <div className="page-header-card flex-col items-start gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-primary-font)] flex items-center gap-3">
+                    <div className="page-header-card flex flex-col items-center text-center gap-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex flex-col items-center">
+                            <h1 className="text-3xl font-bold tracking-tight text-[var(--color-primary-font)] flex items-center justify-center gap-3">
                                 <span className="text-[var(--primary)]">{TABS.find(t => t.id === activeTab)?.icon}</span>
                                 {TABS.find(t => t.id === activeTab)?.label}
                             </h1>
-                            <p className="text-[#8B5E34] text-sm mt-1.5 font-medium">
+                            <p className="text-black text-sm mt-1.5 font-medium">
                                 {activeTab === 'theme' && 'Choose colors and build your brand identity'}
                                 {activeTab === 'homepage' && 'What customers see when they land on your homepage'}
                                 {activeTab === 'plantrip' && 'Customize the trip search and discovery experience'}
@@ -2008,7 +2182,7 @@ export default function AgentThemeSettingsPage() {
                                         {tab.count > 0 && (
                                             <span className={cn(
                                                 "text-[10px] rounded-full px-1.5 py-0.5 font-bold transition-all",
-                                                active ? "bg-[var(--primary)] text-white" : "bg-[var(--color-primary-font)]/10 text-[var(--color-primary-font)]/60"
+                                                active ? "bg-[var(--primary)] text-black" : "bg-black/10 text-black/60"
                                             )}>
                                                 {tab.count}
                                             </span>
@@ -2058,7 +2232,7 @@ export default function AgentThemeSettingsPage() {
                                     <Button
                                         variant="outline"
                                         onClick={() => window.open(window.location.origin, '_blank')}
-                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4"
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Preview
@@ -2068,7 +2242,7 @@ export default function AgentThemeSettingsPage() {
                                 <Button
                                     onClick={handleSave}
                                     disabled={hpSaving || pageSaving}
-                                    className="h-10 text-sm text-white font-bold rounded-2xl px-8 shadow-lg shadow-[var(--primary-glow)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    className="h-10 text-sm !text-black font-bold rounded-2xl px-8 shadow-lg shadow-[var(--primary-glow)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                                     style={{ background: 'var(--primary)' }}
                                 >
                                     <Save className="h-4 w-4 mr-2" />

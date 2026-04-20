@@ -22,6 +22,7 @@ import { MapPin, Search, Calendar as CalendarIcon, Users, Filter, X, ChevronRigh
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { API_URL } from '@/lib/api'
+import AISearchModal from '@/components/ai/AISearchModal'
 
 // Types
 interface Package {
@@ -124,6 +125,12 @@ function PlanTripContent() {
     const [loading, setLoading] = useState(false)
     const [searching, setSearching] = useState(false)
 
+    // AI Search modal state
+    const [showAIModal, setShowAIModal] = useState(false)
+
+    // AI meta — stored for banner display (month, groupSize not used for filtering yet)
+    const [aiMeta, setAiMeta] = useState<{ query: string; month: string | null; groupSize: number | null } | null>(null)
+
     // Initialize searchQuery from URL params synchronously so first render is correct
     const initialQuery = searchParams.get('destination') || (searchParams.get('search') !== 'all' ? searchParams.get('search') : '') || ''
     const [searchQuery, setSearchQuery] = useState(initialQuery)
@@ -149,16 +156,33 @@ function PlanTripContent() {
         return () => clearInterval(interval)
     }, [hpSettings?.plan_trip_search_placeholder])
 
-    // Read destination and style from URL (handles navigation changes)
+    // Read destination, style, and AI-injected params from URL
     useEffect(() => {
         const dest = searchParams.get('destination')
+        const country = searchParams.get('country')
         const style = searchParams.get('trip_style')
         const pkgId = searchParams.get('packageId')
         const searchAll = searchParams.get('search') === 'all'
 
+        // AI-injected params
+        const minPrice = searchParams.get('minPrice')
+        const maxPrice = searchParams.get('maxPrice')
+        const minDays = searchParams.get('minDays')
+        const maxDays = searchParams.get('maxDays')
+        const tripStyles = searchParams.getAll('tripStyle')
+        const activities = searchParams.getAll('activities')
+        const packageType = searchParams.get('packageType')
+        const month = searchParams.get('month')
+        const groupSizeRaw = searchParams.get('groupSize')
+        const aiQueryRaw = searchParams.get('aiQuery')
+
         if (dest) {
             setInputValue(dest)
             setSearchQuery(dest)
+            setHasSearched(true)
+        } else if (country && !dest) {
+            setInputValue(country)
+            setSearchQuery(country)
             setHasSearched(true)
         }
 
@@ -169,6 +193,38 @@ function PlanTripContent() {
 
         if (searchAll || pkgId) {
             setHasSearched(true)
+        }
+
+        // Apply AI filter params if any are present
+        if (minPrice || maxPrice || minDays || maxDays || tripStyles.length > 0 || activities.length > 0 || packageType) {
+            setFilters(prev => ({
+                ...prev,
+                price_min: minPrice ? Number(minPrice) : prev.price_min,
+                price_max: maxPrice ? Number(maxPrice) : prev.price_max,
+                duration_min: minDays ? Number(minDays) : prev.duration_min,
+                duration_max: maxDays ? Number(maxDays) : prev.duration_max,
+                trip_styles: tripStyles.length > 0 ? tripStyles : prev.trip_styles,
+                activities: activities.length > 0 ? activities : prev.activities,
+                package_mode:
+                    packageType === 'single_city' ? 'single' :
+                    packageType === 'multi_city' ? 'multi' :
+                    prev.package_mode,
+            }))
+            setHasSearched(true)
+        }
+
+        // Set AI meta for banner
+        if (aiQueryRaw) {
+            try {
+                const decoded = decodeURIComponent(aiQueryRaw)
+                setAiMeta({
+                    query: decoded,
+                    month: month || null,
+                    groupSize: groupSizeRaw ? Number(groupSizeRaw) : null,
+                })
+            } catch {}
+        } else {
+            setAiMeta(null)
         }
     }, [searchParams])
 
@@ -263,6 +319,8 @@ function PlanTripContent() {
     const searchRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const loaderRef = useRef<HTMLDivElement>(null);
+    // Guard: prevent both search useEffects from firing simultaneously on initial load
+    const searchPendingRef = useRef(false);
 
     // Infinite Scroll Implementation (Intersection Observer)
     useEffect(() => {
@@ -478,7 +536,16 @@ function PlanTripContent() {
     // Run search when searchQuery or hasSearched changes (Instant)
     useEffect(() => {
         if (hasSearched) {
-            executeSearch()
+            searchPendingRef.current = true;
+            // Use a short timeout so if filters also change in the same render cycle,
+            // the filters useEffect (with its own debounce) will cancel this via the ref.
+            const timer = setTimeout(() => {
+                if (searchPendingRef.current) {
+                    searchPendingRef.current = false;
+                    executeSearch()
+                }
+            }, 0)
+            return () => clearTimeout(timer)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, hasSearched])
@@ -491,6 +558,8 @@ function PlanTripContent() {
             const timeout = isSliderDragging ? 600 : 150
 
             const timer = setTimeout(() => {
+                // Cancel any pending immediate search from the searchQuery effect
+                searchPendingRef.current = false;
                 executeSearch(controller.signal)
             }, timeout)
 
@@ -520,7 +589,8 @@ function PlanTripContent() {
         else if (key === 'price') setFilters(prev => ({ ...prev, price_min: 0, price_max: 500000 }))
         else if (key === 'searchQuery') {
             setSearchQuery('');
-            if (hasSearched) setTimeout(executeSearch, 0); // Re-run immediately
+            // NOTE: Do NOT manually call executeSearch here.
+            // The searchQuery state change above will trigger the useEffect automatically.
         }
         else if (value) {
             setFilters(prev => ({
@@ -542,6 +612,12 @@ function PlanTripContent() {
             countries: []
         })
         setSort('recommended')
+        setAiMeta(null)
+        // Remove AI params from URL without navigating
+        const url = new URL(window.location.href)
+        ;['minPrice','maxPrice','minDays','maxDays','tripStyle','activities','packageType','month','groupSize','aiQuery','destination','country'].forEach(k => url.searchParams.delete(k))
+        url.searchParams.set('search','all')
+        window.history.replaceState({}, '', url.toString())
     }
 
     // Helper to render active filter chips
@@ -609,19 +685,19 @@ function PlanTripContent() {
             // 2. If not found in current page of results, fetch specifically by ID
             if (packages.length > 0 || totalPackages === 0) {
                 const fetchSpecificPackage = async () => {
-                   try {
-                       const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                       const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}`, {
-                           headers: { 'X-Domain': domain }
-                       });
-                       if (res.ok) {
-                           const data = await res.json();
-                           handleContinueToBook(data);
-                           setAutoOpenAttempted(true);
-                       }
-                   } catch (err) {
-                       console.error("Failed to fetch specific package for auto-open", err);
-                   }
+                    try {
+                        const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                        const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}`, {
+                            headers: { 'X-Domain': domain }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            handleContinueToBook(data);
+                            setAutoOpenAttempted(true);
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch specific package for auto-open", err);
+                    }
                 };
                 fetchSpecificPackage();
             }
@@ -966,7 +1042,7 @@ function PlanTripContent() {
                                         <Button
                                             onClick={() => handleSearchSubmit()}
                                             className="text-white px-10 py-6 md:py-7 rounded-full text-lg font-black transition-transform duration-200 active:scale-95 w-full md:w-auto h-[52px] md:h-[64px] flex items-center shrink-0 hover:-translate-y-[1px]"
-                                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary))', boxShadow: '0 6px 24px var(--primary-glow)' }}
+                                            style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', boxShadow: '0 6px 24px var(--button-glow)' }}
                                         >
                                             Explore Now
                                         </Button>
@@ -1071,10 +1147,10 @@ function PlanTripContent() {
                                         </p>
                                     </div>
                                     <div className="hidden md:flex gap-3">
-                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--primary-glow)' }}>
+                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--button-bg)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--button-glow)' }}>
                                             <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
                                         </button>
-                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--primary)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--primary-glow)' }}>
+                                        <button className="w-10 h-10 rounded-full border-none bg-[var(--button-bg)] text-white flex items-center justify-center hover:opacity-90 transition-all active:scale-95 group" style={{ boxShadow: '0 4px 16px var(--button-glow)' }}>
                                             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </div>
@@ -1180,7 +1256,7 @@ function PlanTripContent() {
                                                         {city}
                                                     </h3>
                                                     <div className="translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out flex items-center h-8">
-                                                        <span className="bg-[var(--primary)] text-white px-5 py-2 rounded-full font-bold text-sm tracking-wide shadow-lg flex items-center gap-2">
+                                                        <span className="bg-[var(--button-bg)] text-white px-5 py-2 rounded-full font-bold text-sm tracking-wide shadow-lg flex items-center gap-2">
                                                             EXPLORE PACKAGES <ArrowRight className="h-4 w-4" />
                                                         </span>
                                                     </div>
@@ -1222,6 +1298,34 @@ function PlanTripContent() {
                                     <div className="mb-6 relative z-50 overflow-visible">
                                         {renderSearchBar(true)}
                                     </div>
+
+                                    {/* AI Results Banner */}
+                                    {aiMeta && (
+                                        <div
+                                            className="mb-4 flex items-center gap-3 px-5 py-3 rounded-2xl border shadow-sm"
+                                            style={{ background: 'rgba(255,240,220,0.85)', borderColor: 'rgba(255,170,80,0.3)', backdropFilter: 'blur(8px)' }}
+                                        >
+                                            <Sparkles className="h-4 w-4 shrink-0" style={{ color: 'var(--button-bg)' }} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[12px] font-black uppercase tracking-widest" style={{ color: 'var(--button-bg)' }}>AI Filtered Results</p>
+                                                <p className="text-[12px] text-black/70 font-medium truncate">{aiMeta.query}</p>
+                                                {(aiMeta.month || aiMeta.groupSize) && (
+                                                    <p className="text-[11px] text-black/50 font-medium mt-0.5">
+                                                        {aiMeta.month && <span>Travel month: {aiMeta.month}</span>}
+                                                        {aiMeta.month && aiMeta.groupSize && <span> · </span>}
+                                                        {aiMeta.groupSize && <span>{aiMeta.groupSize} travellers</span>}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={clearAllFilters}
+                                                className="p-1.5 rounded-full hover:bg-black/10 transition-colors shrink-0"
+                                                title="Clear AI filters"
+                                            >
+                                                <X className="h-3.5 w-3.5 text-black/50" />
+                                            </button>
+                                        </div>
+                                    )}
                                     {/* Context Header & Mobile Filter Trigger */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                         <div className="backdrop-blur-md rounded-2xl h-[90px] pt-4 px-6 border border-white/20 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden"
@@ -1247,7 +1351,7 @@ function PlanTripContent() {
                                                         <Button variant="outline" className="flex items-center gap-2 h-14 rounded-full border-none shadow-sm bg-white/70">
                                                             <Filter className="h-4 w-4" /> Filters
                                                             {(filters.trip_styles.length > 0 || filters.activities.length > 0) && (
-                                                                <span className="bg-[var(--primary)] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
+                                                                <span className="bg-[var(--button-bg)] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">!</span>
                                                             )}
                                                         </Button>
                                                     </SheetTrigger>
@@ -1297,18 +1401,24 @@ function PlanTripContent() {
                                                     </div>
                                                 </div>
                                                 <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-4 font-display">
-                                                    {hpSettings?.plan_trip_empty_state_message || "No hidden gems found"}
+                                                    {aiMeta
+                                                        ? '✦ No AI matches found'
+                                                        : (hpSettings?.plan_trip_empty_state_message || 'No hidden gems found')}
                                                 </h3>
                                                 <p className="text-[var(--color-primary-font)]/80 max-w-sm mx-auto mb-10 text-lg font-medium leading-relaxed opacity-80">
-                                                    We couldn&apos;t find any packages matching your current filters. Try broadening your search!
+                                                    {aiMeta
+                                                        ? 'No packages matched your AI query. Try relaxing the filters or searching with different keywords.'
+                                                        : "We couldn't find any packages matching your current filters. Try broadening your search!"}
                                                 </p>
-                                                <Button
-                                                    onClick={clearAllFilters}
-                                                    className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white px-10 py-7 rounded-full font-black shadow-[0_12px_24px_var(--primary-glow)] hover:shadow-[0_12px_32px_var(--primary-glow)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 mx-auto"
-                                                >
-                                                    <RotateCcw className="h-5 w-5" />
-                                                    Clear All & Refresh
-                                                </Button>
+                                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                                    <Button
+                                                        onClick={clearAllFilters}
+                                                        className="bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white px-10 py-7 rounded-full font-black shadow-[0_12px_24px_var(--button-glow)] hover:shadow-[0_12px_32px_var(--button-glow)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 mx-auto"
+                                                    >
+                                                        <RotateCcw className="h-5 w-5" />
+                                                        Clear All & Refresh
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -1414,15 +1524,14 @@ function PlanTripContent() {
                                                                         className="hover:opacity-90 text-white px-4 py-2 h-9 rounded-full text-xs font-bold transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-sm"
                                                                         style={{
                                                                             background: (pkg.booking_type || '').toUpperCase() === 'ENQUIRY'
-                                                                                ? 'var(--pt-btn-enquire-bg, #64748b)'
-                                                                                : 'var(--pt-btn-book-bg, var(--primary))',
-                                                                            color: (pkg.booking_type || '').toUpperCase() === 'ENQUIRY'
-                                                                                ? 'var(--pt-btn-enquire-text, white)'
-                                                                                : 'white'
+                                                                                ? 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))'
+                                                                                : 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                                                            boxShadow: '0 4px 12px var(--button-glow)',
+                                                                            color: 'var(--button-text-color, white)'
                                                                         }}
                                                                     >
-                                                                        {(pkg.booking_type || '').toUpperCase() === 'ENQUIRY' 
-                                                                            ? (hpSettings?.plan_trip_secondary_btn_text || 'Enquire Now') 
+                                                                        {(pkg.booking_type || '').toUpperCase() === 'ENQUIRY'
+                                                                            ? (hpSettings?.plan_trip_secondary_btn_text || 'Enquire Now')
                                                                             : (hpSettings?.plan_trip_primary_btn_text || 'Book Now')}
                                                                         <ArrowRight className="h-3 w-3" />
                                                                     </Button>
@@ -1458,6 +1567,9 @@ function PlanTripContent() {
                 )}
             </AnimatePresence>
 
+            {/* AI Search Modal */}
+            <AISearchModal open={showAIModal} onClose={() => setShowAIModal(false)} />
+
             {/* Sticky CTA Removed as per user request */}
 
             {/* Booking Modal Redesign */}
@@ -1469,7 +1581,7 @@ function PlanTripContent() {
                 >
                     <div className="relative flex flex-col h-full max-h-[90vh]">
                         {/* Glassy Header Card */}
-                        <div className="py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg" style={{ background: 'var(--pt-btn-book-bg, var(--primary))' }}>
+                        <div className="py-4 px-5 text-center relative shrink-0 rounded-[24px] mb-2 border border-white/30 backdrop-blur-md shadow-lg" style={{ background: 'var(--pt-btn-book-bg, var(--button-bg))' }}>
                             <DialogClose className="absolute top-2 right-2 text-white/90 hover:text-white hover:bg-white/20 p-2.5 rounded-full transition-all z-[1010] outline-none border-none shadow-none">
                                 <X className="h-5 w-5" />
                                 <span className="sr-only">Close</span>
@@ -1602,11 +1714,10 @@ function PlanTripContent() {
                                 disabled={!selectedDate || travelers.adults < 1 || (selectedPackageForBooking?.flights_enabled && !originCity)}
                                 style={{
                                     background: (selectedPackageForBooking?.booking_type || '').toUpperCase() === 'ENQUIRY'
-                                        ? 'var(--pt-btn-enquire-bg, #64748b)'
-                                        : 'var(--pt-btn-book-bg, var(--primary))',
-                                    color: (selectedPackageForBooking?.booking_type || '').toUpperCase() === 'ENQUIRY'
-                                        ? 'var(--pt-btn-enquire-text, white)'
-                                        : 'white'
+                                        ? 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))'
+                                        : 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                    boxShadow: '0 4px 12px var(--button-glow)',
+                                    color: 'var(--button-text-color, white)'
                                 }}
                                 onClick={() => {
                                     if (selectedPackageForBooking) {

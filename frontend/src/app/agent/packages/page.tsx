@@ -366,9 +366,9 @@ export default function AgentPackagesPage() {
                                 onClick={() => router.push('/agent/packages/new')}
                                 className="text-white px-6 py-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
                                 style={{
-                                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 6px 20px var(--primary-glow)',
+                                    background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                    borderRadius: 'var(--button-radius, 12px)',
+                                    boxShadow: '0 6px 20px var(--button-glow)',
                                     fontWeight: '600'
                                 }}
                             >
@@ -465,7 +465,11 @@ export default function AgentPackagesPage() {
                                 {hasPermission('packages', 'edit') && (
                                     <Button
                                         onClick={() => router.push('/agent/packages/new')}
-                                        className="mt-6 bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white rounded-full px-8 shadow-lg shadow-[var(--primary-glow)]"
+                                        className="mt-6 text-white rounded-full px-8 shadow-lg"
+                                        style={{
+                                            background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
+                                            boxShadow: '0 6px 20px var(--button-glow)',
+                                        }}
                                     >
                                         Create First Package
                                     </Button>
@@ -605,7 +609,7 @@ export default function AgentPackagesPage() {
                                                                             onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}
                                                                         >
                                                                             <Edit className="mr-2 h-4 w-4 text-indigo-500" />
-                                                                            <span className="font-medium">Edit Package</span>
+                                                                            <span className="font-medium text-[var(--color-primary-font)]">Edit Package</span>
                                                                         </DropdownMenuItem>
                                                                     )}
                                                                     <DropdownMenuItem
@@ -624,12 +628,12 @@ export default function AgentPackagesPage() {
                                                                             {pkg.status.toLowerCase() === 'published' ? (
                                                                                 <>
                                                                                     <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
-                                                                                    Unpublish (Draft)
+                                                                                    <span className="font-medium text-[var(--color-primary-font)]">Unpublish (Draft)</span>
                                                                                 </>
                                                                             ) : (
                                                                                 <>
                                                                                     <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                                                                                    Publish Live
+                                                                                    <span className="font-medium text-[var(--color-primary-font)]">Publish Live</span>
                                                                                 </>
                                                                             )}
                                                                         </DropdownMenuItem>
@@ -642,7 +646,7 @@ export default function AgentPackagesPage() {
                                                                                 onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
                                                                             >
                                                                                 <Archive className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
-                                                                                Archive Package
+                                                                                <span className="font-medium text-[var(--color-primary-font)]">Archive Package</span>
                                                                             </DropdownMenuItem>
 
                                                                             <DropdownMenuItem
@@ -698,11 +702,11 @@ export default function AgentPackagesPage() {
                                                     >
                                                         {hasPermission('packages', 'edit') && (
                                                             <DropdownMenuItem onClick={() => router.push(`/agent/packages/new?id=${pkg.id}`)}>
-                                                                Edit
+                                                                <span className="text-[var(--color-primary-font)] font-medium">Edit</span>
                                                             </DropdownMenuItem>
                                                         )}
                                                         <DropdownMenuItem onClick={() => window.open(`/plan-trip/${pkg.slug}?mode=preview`, '_blank')}>
-                                                            Preview
+                                                            <span className="text-[var(--color-primary-font)] font-medium">Preview</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         {hasPermission('packages', 'full') && (

@@ -48,7 +48,8 @@ def reproduce():
     mock_user = MockObject(
         first_name="Hari",
         last_name="Haran",
-        email="hariharan@reshandthosh.com"
+        email="hariharan@reshandthosh.com",
+        phone="+91 9876543210"
     )
     
     mock_booking = MockObject(
@@ -58,6 +59,8 @@ def reproduce():
         agent=mock_agent,
         user=mock_user,
         total_amount=Decimal("1180.00"),
+        payment_status="PAID",
+        status="CONFIRMED",
         created_at=datetime.now(),
         travel_date=datetime.now() ,
         number_of_travelers=2,

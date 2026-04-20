@@ -16,6 +16,14 @@ import { useAuth } from '@/context/AuthContext'
 import { Activity, ActivityCreate, TimeSlotPreference } from '@/types/activities'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { getValidImageUrl } from '@/lib/utils/image'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function CityActivityManager({ params }: { params: { city: string } }) {
     const router = useRouter()
@@ -48,6 +56,11 @@ export default function CityActivityManager({ params }: { params: { city: string
 
     const [activityRows, setActivityRows] = useState<ActivityCreate[]>([createEmptyRow()])
     const [isSavingAll, setIsSavingAll] = useState(false)
+
+    // URL Dialog State
+    const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false)
+    const [urlInput, setUrlInput] = useState('')
+    const [targetUrlRowIndex, setTargetUrlRowIndex] = useState<number | null>(null)
 
     useEffect(() => {
         loadCityActivities()
@@ -186,14 +199,27 @@ export default function CityActivityManager({ params }: { params: { city: string
             toast.warning('Maximum 5 images allowed')
             return
         }
-        const url = prompt('Enter image URL:')
-        if (url) {
+        setTargetUrlRowIndex(rowIndex)
+        setUrlInput('')
+        setIsUrlDialogOpen(true)
+    }
+
+    const handleUrlSubmit = () => {
+        if (!urlInput.trim()) {
+            toast.error('Please enter a valid URL')
+            return
+        }
+        if (targetUrlRowIndex !== null) {
+            const row = activityRows[targetUrlRowIndex]
             const newImages = [...(row.images || [])]
             newImages.push({
-                image_url: url,
+                image_url: urlInput.trim(),
                 display_order: newImages.length
             })
-            handleRowChange(rowIndex, 'images', newImages)
+            handleRowChange(targetUrlRowIndex, 'images', newImages)
+            setIsUrlDialogOpen(false)
+            setUrlInput('')
+            setTargetUrlRowIndex(null)
         }
     }
 
@@ -366,7 +392,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                             onClick={handleSaveAll}
                             disabled={isSavingAll || activityRows.length === 0}
                             className="text-white font-semibold rounded-[50px] px-8 py-6 shadow-[0_8px_24px_var(--primary-glow)] hover:shadow-[0_12px_32px_var(--primary-glow)] transition-all duration-300 hover:-translate-y-1 active:scale-95 border border-white/20"
-                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
+                            style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))', boxShadow: '0 8px 24px var(--button-glow)' }}
                         >
                             {isSavingAll ? 'Saving...' : (
                                 <>
@@ -669,7 +695,7 @@ export default function CityActivityManager({ params }: { params: { city: string
                                         onClick={handleSaveAll}
                                         disabled={isSavingAll}
                                         className="flex-1 h-14 text-white font-bold rounded-[50px] shadow-lg transition-all duration-300 hover:-translate-y-1 active:scale-95 border border-white/20"
-                                        style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-light))' }}
+                                        style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))' }}
                                     >
                                         <Save className="mr-2 h-5 w-5" /> {isSavingAll ? 'Updating...' : 'Save Changes'}
                                     </Button>
@@ -697,6 +723,64 @@ export default function CityActivityManager({ params }: { params: { city: string
                     </div>
                 </div>
             </div>
+
+            <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
+                <DialogContent className="glass-panel border-white/40 bg-white/20 backdrop-blur-3xl sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold text-[var(--primary)]">Add Image URL</DialogTitle>
+                        <DialogDescription className="text-black font-semibold">
+                            Paste the URL of the image you want to add to this activity.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6">
+                        <div className="floating-label-group">
+                            <Input
+                                value={urlInput}
+                                onChange={(e) => setUrlInput(e.target.value)}
+                                placeholder=" "
+                                className="glass-input peer"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleUrlSubmit()
+                                    }
+                                }}
+                                autoFocus
+                            />
+                            <Label className="floating-label">Image URL</Label>
+                        </div>
+                        {urlInput && (
+                            <div className="mt-4 rounded-xl overflow-hidden border-2 border-white/40 shadow-sm aspect-video bg-white/10 flex items-center justify-center">
+                                <img 
+                                    src={urlInput} 
+                                    alt="Preview" 
+                                    className="w-full h-full object-cover"
+                                    onError={(e: any) => {
+                                        e.target.style.display = 'none'
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setIsUrlDialogOpen(false)}
+                            className="rounded-full font-bold text-slate-600 hover:bg-white/40"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleUrlSubmit}
+                            className="text-white font-bold rounded-full px-8 shadow-lg transition-all hover:-translate-y-0.5"
+                            style={{ background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))' }}
+                        >
+                            Add Image
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <style jsx global>{`
                 .glass-panel {

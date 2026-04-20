@@ -354,7 +354,7 @@ export default function AgentSettingsPage() {
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={submitting || !isDirty}
-                                        className="min-w-[160px] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary-glow)] font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
+                                        className="min-w-[160px] bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white shadow-lg shadow-[var(--button-glow)] font-bold text-base transition-all active:scale-95 rounded-full px-8 hover:-translate-y-0.5"
                                         title="Ctrl + S to save"
                                     >
                                         {submitting ? (
@@ -366,7 +366,7 @@ export default function AgentSettingsPage() {
                                             <>
                                                 <Save className="mr-2 h-5 w-5" />
                                                 Save Changes
-                                                <span className="ml-2 px-1.5 py-0.5 bg-[var(--primary)] text-white rounded text-[10px] opacity-90">Ctrl+S</span>
+                                                <span className="ml-2 px-1.5 py-0.5 bg-[var(--button-bg)] text-white rounded text-[10px] opacity-90">Ctrl+S</span>
                                             </>
                                         )}
                                     </Button>

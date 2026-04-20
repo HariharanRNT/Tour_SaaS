@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,8 +18,12 @@ export default function SavedTripsPage() {
     const [loading, setLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    // Guard against React Strict Mode double-mount firing the fetch twice
+    const hasFetchedRef = useRef(false)
 
     useEffect(() => {
+        if (hasFetchedRef.current) return
+        hasFetchedRef.current = true
         loadSessions()
     }, [])
 
