@@ -640,7 +640,7 @@ function CheckoutContent() {
                                             {isCurrent && <div className="absolute inset-0 border-[2px] border-white/30 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-50" />}
 
                                             {isCompleted ? <div className="bg-[var(--primary)]/20 rounded-full p-0.5"><Check className="h-3.5 w-3.5 text-[var(--primary)]" /></div> : <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-[var(--primary)]'}`} />}
-                                            <span className={`text-sm font-bold whitespace-nowrap ${isCurrent ? 'drop-shadow-sm' : 'opacity-80'}`}>{s.label}</span>
+                                            <span className={`text-sm font-bold whitespace-nowrap ${isCurrent ? 'text-white drop-shadow-sm' : isCompleted ? 'text-[var(--primary)] opacity-80' : 'text-black opacity-80'}`}>{s.label}</span>
                                         </div>
                                         {idx < steps.length - 1 && (
                                             <div className="mx-1.5 md:mx-3 h-1 w-6 md:w-10 rounded-full bg-black/5 overflow-hidden relative shadow-inner">
