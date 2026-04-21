@@ -505,6 +505,23 @@ class Token(BaseModel):
 
 
 # Package Schemas
+class InclusionDetail(BaseModel):
+    included: bool = False
+    details: Optional[str] = None
+
+
+class InclusionsSchema(BaseModel):
+    flights: InclusionDetail = InclusionDetail()
+    transportation: InclusionDetail = InclusionDetail()
+    hotel: InclusionDetail = InclusionDetail()
+    visaAssistance: InclusionDetail = InclusionDetail()
+    travelInsurance: InclusionDetail = InclusionDetail()
+    tourGuide: InclusionDetail = InclusionDetail()
+    foodAndDining: InclusionDetail = InclusionDetail()
+    supportAndServices: InclusionDetail = InclusionDetail()
+    other: InclusionDetail = InclusionDetail()
+
+
 class PackageImageBase(BaseModel):
     image_url: str
     display_order: int = 0
@@ -597,6 +614,10 @@ class PackageBase(BaseModel):
     booking_type: BookingType = BookingType.INSTANT
     price_label: Optional[str] = Field(None, max_length=100)
     enquiry_payment: EnquiryPaymentType = EnquiryPaymentType.OFFLINE
+    # Inclusions & Exclusions
+    inclusions: InclusionsSchema = InclusionsSchema()
+    exclusions: dict = {}
+    custom_services: List[dict] = []
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -652,6 +673,10 @@ class PackageUpdate(BaseModel):
     booking_type: Optional[BookingType] = None
     price_label: Optional[str] = Field(None, max_length=100)
     enquiry_payment: Optional[EnquiryPaymentType] = None
+    # Inclusions & Exclusions
+    inclusions: Optional[InclusionsSchema] = None
+    exclusions: Optional[dict] = None
+    custom_services: Optional[List[dict]] = None
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -685,14 +710,16 @@ class PackageResponse(PackageBase):
             return v
         return strip_xss(v).strip()
 
-    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'cancellation_rules', mode='before')
+    @field_validator('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'cancellation_rules', 'inclusions', 'exclusions', 'custom_services', mode='before')
     @classmethod
     def parse_json_list(cls, v):
         if isinstance(v, str):
             try:
                 return json.loads(v)
             except json.JSONDecodeError:
-                return []
+                if '[' in v or '{' in v:
+                    return {} if '{' in v else []
+                return v
         return v if v is not None else []
     
     model_config = {
@@ -892,7 +919,8 @@ class EnquiryBase(BaseModel):
 
 
 class EnquiryCreate(EnquiryBase):
-    pass
+    agent_id: Optional[UUID4] = None
+
 
 
 class EnquiryUpdate(BaseModel):

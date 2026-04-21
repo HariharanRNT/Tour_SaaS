@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import {
     Plane, MapPin, Calendar, Shield, Sparkles, ArrowRight, Sliders, CheckCircle2, PlayCircle,
-    Globe, Users, Clock, Star, Heart, Luggage, Compass, Search,
+    Globe, Users, Clock, Star, Heart, Luggage, Compass, Search, MessageSquare,
     Camera, Car, Hotel, Mountain, Waves, Umbrella, Gift, Award, Zap,
     CheckCircle, Headphones, Wallet, Coffee, Ticket, Navigation, Flag, Package, Map as MapIcon, Palmtree, ChevronRight
 } from 'lucide-react'
@@ -21,6 +21,7 @@ import CustomerAIChatCard from '@/components/ai/CustomerAIChatCard'
 import AISearchModal from '@/components/ai/AISearchModal'
 import { useTheme } from '@/context/ThemeContext'
 import Image from 'next/image'
+import GeneralEnquiryModal from '@/components/modals/GeneralEnquiryModal'
 
 interface Package {
     id: string
@@ -53,6 +54,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     const [destinationsLoading, setDestinationsLoading] = useState(true)
     const [cheapestPackageSlug, setCheapestPackageSlug] = useState<string | null>(null)
     const [showAISearch, setShowAISearch] = useState(false)
+    const [showEnquiryModal, setShowEnquiryModal] = useState(false)
     const hasFetchedRef = useRef(false)
 
     const [hpSettings, setHpSettings] = useState<{
@@ -316,7 +318,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
                                 </Button>
 
-                                <Link href="/plan-trip?search=all">
+                                 <Link href="/plan-trip?search=all">
                                     <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
                                         style={{
                                             background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
@@ -328,6 +330,16 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                         <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </Link>
+
+                                <Button
+                                    onClick={() => setShowEnquiryModal(true)}
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-[56px] px-8 text-[18px] text-white hover:bg-white/10 transition-all font-bold group border-2 border-white/50 bg-white/10 backdrop-blur-md rounded-[30px]"
+                                >
+                                    <MessageSquare className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform" />
+                                    Enquiry
+                                </Button>
                             </div>
 
                             {/* AI Search CTA */}
@@ -655,6 +667,13 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
             {/* AI Search Modal */}
             <AISearchModal open={showAISearch} onClose={() => setShowAISearch(false)} />
+
+            {/* General Enquiry Modal */}
+            <GeneralEnquiryModal 
+                isOpen={showEnquiryModal} 
+                onClose={() => setShowEnquiryModal(false)} 
+                agentId={publicSettings?.agent_id}
+            />
         </div>
     )
 }

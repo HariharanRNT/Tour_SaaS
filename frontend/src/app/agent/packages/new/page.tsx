@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { v4 as uuidv4 } from 'uuid'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,15 +15,15 @@ import {
     Circle, CheckCircle, CheckCircle2, Image as ImageIcon, Briefcase,
     Mountain, Palmtree, Landmark, Coffee, Tent, Building2, ChevronRight,
     Trash2, GripVertical, ChevronUp, ChevronDown, Plane, Hotel, Utensils,
-    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon
+    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
-import { Checkbox } from '@/components/ui/checkbox'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { toast } from 'sonner'
 import { API_URL } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
+import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -48,12 +49,6 @@ interface PackageFormData {
     gst_applicable: boolean
     gst_percentage: number
     gst_mode: string
-    // Flight Configuration
-    flights_enabled: boolean
-    flight_origin_cities: string[]
-    flight_cabin_class: string
-    flight_price_included: boolean
-    flight_baggage_note: string
     // Cancellation Policy
     cancellation_enabled: boolean
     cancellation_rules: { daysBefore: number; refundPercentage: number; fareType?: 'total_fare' | 'base_fare' }[]
@@ -61,6 +56,9 @@ interface PackageFormData {
     booking_type: 'INSTANT' | 'ENQUIRY'
     price_label?: string
     enquiry_payment: 'OFFLINE'
+    // Inclusions & Exclusions
+    inclusions: Record<string, { included: boolean; details: string; visibleToCustomer: boolean }>
+    custom_services: { id: string; heading: string; description: string; isIncluded: boolean; visibleToCustomer: boolean }[]
 }
 
 const TRIP_STYLES = [
@@ -93,6 +91,63 @@ const ACTIVITIES = [
     { id: 'Festivals', label: 'Festivals', icon: '🎭' }
 ]
 
+const INCLUSION_ITEMS = [
+    {
+        key: 'flights',
+        label: 'Flights',
+        icon: '✈️',
+        placeholder: 'e.g. Round trip flights from Chennai included',
+    },
+    {
+        key: 'transportation',
+        label: 'Transportation',
+        icon: '🚌',
+        placeholder: 'e.g. All AC transfers and sightseeing by cab',
+    },
+    {
+        key: 'hotel',
+        label: 'Hotel',
+        icon: '🏨',
+        placeholder: 'e.g. 3-star hotel stay, twin sharing basis',
+    },
+    {
+        key: 'visaAssistance',
+        label: 'Visa Assistance',
+        icon: '🛂',
+        placeholder: 'e.g. Visa application support and documentation',
+    },
+    {
+        key: 'travelInsurance',
+        label: 'Travel Insurance',
+        icon: '🛡️',
+        placeholder: 'e.g. Basic travel insurance up to ₹5 lakhs',
+    },
+    {
+        key: 'tourGuide',
+        label: 'Tour Guide',
+        icon: '🧭',
+        placeholder: 'e.g. English-speaking local guide for all days',
+    },
+    {
+        key: 'foodAndDining',
+        label: 'Food & Dining',
+        icon: '🍽️',
+        placeholder: 'e.g. Daily breakfast and dinner included',
+    },
+    {
+        key: 'supportAndServices',
+        label: 'Support & Services',
+        icon: '🎧',
+        placeholder: 'e.g. 24/7 helpline and dedicated trip manager',
+    },
+    {
+        key: 'languages',
+        label: 'Language Support',
+        icon: '🌐',
+        placeholder: 'e.g. English and Hindi speaking guides/drivers',
+    },
+]
+
 export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -118,7 +173,6 @@ export default function CreatePackagePage() {
     // Multi-Destination Drag & Drop State
     const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
     const [dragOverLegIndex, setDragOverLegIndex] = useState<number | null>(null)
-    const [originInput, setOriginInput] = useState('')
 
     const [formData, setFormData] = useState<PackageFormData>({
         title: '',
@@ -138,19 +192,26 @@ export default function CreatePackagePage() {
         gst_applicable: false,
         gst_percentage: 18,
         gst_mode: 'exclusive',
-        // Flight Defaults
-        flights_enabled: false,
-        flight_origin_cities: [],
-        flight_cabin_class: 'ECONOMY',
-        flight_price_included: false,
-        flight_baggage_note: '',
         // Cancellation Policy
         cancellation_enabled: false,
         cancellation_rules: [],
         // Dual Booking
         booking_type: 'INSTANT',
         price_label: '',
-        enquiry_payment: 'OFFLINE'
+        enquiry_payment: 'OFFLINE',
+        // Inclusions & Exclusions
+        inclusions: {
+            flights: { included: false, details: '', visibleToCustomer: true },
+            transportation: { included: false, details: '', visibleToCustomer: true },
+            hotel: { included: false, details: '', visibleToCustomer: true },
+            visaAssistance: { included: false, details: '', visibleToCustomer: true },
+            travelInsurance: { included: false, details: '', visibleToCustomer: true },
+            tourGuide: { included: false, details: '', visibleToCustomer: true },
+            foodAndDining: { included: false, details: '', visibleToCustomer: true },
+            supportAndServices: { included: false, details: '', visibleToCustomer: true },
+            languages: { included: false, details: '', visibleToCustomer: true },
+        },
+        custom_services: []
     })
 
     const [agentGstApplicable, setAgentGstApplicable] = useState<boolean | null>(null)
@@ -241,21 +302,27 @@ export default function CreatePackagePage() {
                         gst_applicable: false,
                         gst_percentage: 18,
                         gst_mode: 'exclusive',
-                        // Flight Configuration
-                        flights_enabled: false,
-                        flight_origin_cities: [],
-                        flight_cabin_class: 'ECONOMY',
-                        flight_price_included: false,
-                        flight_baggage_note: '',
                         // Cancellation Policy
                         cancellation_enabled: false,
                         cancellation_rules: [],
                         // Dual Booking
                         booking_type: 'INSTANT',
                         price_label: '',
-                        enquiry_payment: 'OFFLINE'
+                        enquiry_payment: 'OFFLINE',
+                        // Inclusions & Exclusions
+                        inclusions: {
+                            flights: { included: false, details: '', visibleToCustomer: true },
+                            transportation: { included: false, details: '', visibleToCustomer: true },
+                            hotel: { included: false, details: '', visibleToCustomer: true },
+                            visaAssistance: { included: false, details: '', visibleToCustomer: true },
+                            travelInsurance: { included: false, details: '', visibleToCustomer: true },
+                            tourGuide: { included: false, details: '', visibleToCustomer: true },
+                            foodAndDining: { included: false, details: '', visibleToCustomer: true },
+                            supportAndServices: { included: false, details: '', visibleToCustomer: true },
+                            languages: { included: false, details: '', visibleToCustomer: true },
+                        },
+                        custom_services: []
                     })
-                    setOriginInput('')
 
                     // Store itinerary data for the itinerary builder
                     if (packageData.itinerary) {
@@ -358,12 +425,6 @@ export default function CreatePackagePage() {
                     gst_applicable: Boolean(gstApplicable),
                     gst_percentage: gstPercentage,
                     gst_mode: gstMode,
-                    // Flight Configuration
-                    flights_enabled: pkg.flights_enabled || false,
-                    flight_origin_cities: pkg.flight_origin_cities || [],
-                    flight_cabin_class: pkg.flight_cabin_class || 'ECONOMY',
-                    flight_price_included: pkg.flight_price_included || false,
-                    flight_baggage_note: pkg.flight_baggage_note || '',
                     // Cancellation Policy — preserve fareType per rule; default absent ones to 'total_fare' when GST is on
                     cancellation_enabled: pkg.cancellation_enabled || false,
                     cancellation_rules: (pkg.cancellation_rules || []).map((r: any) => ({
@@ -374,11 +435,31 @@ export default function CreatePackagePage() {
                     // Dual Booking
                     booking_type: pkg.booking_type || 'INSTANT',
                     price_label: pkg.price_label || '',
-                    enquiry_payment: pkg.enquiry_payment || 'OFFLINE'
+                    enquiry_payment: pkg.enquiry_payment || 'OFFLINE',
+                    inclusions: pkg.inclusions ? Object.keys(pkg.inclusions).reduce((acc: any, key: string) => {
+                        const val = pkg.inclusions[key];
+                        acc[key] = {
+                            included: val.included || false,
+                            details: val.details || '',
+                            visibleToCustomer: val.visibleToCustomer !== undefined ? val.visibleToCustomer : true
+                        };
+                        return acc;
+                    }, {}) : {
+                        flights: { included: false, details: '', visibleToCustomer: true },
+                        transportation: { included: false, details: '', visibleToCustomer: true },
+                        hotel: { included: false, details: '', visibleToCustomer: true },
+                        visaAssistance: { included: false, details: '', visibleToCustomer: true },
+                        travelInsurance: { included: false, details: '', visibleToCustomer: true },
+                        tourGuide: { included: false, details: '', visibleToCustomer: true },
+                        foodAndDining: { included: false, details: '', visibleToCustomer: true },
+                        supportAndServices: { included: false, details: '', visibleToCustomer: true },
+                        languages: { included: false, details: '', visibleToCustomer: true },
+                    },
+                    custom_services: (pkg.custom_services || []).map((s: any) => ({
+                        ...s,
+                        visibleToCustomer: s.visibleToCustomer !== undefined ? s.visibleToCustomer : true
+                    }))
                 })
-                if (pkg.flight_origin_cities) {
-                    setOriginInput(pkg.flight_origin_cities.join(', '))
-                }
                 if (pkg.feature_image_url) setUseFeatureImage(true)
                 setPackageId(id)
                 setDataLoaded(true)
@@ -552,6 +633,14 @@ export default function CreatePackagePage() {
                 }
             }
 
+            // Custom Services validation
+            const invalidCustomServices = formData.custom_services.some(s => !s.heading.trim());
+
+            if (invalidCustomServices) {
+                toast.error("Heading is required for all custom services");
+                return;
+            }
+
             if (missingFields.length > 0) {
                 toast.error(`Please fill in required fields: ${missingFields.join(', ')}`);
                 setTripStyleError(formData.trip_styles.length === 0);
@@ -585,6 +674,23 @@ export default function CreatePackagePage() {
 
             const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
 
+            // Process inclusions and custom services to trim whitespace
+            const trimmedInclusions: Record<string, any> = {};
+            if (formData.inclusions) {
+                Object.entries(formData.inclusions).forEach(([key, val]: [string, any]) => {
+                    trimmedInclusions[key] = {
+                        ...val,
+                        details: val.details?.trim() || ''
+                    };
+                });
+            }
+
+            const trimmedCustomServices = (formData.custom_services || []).map((s: any) => ({
+                ...s,
+                heading: s.heading.trim(),
+                description: s.description.trim()
+            }));
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -593,6 +699,8 @@ export default function CreatePackagePage() {
                 },
                 body: JSON.stringify({
                     ...formData,
+                    inclusions: trimmedInclusions,
+                    custom_services: trimmedCustomServices,
                     gst_applicable: gstApplicableFinal,
                     // Clear GST details when not applicable — prevents default values (18%, exclusive)
                     // from being persisted to the database
@@ -638,6 +746,23 @@ export default function CreatePackagePage() {
 
             const gstApplicableFinal = agentGstApplicable ? formData.gst_applicable : false
 
+            // Process inclusions and custom services to trim whitespace
+            const trimmedInclusions: Record<string, any> = {};
+            if (formData.inclusions) {
+                Object.entries(formData.inclusions).forEach(([key, val]: [string, any]) => {
+                    trimmedInclusions[key] = {
+                        ...val,
+                        details: val.details?.trim() || ''
+                    };
+                });
+            }
+
+            const trimmedCustomServices = (formData.custom_services || []).map((s: any) => ({
+                ...s,
+                heading: s.heading.trim(),
+                description: s.description.trim()
+            }));
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -646,6 +771,8 @@ export default function CreatePackagePage() {
                 },
                 body: JSON.stringify({
                     ...formData,
+                    inclusions: trimmedInclusions,
+                    custom_services: trimmedCustomServices,
                     gst_applicable: gstApplicableFinal,
                     // Clear GST details when not applicable
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
@@ -1250,6 +1377,124 @@ export default function CreatePackagePage() {
                             </CardContent>
                         </Card>
 
+                        {/* Inclusions & Exclusions */}
+                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
+                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)] group-hover:scale-110 transition-transform">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-semibold text-black">Inclusions & Exclusions</h3>
+                                    <p className="text-xs text-black opacity-80">What's covered in this package</p>
+                                </div>
+                            </div>
+                            <CardContent className="p-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-[6px]">
+                                    {INCLUSION_ITEMS.map((item) => {
+                                        const value = formData.inclusions?.[item.key] || { included: false, details: '', visibleToCustomer: true };
+
+                                        return (
+                                            <ServiceCard
+                                                key={item.key}
+                                                icon={item.icon}
+                                                label={item.label}
+                                                isOn={value.included}
+                                                description={value.details}
+                                                isVisible={value.visibleToCustomer}
+                                                onVisibilityChange={(val) => {
+                                                    const newValue = { ...value, visibleToCustomer: val };
+                                                    updateFormData('inclusions', { ...formData.inclusions, [item.key]: newValue });
+                                                }}
+                                                onToggle={() => {
+                                                    const newValue = { ...value, included: !value.included };
+                                                    updateFormData('inclusions', { ...formData.inclusions, [item.key]: newValue });
+                                                }}
+                                                onDescriptionChange={(val) => {
+                                                    const newValue = { ...value, details: val };
+                                                    updateFormData('inclusions', { ...formData.inclusions, [item.key]: newValue });
+                                                }}
+                                                placeholder={item.placeholder}
+                                            />
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Dynamic Custom Services Builder */}
+                                <div className="mt-8 space-y-6 pt-6 border-t border-black/5">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="text-sm font-bold text-black uppercase tracking-wider">Custom Services Builder</h4>
+                                            <p className="text-[11px] text-black/60">Add multiple independent inclusions or exclusions</p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                const newService = {
+                                                    id: uuidv4(),
+                                                    heading: '',
+                                                    description: '',
+                                                    isIncluded: true,
+                                                    visibleToCustomer: true
+                                                };
+                                                updateFormData('custom_services', [...formData.custom_services, newService]);
+                                            }}
+                                            variant="outline"
+                                            className="h-8 gap-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/5 rounded-lg font-bold text-xs px-3"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Add Custom Service
+                                        </Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[6px]">
+                                        {formData.custom_services.map((service, index) => (
+                                            <ServiceCard
+                                                key={service.id}
+                                                isCustom
+                                                heading={service.heading}
+                                                isOn={service.isIncluded}
+                                                description={service.description}
+                                                isVisible={service.visibleToCustomer}
+                                                onVisibilityChange={(val) => {
+                                                    const updated = [...formData.custom_services];
+                                                    updated[index].visibleToCustomer = val;
+                                                    updateFormData('custom_services', updated);
+                                                }}
+                                                onToggle={() => {
+                                                    const updated = [...formData.custom_services];
+                                                    updated[index].isIncluded = !updated[index].isIncluded;
+                                                    updateFormData('custom_services', updated);
+                                                }}
+                                                onDescriptionChange={(val) => {
+                                                    const updated = [...formData.custom_services];
+                                                    updated[index].description = val;
+                                                    updateFormData('custom_services', updated);
+                                                }}
+                                                onHeadingChange={(val) => {
+                                                    const updated = [...formData.custom_services];
+                                                    updated[index].heading = val;
+                                                    updateFormData('custom_services', updated);
+                                                }}
+                                                onRemove={() => {
+                                                    const updated = formData.custom_services.filter((_, i) => i !== index);
+                                                    updateFormData('custom_services', updated);
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {formData.custom_services.length === 0 && (
+                                        <div className="text-center py-10 border-2 border-dashed border-black/5 rounded-3xl group-hover:border-[var(--primary)]/20 transition-colors">
+                                            <div className="p-3 bg-black/5 rounded-full w-fit mx-auto mb-3">
+                                                <Sparkles className="w-5 h-5 text-black/20" />
+                                            </div>
+                                            <p className="text-xs text-black/40 font-medium">[ ✦ ] No custom services added yet. Click "+ Add Custom Service" to add your own inclusions or exclusions.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
                         {/* Logistics & Pricing */}
                         <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
                             <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
@@ -1335,74 +1580,65 @@ export default function CreatePackagePage() {
                                     </div>
                                 </div>
 
-                                {/* Booking Type Selection */}
-                                <div className="space-y-3 md:col-span-2">
-                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">Booking Type</Label>
-                                    <div
-                                        className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.18)',
-                                            border: '1px solid rgba(255,255,255,0.35)',
-                                            borderRadius: '50px',
-                                        }}
-                                    >
-                                        <div
-                                            className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
-                                            style={{
-                                                background: 'linear-gradient(135deg, var(--button-bg) 0%, var(--button-bg-light) 100%)',
-                                                borderRadius: '50px',
-                                                left: formData.booking_type === 'INSTANT' ? '4px' : 'calc(50%)',
-                                                boxShadow: '0 4px 16px var(--button-glow)'
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => updateFormData('booking_type', 'INSTANT')}
-                                            className="relative z-10 py-4 px-6 flex flex-col items-center justify-center min-h-[70px]"
-                                        >
-                                            <div className={cn(
-                                                "text-sm tracking-wide font-bold transition-colors",
-                                                formData.booking_type === 'INSTANT' ? "text-white" : "text-black"
-                                            )}>Instant Booking</div>
-                                            <div className={cn(
-                                                "text-[10px] opacity-80",
-                                                formData.booking_type === 'INSTANT' ? "text-white/90" : "text-black/80"
-                                            )}>Customers pay and book immediately</div>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => updateFormData('booking_type', 'ENQUIRY')}
-                                            className="relative z-10 py-4 px-6 flex flex-col items-center justify-center min-h-[70px]"
-                                        >
-                                            <div className={cn(
-                                                "text-sm tracking-wide font-bold transition-colors",
-                                                formData.booking_type === 'ENQUIRY' ? "text-white" : "text-black"
-                                            )}>Custom Enquiry</div>
-                                            <div className={cn(
-                                                "text-[10px] opacity-80",
-                                                formData.booking_type === 'ENQUIRY' ? "text-white/90" : "text-black/80"
-                                            )}>Customers send inquiry first</div>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {formData.booking_type === 'ENQUIRY' && (
-                                    <>
-                                        {/* Price Label */}
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Price Label (Optional)</Label>
-                                            <Input
-                                                placeholder="e.g. Price on request"
-                                                value={formData.price_label}
-                                                onChange={(e) => updateFormData('price_label', e.target.value)}
-                                                className="glass-input h-12"
-                                            />
-                                            <p className="text-[10px] text-black/60 px-1">Displays instead of numeric price if set</p>
+                                {/* Booking Type & Optional Price Label Row */}
+                                <div className="md:col-span-2 pt-2">
+                                    <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+                                        {/* Left — Booking Type compact toggle */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Booking Type</Label>
+                                            <div className="flex items-center gap-1 p-1 rounded-full bg-black/5 border border-black/5 w-fit">
+                                                <button 
+                                                    type="button"
+                                                    className={cn(
+                                                        "px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
+                                                        formData.booking_type === 'INSTANT' 
+                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                            : "text-black/40 hover:text-black/60"
+                                                    )}
+                                                    onClick={() => updateFormData('booking_type', 'INSTANT')}
+                                                >
+                                                    Instant Booking
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    className={cn(
+                                                        "px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
+                                                        formData.booking_type === 'ENQUIRY' 
+                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                            : "text-black/40 hover:text-black/60"
+                                                    )}
+                                                    onClick={() => updateFormData('booking_type', 'ENQUIRY')}
+                                                >
+                                                    Custom Enquiry
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-black/50 font-medium">
+                                                {formData.booking_type === 'INSTANT'
+                                                    ? '✦ Customers pay and book immediately'
+                                                    : '✦ Customers send inquiry first'}
+                                            </p>
                                         </div>
 
-
-                                    </>
-                                )}
+                                        {/* Right — Price Label, only shown when Custom Enquiry is selected */}
+                                        {formData.booking_type === 'ENQUIRY' && (
+                                            <div className="flex-1 w-full md:max-w-[320px] space-y-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                                <Label className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-2">
+                                                    Price Label 
+                                                    <span className="normal-case opacity-40 font-medium text-[10px]">(Optional)</span>
+                                                </Label>
+                                                <Input
+                                                    placeholder="e.g. Price on request"
+                                                    value={formData.price_label}
+                                                    onChange={(e) => updateFormData('price_label', e.target.value)}
+                                                    className="glass-input h-9 text-xs px-3 rounded-lg border-white/40"
+                                                />
+                                                <p className="text-[10px] text-black/50 font-medium leading-none">
+                                                    Displays instead of numeric price
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                                 {/* GST Configuration — visibility controlled by Agent Settings */}
                                 {agentGstApplicable === true && (
                                     <div className="space-y-3 md:col-span-2">
@@ -1447,90 +1683,37 @@ export default function CreatePackagePage() {
                                                 {/* GST Mode */}
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Mode</Label>
-
-                                                    {/* Segmented Pill Container */}
-                                                    <div
-                                                        className="relative grid grid-cols-2 p-1 overflow-hidden transition-all duration-300"
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.18)',
-                                                            border: '1px solid rgba(255,255,255,0.35)',
-                                                            borderRadius: '50px',
-                                                            gap: 0
-                                                        }}
-                                                    >
-                                                        {/* Animated Sliding Background */}
-                                                        <div
-                                                            className="absolute top-1 bottom-1 w-[calc(50%-4px)] transition-all duration-300 ease-in-out shadow-lg"
-                                                            style={{
-                                                                background: 'linear-gradient(135deg, var(--button-bg) 0%, var(--button-bg-light) 100%)',
-                                                                borderRadius: '50px',
-                                                                left: formData.gst_mode === 'exclusive' ? '4px' : 'calc(50%)',
-                                                                boxShadow: '0 4px 16px var(--button-glow)'
-                                                            }}
-                                                        />
-
-                                                        {/* Exclusive Option */}
-                                                        <button
+                                                    <div className="flex items-center gap-1 p-1 rounded-full bg-black/5 border border-black/5 w-fit">
+                                                        <button 
                                                             type="button"
+                                                            className={cn(
+                                                                "px-6 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
+                                                                formData.gst_mode === 'exclusive' 
+                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                                    : "text-black/40 hover:text-black/60"
+                                                            )}
                                                             onClick={() => updateFormData('gst_mode', 'exclusive')}
-                                                            className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
-                                                            style={{
-                                                                borderRadius: '50px',
-                                                                transition: 'background 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e: any) => { if (formData.gst_mode !== 'exclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
-                                                            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                         >
-                                                            <div
-                                                                className="text-sm tracking-wide transition-colors duration-300"
-                                                                style={{
-                                                                    color: formData.gst_mode === 'exclusive' ? '#FFFFFF' : '#000000',
-                                                                    fontWeight: formData.gst_mode === 'exclusive' ? 700 : 600
-                                                                }}
-                                                            >
-                                                                Exclusive
-                                                            </div>
-                                                            <div
-                                                                className="text-[12px] mt-0.5 transition-colors duration-300"
-                                                                style={{
-                                                                    color: formData.gst_mode === 'exclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.8)'
-                                                                }}
-                                                            >
-                                                                GST added on top of price
-                                                            </div>
+                                                            Exclusive
                                                         </button>
-
-                                                        {/* Inclusive Option */}
-                                                        <button
+                                                        <button 
                                                             type="button"
+                                                            className={cn(
+                                                                "px-6 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
+                                                                formData.gst_mode === 'inclusive' 
+                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                                    : "text-black/40 hover:text-black/60"
+                                                            )}
                                                             onClick={() => updateFormData('gst_mode', 'inclusive')}
-                                                            className="relative z-10 flex flex-col justify-center items-center py-4 px-6 min-h-[60px] cursor-pointer"
-                                                            style={{
-                                                                borderRadius: '50px',
-                                                                transition: 'background 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e: any) => { if (formData.gst_mode !== 'inclusive') e.currentTarget.style.background = 'var(--primary-glow)' }}
-                                                            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'transparent' }}
                                                         >
-                                                            <div
-                                                                className="text-sm tracking-wide transition-colors duration-300"
-                                                                style={{
-                                                                    color: formData.gst_mode === 'inclusive' ? '#FFFFFF' : 'rgba(0,0,0,0.6)',
-                                                                    fontWeight: formData.gst_mode === 'inclusive' ? 700 : 600
-                                                                }}
-                                                            >
-                                                                Inclusive
-                                                            </div>
-                                                            <div
-                                                                className="text-[12px] mt-0.5 transition-colors duration-300"
-                                                                style={{
-                                                                    color: formData.gst_mode === 'inclusive' ? 'rgba(255,255,255,0.80)' : 'rgba(0,0,0,0.4)'
-                                                                }}
-                                                            >
-                                                                Price already includes GST
-                                                            </div>
+                                                            Inclusive
                                                         </button>
                                                     </div>
+                                                    <p className="text-[10px] text-black/50 font-medium">
+                                                        {formData.gst_mode === 'exclusive'
+                                                            ? '✦ GST added on top of price'
+                                                            : '✦ Price already includes GST'}
+                                                    </p>
                                                 </div>
                                             </div>
 
@@ -1982,121 +2165,7 @@ export default function CreatePackagePage() {
                             </CardContent>
                         </Card>
 
-                        {/* Flight Configuration */}
-                        <Card className="glass-card border-0 shadow-lg overflow-hidden group mt-8">
-                            <div className="bg-gradient-to-r from-[var(--primary)]/5 to-white/20 px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                                <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-black group-hover:scale-110 transition-transform">
-                                    <Plane className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-black">Include Flights</h3>
-                                    <p className="text-xs text-black opacity-80">Manage air travel availability and preferences</p>
-                                </div>
-                            </div>
-                            <CardContent className="p-6">
-                                <div className="space-y-6">
-                                    <div
-                                        className={cn(
-                                            "rounded-2xl border transition-all duration-300 overflow-hidden",
-                                            formData.flights_enabled
-                                                ? "bg-[var(--primary)]/5 border-[var(--primary)]/30 shadow-[0_8px_30px_rgba(var(--primary-rgb),0.08)]"
-                                                : "bg-[rgba(255,255,255,0.4)] border-white/40 hover:border-gray-300"
-                                        )}
-                                    >
-                                        <div className="p-5 flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className={cn(
-                                                    "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
-                                                    formData.flights_enabled ? "bg-[var(--primary)] text-black shadow-lg shadow-[var(--primary)]/20" : "bg-white/50 text-black"
-                                                )}>
-                                                    <Plane className={cn("w-6 h-6", formData.flights_enabled && "animate-pulse")} stroke="black" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-black">Include Flights</h4>
-                                                    <p className="text-xs text-black opacity-80">Enable live fare search for customers</p>
-                                                </div>
-                                            </div>
-                                            <div
-                                                onClick={() => updateFormData('flights_enabled', !formData.flights_enabled)}
-                                                className={cn(
-                                                    "w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 relative",
-                                                    formData.flights_enabled ? "bg-[var(--primary)]" : "bg-gray-200"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300",
-                                                    formData.flights_enabled ? "translate-x-7" : "translate-x-0"
-                                                )} />
-                                            </div>
-                                        </div>
 
-                                        {formData.flights_enabled && (
-                                            <div className="px-5 pb-6 pt-2 border-t border-[var(--primary)]/10 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
-                                                <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Supported Origin Airports</Label>
-                                                    <Textarea
-                                                        placeholder="e.g. MAA, BOM, DEL (Comma separated)"
-                                                        value={originInput}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value
-                                                            setOriginInput(val)
-                                                            const cities = val.split(',').map(c => c.trim().toUpperCase()).filter(c => c !== '')
-                                                            updateFormData('flight_origin_cities', cities)
-                                                        }}
-                                                        className="glass-input min-h-[80px] text-sm font-mono"
-                                                    />
-                                                    <p className="text-[10px] text-black opacity-70">Add common codes like MAA, BOM, DEL to restrict search origins.</p>
-                                                </div>
-
-                                                <div className="space-y-4">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Cabin Class Preference</Label>
-                                                        <div className="flex gap-2">
-                                                            {['ECONOMY', 'BUSINESS'].map(cls => (
-                                                                <button
-                                                                    key={cls}
-                                                                    type="button"
-                                                                    onClick={() => updateFormData('flight_cabin_class', cls)}
-                                                                    className={cn(
-                                                                        "flex-1 py-2 text-xs font-bold rounded-lg border transition-all",
-                                                                        formData.flight_cabin_class === cls
-                                                                            ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md shadow-[var(--primary)]/20"
-                                                                            : "bg-white border-gray-200 text-black font-bold hover:border-[var(--primary)]/30"
-                                                                    )}
-                                                                >
-                                                                    {cls}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/40 border border-black/10">
-                                                        <div>
-                                                            <Label className="text-[11px] font-bold text-black">Flight Price Included?</Label>
-                                                            <p className="text-[10px] text-black opacity-70">Check if price is part of base package</p>
-                                                        </div>
-                                                        <Checkbox
-                                                            checked={formData.flight_price_included}
-                                                            onCheckedChange={(checked: any) => updateFormData('flight_price_included', checked)}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="md:col-span-2 space-y-2">
-                                                    <Label className="text-[10px] font-bold text-black uppercase tracking-wider">Baggage & Additional Notes</Label>
-                                                    <Input
-                                                        placeholder="e.g. 15kg Check-in + 7kg Cabin included"
-                                                        value={formData.flight_baggage_note}
-                                                        onChange={(e) => updateFormData('flight_baggage_note', e.target.value)}
-                                                        className="glass-input"
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
 
                         {/* Content & Settings */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

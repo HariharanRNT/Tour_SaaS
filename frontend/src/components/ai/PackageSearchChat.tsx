@@ -33,6 +33,8 @@ interface PackageSearchResult {
     price: number
     duration: string
     highlights: string[]
+    booking_type?: string
+    price_label?: string
 }
 
 export default function PackageSearchChat() {
@@ -337,8 +339,14 @@ export default function PackageSearchChat() {
                                                             {/* Price & Action - Compact */}
                                                             <div className="pt-2 mt-auto border-t border-slate-100 flex flex-col gap-2">
                                                                 <div className="flex items-baseline justify-between">
-                                                                    <span className="text-[10px] text-black font-medium">Starting from</span>
-                                                                    <span className="font-bold text-sm text-violet-600">₹{pkg.price.toLocaleString()}</span>
+                                                                    <span className="text-[10px] text-black font-medium">
+                                                                        {pkg.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
+                                                                    </span>
+                                                                    <span className="font-bold text-sm text-violet-600">
+                                                                        {pkg.booking_type === 'ENQUIRY' 
+                                                                            ? (pkg.price_label || 'Price on request') 
+                                                                            : `₹${pkg.price.toLocaleString()}`}
+                                                                    </span>
                                                                 </div>
 
                                                                 <Button
@@ -402,7 +410,11 @@ export default function PackageSearchChat() {
                                                     <div className="w-px h-8 bg-slate-200" />
                                                     <div className="text-center flex-1">
                                                         <span className="block text-[10px] text-black uppercase font-bold tracking-wider mb-1">Price</span>
-                                                        <span className="text-lg font-bold text-violet-600">₹{msg.tool_result.price.toLocaleString()}</span>
+                                                        <span className="text-lg font-bold text-violet-600">
+                                                            {msg.tool_result.booking_type === 'ENQUIRY' 
+                                                                ? (msg.tool_result.price_label || 'Price on request') 
+                                                                : `₹${msg.tool_result.price.toLocaleString()}`}
+                                                        </span>
                                                     </div>
                                                 </div>
 

@@ -26,6 +26,15 @@ class PackageStatusEnum(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
+class CustomService(BaseModel):
+    """Dynamically added custom inclusions/exclusions"""
+    id: str  # Frontend-generated UUID or existing one
+    heading: str
+    description: Optional[str] = None
+    isIncluded: bool = True
+    visibleToCustomer: bool = True
+
+
 class PackageBase(BaseModel):
     title: str
     slug: Optional[str] = None
@@ -64,6 +73,10 @@ class PackageBase(BaseModel):
     booking_type: BookingType = BookingType.INSTANT
     price_label: Optional[str] = None
     enquiry_payment: EnquiryPaymentType = EnquiryPaymentType.OFFLINE
+    # New JSON fields
+    inclusions: Dict[str, Any] = {}
+    exclusions: Dict[str, Any] = {}
+    custom_services: List[CustomService] = []
 
 
 class PackageCreate(PackageBase):
@@ -106,6 +119,9 @@ class PackageUpdate(BaseModel):
     booking_type: Optional[BookingType] = None
     price_label: Optional[str] = None
     enquiry_payment: Optional[EnquiryPaymentType] = None
+    inclusions: Optional[Dict[str, Any]] = None
+    exclusions: Optional[Dict[str, Any]] = None
+    custom_services: Optional[List[CustomService]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -276,6 +292,9 @@ class PackageResponse(PackageBase):
                 'booking_type': getattr(obj, 'booking_type', BookingType.INSTANT),
                 'price_label': getattr(obj, 'price_label', None),
                 'enquiry_payment': getattr(obj, 'enquiry_payment', EnquiryPaymentType.OFFLINE),
+                'inclusions': getattr(obj, 'inclusions', {}) or {},
+                'exclusions': getattr(obj, 'exclusions', {}) or {},
+                'custom_services': _parse_json_list(getattr(obj, 'custom_services', '[]')),
                 'itinerary_items': getattr(obj, 'itinerary_items', []),
                 'images': getattr(obj, 'images', []),
             }
@@ -285,7 +304,7 @@ class PackageResponse(PackageBase):
 
         # Dict input
         if isinstance(data, dict):
-            for field in ('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities'):
+            for field in ('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'custom_services'):
                 if field in data:
                     data[field] = _parse_json_list(data[field])
             # Populate trip_styles if missing or empty

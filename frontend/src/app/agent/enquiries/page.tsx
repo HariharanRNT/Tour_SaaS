@@ -392,21 +392,21 @@ export default function AgentEnquiriesPage() {
             </div>
 
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="sm:max-w-2xl bg-white/80 backdrop-blur-2xl border-white/40 rounded-[32px] p-0 overflow-hidden shadow-2xl">
-                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-8 py-8 text-white">
-                        <h2 className="text-2xl font-bold mb-1">Enquiry Details</h2>
-                        <p className="text-white/70 text-sm font-bold">{selectedEnquiry?.package_name_snapshot}</p>
+                <DialogContent className="sm:max-w-xl bg-white/80 backdrop-blur-2xl border-white/40 rounded-[32px] p-0 overflow-hidden shadow-2xl">
+                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-6 py-6 text-white">
+                        <h2 className="text-xl font-bold mb-0.5">Enquiry Details</h2>
+                        <p className="text-white/70 text-xs font-bold">{selectedEnquiry?.package_name_snapshot}</p>
                     </div>
 
                     {conversionResult ? (
-                        <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] space-y-6 animate-in fade-in zoom-in duration-300">
-                            <div className="flex flex-col items-center text-center space-y-4">
-                                <div className="h-16 w-16 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
-                                    <Check className="h-8 w-8" />
+                        <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] space-y-4 animate-in fade-in zoom-in duration-300">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="h-14 w-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
+                                    <Check className="h-7 w-7" />
                                 </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-2xl font-bold text-emerald-600">Converted Successfully!</h3>
-                                    <p className="text-emerald-600/70 font-bold">Booking Reference: {conversionResult.booking?.booking_reference}</p>
+                                <div className="space-y-0.5">
+                                    <h3 className="text-xl font-bold text-emerald-600">Converted Successfully!</h3>
+                                    <p className="text-emerald-600/70 text-sm font-bold">Booking Reference: {conversionResult.booking?.booking_reference}</p>
                                 </div>
                             </div>
 
@@ -429,31 +429,31 @@ export default function AgentEnquiriesPage() {
                                 </div>
                             )}
 
-                            <div className="flex justify-center pt-2">
-                                <Button
-                                    variant="outline"
-                                    className="rounded-full px-8 font-bold border-emerald-200 text-emerald-600"
-                                    onClick={() => {
-                                        setIsDetailsOpen(false)
-                                        setConversionResult(null)
-                                    }}
-                                >
-                                    Close Details
-                                </Button>
-                            </div>
+                                <div className="flex justify-center pt-1">
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-full h-10 px-6 text-sm font-bold border-emerald-200 text-emerald-600"
+                                        onClick={() => {
+                                            setIsDetailsOpen(false)
+                                            setConversionResult(null)
+                                        }}
+                                    >
+                                        Close Details
+                                    </Button>
+                                </div>
                         </div>
                     ) : (
-                        <div className="p-8 space-y-8">
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-6 space-y-6">
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-4">
                                     <div className="p-4 bg-white/40 rounded-2xl border border-white/60">
                                         <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Customer</p>
-                                        <p className="font-bold text-lg">{selectedEnquiry?.customer_name}</p>
+                                        <p className="font-bold text-base">{selectedEnquiry?.customer_name}</p>
                                         <div className="mt-2 space-y-1">
-                                            <div className="flex items-center gap-2 text-sm text-[var(--color-primary-font)]/70">
+                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
                                                 <Mail className="h-3.5 w-3.5" /> {selectedEnquiry?.email}
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-[var(--color-primary-font)]/70">
+                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
                                                 <Phone className="h-3.5 w-3.5" /> {selectedEnquiry?.phone}
                                             </div>
                                         </div>
@@ -462,12 +462,12 @@ export default function AgentEnquiriesPage() {
                                 <div className="space-y-4">
                                     <div className="p-4 bg-white/40 rounded-2xl border border-white/60">
                                         <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Trip Details</p>
-                                        <p className="font-bold text-lg">{selectedEnquiry?.package_name_snapshot}</p>
+                                        <p className="font-bold text-base">{selectedEnquiry?.package_name_snapshot}</p>
                                         <div className="mt-2 space-y-1">
-                                            <div className="flex items-center gap-2 text-sm text-[var(--color-primary-font)]/70">
+                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
                                                 <Calendar className="h-3.5 w-3.5" /> {selectedEnquiry?.travel_date ? format(new Date(selectedEnquiry.travel_date), 'dd MMM yyyy') : ''}
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-[var(--color-primary-font)]/70">
+                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
                                                 <Users className="h-3.5 w-3.5" /> {selectedEnquiry?.travellers} Guests
                                             </div>
                                         </div>
@@ -478,7 +478,7 @@ export default function AgentEnquiriesPage() {
                             {selectedEnquiry?.message && (
                                 <section>
                                     <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-2">Customer Message</p>
-                                    <div className="p-6 bg-[var(--primary)]/5 rounded-2xl border border-[var(--primary)]/10 text-sm italic text-[var(--color-primary-font)]">
+                                    <div className="p-4 bg-[var(--primary)]/5 rounded-2xl border border-[var(--primary)]/10 text-xs italic text-[var(--color-primary-font)]">
                                         &quot;{selectedEnquiry.message}&quot;
                                     </div>
                                 </section>
@@ -490,7 +490,7 @@ export default function AgentEnquiriesPage() {
                                 <Textarea
                                     placeholder="Add internal notes about this enquiry..."
                                     defaultValue={selectedEnquiry?.agent_notes || ''}
-                                    className="bg-white/50 border-white/40 min-h-[80px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold"
+                                    className="bg-white/50 border-white/40 min-h-[70px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold text-xs"
                                     onBlur={async (e) => {
                                         if (!selectedEnquiry) return
                                         const token = localStorage.getItem('token')
@@ -504,10 +504,10 @@ export default function AgentEnquiriesPage() {
                                 />
                             </section>
 
-                            <div className="flex flex-wrap gap-3 pt-4 border-t border-black/5">
+                            <div className="flex flex-wrap gap-2 pt-4 border-t border-black/5">
                                 {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                     <Button
-                                        className="h-12 px-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                                        className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold"
                                         disabled={updateStatusMutation.isPending}
                                         onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONTACTED' })}
                                     >
@@ -518,7 +518,7 @@ export default function AgentEnquiriesPage() {
                                 {['NEW', 'CONTACTED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
                                     <>
                                         <Button
-                                            className="h-12 px-6 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
+                                            className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold"
                                             disabled={updateStatusMutation.isPending}
                                             onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONFIRMED' })}
                                         >
@@ -526,7 +526,7 @@ export default function AgentEnquiriesPage() {
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="h-12 px-6 rounded-full border-red-200 text-red-600 hover:bg-red-50"
+                                            className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-sm font-bold"
                                             disabled={updateStatusMutation.isPending}
                                             onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
                                         >
@@ -537,11 +537,11 @@ export default function AgentEnquiriesPage() {
 
                                 {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
                                     <Button
-                                        className="h-12 px-8 rounded-full bg-[var(--primary)] text-white font-black shadow-lg shadow-[var(--primary-glow)]"
+                                        className="h-11 px-6 rounded-full bg-[var(--primary)] text-white font-black text-sm shadow-lg shadow-[var(--primary-glow)]"
                                         disabled={convertToBookingMutation.isPending}
                                         onClick={() => convertToBookingMutation.mutate(selectedEnquiry!.id)}
                                     >
-                                        <Check className="h-5 w-5 mr-2" /> Convert to Official Booking
+                                        <Check className="h-4 w-4 mr-2" /> Convert to Official Booking
                                     </Button>
                                 )}
                             </div>

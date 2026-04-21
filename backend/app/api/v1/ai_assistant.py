@@ -24,6 +24,19 @@ from app.api.deps import get_current_agent, get_optional_current_user
 from typing import Optional
 
 router = APIRouter(prefix="/ai-assistant", tags=["AI Assistant"])
+ 
+DEFAULT_SESSION_STATE = {
+    "conversationContext": {
+        "budget": None,
+        "budget_type": None,
+        "destination": None,
+        "days": None,
+        "trip_style": None,
+        "last_search_results": []
+    },
+    "shownPackages": [],
+    "lastIntent": None
+}
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -51,6 +64,13 @@ async def chat_with_ai(
         if history_data:
             conversation_history = json.loads(history_data)
         
+        # Get session state from Redis
+        session_key = f"ai_session_state:{user_id}:{conversation_id}"
+        session_data = await redis.get(session_key)
+        session_state = DEFAULT_SESSION_STATE.copy()
+        if session_data:
+            session_state = json.loads(session_data)
+        
         # Add user message to history
         user_message = {
             "role": "user",
@@ -76,7 +96,8 @@ async def chat_with_ai(
             ai_response = await gemini_service.chat_package_search(
                 message=request.message,
                 conversation_history=conversation_history[:-1],
-                admin_id=str(target_admin_id) if target_admin_id else None
+                admin_id=str(target_admin_id) if target_admin_id else None,
+                session_state=session_state
             )
         else:
             ai_response = await gemini_service.chat(
@@ -106,6 +127,13 @@ async def chat_with_ai(
             history_key,
             86400,  # 24 hours
             json.dumps(conversation_history)
+        )
+
+        # Store updated session state in Redis
+        await redis.setex(
+            session_key,
+            86400,
+            json.dumps(session_state)
         )
         
         return ChatResponse(

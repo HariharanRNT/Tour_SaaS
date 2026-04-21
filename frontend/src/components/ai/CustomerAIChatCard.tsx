@@ -37,6 +37,8 @@ interface PackageSearchResult {
     price: number
     duration: string
     highlights: string[]
+    booking_type?: string
+    price_label?: string
 }
 
 export default function CustomerAIChatCard() {
@@ -311,8 +313,14 @@ export default function CustomerAIChatCard() {
                                                                 </div>
                                                                 <div className="p-3 flex items-center justify-between">
                                                                     <div>
-                                                                        <p className="text-[10px] text-slate-500">Starting from</p>
-                                                                        <p className="font-bold text-sm text-[var(--primary)]">₹{pkg.price.toLocaleString()}</p>
+                                                                        <p className="text-[10px] text-slate-500">
+                                                                            {pkg.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
+                                                                        </p>
+                                                                        <p className="font-bold text-sm text-[var(--primary)]">
+                                                                            {pkg.booking_type === 'ENQUIRY' 
+                                                                                ? (pkg.price_label || 'Price on request') 
+                                                                                : `₹${pkg.price.toLocaleString()}`}
+                                                                        </p>
                                                                     </div>
                                                                     <Button
                                                                         size="sm"

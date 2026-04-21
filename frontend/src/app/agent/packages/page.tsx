@@ -364,12 +364,12 @@ export default function AgentPackagesPage() {
                         {hasPermission('packages', 'edit') && (
                             <Button
                                 onClick={() => router.push('/agent/packages/new')}
-                                className="text-white px-6 py-6 transition-all hover:-translate-y-0.5 border-none shadow-lg"
+                                className="text-black px-8 py-6 transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl rounded-full"
                                 style={{
                                     background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
-                                    borderRadius: 'var(--button-radius, 12px)',
-                                    boxShadow: '0 6px 20px var(--button-glow)',
-                                    fontWeight: '600'
+                                    boxShadow: '0 8px 25px var(--button-glow)',
+                                    fontWeight: '700',
+                                    letterSpacing: '-0.01em'
                                 }}
                             >
                                 <Plus className="mr-2 h-5 w-5" />

@@ -12,6 +12,7 @@ import { getValidImageUrl } from '@/lib/utils/image'
 import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
 import { ServiceCard } from '@/components/itinerary/service-card'
+import { InclusionsSection } from '@/components/itinerary/InclusionsSection'
 import { flightsAPI, API_URL } from '@/lib/api'
 import { FlightCard, Flight } from '@/components/itinerary/flight-card'
 import { FlightFilters, FlightFilterState } from '@/components/itinerary/flight-filters'
@@ -1290,7 +1291,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             )}
                         </section>
 
-
+                        <InclusionsSection inclusions={session.inclusions} exclusions={session.exclusions} custom_services={session.custom_services} />
                     </div>
 
                     {/* Right Column - Trip Cart (Sticky) */}

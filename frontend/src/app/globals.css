@@ -521,7 +521,7 @@
   .pkg-creation-root .glass-pill-active {
     background: linear-gradient(135deg, var(--button-bg), var(--button-bg-light)) !important;
     border-color: transparent !important;
-    color: white !important;
+    color: var(--button-text-color, #000000) !important;
     border-radius: 9999px;
     box-shadow: 0 4px 12px var(--button-glow) !important;
   }
@@ -697,11 +697,11 @@
   .pkg-creation-root .inclusion-pill.active {
     background: linear-gradient(135deg, var(--button-bg), var(--button-bg-light));
     border-color: transparent;
-    color: white !important;
+    color: var(--button-text-color, #000000) !important;
     box-shadow: 0 4px 15px var(--button-glow);
   }
   .pkg-creation-root .inclusion-pill.active .pill-icon {
-    color: white !important;
+    color: var(--button-text-color, #000000) !important;
   }
   .pkg-creation-root .inclusion-pill .pill-text {
     font-size: 13px;

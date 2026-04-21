@@ -362,12 +362,19 @@ class Package(Base):
     meta_description = Column(String, nullable=True)
     meta_keywords = Column(String, nullable=True)
 
+    # Inclusions & Exclusions
+    inclusions = Column(JSON, default=dict, server_default='{}')
+    exclusions = Column(JSON, default=dict, server_default='{}')
+
     # Flight inclusion configuration
     flights_enabled = Column(Boolean, default=False)
     flight_origin_cities = Column(Text, default="[]") # JSON list of codes (e.g. ["MAA", "BOM"])
     flight_cabin_class = Column(String(20), default="ECONOMY") # ECONOMY, BUSINESS
     flight_price_included = Column(Boolean, default=False)
     flight_baggage_note = Column(Text, nullable=True)
+
+    # Dynamic custom inclusions
+    custom_services = Column(JSON, default=list, server_default='[]')
 
     @property
     def destination_image_url(self) -> Optional[str]:

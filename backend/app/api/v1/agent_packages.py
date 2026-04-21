@@ -43,6 +43,22 @@ def _persist_cancellation_rules(enabled: bool, rules: list) -> list:
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+def _validate_inclusions(inclusions: dict) -> dict:
+    """Validate and trim inclusions details"""
+    keys = [
+        'flights', 'transportation', 'hotel', 'visaAssistance',
+        'travelInsurance', 'tourGuide', 'foodAndDining', 'supportAndServices', 'languages'
+    ]
+    for key in keys:
+        if key in inclusions:
+            item = inclusions[key]
+            if not item.get('included'):
+                item['details'] = None
+            if item.get('details'):
+                item['details'] = str(item['details']).strip()[:200]
+    return inclusions
+
+
 @router.get("/packages", response_model=PaginatedPackageResponse)
 async def list_agent_packages(
     status_filter: Optional[str] = None,
@@ -173,7 +189,11 @@ async def create_agent_package(
             # Dual Booking
             booking_type=package_data.booking_type,
             price_label=package_data.price_label,
-            enquiry_payment=package_data.enquiry_payment
+            enquiry_payment=package_data.enquiry_payment,
+            # Inclusions & Exclusions
+            inclusions=_validate_inclusions(package_data.inclusions.dict()) if package_data.inclusions else {},
+            exclusions=package_data.exclusions or {},
+            custom_services=package_data.custom_services or []
         )
         
         db.add(new_package)
@@ -280,6 +300,12 @@ async def update_agent_package(
             continue
         elif field in json_fields and value is not None:
             setattr(package, field, json.dumps(value))
+        elif field == 'inclusions' and value is not None:
+            # value is a dict or InclusionsSchema
+            inclusions_dict = value.dict() if hasattr(value, 'dict') else value
+            package.inclusions = _validate_inclusions(inclusions_dict)
+        elif field == 'exclusions' and value is not None:
+            package.exclusions = value
         else:
             setattr(package, field, value)
 

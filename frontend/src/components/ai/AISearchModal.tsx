@@ -169,17 +169,15 @@ export default function AISearchModal({ open, onClose }: AISearchModalProps) {
                     rows={4}
                     maxLength={500}
                     placeholder={EXAMPLE_QUERIES[exampleIdx]}
-                    className={`w-full resize-none rounded-2xl border px-4 py-3.5 text-[14px] font-medium leading-relaxed text-[#1a1a1a] placeholder:text-black/30 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/70 backdrop-blur-sm ${
-                      error
-                        ? 'border-red-300 focus:ring-red-200'
-                        : 'border-black/10 focus:ring-[var(--primary)]/25 focus:border-[var(--primary)]/40'
-                    } disabled:opacity-60`}
+                    className={`w-full resize-none rounded-2xl border px-4 py-3.5 text-[14px] font-medium leading-relaxed text-[#1a1a1a] placeholder:text-black/30 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/70 backdrop-blur-sm ${error
+                      ? 'border-red-300 focus:ring-red-200'
+                      : 'border-black/10 focus:ring-[var(--primary)]/25 focus:border-[var(--primary)]/40'
+                      } disabled:opacity-60`}
                   />
                   {/* Character counter */}
                   <span
-                    className={`absolute bottom-3 right-4 text-[10px] font-bold tabular-nums transition-colors ${
-                      isNearLimit ? 'text-orange-500' : 'text-black/25'
-                    }`}
+                    className={`absolute bottom-3 right-4 text-[10px] font-bold tabular-nums transition-colors ${isNearLimit ? 'text-orange-500' : 'text-black/25'
+                      }`}
                   >
                     {charCount}/500
                   </span>
@@ -248,9 +246,7 @@ export default function AISearchModal({ open, onClose }: AISearchModalProps) {
                   </button>
                 </div>
 
-                <p className="text-center text-[11px] text-black/35 font-medium">
-                  Powered by Gemini 2.0 Flash · Press <kbd className="font-mono text-[10px] bg-black/8 px-1 py-0.5 rounded">Ctrl+Enter</kbd> to search
-                </p>
+
               </div>
             </div>
           </motion.div>

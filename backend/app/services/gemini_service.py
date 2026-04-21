@@ -422,9 +422,22 @@ RESPONSE FORMATTING RULES:
      * Price: ₹X,XXX
 3. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
 4. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
+5. CANCELLATION & REFUNDS:
+   - When a user asks about "cancellation", "refund", or "cancel policy":
+     - Identify the relevant package from the conversation context (the last one searched or selected).
+     - If a package is in context, check its cancellation policy details.
+     - If no package is referenced, ask: "Please let me know which package you're referring to for cancellation details."
+     - If cancellation details are not available for the package, show: "Cancellation details are not available for this package. Please contact support for more information."
+6. ENQUIRY-BASED PRICING:
+   - If a package is marked as "ENQUIRY" type:
+     - DO NOT mention a numeric price.
+     - Instead, say something like "Price available on request" or "Contact us for pricing".
+
+CURRENT CONVERSATION CONTEXT:
+{context_str}
 """
 
-    async def chat_package_search(self, message: str, conversation_history: List[Dict] = None, admin_id: Optional[str] = None) -> Dict:
+    async def chat_package_search(self, message: str, conversation_history: List[Dict] = None, admin_id: Optional[str] = None, session_state: Dict = None) -> Dict:
         """
         Chat with AI for package search using function calling (tools)
         """
@@ -433,6 +446,18 @@ RESPONSE FORMATTING RULES:
             if conversation_history:
                 print(f"[GeminiService] History length: {len(conversation_history)}")
 
+            # Prepare context string for system prompt
+            context_str = "No active filters."
+            if session_state and session_state.get("conversationContext"):
+                ctx = session_state["conversationContext"]
+                filters = []
+                if ctx.get("budget"): filters.append(f"Budget: {ctx.get('budget_type', 'around')} ₹{ctx['budget']}")
+                if ctx.get("destination"): filters.append(f"Destination: {ctx['destination']}")
+                if ctx.get("days"): filters.append(f"Duration: {ctx['days']} days")
+                if ctx.get("trip_style"): filters.append(f"Style: {ctx['trip_style']}")
+                if filters:
+                    context_str = " | ".join(filters)
+            
             # Build conversation history
             contents = []
             if conversation_history:
@@ -456,7 +481,8 @@ RESPONSE FORMATTING RULES:
                                 "duration_days": types.Schema(type="INTEGER", description="Number of days"),
                                 "min_price": types.Schema(type="NUMBER", description="Minimum budget"),
                                 "max_price": types.Schema(type="NUMBER", description="Maximum budget"),
-                                "travel_style": types.Schema(type="STRING", description="Travel style (beach, mountain, cultural, etc.)")
+                                "travel_style": types.Schema(type="STRING", description="Travel style (beach, mountain, cultural, etc.)"),
+                                "booking_type": types.Schema(type="STRING", description="Booking type: INSTANT or ENQUIRY")
                             }
                         )
                     ),
@@ -475,7 +501,7 @@ RESPONSE FORMATTING RULES:
             ]
 
             config = types.GenerateContentConfig(
-                system_instruction=self._get_package_search_system_prompt(),
+                system_instruction=self._get_package_search_system_prompt().format(context_str=context_str),
                 temperature=0.7,
                 tools=tools
             )
@@ -514,7 +540,7 @@ RESPONSE FORMATTING RULES:
                 print(f"[GeminiService] Tool Call Detected: {name}({args})")
                 
                 # Execute tool
-                tool_result = await self._execute_tool(name, args, admin_id)
+                tool_result = await self._execute_tool(name, args, admin_id, session_state)
                 print(f"[GeminiService] Tool Result: {str(tool_result)[:100]}...")
                 
                 # Handling the tool response turn
@@ -540,7 +566,7 @@ RESPONSE FORMATTING RULES:
                     # IMPORTANT: Disable tools for this follow-up generation to prevent loops
                     # and force a text response
                     final_config = types.GenerateContentConfig(
-                        system_instruction=self._get_package_search_system_prompt(),
+                        system_instruction=self._get_package_search_system_prompt().format(context_str=context_str),
                         temperature=0.7,
                         # No tools here to force text
                     )
@@ -617,7 +643,7 @@ RESPONSE FORMATTING RULES:
                 "message": "Currently I am not available, please try again." if is_quota_error else "I apologize, but I encountered an internal error. Please check the logs."
             }
 
-    async def _execute_tool(self, name: str, args: Dict, admin_id: Optional[str] = None) -> Any:
+    async def _execute_tool(self, name: str, args: Dict, admin_id: Optional[str] = None, session_state: Dict = None) -> Any:
         try:
             from app.database import AsyncSessionLocal
             from sqlalchemy import select, or_, and_
@@ -625,6 +651,20 @@ RESPONSE FORMATTING RULES:
             
             async with AsyncSessionLocal() as db:
                 if name == "search_packages":
+                    # Update session context if filters are present
+                    if session_state and "conversationContext" in session_state:
+                        ctx = session_state["conversationContext"]
+                        if args.get("max_price"):
+                            ctx["budget"] = args["max_price"]
+                            ctx["budget_type"] = "under"
+                        elif args.get("min_price"):
+                            ctx["budget"] = args["min_price"]
+                            ctx["budget_type"] = "above"
+                        
+                        if args.get("location"): ctx["destination"] = args["location"]
+                        if args.get("duration_days"): ctx["days"] = args["duration_days"]
+                        if args.get("travel_style"): ctx["trip_style"] = args["travel_style"]
+
                     query = select(Package).where(Package.status == PackageStatus.PUBLISHED)
                     
                     # Filter by Admin ID (if provided)
@@ -647,6 +687,16 @@ RESPONSE FORMATTING RULES:
                             Package.duration_days <= limit + 2
                         ))
                         
+                    if args.get("travel_style"):
+                        style = args["travel_style"]
+                        query = query.where(or_(
+                            Package.trip_style.ilike(f"%{style}%"),
+                            Package.category.ilike(f"%{style}%")
+                        ))
+
+                    if args.get("booking_type"):
+                        query = query.where(Package.booking_type == args["booking_type"])
+
                     if args.get("max_price"):
                         query = query.where(Package.price_per_person <= args["max_price"])
                         
@@ -668,17 +718,42 @@ RESPONSE FORMATTING RULES:
                         except:
                             return []
 
-                    return [
+                    results = [
                         {
                             "id": str(p.id),
                             "title": p.title,
                             "destination": p.destination,
                             "price": float(p.price_per_person) if p.price_per_person else 0.0,
+                            "price_label": p.price_label,
+                            "booking_type": p.booking_type,
                             "duration": f"{p.duration_days} Days / {p.duration_nights} Nights",
                             "highlights": parse_included(p.included_items)[:3]
                         }
                         for p in packages
                     ]
+                    
+                    # Update shownPackages in session state
+                    if session_state is not None:
+                        if "shownPackages" not in session_state:
+                            session_state["shownPackages"] = []
+                        
+                        for pkg_data in results:
+                            # Add if not already present
+                            if not any(sp["id"] == pkg_data["id"] for sp in session_state["shownPackages"]):
+                                session_state["shownPackages"].append({
+                                    "id": pkg_data["id"],
+                                    "name": pkg_data["title"],
+                                    "booking_type": pkg_data["booking_type"],
+                                    "price": pkg_data["price"],
+                                    "price_label": pkg_data["price_label"]
+                                })
+                        
+                        # Update last intent
+                        session_state["lastIntent"] = "search"
+                        # Keep only last 20 packages to avoid bloating state
+                        session_state["shownPackages"] = session_state["shownPackages"][-20:]
+
+                    return results
                     
                 elif name == "get_package_details":
                     pkg_id = args.get("package_id")
@@ -697,15 +772,38 @@ RESPONSE FORMATTING RULES:
                             except:
                                 return []
 
-                        return {
+                        details = {
                             "id": str(package.id),
                             "title": package.title,
                             "description": package.description,
                             "price": float(package.price_per_person) if package.price_per_person else 0.0,
+                            "price_label": package.price_label,
+                            "booking_type": package.booking_type,
+                            "duration": f"{package.duration_days} Days / {package.duration_nights} Nights",
                             "duration_days": package.duration_days,
                             "included": parse_included(package.included_items),
+                            "cancellation_enabled": package.cancellation_enabled,
+                            "cancellation_rules": package.cancellation_rules,
                             "itinerary": "Detailed itinerary available upon booking." # simplified
                         }
+                        
+                        # Update session state for details
+                        if session_state is not None:
+                            if "shownPackages" not in session_state:
+                                session_state["shownPackages"] = []
+                            
+                            if not any(sp["id"] == str(package.id) for sp in session_state["shownPackages"]):
+                                session_state["shownPackages"].append({
+                                    "id": str(package.id),
+                                    "name": package.title,
+                                    "booking_type": package.booking_type,
+                                    "price": float(package.price_per_person) if package.price_per_person else 0.0,
+                                    "price_label": package.price_label
+                                })
+                            
+                            session_state["lastIntent"] = "details"
+
+                        return details
                     return {"error": "Package not found"}
                     
         except Exception as e:

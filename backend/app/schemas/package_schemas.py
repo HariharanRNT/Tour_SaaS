@@ -80,6 +80,11 @@ class PackageWithItineraryResponse(BaseModel):
     price_label: Optional[str] = None
     enquiry_payment: str = "OFFLINE"
     
+    # New JSON fields
+    inclusions: Dict[str, Any] = {}
+    exclusions: Dict[str, Any] = {}
+    custom_services: List[Dict[str, Any]] = []
+    
     class Config:
         from_attributes = True
 

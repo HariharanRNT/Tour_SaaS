@@ -17,7 +17,7 @@ from app.schemas import (
     EnquiryListResponse, EnquiryConversionResponse,
     BookingResponse
 )
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_optional_current_user, get_current_domain
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.config import settings
 from app.utils.crypto import decrypt_value
@@ -150,28 +150,58 @@ def _build_enquiry_email_html(
 async def create_enquiry(
     enquiry_data: EnquiryCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    domain: str = Depends(get_current_domain)
 ):
     """
-    Public endpoint to create an enquiry for a package.
+    Public endpoint to create an enquiry. 
+    Can be for a specific package or a General Enquiry.
     Auth is optional but will link customer_id if logged in.
-    On success: fires in-app notification + email to agent.
     """
-    # 1. Validate package exists and is suitable for enquiry
-    result = await db.execute(select(Package).where(Package.id == enquiry_data.package_id))
-    package = result.scalar_one_or_none()
+    agent_id = None
+    package_title = "General Enquiry"
     
-    if not package:
-        raise NotFoundException("Package not found")
+    # 1. Determine Agent and Package Context
+    if enquiry_data.package_id:
+        result = await db.execute(select(Package).where(Package.id == enquiry_data.package_id))
+        package = result.scalar_one_or_none()
         
-    if package.booking_type != "ENQUIRY":
-        raise BadRequestException("This package does not accept enquiries. Please use instant booking.")
+        if not package:
+            raise NotFoundException("Package not found")
+            
+        if package.booking_type != "ENQUIRY":
+            raise BadRequestException("This package does not accept enquiries. Please use instant booking.")
+            
+        agent_id = package.created_by
+        package_title = package.title
+    else:
+        # General Enquiry - resolve agent from request or domain
+        if enquiry_data.agent_id:
+            agent_id = enquiry_data.agent_id
+        else:
+            # Resolve from domain
+            from app.models import Agent
+            agent_result = await db.execute(select(Agent).where(Agent.domain == domain))
+            agent_profile = agent_result.scalar_one_or_none()
+            
+            # Fallback for localhost/development
+            if not agent_profile and (settings.DEBUG or domain == "localhost"):
+                stmt = select(Agent).limit(1)
+                agent_result = await db.execute(stmt)
+                agent_profile = agent_result.scalar_one_or_none()
+
+            if not agent_profile:
+                raise BadRequestException("Could not determine agent for this enquiry. Please specify agent_id or use a valid domain.")
+            agent_id = agent_profile.user_id
 
     # 2. Create Enquiry
+    create_data = enquiry_data.model_dump()
+    create_data.pop('agent_id', None) # Handle explicitly
+
     new_enquiry = Enquiry(
-        **enquiry_data.model_dump(),
-        package_name_snapshot=package.title,
-        agent_id=package.created_by,
+        **create_data,
+        package_name_snapshot=package_title,
+        agent_id=agent_id,
         customer_id=current_user.id if current_user else None,
         status=EnquiryStatus.NEW,
         source="WEB",
@@ -187,13 +217,13 @@ async def create_enquiry(
     try:
         await NotificationService.notify_new_enquiry(
             db=db,
-            agent_id=package.created_by,
+            agent_id=agent_id,
             customer_name=enquiry_data.customer_name,
-            package_title=package.title,
+            package_title=package_title,
             travel_date=str(enquiry_data.travel_date),
             travellers=enquiry_data.travellers
         )
-        logger.info(f"In-app notification created for agent {package.created_by}")
+        logger.info(f"In-app notification created for agent {agent_id}")
     except Exception as e:
         logger.error(f"Failed to create in-app notification for enquiry {new_enquiry.id}: {e}")
 
@@ -201,18 +231,18 @@ async def create_enquiry(
     try:
         # Fetch agent's email address
         agent_user_result = await db.execute(
-            select(User).where(User.id == package.created_by)
+            select(User).where(User.id == agent_id)
         )
         agent_user = agent_user_result.scalar_one_or_none()
         
         # Fetch agent profile (for SMTP settings and name)
         agent_profile_result = await db.execute(
-            select(Agent).where(Agent.user_id == package.created_by)
+            select(Agent).where(Agent.user_id == agent_id)
         )
         agent_profile = agent_profile_result.scalar_one_or_none()
         
         if agent_user and agent_user.email:
-            agent_name = ""
+            agent_name = f"{agent_profile.first_name} {agent_profile.last_name}" if agent_profile else "Agent"
             smtp_config = None
             
             # Use agent's custom SMTP if configured
@@ -223,15 +253,15 @@ async def create_enquiry(
                     "user": agent_profile.smtp_user,
                     "password": agent_profile.smtp_password or "",
                     "from_email": agent_profile.smtp_from_email or agent_user.email,
-                    "from_name": "TourSaaS Enquiries",
+                    "from_name": agent_profile.agency_name or "TourSaaS Enquiries",
                     "encryption_type": "tls"
                 }
             
             # Build HTML body
             html_body = _build_enquiry_email_html(
-                agent_name=agent_name or "Agent",
+                agent_name=agent_name,
                 customer_name=enquiry_data.customer_name,
-                package_title=package.title,
+                package_title=package_title,
                 travel_date=enquiry_data.travel_date,
                 travellers=enquiry_data.travellers,
                 email=enquiry_data.email,
@@ -244,17 +274,18 @@ async def create_enquiry(
             from app.tasks.email_tasks import send_email_task
             send_email_task.delay(
                 to_email=agent_user.email,
-                subject=f"🔔 New Enquiry: {package.title} from {enquiry_data.customer_name}",
+                subject=f"🔔 New Enquiry: {package_title} from {enquiry_data.customer_name}",
                 html_body=html_body,
                 smtp_config=smtp_config
             )
             logger.info(f"Email notification queued for agent {agent_user.email}")
         else:
-            logger.warning(f"No agent email found for package {package.id}, skipping email notification.")
+            logger.warning(f"No agent email found for agent {agent_id}, skipping email notification.")
     except Exception as e:
         logger.error(f"Failed to queue email notification for enquiry {new_enquiry.id}: {e}")
     
     return new_enquiry
+
 
 
 

@@ -366,6 +366,7 @@ async def get_public_settings(
         raise HTTPException(status_code=404, detail="Agent not found for this domain")
         
     return {
+        "agent_id": agent.user_id,
         "agency_name": agent.agency_name,
         "homepage_settings": agent.homepage_settings or {}
     }
