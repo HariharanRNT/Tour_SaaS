@@ -18,6 +18,8 @@ class PackageItineraryItemResponse(BaseModel):
     id: UUID
     day_number: int
     time_slot: Optional[str]
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     title: str
     description: str
     image_url: Optional[str] = None
@@ -171,6 +173,8 @@ class BookingWithCustomizationsResponse(BaseModel):
 class ItineraryItemCreate(BaseModel):
     day_number: int = Field(..., ge=1)
     time_slot: str = Field(..., pattern="^(morning|afternoon|evening|night|half_day|full_day)$")
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     title: str = Field(..., min_length=1, max_length=255)
     description: str
     activities: Optional[List[str]] = []
@@ -181,4 +185,6 @@ class ItineraryItemUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     time_slot: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     display_order: Optional[int] = None

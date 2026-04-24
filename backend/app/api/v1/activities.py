@@ -53,6 +53,10 @@ async def create_activity(
     If the user is an admin, they can potentially create platform activities, but for now we default to setting agent_id unless specified.
     """
     activity_data = activity_in.model_dump(exclude={"images"})
+    if "destination_city" in activity_data:
+        # Normalize city name to prevent duplicates like "Chennai" and "chennai"
+        activity_data["destination_city"] = activity_data["destination_city"].strip()
+        
     db_activity = Activity(
         **activity_data,
         agent_id=current_user.agent_id if current_user.role != UserRole.ADMIN else None
@@ -80,6 +84,7 @@ async def create_activity(
 async def get_destinations(
     page: int = Query(1, ge=1),
     limit: int = Query(8, ge=1),
+    search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_agent)
 ):
@@ -98,8 +103,13 @@ async def get_destinations(
         Destination.agent_id == current_user.agent_id
     )
     
+    if search:
+        act_cities = act_cities.where(Activity.destination_city.ilike(f"%{search}%"))
+        meta_cities = meta_cities.where(Destination.name.ilike(f"%{search}%"))
+    
     combined_cities_stmt = union(act_cities, meta_cities).subquery()
-    base_cities = select(combined_cities_stmt.c.city).group_by(combined_cities_stmt.c.city).subquery()
+    # Group by lowercase city name to avoid duplicates in the list
+    base_cities = select(func.max(combined_cities_stmt.c.city).label("city")).group_by(func.lower(combined_cities_stmt.c.city)).subquery()
     
     # Get total count
     count_stmt = select(func.count()).select_from(base_cities)
@@ -117,7 +127,7 @@ async def get_destinations(
         Destination.display_order,
         over(
             func.row_number(),
-            partition_by=Destination.name,
+            partition_by=func.lower(Destination.name),
             order_by=Destination.agent_id.desc() # Non-null agent_id comes first
         ).label("rn")
     ).where(
@@ -143,13 +153,13 @@ async def get_destinations(
         .outerjoin(
             Activity,
             and_(
-                base_cities.c.city == Activity.destination_city,
+                func.lower(base_cities.c.city) == func.lower(Activity.destination_city),
                 or_(Activity.agent_id == None, Activity.agent_id == current_user.agent_id)
             )
         )
         .outerjoin(
             resolved_dest, 
-            base_cities.c.city == resolved_dest.c.name
+            func.lower(base_cities.c.city) == func.lower(resolved_dest.c.name)
         )
         .group_by(
             base_cities.c.city, 
@@ -171,20 +181,21 @@ async def get_destinations(
     # Get package counts for these cities (Agency-wide packages)
     cities = [row.destination_city for row in rows]
     pkg_count_stmt = (
-        select(Package.destination, func.count(Package.id).label("pkg_count"))
+        select(func.lower(Package.destination), func.count(Package.id).label("pkg_count"))
         .where(
             and_(
-                Package.destination.in_(cities),
+                func.lower(Package.destination).in_([c.lower() for c in cities]),
                 Package.created_by == current_user.agent_id
             )
         )
-        .group_by(Package.destination)
+        .group_by(func.lower(Package.destination))
     )
     pkg_result = await db.execute(pkg_count_stmt)
-    pkg_counts = {row.destination: row.pkg_count for row in pkg_result.all()}
+    pkg_counts = {row[0].lower(): row[1] for row in pkg_result.all()}
     
     destinations = []
     for row in rows:
+        dest_name_lower = row.destination_city.lower()
         destinations.append(DestinationSummary(
             name=row.destination_city, # Mapping city to name
             country=row.country or "",
@@ -194,7 +205,7 @@ async def get_destinations(
             is_active=row.is_active if row.is_active is not None else True,
             display_order=row.display_order or 999,
             activity_count=row.activity_count,
-            package_count=pkg_counts.get(row.destination_city, 0)
+            package_count=pkg_counts.get(dest_name_lower, 0)
         ))
     
     return PaginatedDestinationResponse(
@@ -215,11 +226,15 @@ async def update_destination_metadata(
     Create or update destination metadata (image, description, etc.)
     """
 
+    # Normalize name and check case-insensitively
+    normalized_name = metadata.name.strip()
+    metadata.name = normalized_name
+
     # Check if exists (specifically for this agent)
     stmt = select(Destination).where(
         and_(
-            Destination.name == metadata.name,
-            Destination.agent_id == current_user.id
+            func.lower(Destination.name) == func.lower(normalized_name),
+            Destination.agent_id == current_user.agent_id
         )
     )
     result = await db.execute(stmt)
@@ -256,7 +271,7 @@ async def update_destination_metadata(
     else:
         # Create new agent-specific metadata
         db_dest = Destination(**metadata.model_dump())
-        db_dest.agent_id = current_user.id
+        db_dest.agent_id = current_user.agent_id
         db.add(db_dest)
     
     await db.commit()
@@ -328,11 +343,11 @@ async def update_destination(
     new_name = metadata.name
     
     # If name is being changed, we need to update references
-    if new_name and new_name != old_name:
-        # Check if new name already exists for this agent
+    if new_name and new_name.strip().lower() != old_name.strip().lower():
+        # Check if new name already exists for this agent (case-insensitive)
         check_stmt = select(Destination).where(
             and_(
-                Destination.name == new_name,
+                func.lower(Destination.name) == func.lower(new_name),
                 Destination.agent_id == current_user.agent_id
             )
         )
@@ -427,6 +442,9 @@ async def update_activity(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this activity")
         
     update_data = activity_in.model_dump(exclude_unset=True, exclude={"images"})
+    if "destination_city" in update_data:
+        update_data["destination_city"] = update_data["destination_city"].strip()
+        
     for field, value in update_data.items():
         setattr(activity, field, value)
     
@@ -478,17 +496,26 @@ async def delete_destination_activities(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(check_permission("activities", "full"))
 ):
-    """Delete all activities for a specific destination city owned by the current user."""
-    stmt = delete(Activity).where(
+    """Delete all activities and metadata for a specific destination owned by the current user."""
+    # Delete activities
+    activity_del_stmt = delete(Activity).where(
         Activity.destination_city == city,
         Activity.agent_id == current_user.agent_id
     )
     
+    # Delete destination metadata
+    dest_del_stmt = delete(Destination).where(
+        Destination.name == city,
+        Destination.agent_id == current_user.agent_id
+    )
+    
     # Special handling for Admin if needed
     if current_user.role == UserRole.ADMIN:
-        stmt = delete(Activity).where(Activity.destination_city == city)
+        activity_del_stmt = delete(Activity).where(Activity.destination_city == city)
+        dest_del_stmt = delete(Destination).where(Destination.name == city)
         
-    result = await db.execute(stmt)
+    await db.execute(activity_del_stmt)
+    await db.execute(dest_del_stmt)
     await db.commit()
     
-    return {"message": f"Deleted activities for {city}"}
+    return {"message": f"Deleted destination '{city}' and its activities"}

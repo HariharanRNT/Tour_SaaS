@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import debounce from 'lodash/debounce'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
@@ -40,9 +41,9 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select"
-import { cn } from '@/lib/utils'
+import { cn, isValidUrl } from '@/lib/utils'
 import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2, MoreVertical } from 'lucide-react'
-import { activitiesAPI, API_URL } from '@/lib/api'
+import { activitiesAPI, API_URL, uploadFileToS3 } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -62,8 +63,38 @@ export default function ActivitiesMasterPage() {
     const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
+    const [searchInput, setSearchInput] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize] = useState(8)
+    
+    // Reset to first page on search
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm])
+
+    // Debounced search logic
+    const debouncedSearch = useMemo(
+        () => debounce((value: string) => {
+            // Trigger API only when length is at least 3 or if clearing search
+            if (value.length >= 3 || value.length === 0) {
+                setSearchTerm(value)
+            }
+        }, 500),
+        []
+    )
+
+    // Cleanup debounced call on unmount
+    useEffect(() => {
+        return () => {
+            debouncedSearch.cancel()
+        }
+    }, [debouncedSearch])
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setSearchInput(value)
+        debouncedSearch(value)
+    }
 
     useEffect(() => {
         if (isSubUser && !hasPermission('activities', 'view')) {
@@ -78,6 +109,7 @@ export default function ActivitiesMasterPage() {
     const [newCityImage, setNewCityImage] = useState('')
     const [isUploading, setIsUploading] = useState(false)
     const [isPopular, setIsPopular] = useState(true)
+    const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload')
 
     // Edit State
     const [isEditing, setIsEditing] = useState(false)
@@ -151,13 +183,29 @@ export default function ActivitiesMasterPage() {
 
     const handleCreateNewDestination = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newCityName.trim()) {
+        const trimmedName = newCityName.trim()
+        if (!trimmedName) {
             toast.error('Please enter a destination name')
             return
         }
 
+        if (trimmedName.length < 3) {
+            toast.error('Destination name must be at least 3 characters long')
+            return
+        }
+
+        if (trimmedName.length > 100) {
+            toast.error('Destination name must be at most 100 characters long')
+            return
+        }
+
+        if (newCityImage && !isValidUrl(newCityImage)) {
+            toast.error('Please enter a valid image URL (e.g., https://example.com/image.jpg)')
+            return
+        }
+
         saveMetadataMutation.mutate({
-            name: newCityName.trim(),
+            name: trimmedName,
             country: newCityCountry.trim() || 'Unknown',
             image_url: newCityImage,
             is_popular: isPopular
@@ -170,6 +218,7 @@ export default function ActivitiesMasterPage() {
         setNewCityImage(dest.image_url || '')
         setIsPopular(dest.is_popular ?? true)
         setEditingDestOriginalName(dest.name)
+        setImageMode('upload') // Default to upload mode for preview
         setIsEditing(true)
         setIsNewDestModalOpen(true)
     }
@@ -267,10 +316,15 @@ export default function ActivitiesMasterPage() {
                         </div>
                         <Input
                             placeholder="Search destinations..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={searchInput}
+                            onChange={handleSearchChange}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
+                                    // Force search on enter regardless of length
+                                    debouncedSearch.cancel()
+                                    if (searchInput.length >= 3 || searchInput.length === 0) {
+                                        setSearchTerm(searchInput)
+                                    }
                                     setCurrentPage(1);
                                 }
                             }}
@@ -484,6 +538,7 @@ export default function ActivitiesMasterPage() {
                     setNewCityName('');
                     setNewCityImage('');
                     setIsPopular(true);
+                    setImageMode('upload');
                 }
             }}>
                 <DialogContent
@@ -567,7 +622,13 @@ export default function ActivitiesMasterPage() {
                                 <Input
                                     id="destination-name"
                                     value={newCityName}
-                                    onChange={(e) => setNewCityName(e.target.value)}
+                                    onChange={(e) => {
+                                        // Restrict numeric input and limit to 100 characters
+                                        const val = e.target.value.replace(/[0-9]/g, '');
+                                        setNewCityName(val);
+                                    }}
+                                    minLength={3}
+                                    maxLength={100}
                                     placeholder="e.g., Bali, Paris, Tokyo"
                                     className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-[var(--color-primary-font)]/30 text-[var(--color-primary-font)] font-semibold"
                                     style={{
@@ -596,82 +657,109 @@ export default function ActivitiesMasterPage() {
                                     Destination Image
                                 </label>
 
-                                <div
-                                    className={cn(
-                                        "border-2 border-dashed rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer group h-44 flex items-center justify-center",
-                                        newCityImage ? "border-[var(--primary)]/50 bg-[var(--primary)]/5" : "border-white/40 bg-white/10 hover:border-[var(--primary)]/40 hover:bg-white/20"
-                                    )}
-                                    onClick={() => document.getElementById('dest-upload')?.click()}
-                                >
-                                    {isUploading ? (
-                                        <div className="flex flex-col items-center py-4">
-                                            <Loader2 className="h-8 w-8 text-[var(--primary)] animate-spin mb-2" />
-                                            <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to S3...</p>
-                                        </div>
-                                    ) : newCityImage ? (
-                                        <div className="relative w-full h-full rounded-xl overflow-hidden border border-white/60 shadow-lg">
-                                            <img src={newCityImage} alt="Preview" className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <div className="p-2 bg-white/90 rounded-full text-[var(--primary)] shadow-xl">
-                                                    <Upload className="h-5 w-5" />
+                                {/* Image Mode Selector */}
+                                <div className="flex p-1 bg-white/30 backdrop-blur-md rounded-xl border border-white/40 mb-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setImageMode('upload');
+                                            // Optional: setNewCityImage(''); 
+                                        }}
+                                        className={cn(
+                                            "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+                                            imageMode === 'upload' ? "bg-white text-[var(--primary)] shadow-sm" : "text-[var(--color-primary-font)]/60 hover:text-[var(--primary)]"
+                                        )}
+                                    >
+                                        Upload Image
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setImageMode('url');
+                                            // Optional: setNewCityImage('');
+                                        }}
+                                        className={cn(
+                                            "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+                                            imageMode === 'url' ? "bg-white text-[var(--primary)] shadow-sm" : "text-[var(--color-primary-font)]/60 hover:text-[var(--primary)]"
+                                        )}
+                                    >
+                                        Image URL
+                                    </button>
+                                </div>
+
+                                {imageMode === 'upload' ? (
+                                    <div
+                                        className={cn(
+                                            "border-2 border-dashed rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer group h-44 flex items-center justify-center",
+                                            newCityImage && !isUploading ? "border-[var(--primary)]/50 bg-[var(--primary)]/5" : "border-white/40 bg-white/10 hover:border-[var(--primary)]/40 hover:bg-white/20"
+                                        )}
+                                        onClick={() => document.getElementById('dest-upload')?.click()}
+                                    >
+                                        {isUploading ? (
+                                            <div className="flex flex-col items-center py-4">
+                                                <Loader2 className="h-8 w-8 text-[var(--primary)] animate-spin mb-2" />
+                                                <p className="text-xs font-bold text-[#3A1A08]/60">Uploading to S3...</p>
+                                            </div>
+                                        ) : newCityImage ? (
+                                            <div className="relative w-full h-full rounded-xl overflow-hidden border border-white/60 shadow-lg">
+                                                <img src={newCityImage} alt="Preview" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <div className="p-2 bg-white/90 rounded-full text-[var(--primary)] shadow-xl">
+                                                        <Upload className="h-5 w-5" />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center py-2">
-                                            <div className="p-2.5 bg-white/40 rounded-full text-[var(--primary)] mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                                                <Upload className="h-5 w-5" />
+                                        ) : (
+                                            <div className="flex flex-col items-center py-2">
+                                                <div className="p-2.5 bg-white/40 rounded-full text-[var(--primary)] mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                                                    <Upload className="h-5 w-5" />
+                                                </div>
+                                                <p className="text-sm font-bold text-[#3A1A08]">Drag & drop or Click to upload</p>
+                                                <p className="text-[9px] text-[#B4501E]/60 mt-0.5 uppercase tracking-widest font-bold">PNG, JPG up to 5MB</p>
                                             </div>
-                                            <p className="text-sm font-bold text-[#3A1A08]">Drag & drop or Click to upload</p>
-                                            <p className="text-[9px] text-[#B4501E]/60 mt-0.5 uppercase tracking-widest font-bold">PNG, JPG up to 5MB</p>
-                                        </div>
-                                    )}
-                                    <input
-                                        id="dest-upload"
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={async (e) => {
-                                            const file = e.target.files?.[0]
-                                            if (!file) return
+                                        )}
+                                        <input
+                                            id="dest-upload"
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0]
+                                                if (!file) return
 
-                                            setIsUploading(true)
-                                            try {
-                                                const formData = new FormData()
-                                                formData.append('file', file)
+                                                // Restrict image size to 5MB
+                                                if (file.size > 5 * 1024 * 1024) {
+                                                    toast.error('Image size must be less than 5MB')
+                                                    return
+                                                }
 
-                                                const token = localStorage.getItem('token')
-                                                const response = await fetch(`${API_URL}/api/v1/upload?folder=destinations`, {
-                                                    method: 'POST',
-                                                    headers: { 'Authorization': `Bearer ${token}` },
-                                                    body: formData
-                                                })
-
-                                                if (!response.ok) throw new Error('Upload failed')
-                                                const data = await response.json()
-                                                setNewCityImage(data.url)
-                                                toast.success('Image uploaded successfully')
-                                            } catch (err) {
-                                                console.error(err)
-                                                toast.error('Failed to upload image')
-                                            } finally {
-                                                setIsUploading(false)
-                                            }
-                                        }}
-                                    />
-                                </div>
-
-                                <div className="relative group/url">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]/60 group-focus-within/url:text-[var(--primary)] transition-colors">
-                                        <Link2 className="h-4 w-4" />
+                                                setIsUploading(true)
+                                                try {
+                                                    const s3Url = await uploadFileToS3(file, 'destinations')
+                                                    setNewCityImage(s3Url)
+                                                    toast.success('Image uploaded to S3 successfully')
+                                                } catch (err) {
+                                                    console.error(err)
+                                                    toast.error('Failed to upload image to S3')
+                                                } finally {
+                                                    setIsUploading(false)
+                                                }
+                                            }}
+                                        />
                                     </div>
-                                    <Input
-                                        placeholder="Or paste image URL here..."
-                                        value={newCityImage}
-                                        onChange={(e) => setNewCityImage(e.target.value)}
-                                        className="pl-11 h-10 text-[11px] font-semibold bg-white/30 backdrop-blur-md border-white/40 rounded-xl focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/50 transition-all"
-                                    />
-                                </div>
+                                ) : (
+                                    <div className="relative group/url">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]/60 group-focus-within/url:text-[var(--primary)] transition-colors">
+                                            <Link2 className="h-4 w-4" />
+                                        </div>
+                                        <Input
+                                            placeholder="Paste image URL here..."
+                                            value={newCityImage}
+                                            onChange={(e) => setNewCityImage(e.target.value)}
+                                            className="pl-11 h-12 text-[12px] font-semibold bg-white/30 backdrop-blur-md border-white/40 rounded-xl focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]/50 transition-all shadow-inner"
+                                        />
+                                    </div>
+                                )}
 
                                 {/* Popular Destination Toggle */}
                                 <div 

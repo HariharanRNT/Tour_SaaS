@@ -36,7 +36,7 @@ class CustomService(BaseModel):
 
 
 class PackageBase(BaseModel):
-    title: str
+    title: str = Field(..., max_length=100)
     slug: Optional[str] = None
     destination: str
     duration_days: int
@@ -47,7 +47,7 @@ class PackageBase(BaseModel):
     category: Optional[str] = "Adventure"
     price_per_person: float
     max_group_size: int = 20
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
     is_public: bool = True
     included_items: List[str] = []
@@ -84,7 +84,7 @@ class PackageCreate(PackageBase):
 
 
 class PackageUpdate(BaseModel):
-    title: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=100)
     slug: Optional[str] = None
     destination: Optional[str] = None
     duration_days: Optional[int] = None
@@ -93,7 +93,7 @@ class PackageUpdate(BaseModel):
     trip_styles: Optional[List[str]] = None   # preferred multi-select field from frontend
     price_per_person: Optional[float] = None
     max_group_size: Optional[int] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
     is_public: Optional[bool] = None
     included_items: Optional[List[str]] = None
@@ -161,9 +161,11 @@ def _parse_trip_styles(v) -> List[str]:
 
 class ItineraryItemBase(BaseModel):
     day_number: int
-    title: str
-    description: Optional[str] = None
+    title: str = Field(..., max_length=100)
+    description: Optional[str] = Field(None, max_length=1000)
     time_slot: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     image_url: Optional[List[str]] = []  # Changed to list of strings
     activities: Optional[List[str]] = []
     meals_included: Optional[str] = None
@@ -177,9 +179,11 @@ class ItineraryItemCreate(ItineraryItemBase):
 
 class ItineraryItemUpdate(BaseModel):
     day_number: Optional[int] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = Field(None, max_length=1000)
     time_slot: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     image_url: Optional[List[str]] = None  # Changed to list
     activities: Optional[List[str]] = None
     meals_included: Optional[str] = None
@@ -206,6 +210,8 @@ class ItineraryItemResponse(ItineraryItemBase):
                 'title': getattr(obj, 'title', None),
                 'description': getattr(obj, 'description', None),
                 'time_slot': getattr(obj, 'time_slot', None),
+                'start_time': getattr(obj, 'start_time', None),
+                'end_time': getattr(obj, 'end_time', None),
                 'image_url': _parse_json_list(getattr(obj, 'image_url', [])),
                 'activities': _parse_json_list(getattr(obj, 'activities', [])),
                 'meals_included': getattr(obj, 'meals_included', None),
@@ -271,7 +277,7 @@ class PackageResponse(PackageBase):
                 'max_group_size': getattr(obj, 'max_group_size', 20),
                 'description': getattr(obj, 'description', None),
                 'country': getattr(obj, 'country', None),
-                'is_public': getattr(obj, 'is_public', True),
+                'is_public': getattr(obj, 'is_public', True) if getattr(obj, 'is_public', None) is not None else True,
                 'included_items': _parse_json_list(getattr(obj, 'included_items', '[]')),
                 'excluded_items': _parse_json_list(getattr(obj, 'excluded_items', '[]')),
                 'feature_image_url': getattr(obj, 'feature_image_url', None),

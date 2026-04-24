@@ -376,6 +376,102 @@ Return the COMPLETE updated itinerary in the same JSON format, with all modifica
                 "error": str(e)
             }
 
+    async def analyze_enquiry(self, message: str) -> Dict:
+        """
+        Analyze a travel enquiry and extract structured data.
+        
+        Args:
+            message: Customer's enquiry message
+            
+        Returns:
+            Dict with extracted fields or error
+        """
+        try:
+            # Enhanced print for debugging in terminal
+            print(f"\n[GeminiService] --- ANALYZING ENQUIRY CONTEXT ---\n{message}\n---------------------------------------------")
+            
+            system_instruction = """You are a professional travel agent assistant. Your goal is to extract structured filter data from travel enquiries.
+            
+RULES:
+1. Extract ALL mentioned destinations (cities, states, countries).
+2. If the customer message is brief/vague, ALWAYS look for the destination in the "Interesting Package" field.
+3. If no specific destination is found but a region is implied, include the region.
+4. "budgetHint" should be a number string only.
+5. Return ONLY valid JSON."""
+
+            prompt = f"Analyze this context and return JSON:\n\n{message}"
+
+            config = types.GenerateContentConfig(
+                temperature=0.1,
+                response_mime_type="application/json",
+                system_instruction=system_instruction
+            )
+            
+            # Ensure model name is properly prefixed for the SDK
+            effective_model = self.model_name if self.model_name.startswith("models/") else f"models/{self.model_name}"
+            
+            response = self.client.models.generate_content(
+                model=effective_model,
+                contents=prompt,
+                config=config
+            )
+            
+            response_text = response.text.strip()
+            print(f"[GeminiService] Extracted Data from {effective_model}: {response_text}")
+            
+            # Basic cleanup if not already clean JSON
+            if "```json" in response_text:
+                response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
+                
+            try:
+                data = json.loads(response_text)
+            except Exception:
+                # If JSON fails, try to find the first { and last }
+                import re
+                match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if match:
+                    data = json.loads(match.group())
+                else:
+                    raise
+            
+            # Ensure all keys exist with correct types
+            final_data = {
+                "destinations": data.get("destinations") if isinstance(data.get("destinations"), list) else [],
+                "days": data.get("days"),
+                "nights": data.get("nights"),
+                "guests": data.get("guests"),
+                "tripStyle": data.get("tripStyle"),
+                "budgetHint": str(data.get("budgetHint")) if data.get("budgetHint") else None,
+                "keywords": data.get("keywords") if isinstance(data.get("keywords"), list) else [],
+                "raw_response": response_text # Pass for frontend debugging
+            }
+                
+            return {
+                "success": True,
+                "data": final_data
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[GeminiService] Extraction error: {error_msg}")
+            return {
+                "success": False,
+                "error": error_msg,
+                "data": {
+                    "destinations": [],
+                    "days": None,
+                    "nights": None,
+                    "guests": None,
+                    "tripStyle": None,
+                    "isMultiCity": False,
+                    "budgetHint": None,
+                    "keywords": [],
+                    "internal_error": error_msg # Return for debug
+                }
+            }
+
 
     def _get_package_search_system_prompt(self) -> str:
         """Get the system prompt for the package search assistant"""

@@ -89,31 +89,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     } | null>(null)
 
     useEffect(() => {
-        // 1. Initial load from LocalStorage for speed/dev
-        try {
-            const saved = localStorage.getItem('agent-homepage-settings');
-            if (saved) setHpSettings(JSON.parse(saved));
-        } catch { /* ignore */ }
-        try {
-            const savedCards = localStorage.getItem('agent-homepage-cards');
-            if (savedCards) {
-                const parsed = JSON.parse(savedCards);
-                if (Array.isArray(parsed) && parsed.length > 0) setAgentFeatureCards(parsed);
-            }
-        } catch { /* ignore */ }
-        try {
-            const savedWcu = localStorage.getItem('agent-homepage-wcu-cards');
-            if (savedWcu) {
-                const parsed = JSON.parse(savedWcu);
-                if (Array.isArray(parsed) && parsed.length > 0) setWcuCards(parsed);
-            }
-        } catch { /* ignore */ }
-        try {
-            const savedStyle = localStorage.getItem('agent-homepage-card-style');
-            if (savedStyle) setCardAppearance(JSON.parse(savedStyle));
-        } catch { /* ignore */ }
-
-        // 2. Load from Public Context for accuracy (Sync local states with centralized data)
+        // Load from Public Context for accuracy (Sync local states with centralized data)
         if (publicSettings?.homepage_settings) {
             const hs = publicSettings.homepage_settings;
             if (hs.headline1) {

@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, C
 import { toast } from 'sonner'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { API_URL } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import {
     DndContext,
     closestCenter,
@@ -33,7 +34,6 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { SortableActivityItem } from './SortableActivityItem'
-import { cn } from '@/lib/utils'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -692,6 +692,16 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
             return
         }
 
+        if (newActivity.title.length > 100) {
+            toast.error('Activity title cannot exceed 100 characters')
+            return
+        }
+
+        if (newActivity.description && newActivity.description.length > 300) {
+            toast.error('Activity description cannot exceed 300 characters')
+            return
+        }
+
         setLoading(true)
         try {
             const url = editingId
@@ -751,6 +761,12 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
     }
 
     const uploadImage = async (file: File): Promise<string> => {
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error(`Image "${file.name}" exceeds 5MB limit`)
+            throw new Error('File too large')
+        }
+
         setIsUploading(true)
         setUploadProgress(10)
 
@@ -1299,9 +1315,6 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                 {Object.entries(timeSlotConfig).map(([slot, config]) => {
                                                     const slotActivities = dayActivities[slot as keyof DayActivities]
                                                     const Icon = config.icon
-                                                    const totalCapacityHours = slot === 'full_day' ? 12 : slot === 'morning' ? 4 : slot === 'half_day' ? 6 : 4
-                                                    const estimatedHoursUsed = slotActivities.length * 2
-                                                    const progressPercentage = Math.min((estimatedHoursUsed / totalCapacityHours) * 100, 100)
 
                                                     return (
                                                         <DroppableTimeSlot key={slot} id={`${day}-${slot}`}>
@@ -1317,15 +1330,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                                             <div>
                                                                                 <h3 className="font-bold text-black flex items-center gap-2.5 text-[15px] font-serif tracking-tight">
                                                                                     {config.label}
-                                                                                    <span className="text-[10px] font-bold text-black/60 bg-white/20 px-2.5 py-1 rounded-full border border-white/30 uppercase tracking-widest">
-                                                                                        {totalCapacityHours}h Limit
-                                                                                    </span>
                                                                                 </h3>
-                                                                                {slotActivities.length > 0 && (
-                                                                                    <p className="text-[10px] text-black/60 mt-1 font-bold uppercase tracking-wider">
-                                                                                        Usage: {estimatedHoursUsed}h / {totalCapacityHours}h
-                                                                                    </p>
-                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
@@ -1341,15 +1346,6 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Glowing Progress Bar */}
-                                                                    {slotActivities.length > 0 && (
-                                                                        <div className="w-full mt-4 overflow-hidden bg-white/10 rounded-full h-1.5 border border-white/10">
-                                                                            <div
-                                                                                className="transition-all duration-1000 shadow-[0_0_10px_var(--primary-glow)] h-full"
-                                                                                style={{ width: `${progressPercentage}%`, background: 'linear-gradient(90deg, var(--primary), var(--primary-light))', borderRadius: '100px' }}
-                                                                            />
-                                                                        </div>
-                                                                    )}
 
                                                                     <div className={cn("space-y-3 mt-3")}>
                                                                         <SortableContext
@@ -1484,17 +1480,11 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                 <div className="relative group/title">
                                                     <Input
                                                         id="activity-title"
-                                                        placeholder="e.g., Majestic Sunset at Tokyo Sky Tree..."
-                                                        className={cn(
-                                                            "h-[44px] text-sm font-bold bg-white/30 backdrop-blur-md border-white/60 transition-all rounded-[12px] placeholder:text-slate-400 placeholder:italic text-slate-800 shadow-inner px-4",
-                                                            "text-[var(--primary)]"
-                                                        )}
+                                                        placeholder="e.g., Sunrise Boat Ride at Ganges"
                                                         value={newActivity.title}
-                                                        onChange={(e) => {
-                                                            if (e.target.value.length <= 100) {
-                                                                setNewActivity({ ...newActivity, title: e.target.value })
-                                                            }
-                                                        }}
+                                                        onChange={(e) => setNewActivity(prev => ({ ...prev, title: e.target.value }))}
+                                                        className="glass-input h-12 text-sm font-bold placeholder:text-black/20"
+                                                        maxLength={100}
                                                     />
                                                 </div>
                                             </div>
@@ -1656,34 +1646,37 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                         {showAdvancedOptions && (
                                             <div className="space-y-8 animate-in slide-in-from-top-4 duration-700">
                                                 <div className="space-y-4">
-                                                    <div className={cn("flex items-center gap-2 px-1 border-b pb-2", "border-[var(--primary)]")}>
-                                                        <div className={cn("p-1.5 rounded-lg", "bg-[var(--primary)]/10")}>
-                                                            <FileText className={cn("w-4 h-4", "text-slate-900")} />
+                                                    <div className={cn("flex items-center justify-between border-b pb-2 px-1", "border-[var(--primary)]")}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={cn("p-1.5 rounded-lg", "bg-[var(--primary)]/10")}>
+                                                                <FileText className={cn("w-4 h-4", "text-slate-900")} />
+                                                            </div>
+                                                            <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] font-playfair">Experience Narrative</h3>
                                                         </div>
-                                                        <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] font-playfair">Experience Narrative</h3>
+                                                        <span className={cn(
+                                                            "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
+                                                            (newActivity.description?.length || 0) > 900 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                                        )}>
+                                                            {newActivity.description?.length || 0} / 1000
+                                                        </span>
                                                     </div>
 
-                                                    <div className="relative overflow-hidden rounded-[24px] border border-white/60 focus-within:ring-4 focus-within:ring-emerald-400/5 focus-within:border-emerald-400/40 transition-all bg-white/30 backdrop-blur-md shadow-inner">
-                                                        <div className="relative">
-                                                            <Textarea
-                                                                id="activity-description"
-                                                                placeholder="Craft a compelling story for this experience..."
-                                                                className="min-h-[160px] border-none focus-visible:ring-0 shadow-none text-base font-medium leading-relaxed p-6 bg-transparent resize-none overflow-hidden placeholder:text-slate-400 placeholder:italic text-slate-700"
-                                                                value={newActivity.description}
-                                                                onChange={(e) => {
-                                                                    if (e.target.value.length <= 500) {
-                                                                        setNewActivity({ ...newActivity, description: e.target.value })
-                                                                        e.target.style.height = 'auto';
-                                                                        e.target.style.height = e.target.scrollHeight + 'px';
-                                                                    }
-                                                                }}
+                                                    <div className="relative group/input">
+                                                        <Textarea
+                                                            placeholder="Craft a compelling story for this experience (max 1000 characters)..."
+                                                            value={newActivity.description}
+                                                            onChange={(e) => setNewActivity(prev => ({ ...prev, description: e.target.value }))}
+                                                            className="glass-textarea min-h-[140px] text-sm leading-relaxed placeholder:text-black/20"
+                                                            maxLength={1000}
+                                                        />
+                                                        <div className="mt-2 h-1 w-full bg-black/5 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className={cn(
+                                                                    "h-full transition-all duration-300",
+                                                                    (newActivity.description?.length || 0) > 900 ? "bg-red-500" : "bg-[var(--primary)]"
+                                                                )}
+                                                                style={{ width: `${Math.min(((newActivity.description?.length || 0) / 1000) * 100, 100)}%` }}
                                                             />
-                                                            <div className={cn(
-                                                                "absolute right-4 bottom-4 text-[9px] font-black px-2 py-0.5 rounded-md border backdrop-blur-md",
-                                                                newActivity.description.length > 450 ? "bg-red-50 text-red-600 border-red-100" : ("text-[var(--primary)]")
-                                                            )}>
-                                                                {newActivity.description.length}/500
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

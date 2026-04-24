@@ -1,6 +1,6 @@
 """API endpoints for enhanced package management"""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -22,6 +22,7 @@ router = APIRouter(prefix="/packages", tags=["Packages - Enhanced"])
 
 @router.get("/search", response_model=List[dict])
 async def search_packages_by_destination(
+    response: Response,
     destination: str,
     limit: int = 10,
     offset: int = 0,
@@ -30,6 +31,9 @@ async def search_packages_by_destination(
     domain: str = Depends(get_current_domain)
 ):
     """Search packages by destination"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     try:
         # Debug logging - RE-ENABLE
         print(f"DEBUG SEARCH: Destination={destination}, Current User={current_user}")
@@ -44,7 +48,7 @@ async def search_packages_by_destination(
         
         stmt = select(Package).where(
             Package.status == PackageStatus.PUBLISHED,
-            Package.is_public == True,
+            # Package.is_public == True,
             or_(
                 Package.destination.ilike(f"%{destination}%"),
                 Package.country.ilike(f"%{destination}%")
@@ -100,23 +104,26 @@ async def search_packages_by_destination(
 @router.get("/{package_id}/itinerary", response_model=PackageWithItineraryResponse)
 async def get_package_with_itinerary(
     package_id: UUID,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """Get package with day-wise time-slotted itinerary"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     service = PackageService(db)
     
     try:
         result = await service.get_package_with_itinerary(package_id)
         
-        # Fetch agent homepage settings
-        from app.models import Agent
-        from sqlalchemy import select
-        agent_stmt = select(Agent.homepage_settings).where(Agent.user_id == result['package'].created_by)
-        agent_res = await db.execute(agent_stmt)
-        homepage_settings = agent_res.scalar() or {}
+        agent = result.get('agent')
+        homepage_settings = agent.homepage_settings if agent else {}
 
         return {
             **result['package'].__dict__,
+            'gst_applicable': result.get('gst_applicable'),
+            'gst_mode': result.get('gst_mode'),
+            'gst_percentage': result.get('gst_percentage'),
             'feature_image_url': result.get('feature_image_url'),
             'destination_image_url': result.get('destination_image_url'),
             'itinerary_by_day': result['itinerary_by_day'],
@@ -131,23 +138,26 @@ async def get_package_with_itinerary(
 @router.get("/slug/{slug}/itinerary", response_model=PackageWithItineraryResponse)
 async def get_package_with_itinerary_by_slug(
     slug: str,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """Get package with day-wise time-slotted itinerary by slug"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     service = PackageService(db)
     
     try:
         result = await service.get_package_with_itinerary_by_slug(slug)
         
-        # Fetch agent homepage settings
-        from app.models import Agent
-        from sqlalchemy import select
-        agent_stmt = select(Agent.homepage_settings).where(Agent.user_id == result['package'].created_by)
-        agent_res = await db.execute(agent_stmt)
-        homepage_settings = agent_res.scalar() or {}
+        agent = result.get('agent')
+        homepage_settings = agent.homepage_settings if agent else {}
 
         return {
             **result['package'].__dict__,
+            'gst_applicable': result.get('gst_applicable'),
+            'gst_mode': result.get('gst_mode'),
+            'gst_percentage': result.get('gst_percentage'),
             'feature_image_url': result.get('feature_image_url'),
             'destination_image_url': result.get('destination_image_url'),
             'itinerary_by_day': result['itinerary_by_day'],

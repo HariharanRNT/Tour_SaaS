@@ -9,6 +9,42 @@ export const api = axios.create({
     }
 })
 
+/**
+ * Upload a file directly to S3 using a presigned URL
+ */
+export const uploadFileToS3 = async (file: File, folder: string = "packages") => {
+    // Restrict image size to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size must be less than 5MB');
+    }
+    try {
+        const token = localStorage.getItem('token');
+        
+        // 1. Get presigned URL
+        const { data } = await api.post('/upload/presigned-url', {
+            file_name: file.name,
+            content_type: file.type,
+            folder: folder
+        }, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { upload_url, file_url } = data;
+
+        // 2. Upload to S3 directly
+        await axios.put(upload_url, file, {
+            headers: {
+                'Content-Type': file.type
+            }
+        });
+
+        return file_url;
+    } catch (error) {
+        console.error('S3 Upload Error:', error);
+        throw error;
+    }
+};
+
 // Add auth token and domain to requests
 api.interceptors.request.use((config) => {
     let token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -437,14 +473,14 @@ export const packagesEnhancedAPI = {
 
         const response = await fetch(
             `${API_URL}/api/v1/packages/search/?destination=${encodeURIComponent(destination)}&limit=${limit}`,
-            { headers }
+            { headers, cache: 'no-store' }
         )
         if (!response.ok) throw new Error('Failed to search packages')
         return response.json()
     },
 
     getWithItinerary: async (packageId: string) => {
-        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary/`)
+        const response = await fetch(`${API_URL}/api/v1/packages/${packageId}/itinerary/`, { cache: 'no-store' })
         if (!response.ok) throw new Error('Failed to fetch package details')
         return response.json()
     },
@@ -525,7 +561,7 @@ export const activitiesAPI = {
     },
 
     deleteDestination: async (city: string) => {
-        const response = await api.delete(`/activities/destination/${city}`)
+        const response = await api.delete(`/activities/destination/${encodeURIComponent(city)}`)
         return response.data
     },
 

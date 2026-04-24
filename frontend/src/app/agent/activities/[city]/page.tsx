@@ -11,11 +11,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { activitiesAPI, API_URL } from '@/lib/api'
+import { activitiesAPI, API_URL, uploadFileToS3 } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { Activity, ActivityCreate, TimeSlotPreference } from '@/types/activities'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { getValidImageUrl } from '@/lib/utils/image'
+import { cn, isValidUrl } from '@/lib/utils'
 import {
     Dialog,
     DialogContent,
@@ -61,6 +62,7 @@ export default function CityActivityManager({ params }: { params: { city: string
     const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false)
     const [urlInput, setUrlInput] = useState('')
     const [targetUrlRowIndex, setTargetUrlRowIndex] = useState<number | null>(null)
+    const [errorFields, setErrorFields] = useState<Record<number, string[]>>({})
 
     useEffect(() => {
         loadCityActivities()
@@ -96,6 +98,14 @@ export default function CityActivityManager({ params }: { params: { city: string
         const newRows = [...activityRows]
         newRows[index] = { ...newRows[index], [field]: value }
         setActivityRows(newRows)
+
+        // Clear error when field is updated
+        if (errorFields[index]?.includes(field)) {
+            setErrorFields(prev => ({
+                ...prev,
+                [index]: prev[index].filter(f => f !== field)
+            }))
+        }
     }
 
     // --- Image Handling per Row ---
@@ -116,6 +126,12 @@ export default function CityActivityManager({ params }: { params: { city: string
             const file = e.target.files?.[0]
             if (!file) return
 
+            // Restrict image size to 5MB
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size must be less than 5MB')
+                return
+            }
+
             // Show loading placeholder initially
             const tempId = Date.now().toString()
             const newImages = [...(row.images || [])]
@@ -128,26 +144,7 @@ export default function CityActivityManager({ params }: { params: { city: string
             handleRowChange(rowIndex, 'images', newImages)
 
             try {
-                const formData = new FormData()
-                formData.append('file', file)
-                formData.append('folder', 'activities')
-
-                // Get token and URL
-                const token = localStorage.getItem('token')
-                if (!token) throw new Error('Not authenticated')
-
-                const uploadUrl = `${API_URL}/api/v1/upload`
-                const res = await fetch(uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                })
-
-                if (!res.ok) throw new Error('Upload failed')
-                const data = await res.json()
-                const url = data.url
+                const url = await uploadFileToS3(file, 'activities')
 
                 if (url) {
                     // Update the loading placeholder with actual URL
@@ -205,8 +202,8 @@ export default function CityActivityManager({ params }: { params: { city: string
     }
 
     const handleUrlSubmit = () => {
-        if (!urlInput.trim()) {
-            toast.error('Please enter a valid URL')
+        if (!isValidUrl(urlInput.trim())) {
+            toast.error('Please enter a valid image URL (e.g., https://example.com/image.jpg)')
             return
         }
         if (targetUrlRowIndex !== null) {
@@ -249,27 +246,45 @@ export default function CityActivityManager({ params }: { params: { city: string
     // --- Submission ---
 
     const handleSaveAll = async () => {
-        // Validation: Filter out completely empty rows. Check partial rows.
         const rowsToSave: ActivityCreate[] = []
         let hasValidationErrors = false
+        const newErrorFields: Record<number, string[]> = {}
 
         activityRows.forEach((row, i) => {
             const isCompletelyEmpty = !row.name && !row.category && (row.duration_hours === 1) && !row.description && (!row.images || row.images.length === 0)
 
-            if (isCompletelyEmpty) {
-                // Ignore completely empty rows
-                return
-            }
+            if (isCompletelyEmpty) return
 
-            // Check required fields for partially filled rows
-            if (!row.name || !row.category || !row.duration_hours) {
+            const rowErrors: string[] = []
+            if (!row.name) rowErrors.push('name')
+            if (!row.category) rowErrors.push('category')
+            if (!row.duration_hours) rowErrors.push('duration_hours')
+
+            if (rowErrors.length > 0) {
+                newErrorFields[i] = rowErrors
                 hasValidationErrors = true
-                toast.error(`Row ${i + 1} is missing required fields (Name, Category, Duration)`)
-                return
+                toast.error(`Missing required fields: ${rowErrors.map(f => f.replace('_', ' ')).join(', ')}`)
+            } else {
+                if (row.name.length < 3) {
+                    hasValidationErrors = true
+                    toast.error(`Activity Name must be at least 3 characters long`)
+                } else if (row.name.length > 100) {
+                    hasValidationErrors = true
+                    toast.error(`Activity Name must be at most 100 characters long`)
+                }
+
+                if (row.description && row.description.length > 500) {
+                    hasValidationErrors = true
+                    toast.error(`Description must be at most 500 characters long`)
+                }
             }
 
-            rowsToSave.push(row)
+            if (!hasValidationErrors) {
+                rowsToSave.push(row)
+            }
         })
+
+        setErrorFields(newErrorFields)
 
         if (hasValidationErrors) return
         if (rowsToSave.length === 0) {
@@ -329,7 +344,7 @@ export default function CityActivityManager({ params }: { params: { city: string
 
     const handleDeleteExisting = (id: string) => {
         const activity = existingActivities.find(a => a.id === id)
-        
+
         toast(`Delete ${activity?.name || 'this activity'}?`, {
             description: 'This action cannot be undone. Permanent removal from itinerary.',
             action: {
@@ -347,7 +362,7 @@ export default function CityActivityManager({ params }: { params: { city: string
             },
             cancel: {
                 label: 'Cancel',
-                onClick: () => {}
+                onClick: () => { }
             },
             duration: 5000,
         })
@@ -535,11 +550,22 @@ export default function CityActivityManager({ params }: { params: { city: string
                                         <div className="floating-label-group">
                                             <Input
                                                 value={row.name}
-                                                onChange={(e) => handleRowChange(index, 'name', e.target.value)}
+                                                onChange={(e) => {
+                                                    // Restrict numeric input and limit to 100 characters
+                                                    const val = e.target.value.replace(/[0-9]/g, '');
+                                                    handleRowChange(index, 'name', val);
+                                                }}
                                                 placeholder=" "
-                                                className="glass-input peer"
+                                                maxLength={100}
+                                                className={cn(
+                                                    "glass-input peer",
+                                                    errorFields[index]?.includes('name') && "border-red-500/50 focus:border-red-500 bg-red-50/5 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                                                )}
                                             />
                                             <Label className="floating-label">Activity Name <span className="text-red-500">*</span></Label>
+                                            {errorFields[index]?.includes('name') && (
+                                                <span className="text-[10px] text-red-500 font-bold mt-1 block absolute -bottom-4 right-2 tracking-tight">Required</span>
+                                            )}
                                         </div>
                                         <div>
                                             <Label className="text-[var(--color-primary-font)] font-semibold mb-2 block">Category <span className="text-red-500">*</span></Label>
@@ -547,7 +573,10 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                 value={row.category}
                                                 onValueChange={(val) => handleRowChange(index, 'category', val)}
                                             >
-                                                <SelectTrigger className="bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-[var(--color-primary-font)] focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-[var(--color-primary-font)]/50">
+                                                <SelectTrigger className={cn(
+                                                    "bg-white/22 backdrop-blur-md border border-white/40 rounded-[14px] text-[var(--color-primary-font)] focus:ring-0 focus:border-[var(--primary)]/50 hover:bg-white/30 transition-all font-medium text-[15px] h-10 shadow-sm data-[placeholder]:text-[var(--color-primary-font)]/50",
+                                                    errorFields[index]?.includes('category') && "border-red-500/50 bg-red-50/5"
+                                                )}>
                                                     <SelectValue placeholder="Select Category" />
                                                 </SelectTrigger>
                                                 <SelectContent className="glass-panel border border-white/60 bg-white/80 backdrop-blur-xl">
@@ -560,6 +589,9 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                     <SelectItem value="Relaxation">Relaxation</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {errorFields[index]?.includes('category') && (
+                                                <span className="text-[10px] text-red-500 font-bold mt-1 block text-right pr-2 tracking-tight">Required</span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -589,7 +621,10 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                     min="0.5"
                                                     value={row.duration_hours}
                                                     onChange={(e) => handleRowChange(index, 'duration_hours', parseFloat(e.target.value))}
-                                                    className="glass-input pr-14 h-full"
+                                                    className={cn(
+                                                        "glass-input pr-14 h-full",
+                                                        errorFields[index]?.includes('duration_hours') && "border-red-500/50 bg-red-50/5"
+                                                    )}
                                                     placeholder=" "
                                                 />
                                                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-md border border-white/60 px-2.5 py-1 rounded-[10px] text-[var(--primary)] text-xs font-bold pointer-events-none shadow-sm">
@@ -597,6 +632,9 @@ export default function CityActivityManager({ params }: { params: { city: string
                                                 </div>
                                             </div>
                                             <Label className="floating-label">Duration <span className="text-red-500">*</span></Label>
+                                            {errorFields[index]?.includes('duration_hours') && (
+                                                <span className="text-[10px] text-red-500 font-bold mt-1 block absolute -bottom-4 right-2 tracking-tight">Required</span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -676,10 +714,16 @@ export default function CityActivityManager({ params }: { params: { city: string
                                             value={row.description}
                                             onChange={(e) => handleRowChange(index, 'description', e.target.value)}
                                             placeholder=" "
+                                            maxLength={500}
                                             className="glass-input peer min-h-[120px] pb-8 pt-4 resize-y leading-relaxed"
                                         />
-                                        <div className="absolute bottom-3 right-4 text-[var(--color-primary-font)] text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
-                                            Activity Highlights
+                                        <div className="absolute bottom-3 right-4 flex items-center gap-2">
+                                            <div className="text-[var(--color-primary-font)] text-[10px] font-bold opacity-40">
+                                                {row.description?.length || 0} / 500
+                                            </div>
+                                            <div className="text-[var(--color-primary-font)] text-[11px] font-bold uppercase tracking-wider pointer-events-none drop-shadow-sm">
+                                                Activity Highlights
+                                            </div>
                                         </div>
                                         <Label className="floating-label">Description</Label>
                                     </div>
@@ -750,9 +794,9 @@ export default function CityActivityManager({ params }: { params: { city: string
                         </div>
                         {urlInput && (
                             <div className="mt-4 rounded-xl overflow-hidden border-2 border-white/40 shadow-sm aspect-video bg-white/10 flex items-center justify-center">
-                                <img 
-                                    src={urlInput} 
-                                    alt="Preview" 
+                                <img
+                                    src={urlInput}
+                                    alt="Preview"
                                     className="w-full h-full object-cover"
                                     onError={(e: any) => {
                                         e.target.style.display = 'none'

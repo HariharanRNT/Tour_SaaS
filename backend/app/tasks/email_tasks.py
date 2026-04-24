@@ -26,16 +26,42 @@ async def _execute_email_send(
     notification_log_id: Optional[str]
 ):
     from app.database import engine
+    import os
     logger.info(f"Executing email send to {to_email} with subject: {subject}")
     try:
+        # Resolve file_paths to bytes if necessary
+        resolved_attachments = []
+        if attachments:
+            for attach in attachments:
+                if "bytes" in attach:
+                    resolved_attachments.append(attach)
+                elif "file_path" in attach:
+                    try:
+                        file_path = os.path.abspath(attach["file_path"])
+                        print(f"[Celery] Checking for PDF at: {file_path}")
+                        if os.path.exists(file_path):
+                            print(f"[Celery] File FOUND. Size: {os.path.getsize(file_path)} bytes")
+                            with open(file_path, "rb") as f:
+                                resolved_attachments.append({
+                                    "bytes": f.read(),
+                                    "filename": attach.get("filename", os.path.basename(file_path))
+                                })
+                        else:
+                            print(f"[Celery] ERROR: File NOT FOUND at {file_path}")
+                            logger.error(f"Attachment file not found: {file_path}")
+                    except Exception as e:
+                        logger.error(f"Failed to read attachment file {attach.get('file_path')}: {e}")
+
+        print(f"[Celery] Sending email to: {to_email} with {len(resolved_attachments)} attachments")
         # 1. Send the email
         success = await EmailService.send_email(
             to_email=to_email,
             subject=subject,
             body=html_body,
-            attachments=attachments,
+            attachments=resolved_attachments,
             smtp_config=smtp_config
         )
+        print(f"[Celery] SMTP Success: {success}")
         
         # 2. Update log based on success
         if success:
@@ -86,7 +112,8 @@ def send_email_task(
     attachment_b64: Optional[str] = None,
     attachment_filename: Optional[str] = None,
     notification_log_id: Optional[str] = None,
-    attachments_b64: Optional[list] = None
+    attachments_b64: Optional[list] = None,
+    attachments: Optional[list] = None
 ):
     """
     Celery task to send an email asynchronously.
@@ -95,22 +122,27 @@ def send_email_task(
     logger.info(f"Starting email task to {to_email} (LogID: {notification_log_id})")
     
     import base64
-    attachments = []
+    final_attachments = []
 
-    # Handle multiple attachments
+    # Handle multiple attachments from Base64
     if attachments_b64:
         for a in attachments_b64:
             try:
                 a_bytes = base64.b64decode(a['bytes_b64'])
-                attachments.append({"bytes": a_bytes, "filename": a['filename']})
+                final_attachments.append({"bytes": a_bytes, "filename": a['filename']})
             except Exception as e:
                 logger.error(f"Failed to decode b64 attachment {a.get('filename')}: {e}")
+
+    # Handle multiple attachments from file paths (passed via 'attachments')
+    if attachments:
+        for a in attachments:
+            final_attachments.append(a)
 
     # Backward compatibility for single attachment
     if attachment_b64 and attachment_filename:
         try:
             attachment_bytes = base64.b64decode(attachment_b64)
-            attachments.append({"bytes": attachment_bytes, "filename": attachment_filename})
+            final_attachments.append({"bytes": attachment_bytes, "filename": attachment_filename})
             logger.info(f"Decoded legacy b64 attachment: {len(attachment_bytes)} bytes")
         except Exception as e:
             logger.error(f"Failed to decode legacy b64 attachment: {e}")
@@ -119,7 +151,7 @@ def send_email_task(
     try:
         asyncio.run(_execute_email_send(
             to_email, subject, html_body, smtp_config, 
-            attachments, notification_log_id
+            final_attachments, notification_log_id
         ))
         logger.info(f"Async email work completed for {to_email}")
     except Exception as exc:

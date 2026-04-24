@@ -45,6 +45,15 @@ import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { API_URL } from '@/lib/api'
 import { DatePickerWithRange } from '@/components/ui/date-range-picker'
+import { QuoteBuilderDrawer } from '@/components/enquiries/QuoteBuilderDrawer'
+import { 
+    Sparkles, 
+    History, 
+    Download, 
+    ExternalLink, 
+    FileText,
+    Loader2
+} from 'lucide-react'
 
 interface Enquiry {
     id: string
@@ -74,6 +83,22 @@ export default function AgentEnquiriesPage() {
         from: subMonths(new Date(), 1),
         to: new Date(),
         preset: '1M'
+    })
+    const [isQuoteBuilderOpen, setIsQuoteBuilderOpen] = useState(false)
+
+    const { data: quoteHistory = [], isLoading: loadingHistory } = useQuery({
+        queryKey: ['enquiry-quote-history', selectedEnquiry?.id],
+        queryFn: async () => {
+            if (!selectedEnquiry) return []
+            const token = localStorage.getItem('token')
+            const res = await fetch(`${API_URL}/api/v1/enquiries/agent/${selectedEnquiry.id}/history`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (!res.ok) throw new Error('Failed to fetch quote history')
+            const data = await res.json()
+            return data.quotes || []
+        },
+        enabled: !!selectedEnquiry && isDetailsOpen
     })
 
     useEffect(() => {
@@ -353,8 +378,15 @@ export default function AgentEnquiriesPage() {
                                             </div>
 
                                             <div className="flex flex-col justify-between items-end gap-4 min-w-[200px]">
-                                                <div className="text-right text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/40">
-                                                    Received {format(new Date(enquiry.created_at), 'dd MMM')}
+                                                <div className="flex gap-2">
+                                                    {enquiry.quotes_count > 0 && (
+                                                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">
+                                                            <CheckCircle className="h-3 w-3" /> Quote Sent
+                                                        </div>
+                                                    )}
+                                                    <div className="text-right text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/40">
+                                                        Received {format(new Date(enquiry.created_at), 'dd MMM')}
+                                                    </div>
                                                 </div>
                                                 <Button
                                                     className="w-full md:w-auto h-12 px-8 rounded-full bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-bold shadow-lg shadow-[var(--button-glow)]"
@@ -503,8 +535,62 @@ export default function AgentEnquiriesPage() {
                                     }}
                                 />
                             </section>
+                            
+                            {/* Quote History */}
+                            <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest">Quote History</p>
+                                    <History className="h-3.5 w-3.5 text-slate-300" />
+                                </div>
+                                {loadingHistory ? (
+                                    <div className="h-20 bg-slate-50 flex items-center justify-center rounded-2xl animate-pulse">
+                                        <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+                                    </div>
+                                ) : quoteHistory.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {quoteHistory.map((quote: any) => (
+                                            <div key={quote.id} className="p-4 bg-white/40 border border-white/60 rounded-2xl flex items-center justify-between hover:bg-white/60 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-10 w-10 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-600">
+                                                        <FileText className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold">Quote for {quote.quoted_packages?.length} Packages</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">{format(new Date(quote.quote_sent_at), 'dd MMM yyyy, hh:mm a')}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+                                                        <a href={`${API_URL}${quote.pdf_url}`} target="_blank" rel="noopener noreferrer">
+                                                            <ExternalLink className="h-4 w-4 text-slate-400" />
+                                                        </a>
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+                                                        <a href={`${API_URL}${quote.pdf_url}`} download>
+                                                            <Download className="h-4 w-4 text-slate-400" />
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                        <p className="text-xs text-slate-400 font-bold">No quotes sent yet for this enquiry.</p>
+                                    </div>
+                                )}
+                            </section>
 
                             <div className="flex flex-wrap gap-2 pt-4 border-t border-black/5">
+                                <Button
+                                    className="h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg shadow-blue-500/20"
+                                    onClick={() => {
+                                        setIsDetailsOpen(false);
+                                        setIsQuoteBuilderOpen(true);
+                                    }}
+                                >
+                                    <Sparkles className="h-4 w-4 mr-2" /> Send to Customer with AI
+                                </Button>
                                 {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                     <Button
                                         className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold"
@@ -549,6 +635,15 @@ export default function AgentEnquiriesPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <QuoteBuilderDrawer 
+                isOpen={isQuoteBuilderOpen}
+                onClose={() => {
+                    setIsQuoteBuilderOpen(false)
+                    queryClient.invalidateQueries({ queryKey: ['agent-enquiries'] })
+                }}
+                enquiry={selectedEnquiry}
+            />
         </div>
     )
 }

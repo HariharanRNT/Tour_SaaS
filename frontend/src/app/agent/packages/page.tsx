@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import debounce from 'lodash/debounce'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -64,6 +65,7 @@ export default function AgentPackagesPage() {
     const { hasPermission, isSubUser } = useAuth()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
+    const [searchInput, setSearchInput] = useState('')
 
     const [statusFilter, setStatusFilter] = useState('all')
     const [destinationFilter, setDestinationFilter] = useState('all')
@@ -72,8 +74,52 @@ export default function AgentPackagesPage() {
 
     // Pagination & Sort State
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage] = useState(5)
+    const [itemsPerPage] = useState(10) // Matches screenshot better or user's expectation
     const [sortConfig, setSortConfig] = useState<{ key: keyof PackageData; direction: 'asc' | 'desc' } | null>(null)
+
+    // Debounced search logic for title/name
+    const debouncedSearch = React.useMemo(
+        () => debounce((value: string) => {
+            // Only trigger search if at least 3 chars or clearing
+            if (value.length >= 3 || value.length === 0) {
+                setSearchQuery(value)
+                setCurrentPage(1)
+            }
+        }, 500),
+        []
+    )
+
+    // Debounced destination filter
+    const [destinationInput, setDestinationInput] = React.useState('')
+    const debouncedDestinationFilter = React.useMemo(
+        () => debounce((value: string) => {
+            if (value.length >= 2 || value.length === 0) {
+                setDestinationFilter(value || 'all')
+                setCurrentPage(1)
+            }
+        }, 500),
+        []
+    )
+
+    // Cleanup
+    React.useEffect(() => {
+        return () => {
+            debouncedSearch.cancel()
+            debouncedDestinationFilter.cancel()
+        }
+    }, [debouncedSearch, debouncedDestinationFilter])
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setSearchInput(value)
+        debouncedSearch(value)
+    }
+
+    const handleDestinationFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setDestinationInput(value)
+        debouncedDestinationFilter(value)
+    }
 
     const { data, isLoading } = useQuery({
         queryKey: ['agent-packages', currentPage, itemsPerPage, sortConfig, statusFilter, destinationFilter, searchQuery],
@@ -292,6 +338,7 @@ export default function AgentPackagesPage() {
     };
 
     const clearFilters = () => {
+        setSearchInput('');
         setSearchQuery('');
         setStatusFilter('all');
         setDestinationFilter('all');
@@ -398,9 +445,9 @@ export default function AgentPackagesPage() {
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/60" />
                                     <Input
-                                        placeholder="Search packages..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search by name or destination..."
+                                        value={searchInput}
+                                        onChange={handleSearchChange}
                                         className="glass-input pl-10 w-48 sm:w-64 rounded-full text-[var(--color-primary-font)] placeholder-gray-500"
                                     />
                                 </div>
@@ -423,8 +470,8 @@ export default function AgentPackagesPage() {
                                     <div className="relative">
                                         <Input
                                             placeholder="Filter destination..."
-                                            value={destinationFilter === 'all' ? '' : destinationFilter}
-                                            onChange={(e) => setDestinationFilter(e.target.value || 'all')}
+                                            value={destinationInput}
+                                            onChange={handleDestinationFilterChange}
                                             className="glass-input pl-4 pr-8 py-2 text-sm w-40 rounded-full text-[var(--color-primary-font)] placeholder-gray-500"
                                         />
                                         <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/60 pointer-events-none" />
@@ -641,13 +688,23 @@ export default function AgentPackagesPage() {
                                                                     <DropdownMenuSeparator className="bg-black/5 mx-2 my-1" />
                                                                     {hasPermission('packages', 'full') && (
                                                                         <>
-                                                                            <DropdownMenuItem
-                                                                                className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
-                                                                                onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
-                                                                            >
-                                                                                <Archive className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
-                                                                                <span className="font-medium text-[var(--color-primary-font)]">Archive Package</span>
-                                                                            </DropdownMenuItem>
+                                                                            {pkg.status.toLowerCase() === 'archived' ? (
+                                                                                <DropdownMenuItem
+                                                                                    className="gap-2 cursor-pointer py-2 px-3 focus:bg-emerald-50 focus:text-emerald-700 rounded-lg transition-all duration-200"
+                                                                                    onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'DRAFT' })}
+                                                                                >
+                                                                                    <Archive className="mr-2 h-4 w-4 text-emerald-500" />
+                                                                                    <span className="font-medium">Unarchive Package</span>
+                                                                                </DropdownMenuItem>
+                                                                            ) : (
+                                                                                <DropdownMenuItem
+                                                                                    className="gap-2 cursor-pointer py-2 px-3 focus:bg-[var(--primary)]/10 focus:text-black rounded-lg transition-all duration-200"
+                                                                                    onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}
+                                                                                >
+                                                                                    <Archive className="mr-2 h-4 w-4 text-[var(--color-primary-font)]/60" />
+                                                                                    <span className="font-medium text-[var(--color-primary-font)]">Archive Package</span>
+                                                                                </DropdownMenuItem>
+                                                                            )}
 
                                                                             <DropdownMenuItem
                                                                                 className="gap-2 cursor-pointer py-2 px-3 text-red-600 focus:text-red-700 focus:bg-red-50/50 rounded-lg transition-all duration-200"
@@ -710,9 +767,20 @@ export default function AgentPackagesPage() {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         {hasPermission('packages', 'full') && (
-                                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>
-                                                                Delete
-                                                            </DropdownMenuItem>
+                                                            <>
+                                                                {pkg.status.toLowerCase() === 'archived' ? (
+                                                                    <DropdownMenuItem onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'DRAFT' })}>
+                                                                        <span className="text-emerald-600 font-medium">Unarchive</span>
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem onClick={() => statusMutation.mutate({ id: pkg.id, new_status: 'ARCHIVED' })}>
+                                                                        <span className="text-[var(--color-primary-font)] font-medium">Archive</span>
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(pkg.id)}>
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

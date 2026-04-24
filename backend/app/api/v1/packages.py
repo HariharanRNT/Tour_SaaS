@@ -1,7 +1,7 @@
 """Package API routes"""
 from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
@@ -24,6 +24,7 @@ router = APIRouter()
 @router.get("/config/durations", response_model=List[int])
 @cache(expire=300, namespace="packages")
 async def get_package_durations(
+    response: Response,
     destination: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
@@ -33,6 +34,9 @@ async def get_package_durations(
     Get available package durations for a destination, filtered by the current agent's context.
     Returns a list of distinct duration_days (e.g., [4, 6, 8]).
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     print(f"DEBUG DURATIONS: Dest={destination}, Domain={domain}, User={current_user.email if current_user else 'None'}")
     
     query = select(Package.duration_days).distinct().where(Package.status == PackageStatus.PUBLISHED)
@@ -65,6 +69,7 @@ async def get_package_durations(
 @router.get("/config/dates", response_model=List[dict])
 @cache(expire=300, namespace="packages")
 async def get_package_dates(
+    response: Response,
     destination: Optional[str] = None,
     duration_days: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -75,6 +80,9 @@ async def get_package_dates(
     Get available date ranges for packages matching filters.
     Returns: [{"from": "YYYY-MM-DD", "to": "YYYY-MM-DD"}, ...]
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     query = select(PackageAvailability).join(Package).where(
         Package.status == PackageStatus.PUBLISHED,
         PackageAvailability.is_blackout == False,
@@ -112,6 +120,7 @@ async def get_package_dates(
 @router.get("/config/destinations/popular", response_model=List[dict])
 @cache(expire=300, namespace="packages")
 async def get_popular_destinations(
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
     domain: str = Depends(get_current_domain)
@@ -120,12 +129,15 @@ async def get_popular_destinations(
     Get list of popular destinations based on packages marked as is_public=True.
     Returns deduplicated list by destination with the most recently updated package image.
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     from sqlalchemy import func as sqlfunc
 
     # Build the base query — select all public, published packages
     query = select(Package).where(
         Package.status == PackageStatus.PUBLISHED,
-        Package.is_public == True
+        # Package.is_public == True
     )
 
     # Tenant isolation
@@ -155,7 +167,7 @@ async def get_popular_destinations(
         # Count total public packages for this destination
         count_q = select(sqlfunc.count(Package.id)).where(
             Package.status == PackageStatus.PUBLISHED,
-            Package.is_public == True,
+            # Package.is_public == True,
             Package.destination.ilike(f"%{pkg.destination}%")
         )
         count_result = await db.execute(count_q)
@@ -180,6 +192,7 @@ async def get_popular_destinations(
 @router.get("/config/suggestions", response_model=List[dict])
 @cache(expire=300, namespace="packages")
 async def get_destination_suggestions(
+    response: Response,
     q: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     domain: str = Depends(get_current_domain),
@@ -188,6 +201,9 @@ async def get_destination_suggestions(
     """
     Get unique destination/country suggestions based on public packages of the current agent.
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     
     # Query distinct destinations and countries
     query = select(Package.destination, Package.country).distinct().where(
@@ -246,6 +262,7 @@ async def get_destination_suggestions(
 @router.get("", response_model=PackageListResponse)
 @cache(expire=300, namespace="packages")
 async def list_packages(
+    response: Response,
     destination: Optional[str] = None,
     country: Optional[str] = None,
     trip_style: Optional[str] = None,
@@ -267,6 +284,9 @@ async def list_packages(
     domain: str = Depends(get_current_domain)
 ):
     """List all packages with filters"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     from sqlalchemy.orm import selectinload
     query = select(Package).options(selectinload(Package.dest_metadata)).where(Package.status == status)
 
@@ -288,7 +308,9 @@ async def list_packages(
         query = query.where(Package.created_by == agent_subquery)
         
         # Limit to Public packages for Guests/Non-Owners
-        query = query.where(Package.is_public == True)
+        # VISIBILITY UPDATE: Show ALL Published packages (Requested by User)
+        # Previously we limited to is_public=True for guests, but now we show all Status=Published
+        # query = query.where(Package.is_public == True)
     
     # Apply simple filters
     if destination:
@@ -421,6 +443,7 @@ async def list_packages(
 @router.get("/cheapest", response_model=dict)
 @cache(expire=300, namespace="packages")
 async def get_cheapest_package(
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_optional_current_user),
     domain: str = Depends(get_current_domain)
@@ -429,12 +452,15 @@ async def get_cheapest_package(
     Get the lowest-priced published package for the current user's assigned agent 
     (or the agent themselves).
     """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     try:
         from sqlalchemy import asc
         
         stmt = select(Package).where(
             Package.status == PackageStatus.PUBLISHED,
-            Package.is_public == True
+            # Package.is_public == True
         )
         
         # Filter by Agent (Tenant Isolation)
@@ -479,9 +505,13 @@ async def get_cheapest_package(
 @router.get("/slug/{slug}", response_model=PackageResponse)
 async def get_package_by_slug(
     slug: str,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Get package by slug"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     query = select(Package).where(Package.slug == slug).options(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),
@@ -504,9 +534,13 @@ async def get_package_by_slug(
 @router.get("/{package_id}", response_model=PackageResponse)
 async def get_package(
     package_id: UUID,
+    response: Response,
     db: AsyncSession = Depends(get_db)
 ):
     """Get package by ID"""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     query = select(Package).where(Package.id == package_id).options(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),

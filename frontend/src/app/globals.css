@@ -140,6 +140,13 @@
     scrollbar-width: none;
   }
 
+  /* Robust Text Wrapping Utilities */
+  .break-anywhere {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    word-wrap: break-word !important;
+  }
+
   /* New Glassmorphism Utilities from Design Brief */
   
   /* Navbar Glass */

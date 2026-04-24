@@ -280,7 +280,7 @@ export default function PackageSearchChat() {
                                 {(msg.tool_used === 'search_packages' || msg.tool_used === 'search_package') && msg.tool_result && Array.isArray(msg.tool_result) && (
                                     <div className="flex flex-col gap-2 mt-2">
                                         {msg.content && (
-                                            <div className="p-3 rounded-lg shadow-sm text-[13px] leading-relaxed bg-white text-slate-800 border-2 border-lime-400/50 rounded-tl-none backdrop-blur-sm text-left break-words max-w-[90%] hyphens-auto prose prose-sm max-w-none relative mt-5">
+                                            <div className="p-3 rounded-lg shadow-sm text-[13px] leading-relaxed bg-white text-slate-800 border-2 border-lime-400/50 rounded-tl-none backdrop-blur-sm text-left break-words hyphens-auto prose prose-sm max-w-none relative mt-5">
                                                 <div className="absolute -top-5 left-0 flex items-center gap-2">
                                                     <span className="text-[9px] font-bold text-slate-500 tracking-wider">TTRIP PLANNER</span>
                                                 </div>

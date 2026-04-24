@@ -952,6 +952,7 @@ class EnquiryResponse(EnquiryBase):
     
     # Optional booking info
     booking_id: Optional[UUID4] = None
+    quotes_count: int = 0
 
     class Config:
         from_attributes = True
@@ -968,6 +969,49 @@ class EnquiryConversionResponse(BaseModel):
     booking: Optional[BookingResponse] = None
     payment_link: Optional[str] = None
     message: str
+
+
+class EnquiryAnalyzeResponse(BaseModel):
+    destinations: List[str] = []
+    days: Optional[int] = None
+    nights: Optional[int] = None
+    guests: Optional[int] = None
+    tripStyle: Optional[str] = None
+    isMultiCity: bool = False
+    budgetHint: Optional[str] = None
+    keywords: List[str] = []
+    internal_error: Optional[str] = None
+
+
+class EnquiryQuotePackage(BaseModel):
+    packageId: UUID4
+    packageName: str
+    quotedPrice: Decimal
+    isCustomPrice: bool = False
+
+
+class EnquiryQuoteCreate(BaseModel):
+    packages: List[EnquiryQuotePackage]
+    emailSubject: str
+    emailBody: str
+    aiExtractedData: Optional[dict] = None
+
+
+class EnquiryQuoteResponse(BaseModel):
+    id: UUID4
+    enquiry_id: UUID4
+    quote_sent_at: datetime
+    quoted_packages: List[dict]
+    pdf_url: str
+    email_sent_to: str
+    ai_extracted_data: Optional[dict] = None
+
+    class Config:
+        from_attributes = True
+
+
+class EnquiryQuoteHistoryResponse(BaseModel):
+    quotes: List[EnquiryQuoteResponse]
 
 
 class PaymentVerification(BaseModel):

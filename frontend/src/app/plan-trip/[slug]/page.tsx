@@ -24,7 +24,7 @@ export async function generateMetadata(
     try {
         // Fetch package data by slug for SEO metadata
         const res = await fetch(`${API_URL}/api/v1/packages/slug/${slug}`, {
-            next: { revalidate: 60 } // Cache for 1 minute
+            next: { revalidate: 0 } // Always fetch fresh metadata
         });
 
         if (res.ok) {

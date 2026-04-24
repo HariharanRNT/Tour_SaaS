@@ -120,6 +120,23 @@ export function ThemeProvider({
     // 3. Background API Sync
     useEffect(() => {
         const body = document.body;
+        
+        // --- DOMAIN ISOLATION FIX (Bug 2) ---
+        if (typeof window !== 'undefined') {
+            const currentDomain = window.location.hostname;
+            const lastDomain = localStorage.getItem('last-agent-domain');
+            
+            if (lastDomain && lastDomain !== currentDomain) {
+                console.log(`Domain changed from ${lastDomain} to ${currentDomain}. Clearing storage.`);
+                localStorage.clear();
+                sessionStorage.clear();
+                // After clearing, we might need to restore some essential non-agent data if any, 
+                // but per requirement we clear all to ensure isolation.
+            }
+            localStorage.setItem('last-agent-domain', currentDomain);
+        }
+        // ------------------------------------
+
         if (isExemptPath) {
             console.log('ThemeProvider: Exempt path detected, enforcing default theme');
             setActiveThemeState('default');

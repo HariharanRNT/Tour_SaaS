@@ -218,11 +218,21 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const TRANSFER_ESTIMATE = 100
 
     useEffect(() => {
+        // Clear stale state whenever the target source changes
+        setSession(null)
+        setItinerary([])
+        setSelectedOnwardFlight(null)
+        setSelectedReturnFlight(null)
+        setLoading(true)
+
         if (slug) {
+            console.log(`[BuildTrip] Loading package by slug: ${slug}`);
             loadPackagePreviewBySlug(slug)
         } else if (mode === 'preview' && packageId) {
+            console.log(`[BuildTrip] Loading package preview: ${packageId}`);
             loadPackagePreview(packageId)
         } else if (sessionId) {
+            console.log(`[BuildTrip] Loading session: ${sessionId}`);
             loadSession()
         }
     }, [sessionId, mode, packageId, slug])
@@ -333,19 +343,24 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             }
 
             const response = await fetch(`${API_URL}/api/v1/trip-planner/session/${sessionId}`, {
-                headers
+                headers,
+                cache: 'no-store'
             })
             if (response.ok) {
                 const data = await response.json()
                 setSession(data)
 
-                // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
-                if (data.gst_applicable === false) {
-                    setGstSettings(null)  // No GST - do not show or calculate any GST
-                } else if (data.gst_percentage !== undefined && data.gst_percentage > 0) {
+                // Resolve GST Settings - robust handling of field name inconsistencies
+                const resolvedGstApplicable = data.gst_applicable !== false;
+                const resolvedGstInclusive = data.gst_inclusive ?? (data.gst_mode === 'inclusive');
+                const resolvedGstPercentage = data.gst_percentage ?? 0;
+
+                console.log(`[BuildTrip] GST Config: Applicable=${resolvedGstApplicable}, Inclusive=${resolvedGstInclusive}, Percentage=${resolvedGstPercentage}%`);
+
+                if (resolvedGstApplicable && resolvedGstPercentage > 0) {
                     setGstSettings({
-                        inclusive: data.gst_inclusive,
-                        percentage: data.gst_percentage
+                        inclusive: resolvedGstInclusive,
+                        percentage: resolvedGstPercentage
                     })
                 } else {
                     setGstSettings(null)
@@ -388,7 +403,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     const loadPackagePreview = async (pkgId: string) => {
         try {
-            const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}/itinerary`)
+            const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}/itinerary`, { cache: 'no-store' })
             if (res.ok) {
                 const data = await res.json()
                 // Mock session-like structure for preview
@@ -407,11 +422,20 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     setItinerary(data.itinerary_by_day)
                 }
 
-                if (data.gst_mode) {
+                // Resolve GST Settings - robust handling of field name inconsistencies
+                const resolvedGstApplicable = data.gst_applicable !== false;
+                const resolvedGstInclusive = data.gst_inclusive ?? (data.gst_mode === 'inclusive');
+                const resolvedGstPercentage = data.gst_percentage ?? 0;
+
+                console.log(`[BuildTrip] GST Config (Preview): Applicable=${resolvedGstApplicable}, Inclusive=${resolvedGstInclusive}, Percentage=${resolvedGstPercentage}%`);
+
+                if (resolvedGstApplicable && resolvedGstPercentage > 0) {
                     setGstSettings({
-                        inclusive: data.gst_mode === 'inclusive',
-                        percentage: data.gst_percentage || 0
+                        inclusive: resolvedGstInclusive,
+                        percentage: resolvedGstPercentage
                     })
+                } else {
+                    setGstSettings(null)
                 }
             } else {
                 alert("Failed to load package preview")
@@ -425,10 +449,13 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     }
 
     const loadPackagePreviewBySlug = async (pkgSlug: string) => {
+        setLoading(true)
+        console.log(`[BuildTrip] Fetching package for slug: ${pkgSlug}`)
         try {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
             const res = await fetch(`${API_URL}/api/v1/packages/slug/${pkgSlug}/itinerary`, {
-                headers: { 'X-Domain': domain }
+                headers: { 'X-Domain': domain },
+                cache: 'no-store'
             })
             if (res.ok) {
                 const data = await res.json()
@@ -447,12 +474,22 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 if (data.itinerary_by_day) {
                     setItinerary(data.itinerary_by_day)
                 }
+                console.log(`[BuildTrip] Successfully loaded package: ${data.title} (${data.id})`)
 
-                if (data.gst_mode) {
+                // Resolve GST Settings - robust handling of field name inconsistencies
+                const resolvedGstApplicable = data.gst_applicable !== false;
+                const resolvedGstInclusive = data.gst_inclusive ?? (data.gst_mode === 'inclusive');
+                const resolvedGstPercentage = data.gst_percentage ?? 0;
+
+                console.log(`[BuildTrip] GST Config: Applicable=${resolvedGstApplicable}, Inclusive=${resolvedGstInclusive}, Percentage=${resolvedGstPercentage}%`);
+
+                if (resolvedGstApplicable && resolvedGstPercentage > 0) {
                     setGstSettings({
-                        inclusive: data.gst_mode === 'inclusive',
-                        percentage: data.gst_percentage || 0
+                        inclusive: resolvedGstInclusive,
+                        percentage: resolvedGstPercentage
                     })
+                } else {
+                    setGstSettings(null)
                 }
             } else {
                 alert("Failed to load package preview")
@@ -798,7 +835,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 break-anywhere">
                             Trip to <span className="text-white italic bg-clip-text drop-shadow-sm">
                                 {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1)) 
                                     ? "Multi City Tour" 
@@ -863,12 +900,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         <Sparkles className="h-9 w-9 animate-pulse" />
                                     </div>
                                 </div>
-                                <div className="space-y-6">
-                                    <h2 className="text-3xl md:text-4xl font-black text-black leading-tight">
+                                <div className="space-y-6 min-w-0 flex-1">
+                                    <h2 className="text-3xl md:text-4xl font-black text-black leading-tight break-anywhere">
                                         {session.title}
                                     </h2>
                                     <div 
-                                        className="text-black font-medium leading-relaxed text-lg max-w-5xl"
+                                        className="text-black font-medium leading-relaxed text-lg max-w-5xl break-anywhere line-clamp-6"
                                         dangerouslySetInnerHTML={{ __html: session.description || '' }}
                                     />
                                 </div>
@@ -1182,12 +1219,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                             {session.cancellation_enabled ? (
                                 <div className="space-y-4 max-w-3xl">
-                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2.5rem] p-8 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-6 text-emerald-800">
-                                            <div className="p-2 bg-emerald-100 rounded-lg">
-                                                <CheckCircle className="h-5 w-5" />
+                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2rem] p-6 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-5 text-emerald-800">
+                                            <div className="p-1.5 bg-emerald-100 rounded-lg">
+                                                <CheckCircle className="h-4 w-4" />
                                             </div>
-                                            <span className="font-bold text-xl">Cancellable Package</span>
+                                            <span className="font-bold text-lg">Cancellable Package</span>
                                         </div>
                                         <div className="grid gap-4">
                                             {session.cancellation_rules?.map((rule: any, idx: number) => {
@@ -1219,27 +1256,27 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                                 );
 
                                                 return (
-                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-4">
+                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-xl border border-emerald-100 shadow-sm transition-all hover:shadow-md gap-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-black/5 rounded-lg">
-                                                                <Clock className="h-4 w-4 text-emerald-600" />
+                                                            <div className="p-1.5 bg-black/5 rounded-lg">
+                                                                <Clock className="h-3.5 w-3.5 text-emerald-600" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Timing</p>
-                                                                <span className="font-bold text-black">Cancel before {rule.daysBefore} days</span>
+                                                                <p className="text-[10px] text-black font-bold uppercase tracking-wider">Timing</p>
+                                                                <span className="font-bold text-black text-sm">Cancel before {rule.daysBefore} days</span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                             <div className="text-right flex flex-col items-end">
-                                                                <p className="text-xs text-black font-bold uppercase tracking-wider">Refund</p>
-                                                                <span className="text-emerald-700 font-black text-lg">{rule.refundPercentage}% back</span>
+                                                                <p className="text-[10px] text-black font-bold uppercase tracking-wider">Refund</p>
+                                                                <span className="text-emerald-700 font-black text-base">{rule.refundPercentage}% back</span>
                                                                 {fareLabel && (
-                                                                    <span className="text-[10px] text-emerald-700 font-bold mt-0.5 max-w-[120px] leading-tight text-right">
+                                                                    <span className="text-[9px] text-emerald-700 font-bold mt-0.5 max-w-[120px] leading-tight text-right">
                                                                         {fareLabel}
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-black border border-emerald-100 min-w-[80px] text-center">
+                                                            <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-black border border-emerald-100 min-w-[70px] text-center">
                                                                 ₹{amount.toLocaleString()}
                                                             </div>
                                                         </div>
@@ -1248,22 +1285,22 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             })}
                                             {/* Final catch-all if last rule > 0 days and no explicit 0% rule exists */}
                                             {(session.cancellation_rules?.length > 0 && session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore > 0 && !session.cancellation_rules.some((r: any) => r.refundPercentage === 0)) && (
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50 rounded-2xl border border-red-100 shadow-sm gap-4 opacity-80">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 shadow-sm gap-3 opacity-80">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-white rounded-lg">
-                                                            <XCircle className="h-4 w-4 text-red-600" />
+                                                        <div className="p-1.5 bg-white rounded-lg">
+                                                            <XCircle className="h-3.5 w-3.5 text-red-600" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Condition</p>
-                                                            <span className="font-bold text-red-800 whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
+                                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Condition</p>
+                                                            <span className="font-bold text-red-800 text-sm whitespace-nowrap">Less than {session.cancellation_rules[session.cancellation_rules.length - 1].daysBefore} days</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4">
                                                         <div className="text-right">
-                                                            <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Refund</p>
-                                                            <span className="text-red-700 font-black text-lg">0% back</span>
+                                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Refund</p>
+                                                            <span className="text-red-700 font-black text-base">0% back</span>
                                                         </div>
-                                                        <div className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black border border-red-200 uppercase tracking-tighter">
+                                                        <div className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black border border-red-200 uppercase tracking-tighter">
                                                             Non-refundable
                                                         </div>
                                                     </div>

@@ -138,6 +138,21 @@ export default function CreatePackagePage() {
     }
 
     const handlePublish = async () => {
+        if (!formData.title || !formData.destination) {
+            toast.error('Title and Destination are required')
+            return
+        }
+
+        if (formData.title.length > 100) {
+            toast.error('Package title cannot exceed 100 characters')
+            return
+        }
+
+        if (formData.description && formData.description.length > 500) {
+            toast.error('Package description cannot exceed 500 characters')
+            return
+        }
+
         if (!packageId) {
             alert('Please save the package first');
             return;
@@ -236,15 +251,22 @@ export default function CreatePackagePage() {
                             <CardContent className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="title">
-                                            Package Title <span className="text-red-500">*</span>
-                                        </Label>
+                                        <div className="flex justify-between items-center mb-2 px-1">
+                                            <Label htmlFor="title" className="text-sm font-bold text-gray-700">Package Title <span className="text-red-500">*</span></Label>
+                                            <span className={cn(
+                                                "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
+                                                (formData.title?.length || 0) > 90 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                            )}>
+                                                {formData.title?.length || 0} / 100
+                                            </span>
+                                        </div>
                                         <Input
                                             id="title"
                                             placeholder="e.g., Tokyo Adventure 7 Days"
                                             value={formData.title}
                                             onChange={(e) => updateFormData('title', e.target.value)}
                                             required
+                                            maxLength={100}
                                             className="border-gray-200"
                                         />
                                     </div>
@@ -337,15 +359,33 @@ export default function CreatePackagePage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <Label htmlFor="description" className="text-sm font-bold text-gray-700">Package Description</Label>
+                                        <span className={cn(
+                                            "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
+                                            (formData.description?.length || 0) > 450 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                        )}>
+                                            {formData.description?.length || 0} / 500
+                                        </span>
+                                    </div>
                                     <Textarea
                                         id="description"
                                         placeholder="Describe the package highlights, what's included, and what makes it special..."
                                         value={formData.description}
                                         onChange={(e) => updateFormData('description', e.target.value)}
                                         rows={6}
+                                        maxLength={500}
                                         className="border-gray-200"
                                     />
+                                    <div className="mt-2 h-1 w-full bg-black/5 rounded-full overflow-hidden">
+                                        <div 
+                                            className={cn(
+                                                "h-full transition-all duration-300",
+                                                (formData.description?.length || 0) > 450 ? "bg-red-500" : "bg-[var(--primary)]"
+                                            )}
+                                            style={{ width: `${Math.min(((formData.description?.length || 0) / 500) * 100, 100)}%` }}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-100 space-y-6">

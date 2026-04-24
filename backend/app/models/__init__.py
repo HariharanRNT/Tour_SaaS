@@ -872,6 +872,22 @@ class Enquiry(Base):
     agent = relationship("User", foreign_keys=[agent_id])
     customer = relationship("User", foreign_keys=[customer_id])
     booking = relationship("Booking", back_populates="enquiry", uselist=False)
+    quotes = relationship("EnquiryQuote", back_populates="enquiry", cascade="all, delete-orphan")
+
+
+class EnquiryQuote(Base):
+    __tablename__ = "enquiry_quotes"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    enquiry_id = Column(UUID(as_uuid=True), ForeignKey("enquiries.id", ondelete="CASCADE"), nullable=False, index=True)
+    quote_sent_at = Column(DateTime(timezone=True), server_default=func.now())
+    quoted_packages = Column(JSON, nullable=False) # List of {package_id, package_name, quoted_price, is_custom_price}
+    pdf_url = Column(String, nullable=False)
+    email_sent_to = Column(String, nullable=False)
+    ai_extracted_data = Column(JSON, nullable=True) # {destinations, days, guests, tripStyle, etc.}
+    
+    # Relationships
+    enquiry = relationship("Enquiry", back_populates="quotes")
 
 
 class WebhookEvent(Base):

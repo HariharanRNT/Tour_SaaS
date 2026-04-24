@@ -40,3 +40,34 @@ export function formatError(err: any): string {
     
     return err?.message || 'An unexpected error occurred';
 }
+
+import { API_URL } from "./api"
+
+/**
+ * Ensures an image URL is absolute by prefixing relative paths with API_URL
+ */
+export function resolveImageUrl(path: string | null | undefined): string {
+    if (!path) return "/placeholder.jpg"
+    
+    // If it's already an absolute URL, return as is
+    if (path.startsWith('http')) return path
+    
+    // Ensure API_URL is defined
+    const base = API_URL || 'http://localhost:8000'
+    
+    // Prefix relative path
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`
+    return `${base}${normalizedPath}`
+}
+/**
+ * Checks if a string is a valid URL
+ */
+export function isValidUrl(url: string): boolean {
+    if (!url) return false
+    try {
+        const parsed = new URL(url)
+        return ['http:', 'https:'].includes(parsed.protocol)
+    } catch {
+        return false
+    }
+}

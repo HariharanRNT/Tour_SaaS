@@ -17,15 +17,27 @@ from app.schemas import (
     EnquiryListResponse, EnquiryConversionResponse,
     BookingResponse
 )
-from app.api.deps import get_current_user, get_optional_current_user, get_current_domain
+from app.api.deps import get_current_user, get_optional_current_user, get_current_domain, check_permission
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.config import settings
 from app.utils.crypto import decrypt_value
 from app.services.notification_service import NotificationService
+from app.services.gemini_service import gemini_service
+from app.services.pdf_service import pdf_service
+from app.models import EnquiryQuote
+from app.schemas import (
+    EnquiryCreate, EnquiryUpdate, EnquiryResponse, 
+    EnquiryListResponse, EnquiryConversionResponse,
+    BookingResponse, EnquiryAnalyzeResponse,
+    EnquiryQuoteCreate, EnquiryQuoteResponse,
+    EnquiryQuoteHistoryResponse
+)
 import razorpay
+import json
 import random
 import string
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -297,13 +309,10 @@ async def list_agent_enquiries(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_permission('enquiries', 'view'))
 ):
-    """List enquiries for the authenticated agent"""
-    if current_user.role != UserRole.AGENT and current_user.role != "agent":
-        raise HTTPException(status_code=403, detail="Only agents can access this endpoint")
-        
-    query = select(Enquiry).where(Enquiry.agent_id == current_user.id)
+    """List enquiries for the authenticated agent or sub-user"""
+    query = select(Enquiry).where(Enquiry.agent_id == current_user.agent_id)
     
     if status:
         query = query.where(Enquiry.status == status)
@@ -317,11 +326,15 @@ async def list_agent_enquiries(
     query = query.order_by(Enquiry.created_at.desc())
     query = query.offset((page - 1) * page_size).limit(page_size)
     
-    # Include booking info
-    query = query.options(selectinload(Enquiry.booking))
+    # Include booking info and quotes
+    query = query.options(selectinload(Enquiry.booking), selectinload(Enquiry.quotes))
     
     result = await db.execute(query)
     enquiries = result.scalars().all()
+    
+    # Populate quotes_count
+    for e in enquiries:
+        e.quotes_count = len(e.quotes)
     
     return EnquiryListResponse(
         enquiries=enquiries,
@@ -334,13 +347,13 @@ async def list_agent_enquiries(
 async def get_enquiry_detail(
     enquiry_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_permission('enquiries', 'view'))
 ):
     """Get detailed enquiry information"""
     result = await db.execute(
         select(Enquiry)
         .where(Enquiry.id == enquiry_id)
-        .options(selectinload(Enquiry.booking))
+        .options(selectinload(Enquiry.booking), selectinload(Enquiry.quotes))
     )
     enquiry = result.scalar_one_or_none()
     
@@ -348,8 +361,11 @@ async def get_enquiry_detail(
         raise NotFoundException("Enquiry not found")
         
     # Security Check
-    if enquiry.agent_id != current_user.id:
+    if enquiry.agent_id != current_user.agent_id:
         raise HTTPException(status_code=403, detail="Not authorized to view this enquiry")
+        
+    # Populate quotes_count
+    enquiry.quotes_count = len(enquiry.quotes)
         
     return enquiry
 
@@ -358,7 +374,7 @@ async def update_enquiry(
     enquiry_id: UUID,
     enquiry_update: EnquiryUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_permission('enquiries', 'edit'))
 ):
     """Update enquiry status or agent notes"""
     result = await db.execute(select(Enquiry).where(Enquiry.id == enquiry_id))
@@ -367,7 +383,7 @@ async def update_enquiry(
     if not enquiry:
         raise NotFoundException("Enquiry not found")
         
-    if enquiry.agent_id != current_user.id:
+    if enquiry.agent_id != current_user.agent_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this enquiry")
         
     # Strict Status Transition Rules
@@ -401,7 +417,7 @@ async def update_enquiry(
 async def convert_enquiry_to_booking(
     enquiry_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_permission('enquiries', 'full'))
 ):
     """Convert a confirmed enquiry into a booking"""
     # 1. Fetch Enquiry and related info
@@ -415,7 +431,7 @@ async def convert_enquiry_to_booking(
     if not enquiry:
         raise NotFoundException("Enquiry not found")
         
-    if enquiry.agent_id != current_user.id:
+    if enquiry.agent_id != current_user.agent_id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
     if enquiry.status != EnquiryStatus.CONFIRMED:
@@ -540,3 +556,192 @@ async def convert_enquiry_to_booking(
         payment_link=payment_link,
         message="Enquiry converted to booking successfully" if not payment_link and package.enquiry_payment == EnquiryPaymentType.PAYMENT_LINK else "Booking created and payment link generated" if payment_link else "Booking created manually"
     )
+
+
+# AI & QUOTE BUILDER ENDPOINTS
+
+@router.post("/agent/{enquiry_id}/analyze", response_model=EnquiryAnalyzeResponse)
+async def analyze_enquiry_with_ai(
+    enquiry_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_permission('enquiries', 'edit'))
+):
+    """Analyze the enquiry message using AI to extract travel parameters"""
+    result = await db.execute(select(Enquiry).where(Enquiry.id == enquiry_id))
+    enquiry = result.scalar_one_or_none()
+    
+    if not enquiry:
+        raise NotFoundException("Enquiry not found")
+        
+    if enquiry.agent_id != current_user.agent_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    if not enquiry.message and not enquiry.package_name_snapshot:
+        return EnquiryAnalyzeResponse()
+        
+    # Provide more context to Gemini for better extraction
+    context_msg = f"Message: {enquiry.message or 'No message'}\n"
+    if enquiry.package_name_snapshot:
+        context_msg += f"Interesting Package: {enquiry.package_name_snapshot}\n"
+    if enquiry.travel_date:
+        context_msg += f"Travel Date: {enquiry.travel_date.isoformat()}\n"
+    context_msg += f"Travellers: {enquiry.travellers}\n"
+
+    analysis_result = await gemini_service.analyze_enquiry(context_msg)
+    if not analysis_result.get("success"):
+        return EnquiryAnalyzeResponse(
+            internal_error=analysis_result.get("error", "Unknown extraction error")
+        )
+        
+    data = analysis_result.get("data", {})
+    return EnquiryAnalyzeResponse(**data)
+
+
+@router.post("/agent/{enquiry_id}/generate-quote", response_model=EnquiryQuoteResponse)
+async def generate_enquiry_quote(
+    enquiry_id: UUID,
+    quote_data: EnquiryQuoteCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_permission('enquiries', 'edit'))
+):
+    """Generate a PDF quote and store it in history"""
+    # 1. Fetch Enquiry and Agent Profile
+    enquiry_result = await db.execute(
+        select(Enquiry)
+        .where(Enquiry.id == enquiry_id)
+        .options(selectinload(Enquiry.quotes))
+    )
+    enquiry = enquiry_result.scalar_one_or_none()
+    
+    if not enquiry:
+        raise NotFoundException("Enquiry not found")
+        
+    agent_result = await db.execute(
+        select(Agent)
+        .where(Agent.user_id == enquiry.agent_id)
+        .options(selectinload(Agent.user))
+    )
+    agent_profile = agent_result.scalar_one_or_none()
+
+    # 2. Fetch Selected Packages
+    pkg_ids = [str(p.packageId) for p in quote_data.packages]
+    packages_result = await db.execute(
+        select(Package)
+        .where(Package.id.in_(pkg_ids))
+        .options(selectinload(Package.itinerary_items))
+    )
+    packages = packages_result.scalars().all()
+    
+    if not packages:
+        raise BadRequestException("No valid packages selected for quote")
+
+    # 3. Generate PDF
+    quoted_packages_json = [p.model_dump() for p in quote_data.packages]
+    for sp in quoted_packages_json:
+        sp['packageId'] = str(sp['packageId'])
+        sp['quotedPrice'] = float(sp['quotedPrice'])
+
+    pdf_url = await pdf_service.generate_quote_pdf(
+        enquiry=enquiry,
+        packages=packages,
+        agent_profile=agent_profile,
+        quoted_data=quoted_packages_json
+    )
+
+    # 4. Save Quote History
+    new_quote = EnquiryQuote(
+        enquiry_id=enquiry.id,
+        quoted_packages=quoted_packages_json,
+        pdf_url=pdf_url,
+        email_sent_to=enquiry.email,
+        ai_extracted_data=quote_data.aiExtractedData
+    )
+    
+    db.add(new_quote)
+    await db.commit()
+    await db.refresh(new_quote)
+    
+    return new_quote
+
+
+@router.post("/agent/{enquiry_id}/send-quote/{quote_id}")
+async def send_enquiry_quote_email(
+    enquiry_id: UUID,
+    quote_id: UUID,
+    email_subject: str = Query(..., min_length=1),
+    email_body: str = Query(..., min_length=1),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_permission('enquiries', 'edit'))
+):
+    """Send the generated PDF quote to the customer via email"""
+    # 1. Fetch Quote and Enquiry
+    quote_result = await db.execute(
+        select(EnquiryQuote).where(EnquiryQuote.id == quote_id)
+    )
+    quote = quote_result.scalar_one_or_none()
+    
+    if not quote or quote.enquiry_id != enquiry_id:
+        raise NotFoundException("Quote not found")
+        
+    enquiry_result = await db.execute(select(Enquiry).where(Enquiry.id == enquiry_id))
+    enquiry = enquiry_result.scalar_one_or_none()
+
+    # 2. Fetch Agent SMTP settings
+    agent_profile_result = await db.execute(
+        select(Agent).where(Agent.user_id == enquiry.agent_id)
+    )
+    agent_profile = agent_profile_result.scalar_one_or_none()
+    
+    smtp_config = None
+    if agent_profile and agent_profile.smtp_host and agent_profile.smtp_user:
+        smtp_config = {
+            "host": agent_profile.smtp_host,
+            "port": agent_profile.smtp_port or 587,
+            "user": agent_profile.smtp_user,
+            "password": agent_profile.smtp_password or "",
+            "from_email": agent_profile.smtp_from_email or current_user.email,
+            "from_name": agent_profile.agency_name or "Travel Agency",
+            "encryption_type": "tls"
+        }
+
+    # 3. Dispatch Email Task with Attachment
+    from app.tasks.email_tasks import send_email_task
+    # Resolve absolute path for the PDF
+    pdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", quote.pdf_url.lstrip('/'))
+    
+    send_email_task.delay(
+        to_email=enquiry.email,
+        subject=email_subject,
+        html_body=email_body,
+        smtp_config=smtp_config,
+        attachments=[{
+            "filename": os.path.basename(pdf_path),
+            "file_path": pdf_path,
+            "content_type": "application/pdf"
+        }]
+    )
+    
+    # 4. Update Enquiry Status to CONTACTED if it was NEW
+    if enquiry.status == EnquiryStatus.NEW:
+        enquiry.status = EnquiryStatus.CONTACTED
+        enquiry.last_contacted_at = datetime.now()
+        await db.commit()
+
+    return {"success": True, "message": "Quote sent successfully"}
+
+
+@router.get("/agent/{enquiry_id}/history", response_model=EnquiryQuoteHistoryResponse)
+async def get_enquiry_quote_history(
+    enquiry_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_permission('enquiries', 'view'))
+):
+    """Retrieve the history of quotes sent for this enquiry"""
+    result = await db.execute(
+        select(EnquiryQuote)
+        .where(EnquiryQuote.enquiry_id == enquiry_id)
+        .order_by(EnquiryQuote.quote_sent_at.desc())
+    )
+    quotes = result.scalars().all()
+    
+    return EnquiryQuoteHistoryResponse(quotes=quotes)

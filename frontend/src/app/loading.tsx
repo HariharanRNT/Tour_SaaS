@@ -21,7 +21,7 @@ export default function Loading() {
                     <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 rounded-full border-t-4 border-[var(--primary)] border-r-4 border-transparent"
+                        className="absolute inset-0 rounded-full border-4 border-transparent border-t-[var(--primary)]"
                     />
 
                     {/* Icon in center */}

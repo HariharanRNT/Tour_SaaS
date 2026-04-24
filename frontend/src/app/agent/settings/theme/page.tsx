@@ -751,6 +751,13 @@ export default function AgentThemeSettingsPage() {
     const hpField = (field: keyof HomepageSettings, value: any) => setHpSettings(prev => ({ ...prev, [field]: value }));
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
+
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size must be less than 5MB');
+            return;
+        }
+
         setImageUploading(true);
         const toastId = toast.loading('Optimizing and uploading background image...');
         try {
@@ -797,6 +804,12 @@ export default function AgentThemeSettingsPage() {
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Logo image size must be less than 5MB');
+            return;
+        }
 
         setLogoUploading(true);
         const toastId = toast.loading('Optimizing and uploading logo...');
@@ -846,6 +859,12 @@ export default function AgentThemeSettingsPage() {
     const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Favicon size must be less than 5MB');
+            return;
+        }
 
         setFaviconUploading(true);
         const toastId = toast.loading('Optimizing and uploading favicon...');

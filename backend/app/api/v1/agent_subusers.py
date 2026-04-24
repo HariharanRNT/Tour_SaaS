@@ -38,6 +38,7 @@ ROLE_PRESETS = {
         {"module": "dashboard", "access_level": "view"},
         {"module": "bookings", "access_level": "view"},
         {"module": "finance_reports", "access_level": "view"},
+        {"module": "enquiries", "access_level": "view"},
     ],
 }
 

@@ -22,6 +22,7 @@ import {
 import { ArrowLeft, MapPin, Calendar, Plus, Edit2, Trash2 } from 'lucide-react'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface Package {
     id: string
@@ -144,6 +145,16 @@ export default function PackageDetailPage() {
     const handleSaveActivity = async () => {
         if (!formData.title) {
             toast.error('Title is required')
+            return
+        }
+
+        if (formData.title.length > 100) {
+            toast.error('Activity title cannot exceed 100 characters')
+            return
+        }
+
+        if (formData.description && formData.description.length > 300) {
+            toast.error('Activity description cannot exceed 300 characters')
             return
         }
 
@@ -411,22 +422,40 @@ export default function PackageDetailPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="title">Activity Title</Label>
+                            <div className="flex justify-between items-center px-1">
+                                <Label htmlFor="title">Activity Title</Label>
+                                <span className={cn(
+                                    "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
+                                    (formData.title?.length || 0) > 90 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                )}>
+                                    {formData.title?.length || 0} / 100
+                                </span>
+                            </div>
                             <Input
                                 id="title"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                 placeholder="e.g., Visit Tokyo Tower"
+                                maxLength={100}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description (Optional)</Label>
+                            <div className="flex justify-between items-center px-1">
+                                <Label htmlFor="description">Description (Optional)</Label>
+                                <span className={cn(
+                                    "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
+                                    (formData.description?.length || 0) > 280 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                )}>
+                                    {formData.description?.length || 0} / 300
+                                </span>
+                            </div>
                             <Textarea
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 placeholder="Briefly describe what happens..."
                                 rows={3}
+                                maxLength={300}
                             />
                         </div>
                         <div className="space-y-2">

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Check, Shield, Eye, Edit3, Settings, Package, Map, Calendar, Receipt, BarChart2, LayoutDashboard } from 'lucide-react'
+import { Check, Shield, Eye, Edit3, Settings, Package, Map, Calendar, Receipt, BarChart2, LayoutDashboard, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type AccessLevel = 'view' | 'edit' | 'full'
@@ -24,6 +24,7 @@ const MODULES = [
     { id: 'billing', label: 'Billing', icon: Receipt, desc: 'Manage subscriptions and invoices' },
     { id: 'finance_reports', label: 'Finance Reports', icon: BarChart2, desc: 'Revenue and commission analysis' },
     { id: 'settings', label: 'Settings', icon: Settings, desc: 'Agency profile and configuration' },
+    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare, desc: 'Manage customer enquiries and leads' },
 ]
 
 export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProps) {

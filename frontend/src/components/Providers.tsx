@@ -12,9 +12,10 @@ export function Providers({ children }: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient({
         defaultOptions: {
             queries: {
-                staleTime: 1000 * 30, // 30 seconds
+                staleTime: 0, // Fetch fresh data every time
                 gcTime: 1000 * 60 * 5,   // 5 minutes
-                refetchOnWindowFocus: false,
+                refetchOnWindowFocus: true,
+                refetchOnMount: true,
                 retry: 1,
             }
         }

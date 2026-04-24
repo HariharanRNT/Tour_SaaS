@@ -255,7 +255,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     const toastId = toast.loading(`Uploading ${type} image...`);
     
     try {
-      if (file.size > 2 * 1024 * 1024) throw new Error("Image must be less than 2MB");
+      if (file.size > 5 * 1024 * 1024) throw new Error("Image must be less than 5MB");
       
       const compressedFile = await compressImage(file, {
         maxWidthOrHeight: isHeader ? 800 : 1200,

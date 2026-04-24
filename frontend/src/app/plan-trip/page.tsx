@@ -365,7 +365,8 @@ function PlanTripContent() {
             try {
                 const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
                 const res = await fetch(`${API_URL}/api/v1/trip-planner/popular-destinations`, {
-                    headers: { 'X-Domain': domain }
+                    headers: { 'X-Domain': domain },
+                    cache: 'no-store'
                 })
                 if (res.ok) {
                     const data = await res.json()
@@ -419,7 +420,8 @@ function PlanTripContent() {
             const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
             const res = await fetch(`${API_URL}/api/v1/packages/config/suggestions?q=${encodeURIComponent(q)}`, {
                 headers: { 'X-Domain': domain },
-                signal: controller.signal
+                signal: controller.signal,
+                cache: 'no-store'
             })
             if (res.ok) {
                 const data = await res.json()
@@ -503,7 +505,8 @@ function PlanTripContent() {
 
             const res = await fetch(`${API_URL}/api/v1/packages?${params.toString()}`, {
                 headers: { 'X-Domain': domain },
-                signal
+                signal,
+                cache: 'no-store'
             })
 
             if (res.ok) {
@@ -688,7 +691,8 @@ function PlanTripContent() {
                     try {
                         const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
                         const res = await fetch(`${API_URL}/api/v1/packages/${pkgId}`, {
-                            headers: { 'X-Domain': domain }
+                            headers: { 'X-Domain': domain },
+                            cache: 'no-store'
                         });
                         if (res.ok) {
                             const data = await res.json();
@@ -1611,7 +1615,7 @@ function PlanTripContent() {
                                             </div>
                                         </div>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 border-0 bg-transparent shadow-none p-0 z-[1100]" align="start">
+                                    <PopoverContent className="w-auto p-0 border-0 bg-transparent shadow-none z-[1100]" align="start">
                                         <PremiumCalendar
                                             mode="single"
                                             selected={selectedDate ? new Date(selectedDate) : undefined}

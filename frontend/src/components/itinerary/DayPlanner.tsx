@@ -115,7 +115,6 @@ export function DayPlanner({
         timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day',
         icon: React.ReactNode,
         label: string,
-        timeRange: string,
         activities: Activity[],
         isLastSection: boolean = false
     ) => {
@@ -168,11 +167,6 @@ export function DayPlanner({
                         <h4 className={cn("font-display text-xl md:text-2xl font-bold tracking-tight", theme.text)}>
                             {label}
                         </h4>
-                        <div className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full border border-[var(--itinerary-primary,var(--primary-glow))]">
-                            <span className="text-black font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                {timeRange}
-                            </span>
-                        </div>
                     </div>
                 </div>
 
@@ -230,25 +224,27 @@ export function DayPlanner({
                                     <div className="flex-1 min-w-0 p-3 md:py-3 md:pr-6 md:pl-2 flex flex-col">
                                         <div className="flex justify-between items-start gap-4 min-w-0">
                                             <div className="space-y-2 min-w-0 flex-1">
-                                                {/* Category Tag */}
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-[var(--itinerary-primary,var(--primary-glow))]/10 border border-[var(--itinerary-primary,var(--primary))]/20 text-black text-[10px] font-bold uppercase tracking-wider mb-1">
-                                                    ✨ Experience
+                                                {/* Category & Time Row */}
+                                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-[var(--itinerary-primary,var(--primary-glow))]/10 border border-[var(--itinerary-primary,var(--primary))]/20 text-black text-[10px] font-bold uppercase tracking-wider">
+                                                        ✨ Experience
+                                                    </div>
+                                                    {(activity.start_time || activity.end_time) && (
+                                                        <div className="flex items-center text-[10px] font-bold text-black uppercase tracking-widest bg-black/5 px-2.5 py-1 rounded-full border border-black/5">
+                                                            <Clock className="h-3 w-3 mr-1.5 text-[var(--itinerary-primary,var(--primary))]" />
+                                                            {activity.start_time || '?'} - {activity.end_time || '?'}
+                                                        </div>
+                                                    )}
                                                 </div>
 
-                                                <h5 className="font-display text-lg md:text-xl text-black leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-words">
+                                                <h5 className="font-display text-lg md:text-xl text-black leading-tight group-hover/card:text-[var(--itinerary-primary,var(--primary))] transition-colors break-anywhere">
                                                     {activity.title}
                                                 </h5>
-                                                {(activity.start_time || activity.end_time) && (
-                                                    <div className="flex items-center text-xs font-bold text-black uppercase tracking-widest">
-                                                        <Clock className="h-3.5 w-3.5 mr-2 text-[var(--itinerary-primary,var(--primary))]" />
-                                                        {activity.start_time || '?'} - {activity.end_time || '?'}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
-                                        <p className="text-black mt-1 line-clamp-2 text-[11px] leading-relaxed font-bold mb-auto">
-                                            {activity.description.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                                        <p className="text-black mt-1 line-clamp-2 text-[11px] leading-relaxed font-bold mb-auto break-anywhere">
+                                            {activity.description.replace(/<[^>]*>/g, '')}
                                         </p>
 
                                         <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-[var(--itinerary-primary,var(--primary-glow))]/20">
@@ -348,7 +344,6 @@ export function DayPlanner({
                             'full_day',
                             <Calendar className="h-5 w-5" />,
                             'Full Day',
-                            'All Day Experience',
                             day.full_day,
                             true
                         )
@@ -365,7 +360,6 @@ export function DayPlanner({
                                             'half_day',
                                             <Clock className="h-5 w-5" />,
                                             'Early Start',
-                                            '06:00 - 12:00',
                                             firstHalf
                                         )}
 
@@ -373,7 +367,6 @@ export function DayPlanner({
                                             'morning',
                                             <Sunrise className="h-6 w-6" />,
                                             'Morning',
-                                            '06:00 - 12:00',
                                             day.morning || []
                                         )}
 
@@ -382,7 +375,6 @@ export function DayPlanner({
                                             'half_day',
                                             <Clock className="h-5 w-5" />,
                                             'Mid-Day',
-                                            '12:00 - 18:00',
                                             secondHalf
                                         )}
 
@@ -390,7 +382,6 @@ export function DayPlanner({
                                             'afternoon',
                                             <Sun className="h-6 w-6" />,
                                             'Afternoon',
-                                            '12:00 - 17:00',
                                             day.afternoon || []
                                         )}
 
@@ -398,7 +389,6 @@ export function DayPlanner({
                                             'evening',
                                             <Sunset className="h-6 w-6" />,
                                             'Evening',
-                                            '17:00 - 21:00',
                                             day.evening || []
                                         )}
 
@@ -406,7 +396,6 @@ export function DayPlanner({
                                             'night',
                                             <Moon className="h-6 w-6" />,
                                             'Night',
-                                            '21:00 - 06:00',
                                             day.night || [],
                                             true // Last section
                                         )}
@@ -421,7 +410,7 @@ export function DayPlanner({
                 <Dialog open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
                     <DialogContent className="max-w-[640px] p-0 overflow-hidden flex flex-col max-h-[85vh] rounded-[2rem] border border-white/40 [&>button]:hidden shadow-2xl bg-white/40 backdrop-blur-3xl">
                         {selectedActivity && (
-                            <div className="flex flex-col h-full overflow-y-auto custom-scrollbar">
+                            <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
                                 {/* Image Gallery */}
                                 <div className="relative w-full bg-black/5 h-[280px] shrink-0">
                                     {(() => {
@@ -496,7 +485,7 @@ export function DayPlanner({
                                             <div className="h-8 w-1.5 bg-[var(--primary)] rounded-full"></div>
                                             About this activity
                                         </h3>
-                                        <div className="text-black leading-relaxed text-lg whitespace-pre-wrap font-medium">
+                                        <div className="text-black leading-relaxed text-lg whitespace-pre-wrap font-medium break-anywhere">
                                             {selectedActivity.description}
                                         </div>
                                     </div>

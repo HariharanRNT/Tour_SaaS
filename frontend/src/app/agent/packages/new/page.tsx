@@ -148,6 +148,17 @@ const INCLUSION_ITEMS = [
     },
 ]
 
+const generateSlug = (name: string): string => {
+    return name
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9\s-]/g, "") // Allow only a-z, 0-9, spaces, hyphens
+        .replace(/\s+/g, "-")          // Replace spaces with hyphens
+        .replace(/-+/g, "-")           // Collapse multiple hyphens
+        .replace(/^-+|-+$/g, "");      // Trim hyphens from ends
+};
+
 export default function CreatePackagePage() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -169,6 +180,8 @@ export default function CreatePackagePage() {
     const [tripStyleError, setTripStyleError] = useState(false)
     // Track whether package data has been loaded so we can suppress validation until ready
     const [dataLoaded, setDataLoaded] = useState(!editPackageId)
+    // Track whether the slug was manually edited to avoid overwriting it when title changes
+    const [isSlugEdited, setIsSlugEdited] = useState(false)
 
     // Multi-Destination Drag & Drop State
     const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
@@ -221,6 +234,22 @@ export default function CreatePackagePage() {
         .map((r, i) => ({ days: r.daysBefore, index: i }))
         .filter(r => (r.days as any) !== '' && r.days !== null && r.days !== undefined)
         .filter((r, i, self) => self.some((other, otherIdx) => other.days === r.days && other.index !== r.index))
+        .map(r => r.index);
+
+    const unorderedRuleIndices = formData.cancellation_rules
+        .map((r, i) => ({ days: r.daysBefore, index: i }))
+        .filter(r => (r.days as any) !== '' && r.days !== null && r.days !== undefined)
+        .filter((r, i, self) => i > 0 && r.days >= self[i - 1].days)
+        .map(r => r.index);
+
+    const invalidPercentageIndices = formData.cancellation_rules
+        .map((r, i) => ({ percentage: r.refundPercentage, index: i }))
+        .filter(r => (r.percentage as any) !== '' && (Number(r.percentage) < 0 || Number(r.percentage) > 100))
+        .map(r => r.index);
+
+    const emptyFieldIndices = formData.cancellation_rules
+        .map((r, i) => ({ days: r.daysBefore, percentage: r.refundPercentage, index: i }))
+        .filter(r => (r.days as any) === '' || (r.percentage as any) === '')
         .map(r => r.index);
 
     // Clear trip style validation error automatically when styles are pre-populated
@@ -355,7 +384,8 @@ export default function CreatePackagePage() {
     // Auto-generate slug from title
     useEffect(() => {
         if (formData.title && !formData.slug) {
-            updateFormData('slug', formData.title.toLowerCase().replace(/[^a-z0-9-]/g, '-'))
+            console.log(`[SlugGen] Auto-generating slug for: "${formData.title}"`);
+            updateFormData('slug', generateSlug(formData.title));
         }
     }, [formData.title, formData.slug])
 
@@ -406,6 +436,8 @@ export default function CreatePackagePage() {
                     } catch { /* ignore */ }
                 }
 
+                setIsSlugEdited(true)
+
                 setFormData({
                     title: pkg.title || '',
                     destination: pkg.destination || '',
@@ -415,7 +447,7 @@ export default function CreatePackagePage() {
                     trip_styles: pkg.trip_styles || (pkg.trip_style ? [pkg.trip_style] : []),
                     price_per_person: Number(pkg.price_per_person) || 0,
                     description: pkg.description || '',
-                    is_public: pkg.is_public !== undefined ? pkg.is_public : true,
+                    is_public: (pkg.is_public === true || pkg.is_public === false) ? pkg.is_public : true,
                     feature_image_url: pkg.feature_image_url || '',
                     package_mode: (pkg.package_mode || 'single').toLowerCase(),
                     destinations: pkg.destinations || [],
@@ -430,7 +462,7 @@ export default function CreatePackagePage() {
                     cancellation_rules: (pkg.cancellation_rules || []).map((r: any) => ({
                         daysBefore: r.daysBefore ?? 0,
                         refundPercentage: r.refundPercentage ?? 0,
-                        ...(gstApplicable && { fareType: r.fareType || 'total_fare' }),
+                        fareType: r.fareType || 'total_fare'
                     })),
                     // Dual Booking
                     booking_type: pkg.booking_type || 'INSTANT',
@@ -647,10 +679,24 @@ export default function CreatePackagePage() {
                 return;
             }
 
-            // Cancellation policy duplicate day check
-            if (formData.cancellation_enabled && duplicateDayIndices.length > 0) {
-                toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
-                return;
+            // Cancellation policy validation
+            if (formData.cancellation_enabled) {
+                if (duplicateDayIndices.length > 0) {
+                    toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
+                    return;
+                }
+                if (unorderedRuleIndices.length > 0) {
+                    toast.error("Cancellation rules must be in descending order (e.g., 30 days, then 15, then 0).");
+                    return;
+                }
+                if (invalidPercentageIndices.length > 0) {
+                    toast.error("Refund percentage must be between 0 and 100.");
+                    return;
+                }
+                if (emptyFieldIndices.length > 0) {
+                    toast.error("Please fill in both 'Days Before' and 'Refund %' for all cancellation rules.");
+                    return;
+                }
             }
         }
 
@@ -726,9 +772,16 @@ export default function CreatePackagePage() {
             toast.success(packageId ? 'Package details updated' : 'Package details saved')
             setActiveStep(targetStep) // Advance step only on success
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save package:', error)
-            toast.error('Failed to save package details. Please try again.')
+            let errorMsg = 'Failed to save package details. Please try again.'
+            try {
+                const parsed = JSON.parse(error.message)
+                if (parsed.detail) {
+                    errorMsg = parsed.detail
+                }
+            } catch { /* ignore */ }
+            toast.error(errorMsg)
         } finally {
             setSaving(false)
         }
@@ -777,13 +830,34 @@ export default function CreatePackagePage() {
                     // Clear GST details when not applicable
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
+                    cancellation_rules: formData.cancellation_rules.map(r => ({
+                        ...r,
+                        fareType: r.fareType || 'total_fare'
+                    }))
                 })
             })
 
-            if (formData.cancellation_enabled && duplicateDayIndices.length > 0) {
-                setSaving(false);
-                toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
-                return;
+            if (formData.cancellation_enabled) {
+                if (duplicateDayIndices.length > 0) {
+                    setSaving(false);
+                    toast.error("Cancellation policy has duplicate days. Please use unique days for each rule.");
+                    return;
+                }
+                if (unorderedRuleIndices.length > 0) {
+                    setSaving(false);
+                    toast.error("Cancellation rules must be in descending order (e.g., 30 days, then 15, then 0).");
+                    return;
+                }
+                if (invalidPercentageIndices.length > 0) {
+                    setSaving(false);
+                    toast.error("Refund percentage must be between 0 and 100.");
+                    return;
+                }
+                if (emptyFieldIndices.length > 0) {
+                    setSaving(false);
+                    toast.error("Please fill in both 'Days Before' and 'Refund %' for all cancellation rules.");
+                    return;
+                }
             }
 
             if (!response.ok) throw new Error('Failed to save draft')
@@ -1108,7 +1182,15 @@ export default function CreatePackagePage() {
                                         <Input
                                             placeholder="e.g., Tokyo Adventure 7 Days"
                                             value={formData.title}
-                                            onChange={(e) => updateFormData('title', e.target.value)}
+                                            maxLength={100}
+                                            onChange={(e) => {
+                                                const newTitle = e.target.value;
+                                                updateFormData('title', newTitle);
+                                                // Auto-update slug only if not manually edited
+                                                if (!isSlugEdited) {
+                                                    updateFormData('slug', generateSlug(newTitle));
+                                                }
+                                            }}
                                             className={cn("glass-input pl-10 h-12 rounded-xl", getInputStyle(formData.title, true))}
                                         />
                                         <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs text-black/40">
@@ -1116,6 +1198,52 @@ export default function CreatePackagePage() {
                                         </div>
                                     </div>
                                     <p className="text-xs text-black/80">Create an engaging title that highlights the experience</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                        <Label className={cn("text-xs font-bold uppercase tracking-wider", formData.slug ? "text-[var(--primary)]" : "text-black")}>
+                                            URL Slug <span className="text-black/40 font-normal">(Optional — will auto-generate)</span>
+                                        </Label>
+                                        <div className="relative group/input">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Link2 className={cn("h-4 w-4 transition-colors", formData.slug ? "text-[var(--primary)]" : "text-black/40 group-focus-within/input:text-[var(--primary)]")} />
+                                            </div>
+                                            <Input
+                                                placeholder="e.g., tokyo-adventure-7-days"
+                                                value={formData.slug}
+                                                onChange={(e) => {
+                                                    const manualSlug = generateSlug(e.target.value);
+                                                    updateFormData('slug', manualSlug);
+                                                    setIsSlugEdited(true); // Mark as manually edited
+                                                }}
+                                                className={cn("glass-input pl-10 h-10 rounded-xl font-mono text-xs", getInputStyle(formData.slug, false))}
+                                            />
+                                        <div className="absolute inset-y-0 right-0 pr-1 flex items-center">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    if (formData.title) {
+                                                        const freshSlug = generateSlug(formData.title);
+                                                        updateFormData('slug', freshSlug);
+                                                        setIsSlugEdited(false); // Reset edit state to allow auto-sync again
+                                                        toast.success('Slug synced with title');
+                                                    }
+                                                }}
+                                                className="h-8 w-8 p-0 hover:bg-white/20 text-black/40 hover:text-[var(--primary)]"
+                                                title="Sync with title"
+                                            >
+                                                <Sparkles className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                        <p className="text-[10px] font-bold text-black/60">
+                                            Changing this will update the public URL. Current: <span className="text-[var(--primary)]">/plan-trip/{formData.slug || '...'}</span>
+                                        </p>
+                                    </div>
                                 </div>
 
                                 {formData.package_mode === 'single' && (
@@ -1389,6 +1517,15 @@ export default function CreatePackagePage() {
                                 </div>
                             </div>
                             <CardContent className="p-3">
+                                <div className="mb-4 flex items-start gap-2.5 p-3.5 bg-[var(--primary)]/5 border border-[var(--primary)]/10 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-500">
+                                    <div className="p-1.5 bg-white shadow-sm rounded-full mt-0.5">
+                                        <Info className="w-3.5 h-3.5 text-[var(--primary)]" />
+                                    </div>
+                                    <p className="text-[11px] font-bold text-black opacity-70 leading-relaxed">
+                                        The checkbox on the UI page determines whether the item is shown as inclusive or exclusive. <br />
+                                        If the toggle is enabled, it is inclusive; if it is disabled, it is exclusive.
+                                    </p>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-[6px]">
                                     {INCLUSION_ITEMS.map((item) => {
                                         const value = formData.inclusions?.[item.key] || { included: false, details: '', visibleToCustomer: true };
@@ -1587,24 +1724,24 @@ export default function CreatePackagePage() {
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold text-black uppercase tracking-wider">Booking Type</Label>
                                             <div className="flex items-center gap-1 p-1 rounded-full bg-black/5 border border-black/5 w-fit">
-                                                <button 
+                                                <button
                                                     type="button"
                                                     className={cn(
                                                         "px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
-                                                        formData.booking_type === 'INSTANT' 
-                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                        formData.booking_type === 'INSTANT'
+                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20"
                                                             : "text-black/40 hover:text-black/60"
                                                     )}
                                                     onClick={() => updateFormData('booking_type', 'INSTANT')}
                                                 >
                                                     Instant Booking
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="button"
                                                     className={cn(
                                                         "px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
-                                                        formData.booking_type === 'ENQUIRY' 
-                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                        formData.booking_type === 'ENQUIRY'
+                                                            ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20"
                                                             : "text-black/40 hover:text-black/60"
                                                     )}
                                                     onClick={() => updateFormData('booking_type', 'ENQUIRY')}
@@ -1623,12 +1760,13 @@ export default function CreatePackagePage() {
                                         {formData.booking_type === 'ENQUIRY' && (
                                             <div className="flex-1 w-full md:max-w-[320px] space-y-2 animate-in fade-in slide-in-from-right-2 duration-300">
                                                 <Label className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-2">
-                                                    Price Label 
+                                                    Price Label
                                                     <span className="normal-case opacity-40 font-medium text-[10px]">(Optional)</span>
                                                 </Label>
                                                 <Input
                                                     placeholder="e.g. Price on request"
                                                     value={formData.price_label}
+                                                    maxLength={20}
                                                     onChange={(e) => updateFormData('price_label', e.target.value)}
                                                     className="glass-input h-9 text-xs px-3 rounded-lg border-white/40"
                                                 />
@@ -1643,8 +1781,32 @@ export default function CreatePackagePage() {
                                 {agentGstApplicable === true && (
                                     <div className="space-y-3 md:col-span-2">
                                         <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Configuration</Label>
-                                        <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-2">
+                                        <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-5">
+                                            {/* Package Level Toggle */}
+                                            <div className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-emerald-200/50">
+                                                <div className="space-y-0.5">
+                                                    <Label className="text-[11px] font-black uppercase tracking-wider text-emerald-900">Enable GST for this package</Label>
+                                                    <p className="text-[10px] text-emerald-700 font-medium">When disabled, no tax is added to the customer's total.</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateFormData('gst_applicable', !formData.gst_applicable)}
+                                                    className={cn(
+                                                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                                                        formData.gst_applicable ? "bg-emerald-500" : "bg-gray-300"
+                                                    )}
+                                                >
+                                                    <span className={cn(
+                                                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                                                        formData.gst_applicable ? "translate-x-6" : "translate-x-1"
+                                                    )} />
+                                                </button>
+                                            </div>
+
+                                            <div className={cn(
+                                                "grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-2 transition-opacity duration-300",
+                                                !formData.gst_applicable && "opacity-40 pointer-events-none"
+                                            )}>
                                                 {/* GST Percentage */}
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Percentage</Label>
@@ -1684,24 +1846,24 @@ export default function CreatePackagePage() {
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-black uppercase tracking-wider">GST Mode</Label>
                                                     <div className="flex items-center gap-1 p-1 rounded-full bg-black/5 border border-black/5 w-fit">
-                                                        <button 
+                                                        <button
                                                             type="button"
                                                             className={cn(
                                                                 "px-6 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
-                                                                formData.gst_mode === 'exclusive' 
-                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                                formData.gst_mode === 'exclusive'
+                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20"
                                                                     : "text-black/40 hover:text-black/60"
                                                             )}
                                                             onClick={() => updateFormData('gst_mode', 'exclusive')}
                                                         >
                                                             Exclusive
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             type="button"
                                                             className={cn(
                                                                 "px-6 py-1.5 rounded-full text-[11px] font-bold transition-all duration-300",
-                                                                formData.gst_mode === 'inclusive' 
-                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20" 
+                                                                formData.gst_mode === 'inclusive'
+                                                                    ? "bg-[var(--primary)] text-black shadow-sm shadow-[var(--primary)]/20"
                                                                     : "text-black/40 hover:text-black/60"
                                                             )}
                                                             onClick={() => updateFormData('gst_mode', 'inclusive')}
@@ -1728,7 +1890,7 @@ export default function CreatePackagePage() {
                                                         padding: '12px 16px'
                                                     }}
                                                 >
-                                                    {(agentGstApplicable && formData.gst_mode === 'exclusive') ? (
+                                                    {(formData.gst_applicable && formData.gst_mode === 'exclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="font-bold text-black">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
@@ -1737,7 +1899,7 @@ export default function CreatePackagePage() {
                                                                 ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
                                                         </div>
-                                                    ) : (agentGstApplicable && formData.gst_mode === 'inclusive') ? (
+                                                    ) : (formData.gst_applicable && formData.gst_mode === 'inclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="text-black opacity-50 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
@@ -1760,7 +1922,7 @@ export default function CreatePackagePage() {
                                                     <div className="text-right flex flex-col sm:items-end">
                                                         <div className="text-[10px] font-bold text-black uppercase tracking-wider mb-0.5">Final Total</div>
                                                         <div className="text-lg font-black" style={{ color: 'var(--primary)' }}>
-                                                            ₹{(agentGstApplicable && formData.gst_mode === 'exclusive')
+                                                            ₹{(formData.gst_applicable && formData.gst_mode === 'exclusive')
                                                                 ? (formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN', { maximumFractionDigits: 2 })
                                                                 : formData.price_per_person.toLocaleString('en-IN', { maximumFractionDigits: 2 })
                                                             }
@@ -1798,8 +1960,8 @@ export default function CreatePackagePage() {
                                                 cancellation_enabled: next,
                                                 cancellation_rules: next && prev.cancellation_rules.length === 0
                                                     ? [agentGstApplicable
-                                                        ? { daysBefore: 0, refundPercentage: 0, fareType: 'total_fare' as const }
-                                                        : { daysBefore: 0, refundPercentage: 0 }]
+                                                        ? { daysBefore: '' as any, refundPercentage: '' as any, fareType: 'total_fare' as const }
+                                                        : { daysBefore: '' as any, refundPercentage: '' as any }]
                                                     : prev.cancellation_rules
                                             }))
                                         }}
@@ -1861,12 +2023,19 @@ export default function CreatePackagePage() {
                                                         }}
                                                         className={cn(
                                                             "h-8 text-sm transition-all duration-300",
-                                                            duplicateDayIndices.includes(idx)
+                                                            duplicateDayIndices.includes(idx) || unorderedRuleIndices.includes(idx) || (rule.daysBefore as any) === ''
                                                                 ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10"
                                                                 : "bg-white/80"
                                                         )}
                                                         placeholder="e.g. 7"
                                                     />
+                                                    {(rule.daysBefore as any) === '' && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                This field is required.
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     {duplicateDayIndices.includes(idx) && (
                                                         <div className="absolute left-0 -bottom-8 w-max z-20">
                                                             <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
@@ -1874,9 +2043,16 @@ export default function CreatePackagePage() {
                                                             </div>
                                                         </div>
                                                     )}
+                                                    {unorderedRuleIndices.includes(idx) && !duplicateDayIndices.includes(idx) && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                Rules must be in descending order (e.g. 30, then 15).
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {/* Refund % */}
-                                                <div>
+                                                <div className="relative group/percentage">
                                                     <Input
                                                         type="text"
                                                         inputMode="numeric"
@@ -1887,9 +2063,28 @@ export default function CreatePackagePage() {
                                                             updated[idx] = { ...updated[idx], refundPercentage: val === '' ? '' as any : Number(val) }
                                                             setFormData(prev => ({ ...prev, cancellation_rules: updated }))
                                                         }}
-                                                        className="h-8 text-sm"
+                                                        className={cn(
+                                                            "h-8 text-sm transition-all duration-300 shadow-sm",
+                                                            invalidPercentageIndices.includes(idx) || (rule.refundPercentage as any) === ''
+                                                                ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10 text-red-600 font-bold"
+                                                                : "bg-white/80"
+                                                        )}
                                                         placeholder="0–100"
                                                     />
+                                                    {invalidPercentageIndices.includes(idx) && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                Must be between 0 and 100.
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(rule.refundPercentage as any) === '' && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                This field is required.
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {/* Fare Type — only when GST applicable */}
                                                 {agentGstApplicable && (
@@ -1943,8 +2138,8 @@ export default function CreatePackagePage() {
                                                 cancellation_rules: [
                                                     ...prev.cancellation_rules,
                                                     agentGstApplicable
-                                                        ? { daysBefore: 0, refundPercentage: 0, fareType: 'total_fare' as const }
-                                                        : { daysBefore: 0, refundPercentage: 0 }
+                                                        ? { daysBefore: '' as any, refundPercentage: '' as any, fareType: 'total_fare' as const }
+                                                        : { daysBefore: '' as any, refundPercentage: '' as any }
                                                 ]
                                             }))
                                         }}
@@ -2189,6 +2384,7 @@ export default function CreatePackagePage() {
                                             name="description"
                                             placeholder="Describe highlights, what's included..."
                                             value={formData.description || ''}
+                                            maxLength={500}
                                             onChange={(e) => updateFormData('description', e.target.value)}
                                             className={cn("glass-textarea w-full relative z-10", getInputStyle(formData.description))}
                                         />
@@ -2200,7 +2396,7 @@ export default function CreatePackagePage() {
                                                 ? "bg-orange-500/20 text-orange-600 border-orange-500/30"
                                                 : "bg-white/20 text-black border-white/30"
                                         )}>
-                                            {formData.description?.length || 0} characters
+                                            {formData.description?.length || 0} / 500
                                         </div>
                                     </div>
 
@@ -2212,10 +2408,19 @@ export default function CreatePackagePage() {
                                         </div>
                                         <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
                                             <div
-                                                className="word-count-progress rounded-full"
+                                                className={cn(
+                                                    "word-count-progress rounded-full h-full transition-all duration-300",
+                                                    (formData.description?.length || 0) >= 500 ? "bg-amber-500" : ""
+                                                )}
                                                 style={{ width: `${Math.min(100, ((formData.description?.length || 0) / 500) * 100)}%` }}
                                             />
                                         </div>
+                                        {(formData.description?.length || 0) >= 500 && (
+                                            <p className="text-[10px] text-amber-600 font-bold flex items-center gap-1 animate-pulse">
+                                                <AlertCircle className="w-3 h-3" />
+                                                Maximum character limit reached (500)
+                                            </p>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -2289,6 +2494,11 @@ export default function CreatePackagePage() {
                                                             onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
+                                                                    // Restrict image size to 5MB
+                                                                    if (file.size > 5 * 1024 * 1024) {
+                                                                        toast.error('Image size must be less than 5MB');
+                                                                        return;
+                                                                    }
                                                                     const toastId = toast.loading('Optimizing and uploading image...');
                                                                     try {
                                                                         // 1. Compress image
@@ -2403,8 +2613,8 @@ export default function CreatePackagePage() {
 
                 {/* STEP 3: Review */}
                 {activeStep === 3 && (
-                    <div className="animate-in fade-in slide-in-from-right-8 duration-500 max-w-3xl mx-auto">
-                        <Card className="glass-panel border-0 shadow-lg">
+                    <div className="animate-in fade-in slide-in-from-right-8 duration-500 max-w-3xl mx-auto overflow-hidden">
+                        <Card className="glass-panel border-0 shadow-lg overflow-hidden max-w-full">
                             <CardHeader className="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-t-xl p-8">
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -2424,9 +2634,9 @@ export default function CreatePackagePage() {
                                                 <Badge className="bg-red-500/20 text-red-100 border-0">Draft</Badge>
                                             )}
                                         </div>
-                                        <CardTitle className="text-3xl font-bold mb-2 text-white">{formData.title}</CardTitle>
-                                        <div className="flex flex-wrap items-center gap-4 text-white/90 font-bold text-sm">
-                                            <span className="flex items-center gap-1">
+                                        <CardTitle className="text-3xl font-bold mb-2 text-white [overflow-wrap:anywhere]">{formData.title}</CardTitle>
+                                        <div className="flex flex-wrap items-center gap-4 text-white/90 font-bold text-sm [overflow-wrap:anywhere]">
+                                            <span className="flex items-center gap-1 [overflow-wrap:anywhere]">
                                                 <MapPin className="w-4 h-4" />
                                                 {formData.package_mode === 'multi' && formData.destinations.length > 0
                                                     ? `${formData.destinations.map(d => d.city).join(' → ')}`
@@ -2442,15 +2652,18 @@ export default function CreatePackagePage() {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-8 space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
+                            <CardContent className="p-8 space-y-10">
+                                <div className="space-y-8">
+                                    {/* Full Width Description */}
+                                    <div className="w-full">
                                         <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Description</h3>
-                                        <p className="text-black whitespace-pre-wrap leading-relaxed font-medium">
+                                        <p className="text-black whitespace-pre-wrap leading-relaxed font-medium [overflow-wrap:anywhere] w-full overflow-x-hidden">
                                             {formData.description || "No description provided."}
                                         </p>
                                     </div>
-                                    <div className="space-y-6">
+
+                                    {/* Activities & Inclusions - Now in a single column or horizontal flex */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-black/5">
                                         {formData.activities.length > 0 && (
                                             <div>
                                                 <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Activities</h3>
@@ -2469,7 +2682,7 @@ export default function CreatePackagePage() {
                                         {formData.included_items.length > 0 && (
                                             <div>
                                                 <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Price Includes</h3>
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     {formData.included_items.map(item => (
                                                         <div key={item} className="flex items-center gap-2 text-sm text-black font-bold">
                                                             <CheckCircle className="w-4 h-4 text-emerald-500" />

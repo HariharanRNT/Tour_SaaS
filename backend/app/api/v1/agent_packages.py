@@ -84,7 +84,13 @@ async def list_agent_packages(
             raise HTTPException(status_code=400, detail=f"Invalid status filter: '{status_filter}'. Valid values are: draft, published, archived")
     
     if destination and destination != 'all':
-        stmt = stmt.where(Package.destination.ilike(f"%{destination}%"))
+        from sqlalchemy import or_
+        stmt = stmt.where(
+            or_(
+                Package.destination.ilike(f"%{destination}%"),
+                Package.title.ilike(f"%{destination}%")
+            )
+        )
         
     # Get total count first
     from sqlalchemy import func
@@ -133,8 +139,11 @@ async def create_agent_package(
         
         # Generate unique slug (and ID manually to allow re-fetching safely)
         package_id = uuid.uuid4()
-        base_slug = getattr(package_data, 'slug', None) or package_data.title.lower().replace(' ', '-')
-        unique_slug = f"{base_slug}-{str(uuid.uuid4())[:8]}"
+        from app.services.package_service import PackageService
+        
+        # Use provided slug as base if available, otherwise use title
+        slug_base = package_data.slug if package_data.slug else package_data.title
+        unique_slug = PackageService.generate_slug(slug_base, package_id)
         
         # Determine effective GST values — null them out if GST is not applicable
         gst_applicable = package_data.gst_applicable  # True / False / None
@@ -152,7 +161,7 @@ async def create_agent_package(
             id=package_id,
             title=package_data.title,
             slug=unique_slug,
-            destination=package_data.destination,
+            destination=package_data.destination.strip() if package_data.destination else "",
             duration_days=package_data.duration_days,
             duration_nights=package_data.duration_nights,
             trip_style=trip_style_serialized,
@@ -184,16 +193,16 @@ async def create_agent_package(
             cancellation_enabled=package_data.cancellation_enabled,
             cancellation_rules=_persist_cancellation_rules(
                 package_data.cancellation_enabled,
-                [r.dict() for r in package_data.cancellation_rules]
+                [r.dict() if hasattr(r, 'dict') else r for r in (package_data.cancellation_rules or [])]
             ),
             # Dual Booking
             booking_type=package_data.booking_type,
             price_label=package_data.price_label,
             enquiry_payment=package_data.enquiry_payment,
             # Inclusions & Exclusions
-            inclusions=_validate_inclusions(package_data.inclusions.dict()) if package_data.inclusions else {},
+            inclusions=_validate_inclusions(package_data.inclusions) if package_data.inclusions else {},
             exclusions=package_data.exclusions or {},
-            custom_services=package_data.custom_services or []
+            custom_services=[s.dict() if hasattr(s, 'dict') else s for s in package_data.custom_services] if package_data.custom_services else []
         )
         
         db.add(new_package)
@@ -280,6 +289,8 @@ async def update_agent_package(
     
     # Update fields
     update_data = package_data.dict(exclude_unset=True)
+    if "destination" in update_data and update_data["destination"]:
+        update_data["destination"] = update_data["destination"].strip()
     json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
 
     # Handle trip_styles → serialize as JSON into the trip_style String column
@@ -306,6 +317,10 @@ async def update_agent_package(
             package.inclusions = _validate_inclusions(inclusions_dict)
         elif field == 'exclusions' and value is not None:
             package.exclusions = value
+        elif field == 'slug' and value:
+            # Re-generate slug to ensure it has the correct ID suffix and is clean
+            from app.services.package_service import PackageService
+            package.slug = PackageService.generate_slug(value, package.id)
         else:
             setattr(package, field, value)
 
@@ -442,15 +457,10 @@ async def toggle_agent_package_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Package not found"
         )
-    
     try:
         status_enum = PackageStatus(new_status.upper())
+        # Update status
         package.status = status_enum
-        
-        # Auto-publish if status is set to PUBLISHED
-        if status_enum == PackageStatus.PUBLISHED:
-            package.is_public = True
-            
     except ValueError:
          raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
