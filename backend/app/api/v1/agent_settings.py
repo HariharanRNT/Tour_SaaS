@@ -11,7 +11,7 @@ from app.schemas import (
     AgentSMTPSettingsCreate, AgentSMTPSettingsResponse,
     AgentRazorpaySettingsCreate, AgentRazorpaySettingsResponse,
     AgentSettingsResponse, AgentGeneralSettingsUpdate,
-    HomepageSettingsUpdate
+    HomepageSettingsUpdate, WebsitePagesConfigUpdate
 )
 from app.api.deps import get_current_agent, get_current_domain, check_permission
 from app.utils.crypto import encrypt_value
@@ -62,7 +62,8 @@ async def get_agent_settings(
         "gst_percentage": agent_profile.gst_percentage,
         "smtp": smtp_settings,
         "razorpay": rp_settings,
-        "homepage_settings": agent_profile.homepage_settings
+        "homepage_settings": agent_profile.homepage_settings,
+        "website_pages_config": agent_profile.website_pages_config
     }
 
 # --- General Settings Endpoints ---
@@ -111,7 +112,8 @@ async def update_general_settings(
         "gst_percentage": agent_profile.gst_percentage,
         "smtp": smtp_settings,
         "razorpay": rp_settings,
-        "homepage_settings": agent_profile.homepage_settings
+        "homepage_settings": agent_profile.homepage_settings,
+        "website_pages_config": agent_profile.website_pages_config
     }
 
 # --- SMTP Endpoints ---
@@ -342,6 +344,38 @@ async def update_homepage_settings(
     return {"message": "Homepage settings updated", "settings": agent_profile.homepage_settings}
 
 
+@router.put("/website-pages")
+async def update_website_pages_config(
+    settings_in: WebsitePagesConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    agent_user: User = Depends(check_permission("settings", "edit"))
+):
+    """
+    Update website pages (About, Contact) customization settings.
+    """
+    agent_id = agent_user.agent_id
+    agent_profile = await get_agent_profile_by_id(db, agent_id)
+
+    current_config = agent_profile.website_pages_config or {}
+    
+    # Update provided sections
+    update_data = settings_in.model_dump(exclude_unset=True)
+    
+    for key, value in update_data.items():
+        current_config[key] = value
+            
+    agent_profile.website_pages_config = current_config
+    
+    # Mark as modified
+    flag_modified(agent_profile, "website_pages_config")
+    
+    db.add(agent_profile)
+    await db.commit()
+    await db.refresh(agent_profile)
+    
+    return {"message": "Website pages config updated", "config": agent_profile.website_pages_config}
+
+
 @router.get("/public")
 async def get_public_settings(
     domain: str = Depends(get_current_domain),
@@ -368,7 +402,8 @@ async def get_public_settings(
     return {
         "agent_id": agent.user_id,
         "agency_name": agent.agency_name,
-        "homepage_settings": agent.homepage_settings or {}
+        "homepage_settings": agent.homepage_settings or {},
+        "website_pages_config": agent.website_pages_config or {}
     }
 
 

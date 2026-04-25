@@ -15,7 +15,7 @@ import {
     Circle, CheckCircle, CheckCircle2, Image as ImageIcon, Briefcase,
     Mountain, Palmtree, Landmark, Coffee, Tent, Building2, ChevronRight,
     Trash2, GripVertical, ChevronUp, ChevronDown, Plane, Hotel, Utensils,
-    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles
+    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles, Layers
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
@@ -61,35 +61,9 @@ interface PackageFormData {
     custom_services: { id: string; heading: string; description: string; isIncluded: boolean; visibleToCustomer: boolean }[]
 }
 
-const TRIP_STYLES = [
-    { id: 'Adventure', icon: '🎒', label: 'Adventure' },
-    { id: 'Leisure', icon: '🏖️', label: 'Leisure' },
-    { id: 'Cultural', icon: '🏛️', label: 'Cultural' },
-    { id: 'Family', icon: '👨‍👩‍👧', label: 'Family' },
-    { id: 'Honeymoon', icon: '💑', label: 'Honeymoon' },
-    { id: 'Luxury', icon: '⭐', label: 'Luxury' },
-    { id: 'Wellness', icon: '🧘', label: 'Wellness' },
-    { id: 'Group Tour', icon: '🤝', label: 'Group Tour' },
-    { id: 'Corporate', icon: '💼', label: 'Corporate' }
-]
 
-const ACTIVITIES = [
-    { id: 'Beach', label: 'Beach', icon: '🏖️' },
-    { id: 'Mountain', label: 'Mountain', icon: '⛰️' },
-    { id: 'Trekking', label: 'Trekking', icon: '🥾' },
-    { id: 'Heritage', label: 'Heritage', icon: '🏛️' },
-    { id: 'Nature', label: 'Nature', icon: '🌿' },
-    { id: 'Food & Culinary', label: 'Food & Culinary', icon: '🍽️' },
-    { id: 'City Tour', label: 'City Tour', icon: '🏙️' },
-    { id: 'Snow', label: 'Snow', icon: '❄️' },
-    { id: 'Pilgrimage', label: 'Pilgrimage', icon: '🛕' },
-    { id: 'Water Sports', label: 'Water Sports', icon: '🌊' },
-    { id: 'Safari', label: 'Safari', icon: '🦁' },
-    { id: 'Cycling', label: 'Cycling', icon: '🚴' },
-    { id: 'Wine Tour', label: 'Wine Tour', icon: '🍷' },
-    { id: 'Photography', label: 'Photography', icon: '📸' },
-    { id: 'Festivals', label: 'Festivals', icon: '🎭' }
-]
+
+
 
 const INCLUSION_ITEMS = [
     {
@@ -183,6 +157,22 @@ export default function CreatePackagePage() {
     // Track whether the slug was manually edited to avoid overwriting it when title changes
     const [isSlugEdited, setIsSlugEdited] = useState(false)
 
+    // Master Data States
+    const [tripStyles, setTripStyles] = useState<any[]>([])
+    const [activityTags, setActivityTags] = useState<any[]>([])
+    const [activityCategories, setActivityCategories] = useState<any[]>([])
+    const [isCustomStyleModalOpen, setIsCustomStyleModalOpen] = useState(false)
+    const [isCustomTagModalOpen, setIsCustomTagModalOpen] = useState(false)
+    const [newStyleName, setNewStyleName] = useState('')
+    const [newStyleIcon, setNewStyleIcon] = useState('')
+    const [newTagName, setNewTagName] = useState('')
+    const [newTagIcon, setNewTagIcon] = useState('')
+    const [newTagCategoryId, setNewTagCategoryId] = useState('')
+    const [newStyleError, setNewStyleError] = useState('')
+    const [newTagError, setNewTagError] = useState('')
+    const [addingStyle, setAddingStyle] = useState(false)
+    const [addingTag, setAddingTag] = useState(false)
+
     // Multi-Destination Drag & Drop State
     const [draggedLegIndex, setDraggedLegIndex] = useState<number | null>(null)
     const [dragOverLegIndex, setDragOverLegIndex] = useState<number | null>(null)
@@ -266,6 +256,44 @@ export default function CreatePackagePage() {
         }
     }, [editPackageId])
 
+    // Fetch Master Data
+    useEffect(() => {
+        const fetchTripStyles = async () => {
+            try {
+                const token = localStorage.getItem('token')
+                const [stylesRes, tagsRes, categoriesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/v1/agent/trip-styles`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${API_URL}/api/v1/agent/activity-tags`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${API_URL}/api/v1/agent/activity-categories`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ])
+                if (stylesRes.ok) {
+                    const data = await stylesRes.json()
+                    setTripStyles(data.map((item: any) => ({
+                        id: item.id,
+                        icon: item.icon || '✨',
+                        label: item.name,
+                        isCustom: !!item.agent_id
+                    })))
+                }
+                if (tagsRes.ok) {
+                    setActivityTags(await tagsRes.json())
+                }
+                if (categoriesRes.ok) {
+                    setActivityCategories(await categoriesRes.json())
+                }
+            } catch (error) {
+                console.error('Failed to load trip styles', error)
+            }
+        }
+        fetchTripStyles()
+    }, [])
+
     // Auto-populate GST defaults from agent settings
     // - For NEW packages: always apply agent settings
     // - For EXISTING packages: applied inside loadPackageData if pkg hasn't explicitly set GST
@@ -318,7 +346,7 @@ export default function CreatePackagePage() {
                         country: packageData.country || '',
                         duration_days: packageData.duration?.days || 7,
                         duration_nights: packageData.duration?.nights || 6,
-                        trip_styles: packageData.trip_style ? [packageData.trip_style] : ['Adventure'],
+                        trip_styles: packageData.trip_style ? [packageData.trip_style] : [],
                         price_per_person: packageData.pricePerPerson || 0,
                         description: packageData.packageOverview || '',
                         is_public: true,
@@ -444,14 +472,18 @@ export default function CreatePackagePage() {
                     country: pkg.country || '',
                     duration_days: pkg.duration_days || 7,
                     duration_nights: pkg.duration_nights || 6,
-                    trip_styles: pkg.trip_styles || (pkg.trip_style ? [pkg.trip_style] : []),
+                    trip_styles: pkg.trip_styles?.length > 0
+                        ? pkg.trip_styles.map((s: any) => typeof s === 'string' ? s : s.id)
+                        : (pkg.trip_style ? [pkg.trip_style] : []),
                     price_per_person: Number(pkg.price_per_person) || 0,
                     description: pkg.description || '',
                     is_public: (pkg.is_public === true || pkg.is_public === false) ? pkg.is_public : true,
                     feature_image_url: pkg.feature_image_url || '',
                     package_mode: (pkg.package_mode || 'single').toLowerCase(),
                     destinations: pkg.destinations || [],
-                    activities: pkg.activities || [],
+                    activities: pkg.activity_tags?.length > 0
+                        ? pkg.activity_tags.map((t: any) => typeof t === 'string' ? t : t.id)
+                        : (pkg.activities || []),
                     included_items: pkg.included_items || [],
                     slug: pkg.slug || '',
                     gst_applicable: Boolean(gstApplicable),
@@ -615,6 +647,90 @@ export default function CreatePackagePage() {
         })
     }
 
+    const handleAddCustomStyle = async () => {
+        if (!newStyleName.trim()) {
+            setNewStyleError('Name is required')
+            return
+        }
+        setAddingStyle(true)
+        setNewStyleError('')
+        try {
+            const token = localStorage.getItem('token')
+            const res = await fetch(`${API_URL}/api/v1/agent/trip-styles`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: newStyleName.trim(),
+                    icon: newStyleIcon.trim() || '✨'
+                })
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.detail || 'Failed to add style')
+            }
+            const newStyle = await res.json()
+            const mappedStyle = {
+                id: newStyle.id,
+                icon: newStyle.icon,
+                label: newStyle.name,
+                isCustom: true
+            }
+            setTripStyles(prev => [...prev, mappedStyle])
+            setFormData(prev => ({ ...prev, trip_styles: [...prev.trip_styles, newStyle.id] }))
+            setIsCustomStyleModalOpen(false)
+            setNewStyleName('')
+            setNewStyleIcon('')
+            toast.success('Custom trip style added')
+        } catch (error: any) {
+            setNewStyleError(error.message)
+        } finally {
+            setAddingStyle(false)
+        }
+    }
+
+    const handleAddCustomTag = async () => {
+        if (!newTagName.trim()) {
+            setNewTagError('Name is required')
+            return
+        }
+        setAddingTag(true)
+        setNewTagError('')
+        try {
+            const token = localStorage.getItem('token')
+            const res = await fetch(`${API_URL}/api/v1/agent/activity-tags`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: newTagName.trim(),
+                    icon: newTagIcon.trim() || '✨',
+                    category_id: newTagCategoryId || null
+                })
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.detail || 'Failed to add tag')
+            }
+            const newTag = await res.json()
+            setActivityTags(prev => [...prev, newTag])
+            setFormData(prev => ({ ...prev, activities: [...prev.activities, newTag.id] }))
+            setIsCustomTagModalOpen(false)
+            setNewTagName('')
+            setNewTagIcon('')
+            setNewTagCategoryId('')
+            toast.success('Custom activity tag added')
+        } catch (error: any) {
+            setNewTagError(error.message)
+        } finally {
+            setAddingTag(false)
+        }
+    }
+
     const toggleIncludedItem = (item: string) => {
         setFormData(prev => {
             const items = prev.included_items.includes(item)
@@ -752,7 +868,9 @@ export default function CreatePackagePage() {
                     // from being persisted to the database
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
-                    cancellation_rules: sanitisedRules
+                    cancellation_rules: sanitisedRules,
+                    trip_style_ids: formData.trip_styles,
+                    activity_tag_ids: formData.activities
                 })
             })
 
@@ -833,7 +951,9 @@ export default function CreatePackagePage() {
                     cancellation_rules: formData.cancellation_rules.map(r => ({
                         ...r,
                         fareType: r.fareType || 'total_fare'
-                    }))
+                    })),
+                    trip_style_ids: formData.trip_styles,
+                    activity_tag_ids: formData.activities
                 })
             })
 
@@ -1201,23 +1321,23 @@ export default function CreatePackagePage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                        <Label className={cn("text-xs font-bold uppercase tracking-wider", formData.slug ? "text-[var(--primary)]" : "text-black")}>
-                                            URL Slug <span className="text-black/40 font-normal">(Optional — will auto-generate)</span>
-                                        </Label>
-                                        <div className="relative group/input">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <Link2 className={cn("h-4 w-4 transition-colors", formData.slug ? "text-[var(--primary)]" : "text-black/40 group-focus-within/input:text-[var(--primary)]")} />
-                                            </div>
-                                            <Input
-                                                placeholder="e.g., tokyo-adventure-7-days"
-                                                value={formData.slug}
-                                                onChange={(e) => {
-                                                    const manualSlug = generateSlug(e.target.value);
-                                                    updateFormData('slug', manualSlug);
-                                                    setIsSlugEdited(true); // Mark as manually edited
-                                                }}
-                                                className={cn("glass-input pl-10 h-10 rounded-xl font-mono text-xs", getInputStyle(formData.slug, false))}
-                                            />
+                                    <Label className={cn("text-xs font-bold uppercase tracking-wider", formData.slug ? "text-[var(--primary)]" : "text-black")}>
+                                        URL Slug <span className="text-black/40 font-normal">(Optional — will auto-generate)</span>
+                                    </Label>
+                                    <div className="relative group/input">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Link2 className={cn("h-4 w-4 transition-colors", formData.slug ? "text-[var(--primary)]" : "text-black/40 group-focus-within/input:text-[var(--primary)]")} />
+                                        </div>
+                                        <Input
+                                            placeholder="e.g., tokyo-adventure-7-days"
+                                            value={formData.slug}
+                                            onChange={(e) => {
+                                                const manualSlug = generateSlug(e.target.value);
+                                                updateFormData('slug', manualSlug);
+                                                setIsSlugEdited(true); // Mark as manually edited
+                                            }}
+                                            className={cn("glass-input pl-10 h-10 rounded-xl font-mono text-xs", getInputStyle(formData.slug, false))}
+                                        />
                                         <div className="absolute inset-y-0 right-0 pr-1 flex items-center">
                                             <Button
                                                 type="button"
@@ -2230,8 +2350,8 @@ export default function CreatePackagePage() {
                                         tripStyleError ? "ring-2 ring-red-400/60 ring-offset-1 p-1" : ""
                                     )}
                                 >
-                                    {TRIP_STYLES.map((style, index) => {
-                                        const isSelected = formData.trip_styles.includes(style.id)
+                                    {tripStyles.map((style, index) => {
+                                        const isSelected = formData.trip_styles.includes(style.id) || formData.trip_styles.includes(style.label)
                                         return (
                                             <div
                                                 key={style.id}
@@ -2265,6 +2385,13 @@ export default function CreatePackagePage() {
                                                     </div>
                                                 )}
 
+                                                {/* Custom badge */}
+                                                {style.isCustom && (
+                                                    <div className="absolute bottom-2 left-2 text-[8px] font-bold tracking-widest text-[var(--primary)] uppercase bg-[var(--primary)]/10 px-1.5 py-0.5 rounded-sm">
+                                                        Custom
+                                                    </div>
+                                                )}
+
                                                 {/* Animated hover outline */}
                                                 <div className={cn(
                                                     "absolute inset-0 rounded-2xl border-2 transition-all duration-300 pointer-events-none",
@@ -2291,7 +2418,85 @@ export default function CreatePackagePage() {
                                             </div>
                                         )
                                     })}
+
+                                    {/* Add Custom Style Card */}
+                                    <div
+                                        onClick={() => setIsCustomStyleModalOpen(true)}
+                                        className="relative cursor-pointer p-4 flex flex-col items-center justify-center gap-3 fade-up-enter group"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '2px dashed rgba(255,255,255,0.4)',
+                                            borderRadius: '16px',
+                                            transition: 'all 200ms ease',
+                                            animationDelay: `${tripStyles.length * 50}ms`,
+                                        }}
+                                        onMouseEnter={(e: any) => {
+                                            e.currentTarget.style.border = '2px dashed var(--primary)'
+                                            e.currentTarget.style.background = 'var(--primary-glow)'
+                                        }}
+                                        onMouseLeave={(e: any) => {
+                                            e.currentTarget.style.border = '2px dashed rgba(255,255,255,0.4)'
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                                        }}
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-black/60 group-hover:text-[var(--primary)] group-hover:bg-white transition-colors">
+                                            <Plus className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-black/60 group-hover:text-[var(--primary)] transition-colors text-center">
+                                            Add Custom
+                                        </span>
+                                    </div>
                                 </div>
+
+                                {/* Custom Style Modal */}
+                                {isCustomStyleModalOpen && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
+                                            <h3 className="text-lg font-bold text-black mb-4">Add Custom Trip Style</h3>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">Style Name <span className="text-red-500">*</span></Label>
+                                                    <Input
+                                                        value={newStyleName}
+                                                        onChange={(e) => setNewStyleName(e.target.value)}
+                                                        placeholder="e.g. Backpacker"
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs font-bold text-black uppercase tracking-wider">Icon / Emoji</Label>
+                                                    <Input
+                                                        value={newStyleIcon}
+                                                        onChange={(e) => setNewStyleIcon(e.target.value)}
+                                                        placeholder="e.g. 🎒"
+                                                        className="mt-1"
+                                                        maxLength={5}
+                                                    />
+                                                </div>
+                                                {newStyleError && <p className="text-xs text-red-500 font-bold">{newStyleError}</p>}
+                                                <div className="flex justify-end gap-2 mt-6">
+                                                    <Button
+                                                        variant="ghost"
+                                                        onClick={() => {
+                                                            setIsCustomStyleModalOpen(false)
+                                                            setNewStyleError('')
+                                                        }}
+                                                        disabled={addingStyle}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleAddCustomStyle}
+                                                        disabled={addingStyle}
+                                                        className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-black font-bold"
+                                                    >
+                                                        {addingStyle ? 'Adding...' : 'Add Style'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Validation tooltip */}
                                 {tripStyleError && (
@@ -2316,32 +2521,150 @@ export default function CreatePackagePage() {
                             </div>
                             <CardContent className="p-6">
                                 <div className="space-y-3">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">ACTIVITIES <span className="text-black/60 font-medium normal-case">(Optional)</span></Label>
-                                            <p className="text-[11px] text-black font-medium mt-0.5">What will customers do on this trip? (Helps with search & discovery)</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {ACTIVITIES.map((activity) => {
-                                            const isSelected = formData.activities.includes(activity.id)
+                                    <div className="space-y-4">
+                                        {activityCategories.map(category => {
+                                            const categoryTags = activityTags.filter(t => t.category_id === category.id)
+                                            if (categoryTags.length === 0) return null;
+
                                             return (
-                                                <Badge
-                                                    key={activity.id}
-                                                    variant="outline"
-                                                    className={cn(
-                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
-                                                        isSelected
-                                                            ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
-                                                            : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
-                                                    )}
-                                                    onClick={() => toggleActivity(activity.id)}
-                                                >
-                                                    <span className="mr-2 text-base">{activity.icon}</span>
-                                                    {activity.label}
-                                                </Badge>
+                                                <div key={category.id} className="space-y-2">
+                                                    <h4 className="text-xs font-bold text-black/80 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <span>{category.icon || '📂'}</span> {category.name}
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {categoryTags.map(activity => {
+                                                            const isSelected = formData.activities.includes(activity.id) || formData.activities.includes(activity.name)
+                                                            return (
+                                                                <Badge
+                                                                    key={activity.id}
+                                                                    variant="outline"
+                                                                    className={cn(
+                                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
+                                                                        isSelected
+                                                                            ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
+                                                                            : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+                                                                    )}
+                                                                    onClick={() => toggleActivity(activity.id)}
+                                                                >
+                                                                    <span className="mr-2 text-base">{activity.icon}</span>
+                                                                    {activity.name}
+                                                                </Badge>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
                                             )
                                         })}
+
+                                        {/* Uncategorized / Other Tags */}
+                                        {activityTags.filter(t => !t.category_id).length > 0 && (
+                                            <div className="space-y-2">
+                                                <h4 className="text-xs font-bold text-black/60 uppercase tracking-wider">Activities</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {activityTags.filter(t => !t.category_id).map(activity => {
+                                                        const isSelected = formData.activities.includes(activity.id) || formData.activities.includes(activity.name)
+                                                        return (
+                                                            <Badge
+                                                                key={activity.id}
+                                                                variant="outline"
+                                                                className={cn(
+                                                                    "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
+                                                                    isSelected
+                                                                        ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
+                                                                        : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+                                                                )}
+                                                                onClick={() => toggleActivity(activity.id)}
+                                                            >
+                                                                <span className="mr-2 text-base">{activity.icon}</span>
+                                                                {activity.name}
+                                                            </Badge>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-2 mt-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setIsCustomTagModalOpen(true)}
+                                                className="text-xs text-black border-black/20 hover:bg-black/5 font-bold px-3 py-1.5 h-auto rounded-full"
+                                            >
+                                                <Plus className="w-3 h-3 mr-1 text-[var(--primary)]" /> Add Custom
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => router.push('/agent/settings/master-data')}
+                                                className="text-xs text-black/60 hover:text-black font-bold px-3 py-1.5 h-auto"
+                                            >
+                                                <Layers className="w-3 h-3 mr-1" /> Manage Tags
+                                            </Button>
+                                        </div>
+
+                                        {/* Custom Tag Modal */}
+                                        {isCustomTagModalOpen && (
+                                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 border border-slate-100">
+                                                    <h3 className="text-lg font-bold text-black mb-4">Add Custom Activity Tag</h3>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Tag Name <span className="text-red-500">*</span></Label>
+                                                            <Input
+                                                                value={newTagName}
+                                                                onChange={(e) => setNewTagName(e.target.value)}
+                                                                placeholder="e.g. Scuba Diving"
+                                                                className="mt-1"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Icon / Emoji</Label>
+                                                            <Input
+                                                                value={newTagIcon}
+                                                                onChange={(e) => setNewTagIcon(e.target.value)}
+                                                                placeholder="e.g. 🤿"
+                                                                className="mt-1"
+                                                                maxLength={5}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-xs font-bold text-black uppercase tracking-wider">Category</Label>
+                                                            <select
+                                                                value={newTagCategoryId}
+                                                                onChange={(e) => setNewTagCategoryId(e.target.value)}
+                                                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 mt-1"
+                                                            >
+                                                                <option value="">No Category</option>
+                                                                {activityCategories.map(cat => (
+                                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        {newTagError && <p className="text-xs text-red-500 font-bold">{newTagError}</p>}
+                                                        <div className="flex justify-end gap-2 mt-6">
+                                                            <Button
+                                                                variant="ghost"
+                                                                onClick={() => {
+                                                                    setIsCustomTagModalOpen(false)
+                                                                    setNewTagError('')
+                                                                }}
+                                                                disabled={addingTag}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                            <Button
+                                                                onClick={handleAddCustomTag}
+                                                                disabled={addingTag}
+                                                                className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-black font-bold rounded-xl"
+                                                            >
+                                                                {addingTag ? 'Adding...' : 'Add Tag'}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     {/* Warnings based on selection count */}
                                     {formData.activities.length === 0 && (
@@ -2620,7 +2943,7 @@ export default function CreatePackagePage() {
                                     <div>
                                         <div className="flex items-center gap-2 mb-2">
                                             {formData.trip_styles.map(styleId => {
-                                                const style = TRIP_STYLES.find(c => c.id === styleId);
+                                                const style = tripStyles.find(c => c.id === styleId || c.label === styleId);
                                                 return style ? (
                                                     <Badge key={styleId} className="bg-[var(--primary)]/20 text-white hover:bg-[var(--primary)]/30 border-0 flex items-center gap-1.5 py-1 px-3">
                                                         <span>{style.icon}</span>
@@ -2669,10 +2992,10 @@ export default function CreatePackagePage() {
                                                 <h3 className="font-bold text-black border-b pb-2 mb-4 uppercase tracking-wider text-xs">Activities</h3>
                                                 <div className="flex flex-wrap gap-2">
                                                     {formData.activities.map(activityId => {
-                                                        const activityInfo = ACTIVITIES.find(a => a.id === activityId)
+                                                        const activityInfo = activityTags.find(a => a.id === activityId || a.name === activityId)
                                                         return activityInfo ? (
                                                             <Badge key={activityId} variant="secondary" className="bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 transition-colors rounded-full px-3 py-1">
-                                                                <span className="mr-1.5">{activityInfo.icon}</span> {activityInfo.label}
+                                                                <span className="mr-1.5">{activityInfo.icon}</span> {activityInfo.name}
                                                             </Badge>
                                                         ) : null
                                                     })}

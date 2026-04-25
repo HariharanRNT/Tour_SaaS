@@ -68,6 +68,7 @@ interface Enquiry {
     created_at: string
     package_id?: string
     agent_notes?: string
+    quotes_count: number
 }
 
 export default function AgentEnquiriesPage() {
@@ -424,10 +425,10 @@ export default function AgentEnquiriesPage() {
             </div>
 
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="sm:max-w-xl bg-white/80 backdrop-blur-2xl border-white/40 rounded-[32px] p-0 overflow-hidden shadow-2xl">
-                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-6 py-6 text-white">
-                        <h2 className="text-xl font-bold mb-0.5">Enquiry Details</h2>
-                        <p className="text-white/70 text-xs font-bold">{selectedEnquiry?.package_name_snapshot}</p>
+                <DialogContent className="sm:max-w-lg bg-white/80 backdrop-blur-2xl border-white/40 rounded-[32px] p-0 overflow-hidden shadow-2xl">
+                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-5 py-4 text-white">
+                        <h2 className="text-lg font-bold mb-0.5">Enquiry Details</h2>
+                        <p className="text-white/70 text-[10px] font-bold">{selectedEnquiry?.package_name_snapshot}</p>
                     </div>
 
                     {conversionResult ? (
@@ -475,32 +476,32 @@ export default function AgentEnquiriesPage() {
                                 </div>
                         </div>
                     ) : (
-                        <div className="p-6 space-y-6">
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-5 space-y-4">
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-white/40 rounded-2xl border border-white/60">
-                                        <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Customer</p>
-                                        <p className="font-bold text-base">{selectedEnquiry?.customer_name}</p>
-                                        <div className="mt-2 space-y-1">
-                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
-                                                <Mail className="h-3.5 w-3.5" /> {selectedEnquiry?.email}
+                                    <div className="p-3 bg-white/40 rounded-xl border border-white/60">
+                                        <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Customer</p>
+                                        <p className="font-bold text-sm leading-tight">{selectedEnquiry?.customer_name}</p>
+                                        <div className="mt-1.5 space-y-0.5">
+                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                <Mail className="h-3 w-3" /> {selectedEnquiry?.email}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
-                                                <Phone className="h-3.5 w-3.5" /> {selectedEnquiry?.phone}
+                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                <Phone className="h-3 w-3" /> {selectedEnquiry?.phone}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-white/40 rounded-2xl border border-white/60">
-                                        <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Trip Details</p>
-                                        <p className="font-bold text-base">{selectedEnquiry?.package_name_snapshot}</p>
-                                        <div className="mt-2 space-y-1">
-                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
-                                                <Calendar className="h-3.5 w-3.5" /> {selectedEnquiry?.travel_date ? format(new Date(selectedEnquiry.travel_date), 'dd MMM yyyy') : ''}
+                                    <div className="p-3 bg-white/40 rounded-xl border border-white/60">
+                                        <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Trip Details</p>
+                                        <p className="font-bold text-sm leading-tight">{selectedEnquiry?.package_name_snapshot}</p>
+                                        <div className="mt-1.5 space-y-0.5">
+                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                <Calendar className="h-3 w-3" /> {selectedEnquiry?.travel_date ? format(new Date(selectedEnquiry.travel_date), 'dd MMM yyyy') : ''}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-[var(--color-primary-font)]/70">
-                                                <Users className="h-3.5 w-3.5" /> {selectedEnquiry?.travellers} Guests
+                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                <Users className="h-3 w-3" /> {selectedEnquiry?.travellers} Guests
                                             </div>
                                         </div>
                                     </div>
@@ -509,8 +510,8 @@ export default function AgentEnquiriesPage() {
 
                             {selectedEnquiry?.message && (
                                 <section>
-                                    <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-2">Customer Message</p>
-                                    <div className="p-4 bg-[var(--primary)]/5 rounded-2xl border border-[var(--primary)]/10 text-xs italic text-[var(--color-primary-font)]">
+                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Customer Message</p>
+                                    <div className="p-3 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-[11px] italic text-[var(--color-primary-font)]">
                                         &quot;{selectedEnquiry.message}&quot;
                                     </div>
                                 </section>
@@ -518,11 +519,11 @@ export default function AgentEnquiriesPage() {
 
                             {/* Agent Notes */}
                             <section>
-                                <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-2">Agent Notes</p>
+                                <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Agent Notes</p>
                                 <Textarea
                                     placeholder="Add internal notes about this enquiry..."
                                     defaultValue={selectedEnquiry?.agent_notes || ''}
-                                    className="bg-white/50 border-white/40 min-h-[70px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold text-xs"
+                                    className="bg-white/50 border-white/40 min-h-[60px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold text-[11px]"
                                     onBlur={async (e) => {
                                         if (!selectedEnquiry) return
                                         const token = localStorage.getItem('token')
@@ -537,10 +538,10 @@ export default function AgentEnquiriesPage() {
                             </section>
                             
                             {/* Quote History */}
-                            <section className="space-y-4">
+                            <section className="space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest">Quote History</p>
-                                    <History className="h-3.5 w-3.5 text-slate-300" />
+                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest">Quote History</p>
+                                    <History className="h-3 w-3 text-slate-300" />
                                 </div>
                                 {loadingHistory ? (
                                     <div className="h-20 bg-slate-50 flex items-center justify-center rounded-2xl animate-pulse">
@@ -549,14 +550,14 @@ export default function AgentEnquiriesPage() {
                                 ) : quoteHistory.length > 0 ? (
                                     <div className="space-y-3">
                                         {quoteHistory.map((quote: any) => (
-                                            <div key={quote.id} className="p-4 bg-white/40 border border-white/60 rounded-2xl flex items-center justify-between hover:bg-white/60 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-10 w-10 bg-blue-600/10 rounded-xl flex items-center justify-center text-blue-600">
-                                                        <FileText className="h-5 w-5" />
+                                            <div key={quote.id} className="p-3 bg-white/40 border border-white/60 rounded-xl flex items-center justify-between hover:bg-white/60 transition-all">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-8 w-8 bg-blue-600/10 rounded-lg flex items-center justify-center text-blue-600">
+                                                        <FileText className="h-4 w-4" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold">Quote for {quote.quoted_packages?.length} Packages</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">{format(new Date(quote.quote_sent_at), 'dd MMM yyyy, hh:mm a')}</p>
+                                                        <p className="text-[13px] font-bold">Quote for {quote.quoted_packages?.length} Packages</p>
+                                                        <p className="text-[9px] text-slate-400 font-bold uppercase">{format(new Date(quote.quote_sent_at), 'dd MMM yyyy, hh:mm a')}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -575,59 +576,59 @@ export default function AgentEnquiriesPage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="p-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                        <p className="text-xs text-slate-400 font-bold">No quotes sent yet for this enquiry.</p>
+                                    <div className="p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-center">
+                                        <p className="text-[11px] text-slate-400 font-bold">No quotes sent yet.</p>
                                     </div>
                                 )}
                             </section>
 
-                            <div className="flex flex-wrap gap-2 pt-4 border-t border-black/5">
+                            <div className="flex flex-wrap gap-2 pt-3 border-t border-black/5">
                                 <Button
-                                    className="h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg shadow-blue-500/20"
+                                    className="h-10 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold shadow-lg shadow-blue-500/20"
                                     onClick={() => {
                                         setIsDetailsOpen(false);
                                         setIsQuoteBuilderOpen(true);
                                     }}
                                 >
-                                    <Sparkles className="h-4 w-4 mr-2" /> Send to Customer with AI
+                                    <Sparkles className="h-3.5 w-3.5 mr-2" /> Send with AI
                                 </Button>
                                 {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                     <Button
-                                        className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold"
+                                        className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold"
                                         disabled={updateStatusMutation.isPending}
                                         onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONTACTED' })}
                                     >
-                                        Mark as Contacted
+                                        Mark Contacted
                                     </Button>
                                 )}
 
                                 {['NEW', 'CONTACTED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
                                     <>
                                         <Button
-                                            className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold"
+                                            className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold"
                                             disabled={updateStatusMutation.isPending}
                                             onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONFIRMED' })}
                                         >
-                                            Mark as Confirmed
+                                            Confirm
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-sm font-bold"
+                                            className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-bold"
                                             disabled={updateStatusMutation.isPending}
                                             onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
                                         >
-                                            Reject Enquiry
+                                            Reject
                                         </Button>
                                     </>
                                 )}
 
                                 {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
                                     <Button
-                                        className="h-11 px-6 rounded-full bg-[var(--primary)] text-white font-black text-sm shadow-lg shadow-[var(--primary-glow)]"
+                                        className="h-10 px-6 rounded-full bg-[var(--primary)] text-white font-black text-[13px] shadow-lg shadow-[var(--primary-glow)]"
                                         disabled={convertToBookingMutation.isPending}
                                         onClick={() => convertToBookingMutation.mutate(selectedEnquiry!.id)}
                                     >
-                                        <Check className="h-4 w-4 mr-2" /> Convert to Official Booking
+                                        <Check className="h-4 w-4 mr-2" /> Convert to Booking
                                     </Button>
                                 )}
                             </div>

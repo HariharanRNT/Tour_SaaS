@@ -35,8 +35,9 @@ interface Package {
     duration_nights: number;
     price_per_person: number;
     trip_style: string;
-    activities: string[];
-    trip_styles?: string[];
+    activities: any; // Can be string[] or JSON string
+    trip_styles?: { id: string, name: string, icon?: string }[];
+    activity_tags?: { id: string, name: string, icon?: string }[];
     package_mode: string;
     destinations: { city: string, country: string, days: number }[];
     feature_image_url?: string;
@@ -251,6 +252,10 @@ function PlanTripContent() {
         return !!(dest || style || searchQuery || pkgId)
     })
 
+    // Dynamic Master Data State
+    const [availableTripStyles, setAvailableTripStyles] = useState<{id: string, name: string, icon?: string}[]>([])
+    const [availableActivities, setAvailableActivities] = useState<{id: string, name: string, icon?: string}[]>([])
+
     // Filter State — initialize from URL so first render is correct
     const [filters, setFilters] = useState(() => {
         const style = searchParams.get('trip_style')
@@ -270,8 +275,14 @@ function PlanTripContent() {
     const [sort, setSort] = useState('recommended')
 
     // Constants for filters
-    const TRIP_STYLES = ['Adventure', 'Leisure', 'Cultural', 'Family', 'Honeymoon', 'Luxury', 'Wellness', 'Group Tour', 'Corporate']
-    const ACTIVITIES = ['Beach', 'Mountain', 'Trekking', 'Heritage', 'Nature', 'Food & Culinary', 'City Tour', 'Snow', 'Pilgrimage', 'Water Sports', 'Safari', 'Cycling', 'Wine Tour', 'Photography', 'Festivals']
+    const TRIP_STYLES = availableTripStyles.length > 0 
+        ? availableTripStyles.map(s => s.name)
+        : ['Adventure', 'Leisure', 'Cultural', 'Family', 'Honeymoon', 'Luxury', 'Wellness', 'Group Tour', 'Corporate']
+        
+    const ACTIVITIES = availableActivities.length > 0
+        ? availableActivities.map(a => a.name)
+        : ['Beach', 'Mountain', 'Trekking', 'Heritage', 'Nature', 'Food & Culinary', 'City Tour', 'Snow', 'Pilgrimage', 'Water Sports', 'Safari', 'Cycling', 'Wine Tour', 'Photography', 'Festivals']
+        
     const AVAILABLE_COUNTRIES = ['India', 'France', 'Italy', 'Spain', 'Germany', 'Switzerland', 'Thailand', 'Maldives', 'Indonesia', 'UAE'] // Ideally fetched from API
 
     // Computed Facets from Current Packages
@@ -285,18 +296,28 @@ function PlanTripContent() {
         let maxDur = -Infinity
 
         packages.forEach(pkg => {
-            // Activities
-            pkg.activities?.forEach(act => {
+            // Activities - use activity_tags if available, fallback to legacy activities field
+            const acts = pkg.activity_tags && pkg.activity_tags.length > 0
+                ? pkg.activity_tags.map(t => t.name)
+                : parsePackageTags(pkg.activities)
+            
+            acts.forEach(act => {
                 activityCounts[act] = (activityCounts[act] || 0) + 1
             })
+
             // Country
             if (pkg.country) {
                 countryCounts[pkg.country] = (countryCounts[pkg.country] || 0) + 1
             }
-            // Trip Style
-            if (pkg.trip_style) {
-                styleCounts[pkg.trip_style] = (styleCounts[pkg.trip_style] || 0) + 1
-            }
+
+            // Trip Styles - use trip_styles if available, fallback to legacy trip_style field
+            const styles = pkg.trip_styles && pkg.trip_styles.length > 0
+                ? pkg.trip_styles.map(s => s.name)
+                : parsePackageTags(pkg.trip_style)
+
+            styles.forEach(style => {
+                styleCounts[style] = (styleCounts[style] || 0) + 1
+            })
             // Price & Duration for smart ranges
             if (pkg.price_per_person < minPrice) minPrice = pkg.price_per_person
             if (pkg.price_per_person > maxPrice) maxPrice = pkg.price_per_person
@@ -383,6 +404,29 @@ function PlanTripContent() {
             }
         }
         fetchPopularDestinations()
+
+        // Fetch Dynamic Master Data
+        const fetchMasterData = async () => {
+            try {
+                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                const [stylesRes, tagsRes] = await Promise.all([
+                    fetch(`${API_URL}/api/v1/public/trip-styles`, {
+                        headers: { 'X-Domain': domain },
+                        cache: 'no-store'
+                    }),
+                    fetch(`${API_URL}/api/v1/public/activity-tags`, {
+                        headers: { 'X-Domain': domain },
+                        cache: 'no-store'
+                    })
+                ])
+                
+                if (stylesRes.ok) setAvailableTripStyles(await stylesRes.json())
+                if (tagsRes.ok) setAvailableActivities(await tagsRes.json())
+            } catch (error) {
+                console.error("Failed to fetch master data", error)
+            }
+        }
+        fetchMasterData()
 
         // Handle click outside to close suggestions
         const handleClickOutside = (event: MouseEvent) => {
@@ -851,6 +895,8 @@ function PlanTripContent() {
                                         const count = facets.styleCounts[style] || 0;
                                         const isDisabled = count === 0 && !filters.trip_styles.includes(style);
                                         const isActive = filters.trip_styles.includes(style);
+                                        const styleObj = availableTripStyles.find(s => s.name === style);
+                                        const icon = styleObj?.icon;
 
                                         return (
                                             <div
@@ -862,6 +908,7 @@ function PlanTripContent() {
                                                     {isActive && <Check className="h-3 w-3 text-white" />}
                                                 </div>
                                                 <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2`} style={{ color: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-text, black)' }}>
+                                                    {icon && <span className="text-sm mr-0.5">{icon}</span>}
                                                     {style}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>
@@ -889,6 +936,8 @@ function PlanTripContent() {
                                         const count = facets.activityCounts[act] || 0;
                                         const isDisabled = count === 0 && !filters.activities.includes(act);
                                         const isActive = filters.activities.includes(act);
+                                        const actObj = availableActivities.find(a => a.name === act);
+                                        const icon = actObj?.icon;
 
                                         return (
                                             <div
@@ -900,6 +949,7 @@ function PlanTripContent() {
                                                     {isActive && <Check className="h-3 w-3 text-white" />}
                                                 </div>
                                                 <label className={`text-[13px] font-bold cursor-pointer transition-colors uppercase tracking-tight flex items-center gap-2`} style={{ color: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-text, black)' }}>
+                                                    {icon && <span className="text-sm mr-0.5">{icon}</span>}
                                                     {act}
                                                     {count > 0 && <span className="text-[10px] opacity-40">({count})</span>}
                                                 </label>

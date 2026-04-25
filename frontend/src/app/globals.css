@@ -2260,3 +2260,20 @@ button,
 .glass-select-item[data-state="checked"] * {
   color: var(--primary) !important;
 }
+
+/* User Content Styling (Basic Prose) */
+.prose h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1.5rem; color: #0f172a; }
+.prose h2 { font-size: 1.875rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #1e293b; }
+.prose h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; color: #1e293b; }
+.prose p { font-size: 1.125rem; line-height: 1.75rem; margin-bottom: 1rem; color: #475569; }
+.prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; color: #475569; }
+.prose ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.5rem; color: #475569; }
+.prose li { margin-bottom: 0.5rem; }
+.prose img { max-width: 100%; height: auto; border-radius: 1rem; margin-top: 2rem; margin-bottom: 2rem; }
+.prose table { width: 100%; border-collapse: collapse; margin-top: 2rem; margin-bottom: 2rem; }
+.prose th { background-color: #f8fafc; text-align: left; padding: 0.75rem; border: 1px solid #e2e8f0; font-weight: 700; }
+.prose td { padding: 0.75rem; border: 1px solid #e2e8f0; }
+.prose a { color: var(--primary); text-decoration: none; font-weight: 500; }
+.prose a:hover { text-decoration: underline; }
+.prose blockquote { border-left-width: 4px; border-color: #e2e8f0; padding-left: 1rem; font-style: italic; margin-top: 1.5rem; margin-bottom: 1.5rem; color: #64748b; }
+

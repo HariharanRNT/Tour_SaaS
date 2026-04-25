@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 from datetime import datetime
 from xhtml2pdf import pisa
@@ -45,7 +46,10 @@ class PDFService:
         agent_profile: Agent,
         quoted_data: List[Dict[str, Any]]
     ) -> str:
-        """Build the HTML string for the PDF."""
+        """Build the HTML string for the PDF with a modern design."""
+        import os
+        import json
+        
         # Map quoted prices for easy lookup
         price_map = {str(item['packageId']): item['quotedPrice'] for item in quoted_data}
         
@@ -53,155 +57,340 @@ class PDFService:
         agency_contact = f"{agent_profile.phone or ''} | {agent_profile.user.email}"
         agency_address = agent_profile.business_address or ""
         
+        # Logo handling (similar to invoice_service)
+        company_logo_url = ""
+        if agent_profile.homepage_settings:
+            custom_logo = agent_profile.homepage_settings.get("navbar_logo_image")
+            if custom_logo:
+                company_logo_url = custom_logo
+        
+        # Standard logo fallback and xhtml2pdf protocol fix
+        if not company_logo_url:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            logo_path = os.path.join(current_dir, "..", "..", "static", "logo.png")
+            if os.path.exists(logo_path):
+                company_logo_url = "file:///" + os.path.abspath(logo_path).replace("\\", "/")
+        elif not company_logo_url.startswith(("http://", "https://", "file://")):
+            # If it's a relative path from static, resolve it
+            if company_logo_url.startswith("/static/"):
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                local_path = os.path.join(current_dir, "..", "..", company_logo_url.lstrip("/"))
+                if os.path.exists(local_path):
+                    company_logo_url = "file:///" + os.path.abspath(local_path).replace("\\", "/")
+
         today = datetime.now().strftime("%d %B %Y")
         travel_date = enquiry.travel_date.strftime("%d %B %Y")
         
+        logo_html = f'<img src="{company_logo_url}" class="logo-img" />' if company_logo_url else f'<div class="agency-name">{agency_name}</div>'
+        agency_name_html = f'<div class="agency-name">{agency_name}</div>' if company_logo_url else ''
+
         html = f"""
         <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
                 @page {{
                     size: A4;
-                    margin: 2cm;
+                    margin: 0;
                 }}
                 body {{
-                    font-family: Helvetica, Arial, sans-serif;
-                    color: #333;
-                    line-height: 1.5;
+                    font-family: 'Helvetica', 'Arial', sans-serif;
+                    color: #1f2937;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 0;
                 }}
-                .header {{
-                    text-align: center;
-                    border-bottom: 2px solid #3B82F6;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
+                .header-container {{
+                    background-color: #f8fafc;
+                    padding: 30px 40px;
+                    border-bottom: 4px solid #2563eb;
+                }}
+                .header-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                .logo-cell {{
+                    width: 50%;
+                    vertical-align: middle;
+                }}
+                .agency-info-cell {{
+                    width: 50%;
+                    text-align: right;
+                    vertical-align: middle;
+                }}
+                .logo-img {{
+                    max-height: 60px;
+                    max-width: 200px;
                 }}
                 .agency-name {{
-                    font-size: 28px;
+                    font-size: 22px;
                     font-weight: bold;
-                    color: #1E40AF;
+                    color: #1e3a8a;
+                    margin-bottom: 2px;
                 }}
-                .quote-title {{
-                    font-size: 32px;
-                    font-weight: bold;
-                    margin: 40px 0;
+                .agency-details {{
+                    font-size: 10px;
+                    color: #64748b;
+                }}
+                
+                .quote-banner {{
+                    background-color: #1e3a8a;
+                    color: white;
+                    padding: 12px 40px;
                     text-align: center;
-                    color: #3B82F6;
-                    text-transform: uppercase;
-                }}
-                .info-table {{
-                    width: 100%;
-                    margin-bottom: 30px;
-                }}
-                .info-table td {{
-                    padding: 5px;
-                }}
-                .label {{
-                    font-weight: bold;
-                    color: #666;
-                }}
-                .package-section {{
-                    margin-top: 40px;
-                    page-break-before: always;
-                }}
-                .package-title {{
-                    font-size: 24px;
-                    font-weight: bold;
-                    background-color: #F3F4F6;
-                    padding: 10px;
-                    border-left: 5px solid #3B82F6;
-                }}
-                .section-header {{
                     font-size: 18px;
                     font-weight: bold;
-                    margin-top: 20px;
-                    margin-bottom: 10px;
-                    color: #1E40AF;
-                    border-bottom: 1px solid #DDD;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
                 }}
-                .itinerary-day {{
+                
+                .summary-box {{
+                    margin: 20px 40px;
+                    padding: 15px;
+                    background-color: #eff6ff;
+                    border-radius: 10px;
+                }}
+                .summary-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                .summary-table td {{
+                    padding: 6px 10px;
+                    font-size: 12px;
+                }}
+                .summary-label {{
+                    color: #3b82f6;
+                    font-weight: bold;
+                    width: 110px;
+                }}
+                .summary-value {{
+                    color: #1e293b;
+                    font-weight: bold;
+                }}
+                
+                .intro-text {{
+                    padding: 0 40px;
+                    font-size: 13px;
+                    color: #475569;
+                }}
+                
+                .package-container {{
+                    margin: 30px 0;
+                }}
+                .package-header {{
+                    background-color: #f1f5f9;
+                    padding: 12px 40px;
+                    border-left: 5px solid #2563eb;
                     margin-bottom: 15px;
                 }}
-                .day-number {{
+                .package-title {{
+                    font-size: 18px;
                     font-weight: bold;
-                    color: #3B82F6;
+                    color: #0f172a;
+                }}
+                .package-meta {{
+                    font-size: 11px;
+                    color: #64748b;
+                    font-weight: bold;
+                    margin-top: 3px;
+                }}
+                
+                .section-title {{
+                    margin: 20px 40px 10px 40px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #2563eb;
+                    border-bottom: 1px solid #e2e8f0;
+                    padding-bottom: 4px;
+                }}
+                
+                .highlight-grid {{
+                    margin: 10px 40px;
+                }}
+                .highlight-item {{
+                    display: inline-block;
+                    background-color: #f0fdf4;
+                    color: #166534;
+                    padding: 3px 10px;
+                    border-radius: 15px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    margin: 3px;
+                    border: 1px solid #bbf7d0;
+                }}
+                
+                .itinerary-container {{
+                    margin: 10px 40px;
+                }}
+                .itinerary-day {{
+                    margin-bottom: 12px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px dashed #e2e8f0;
+                }}
+                .day-badge {{
+                    background-color: #2563eb;
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    margin-right: 8px;
+                }}
+                .day-title {{
+                    font-size: 13px;
+                    font-weight: bold;
+                    color: #1e293b;
+                }}
+                .day-desc {{
+                    font-size: 11px;
+                    color: #64748b;
+                    margin-top: 4px;
+                    display: block;
+                }}
+                
+                .pricing-container {{
+                    margin: 15px 40px;
                 }}
                 .pricing-table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 20px;
-                }}
-                .pricing-table th, .pricing-table td {{
-                    border: 1px solid #DDD;
-                    padding: 10px;
-                    text-align: left;
+                    border: 1px solid #e2e8f0;
                 }}
                 .pricing-table th {{
-                    background-color: #F9FAFB;
+                    background-color: #f8fafc;
+                    padding: 10px;
+                    text-align: left;
+                    font-size: 11px;
+                    color: #64748b;
+                    border-bottom: 2px solid #e2e8f0;
                 }}
-                .inclusion-list {{
-                    list-style-type: none;
-                    padding-left: 0;
-                }}
-                .inclusion-item {{
-                    margin-bottom: 5px;
-                }}
-                .check {{ color: green; font-weight: bold; }}
-                .cross {{ color: red; font-weight: bold; }}
-                .footer {{
-                    margin-top: 50px;
-                    text-align: center;
+                .pricing-table td {{
+                    padding: 10px;
                     font-size: 12px;
-                    color: #666;
-                    border-top: 1px solid #DDD;
-                    padding-top: 20px;
+                    border-bottom: 1px solid #e2e8f0;
                 }}
-                .total-row {{
-                    font-size: 18px;
+                .price-total-row {{
+                    background-color: #f0f9ff;
+                }}
+                .total-label {{
                     font-weight: bold;
-                    background-color: #EFF6FF;
+                    color: #1e3a8a;
+                    font-size: 14px;
+                }}
+                .total-amount {{
+                    font-weight: 800;
+                    color: #2563eb;
+                    font-size: 16px;
+                    text-align: right;
+                }}
+                
+                .inc-exc-container {{
+                    margin: 15px 40px;
+                }}
+                .inc-exc-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                .inc-exc-cell {{
+                    width: 50%;
+                    vertical-align: top;
+                    padding: 8px;
+                }}
+                .inc-box {{
+                    background-color: #f0fdf4;
+                    padding: 12px;
+                    border-radius: 6px;
+                    border: 1px solid #dcfce7;
+                }}
+                .exc-box {{
+                    background-color: #fef2f2;
+                    padding: 12px;
+                    border-radius: 6px;
+                    border: 1px solid #fee2e2;
+                }}
+                .inc-title {{ color: #15803d; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
+                .exc-title {{ color: #b91c1c; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
+                .inc-list {{ padding-left: 15px; margin: 0; }}
+                .inc-list li {{ font-size: 10px; color: #374151; margin-bottom: 3px; }}
+                
+                .footer-container {{
+                    margin-top: 40px;
+                    padding: 30px 40px;
+                    background-color: #1e293b;
+                    color: #cbd5e1;
+                    text-align: center;
+                }}
+                .footer-contact {{
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: white;
+                    margin-bottom: 8px;
+                }}
+                .footer-text {{
+                    font-size: 10px;
+                    margin-bottom: 10px;
+                    line-height: 1.6;
+                }}
+                .powered-by {{
+                    font-size: 9px;
+                    opacity: 0.6;
                 }}
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="agency-name">{agency_name}</div>
-                <div>{agency_address}</div>
-                <div>{agency_contact}</div>
+            <div class="header-container">
+                <table class="header-table">
+                    <tr>
+                        <td class="logo-cell">
+                            {logo_html}
+                        </td>
+                        <td class="agency-info-cell">
+                            {agency_name_html}
+                            <div class="agency-details">
+                                {agency_address}<br/>
+                                {agency_contact}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
-
-            <div class="quote-title">Travel Quote</div>
-
-            <table class="info-table">
-                <tr>
-                    <td class="label">Customer:</td>
-                    <td>{enquiry.customer_name}</td>
-                    <td class="label">Reference:</td>
-                    <td>ENQ-{enquiry.id.hex[:6].upper()}</td>
-                </tr>
-                <tr>
-                    <td class="label">Travel Date:</td>
-                    <td>{travel_date}</td>
-                    <td class="label">Generated On:</td>
-                    <td>{today}</td>
-                </tr>
-                <tr>
-                    <td class="label">Guests:</td>
-                    <td>{enquiry.travellers} Adults</td>
-                    <td class="label">Validity:</td>
-                    <td>7 Days from generation</td>
-                </tr>
-            </table>
-
-            <p>Dear {enquiry.customer_name},<br/><br/>
-            Thank you for your enquiry. We are pleased to provide you with the following personalized travel options for your upcoming trip.</p>
+            
+            <div class="quote-banner">Personalized Travel Quote</div>
+            
+            <div class="summary-box">
+                <table class="summary-table">
+                    <tr>
+                        <td class="summary-label">PREPARED FOR</td>
+                        <td class="summary-value">{enquiry.customer_name}</td>
+                        <td class="summary-label">QUOTE REF</td>
+                        <td class="summary-value">ENQ-{enquiry.id.hex[:6].upper()}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">TRAVEL DATE</td>
+                        <td class="summary-value">{travel_date}</td>
+                        <td class="summary-label">ISSUE DATE</td>
+                        <td class="summary-value">{today}</td>
+                    </tr>
+                    <tr>
+                        <td class="summary-label">GUESTS</td>
+                        <td class="summary-value">{enquiry.travellers} Adults</td>
+                        <td class="summary-label">VALIDITY</td>
+                        <td class="summary-value">7 Days</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="intro-text">
+                <p>Dear <strong>{enquiry.customer_name}</strong>,</p>
+                <p>It was a pleasure connecting with you. Based on your travel preferences, we have curated the following exclusive travel packages. Each itinerary has been designed to provide an unforgettable experience.</p>
+            </div>
         """
 
-        for pkg in packages:
+        for idx, pkg in enumerate(packages):
             quoted_price = price_map.get(str(pkg.id), pkg.price_per_person)
             
-            # Simple Inclusions/Exclusions logic (simplified for PDF)
-            import json
+            # Inclusions/Exclusions logic
             try:
                  inclusions = pkg.included_items if isinstance(pkg.included_items, list) else json.loads(pkg.included_items or '[]')
                  exclusions = pkg.excluded_items if isinstance(pkg.excluded_items, list) else json.loads(pkg.excluded_items or '[]')
@@ -209,74 +398,102 @@ class PDFService:
                  inclusions = []
                  exclusions = []
 
-            html += f"""
-            <div class="package-section">
-                <div class="package-title">{pkg.title} - {pkg.destination}</div>
-                
-                <div class="section-header">Package Highlights</div>
-                <ul>
-                    {" ".join([f"<li>{h}</li>" for h in inclusions[:5]])}
-                </ul>
+            # Page break for subsequent packages
+            page_break = 'style="page-break-before: always;"' if idx > 0 else ""
 
-                <div class="section-header">Itinerary Details ({pkg.duration_days} Days / {pkg.duration_nights} Nights)</div>
+            html += f"""
+            <div class="package-container" {page_break}>
+                <div class="package-header">
+                    <div class="package-title">{pkg.title}</div>
+                    <div class="package-meta">{pkg.destination.upper()} &bull; {pkg.duration_days} DAYS &bull; {pkg.duration_nights} NIGHTS</div>
+                </div>
+                
+                <div class="section-title">Package Highlights</div>
+                <div class="highlight-grid">
+                    {" ".join([f'<span class="highlight-item">{h}</span>' for h in inclusions[:8]])}
+                </div>
+
+                <div class="section-title">Daily Itinerary</div>
+                <div class="itinerary-container">
             """
             
             # Day-wise Itinerary
             for item in pkg.itinerary_items:
+                desc = item.description[:400] + "..." if len(item.description) > 400 else item.description
                 html += f"""
                 <div class="itinerary-day">
-                    <span class="day-number">Day {item.day_number}:</span> {item.title}<br/>
-                    <small>{item.description[:300] if len(item.description) > 300 else item.description}...</small>
+                    <span class="day-badge">DAY {item.day_number}</span>
+                    <span class="day-title">{item.title}</span>
+                    <span class="day-desc">{desc}</span>
                 </div>
                 """
 
             # Pricing Table
             total_for_guests = float(quoted_price) * enquiry.travellers
             html += f"""
-                <div class="section-header">Quote Pricing</div>
-                <table class="pricing-table">
-                    <tr>
-                        <th>Item</th>
-                        <th>Details</th>
-                        <th>Amount</th>
-                    </tr>
-                    <tr>
-                        <td>Quoted Price (per person)</td>
-                        <td>For {enquiry.travellers} Guests</td>
-                        <td>INR {float(quoted_price):,.2f}</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td colspan="2">Total Quote Amount</td>
-                        <td>INR {total_for_guests:,.2f}</td>
-                    </tr>
-                </table>
-                <p><small>* Prices including applicable taxes. Quoted price is specific to this offer and may vary if booked later.</small></p>
+                </div>
 
-                <div class="section-header">Inclusions & Exclusions</div>
-                <table style="width:100%">
-                    <tr>
-                        <td style="width:50%; vertical-align:top;">
-                            <div style="font-weight:bold; margin-bottom:5px;">What's Included:</div>
-                            <ul class="inclusion-list">
-                                {" ".join([f'<li class="inclusion-item"><span class="check">✓</span> {i}</li>' for i in inclusions])}
-                            </ul>
-                        </td>
-                        <td style="width:50%; vertical-align:top;">
-                            <div style="font-weight:bold; margin-bottom:5px;">What's Not Included:</div>
-                            <ul class="inclusion-list">
-                                {" ".join([f'<li class="inclusion-item"><span class="cross">✗</span> {e}</li>' for e in exclusions])}
-                            </ul>
-                        </td>
-                    </tr>
-                </table>
+                <div class="section-title">Investment Details</div>
+                <div class="pricing-container">
+                    <table class="pricing-table">
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: right;">Unit Price</th>
+                            <th style="text-align: right;">Subtotal</th>
+                        </tr>
+                        <tr>
+                            <td>{pkg.title} - Full Package for {pkg.duration_days} Days</td>
+                            <td style="text-align: center;">{enquiry.travellers}</td>
+                            <td style="text-align: right;">INR {float(quoted_price):,.2f}</td>
+                            <td style="text-align: right;">INR {total_for_guests:,.2f}</td>
+                        </tr>
+                        <tr class="price-total-row">
+                            <td colspan="2" class="total-label">Total Professional Fee</td>
+                            <td colspan="2" class="total-amount">INR {total_for_guests:,.2f}</td>
+                        </tr>
+                    </table>
+                    <p style="font-size: 10px; color: #94a3b8; margin-top: 8px;">* Prices are inclusive of all applicable taxes. All rates are subject to availability at the time of booking.</p>
+                </div>
+
+                <div class="section-title">Standard Terms</div>
+                <div class="inc-exc-container">
+                    <table class="inc-exc-table">
+                        <tr>
+                            <td class="inc-exc-cell">
+                                <div class="inc-box">
+                                    <div class="inc-title">WHAT'S INCLUDED</div>
+                                    <ul class="inc-list">
+                                        {" ".join([f'<li>{i}</li>' for i in inclusions])}
+                                    </ul>
+                                </div>
+                            </td>
+                            <td class="inc-exc-cell">
+                                <div class="exc-box">
+                                    <div class="exc-title">WHAT'S NOT INCLUDED</div>
+                                    <ul class="inc-list">
+                                        {" ".join([f'<li>{e}</li>' for e in exclusions])}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
             </div>
             """
 
         html += f"""
-            <div class="footer">
-                <p>This quote is valid for 7 days from the date of issue. Availability is not guaranteed until booking is confirmed.</p>
-                <div style="font-weight:bold; font-size:16px; margin-top:10px;">To confirm your booking, reply to this email or call us at {agent_profile.phone or ''}</div>
-                <p>© 2026 {agency_name} | Powered by TourSaaS</p>
+            <div class="footer-container">
+                <div class="footer-contact">Ready to explore? Contact us today!</div>
+                <div class="footer-text">
+                    For bookings and inquiries, please reach out to us at <strong>{agent_profile.phone or ''}</strong> 
+                    or email <strong>{agent_profile.user.email}</strong>.<br/>
+                    This quote is valid for 7 days. Availability of packages is subject to change.
+                </div>
+                <div class="footer-text">
+                    &copy; 2026 {agency_name}. All rights reserved.
+                </div>
+                
             </div>
         </body>
         </html>

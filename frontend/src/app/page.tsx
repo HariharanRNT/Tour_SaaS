@@ -34,6 +34,7 @@ interface Package {
     price_per_person: number
     feature_image_url?: string
     view_count: number
+    is_public?: boolean
 }
 
 interface PopularDestination {
@@ -56,6 +57,48 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
     const [showAISearch, setShowAISearch] = useState(false)
     const [showEnquiryModal, setShowEnquiryModal] = useState(false)
     const hasFetchedRef = useRef(false)
+    const destScrollRef = useRef<HTMLDivElement>(null)
+    const [isDragging, setIsDragging] = useState(false)
+    const [startX, setStartX] = useState(0)
+    const [scrollLeftState, setScrollLeftState] = useState(0)
+
+    useEffect(() => {
+        const el = destScrollRef.current
+        if (!el) return
+
+        const onWheel = (e: WheelEvent) => {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.preventDefault()
+                el.scrollLeft += e.deltaY
+            }
+        }
+
+        el.addEventListener('wheel', onWheel, { passive: false })
+        return () => el.removeEventListener('wheel', onWheel)
+    }, [])
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!destScrollRef.current) return
+        setIsDragging(true)
+        setStartX(e.pageX - destScrollRef.current.offsetLeft)
+        setScrollLeftState(destScrollRef.current.scrollLeft)
+    }
+
+    const handleMouseLeave = () => {
+        setIsDragging(false)
+    }
+
+    const handleMouseUp = () => {
+        setIsDragging(false)
+    }
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !destScrollRef.current) return
+        e.preventDefault()
+        const x = e.pageX - destScrollRef.current.offsetLeft
+        const walk = (x - startX) * 2
+        destScrollRef.current.scrollLeft = scrollLeftState - walk
+    }
 
     const [hpSettings, setHpSettings] = useState<{
         headline1: string;
@@ -142,10 +185,14 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
         const fetchPackages = async () => {
             try {
+                // Fetch a larger page size to ensure we get all public packages
                 const response = await api.get('/packages', {
-                    params: { page_size: 6 }
+                    params: { page_size: 100 }
                 })
-                setPackages(response.data.packages)
+                // Filter to only show packages with public visibility enabled
+                const allPackages = response.data.packages || []
+                const publicPackages = allPackages.filter((pkg: Package) => pkg.is_public !== false)
+                setPackages(publicPackages)
                 
                 // Fallback: If no cheapest slug yet from dedicated fetch, pick from these packages
                 if (response.data.packages && response.data.packages.length > 0 && !cheapestPackageSlug) {
@@ -429,7 +476,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {packages.slice(0, 6).map((pkg, idx) => {
+                                {packages.map((pkg, idx) => {
                                     const fallbackImages = [
                                         "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&q=80&w=2071",
                                         "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80&w=1964",
@@ -521,16 +568,23 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                 </motion.div>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                                {popularDestinations.slice(0, 6).map((dest, idx) => (
+                            <div 
+                                ref={destScrollRef}
+                                onMouseDown={handleMouseDown}
+                                onMouseLeave={handleMouseLeave}
+                                onMouseUp={handleMouseUp}
+                                onMouseMove={handleMouseMove}
+                                className={`flex overflow-x-auto pb-6 gap-6 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                            >
+                                {popularDestinations.map((dest, idx) => (
                                     <motion.div
                                         key={dest.name}
                                         initial={{ opacity: 0, y: 20 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ delay: idx * 0.05 }}
-                                        onClick={() => router.push(`/plan-trip?search=${encodeURIComponent(dest.name)}`)}
-                                        className="group relative h-[220px] w-full rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+                                        onClick={() => !isDragging && router.push(`/plan-trip?search=${encodeURIComponent(dest.name)}`)}
+                                        className="flex-none group relative h-[220px] w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(16.666%-20px)] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 snap-start"
                                     >
                                         {dest.image_url ? (
                                             <Image

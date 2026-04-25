@@ -112,7 +112,6 @@ async def get_popular_destinations(
             popular_meta.c.display_order
         )
         .order_by(popular_meta.c.display_order.asc(), func.count(Package.id).desc())
-        .limit(10)
     )
     
     result = await db.execute(stmt)

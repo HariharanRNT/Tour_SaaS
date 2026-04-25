@@ -7,7 +7,7 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from slugify import slugify
 from app.database import get_db
-from app.models import Package, PackageImage, ItineraryItem, PackageAvailability, PackageStatus, UserRole, Agent
+from app.models import Package, PackageImage, ItineraryItem, PackageAvailability, PackageStatus, UserRole, Agent, TripStyle, ActivityTag
 from app.schemas import (
     PackageCreate, PackageUpdate, PackageResponse,
     PackageListResponse, MessageResponse
@@ -333,22 +333,18 @@ async def list_packages(
     if duration_max is not None:
         query = query.where(Package.duration_days <= duration_max)
 
-    # Array Filters
+    # Array Filters using normalized relationships
     if activities and len(activities) > 0:
-        # Assuming activities is a JSON string of a list
-        # E.g., '["Beach", "Mountain"]'
-        # SQLAlchemy sqlite JSON contains is tricky, ilike is safer across DBs for text representation
-        # or use specialized JSON functions depending on the database.
-        # Fallback to ilike for SQLite/generic fallback:
-        activity_conditions = [Package.activities.ilike(f'%"{activity}"%') for activity in activities]
-        query = query.where(or_(*activity_conditions))
+        # Filter packages that have at least one of these activity tag names
+        query = query.where(Package.activity_tags.any(ActivityTag.name.in_(activities)))
         
     if trip_styles and len(trip_styles) > 0:
-        query = query.where(Package.trip_style.in_(trip_styles))
+        # Filter packages that have at least one of these trip style names
+        query = query.where(Package.trip_styles.any(TripStyle.name.in_(trip_styles)))
 
     if countries and len(countries) > 0:
         country_conditions = [Package.country.ilike(f"%{c}%") for c in countries]
-        # Also check within destinations JSON
+        # Also check within destinations JSON (fallback for legacy)
         country_conditions.extend([Package.destinations.ilike(f'%"{c}"%') for c in countries])
         query = query.where(or_(*country_conditions))
 
@@ -385,10 +381,13 @@ async def list_packages(
                     Package.description.ilike(search_term),
                     Package.destination.ilike(search_term),
                     Package.country.ilike(search_term),
-                    # Search within the JSON arrays/text fields
+                    # Search within the JSON arrays/text fields (fallback)
                     Package.destinations.ilike(search_term),
                     Package.trip_style.ilike(search_term),
-                    Package.activities.ilike(search_term)
+                    Package.activities.ilike(search_term),
+                    # Search within normalized relationships
+                    Package.trip_styles.any(TripStyle.name.ilike(search_term)),
+                    Package.activity_tags.any(ActivityTag.name.ilike(search_term))
                 )
             )
             
@@ -425,7 +424,9 @@ async def list_packages(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),
         selectinload(Package.availability),
-        selectinload(Package.dest_metadata)
+        selectinload(Package.dest_metadata),
+        selectinload(Package.trip_styles),
+        selectinload(Package.activity_tags)
     )
     
     result = await db.execute(query)

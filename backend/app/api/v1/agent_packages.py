@@ -109,7 +109,9 @@ async def list_agent_packages(
     stmt = stmt.options(
         selectinload(Package.images),
         selectinload(Package.itinerary_items),
-        selectinload(Package.availability)
+        selectinload(Package.availability),
+        selectinload(Package.trip_styles),
+        selectinload(Package.activity_tags)
     ).order_by(order_column).offset(skip).limit(limit)
     
     result = await db.execute(stmt)
@@ -150,11 +152,27 @@ async def create_agent_package(
         gst_percentage = package_data.gst_percentage if gst_applicable else None
         gst_mode = package_data.gst_mode if gst_applicable else None
 
-        # Serialize trip_styles list → JSON string for the trip_style DB column
+        # Serialize trip_styles list → JSON string for the trip_style DB column (backward compatibility)
         import json as _json
-        trip_styles_list = package_data.trip_styles or ([
-            package_data.trip_style] if package_data.trip_style else [])
-        trip_style_serialized = _json.dumps(trip_styles_list) if trip_styles_list else None
+        from app.models import TripStyle, ActivityTag
+        trip_styles_list = package_data.trip_style_ids or []
+        trip_style_names = []
+        if trip_styles_list:
+            style_stmt = select(TripStyle.name).where(TripStyle.id.in_(trip_styles_list))
+            style_res = await db.execute(style_stmt)
+            trip_style_names = [r[0] for r in style_res.all()]
+            
+        trip_style_serialized = _json.dumps(trip_style_names) if trip_style_names else None
+        
+        # Similar for activity tags legacy column
+        activity_tag_ids = package_data.activity_tag_ids or []
+        activity_names = []
+        if activity_tag_ids:
+            tag_stmt = select(ActivityTag.name).where(ActivityTag.id.in_(activity_tag_ids))
+            tag_res = await db.execute(tag_stmt)
+            activity_names = [r[0] for r in tag_res.all()]
+        
+        activities_serialized = _json.dumps(activity_names) if activity_names else "[]"
 
         # Create package
         new_package = Package(
@@ -178,7 +196,7 @@ async def create_agent_package(
             feature_image_url=package_data.feature_image_url,
             package_mode=package_data.package_mode,
             destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
-            activities=json.dumps(package_data.activities) if package_data.activities else "[]",
+            activities=activities_serialized,
             # GST Configuration
             gst_applicable=gst_applicable,
             gst_percentage=gst_percentage,
@@ -206,6 +224,19 @@ async def create_agent_package(
         )
         
         db.add(new_package)
+        
+        # Add Trip Style relationships
+        if package_data.trip_style_ids:
+            from app.models import PackageTripStyle
+            for style_id in package_data.trip_style_ids:
+                db.add(PackageTripStyle(package_id=package_id, trip_style_id=style_id))
+        
+        # Add Activity Tag relationships
+        if package_data.activity_tag_ids:
+            from app.models import PackageActivityTag
+            for tag_id in package_data.activity_tag_ids:
+                db.add(PackageActivityTag(package_id=package_id, activity_tag_id=tag_id))
+        
         await db.commit()
         
         # Invalidate cache
@@ -221,7 +252,9 @@ async def create_agent_package(
         stmt = select(Package).options(
             selectinload(Package.itinerary_items),
             selectinload(Package.images),
-            selectinload(Package.availability)
+            selectinload(Package.availability),
+            selectinload(Package.trip_styles),
+            selectinload(Package.activity_tags)
         ).where(Package.id == package_id)
         
         result = await db.execute(stmt)
@@ -249,7 +282,9 @@ async def get_agent_package(
     stmt = select(Package).options(
         selectinload(Package.itinerary_items),
         selectinload(Package.images),
-        selectinload(Package.availability)
+        selectinload(Package.availability),
+        selectinload(Package.trip_styles),
+        selectinload(Package.activity_tags)
     ).where(
         Package.id == package_id,
         Package.created_by == current_agent.agent_id
@@ -293,17 +328,55 @@ async def update_agent_package(
         update_data["destination"] = update_data["destination"].strip()
     json_fields = ['included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities']
 
-    # Handle trip_styles → serialize as JSON into the trip_style String column
+    # Handle trip_style_ids → serialize names as JSON into the trip_style String column AND update association table
     import json as _json
-    if 'trip_styles' in update_data:
-        trip_styles_list = update_data.pop('trip_styles') or []
-        # Also remove trip_style if it was sent separately to avoid conflicts
-        update_data.pop('trip_style', None)
-        package.trip_style = _json.dumps(trip_styles_list) if trip_styles_list else None
+    from app.models import TripStyle, ActivityTag
+    if 'trip_style_ids' in update_data:
+        trip_style_ids = update_data.pop('trip_style_ids') or []
+        
+        # Fetch names for legacy column
+        trip_style_names = []
+        if trip_style_ids:
+            style_stmt = select(TripStyle.name).where(TripStyle.id.in_(trip_style_ids))
+            style_res = await db.execute(style_stmt)
+            trip_style_names = [r[0] for r in style_res.all()]
+        
+        # Update legacy column
+        package.trip_style = _json.dumps(trip_style_names) if trip_style_names else None
+        
+        # Sync association table
+        from app.models import PackageTripStyle
+        # Delete old
+        await db.execute(delete(PackageTripStyle).where(PackageTripStyle.package_id == package_id))
+        # Add new
+        for sid in trip_style_ids:
+            db.add(PackageTripStyle(package_id=package_id, trip_style_id=sid))
+            
     elif 'trip_style' in update_data:
-        # Legacy single-value update — wrap as JSON list for consistency
+        # Legacy single-value update
         raw = update_data.pop('trip_style')
         package.trip_style = _json.dumps([raw]) if raw else None
+
+    # Handle activity_tag_ids sync
+    if 'activity_tag_ids' in update_data:
+        activity_tag_ids = update_data.pop('activity_tag_ids') or []
+        
+        # Fetch names for legacy column
+        activity_names = []
+        if activity_tag_ids:
+            tag_stmt = select(ActivityTag.name).where(ActivityTag.id.in_(activity_tag_ids))
+            tag_res = await db.execute(tag_stmt)
+            activity_names = [r[0] for r in tag_res.all()]
+        
+        # Update legacy column
+        package.activities = _json.dumps(activity_names)
+        
+        from app.models import PackageActivityTag
+        # Delete old
+        await db.execute(delete(PackageActivityTag).where(PackageActivityTag.package_id == package_id))
+        # Add new
+        for tid in activity_tag_ids:
+            db.add(PackageActivityTag(package_id=package_id, activity_tag_id=tid))
 
     for field, value in update_data.items():
         if field == 'cancellation_rules':
@@ -355,7 +428,9 @@ async def update_agent_package(
     stmt = select(Package).options(
         selectinload(Package.itinerary_items),
         selectinload(Package.images),
-        selectinload(Package.availability)
+        selectinload(Package.availability),
+        selectinload(Package.trip_styles),
+        selectinload(Package.activity_tags)
     ).where(Package.id == package_id)
     result = await db.execute(stmt)
     updated_package = result.scalar_one()

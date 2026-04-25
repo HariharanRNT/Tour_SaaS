@@ -8,7 +8,7 @@ from sqlalchemy import (
     Column, String, Boolean, Integer, Text, Date, DateTime, Numeric, Float,
     ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint, CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -278,6 +278,7 @@ class Agent(Base):
     
     # Homepage Customization
     homepage_settings = Column(JSON, nullable=True) # Stores headline, hero, cards, WCU, styles
+    website_pages_config = Column(JSON, nullable=True) # Stores About & Contact page blocks and design
     
     # Relationships
     smtp_settings = relationship("AgentSMTPSettings", back_populates="agent", uselist=False, cascade="all, delete-orphan", lazy="selectin")
@@ -301,6 +302,63 @@ class Customer(Base):
     
     user = relationship("User", back_populates="customer_profile", foreign_keys=[user_id])
     agent = relationship("User", foreign_keys=[agent_id], lazy="selectin")
+
+
+# Master Data Models
+class TripStyle(Base):
+    __tablename__ = "trip_styles"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False)
+    icon = Column(String(255), nullable=True)
+    created_by = Column(String(10), nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    __table_args__ = (UniqueConstraint('name', 'agent_id', name='uq_trip_style_name_agent'),)
+
+
+class ActivityTag(Base):
+    __tablename__ = "activity_tags"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False)
+    icon = Column(String(255), nullable=True)
+    created_by = Column(String(10), nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("activity_categories.id", ondelete="SET NULL"), nullable=True)
+
+    __table_args__ = (UniqueConstraint('name', 'agent_id', name='uq_activity_tag_name_agent'),)
+
+
+class ActivityCategory(Base):
+    __tablename__ = "activity_categories"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False)
+    created_by = Column(String(10), nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (UniqueConstraint('name', 'agent_id', name='uq_activity_category_name_agent'),)
+
+
+class PackageTripStyle(Base):
+    __tablename__ = "package_trip_styles"
+    
+    package_id = Column(UUID(as_uuid=True), ForeignKey("packages.id", ondelete="CASCADE"), primary_key=True)
+    trip_style_id = Column(UUID(as_uuid=True), ForeignKey("trip_styles.id", ondelete="CASCADE"), primary_key=True)
+
+
+class PackageActivityTag(Base):
+    __tablename__ = "package_activity_tags"
+    
+    package_id = Column(UUID(as_uuid=True), ForeignKey("packages.id", ondelete="CASCADE"), primary_key=True)
+    activity_tag_id = Column(UUID(as_uuid=True), ForeignKey("activity_tags.id", ondelete="CASCADE"), primary_key=True)
 
 
 class Package(Base):
@@ -392,6 +450,10 @@ class Package(Base):
     availability = relationship("PackageAvailability", back_populates="package", cascade="all, delete-orphan", lazy="selectin")
     bookings = relationship("Booking", back_populates="package")
     dest_metadata = relationship("Destination", back_populates="packages", primaryjoin="Package.destination == Destination.name", foreign_keys="[Package.destination]", viewonly=True)
+    
+    # Master Data Relationships
+    trip_styles = relationship("TripStyle", secondary="package_trip_styles", lazy="selectin")
+    activity_tags = relationship("ActivityTag", secondary="package_activity_tags", lazy="selectin")
 
 
 class Destination(Base):
@@ -648,7 +710,8 @@ class Activity(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     destination_city = Column(String, nullable=False, index=True)
-    category = Column(String, nullable=False, index=True)
+    category = Column(String, nullable=False, index=True) # Old category string
+    category_id = Column(UUID(as_uuid=True), ForeignKey("activity_categories.id", ondelete="SET NULL"), nullable=True) # New category FK
     duration_hours = Column(Float, nullable=False)
     time_slot_preference = Column(String, nullable=False) # morning, afternoon, evening, full_day
     description = Column(Text, nullable=True)
@@ -663,6 +726,7 @@ class Activity(Base):
     # Relationships
     agent = relationship("User", foreign_keys=[agent_id])
     images = relationship("ActivityImage", back_populates="activity", cascade="all, delete-orphan")
+    activity_category = relationship("ActivityCategory", lazy="selectin")
     
     def __repr__(self):
         return f"<Activity(id={self.id}, name={self.name}, city={self.destination_city})>"
@@ -1045,3 +1109,52 @@ class APILog(Base):
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id], lazy="noload")
+
+
+class ContactSubmission(Base):
+    __tablename__ = "contact_submissions"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=True)
+    subject = Column(String(255), nullable=True)
+    message = Column(Text, nullable=False)
+    travel_date = Column(Date, nullable=True)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class WebsitePage(Base):
+    __tablename__ = "website_pages"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    slug = Column(String(50), nullable=False) # 'about', 'contact'
+    title = Column(String(255), nullable=True)
+    is_enabled = Column(Boolean, default=True)
+    design_settings = Column(JSONB, default=dict, server_default='{}') # Global design for this page
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint("agent_id", "slug", name="uq_agent_page_slug"),)
+    
+    # Relationships
+    blocks = relationship("PageBlock", back_populates="page", cascade="all, delete-orphan", order_by="PageBlock.block_order")
+
+
+class PageBlock(Base):
+    __tablename__ = "page_blocks"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    page_id = Column(UUID(as_uuid=True), ForeignKey("website_pages.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(50), nullable=False) # hero, text, image, etc.
+    block_data = Column(JSONB, nullable=False, server_default='{}') # JSONB content
+    block_order = Column(Integer, default=0)
+    is_enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    page = relationship("WebsitePage", back_populates="blocks")

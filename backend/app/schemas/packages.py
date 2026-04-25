@@ -19,6 +19,51 @@ class CancellationRule(BaseModel):
     )
 
 
+class TripStyleCreate(BaseModel):
+    name: str
+    icon: Optional[str] = None
+
+class TripStyleResponse(BaseModel):
+    id: UUID
+    name: str
+    icon: Optional[str] = None
+    created_by: str
+    agent_id: Optional[UUID] = None
+    is_active: bool
+    
+    model_config = {"from_attributes": True}
+
+
+class ActivityTagCreate(BaseModel):
+    name: str
+    icon: Optional[str] = None
+    category_id: Optional[UUID] = None
+
+class ActivityTagResponse(BaseModel):
+    id: UUID
+    name: str
+    icon: Optional[str] = None
+    category_id: Optional[UUID] = None
+    created_by: str
+    agent_id: Optional[UUID] = None
+    is_active: bool
+    
+    model_config = {"from_attributes": True}
+
+
+class ActivityCategoryCreate(BaseModel):
+    name: str
+
+class ActivityCategoryResponse(BaseModel):
+    id: UUID
+    name: str
+    created_by: str
+    agent_id: Optional[UUID] = None
+    is_active: bool
+    
+    model_config = {"from_attributes": True}
+
+
 class PackageStatusEnum(str, Enum):
     """Package status enum for API"""
     DRAFT = "DRAFT"
@@ -43,7 +88,6 @@ class PackageBase(BaseModel):
     duration_nights: int
     # trip_style stores a JSON-encoded list in the DB; trip_styles is the canonical frontend field
     trip_style: Optional[str] = None          # raw DB column (kept for backward compat)
-    trip_styles: List[str] = []               # preferred multi-select field from frontend
     category: Optional[str] = "Adventure"
     price_per_person: float
     max_group_size: int = 20
@@ -77,6 +121,14 @@ class PackageBase(BaseModel):
     inclusions: Dict[str, Any] = {}
     exclusions: Dict[str, Any] = {}
     custom_services: List[CustomService] = []
+    
+    # New relationships
+    trip_style_ids: Optional[List[UUID]] = []
+    activity_tag_ids: Optional[List[UUID]] = []
+    
+    # Legacy/Alias fields to prevent AttributeErrors
+    trip_styles: Optional[List[Any]] = []
+    activity_tags: Optional[List[Any]] = []
 
 
 class PackageCreate(PackageBase):
@@ -90,7 +142,6 @@ class PackageUpdate(BaseModel):
     duration_days: Optional[int] = None
     duration_nights: Optional[int] = None
     trip_style: Optional[str] = None          # raw DB column (kept for backward compat)
-    trip_styles: Optional[List[str]] = None   # preferred multi-select field from frontend
     price_per_person: Optional[float] = None
     max_group_size: Optional[int] = None
     description: Optional[str] = Field(None, max_length=2000)
@@ -122,6 +173,8 @@ class PackageUpdate(BaseModel):
     inclusions: Optional[Dict[str, Any]] = None
     exclusions: Optional[Dict[str, Any]] = None
     custom_services: Optional[List[CustomService]] = None
+    trip_style_ids: Optional[List[UUID]] = None
+    activity_tag_ids: Optional[List[UUID]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -246,6 +299,8 @@ class PackageResponse(PackageBase):
     updated_at: Optional[datetime] = None
     itinerary_items: List[ItineraryItemResponse] = []
     images: List[PackageImageResponse] = []
+    trip_styles: List[TripStyleResponse] = []
+    activity_tags: List[ActivityTagResponse] = []
 
     model_config = {"from_attributes": True, "use_enum_values": True}
 
@@ -303,9 +358,9 @@ class PackageResponse(PackageBase):
                 'custom_services': _parse_json_list(getattr(obj, 'custom_services', '[]')),
                 'itinerary_items': getattr(obj, 'itinerary_items', []),
                 'images': getattr(obj, 'images', []),
+                'trip_styles': getattr(obj, 'trip_styles', []),
+                'activity_tags': getattr(obj, 'activity_tags', []),
             }
-            # Populate trip_styles from the DB column
-            d['trip_styles'] = _parse_trip_styles(d['trip_style'])
             return d
 
         # Dict input
@@ -313,9 +368,6 @@ class PackageResponse(PackageBase):
             for field in ('included_items', 'excluded_items', 'destinations', 'activities', 'flight_origin_cities', 'custom_services'):
                 if field in data:
                     data[field] = _parse_json_list(data[field])
-            # Populate trip_styles if missing or empty
-            if not data.get('trip_styles'):
-                data['trip_styles'] = _parse_trip_styles(data.get('trip_style'))
 
         return data
 

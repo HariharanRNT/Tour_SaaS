@@ -382,6 +382,7 @@ export default function AgentSettingsPage() {
                             { name: 'Email', id: 'email-section' },
                             { name: 'Payment', id: 'payment-section' },
                             { name: 'Notifications', id: 'notifications-section' },
+                            { name: 'Master Data', id: 'master-data-link' },
                             { name: 'Theme', id: 'theme-link' }
                         ].map((tab) => (
                             <button
@@ -389,6 +390,8 @@ export default function AgentSettingsPage() {
                                 onClick={() => {
                                     if (tab.id === 'theme-link') {
                                         router.push('/agent/settings/theme');
+                                    } else if (tab.id === 'master-data-link') {
+                                        router.push('/agent/settings/master-data');
                                     } else {
                                         scrollToSection(tab.id);
                                     }

@@ -53,6 +53,8 @@ export function Navbar() {
         const defaultLinks = [
             { label: 'Packages', href: '/#popular-packages', show: true, requiresAuth: false, role: null },
             { label: 'Plan Trip', href: '/plan-trip?search=all', show: true, requiresAuth: false, role: null },
+            { label: 'About', href: '/about', show: publicSettings?.website_pages_config?.about_page?.enabled ?? false, requiresAuth: false, role: null },
+            { label: 'Contact', href: '/contact', show: publicSettings?.website_pages_config?.contact_page?.enabled ?? false, requiresAuth: false, role: null },
             { label: 'My Bookings', href: '/bookings', show: true, requiresAuth: true, role: 'customer' }
         ]
 

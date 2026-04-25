@@ -343,6 +343,7 @@ class AgentSettingsResponse(BaseModel):
     smtp: Optional[AgentSMTPSettingsResponse] = None
     razorpay: Optional[AgentRazorpaySettingsResponse] = None
     homepage_settings: Optional[dict] = None
+    website_pages_config: Optional[dict] = None
     
     class Config:
         from_attributes = True
@@ -498,6 +499,11 @@ class HomepageSettingsUpdate(BaseModel):
         return v
 
 
+class WebsitePagesConfigUpdate(BaseModel):
+    global_design: Optional[dict] = None
+    about_page: Optional[dict] = None
+    contact_page: Optional[dict] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -582,6 +588,31 @@ class PackageAvailabilityResponse(PackageAvailabilityBase):
         from_attributes = True
 
 
+class TripStyleResponse(BaseModel):
+    id: UUID4
+    name: str
+    icon: Optional[str] = None
+    created_by: str
+    agent_id: Optional[UUID4] = None
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+
+
+class ActivityTagResponse(BaseModel):
+    id: UUID4
+    name: str
+    icon: Optional[str] = None
+    category_id: Optional[UUID4] = None
+    created_by: str
+    agent_id: Optional[UUID4] = None
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+
+
 class PackageBase(BaseModel):
     title: str = Field(..., min_length=0, max_length=200)
     description: str = Field(..., min_length=0, max_length=5000)
@@ -589,7 +620,7 @@ class PackageBase(BaseModel):
     country: Optional[str] = Field(None, max_length=100)
     duration_days: int = Field(..., ge=1)
     duration_nights: int = Field(..., ge=0)
-    trip_style: Optional[str] = Field(None, max_length=50)
+    trip_style: Optional[str] = Field(None, max_length=1000)
     price_per_person: Decimal = Field(..., ge=0)
     max_group_size: int = Field(20, ge=1)
     included_items: List[str] = []
@@ -647,7 +678,7 @@ class PackageUpdate(BaseModel):
     country: Optional[str] = Field(None, max_length=100)
     duration_days: Optional[int] = Field(None, ge=1)
     duration_nights: Optional[int] = Field(None, ge=0)
-    trip_style: Optional[str] = Field(None, max_length=50)
+    trip_style: Optional[str] = Field(None, max_length=1000)
     price_per_person: Optional[Decimal] = Field(None, ge=0)
     max_group_size: Optional[int] = Field(None, ge=1)
     included_items: Optional[List[str]] = None
@@ -701,6 +732,8 @@ class PackageResponse(PackageBase):
     images: List[PackageImageResponse] = []
     itinerary_items: List[ItineraryItemResponse] = []
     availability: List[PackageAvailabilityResponse] = []
+    trip_styles: List[TripStyleResponse] = []
+    activity_tags: List[ActivityTagResponse] = []
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
