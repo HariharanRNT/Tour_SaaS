@@ -762,6 +762,10 @@ export default function CreatePackagePage() {
             }
             const isPriceRequired = formData.booking_type === 'INSTANT';
             if (isPriceRequired && (!formData.price_per_person || Number(formData.price_per_person) <= 0)) missingFields.push("Price per Person");
+            if (Number(formData.price_per_person) >= 100000000) {
+                toast.error("Price per Person cannot exceed 99,999,999");
+                return;
+            }
             if (formData.trip_styles.length === 0) missingFields.push("Trip Style");
 
             // Duplicate destination check
@@ -906,6 +910,10 @@ export default function CreatePackagePage() {
     }
 
     const handleSaveDraftOnly = async () => {
+        if (Number(formData.price_per_person) >= 100000000) {
+            toast.error("Price per Person cannot exceed 99,999,999");
+            return;
+        }
         setSaving(true)
         try {
             const url = packageId
@@ -1822,7 +1830,24 @@ export default function CreatePackagePage() {
                                             value={formData.price_per_person as any}
                                             onChange={(e) => {
                                                 const val = e.target.value;
-                                                updateFormData('price_per_person', val === '' ? '' as any : Number(val));
+                                                if (val === '') {
+                                                    updateFormData('price_per_person', '' as any);
+                                                    return;
+                                                }
+                                                
+                                                // Only allow digits and at most one decimal point
+                                                if (!/^\d*\.?\d*$/.test(val)) return;
+
+                                                const [intPart, decPart] = val.split('.');
+                                                
+                                                // Database is NUMERIC(10, 2) -> max 8 digits before decimal, 2 after
+                                                if (intPart.length > 8) {
+                                                    toast.error('Maximum price limit reached (8 digits)');
+                                                    return;
+                                                }
+                                                if (decPart !== undefined && decPart.length > 2) return;
+
+                                                updateFormData('price_per_person', Number(val));
                                             }}
                                             placeholder={formData.booking_type === 'INSTANT' ? "Enter price per person" : "Optional — leave blank for enquiry"}
                                             className={cn("glass-input pl-8 h-12 font-mono font-medium text-lg", getInputStyle(formData.price_per_person, formData.booking_type === 'INSTANT'))}
