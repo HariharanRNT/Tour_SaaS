@@ -182,6 +182,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                         value={traveler.first_name}
                         onChange={(e: any) => onChange(index, 'first_name', e.target.value)}
                         error={errors[`first_name_${index}`]}
+                        maxLength={50}
                         className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                     />
                 </div>
@@ -191,6 +192,8 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                         label="Last Name"
                         value={traveler.last_name}
                         onChange={(e: any) => onChange(index, 'last_name', e.target.value)}
+                        error={errors[`last_name_${index}`]}
+                        maxLength={50}
                         className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                     />
                 </div>
@@ -303,6 +306,7 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
                     label="Passport Number (Optional for Domestic)"
                     value={traveler.passport_number}
                     onChange={(e: any) => onChange(index, 'passport_number', e.target.value.toUpperCase())}
+                    maxLength={20}
                     className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                 />
             </div>

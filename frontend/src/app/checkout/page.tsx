@@ -270,6 +270,17 @@ function CheckoutContent() {
             if (!t.first_name?.trim()) {
                 newErrors[`first_name_${idx}`] = "First Name is required"
                 isValid = false
+            } else if (!/^[a-zA-Z\s.\-']+$/.test(t.first_name)) {
+                newErrors[`first_name_${idx}`] = "First Name should only contain alphabets, spaces, dots, hyphens, or apostrophes"
+                isValid = false
+            }
+
+            if (!t.last_name?.trim()) {
+                newErrors[`last_name_${idx}`] = "Last Name is required"
+                isValid = false
+            } else if (!/^[a-zA-Z\s.\-']+$/.test(t.last_name)) {
+                newErrors[`last_name_${idx}`] = "Last Name should only contain alphabets, spaces, dots, hyphens, or apostrophes"
+                isValid = false
             }
 
             const dobParts = t.date_of_birth?.split('-') || []
@@ -721,6 +732,7 @@ function CheckoutContent() {
                                             value={contactEmail}
                                             onChange={(e: any) => setContactEmail(e.target.value)}
                                             error={errors.email}
+                                            maxLength={100}
                                             className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                                         />
                                     </div>
@@ -733,6 +745,7 @@ function CheckoutContent() {
                                         value={contactAddress}
                                         onChange={(e: any) => setContactAddress(e.target.value)}
                                         error={errors.address}
+                                        maxLength={500}
                                         className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                                     />
                                 </div>

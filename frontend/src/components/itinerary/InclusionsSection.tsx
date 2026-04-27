@@ -116,7 +116,7 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Inclusions Card */}
-                <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-md overflow-hidden group">
+                <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-md overflow-hidden group w-full">
                     <div className="bg-emerald-500/10 px-6 py-4 border-b border-emerald-500/20 flex items-center gap-3">
                         <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-600">
                             <Check className="w-5 h-5" />
@@ -131,11 +131,11 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
                                         <div className="mt-1 p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover/item:bg-emerald-100 transition-colors">
                                             {item.icon && <item.icon className="w-5 h-5" />}
                                         </div>
-                                        <div className="flex-1 space-y-1">
+                                        <div className="flex-1 space-y-1 min-w-0">
                                             <div className="font-bold text-black group-hover/item:text-[var(--primary)] transition-colors">
                                                 {item.label}
                                             </div>
-                                            <p className="text-sm text-black/70 leading-relaxed">
+                                            <p className="text-sm text-black/70 leading-relaxed break-words whitespace-normal">
                                                 {item.details || `Standard ${item.label.toLowerCase()} included in package.`}
                                             </p>
                                         </div>
@@ -153,11 +153,11 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
                                                 <div className="mt-1 p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover/item:bg-emerald-100 transition-colors">
                                                     {item.icon && <item.icon className="w-5 h-5" />}
                                                 </div>
-                                                <div className="flex-1 space-y-1">
+                                                <div className="flex-1 space-y-1 min-w-0">
                                                     <div className="font-bold text-black group-hover/item:text-[var(--primary)] transition-colors">
                                                         {item.label}
                                                     </div>
-                                                    <p className="text-sm text-black/70 leading-relaxed">
+                                                    <p className="text-sm text-black/70 leading-relaxed break-words whitespace-normal">
                                                         {item.details || `Standard ${item.label.toLowerCase()} included in package.`}
                                                     </p>
                                                 </div>
@@ -173,7 +173,7 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
                 </Card>
 
                 {/* Exclusions Card */}
-                <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-md overflow-hidden group">
+                <Card className="border-0 shadow-xl bg-white/40 backdrop-blur-md overflow-hidden group w-full">
                     <div className="bg-rose-500/10 px-6 py-4 border-b border-rose-500/20 flex items-center gap-3">
                         <div className="p-2 bg-rose-500/20 rounded-lg text-rose-600">
                             <X className="w-5 h-5" />
@@ -199,7 +199,7 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
                                 {Array.isArray(exclusions) && exclusions.length > 0 && (
                                     <ul className="space-y-2 list-disc list-inside">
                                         {exclusions.map((item, idx) => (
-                                            <li key={`text-excl-${idx}`} className="text-sm text-rose-800 opacity-80">
+                                            <li key={`text-excl-${idx}`} className="text-sm text-rose-800 opacity-80 break-words whitespace-normal">
                                                 {item}
                                             </li>
                                         ))}
@@ -210,7 +210,7 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
                             <p className="text-sm text-black/50 italic py-4 text-center">Refer to terms and conditions.</p>
                         )}
                         <div className="pt-4 mt-4 border-t border-rose-100/50">
-                            <p className="text-xs text-rose-800/60 leading-relaxed italic">
+                            <p className="text-xs text-rose-800/60 leading-relaxed italic break-words whitespace-normal">
                                 * Anything not explicitly mentioned in the inclusions list is excluded from the package. Personal expenses, tips, and additional activities are not covered.
                             </p>
                         </div>

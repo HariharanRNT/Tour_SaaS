@@ -143,7 +143,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                     primaryBtnText: hs.primaryBtnText || "Start Your Journey",
                     secondaryBtnText: hs.secondaryBtnText || "See Sample Itinerary",
                     backgroundImageUrl: hs.backgroundImageUrl || "",
-                    showAISearch: hs.showAISearch ?? hs.showAiBadge !== false,
+                    showAISearch: hs.showAISearch !== false,
                     aiSearchBtnText: hs.aiSearchBtnText || "Try AI Search",
                     aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip"
                 });

@@ -376,6 +376,10 @@ class HomepageSettingsUpdate(BaseModel):
     favicon_url: Optional[str] = None
     badgeText: Optional[str] = Field(None, max_length=100)
     showAiBadge: Optional[bool] = None
+    showAISearch: Optional[bool] = None
+    aiSearchBtnText: Optional[str] = Field(None, max_length=100)
+    aiSearchTagline: Optional[str] = Field(None, max_length=200)
+
     feature_cards: Optional[List[dict]] = None
     wcu_cards: Optional[List[dict]] = None
     card_appearance: Optional[HomepageCardAppearance] = None
@@ -479,7 +483,9 @@ class HomepageSettingsUpdate(BaseModel):
         'payment_summary_total_label', 'payment_summary_support_text',
         'plan_trip_page_title', 'plan_trip_search_placeholder', 'plan_trip_primary_btn_text',
         'plan_trip_secondary_btn_text', 'plan_trip_price_label', 'plan_trip_empty_state_message',
+        'aiSearchBtnText', 'aiSearchTagline',
         mode='before'
+
     )
     @classmethod
     def sanitize_homepage_text(cls, v):
@@ -778,7 +784,9 @@ class PackageResponse(PackageBase):
                 'enquiry_payment': getattr(obj, 'enquiry_payment', EnquiryPaymentType.OFFLINE),
                 'images': getattr(obj, 'images', []),
                 'itinerary_items': getattr(obj, 'itinerary_items', []),
-                'availability': getattr(obj, 'availability', [])
+                'availability': getattr(obj, 'availability', []),
+                'trip_styles': getattr(obj, 'trip_styles', []),
+                'activity_tags': getattr(obj, 'activity_tags', [])
             }
         return obj
 

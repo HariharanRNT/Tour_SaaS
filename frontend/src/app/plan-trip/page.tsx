@@ -73,7 +73,7 @@ function PlanTripContent() {
     const hpSettings = publicSettings?.homepage_settings || {}
 
     // Helper to parse and format tags (trip styles, activities) from various data formats
-    const parsePackageTags = (tags: string | string[] | undefined | null): string[] => {
+    const parsePackageTags = (tags: string | string[] | undefined | null, type: 'activity' | 'style' = 'activity'): string[] => {
         if (!tags) return [];
 
         let result: string[] = [];
@@ -106,11 +106,33 @@ function PlanTripContent() {
             }
         }
 
+        // Map IDs to names if possible
+        const mappedResult = result.map(tag => {
+            const tagStr = tag.toString().trim();
+            // Check if it's a UUID
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tagStr);
+            
+            if (isUuid) {
+                if (type === 'activity') {
+                    const found = availableActivities.find(a => a.id.toLowerCase() === tagStr.toLowerCase());
+                    if (found) return found.name;
+                } else if (type === 'style') {
+                    const found = availableTripStyles.find(s => s.id.toLowerCase() === tagStr.toLowerCase());
+                    if (found) return found.name;
+                }
+            }
+            return tagStr;
+        });
+
         // Clean up results: remove quotes/brackets leftovers, filter empty, and format to proper case
-        return result
+        return mappedResult
             .map(tag => tag.toString().replace(/["\[\]]/g, '').trim())
             .filter(tag => tag.length > 0)
-            .map(tag => tag.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+            .map(tag => {
+                // If it's still a UUID (not found in master data), don't CamelCase it, just return as is
+                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tag)) return tag;
+                return tag.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            });
     };
 
     // Booking Modal State
@@ -313,7 +335,7 @@ function PlanTripContent() {
             // Trip Styles - use trip_styles if available, fallback to legacy trip_style field
             const styles = pkg.trip_styles && pkg.trip_styles.length > 0
                 ? pkg.trip_styles.map(s => s.name)
-                : parsePackageTags(pkg.trip_style)
+                : parsePackageTags(pkg.trip_style, 'style')
 
             styles.forEach(style => {
                 styleCounts[style] = (styleCounts[style] || 0) + 1
@@ -334,7 +356,7 @@ function PlanTripContent() {
             minDur: minDur === Infinity ? 1 : minDur,
             maxDur: maxDur === -Infinity ? 30 : maxDur
         }
-    }, [packages])
+    }, [packages, availableActivities, availableTripStyles])
 
     // Refs
     const searchRef = useRef<HTMLDivElement>(null);
@@ -1536,7 +1558,10 @@ function PlanTripContent() {
                                                                         </div>
 
                                                                         <div className="flex flex-wrap gap-2 mb-1.5">
-                                                                            {parsePackageTags(pkg.activities).slice(0, 2).map((act, aIdx) => (
+                                                                            {(pkg.activity_tags && pkg.activity_tags.length > 0
+                                                                                ? pkg.activity_tags.map(t => t.name)
+                                                                                : parsePackageTags(pkg.activities)
+                                                                            ).slice(0, 2).map((act, aIdx) => (
                                                                                 <Badge key={`act-${aIdx}`} variant="outline" className="font-bold whitespace-nowrap rounded-full px-3 py-1 uppercase text-[9px] tracking-wider border-0"
                                                                                     style={{ background: 'var(--pt-card-activity-bg, rgba(0,0,0,0.05))', color: 'var(--pt-card-activity-text, black)' }}>
                                                                                     {act}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Lock, Eye, EyeOff, Loader2, Check, AlertCircle, ShieldCheck } from 'lucide-react'
+import { X, Mail, Lock, Eye, EyeOff, Loader2, Check, AlertCircle, ShieldCheck, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authAPI } from '@/lib/api'
@@ -17,7 +17,7 @@ interface BookingAuthModalProps {
     initialTab?: Tab
 }
 
-type Tab = 'login' | 'register'
+type Tab = 'login' | 'register' | 'forgot'
 
 export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'login' }: BookingAuthModalProps) {
     const { login: authLogin } = useAuth()
@@ -40,6 +40,12 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     const [resendCooldown, setResendCooldown] = useState(0)
     const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null)
     const [registrationSuccess, setRegistrationSuccess] = useState(false)
+    const [forgotSuccess, setForgotSuccess] = useState(false)
+    const [requireResetOtp, setRequireResetOtp] = useState(false)
+    const [requireNewPassword, setRequireNewPassword] = useState(false)
+    const [resetToken, setResetToken] = useState('')
+    const [resetPassword, setResetPassword] = useState('')
+    const [confirmResetPassword, setConfirmResetPassword] = useState('')
 
     // Reset state when modal opens/closes
     useEffect(() => {
@@ -57,6 +63,12 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             setFirstName('')
             setLastName('')
             setRegistrationSuccess(false)
+            setForgotSuccess(false)
+            setRequireResetOtp(false)
+            setRequireNewPassword(false)
+            setResetToken('')
+            setResetPassword('')
+            setConfirmResetPassword('')
             // Optional: reset fields if desired
         }
     }, [isOpen])
@@ -189,6 +201,64 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         }
     }
 
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError('')
+        if (!validateEmail(email)) return setError('Please enter a valid email')
+
+        setLoading(true)
+        try {
+            await authAPI.forgotPassword(email)
+            setRequireResetOtp(true)
+            setOtp('')
+        } catch (err: any) {
+            setError(formatError(err))
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleVerifyResetOTP = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError('')
+        if (otp.length !== 6) return setError('Please enter a 6-digit OTP')
+
+        setLoading(true)
+        try {
+            const data = await authAPI.verifyOTP(email, otp)
+            setResetToken(data.token)
+            setRequireNewPassword(true)
+            setRequireResetOtp(false)
+        } catch (err: any) {
+            setError(formatError(err))
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError('')
+        if (resetPassword.length < 8) return setError('Password must be at least 8 characters')
+        if (resetPassword !== confirmResetPassword) return setError('Passwords do not match')
+
+        setLoading(true)
+        try {
+            await authAPI.resetPassword({
+                token: resetToken,
+                email,
+                new_password: resetPassword,
+                confirm_password: confirmResetPassword
+            })
+            setForgotSuccess(true)
+            setRequireNewPassword(false)
+        } catch (err: any) {
+            setError(formatError(err))
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             setLoading(true)
@@ -256,7 +326,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                     </div>
 
                     {/* Tabs */}
-                    {!requireOtp && (
+                    {!requireOtp && activeTab !== 'forgot' && (
                         <div className="flex p-1 bg-white/10 rounded-2xl mb-4 border border-white/10">
                             {(['login', 'register'] as Tab[]).map((tab) => (
                                 <button
@@ -291,9 +361,31 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                     <Loader2 className="w-6 h-6 animate-spin text-[var(--primary)]" />
                                 </div>
                             </motion.div>
+                        ) : forgotSuccess ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="py-8 text-center space-y-4"
+                            >
+                                <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                                    <Check className="w-8 h-8 text-green-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-black">Password Reset!</h3>
+                                <p className="text-black/70 text-sm px-6">Your password has been successfully reset. You can now login with your new password.</p>
+                                <Button 
+                                    onClick={() => { 
+                                        setForgotSuccess(false); 
+                                        setActiveTab('login'); 
+                                        setPassword('');
+                                    }}
+                                    className="mt-4 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 rounded-xl px-8"
+                                >
+                                    Login Now
+                                </Button>
+                            </motion.div>
                         ) : (
                             <motion.div
-                                key={requireOtp ? 'otp' : activeTab}
+                                key={requireOtp || requireResetOtp || requireNewPassword ? 'form-special' : activeTab}
                                 initial={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? -20 : 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? 20 : -20 }}
@@ -354,6 +446,130 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                         </div>
                                     </div>
                                 </form>
+                            ) : activeTab === 'forgot' ? (
+                                <>
+                                    {requireResetOtp ? (
+                                        <form onSubmit={handleVerifyResetOTP} className="space-y-4">
+                                            <div className="text-center mb-6">
+                                                <p className="text-sm text-black/80">Enter the reset code sent to <strong className="text-black">{email}</strong></p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
+                                                <div className="relative group">
+                                                    <Input
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                        placeholder="••••••"
+                                                        required
+                                                    />
+                                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
+                                                </div>
+                                            </div>
+                                            
+                                            <Button
+                                                type="submit"
+                                                disabled={loading || otp.length !== 6}
+                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
+                                            >
+                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Reset Code'}
+                                            </Button>
+
+                                            <div className="text-center mt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRequireResetOtp(false)}
+                                                    className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
+                                                >
+                                                    Change Email
+                                                </button>
+                                            </div>
+                                        </form>
+                                    ) : requireNewPassword ? (
+                                        <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                                            <div className="text-center mb-4">
+                                                <p className="text-sm text-black/80 font-medium">Create New Password</p>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">New Password</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            type="password"
+                                                            value={resetPassword}
+                                                            onChange={(e) => setResetPassword(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="••••••••"
+                                                            required
+                                                        />
+                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm New Password</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            type="password"
+                                                            value={confirmResetPassword}
+                                                            onChange={(e) => setConfirmResetPassword(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="••••••••"
+                                                            required
+                                                        />
+                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <Button
+                                                type="submit"
+                                                disabled={loading || resetPassword.length < 8}
+                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5 mt-2"
+                                            >
+                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Reset Password'}
+                                            </Button>
+                                        </form>
+                                    ) : (
+                                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                                            <div className="text-center mb-6 px-4">
+                                                <p className="text-sm text-black/80 font-medium">Reset your password</p>
+                                                <p className="text-xs text-black/50 mt-1">Enter your email and we'll send you an OTP to reset your password.</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
+                                                <div className="relative group">
+                                                    <Input
+                                                        type="email"
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                        placeholder="traveler@example.com"
+                                                        required
+                                                    />
+                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                </div>
+                                            </div>
+                                            
+                                            <Button
+                                                type="submit"
+                                                disabled={loading}
+                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
+                                            >
+                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send OTP'}
+                                            </Button>
+
+                                            <div className="text-center mt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setActiveTab('login')}
+                                                    className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
+                                                >
+                                                    <ArrowLeft className="w-3 h-3" /> Back to Login
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </>
                             ) : (
                                 <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-3">
                                     {activeTab === 'register' && (
@@ -404,7 +620,13 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                     <div className="flex justify-between items-center px-1">
                                         <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest">Password</label>
                                         {activeTab === 'login' && (
-                                            <button type="button" className="text-[10px] font-bold text-black hover:underline uppercase tracking-tight">Forgot?</button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { setActiveTab('forgot'); setError(''); }}
+                                                className="text-[10px] font-bold text-black hover:underline uppercase tracking-tight cursor-pointer relative z-10"
+                                            >
+                                                Forgot?
+                                            </button>
                                         )}
                                     </div>
                                     <div className="relative group">
@@ -491,7 +713,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                     </AnimatePresence>
 
                     <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/5"></div></div>
                         <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-bold text-black/30"><span className="bg-transparent px-3">secure social sign-in</span></div>
                     </div>
 
@@ -514,12 +736,23 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                 {/* Footer Section */}
                 <div className="bg-white/5 border-t border-white/10 px-6 py-4 text-center">
                     <p className="text-[10px] text-black/40 font-bold uppercase tracking-wider">
-                        {activeTab === 'login' ? "New around here?" : "Already have an account?"}{' '}
+                        {activeTab === 'forgot' 
+                            ? "Remember your password? " 
+                            : activeTab === 'login' 
+                                ? "New around here? " 
+                                : "Already have an account? "}
                         <button
-                            onClick={() => { setActiveTab(activeTab === 'login' ? 'register' : 'login'); setError(''); }}
+                            onClick={() => { 
+                                setActiveTab(activeTab === 'register' ? 'login' : activeTab === 'forgot' ? 'login' : 'register'); 
+                                setError(''); 
+                            }}
                             className="text-black hover:underline"
                         >
-                            {activeTab === 'login' ? "Join the adventure" : "Welcome back"}
+                            {activeTab === 'forgot' 
+                                ? "Back to Login" 
+                                : activeTab === 'login' 
+                                     ? "Join the adventure" 
+                                     : "Welcome back"}
                         </button>
                     </p>
                 </div>
