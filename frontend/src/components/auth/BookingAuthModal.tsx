@@ -30,6 +30,8 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
 
     // New OTP states
     const [requireOtp, setRequireOtp] = useState(false)
@@ -37,6 +39,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     const [otpError, setOtpError] = useState('')
     const [resendCooldown, setResendCooldown] = useState(0)
     const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null)
+    const [registrationSuccess, setRegistrationSuccess] = useState(false)
 
     // Reset state when modal opens/closes
     useEffect(() => {
@@ -51,6 +54,9 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             setOtp('')
             setOtpExpiresAt(null)
             setResendCooldown(0)
+            setFirstName('')
+            setLastName('')
+            setRegistrationSuccess(false)
             // Optional: reset fields if desired
         }
     }, [isOpen])
@@ -156,6 +162,8 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         setError('')
 
         if (!validateEmail(email)) return setError('Invalid email address')
+        if (!firstName.trim()) return setError('First name is required')
+        if (!lastName.trim()) return setError('Last name is required')
         if (password.length < 8) return setError('Password must be at least 8 characters')
         if (password !== confirmPassword) return setError('Passwords do not match')
 
@@ -164,14 +172,19 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             const data = await authAPI.register({
                 email,
                 password,
-                first_name: '',
-                last_name: ''
+                first_name: firstName,
+                last_name: lastName
             })
-            authLogin(data.access_token, data.user)
-            if (onSuccess) onSuccess()
+            
+            setRegistrationSuccess(true)
+            
+            // Allow user to see the success message before proceeding
+            setTimeout(() => {
+                authLogin(data.access_token, data.user)
+                if (onSuccess) onSuccess()
+            }, 1500)
         } catch (err: any) {
             setError(formatError(err))
-        } finally {
             setLoading(false)
         }
     }
@@ -263,13 +276,29 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                     )}
 
                     <AnimatePresence mode="wait">
-                        <motion.div
-                            key={requireOtp ? 'otp' : activeTab}
-                            initial={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? -20 : 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? 20 : -20 }}
-                            transition={{ duration: 0.2 }}
-                        >
+                        {registrationSuccess ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="py-12 text-center space-y-4"
+                            >
+                                <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                                    <Check className="w-8 h-8 text-green-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-black">Welcome Aboard!</h3>
+                                <p className="text-black/70 text-sm">Account created! Now continue to book.</p>
+                                <div className="pt-4 flex justify-center">
+                                    <Loader2 className="w-6 h-6 animate-spin text-[var(--primary)]" />
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key={requireOtp ? 'otp' : activeTab}
+                                initial={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? -20 : 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? 20 : -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
                             {(error || otpError) && (
                                 <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-800 text-xs animate-shake">
                                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -327,6 +356,34 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                 </form>
                             ) : (
                                 <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-3">
+                                    {activeTab === 'register' && (
+                                        <div className="grid grid-cols-2 gap-3 mb-1">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">First Name</label>
+                                                <div className="relative group">
+                                                    <Input
+                                                        value={firstName}
+                                                        onChange={(e) => setFirstName(e.target.value)}
+                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                        placeholder="John"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Last Name</label>
+                                                <div className="relative group">
+                                                    <Input
+                                                        value={lastName}
+                                                        onChange={(e) => setLastName(e.target.value)}
+                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                        placeholder="Doe"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
 
                                 <div className="space-y-1">
@@ -428,8 +485,9 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                     )}
                                 </Button>
                             </form>
-                            )}
+                        )}
                         </motion.div>
+                        )}
                     </AnimatePresence>
 
                     <div className="relative my-4">

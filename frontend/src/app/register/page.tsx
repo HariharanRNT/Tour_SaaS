@@ -75,8 +75,8 @@ export default function RegisterPage() {
         return (
             emailValid &&
             formData.password.length >= 8 &&
-            formData.first_name.length > 0 &&
-            formData.last_name.length > 0 &&
+            formData.first_name.trim().length > 0 &&
+            formData.last_name.trim().length > 0 &&
             formData.terms
         )
     }

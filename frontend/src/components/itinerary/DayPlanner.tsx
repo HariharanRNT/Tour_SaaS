@@ -350,57 +350,54 @@ export function DayPlanner({
                     ) : (
                         <>
                             {(() => {
-                                const firstHalf = (day.half_day || []).filter(a => a.start_time && parseInt(a.start_time.split(':')[0]) < 12)
-                                const secondHalf = (day.half_day || []).filter(a => !a.start_time || parseInt(a.start_time.split(':')[0]) >= 12)
+                                const sectionsToRender: Array<{
+                                    id: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day',
+                                    icon: React.ReactNode,
+                                    label: string,
+                                    activities: Activity[]
+                                }> = [];
+                                
+                                const firstHalf = (day.half_day || []).filter(a => a.start_time && parseInt(a.start_time.split(':')[0]) < 12);
+                                if (firstHalf.length > 0) {
+                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: 'Early Start', activities: firstHalf });
+                                }
+
+                                if ((day.morning || []).length > 0) {
+                                    sectionsToRender.push({ id: 'morning', icon: <Sunrise className="h-6 w-6" />, label: 'Morning', activities: day.morning! });
+                                }
+
+                                const secondHalf = (day.half_day || []).filter(a => !a.start_time || parseInt(a.start_time.split(':')[0]) >= 12);
+                                if (secondHalf.length > 0) {
+                                    sectionsToRender.push({ id: 'half_day', icon: <Clock className="h-5 w-5" />, label: 'Mid-Day', activities: secondHalf });
+                                }
+
+                                if ((day.afternoon || []).length > 0) {
+                                    sectionsToRender.push({ id: 'afternoon', icon: <Sun className="h-6 w-6" />, label: 'Afternoon', activities: day.afternoon! });
+                                }
+
+                                if ((day.evening || []).length > 0) {
+                                    sectionsToRender.push({ id: 'evening', icon: <Sunset className="h-6 w-6" />, label: 'Evening', activities: day.evening! });
+                                }
+
+                                if ((day.night || []).length > 0) {
+                                    sectionsToRender.push({ id: 'night', icon: <Moon className="h-6 w-6" />, label: 'Night', activities: day.night! });
+                                }
 
                                 return (
                                     <>
-                                        {/* First Half (Pre-Morning) */}
-                                        {firstHalf.length > 0 && renderTimelineSection(
-                                            'half_day',
-                                            <Clock className="h-5 w-5" />,
-                                            'Early Start',
-                                            firstHalf
-                                        )}
-
-                                        {renderTimelineSection(
-                                            'morning',
-                                            <Sunrise className="h-6 w-6" />,
-                                            'Morning',
-                                            day.morning || []
-                                        )}
-
-                                        {/* Second Half (Post-Morning) */}
-                                        {secondHalf.length > 0 && renderTimelineSection(
-                                            'half_day',
-                                            <Clock className="h-5 w-5" />,
-                                            'Mid-Day',
-                                            secondHalf
-                                        )}
-
-                                        {renderTimelineSection(
-                                            'afternoon',
-                                            <Sun className="h-6 w-6" />,
-                                            'Afternoon',
-                                            day.afternoon || []
-                                        )}
-
-                                        {renderTimelineSection(
-                                            'evening',
-                                            <Sunset className="h-6 w-6" />,
-                                            'Evening',
-                                            day.evening || []
-                                        )}
-
-                                        {renderTimelineSection(
-                                            'night',
-                                            <Moon className="h-6 w-6" />,
-                                            'Night',
-                                            day.night || [],
-                                            true // Last section
-                                        )}
+                                        {sectionsToRender.map((section, idx) => (
+                                            <React.Fragment key={`${section.id}-${idx}`}>
+                                                {renderTimelineSection(
+                                                    section.id,
+                                                    section.icon,
+                                                    section.label,
+                                                    section.activities,
+                                                    idx === sectionsToRender.length - 1
+                                                )}
+                                            </React.Fragment>
+                                        ))}
                                     </>
-                                )
+                                );
                             })()}
                         </>
                     )}

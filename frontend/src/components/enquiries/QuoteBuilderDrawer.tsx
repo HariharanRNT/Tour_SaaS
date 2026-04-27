@@ -156,12 +156,31 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
     }
 
     const handlePriceChange = (pkgId: string, price: string) => {
+        if (price === '') {
+            setSelectedPackages(prev => prev.map(p => p.packageId === pkgId ? { ...p, quotedPrice: 0, isCustomPrice: true } : p))
+            return
+        }
+
+        // Only allow digits and at most one decimal point
+        if (!/^\d*\.?\d*$/.test(price)) return
+
+        const [intPart, decPart] = price.split('.')
+        
+        // Limit to 8 digits before decimal
+        if (intPart.length > 8) {
+            toast.error('Maximum price limit reached (8 digits)')
+            return
+        }
+        if (decPart !== undefined && decPart.length > 2) return
+
+        const numVal = parseFloat(price) || 0
+
         setSelectedPackages(prev => prev.map(p => {
             if (p.packageId === pkgId) {
                 return { 
                     ...p, 
-                    quotedPrice: parseFloat(price) || 0,
-                    isCustomPrice: parseFloat(price) !== p._pkg.price_per_person
+                    quotedPrice: numVal,
+                    isCustomPrice: numVal !== p._pkg.price_per_person
                 }
             }
             return p
@@ -659,7 +678,8 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                             <div className="relative">
                                                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">INR</span>
                                                                 <Input 
-                                                                    type="number" 
+                                                                    type="text"
+                                                                    inputMode="numeric" 
                                                                     className="h-12 pl-12 rounded-xl bg-white border-2 border-slate-100 focus:border-blue-600 font-bold"
                                                                     value={p.quotedPrice}
                                                                     onChange={(e) => handlePriceChange(p.packageId, e.target.value)}

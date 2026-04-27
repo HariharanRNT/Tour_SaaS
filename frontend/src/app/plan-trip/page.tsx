@@ -636,6 +636,7 @@ function PlanTripContent() {
         else if (key === 'price') setFilters(prev => ({ ...prev, price_min: 0, price_max: 500000 }))
         else if (key === 'searchQuery') {
             setSearchQuery('');
+            setInputValue('');
             // NOTE: Do NOT manually call executeSearch here.
             // The searchQuery state change above will trigger the useEffect automatically.
         }
@@ -659,6 +660,8 @@ function PlanTripContent() {
             countries: []
         })
         setSort('recommended')
+        setSearchQuery('')
+        setInputValue('')
         setAiMeta(null)
         // Remove AI params from URL without navigating
         const url = new URL(window.location.href)
@@ -805,14 +808,12 @@ function PlanTripContent() {
                                 return (
                                     <div
                                         key={type}
-                                        onClick={() => !isDisabled && setFilters(prev => ({ ...prev, package_mode: type }))}
+                                        onClick={() => setFilters(prev => ({ ...prev, package_mode: type }))}
                                         className={`
                                             py-2.5 px-4 rounded-xl text-[13px] font-bold cursor-pointer border transition-all duration-300 flex items-center justify-between group
                                             ${isActive
                                                 ? 'shadow-md'
-                                                : isDisabled
-                                                    ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-100 text-gray-400'
-                                                    : 'hover:border-[var(--primary)]'}
+                                                : 'hover:border-[var(--primary)]'}
                                         `}
                                         style={{
                                             background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)',
@@ -822,7 +823,7 @@ function PlanTripContent() {
                                     >
                                         <span className="flex items-center gap-2">
                                             {type === 'all' ? 'All Packages' : type === 'single' ? 'Single City' : 'Multi-City Tours'}
-                                            {!isDisabled && <span className={`text-[10px] ${isActive ? 'text-white/80' : 'opacity-50'}`}>({count})</span>}
+                                            {count > 0 && <span className={`text-[10px] ${isActive ? 'text-white/80' : 'opacity-50'}`}>({count})</span>}
                                         </span>
                                         {isActive && <CheckCircle2 className="h-4 w-4 text-white" />}
                                     </div>
@@ -847,14 +848,11 @@ function PlanTripContent() {
                                 return (
                                     <button
                                         key={range}
-                                        disabled={isDisabled}
                                         onClick={() => {
                                             setFilters(prev => ({ ...prev, duration_min: minLabel, duration_max: maxLabel }));
                                         }}
                                         className={`px-4 py-2 h-[36px] rounded-full text-[12px] font-bold transition-all border 
-                                            ${isActive ? 'text-white shadow-lg' :
-                                                isDisabled ? 'opacity-30 border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed' :
-                                                    'hover:opacity-80'}`}
+                                            ${isActive ? 'text-white shadow-lg' : 'hover:opacity-80'}`}
                                         style={{
                                             background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)',
                                             borderColor: isActive ? 'transparent' : 'rgba(0,0,0,0.1)',
@@ -901,8 +899,8 @@ function PlanTripContent() {
                                         return (
                                             <div
                                                 key={style}
-                                                className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
-                                                onClick={() => !isDisabled && toggleFilterArray('trip_styles', style)}
+                                                className={`flex items-center group cursor-pointer`}
+                                                onClick={() => toggleFilterArray('trip_styles', style)}
                                             >
                                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${isActive ? 'border-transparent' : 'border-black/10'}`} style={{ background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)' }}>
                                                     {isActive && <Check className="h-3 w-3 text-white" />}
@@ -942,8 +940,8 @@ function PlanTripContent() {
                                         return (
                                             <div
                                                 key={act}
-                                                className={`flex items-center group ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
-                                                onClick={() => !isDisabled && toggleFilterArray('activities', act)}
+                                                className={`flex items-center group cursor-pointer`}
+                                                onClick={() => toggleFilterArray('activities', act)}
                                             >
                                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center mr-3 transition-colors ${isActive ? 'border-transparent' : 'border-black/10'}`} style={{ background: isActive ? 'var(--pt-filter-chip-active, var(--primary))' : 'var(--pt-filter-chip-inactive, white)' }}>
                                                     {isActive && <Check className="h-3 w-3 text-white" />}
