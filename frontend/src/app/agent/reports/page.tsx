@@ -84,6 +84,13 @@ ChartJS.register(
 
 // Mock data removed in favor of API data
 
+// Helper to explicitly convert UTC date string to IST Date object for display
+const getISTDate = (dateString: string) => {
+    const d = new Date(dateString);
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    return new Date(utc + (3600000 * 5.5));
+};
+
 export default function ReportsPage() {
     const router = useRouter()
     const { hasPermission, isSubUser } = useAuth()
@@ -128,7 +135,7 @@ export default function ReportsPage() {
 
     const [page, setPage] = useState(1)
     const [limit] = useState(5)
-    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'revenue', direction: 'desc' })
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'bookings', direction: 'desc' })
 
     // Reset page on filter changes
     useEffect(() => {
@@ -279,7 +286,8 @@ export default function ReportsPage() {
             "Booking Status": bk.status,
             "Refund Status": bk.refund?.status || 'None',
             "Refund Amount": bk.refund_amount || 0,
-            "Created Date": format(new Date(bk.created_at), 'yyyy-MM-dd')
+            "Booked By": bk.booked_by ? `${bk.booked_by.first_name} ${bk.booked_by.last_name}` : "Customer",
+            "Created Date": format(getISTDate(bk.created_at), 'yyyy-MM-dd')
         }))
     }
 
@@ -399,12 +407,12 @@ export default function ReportsPage() {
                 padding: 8,
                 cornerRadius: 8,
                 callbacks: {
-                    label: (context) => '₹' + context.raw?.toLocaleString()
+                    label: (context) => context.raw?.toLocaleString() + ' Sales'
                 }
             }
         },
         scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: '#000000', callback: (v) => '₹' + (Number(v) / 1000).toFixed(0) + 'k' } },
+            x: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { color: '#000000', callback: (v) => v } },
             y: { grid: { display: false }, ticks: { color: '#000000', font: { size: 11 } } }
         }
     }
@@ -520,8 +528,8 @@ export default function ReportsPage() {
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-6 rounded-[18px] text-[13.5px] font-black tracking-tight whitespace-nowrap transition-all duration-500 relative ${
                             activeTab === tab.id 
-                            ? 'text-[var(--color-primary-font)]' 
-                            : 'text-[var(--color-primary-font)]/70 hover:text-[var(--color-primary-font)] font-black uppercase'
+                            ? 'text-black' 
+                            : 'text-black/70 hover:text-black font-black uppercase'
                         }`}
                     >
                         {activeTab === tab.id && (
@@ -531,7 +539,7 @@ export default function ReportsPage() {
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
                         )}
-                        <tab.icon className={`h-4.5 w-4.5 relative z-10 transition-colors duration-500 ${activeTab === tab.id ? 'text-[var(--color-primary-font)]' : 'text-[var(--color-primary-font)]/70'}`} />
+                        <tab.icon className={`h-4.5 w-4.5 relative z-10 transition-colors duration-500 ${activeTab === tab.id ? 'text-black' : 'text-black/70'}`} />
                         <span className="relative z-10">{tab.label}</span>
                     </button>
                 ))}
@@ -560,8 +568,8 @@ export default function ReportsPage() {
                                     onClick={() => setActivePeriod(p as any)}
                                     className={`px-5 py-2 rounded-xl text-[12.5px] font-black transition-all duration-500 relative z-10 ${
                                         activePeriod === p 
-                                        ? 'text-white shadow-lg' 
-                                        : 'text-[var(--color-primary-font)]/50 hover:text-[var(--color-primary-font)]'
+                                        ? 'text-black shadow-lg' 
+                                        : 'text-black/50 hover:text-black'
                                     }`}
                                     style={activePeriod === p ? { 
                                         background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
@@ -599,6 +607,7 @@ export default function ReportsPage() {
                                         onSelect={(date) => setCustomRange({ ...customRange, from: date as Date })}
                                         onClear={() => setCustomRange({ ...customRange, from: undefined })}
                                         onToday={() => setCustomRange({ ...customRange, from: new Date() })}
+                                        disabled={(date) => date > new Date()}
                                         initialFocus
                                         mode_type="completed"
                                     />
@@ -628,7 +637,7 @@ export default function ReportsPage() {
                                         onSelect={(date) => setCustomRange({ ...customRange, to: date as Date })}
                                         onClear={() => setCustomRange({ ...customRange, to: undefined })}
                                         onToday={() => setCustomRange({ ...customRange, to: new Date() })}
-                                        disabled={(date) => customRange.from ? isBefore(date, customRange.from) : false}
+                                        disabled={(date) => date > new Date() || (customRange.from ? isBefore(date, customRange.from) : false)}
                                         initialFocus
                                         mode_type="completed"
                                     />
@@ -740,7 +749,7 @@ export default function ReportsPage() {
                             </div>
                         </div>
                         <div>
-                            <h4 className="text-[14px] font-bold text-[var(--color-primary-font)] mb-6">Revenue by Package</h4>
+                            <h4 className="text-[14px] font-bold text-[var(--color-primary-font)] mb-6">Top 5 Package Performance (Sales)</h4>
                             <div className="h-[220px] w-full">
                                 <Bar data={revByPackageData} options={horizontalBarOptions} />
                             </div>
@@ -763,7 +772,7 @@ export default function ReportsPage() {
             {/* Section 3: Package Performance */}
             <ReportSection 
                 title="Package Performance" 
-                description="Metric aggregation per tour offer"
+                description="Top 5 packages based on sales"
                 icon={Package}
                 onExportFetch={handleFetchAllPackages}
                 exportFilename="package_performance"
@@ -899,8 +908,8 @@ export default function ReportsPage() {
                         )},
                         { header: 'Booking Date', accessor: (bk) => (
                             <div className="flex flex-col">
-                                <span className="text-[12.5px] font-bold text-[var(--color-primary-font)]">{format(new Date(bk.created_at), 'dd MMM yyyy')}</span>
-                               <span className="text-[10px] text-[var(--color-primary-font)]/70 font-medium uppercase tracking-tighter">{format(new Date(bk.created_at), 'HH:mm')}</span>
+                                <span className="text-[12.5px] font-bold text-[var(--color-primary-font)]">{format(getISTDate(bk.created_at), 'dd MMM yyyy')}</span>
+                               <span className="text-[10px] text-[var(--color-primary-font)]/70 font-medium uppercase tracking-tighter">{format(getISTDate(bk.created_at), 'HH:mm')}</span>
                             </div>
                         )},
                         { header: 'Investment', accessor: (bk) => `₹${bk.total_amount.toLocaleString()}`, className: 'text-right font-black' },
@@ -928,10 +937,15 @@ export default function ReportsPage() {
                         { header: 'Refund Amt', accessor: (bk) => bk.refund_amount > 0 ? `₹${bk.refund_amount.toLocaleString()}` : '-', className: 'text-right' },
                         { header: 'Booked By', accessor: (bk) => (
                             bk.booked_by ? (
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg">
-                                    <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{bk.booked_by.first_name}</span>
+                                <div className="flex flex-col px-2 py-1 bg-slate-50/50 rounded-lg border border-slate-100">
+                                    <span className="text-[10px] font-black text-slate-700 truncate max-w-[100px]">{bk.booked_by.first_name} {bk.booked_by.last_name}</span>
+                                    <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">{bk.booked_by.role}</span>
                                 </div>
-                            ) : <span className="text-[var(--color-primary-font)]/30 text-[10px]">-</span>
+                            ) : (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50/30 rounded-lg border border-emerald-100/50">
+                                    <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider">Self</span>
+                                </div>
+                            )
                         )}
                     ]}
                 />

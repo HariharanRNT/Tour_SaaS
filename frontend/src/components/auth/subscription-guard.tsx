@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -13,6 +13,7 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const { user, loading, refreshUser } = useAuth()
+    const lastCheckedPath = useRef<string | null>(null)
 
     useEffect(() => {
         if (loading) return
@@ -28,14 +29,13 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
                 return
             }
 
-            // Only agents need subscription check for /agent/* routes
-            if (user.role?.toLowerCase() === 'agent') {
-                let hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
-
-                // If context says no active sub, try to refresh from backend once
-                if (!hasActiveSub) {
-                    await refreshUser()
-                }
+            // Both agents and sub_users need subscription check for /agent/* routes
+            const isAgentType = user.role?.toLowerCase() === 'agent' || user.role?.toLowerCase() === 'sub_user';
+            if (isAgentType && lastCheckedPath.current !== pathname) {
+                lastCheckedPath.current = pathname;
+                // Always refresh from backend to ensure the subscription hasn't expired
+                // since the local storage was last updated.
+                await refreshUser()
             }
         }
 
@@ -43,8 +43,9 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     }, [user, loading, pathname, router, refreshUser])
 
     useEffect(() => {
+        const isAgentType = user?.role?.toLowerCase() === 'agent' || user?.role?.toLowerCase() === 'sub_user';
         // Redirection logic if still not authorized after refresh
-        if (!loading && user && user.role?.toLowerCase() === 'agent' && pathname !== '/agent/subscription') {
+        if (!loading && user && isAgentType && !pathname.startsWith('/agent/subscription')) {
             const hasActiveSub = user.has_active_subscription || user.subscription_status === 'active';
             if (!hasActiveSub) {
                 router.push('/agent/subscription')
@@ -61,9 +62,9 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     }
 
     // Direct check for render
-    const isAgent = user?.role?.toLowerCase() === 'agent'
+    const isAgentTypeRender = user?.role?.toLowerCase() === 'agent' || user?.role?.toLowerCase() === 'sub_user'
     const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active'
-    const isAuthorized = !isAgent || pathname === '/agent/subscription' || hasActiveSub
+    const isAuthorized = !isAgentTypeRender || pathname.startsWith('/agent/subscription') || hasActiveSub
 
     if (!user) return null
     if (!isAuthorized) return null

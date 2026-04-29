@@ -146,6 +146,12 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             authLogin(data.access_token, data.user)
             onClose()
             if (onSuccess) onSuccess()
+
+            const redirect = sessionStorage.getItem('redirectAfterLogin')
+            if (redirect) {
+                sessionStorage.removeItem('redirectAfterLogin')
+                window.location.href = redirect
+            }
         } catch (err: any) {
             setOtpError(formatError(err))
         } finally {
@@ -193,7 +199,14 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             // Allow user to see the success message before proceeding
             setTimeout(() => {
                 authLogin(data.access_token, data.user)
+                onClose()
                 if (onSuccess) onSuccess()
+                
+                const redirect = sessionStorage.getItem('redirectAfterLogin')
+                if (redirect) {
+                    sessionStorage.removeItem('redirectAfterLogin')
+                    window.location.href = redirect
+                }
             }, 1500)
         } catch (err: any) {
             setError(formatError(err))
@@ -265,7 +278,14 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             try {
                 const data = await authAPI.googleLogin(tokenResponse.access_token)
                 authLogin(data.access_token, data.user)
+                onClose()
                 if (onSuccess) onSuccess()
+
+                const redirect = sessionStorage.getItem('redirectAfterLogin')
+                if (redirect) {
+                    sessionStorage.removeItem('redirectAfterLogin')
+                    window.location.href = redirect
+                }
             } catch (err: any) {
                 setError(formatError(err))
             } finally {

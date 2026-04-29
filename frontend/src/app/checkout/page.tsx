@@ -40,7 +40,7 @@ function CheckoutContent() {
     const customerId = searchParams.get('customerId') // Set when agent books on behalf of customer
 
     const [loading, setLoading] = useState(true)
-    const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS'>('DETAILS')
+    const [step, setStep] = useState<'DETAILS' | 'PAYMENT' | 'PROCESSING' | 'SUCCESS' | 'FAILURE'>('DETAILS')
 
     // Data
     const [sessionData, setSessionData] = useState<any>(null)
@@ -84,8 +84,11 @@ function CheckoutContent() {
 
     // State for confirmed booking displaying details
     const [confirmedBooking, setConfirmedBooking] = useState<any>(null)
+    const [confirmationError, setConfirmationError] = useState<string | null>(null)
 
     const handlePaymentSuccess = async (response: any, bookingId: string) => {
+        setStep('PROCESSING')
+        setConfirmationError(null)
         try {
             // 4. Confirm Booking (Backend Orchestrator)
             const responseData = await bookingsAPI.confirm(bookingId, {
@@ -101,9 +104,11 @@ function CheckoutContent() {
 
         } catch (err: any) {
             console.error(err)
-            toast.error(formatError(err) || "Payment successful but booking failed.")
-            setStep('DETAILS')
+            const errorMsg = formatError(err) || "Payment successful but booking failed."
+            setConfirmationError(errorMsg)
+            toast.error(errorMsg)
             setShowMockModal(false)
+            // We stay in PROCESSING state but show the error
         }
     }
 
@@ -415,11 +420,22 @@ function CheckoutContent() {
                             } catch (e) {
                                 console.error("Failed to mark payment as failed", e)
                             }
-                            setStep('DETAILS')
+                            setStep('FAILURE')
                         }
                     }
                 };
                 const rzp1 = new (window as any).Razorpay(options);
+
+                rzp1.on('payment.failed', async function (response: any) {
+                    console.error("Razorpay Payment Failed:", response.error);
+                    try {
+                        await paymentsAPI.markFailed(booking.id);
+                    } catch (e) {
+                        console.error("Failed to mark payment as failed", e);
+                    }
+                    setStep('FAILURE');
+                });
+
                 rzp1.open();
             }
 
@@ -446,21 +462,91 @@ function CheckoutContent() {
         </div>
     )
 
-    if (step === 'SUCCESS') {
-        let confirmation = null
-        let contactInfo = { email: 'N/A', phone: 'N/A' }
+    if (step === 'PROCESSING') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
+                {/* Ambient Deep Mesh Background */}
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
 
-        if (confirmedBooking?.special_requests) {
-            try {
-                const req = JSON.parse(confirmedBooking.special_requests)
-                confirmation = req.flight_booking_confirmation
-                if (req.contact_info) {
-                    contactInfo = req.contact_info
-                }
-            } catch (e) {
-                console.error("Error parsing special requests", e)
-            }
-        }
+                {/* Ambient Orbs */}
+                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+                <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
+
+                {/* Subtle Noise Texture */}
+                <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative group w-full flex justify-center max-w-[480px]"
+                >
+                    <div className="relative overflow-hidden w-full p-10 rounded-[32px] border border-white/25 bg-white/20 backdrop-blur-[25px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] text-center flex flex-col items-center gap-6">
+                        {confirmationError ? (
+                            <div className="relative">
+                                <div className="absolute inset-0 rounded-full bg-red-500/20 blur-xl animate-pulse" />
+                                <XCircle className="h-16 w-16 text-red-500 relative z-10" />
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <div className="absolute inset-0 rounded-full bg-[var(--primary)]/20 blur-xl animate-pulse" />
+                                <Loader2 className="h-16 w-16 animate-spin text-[var(--primary)] relative z-10" />
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">
+                                {confirmationError ? "Booking Confirmation Failed" : "Confirming Your Trip"}
+                            </h2>
+                            <p className="text-[var(--color-primary-font)] opacity-70 text-sm max-w-[300px] mx-auto">
+                                {confirmationError
+                                    ? confirmationError
+                                    : "Please stay on this page. We're securing your booking and processing the payment."}
+                            </p>
+                        </div>
+
+                        {!confirmationError && (
+                            <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden mt-2">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]"
+                                    animate={{
+                                        width: ["0%", "100%"],
+                                        x: ["-100%", "100%"]
+                                    }}
+                                    transition={{
+                                        duration: 1.5,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {confirmationError && (
+                            <div className="flex flex-col w-full gap-3 mt-2">
+                                <Button
+                                    onClick={() => {
+                                        setConfirmationError(null)
+                                        // User might need to retry manually or contact support
+                                        // For now, let's allow them to go back to details if it failed to confirm
+                                        setStep('DETAILS')
+                                    }}
+                                    className="w-full rounded-xl bg-[var(--primary)] text-white font-bold"
+                                >
+                                    Back to Guest Details
+                                </Button>
+                                <p className="text-xs opacity-50 font-medium">
+                                    If your payment was deducted, please contact support with your booking reference.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+        )
+    }
+
+    if (step === 'SUCCESS') {
+
 
         const containerVariants: any = {
             hidden: { opacity: 0, y: 30 },
@@ -484,7 +570,7 @@ function CheckoutContent() {
             <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
                 {/* Ambient Deep Mesh Background */}
                 <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
-                
+
                 {/* Ambient Orbs */}
                 <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
                 <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
@@ -502,8 +588,8 @@ function CheckoutContent() {
                     {/* Main Success Card - Premium Glassmorphism Style */}
                     <div className="relative overflow-hidden w-full p-8 md:p-[32px_28px] rounded-[28px] border border-white/25 bg-white/18 backdrop-blur-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.3)] text-center transition-all flex flex-col gap-5">
                         {/* Interior Glow Enhancement */}
-                        <div className="absolute inset-0 pointer-events-none" 
-                             style={{ background: 'radial-gradient(circle at top, rgba(255,255,255,0.25), transparent 60%)' }} />
+                        <div className="absolute inset-0 pointer-events-none"
+                            style={{ background: 'radial-gradient(circle at top, rgba(255,255,255,0.25), transparent 60%)' }} />
 
                         {/* Success Icon Badge - Premium Gradient Circular */}
                         <motion.div
@@ -517,9 +603,9 @@ function CheckoutContent() {
                             }}
                             className="relative w-[72px] h-[72px] mx-auto"
                         >
-                            <motion.div 
-                                animate={{ 
-                                    boxShadow: ["0 10px 25px rgba(0,200,120,0.25)", "0 10px 35px rgba(0,200,120,0.45)", "0 10px 25px rgba(0,200,120,0.25)"] 
+                            <motion.div
+                                animate={{
+                                    boxShadow: ["0 10px 25px rgba(0,200,120,0.25)", "0 10px 35px rgba(0,200,120,0.45)", "0 10px 25px rgba(0,200,120,0.25)"]
                                 }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                                 className="absolute inset-0 rounded-full border border-white/40 bg-gradient-to-br from-[#e6f9f0] to-[#c8f7dc] shadow-lg flex items-center justify-center"
@@ -549,7 +635,7 @@ function CheckoutContent() {
                                 <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-black/50 border-b border-white/10 pb-2">
                                     Booking Summary
                                 </h3>
-                                
+
                                 <div className="grid grid-cols-1 gap-4">
                                     <div className="grid grid-template-columns: 1fr auto items-center">
                                         <div className="flex justify-between items-center w-full">
@@ -567,13 +653,7 @@ function CheckoutContent() {
                                         </span>
                                     </div>
 
-                                    {/* Glass Alert Box */}
-                                    <div className="flex items-center gap-2 p-[10px_12px] rounded-[12px] border border-amber-500/30 bg-[rgba(255,200,0,0.15)] mt-1">
-                                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                                        <p className="text-[var(--color-primary-font)]/80 text-[13px] font-medium">
-                                            Flight confirmation is pending
-                                        </p>
-                                    </div>
+
                                 </div>
                             </div>
                         </motion.div>
@@ -595,6 +675,61 @@ function CheckoutContent() {
         )
     }
 
+    if (step === 'FAILURE') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
+                {/* Ambient Deep Mesh Background */}
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
+
+                {/* Ambient Orbs */}
+                <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--primary)]/40 to-[var(--primary-light)]/40 blur-[120px] pointer-events-none z-[-1]" />
+                <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[var(--primary-light)]/30 to-[var(--primary-soft)]/40 blur-[100px] pointer-events-none z-[-1]" />
+
+                {/* Subtle Noise Texture */}
+                <div className="fixed inset-0 pointer-events-none z-[-1] opacity-[0.04] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png')]" />
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative group w-full flex justify-center max-w-[480px]"
+                >
+                    <div className="relative overflow-hidden w-full p-10 rounded-[32px] border border-white/25 bg-white/20 backdrop-blur-[25px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] text-center flex flex-col items-center gap-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 rounded-full bg-red-500/20 blur-xl animate-pulse" />
+                            <XCircle className="h-16 w-16 text-red-500 relative z-10" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Payment Failed</h2>
+                            <p className="text-[var(--color-primary-font)] opacity-70 text-sm max-w-[300px] mx-auto">
+                                We couldn&apos;t process your payment. The booking has been cancelled. Please try again.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col w-full gap-3 mt-2">
+                            <Button
+                                onClick={() => {
+                                    setStep('DETAILS')
+                                    setConfirmationError(null)
+                                }}
+                                className="w-full h-12 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold shadow-lg shadow-[var(--primary)]/20"
+                            >
+                                Try Again
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => router.push('/')}
+                                className="w-full h-12 rounded-xl text-[var(--color-primary-font)] opacity-60 hover:opacity-100 font-bold"
+                            >
+                                Back to Home
+                            </Button>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )
+    }
+
     const basePrice = sessionData?.price_per_person || 18000
     const flightPrice = sessionData?.flight_details?.price || 0
     const chargeableCount = travelers.filter((t: any) => t.type !== 'INFANT').length
@@ -608,7 +743,7 @@ function CheckoutContent() {
         { id: 'SUCCESS', label: 'Confirmation', icon: CheckCircle },
     ]
 
-    const currentStepIdx = steps.findIndex(s => s.id === (step === 'PROCESSING' ? 'PAYMENT' : step))
+    const currentStepIdx = steps.findIndex(s => s.id === step)
 
     return (
         <div className="min-h-screen bg-transparent font-sans pb-20 overflow-x-hidden relative">
@@ -942,7 +1077,7 @@ function CheckoutContent() {
                                                 <RotateCcw className="h-3.5 w-3.5 text-blue-600 relative z-10" /> <span className="relative z-10">Refundable</span>
                                             </div>
                                         ) : (
-                                            <div 
+                                            <div
                                                 title="This package cannot be cancelled or refunded"
                                                 className="flex items-center gap-1.5 text-[10px] font-bold text-red-900 bg-red-100/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-red-200 shadow-sm relative overflow-hidden group cursor-help"
                                             >
@@ -957,22 +1092,16 @@ function CheckoutContent() {
                                         className="w-full h-[56px] text-lg font-bold shadow-[0_12px_32px_var(--primary-glow)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:shadow-[0_16px_40px_var(--primary-glow)] hover:opacity-90 text-white transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] rounded-full flex items-center justify-center px-6 border border-white/20 relative overflow-hidden group"
                                         size="lg"
                                         onClick={handlePayment}
-                                        disabled={step === 'PROCESSING'}
+                                        disabled={false}
                                     >
                                         {/* Shine sweep effect */}
                                         <div className="absolute right-[-100%] top-0 bottom-0 w-[50%] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 group-hover:animate-[shine_1.5s_ease-out_infinite]" />
 
-                                        {step === 'PROCESSING' ? (
-                                            <div className="flex items-center justify-center w-full gap-2 relative z-10">
-                                                <Loader2 className="animate-spin h-6 w-6" /> Processing...
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-3 relative z-10">
-                                                <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
-                                                <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
-                                            </div>
-                                        )}
-                                    </Button>
+                                        <div className="flex items-center gap-3 relative z-10">
+                                            <div className="bg-white/20 p-1.5 rounded-full"><Lock className="h-4 w-4 text-white" /></div>
+                                            <span className="font-display tracking-wide">Pay {totalAmount.toLocaleString()}</span>
+                                        </div>
+                                        {/*  */}                                    </Button>
                                     <div className="text-[10px] font-bold text-center text-[var(--color-primary-font)] mt-4 w-full flex items-center justify-center gap-1.5">
                                         <CheckCircle className="h-3.5 w-3.5 text-green-600 drop-shadow-sm" /> Secure Payment via Razorpay
                                     </div>
@@ -992,7 +1121,7 @@ function CheckoutContent() {
                     orderId={currentOrder.order_id}
                     onClose={() => {
                         setShowMockModal(false)
-                        setStep('DETAILS') // Or cancel state
+                        setStep('FAILURE') // Or cancel state
                     }}
                     onSuccess={(response) => handlePaymentSuccess(response, currentBookingId)}
                 />

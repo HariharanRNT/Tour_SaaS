@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 interface GeneralEnquiryModalProps {
     isOpen: boolean
@@ -30,6 +32,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
         travelDate: undefined as Date | undefined,
         travelers: 1
     })
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,7 +87,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-white/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
+            <DialogContent hideClose={true} className="sm:max-w-[480px] p-0 overflow-hidden bg-white/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl">
                 <div className="relative">
                     {/* Header with Gradient Background */}
                     <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] p-6 text-white relative">
@@ -113,7 +116,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                     <Input
                                         id="name"
                                         placeholder="Full Name"
-                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all"
+                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         required
@@ -122,17 +125,23 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Phone Number</Label>
-                                <div className="relative group">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[var(--primary)] transition-colors" />
-                                    <Input
-                                        id="phone"
-                                        placeholder="+91 ..."
-                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all"
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                                <PhoneInput
+                                    country={'in'}
+                                    value={formData.phone}
+                                    onChange={(val) => setFormData({ ...formData, phone: val })}
+                                    placeholder="+91 ..."
+                                    inputProps={{
+                                        id: 'phone',
+                                        name: 'phone',
+                                        required: true,
+                                    }}
+                                    containerClass="!w-full !border-none"
+                                    inputClass="!w-full !h-10 !bg-slate-50 !border-slate-200 focus:!border-[var(--primary)] focus:!ring-[var(--primary-glow)] !rounded-xl !transition-all !pl-12 !font-sans !text-sm"
+                                    buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-slate-100 !transition-colors"
+                                    dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
+                                    searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
+                                    enableSearch={true}
+                                />
                             </div>
                         </div>
 
@@ -144,7 +153,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                     id="email"
                                     type="email"
                                     placeholder="email@example.com"
-                                    className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all"
+                                    className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     required
@@ -159,7 +168,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                 <Textarea
                                     id="message"
                                     placeholder="I want to plan a trip to Japan, please share available packages."
-                                    className="pl-10 min-h-[80px] bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all resize-none"
+                                    className="pl-10 min-h-[80px] bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all resize-none text-slate-900"
                                     value={formData.message}
                                     onChange={e => setFormData({ ...formData, message: e.target.value })}
                                     required
@@ -170,26 +179,40 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Travel Date</Label>
-                                <Popover>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
                                             className={cn(
                                                 "w-full h-10 justify-start text-left font-normal bg-slate-50 border-slate-200 hover:bg-slate-100 rounded-xl transition-all",
-                                                !formData.travelDate && "text-muted-foreground"
+                                                !formData.travelDate ? "text-slate-400" : "text-slate-900 font-semibold"
                                             )}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4 text-[var(--primary)]" />
                                             {formData.travelDate ? format(formData.travelDate, "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <PopoverContent className="w-auto p-0 z-[120]" align="start">
                                         <Calendar
                                             mode="single"
                                             selected={formData.travelDate}
-                                            onSelect={date => setFormData({ ...formData, travelDate: date })}
+                                            onSelect={date => {
+                                                setFormData({ ...formData, travelDate: date })
+                                                setIsCalendarOpen(false)
+                                            }}
                                             initialFocus
-                                            disabled={(date) => date < new Date()}
+                                            disabled={(date) => {
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+                                                return date < today;
+                                            }}
+                                            classNames={{
+                                                day: "h-9 w-9 p-0 font-normal text-slate-900 hover:bg-slate-100 rounded-xl transition-all",
+                                                day_today: "bg-slate-100 text-[var(--primary)] font-bold rounded-xl",
+                                                day_selected: "bg-[var(--primary)] text-white hover:bg-[var(--primary)] hover:text-white focus:bg-[var(--primary)] focus:text-white rounded-xl",
+                                                day_outside: "text-slate-300 opacity-50",
+                                                day_disabled: "text-slate-200 opacity-50"
+                                            }}
                                         />
                                     </PopoverContent>
                                 </Popover>
@@ -202,7 +225,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                         id="travelers"
                                         type="number"
                                         min="1"
-                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all"
+                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900 font-medium"
                                         value={formData.travelers}
                                         onChange={e => setFormData({ ...formData, travelers: parseInt(e.target.value) || 1 })}
                                         required

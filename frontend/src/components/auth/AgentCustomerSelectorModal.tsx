@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { cn, formatError } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { useAuthModal, SelectedCustomer } from '@/context/AuthModalContext'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 type View = 'search' | 'create'
 
@@ -85,17 +87,52 @@ export function AgentCustomerSelectorModal() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
         setCreateError('')
-        if (!createForm.first_name || !createForm.last_name || !createForm.email) {
-            setCreateError('First name, last name and email are required.')
+
+        const { first_name, last_name, email, phone } = createForm
+
+        // Basic presence validation
+        if (!first_name.trim()) {
+            setCreateError('First name is required.')
             return
         }
+        if (!last_name.trim()) {
+            setCreateError('Last name is required.')
+            return
+        }
+        if (!email.trim()) {
+            setCreateError('Email address is required.')
+            return
+        }
+
+        // Length validation (already enforced by maxLength, but good for safety)
+        if (first_name.length > 50 || last_name.length > 50 || email.length > 50 || (phone && phone.length > 50)) {
+            setCreateError('Fields cannot exceed 50 characters.')
+            return
+        }
+
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+            setCreateError('Please enter a valid email address.')
+            return
+        }
+
+        // Phone format validation (if provided)
+        if (phone && phone.trim()) {
+            const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/
+            if (!phoneRegex.test(phone)) {
+                setCreateError('Please enter a valid phone number.')
+                return
+            }
+        }
+
         setCreateLoading(true)
         try {
             const res = await api.post('/agent/customers/quick-create', {
-                first_name: createForm.first_name,
-                last_name: createForm.last_name,
-                email: createForm.email,
-                phone: createForm.phone || null,
+                first_name: first_name.trim(),
+                last_name: last_name.trim(),
+                email: email.trim(),
+                phone: phone ? phone.trim() : null,
                 send_credentials: createForm.send_credentials,
             })
             const newCustomer: CustomerSearchResult = res.data
@@ -297,6 +334,7 @@ export function AgentCustomerSelectorModal() {
                                                 placeholder="Aarav"
                                                 className="h-11 bg-black/5 border-black/10 rounded-xl text-black focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
                                                 required
+                                                maxLength={50}
                                             />
                                         </div>
                                         <div className="space-y-1">
@@ -307,6 +345,7 @@ export function AgentCustomerSelectorModal() {
                                                 placeholder="Kumar"
                                                 className="h-11 bg-black/5 border-black/10 rounded-xl text-black focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
                                                 required
+                                                maxLength={50}
                                             />
                                         </div>
                                     </div>
@@ -322,6 +361,7 @@ export function AgentCustomerSelectorModal() {
                                             placeholder="customer@email.com"
                                             className="h-11 bg-black/5 border-black/10 rounded-xl text-black focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
                                             required
+                                            maxLength={50}
                                         />
                                     </div>
 
@@ -329,12 +369,22 @@ export function AgentCustomerSelectorModal() {
                                         <label className="text-[10px] font-bold text-black/40 uppercase tracking-widest flex items-center gap-1.5">
                                             <Phone className="w-3 h-3" /> Phone
                                         </label>
-                                        <Input
-                                            type="tel"
+                                        <PhoneInput
+                                            country={'in'}
                                             value={createForm.phone}
-                                            onChange={(e) => setCreateForm(p => ({ ...p, phone: e.target.value }))}
+                                            onChange={(val) => setCreateForm(p => ({ ...p, phone: val }))}
                                             placeholder="+91 98765 43210"
-                                            className="h-11 bg-black/5 border-black/10 rounded-xl text-black focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
+                                            inputProps={{
+                                                name: 'phone',
+                                                required: false,
+                                                maxLength: 50
+                                            }}
+                                            containerClass="!w-full !border-none"
+                                            inputClass="!w-full !h-11 !bg-black/5 !border-black/10 !rounded-xl !text-black focus:!ring-[var(--primary)]/30 focus:!border-[var(--primary)] !transition-all !pl-12 !font-sans"
+                                            buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-black/5 !transition-colors"
+                                            dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/90 !backdrop-blur-xl !py-2"
+                                            searchClass="!rounded-lg !border-black/10 !mx-2 !mb-2"
+                                            enableSearch={true}
                                         />
                                     </div>
 

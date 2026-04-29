@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
@@ -7,7 +8,7 @@ import uuid
 from datetime import date, timedelta
 
 from app.database import get_db
-from app.api.deps import get_current_active_user, get_current_active_superuser
+from app.api.deps import get_current_active_user, get_current_active_superuser, check_permission
 from app.models import User, SubscriptionPlan, Subscription, Invoice, Notification
 from app.schemas import (
     SubscriptionPlanCreate, SubscriptionPlanResponse,
@@ -70,6 +71,9 @@ async def delete_plan(
     
     if not plan:
         raise HTTPException(status_code=404, detail="Subscription plan not found")
+
+    if plan.is_active:
+        raise HTTPException(status_code=400, detail="Cannot delete an active subscription plan. Deactivate it first.")
 
     # Check for active subscriptions to this plan
     result = await db.execute(select(Subscription).where(Subscription.plan_id == plan_id, Subscription.status == 'active'))
@@ -202,6 +206,60 @@ async def list_all_subscriptions(
         
     return subscriptions
 
+class SubscriptionStatusUpdate(BaseModel):
+    status: str
+
+@router.patch("/admin/subscriptions/{subscription_id}/status", response_model=SubscriptionResponse)
+async def update_subscription_status(
+    subscription_id: UUID,
+    update_data: SubscriptionStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_superuser),
+):
+    """Update a subscription status (Admin only)"""
+    from sqlalchemy.orm import selectinload
+    from app.services.subscription_service import SubscriptionService
+    from datetime import date
+    
+    stmt = select(Subscription).where(Subscription.id == subscription_id).options(
+        selectinload(Subscription.plan),
+        selectinload(Subscription.user)
+    )
+    result = await db.execute(stmt)
+    subscription = result.scalar_one_or_none()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    new_status = update_data.status
+    valid_statuses = ['active', 'cancelled', 'expired', 'trial', 'completed', 'upcoming', 'on_hold']
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+
+    # Special handling for activating a plan
+    if new_status == 'active':
+        # Check if plan is actually expired by date
+        if subscription.end_date < date.today():
+             raise HTTPException(status_code=400, detail="Cannot activate an expired plan. Please extend the end date or create a new subscription.")
+        
+        # Move any currently active plans to 'on_hold' to prevent multiple active plans
+        stmt = select(Subscription).where(
+            Subscription.user_id == subscription.user_id,
+            Subscription.id != subscription.id,
+            Subscription.status == 'active'
+        )
+        result = await db.execute(stmt)
+        other_active_subs = result.scalars().all()
+        for other_sub in other_active_subs:
+            other_sub.status = 'on_hold'
+            db.add(other_sub)
+
+    subscription.status = new_status
+    db.add(subscription)
+    await db.commit()
+    await db.refresh(subscription)
+    return subscription
+
 # --- User Endpoints ---
 
 @router.get("/my-subscription", response_model=List[SubscriptionResponse])
@@ -291,7 +349,7 @@ async def manual_activate_plan(
 async def upgrade_subscription(
     plan_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(check_permission("billing", "full")),
 ):
     """Upgrade or subscribe to a plan"""
     # Verify plan exists
@@ -311,7 +369,7 @@ async def upgrade_subscription(
 
     # Cancel existing active subscription if any
     stmt = select(Subscription).where(
-        Subscription.user_id == current_user.id,
+        Subscription.user_id == current_user.agent_id,
         Subscription.status == 'active'
     )
     result = await db.execute(stmt)
@@ -322,7 +380,7 @@ async def upgrade_subscription(
 
     # Create new subscription
     new_sub = Subscription(
-        user_id=current_user.id,
+        user_id=current_user.agent_id,
         plan_id=plan.id,
         status='active',
         start_date=start_date,
@@ -334,7 +392,7 @@ async def upgrade_subscription(
     
     # Generate Invoice (Simplified for now)
     new_invoice = Invoice(
-        user_id=current_user.id,
+        user_id=current_user.agent_id,
         subscription_id=new_sub.id,
         amount=plan.price,
         status='pending',
@@ -355,10 +413,10 @@ async def upgrade_subscription(
 @router.get("/invoices", response_model=List[InvoiceResponse])
 async def list_my_invoices(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(check_permission("billing", "view")),
 ):
     """List current user's invoices"""
-    stmt = select(Invoice).where(Invoice.user_id == current_user.id).order_by(Invoice.created_at.desc())
+    stmt = select(Invoice).where(Invoice.user_id == current_user.agent_id).order_by(Invoice.created_at.desc())
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -366,7 +424,7 @@ async def list_my_invoices(
 async def purchase_subscription(
     plan_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(check_permission("billing", "full")),
 ):
     """Initiate subscription purchase (Razorpay)"""
     import razorpay
@@ -381,7 +439,7 @@ async def purchase_subscription(
 
     # Create pending subscription
     new_sub = Subscription(
-        user_id=current_user.id,
+        user_id=current_user.agent_id,
         plan_id=plan.id,
         status='pending_payment',
         start_date=date.today(),
@@ -446,7 +504,7 @@ async def purchase_subscription(
                 total_count=120,
                 customer_notify=1,
                 notes={
-                    "user_id": str(current_user.id),
+                    "user_id": str(current_user.agent_id),
                     "local_subscription_id": str(new_sub.id)
                 }
             )
@@ -474,7 +532,7 @@ async def purchase_subscription(
 async def verify_subscription_payment(
     verification_data: SubscriptionPaymentVerification,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(check_permission("billing", "full")),
 ):
     """Verify subscription payment and activate"""
     from app.schemas import SubscriptionPaymentVerification, MessageResponse

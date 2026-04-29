@@ -2277,3 +2277,49 @@ button,
 .prose a:hover { text-decoration: underline; }
 .prose blockquote { border-left-width: 4px; border-color: #e2e8f0; padding-left: 1rem; font-style: italic; margin-top: 1.5rem; margin-bottom: 1.5rem; color: #64748b; }
 
+/* react-phone-input-2 Custom Styles */
+.react-tel-input .form-control {
+  font-family: inherit !important;
+  font-size: 14px !important;
+}
+
+.react-tel-input .flag-dropdown {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 12px 0 0 12px !important;
+}
+
+.react-tel-input .selected-flag {
+  background-color: transparent !important;
+  border-radius: 12px 0 0 12px !important;
+}
+
+.react-tel-input .country-list {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 16px !important;
+  padding: 8px !important;
+  margin-top: 8px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  scrollbar-width: thin;
+}
+
+.react-tel-input .country-list .country {
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-tel-input .country-list .country:hover,
+.react-tel-input .country-list .country.highlight {
+  background-color: var(--primary-glow) !important;
+}
+
+.react-tel-input .country-list .search {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 10px !important;
+  margin-bottom: 8px !important;
+}

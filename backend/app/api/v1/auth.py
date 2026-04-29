@@ -456,8 +456,16 @@ async def login(
             role=user.role.value
         )
     
-    # Create access token (for Admin)
-    access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
+    # Create access token
+    token_data = {"sub": str(user.id), "role": user.role.value}
+    
+    # For SUB_USER — embed parent agent_id and permissions in the token
+    if user.role == UserRole.SUB_USER and user.sub_user_profile:
+        token_data["agent_id"] = str(user.sub_user_profile.agent_id)
+        token_data["permissions"] = user.permissions
+        token_data["role_label"] = user.sub_user_profile.role_label
+
+    access_token = create_access_token(data=token_data)
     
     return LoginResponse(
         access_token=access_token,
@@ -893,6 +901,7 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ):
     """Get current user information"""
+    return current_user
 @router.get("/agent-info")
 async def get_public_agent_info(
     db: AsyncSession = Depends(get_db),

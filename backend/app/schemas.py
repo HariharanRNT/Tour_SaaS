@@ -1399,10 +1399,10 @@ class SubUserListResponse(BaseModel):
 
 class AgentQuickCreateCustomer(BaseModel):
     """Schema for agent quick-creating a customer during the booking flow."""
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    phone: Optional[str] = None
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr = Field(..., max_length=50)
+    phone: Optional[str] = Field(None, max_length=50)
     send_credentials: bool = False  # Whether to email login creds to the customer
 
     @field_validator('first_name', 'last_name', mode='before')

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import User, UserRole
+from app.models import User, UserRole, SubUser
 from app.core.security import decode_access_token
 from app.config import settings
 
@@ -55,7 +55,7 @@ async def get_current_user(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
         selectinload(User.customer_profile),
-        selectinload(User.sub_user_profile),
+        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
         selectinload(User.subscription)
     )
     
@@ -71,10 +71,8 @@ async def get_current_user(
 
     # For SUB_USER: attach permissions and parent agent_id from JWT payload
     if user.role == UserRole.SUB_USER:
-        permissions = payload.get("permissions", [])
         parent_agent_id = payload.get("agent_id")
         # Attach as dynamic attributes so endpoints can inspect them
-        user._sub_user_permissions = permissions
         user._sub_user_agent_id = parent_agent_id
         
         # Fetch parent agent's domain via a separate targeted query

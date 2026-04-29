@@ -15,7 +15,7 @@ import {
     Circle, CheckCircle, CheckCircle2, Image as ImageIcon, Briefcase,
     Mountain, Palmtree, Landmark, Coffee, Tent, Building2, ChevronRight,
     Trash2, GripVertical, ChevronUp, ChevronDown, Plane, Hotel, Utensils,
-    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles, Layers
+    Camera, UserCheck, FileCheck, ShieldCheck, Upload, Link2, Car, Plus, Map, Moon, Sparkles, Layers, X
 } from 'lucide-react'
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
@@ -240,6 +240,12 @@ export default function CreatePackagePage() {
     const emptyFieldIndices = formData.cancellation_rules
         .map((r, i) => ({ days: r.daysBefore, percentage: r.refundPercentage, index: i }))
         .filter(r => (r.days as any) === '' || (r.percentage as any) === '')
+        .map(r => r.index);
+
+    const invalidRefundProgressionIndices = formData.cancellation_rules
+        .map((r, i) => ({ percentage: r.refundPercentage, days: r.daysBefore, index: i }))
+        .filter(r => (r.percentage as any) !== '' && (r.days as any) !== '')
+        .filter((r, i, self) => i > 0 && Number(r.percentage) >= Number(self[i - 1].percentage))
         .map(r => r.index);
 
     // Clear trip style validation error automatically when styles are pre-populated
@@ -750,7 +756,7 @@ export default function CreatePackagePage() {
         // Validation check before proceeding
         if (targetStep > activeStep) {
             const missingFields: string[] = [];
-            if (!formData.title) missingFields.push("Package Title");
+            if (!formData.title || !formData.title.trim()) missingFields.push("Package Title");
             if (formData.package_mode === 'multi') {
                 if (formData.destinations.length === 0) missingFields.push("Destinations");
                 else if (formData.destinations.some(d => !d.city || !d.country || (d.days || 0) <= 0)) {
@@ -811,6 +817,10 @@ export default function CreatePackagePage() {
                 }
                 if (invalidPercentageIndices.length > 0) {
                     toast.error("Refund percentage must be between 0 and 100.");
+                    return;
+                }
+                if (invalidRefundProgressionIndices.length > 0) {
+                    toast.error("Refund percentage must be strictly decreasing in subsequent rules. A rule with fewer days must have a lower refund percentage than the previous rule.");
                     return;
                 }
                 if (emptyFieldIndices.length > 0) {
@@ -979,6 +989,11 @@ export default function CreatePackagePage() {
                 if (invalidPercentageIndices.length > 0) {
                     setSaving(false);
                     toast.error("Refund percentage must be between 0 and 100.");
+                    return;
+                }
+                if (invalidRefundProgressionIndices.length > 0) {
+                    setSaving(false);
+                    toast.error("Refund percentage must be strictly decreasing in subsequent rules. A rule with fewer days must have a lower refund percentage than the previous rule.");
                     return;
                 }
                 if (emptyFieldIndices.length > 0) {
@@ -2210,7 +2225,7 @@ export default function CreatePackagePage() {
                                                         }}
                                                         className={cn(
                                                             "h-8 text-sm transition-all duration-300 shadow-sm",
-                                                            invalidPercentageIndices.includes(idx) || (rule.refundPercentage as any) === ''
+                                                            invalidPercentageIndices.includes(idx) || invalidRefundProgressionIndices.includes(idx) || (rule.refundPercentage as any) === ''
                                                                 ? "border-red-500 focus-visible:ring-red-500/20 bg-red-50/10 text-red-600 font-bold"
                                                                 : "bg-white/80"
                                                         )}
@@ -2220,6 +2235,13 @@ export default function CreatePackagePage() {
                                                         <div className="absolute left-0 -bottom-8 w-max z-20">
                                                             <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
                                                                 Must be between 0 and 100.
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {invalidRefundProgressionIndices.includes(idx) && (
+                                                        <div className="absolute left-0 -bottom-8 w-max z-20">
+                                                            <div className="bg-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-lg animate-in fade-in slide-in-from-top-1 duration-300">
+                                                                Percentage must be lower than previous rule.
                                                             </div>
                                                         </div>
                                                     )}
@@ -2476,7 +2498,16 @@ export default function CreatePackagePage() {
                                 {/* Custom Style Modal */}
                                 {isCustomStyleModalOpen && (
                                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
+                                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 relative">
+                                            <button 
+                                                onClick={() => {
+                                                    setIsCustomStyleModalOpen(false)
+                                                    setNewStyleError('')
+                                                }}
+                                                className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
                                             <h3 className="text-lg font-bold text-black mb-4">Add Custom Trip Style</h3>
                                             <div className="space-y-4">
                                                 <div>
@@ -2631,7 +2662,16 @@ export default function CreatePackagePage() {
                                         {/* Custom Tag Modal */}
                                         {isCustomTagModalOpen && (
                                             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 border border-slate-100">
+                                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 border border-slate-100 relative">
+                                                    <button 
+                                                        onClick={() => {
+                                                            setIsCustomTagModalOpen(false)
+                                                            setNewTagError('')
+                                                        }}
+                                                        className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                                                    >
+                                                        <X className="w-5 h-5" />
+                                                    </button>
                                                     <h3 className="text-lg font-bold text-black mb-4">Add Custom Activity Tag</h3>
                                                     <div className="space-y-4">
                                                         <div>

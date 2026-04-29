@@ -110,7 +110,17 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         showAISearch: boolean;
         aiSearchBtnText: string;
         aiSearchTagline: string;
-    } | null>(null)
+    }>({
+        headline1: "Your Gateway to",
+        headline2: "Extraordinary Adventures",
+        subheading: "Discover handpicked premium tour packages tailored for your perfect getaway.",
+        primaryBtnText: "Start Your Journey",
+        secondaryBtnText: "See Sample Itinerary",
+        backgroundImageUrl: "",
+        showAISearch: true,
+        aiSearchBtnText: "Try AI Search",
+        aiSearchTagline: "— just describe your dream trip"
+    })
 
     const [agentFeatureCards, setAgentFeatureCards] = useState<{
         icon: string; title: string; description: string;
@@ -135,19 +145,17 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
         // Load from Public Context for accuracy (Sync local states with centralized data)
         if (publicSettings?.homepage_settings) {
             const hs = publicSettings.homepage_settings;
-            if (hs.headline1) {
-                setHpSettings({
-                    headline1: hs.headline1,
-                    headline2: hs.headline2 || "",
-                    subheading: hs.subheading || "",
-                    primaryBtnText: hs.primaryBtnText || "Start Your Journey",
-                    secondaryBtnText: hs.secondaryBtnText || "See Sample Itinerary",
-                    backgroundImageUrl: hs.backgroundImageUrl || "",
-                    showAISearch: hs.showAISearch !== false,
-                    aiSearchBtnText: hs.aiSearchBtnText || "Try AI Search",
-                    aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip"
-                });
-            }
+            setHpSettings({
+                headline1: hs.headline1 || "Your Gateway to",
+                headline2: hs.headline2 || "Extraordinary Adventures",
+                subheading: hs.subheading || "Discover handpicked premium tour packages tailored for your perfect getaway.",
+                primaryBtnText: hs.primaryBtnText || "Start Your Journey",
+                secondaryBtnText: hs.secondaryBtnText || "See Sample Itinerary",
+                backgroundImageUrl: hs.backgroundImageUrl || "",
+                showAISearch: hs.showAISearch !== false,
+                aiSearchBtnText: hs.aiSearchBtnText || "Try AI Search",
+                aiSearchTagline: hs.aiSearchTagline || "— just describe your dream trip"
+            });
             if (hs.feature_cards) setAgentFeatureCards(hs.feature_cards);
             if (hs.wcu_cards) setWcuCards(hs.wcu_cards);
             if (hs.card_appearance) setCardAppearance(hs.card_appearance);

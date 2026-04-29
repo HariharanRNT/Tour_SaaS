@@ -42,7 +42,8 @@ async def list_user_bookings(
             selectinload(Booking.package).selectinload(Package.availability),
             selectinload(Booking.package).selectinload(Package.dest_metadata),
             selectinload(Booking.travelers),
-            selectinload(Booking.refund)
+            selectinload(Booking.refund),
+            selectinload(Booking.booked_by)
         )
         result = await db.execute(query)
         bookings = result.scalars().all()
@@ -67,7 +68,8 @@ async def get_booking(
         selectinload(Booking.package).selectinload(Package.availability),
         selectinload(Booking.package).selectinload(Package.dest_metadata),
         selectinload(Booking.travelers),
-        selectinload(Booking.refund)
+        selectinload(Booking.refund),
+        selectinload(Booking.booked_by)
     )
     result = await db.execute(query)
     booking = result.scalar_one_or_none()
@@ -200,17 +202,21 @@ async def create_booking(
         total_amount = subtotal
         
         # Apply GST Logic
+        gst_percentage = 18.0
+        is_gst_inclusive = False
+        gst_applicable = True
+
+        # 1. Determine the Agent whose settings apply
         real_agent_id = None
         if current_user.role in [UserRole.AGENT]:
             real_agent_id = current_user.id
         elif current_user.role in [UserRole.SUB_USER]:
-            # Sub-user's parent agent
             if current_user.sub_user_profile and current_user.sub_user_profile.agent_id:
                 real_agent_id = current_user.sub_user_profile.agent_id
         else:
-            # Customer booking directly: The package creator is the "Supplier Agent"
             real_agent_id = package.created_by or current_user.agent_id
         
+        # 2. Load Agent Settings
         if real_agent_id:
             from app.models import Agent
             agent_stmt = select(Agent).where(Agent.user_id == real_agent_id)
@@ -218,12 +224,28 @@ async def create_booking(
             agent_obj = agent_result.scalar_one_or_none()
             
             if agent_obj:
-                gst_percentage = float(agent_obj.gst_percentage) if agent_obj.gst_percentage else 18.0
-                is_gst_inclusive = agent_obj.gst_inclusive if agent_obj.gst_inclusive is not None else False
-                
-                if not is_gst_inclusive:
-                    gst_amount = subtotal * (gst_percentage / 100)
-                    total_amount = subtotal + gst_amount
+                if agent_obj.gst_applicable is False:
+                    gst_applicable = False
+                else:
+                    gst_percentage = float(agent_obj.gst_percentage) if agent_obj.gst_percentage is not None else 18.0
+                    is_gst_inclusive = agent_obj.gst_inclusive if agent_obj.gst_inclusive is not None else False
+        
+        # 3. Package-specific overrides (Take priority)
+        if package.gst_applicable is False:
+            gst_applicable = False
+        elif package.gst_applicable is True:
+            gst_applicable = True
+            if package.gst_mode:
+                is_gst_inclusive = (package.gst_mode == 'inclusive')
+            if package.gst_percentage is not None:
+                gst_percentage = float(package.gst_percentage)
+        
+        # 4. Final Calculation
+        if gst_applicable and not is_gst_inclusive:
+            gst_amount = subtotal * (gst_percentage / 100)
+            total_amount = subtotal + gst_amount
+        else:
+            total_amount = subtotal
         
         # Generate booking reference
         booking_reference = generate_booking_reference()
@@ -394,7 +416,8 @@ async def list_all_bookings(
         selectinload(Booking.package).options(
             selectinload(Package.dest_metadata)
         ),
-        selectinload(Booking.travelers)
+        selectinload(Booking.travelers),
+        selectinload(Booking.booked_by)
     )
     result = await db.execute(query)
     bookings = result.scalars().all()
@@ -587,7 +610,11 @@ async def download_invoice(
         raise NotFoundException("Booking not found")
         
     # Check authorization
-    if booking.user_id != current_user.id and current_user.role != "admin":
+    from app.models import UserRole
+    if (booking.user_id != current_user.id and 
+        booking.agent_id != current_user.id and 
+        current_user.role != UserRole.ADMIN and 
+        current_user.role != "admin"):
         raise HTTPException(status_code=403, detail="Not authorized to view this invoice")
         
     # Generate PDF

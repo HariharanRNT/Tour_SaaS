@@ -118,10 +118,21 @@ class User(Base):
 
     @property
     def agent_id(self):
+        """Returns the ID of the agent/agency this user belongs to."""
         if self.role == UserRole.AGENT:
             return self.id
+        
+        # Check for JWT-injected agent_id (set in deps.py)
+        if hasattr(self, '_sub_user_agent_id') and self._sub_user_agent_id:
+            return self._sub_user_agent_id
+            
         # Fallback to profile (for Customer or SubUser)
-        return getattr(self.profile, 'agent_id', None) if self.profile else None
+        if self.role == UserRole.SUB_USER and self.sub_user_profile:
+            return self.sub_user_profile.agent_id
+        if self.role == UserRole.CUSTOMER and self.customer_profile:
+            return self.customer_profile.agent_id
+            
+        return None
 
     # Agent Specific Proxies
     @property
@@ -178,19 +189,28 @@ class User(Base):
 
     @property
     def permissions(self):
-        # We might have attached them in deps.py
-        if hasattr(self, '_sub_user_permissions'):
+        """
+        Returns permissions for sub-users. 
+        Returns an empty list for regular agents (who have full access) and customers.
+        """
+        if self.role != UserRole.SUB_USER:
+            return []
+            
+        # Prioritize JWT-injected permissions (set in deps.py)
+        if hasattr(self, '_sub_user_permissions') and self._sub_user_permissions is not None:
             return self._sub_user_permissions
-        # Otherwise load from database
+
+        # Fallback to DB (requires eager loading or lazy load)
         try:
-            if self.role == UserRole.SUB_USER and self.sub_user_profile and self.sub_user_profile.permissions:
+            if self.sub_user_profile and self.sub_user_profile.permissions:
                 return [
                     {"module": p.module, "access_level": p.access_level}
                     for p in self.sub_user_profile.permissions
                 ]
         except Exception:
-            # Fallback if permissions are not loaded and session is closed
+            # Fallback if session is closed or relationship not loaded
             pass
+            
         return []
 
     @property

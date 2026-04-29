@@ -675,49 +675,49 @@ async def get_trip_session(
     flight_details = parse_json_field(row[14])
     
     # GST Settings Logic
-    # 1. Start with Package specific settings if applicable
+    # 1. Start with agent defaults (package creator's agent)
+    gst_inclusive = row[15]
+    gst_percentage = row[16]
+    gst_applicable_final = True # Default to True unless suppressed
+
+    # 2. If accessed via a custom domain, prefer the Domain Agent's defaults over Creator defaults
+    # This ensures that when an agent sells a package, THEIR default GST settings apply as the base.
+    if domain:
+        agent_stmt = select(Agent).where(Agent.domain == domain)
+        agent_res = await db.execute(agent_stmt)
+        agent = agent_res.scalar_one_or_none()
+        if agent:
+            # Domain agent's gst_applicable setting also matters:
+            # If the domain agent has GST off (gst_applicable=False), suppress GST.
+            if agent.gst_applicable is False:
+                gst_inclusive = True
+                gst_percentage = 0
+                gst_applicable_final = False
+            else:
+                # Override with Domain Agent's GST defaults
+                gst_inclusive = agent.gst_inclusive
+                gst_percentage = agent.gst_percentage
+                gst_applicable_final = True
+
+    # 3. Package-specific overrides ALWAYS take final priority if set
     p_gst_applicable = row[21]  # None = not set, True = GST applies, False = explicitly no GST
     p_gst_mode = row[19]
     p_gst_percentage = row[20]
 
-    # Initialize with agent defaults (package creator's agent)
-    gst_inclusive = row[15]
-    gst_percentage = row[16]
-
-    # CRITICAL: If package explicitly marks GST as NOT applicable, override to 0 immediately
     if p_gst_applicable is False:
-        # Package says explicitly: no GST. Honour it regardless of agent-level defaults.
-        gst_inclusive = True   # Mark as inclusive to suppress the extra GST line in frontend
+        # Package says explicitly: no GST. Honour it regardless of any agent-level defaults.
+        gst_inclusive = True
         gst_percentage = 0
         gst_applicable_final = False
-    else:
-        gst_applicable_final = True  # either True or None (inherit agent default)
+    elif p_gst_applicable is True:
+        # Package says explicitly: GST applies with these specific settings
+        if p_gst_mode:
+            gst_inclusive = (p_gst_mode == 'inclusive')
+        if p_gst_percentage is not None:
+            gst_percentage = p_gst_percentage
+        gst_applicable_final = True
+    # If p_gst_applicable is None, we keep the agent/domain defaults determined above
 
-        # Override with package-specific settings if they exist (and GST is applicable)
-        if p_gst_applicable is True:
-            if p_gst_mode:
-                gst_inclusive = (p_gst_mode == 'inclusive')
-            if p_gst_percentage is not None:
-                gst_percentage = p_gst_percentage
-
-        # 2. If accessed via a custom domain, prefer the Domain Agent's settings
-        # This ensures that when an agent sells a package (even a system package),
-        # THEIR GST settings apply, ONLY if the package has not explicitly set gst_applicable=False.
-        if domain:
-            agent_stmt = select(Agent).where(Agent.domain == domain)
-            agent_res = await db.execute(agent_stmt)
-            agent = agent_res.scalar_one_or_none()
-            if agent:
-                # Domain agent's gst_applicable setting also matters:
-                # If the domain agent has GST off (gst_applicable=False), suppress GST.
-                if agent.gst_applicable is False:
-                    gst_inclusive = True
-                    gst_percentage = 0
-                    gst_applicable_final = False
-                else:
-                    # Override with Domain Agent's GST settings
-                    gst_inclusive = agent.gst_inclusive
-                    gst_percentage = agent.gst_percentage
 
     # Enrich itinerary with latest times from package items if available
     # This handles cases where the session was created before times were added to package

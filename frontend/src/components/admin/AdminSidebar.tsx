@@ -65,7 +65,7 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                 ...(userRole !== 'admin' ? [
                     { icon: Package, label: 'Manage Packages', href: '/agent/packages', module: 'packages' },
                     { icon: Map, label: 'Activity Master', href: '/agent/activities', module: 'activities' },
-                    { icon: MessageSquare, label: 'Enquiries', href: '/agent/enquiries', module: 'packages' }, // Using packages permission as fallback
+                    { icon: MessageSquare, label: 'Enquiries', href: '/agent/enquiries', module: 'enquiries' },
                     { icon: Calendar, label: 'Booking Report', href: '/agent/bookings', module: 'bookings' },
                 ] : []),
 
@@ -101,6 +101,12 @@ export function AdminSidebar({ className, onCollapsedChange }: SidebarProps) {
                     { icon: Users, label: 'Sub-Users', href: '/agent/settings/sub-users', module: 'settings' },
                 ] : []),
             ].filter(item => {
+                // If agent/sub-user has no active sub, only show Billing
+                if (userRole !== 'admin' && item.href !== '/agent/subscription') {
+                    const hasActiveSub = user?.has_active_subscription || user?.subscription_status === 'active';
+                    if (!hasActiveSub) return false;
+                }
+                
                 // If sub-user, check permissions explicitly using the AuthContext
                 if (isSubUser && item.module) {
                     return hasPermission(item.module, 'view');

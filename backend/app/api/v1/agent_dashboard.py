@@ -105,18 +105,18 @@ async def get_agent_dashboard_stats(
         # Total Bookings (Only Successful/Confirmed)
         bk_count_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         bk_count_query = apply_date_filter(bk_count_query, Booking.created_at)
         res = await db.execute(bk_count_query)
         total_bookings = res.scalar() or 0
         
-        # Active (Confirmed or Pending) AND Upcoming Trip
+        # Active (Confirmed) AND Upcoming Trip
         active_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.status == BookingStatus.CONFIRMED,
-            Booking.payment_status == PaymentStatus.SUCCEEDED,
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
             Booking.travel_date >= now.date()  # Only upcoming trips
         )
         active_query = apply_date_filter(active_query, Booking.created_at)
@@ -133,10 +133,10 @@ async def get_agent_dashboard_stats(
         res = await db.execute(pending_query)
         pending_bookings = res.scalar() or 0
         
-        rev_query = select(func.sum(Booking.total_amount)).where(
+        rev_query = select(func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0))).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         rev_query = apply_date_filter(rev_query, Booking.created_at)
         res = await db.execute(rev_query)
@@ -156,8 +156,8 @@ async def get_agent_dashboard_stats(
         today_query = select(func.count(Booking.id)).where(
             Booking.agent_id == current_agent.agent_id,
             Booking.created_at >= today_start,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         res = await db.execute(today_query)
         today_bookings = res.scalar() or 0
@@ -178,11 +178,11 @@ async def get_agent_dashboard_stats(
             Package.title,
             Package.view_count,
             func.count(Booking.id).label('count'),
-            func.sum(Booking.total_amount).label('revenue')
+            func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         # Apply filter to bookings
         stmt = apply_date_filter(stmt, Booking.created_at)
@@ -213,11 +213,11 @@ async def get_agent_dashboard_stats(
             Package.title,
             Package.view_count,
             func.count(Booking.id).label('count'),
-            func.sum(Booking.total_amount).label('revenue')
+            func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('revenue')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title, Package.view_count).order_by(asc('count')).limit(1)
@@ -241,8 +241,8 @@ async def get_agent_dashboard_stats(
             func.count(Booking.id).label('count')
         ).join(Booking, Package.id == Booking.package_id).where(
             Booking.agent_id == current_agent.agent_id,
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED]),
-            Booking.payment_status == PaymentStatus.SUCCEEDED
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]),
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
         )
         stmt = apply_date_filter(stmt, Booking.created_at)
         stmt = stmt.group_by(Package.id, Package.title).order_by(desc('count')).limit(5)
@@ -269,7 +269,8 @@ async def get_agent_dashboard_stats(
 
         completed_bookings_stmt = select(Booking).where(
             Booking.agent_id == current_agent.agent_id,
-            (Booking.travel_date < now.date()) | (Booking.status.in_([BookingStatus.CANCELLED, BookingStatus.COMPLETED]))
+            Booking.status != BookingStatus.CANCELLED,
+            (Booking.travel_date < now.date()) | (Booking.status == BookingStatus.COMPLETED)
         ).order_by(desc(Booking.travel_date)).limit(5).options(
             selectinload(Booking.travelers),
             selectinload(Booking.package).selectinload(Package.images),

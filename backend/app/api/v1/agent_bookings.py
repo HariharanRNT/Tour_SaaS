@@ -43,7 +43,8 @@ async def list_agent_bookings(
     base_stmt = select(Booking).where(Booking.agent_id == current_agent.agent_id)
     
     # Date Filtering Logic
-    now = datetime.now(timezone.utc)
+    IST = timezone(timedelta(hours=5, minutes=30))
+    now = datetime.now(IST)
     filter_start = None
     filter_end = None
 
@@ -60,14 +61,14 @@ async def list_agent_bookings(
         filter_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     elif period == 'custom' and from_date:
         try:
-            filter_start = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+            filter_start = datetime.fromisoformat(from_date.replace('Z', '+05:30'))
             if not filter_start.tzinfo:
-                filter_start = filter_start.replace(tzinfo=timezone.utc)
+                filter_start = filter_start.replace(tzinfo=IST)
             
             if to_date:
-                filter_end = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+                filter_end = datetime.fromisoformat(to_date.replace('Z', '+05:30'))
                 if not filter_end.tzinfo:
-                    filter_end = filter_end.replace(tzinfo=timezone.utc)
+                    filter_end = filter_end.replace(tzinfo=IST)
                 filter_end = filter_end + timedelta(days=1)
         except ValueError:
             pass
@@ -102,7 +103,8 @@ async def list_agent_bookings(
         ),
         selectinload(Booking.travelers),
         selectinload(Booking.user),
-        selectinload(Booking.refund)
+        selectinload(Booking.refund),
+        selectinload(Booking.booked_by)
     )
     
     try:
@@ -158,7 +160,8 @@ async def get_agent_booking(
             selectinload(Package.dest_metadata)
         ),
         selectinload(Booking.travelers),
-        selectinload(Booking.user)
+        selectinload(Booking.user),
+        selectinload(Booking.booked_by)
     )
     result = await db.execute(stmt)
     booking = result.scalar_one_or_none()

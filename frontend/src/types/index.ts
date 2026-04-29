@@ -46,6 +46,9 @@ export interface Package {
     gst_mode?: 'inclusive' | 'exclusive'
     trip_style?: string
     trip_styles?: string[]
+    inclusions?: Record<string, { included: boolean; details?: string; visibleToCustomer?: boolean }>
+    exclusions?: Record<string, { excluded: boolean; details?: string; visibleToCustomer?: boolean }>
+    custom_services?: Array<{ id: string; heading: string; description?: string; isIncluded: boolean; visibleToCustomer?: boolean }>
 }
 
 export interface PackageImage {

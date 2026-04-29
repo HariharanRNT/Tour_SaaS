@@ -8,7 +8,8 @@ import {
     fetchAdminSubscriptions,
     createSubscriptionPlan,
     updateSubscriptionPlan,
-    deleteSubscriptionPlan
+    deleteSubscriptionPlan,
+    updateAdminSubscriptionStatus
 } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -78,6 +79,8 @@ export default function AdminBillingPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [planToDelete, setPlanToDelete] = useState<{ id: string, name: string } | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [newPlan, setNewPlan] = useState({
         name: '',
@@ -88,6 +91,7 @@ export default function AdminBillingPage() {
         features: '',
         is_active: true
     });
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const { data: plans = [], isLoading: isLoadingPlans } = useQuery({
         queryKey: ['admin-plans'],
@@ -107,9 +111,10 @@ export default function AdminBillingPage() {
             queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
             setIsCreateOpen(false);
             setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
+            setErrors({});
             toast.success("Plan created successfully!");
         },
-        onError: (err: any) => toast.error(`Save failed: ${formatError(err)}`)
+        onError: (err: any) => toast.error(`We couldn't create the plan: ${formatError(err)}`)
     });
 
     const updateMutation = useMutation({
@@ -120,7 +125,7 @@ export default function AdminBillingPage() {
             setEditingId(null);
             toast.success("Plan updated successfully!");
         },
-        onError: (err: any) => toast.error(`Update failed: ${formatError(err)}`)
+        onError: (err: any) => toast.error(`Failed to update the plan: ${formatError(err)}`)
     });
 
     const deleteMutation = useMutation({
@@ -129,7 +134,16 @@ export default function AdminBillingPage() {
             queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
             toast.success("Plan deleted successfully");
         },
-        onError: (err: any) => toast.error(formatError(err) || "Error deleting plan")
+        onError: (err: any) => toast.error(`Error deleting plan: ${formatError(err) || "Something went wrong"}`)
+    });
+
+    const updateSubMutation = useMutation({
+        mutationFn: ({ id, status }: { id: string, status: string }) => updateAdminSubscriptionStatus(id, status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-subscriptions'] });
+            toast.success("Subscription status updated successfully!");
+        },
+        onError: (err: any) => toast.error(`Failed to update subscription: ${formatError(err)}`)
     });
 
     const isCurrentMonth = (dateString: string) => {
@@ -146,8 +160,16 @@ export default function AdminBillingPage() {
     const planSubscriberCounts = plans.map((p: SubscriptionPlan) => ({
         id: p.id,
         name: p.name,
-        count: currentMonthSubscriptions.filter((s: Subscription) => s.plan.id === p.id).length,
-        totalCount: subscriptions.filter((s: Subscription) => s.plan.id === p.id).length
+        count: currentMonthSubscriptions.filter((s: Subscription) => 
+            s.plan.id === p.id && 
+            s.status !== 'pending_payment' && 
+            s.status !== 'failed'
+        ).length,
+        totalCount: subscriptions.filter((s: Subscription) => 
+            s.plan.id === p.id && 
+            s.status !== 'pending_payment' && 
+            s.status !== 'failed'
+        ).length
     }));
 
     const maxSubscribers = planSubscriberCounts.length > 0
@@ -155,8 +177,11 @@ export default function AdminBillingPage() {
         : 0;
 
     const stats = (() => {
-        const activeCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
-        const mrr = subscriptions
+        const successSubscriptions = subscriptions.filter((s: Subscription) => 
+            s.status !== 'pending_payment' && s.status !== 'failed'
+        );
+        const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active').length;
+        const mrr = successSubscriptions
             .filter((s: Subscription) => s.status === 'active')
             .reduce((sum: number, s: Subscription) => {
                 const price = Number(s.plan?.price) || 0;
@@ -167,13 +192,25 @@ export default function AdminBillingPage() {
             }, 0);
 
         return {
-            totalSubscriptions: subscriptions.length,
+            totalSubscriptions: successSubscriptions.length,
             activeSubscriptions: activeCount,
             mrr: Math.round(mrr),
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
-            recentChanges: currentMonthSubscriptions.length
+            recentChanges: currentMonthSubscriptions.filter((s: Subscription) => s.status !== 'pending_payment' && s.status !== 'failed').length
         };
     })();
+
+    const filteredSubscriptions = subscriptions.filter((sub: Subscription) => {
+        // Search filter
+        if (!searchQuery.trim()) return true;
+        const searchLower = searchQuery.toLowerCase();
+        return (
+            sub.user?.agency_name?.toLowerCase().includes(searchLower) ||
+            sub.user_id.toLowerCase().includes(searchLower) ||
+            sub.plan.name.toLowerCase().includes(searchLower) ||
+            sub.id.toLowerCase().includes(searchLower)
+        );
+    });
 
     const handleToggleStatus = (plan: SubscriptionPlan) => {
         updateMutation.mutate({
@@ -182,8 +219,52 @@ export default function AdminBillingPage() {
         });
     };
 
+    const handleToggleSubStatus = (sub: Subscription) => {
+        const newStatus = sub.status === 'active' ? 'cancelled' : 'active';
+        updateSubMutation.mutate({ id: sub.id, status: newStatus });
+    };
+
     const handleSavePlan = () => {
+        // Validation
+        const newErrors: Record<string, string> = {};
+        if (!newPlan.name.trim()) newErrors.name = "Plan name is required";
+        else if (newPlan.name.length > 50) newErrors.name = "Plan name cannot exceed 50 characters";
+        else {
+            const isDuplicate = plans.some((p: SubscriptionPlan) => 
+                p.id !== editingId && p.name.trim().toLowerCase() === newPlan.name.trim().toLowerCase()
+            );
+            if (isDuplicate) newErrors.name = "A plan with this name already exists";
+        }
+
+        if (!newPlan.price) newErrors.price = "Price is required";
+        else if (parseFloat(newPlan.price) < 0) newErrors.price = "Price cannot be negative";
+        else if (parseFloat(newPlan.price) > 1000000) newErrors.price = "Price cannot exceed ₹10,00,000";
+
+        if (newPlan.booking_limit === '') newErrors.booking_limit = "Booking limit is required";
+        else {
+            const limit = parseInt(newPlan.booking_limit);
+            if (limit < -1) newErrors.booking_limit = "Invalid booking limit";
+            else if (limit > 10000) newErrors.booking_limit = "Booking limit cannot exceed 10,000";
+        }
+
+        if (newPlan.billing_cycle === 'custom') {
+            if (!newPlan.duration_days) newErrors.duration_days = "Duration is required for custom cycle";
+            else if (parseInt(newPlan.duration_days) <= 0) newErrors.duration_days = "Duration must be at least 1 day";
+            else if (parseInt(newPlan.duration_days) > 365) newErrors.duration_days = "Duration cannot exceed 365 days";
+        }
+
         const featuresArray = newPlan.features.split('\n').filter(f => f.trim() !== '');
+        if (featuresArray.length === 0) newErrors.features = "At least one feature is required";
+        else if (newPlan.features.length > 1000) newErrors.features = "Features text too long (max 1000 characters)";
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error("Please fix the errors in the form");
+            return;
+        }
+
+        setErrors({});
+
         const payload = {
             name: newPlan.name,
             price: parseFloat(newPlan.price),
@@ -203,8 +284,14 @@ export default function AdminBillingPage() {
     };
 
     const handleDeletePlan = (id: string, name: string) => {
-        if (confirm(`Are you sure you want to delete ${name}?`)) {
-            deleteMutation.mutate(id);
+        setPlanToDelete({ id, name });
+        setIsDeleteOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (planToDelete) {
+            deleteMutation.mutate(planToDelete.id);
+            setIsDeleteOpen(false);
         }
     };
 
@@ -220,6 +307,7 @@ export default function AdminBillingPage() {
             features: Array.isArray(featuresList) ? featuresList.join('\n') : '',
             is_active: plan.is_active
         });
+        setErrors({});
         setIsCreateOpen(true);
     };
 
@@ -256,6 +344,7 @@ export default function AdminBillingPage() {
                             onClick={() => {
                                 setEditingId(null);
                                 setNewPlan({ name: '', price: '', booking_limit: '', billing_cycle: 'monthly', duration_days: '', features: '', is_active: true });
+                                setErrors({});
                                 setIsCreateOpen(true);
                             }}
                             className="bg-gradient-to-r from-[#FF6B2B] to-[#FF8E53] hover:from-[#FF5A1F] hover:to-[#FF7D42] text-white px-8 h-[48px] rounded-[16px] font-black text-[14px] uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_24px_rgba(255,107,43,0.3)] flex items-center gap-3 border-0 group"
@@ -358,7 +447,7 @@ export default function AdminBillingPage() {
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
-                                        className="rounded-[10px] px-6 h-8 transition-all border-0 tracking-normal data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#7c3010]"
+                                        className="rounded-[10px] px-6 h-8 transition-all border-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2B] data-[state=active]:to-[#FF8E53] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_12px_rgba(255,107,43,0.3)] data-[state=active]:font-black uppercase text-[11px] tracking-widest data-[state=inactive]:font-bold data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#7c3010]"
                                     >
                                         {tab === 'plans' ? `Plans` : tab === 'subscriptions' ? 'Subscriptions' : 'Financials'}
                                         {tab === 'plans' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{plans.length}</span>}
@@ -371,8 +460,16 @@ export default function AdminBillingPage() {
                         <TabsContent value="plans" className="outline-none pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
                                 {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                    const subscriberCount = subscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
-                                    const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
+                                    const subscriberCount = subscriptions.filter((s: Subscription) => 
+                                        s.plan.id === plan.id && 
+                                        s.status !== 'pending_payment' && 
+                                        s.status !== 'failed'
+                                    ).length;
+                                    const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) => 
+                                        s.plan.id === plan.id && 
+                                        s.status !== 'pending_payment' && 
+                                        s.status !== 'failed'
+                                    ).length;
                                     const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
 
                                     // Debug logging for each plan
@@ -561,38 +658,44 @@ export default function AdminBillingPage() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {subscriptions.filter((sub: Subscription) => sub.status === 'active').length === 0 ? (
+                                                {subscriptions.length === 0 ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={7} className="h-72 text-center">
+                                                            <div className="flex flex-col items-center justify-center gap-4 opacity-50">
+                                                                 <div className="p-4 bg-white/5 rounded-full border border-white/10">
+                                                                     <CreditCard className="h-10 w-10 text-[#7c3010]" />
+                                                                 </div>
+                                                                 <div className="space-y-1">
+                                                                     <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No subscriptions found</p>
+                                                                     <p className="text-[#92400e] text-xs font-medium">When agents subscribe to plans, they will appear here.</p>
+                                                                 </div>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : filteredSubscriptions.length === 0 ? (
                                                     <TableRow>
                                                         <TableCell colSpan={7} className="h-72 text-center">
                                                             <div className="flex flex-col items-center justify-center gap-4 opacity-50">
                                                                 <div className="p-4 bg-white/5 rounded-full border border-white/10">
-                                                                    <CreditCard className="h-10 w-10 text-[#7c3010]" />
+                                                                    <Search className="h-10 w-10 text-[#7c3010]" />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No active subscriptions yet</p>
-                                                                    <p className="text-[#92400e] text-xs font-medium">When agents subscribe to plans, they will appear here.</p>
+                                                                    <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No matching results</p>
+                                                                    <p className="text-[#92400e] text-xs font-medium">No subscriptions found for "{searchQuery}"</p>
                                                                 </div>
                                                                 <Button
                                                                     variant="outline"
                                                                     className="mt-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 rounded-xl"
-                                                                    onClick={() => setActiveTab('plans')}
+                                                                    onClick={() => setSearchQuery('')}
                                                                 >
-                                                                    View Available Plans
+                                                                    Clear Search
                                                                 </Button>
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>
                                                 ) : (
-                                                    subscriptions
-                                                        .filter((sub: Subscription) => {
-                                                            if (sub.status !== 'active') return false;
-                                                            const endDate = new Date(sub.end_date);
-                                                            const today = new Date();
-                                                            today.setHours(0, 0, 0, 0);
-                                                            return endDate >= today;
-                                                        })
-                                                        .map((sub: Subscription, i: number) => (
-                                                            <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
+                                                    filteredSubscriptions.map((sub: Subscription, i: number) => (
+                                                        <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
                                                                 <TableCell className="pl-8">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className={cn(
@@ -616,10 +719,13 @@ export default function AdminBillingPage() {
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <span className={cn(
-                                                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
-                                                                        sub.status === 'active' ? "bg-white/60 text-[#166534] border-emerald-400/20" : "bg-slate-100/10 text-slate-700 border-slate-100/20"
+                                                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap",
+                                                                        sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" : 
+                                                                        sub.status === 'cancelled' ? "bg-red-400/10 text-red-600 border-red-400/20" :
+                                                                        sub.status === 'expired' ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
+                                                                        "bg-amber-400/10 text-amber-600 border-amber-400/20"
                                                                     )}>
-                                                                        {sub.status}
+                                                                        {sub.status.replace('_', ' ')}
                                                                     </span>
                                                                 </TableCell>
                                                                 <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
@@ -640,8 +746,19 @@ export default function AdminBillingPage() {
                                                                             </Button>
                                                                         </DropdownMenuTrigger>
                                                                         <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl min-w-[150px]">
-                                                                            <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs text-white hover:bg-white/10">Manage Access</DropdownMenuItem>
-                                                                            <DropdownMenuItem className="rounded-xl font-bold py-2.5 px-4 text-xs text-red-400 hover:bg-red-400/10">Suspend Plan</DropdownMenuItem>
+                                                                            <DropdownMenuItem 
+                                                                                onClick={() => handleToggleSubStatus(sub)}
+                                                                                className={cn(
+                                                                                    "rounded-xl font-bold py-2.5 px-4 text-xs hover:bg-white/10 cursor-pointer",
+                                                                                    sub.status === 'active' ? "text-red-400" : "text-emerald-400"
+                                                                                )}
+                                                                            >
+                                                                                {sub.status === 'active' ? (
+                                                                                    <><Power className="h-4 w-4 mr-2" /> Deactivate Subscription</>
+                                                                                ) : (
+                                                                                    <><CheckCircle2 className="h-4 w-4 mr-2" /> Activate Subscription</>
+                                                                                )}
+                                                                            </DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     </DropdownMenu>
                                                                 </TableCell>
@@ -661,7 +778,11 @@ export default function AdminBillingPage() {
                                     <div className="text-[20px] font-bold text-[#111111] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
                                         {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                            const subCount = subscriptions.filter((s: Subscription) => s.plan.id === plan.id).length;
+                                            const subCount = subscriptions.filter((s: Subscription) => 
+                                                s.plan.id === plan.id && 
+                                                s.status !== 'pending_payment' && 
+                                                s.status !== 'failed'
+                                            ).length;
                                             const revenue = subCount * Number(plan.price);
                                             const colors = ['#f97316', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#0ea5e9'];
                                             const color = colors[idx % colors.length];
@@ -686,7 +807,12 @@ export default function AdminBillingPage() {
                                         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                                             <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Estimated Revenue</div>
                                             <div className="text-[20px] font-black text-[#111111] font-['Outfit'] tracking-tight">
-                                                ₹{plans.reduce((sum: number, p: SubscriptionPlan) => sum + (subscriptions.filter((s: Subscription) => s.plan.id === p.id).length * Number(p.price)), 0).toLocaleString('en-IN')}
+                                                ₹{plans.reduce((sum: number, p: SubscriptionPlan) => 
+                                                    sum + (subscriptions.filter((s: Subscription) => 
+                                                        s.plan.id === p.id && 
+                                                        s.status !== 'pending_payment' && 
+                                                        s.status !== 'failed'
+                                                    ).length * Number(p.price)), 0).toLocaleString('en-IN')}
                                             </div>
                                         </div>
                                     </div>
@@ -716,7 +842,7 @@ export default function AdminBillingPage() {
                 </div>
 
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogContent className="max-w-[560px] p-0 overflow-hidden glass-premium border-0">
+                    <DialogContent hideClose className="max-w-[560px] p-0 overflow-hidden glass-premium border-0">
                         <div className="bg-gradient-to-br from-[#FF6B2B] via-[#FF8E53] to-[#FF5A1F] px-[28px] pt-[28px] pb-[32px] text-white relative min-h-[110px]">
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4 opacity-10">
@@ -744,30 +870,48 @@ export default function AdminBillingPage() {
                             <div className="grid grid-cols-2 gap-[16px]">
                                 {/* Plan Name */}
                                 <div className="space-y-[4px]">
-                                    <Label className="text-[11px] font-semibold text-slate-900 uppercase tracking-[0.8px]">Plan Name</Label>
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-[11px] font-semibold text-slate-900 uppercase tracking-[0.8px]">Plan Name</Label>
+                                        <span className={cn("text-[10px] font-bold", newPlan.name.length > 45 ? "text-red-500" : "text-slate-900")}>
+                                            {newPlan.name.length}/50
+                                        </span>
+                                    </div>
                                     <Input
                                         value={newPlan.name}
-                                        onChange={e => setNewPlan({ ...newPlan, name: e.target.value })}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        maxLength={50}
+                                        onChange={e => {
+                                            setNewPlan({ ...newPlan, name: e.target.value });
+                                            if (errors.name) setErrors({ ...errors, name: '' });
+                                        }}
+                                        className={cn(
+                                            "h-[44px] rounded-[10px] border-[1.5px] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200",
+                                            errors.name ? "border-red-500 bg-red-50" : "border-[#E2E8F0]"
+                                        )}
                                         placeholder="e.g. Pro Plan"
                                     />
+                                    {errors.name && <p className="text-[10px] font-bold text-red-500 mt-1">{errors.name}</p>}
                                 </div>
 
                                 {/* Pricing */}
                                 <div className="space-y-[4px]">
                                     <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Pricing (INR)</Label>
-                                    <div className="flex h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#FF6B2B] focus-within:ring-[3px] focus-within:ring-[rgba(255,107,43,0.12)] transition-all duration-200 overflow-hidden">
+                                    <div className={cn(
+                                        "flex h-[44px] rounded-[10px] border-[1.5px] bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#FF6B2B] focus-within:ring-[3px] focus-within:ring-[rgba(255,107,43,0.12)] transition-all duration-200 overflow-hidden",
+                                        errors.price ? "border-red-500 bg-red-50" : "border-[#E2E8F0]"
+                                    )}>
                                         <div className="flex items-center justify-center bg-[#F1F5F9] border-r-[1.5px] border-[#E2E8F0] px-[12px]">
                                             <span className="text-[13px] font-semibold text-[#0f172a]">₹</span>
                                         </div>
                                         <Input
                                             type="number"
                                             min={0}
+                                            max={1000000}
                                             value={newPlan.price}
                                             onChange={e => {
-                                                const val = parseFloat(e.target.value);
-                                                if (val >= 0 || e.target.value === '') {
-                                                    setNewPlan({ ...newPlan, price: e.target.value });
+                                                const val = e.target.value;
+                                                if (val === '' || (parseFloat(val) >= 0 && parseFloat(val) <= 1000000)) {
+                                                    setNewPlan({ ...newPlan, price: val });
+                                                    if (errors.price) setErrors({ ...errors, price: '' });
                                                 }
                                             }}
                                             onKeyDown={e => {
@@ -777,7 +921,11 @@ export default function AdminBillingPage() {
                                             placeholder="5,000"
                                         />
                                     </div>
-                                    <p className="text-[10px] text-slate-900">Enter amount in Indian Rupees</p>
+                                    {errors.price ? (
+                                        <p className="text-[10px] font-bold text-red-500 mt-1">{errors.price}</p>
+                                    ) : (
+                                        <p className="text-[10px] text-slate-900">Enter amount in Indian Rupees</p>
+                                    )}
                                 </div>
                                 {/* Booking Limit */}
                                 <div className="space-y-[4px]">
@@ -785,19 +933,25 @@ export default function AdminBillingPage() {
                                     <Input
                                         type="number"
                                         min={-1}
+                                        max={10000}
                                         value={newPlan.booking_limit}
                                         onChange={e => {
-                                            const val = parseInt(e.target.value);
-                                            if (val >= -1 || e.target.value === '' || e.target.value === '-') {
-                                                setNewPlan({ ...newPlan, booking_limit: e.target.value });
+                                            const val = e.target.value;
+                                            if (val === '' || val === '-' || (parseInt(val) >= -1 && parseInt(val) <= 10000)) {
+                                                setNewPlan({ ...newPlan, booking_limit: val });
+                                                if (errors.booking_limit) setErrors({ ...errors, booking_limit: '' });
                                             }
                                         }}
                                         onKeyDown={e => {
                                             if (e.key === 'e') e.preventDefault();
                                         }}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        className={cn(
+                                            "h-[44px] rounded-[10px] border-[1.5px] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200",
+                                            errors.booking_limit ? "border-red-500 bg-red-50" : "border-[#E2E8F0]"
+                                        )}
                                         placeholder="Enter limit (-1 = unlimited)"
                                     />
+                                    {errors.booking_limit && <p className="text-[10px] font-bold text-red-500 mt-1">{errors.booking_limit}</p>}
                                 </div>
 
                                 {/* Billing Cycle */}
@@ -825,25 +979,50 @@ export default function AdminBillingPage() {
                                     <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Duration in Days</Label>
                                     <Input
                                         type="number"
+                                        min={1}
+                                        max={365}
                                         value={newPlan.duration_days}
-                                        onChange={e => setNewPlan({ ...newPlan, duration_days: e.target.value })}
-                                        className="h-[44px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200"
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 365)) {
+                                                setNewPlan({ ...newPlan, duration_days: val });
+                                                if (errors.duration_days) setErrors({ ...errors, duration_days: '' });
+                                            }
+                                        }}
+                                        className={cn(
+                                            "h-[44px] rounded-[10px] border-[1.5px] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[14px] text-[#0F172A] px-3 transition-all duration-200",
+                                            errors.duration_days ? "border-red-500 bg-red-50" : "border-[#E2E8F0]"
+                                        )}
                                         placeholder="e.g. 15"
                                     />
+                                    {errors.duration_days && <p className="text-[10px] font-bold text-red-500 mt-1">{errors.duration_days}</p>}
                                 </div>
                             )}
 
                             {/* Features */}
                             <div className="space-y-[4px]">
-                                <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Features (one per line)</Label>
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-[11px] font-semibold text-[#0f172a] uppercase tracking-[0.8px]">Features (one per line)</Label>
+                                    <span className={cn("text-[10px] font-bold", newPlan.features.length > 950 ? "text-red-500" : "text-slate-900")}>
+                                        {newPlan.features.length}/1000
+                                    </span>
+                                </div>
                                 <Textarea
                                     value={newPlan.features}
-                                    onChange={e => setNewPlan({ ...newPlan, features: e.target.value })}
-                                    className="min-h-[100px] rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[13px] text-[#0F172A] p-[12px] resize-none leading-[1.6] transition-all duration-200"
+                                    maxLength={1000}
+                                    onChange={e => {
+                                        setNewPlan({ ...newPlan, features: e.target.value });
+                                        if (errors.features) setErrors({ ...errors, features: '' });
+                                    }}
+                                    className={cn(
+                                        "min-h-[100px] rounded-[10px] border-[1.5px] bg-[#F8FAFC] focus:bg-white focus:border-[#FF6B2B] focus:ring-[3px] focus:ring-[rgba(255,107,43,0.12)] font-normal text-[13px] text-[#0F172A] p-[12px] resize-none leading-[1.6] transition-all duration-200",
+                                        errors.features ? "border-red-500 bg-red-50" : "border-[#E2E8F0]"
+                                    )}
                                     placeholder={`Feature 1
 Feature 2
 Feature 3`}
                                 />
+                                {errors.features && <p className="text-[10px] font-bold text-red-500 mt-1">{errors.features}</p>}
                             </div>
 
                             {/* Active Status Toggle */}
@@ -915,6 +1094,46 @@ Feature 3`}
                                         )}
                                     </Button>
                                 </DialogFooter>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                    <DialogContent hideClose className="max-w-[400px] p-0 overflow-hidden glass-premium border-0 !rounded-[24px]">
+                        <div className="p-8 space-y-6 text-center">
+                            <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-2">
+                                <Trash className="h-8 w-8 stroke-[2.5px]" />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <DialogTitle className="text-[22px] font-bold text-slate-900 font-['Plus_Jakarta_Sans'] tracking-tight">Delete Plan?</DialogTitle>
+                                <DialogDescription className="text-slate-600 font-medium text-[14px] leading-relaxed">
+                                    Are you sure you want to delete <span className="text-slate-900 font-bold">"{planToDelete?.name}"</span>? 
+                                    This action cannot be undone and may affect active subscribers.
+                                </DialogDescription>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setIsDeleteOpen(false)}
+                                    className="flex-1 h-[48px] rounded-[14px] font-bold text-[14px] text-slate-600 border-[1.5px] border-slate-100 hover:bg-slate-50 transition-all"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={confirmDelete}
+                                    disabled={deleteMutation.isPending}
+                                    className="flex-1 h-[48px] rounded-[14px] bg-red-500 hover:bg-red-600 text-white font-bold text-[14px] shadow-[0_8px_16px_rgba(239,68,68,0.25)] transition-all flex items-center justify-center gap-2"
+                                >
+                                    {deleteMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Delete Plan"
+                                    )}
+                                </Button>
                             </div>
                         </div>
                     </DialogContent>

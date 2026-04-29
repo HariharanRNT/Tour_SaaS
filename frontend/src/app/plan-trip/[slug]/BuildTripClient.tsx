@@ -34,6 +34,8 @@ import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 interface Activity {
     id?: string
@@ -672,9 +674,9 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         // For instant booking, require authentication
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
         if (!token) {
-            openAuthModal({ 
+            openAuthModal({
                 mode: 'login',
-                redirectUrl: window.location.href 
+                redirectUrl: window.location.href
             })
             return
         }
@@ -837,8 +839,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         {/* Title */}
                         <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 break-anywhere">
                             Trip to <span className="text-white italic bg-clip-text drop-shadow-sm">
-                                {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1)) 
-                                    ? "Multi City Tour" 
+                                {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1))
+                                    ? "Multi City Tour"
                                     : session.destination
                                 }
                             </span>
@@ -904,7 +906,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     <h2 className="text-3xl md:text-4xl font-black text-black leading-tight break-anywhere">
                                         {session.title}
                                     </h2>
-                                    <div 
+                                    <div
                                         className="text-black font-medium leading-relaxed text-lg max-w-5xl break-anywhere line-clamp-6"
                                         dangerouslySetInnerHTML={{ __html: session.description || '' }}
                                     />
@@ -972,6 +974,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             headingBorderColor={undefined}
                                             dayBadgeColor={undefined}
                                             isReadonly={mode === 'preview'}
+                                            tripStyles={session?.trip_styles || (session?.trip_style ? [session.trip_style] : [])}
                                         />
                                     </TabsContent>
                                 ))}
@@ -1389,12 +1392,12 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     ]
                                     const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
                                     let subTotal = totalBasePrice + totalServicesPrice
-                                    
+
                                     if (gstSettings && !gstSettings.inclusive) {
                                         const gstAmount = (subTotal * gstSettings.percentage) / 100
                                         subTotal += gstAmount
                                     }
-                                    
+
                                     return subTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })
                                 })()}`
                             )}
@@ -1445,7 +1448,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
             {/* Enquiry Modal */}
             <Dialog open={isEnquiryModalOpen} onOpenChange={setIsEnquiryModalOpen}>
-                <DialogContent className="max-w-[500px] glass-panel bg-white/80 p-0 overflow-hidden border-white/40 z-[1100]">
+                <DialogContent hideClose={true} className="max-w-[500px] glass-panel bg-white/80 p-0 overflow-hidden border-white/40 z-[1100]">
                     <div className="absolute top-4 right-4 z-10">
                         <DialogClose asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/50 hover:bg-white/80">
@@ -1456,7 +1459,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
                     <div className="flex flex-col h-full max-h-[90vh]">
                         <div className="bg-gradient-to-br from-[var(--primary-soft)] to-white p-6 border-b border-white/50">
-                            <h3 className="font-bold text-xl text-[var(--color-primary-font)]">Inquire About This Journey</h3>
+                            <h3 className="font-bold text-xl text-[var(--color-primary-font)]">Enquire About This Journey</h3>
                             <p className="text-sm text-[var(--color-primary-font)]/70 mt-1">{session?.title}</p>
                         </div>
 
@@ -1468,16 +1471,27 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         placeholder="Full Name"
                                         value={enquiryForm.name}
                                         onChange={(e) => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
-                                        className="h-11 bg-white/50 border-white/40"
+                                        className="h-11 bg-white/50 border-white/40 text-slate-900 font-medium"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[var(--color-primary-font)]">Phone Number <span className="text-red-500">*</span></Label>
-                                    <Input
-                                        placeholder="+91 ..."
+                                    <PhoneInput
+                                        country={'in'}
                                         value={enquiryForm.phone}
-                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, phone: e.target.value }))}
-                                        className="h-11 bg-white/50 border-white/40"
+                                        onChange={(val) => setEnquiryForm(prev => ({ ...prev, phone: val }))}
+                                        placeholder="+91 ..."
+                                        inputProps={{
+                                            id: 'phone',
+                                            name: 'phone',
+                                            required: true,
+                                        }}
+                                        containerClass="!w-full !border-none"
+                                        inputClass="!w-full !h-11 !bg-white/50 !border-white/40 !rounded-xl !transition-all !pl-12 !font-sans !text-slate-900 !font-medium"
+                                        buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-white/80 !transition-colors"
+                                        dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
+                                        searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
+                                        enableSearch={true}
                                     />
                                 </div>
                             </div>
@@ -1489,7 +1503,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     placeholder="email@example.com"
                                     value={enquiryForm.email}
                                     onChange={(e) => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
-                                    className="h-11 bg-white/50 border-white/40"
+                                    className="h-11 bg-white/50 border-white/40 text-slate-900 font-medium"
                                 />
                             </div>
 
@@ -1499,7 +1513,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     placeholder="Tell us about special requirements..."
                                     value={enquiryForm.message}
                                     onChange={(e) => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
-                                    className="min-h-[100px] bg-white/50 border-white/40 resize-none"
+                                    className="min-h-[100px] bg-white/50 border-white/40 resize-none text-slate-900 font-medium"
                                 />
                             </div>
 
