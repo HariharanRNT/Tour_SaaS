@@ -52,7 +52,7 @@ async def create_payment_order(
         raise HTTPException(status_code=403, detail="Not authorized to pay for this booking")
     
     # Check if booking is already paid
-    if booking.payment_status == PaymentStatus.SUCCEEDED:
+    if booking.payment_status in [PaymentStatus.SUCCEEDED, PaymentStatus.PAID]:
         raise BadRequestException("Booking is already paid")
     
     # Create Razorpay order
@@ -274,7 +274,7 @@ async def mark_payment_failed(
         
     # Update Statuses
     booking.payment_status = PaymentStatus.FAILED
-    booking.status = BookingStatus.INITIATED
+    booking.status = BookingStatus.CANCELLED
     
     # Also update associated Payment records if any
     result_payments = await db.execute(

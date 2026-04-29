@@ -38,6 +38,7 @@ interface DayPlannerProps {
     onAddActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day') => void
     onRemoveActivity: (dayNumber: number, timeSlot: 'morning' | 'afternoon' | 'evening' | 'night' | 'half_day' | 'full_day', index: number) => void
     isReadonly?: boolean
+    tripStyles?: any[]
     // Theme Props
     morningColor?: string
     afternoonColor?: string
@@ -56,6 +57,7 @@ export function DayPlanner({
     onAddActivity,
     onRemoveActivity,
     isReadonly,
+    tripStyles,
     morningColor,
     afternoonColor,
     eveningColor,
@@ -323,14 +325,46 @@ export function DayPlanner({
                                     <div className="w-2 h-2 rounded-full bg-[var(--primary)]" />
                                     <span className="font-bold text-[var(--primary)] text-[10px] uppercase tracking-widest">{totalActivities} Experiences</span>
                                 </span>
-                                <span className={cn(
-                                    "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
-                                    pace === 'Relaxed' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                        pace === 'Balanced' ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-700 border-red-200"
-                                )}>
-                                    {pace === 'Relaxed' ? '🌱' : pace === 'Balanced' ? '⚖️' : '⚡'}
-                                    {pace} Pace
-                                </span>
+                                {(() => {
+                                    let parsedStyles: any[] = [];
+                                    if (tripStyles && tripStyles.length > 0) {
+                                        if (tripStyles.length === 1 && typeof tripStyles[0] === 'string' && tripStyles[0].startsWith('[')) {
+                                            try {
+                                                parsedStyles = JSON.parse(tripStyles[0]);
+                                            } catch(e) {
+                                                parsedStyles = tripStyles;
+                                            }
+                                        } else if (typeof tripStyles === 'string' && (tripStyles as string).startsWith('[')) {
+                                            try {
+                                                parsedStyles = JSON.parse(tripStyles as string);
+                                            } catch(e) {
+                                                parsedStyles = [tripStyles];
+                                            }
+                                        } else {
+                                            parsedStyles = tripStyles;
+                                        }
+                                    }
+
+                                    return parsedStyles.length > 0 ? (
+                                        parsedStyles.map((style: any, idx: number) => {
+                                            const styleName = typeof style === 'string' ? style : style.name || style.id || style.label;
+                                            return (
+                                                <span key={idx} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all bg-amber-50 text-amber-700 border-amber-200">
+                                                    {styleName}
+                                                </span>
+                                            );
+                                        })
+                                    ) : (
+                                        <span className={cn(
+                                            "flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
+                                            pace === 'Relaxed' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                                pace === 'Balanced' ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-red-50 text-red-700 border-red-200"
+                                        )}>
+                                            {pace === 'Relaxed' ? '🌱' : pace === 'Balanced' ? '⚖️' : '⚡'}
+                                            {pace} Pace
+                                        </span>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>

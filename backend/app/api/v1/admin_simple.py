@@ -108,7 +108,7 @@ async def get_dashboard_stats(
         
         # 3. Total Revenue
         rev_stmt = select(func.sum(Payment.amount)).where(
-            Payment.status == PaymentStatus.SUCCEEDED,
+            Payment.status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
             Payment.subscription_id != None
         )
         rev_stmt = apply_date_filter(rev_stmt, Payment.created_at)
@@ -117,7 +117,7 @@ async def get_dashboard_stats(
 
         # Prev Revenue
         prev_rev_stmt = select(func.sum(Payment.amount)).where(
-            Payment.status == PaymentStatus.SUCCEEDED,
+            Payment.status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
             Payment.subscription_id != None
         )
         prev_rev_stmt = apply_prev_filter(prev_rev_stmt, Payment.created_at)
@@ -171,14 +171,18 @@ async def get_dashboard_stats(
             User.email,
             User.is_active,
             func.count(Booking.id).label('booking_count'),
-            func.sum(Booking.total_amount).label('total_revenue')
+            func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('total_revenue')
         ).join(Agent, Agent.user_id == User.id).outerjoin(Booking, (User.id == Booking.agent_id) & (
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED])
+        ) & (
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+        ) & (
             (Booking.created_at >= filter_start) if filter_start else True
         ) & (
             (Booking.created_at < filter_end) if filter_end else True
         )).where(
             User.role == UserRole.AGENT
-        ).group_by(User.id, Agent.first_name, Agent.last_name)
+        ).group_by(User.id, Agent.first_name, Agent.last_name, User.is_active, User.email)
         
         result = await db.execute(stmt)
         agents_performance = []
@@ -309,7 +313,7 @@ async def get_dashboard_stats(
         # Fetch subscription payments for trends (covering both 6-month and YTM)
         trend_payments_stmt = select(Payment.created_at, Payment.amount).where(
             Payment.created_at >= min(six_months_ago, jan_1st),
-            Payment.status == PaymentStatus.SUCCEEDED,
+            Payment.status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID]),
             Payment.subscription_id != None  # Only subscription payments
         )
         result = await db.execute(trend_payments_stmt)
@@ -845,6 +849,21 @@ async def add_itinerary_item_simple(
         if not package:
             raise HTTPException(status_code=404, detail="Package not found")
         
+        # Check for 10 activities limit per slot
+        day_number = int(data.get('day_number', 1))
+        time_slot = data.get('time_slot', 'morning')
+        
+        stmt = select(func.count(ItineraryItem.id)).where(
+            ItineraryItem.package_id == package_id,
+            ItineraryItem.day_number == day_number,
+            ItineraryItem.time_slot == time_slot
+        )
+        result = await db.execute(stmt)
+        count = result.scalar() or 0
+        
+        if count >= 10:
+            raise HTTPException(status_code=400, detail=f"Maximum of 10 activities allowed per time slot ({time_slot})")
+
         # Serialize image_url if it's a list
         raw_img_url = data.get('image_url', '')
         img_url_val = json.dumps(raw_img_url) if isinstance(raw_img_url, list) else raw_img_url
@@ -1156,8 +1175,23 @@ async def copy_itinerary_day(
         result = await db.execute(stmt)
         items = result.scalars().all()
 
+        # Get target day counts for each slot
+        stmt_counts = select(ItineraryItem.time_slot, func.count(ItineraryItem.id)).where(
+            ItineraryItem.package_id == package_id,
+            ItineraryItem.day_number == target_day
+        ).group_by(ItineraryItem.time_slot)
+        result_counts = await db.execute(stmt_counts)
+        target_counts = {row[0]: row[1] for row in result_counts.all()}
+
         # Create copies for the target day
         for item in items:
+            slot = item.time_slot or 'morning'
+            current_count = target_counts.get(slot, 0)
+            
+            if current_count >= 10:
+                print(f"Skipping copy of '{item.title}' to day {target_day} slot {slot} as limit of 10 reached")
+                continue
+                
             new_item = ItineraryItem(
                 package_id=package_id,
                 day_number=target_day,
@@ -1173,6 +1207,7 @@ async def copy_itinerary_day(
                 is_optional=item.is_optional
             )
             db.add(new_item)
+            target_counts[slot] = current_count + 1
 
         await db.commit()
         return {"message": f"Day {day_number} copied to Day {target_day} successfully"}

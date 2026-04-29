@@ -25,7 +25,7 @@ import {
     User,
     Info,
     FileText,
-
+    Loader2,
     Edit,
     Trash2,
     FileSpreadsheet,
@@ -94,7 +94,7 @@ export default function AgentBookingsPage() {
         }
     }, [isSubUser, hasPermission, router])
 
-    const { data: bookingsData, isLoading: loading, refetch: loadBookings } = useQuery({
+    const { data: bookingsData, isLoading: loading, isFetching, refetch: loadBookings } = useQuery({
         queryKey: ['agent-bookings'],
         queryFn: async () => {
             const data = await bookingsAPI.getAgentBookings()
@@ -323,10 +323,10 @@ export default function AgentBookingsPage() {
                         <Button
                             variant="outline"
                             onClick={() => loadBookings()}
-                            disabled={loading}
+                            disabled={loading || isFetching}
                             className="h-12 px-6 rounded-2xl bg-white/30 backdrop-blur-xl border border-white/50 text-[var(--color-primary-font)] font-bold hover:bg-white/40 transition-all flex items-center gap-2 shadow-sm"
                         >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-4 w-4 ${(loading || isFetching) ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
                         <Button
@@ -665,7 +665,7 @@ export default function AgentBookingsPage() {
                                         </DropdownMenuItem>
 
                                         <DropdownMenuSeparator className="bg-white/10" />
-                                        {booking.status !== 'cancelled' && hasPermission('bookings', 'edit') && (
+                                        {booking.status === 'confirmed' && hasPermission('bookings', 'edit') && (
                                             <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)} className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
                                                 <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
                                             </DropdownMenuItem>
@@ -727,9 +727,51 @@ export default function AgentBookingsPage() {
     }
 
     function BookingDetailsModal({ booking, isOpen, onClose }: { booking: Booking | null, isOpen: boolean, onClose: () => void }) {
+        const [isDownloading, setIsDownloading] = useState(false);
+        const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+        useEffect(() => {
+            if (!isOpen) setShowCancelConfirm(false);
+        }, [isOpen]);
+
         if (!booking) return null;
 
         const travelerCount = booking.number_of_travelers || (booking.travelers ? booking.travelers.length : 0);
+
+        let contactInfo: any = null;
+        try {
+            if (booking.special_requests) {
+                const parsed = JSON.parse(booking.special_requests);
+                if (parsed.contact_info) {
+                    contactInfo = parsed.contact_info;
+                }
+            }
+        } catch (e) {
+            // Ignore parse error
+        }
+
+        const displayPhone = contactInfo?.phone || booking.user?.phone || 'Not provided';
+        const displayEmail = contactInfo?.email || booking.user?.email || 'Not provided';
+
+        const handleDownloadInvoice = async () => {
+            if (!booking.id) return;
+            setIsDownloading(true);
+            try {
+                const blob = await bookingsAPI.downloadInvoice(booking.id);
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Invoice-${booking.booking_reference || booking.id}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } catch (error) {
+                console.error("Failed to download invoice", error);
+                toast.error("Failed to download invoice");
+            } finally {
+                setIsDownloading(false);
+            }
+        };
 
         return (
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -739,15 +781,19 @@ export default function AgentBookingsPage() {
                 >
                     {/* Header Section: Reduced height, more purposeful actions */}
                     <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-8 py-8 text-white relative shrink-0">
-                        <div className="absolute top-6 right-6">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={onClose}
-                                className="h-10 w-10 rounded-full bg-white/20 border border-white/40 text-white hover:bg-white/30 backdrop-blur-md transition-all"
+                        <div className="absolute top-6 right-6 z-50">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onClose();
+                                }}
+                                className="flex items-center justify-center h-10 w-10 rounded-full bg-white/20 border border-white/40 text-white hover:bg-white/30 backdrop-blur-md transition-all cursor-pointer relative"
                             >
+                                <div className="absolute inset-0 z-10" />
                                 <XCircle className="h-6 w-6" />
-                            </Button>
+                            </button>
                         </div>
 
                         <div className="relative z-10 flex flex-col gap-4">
@@ -823,22 +869,22 @@ export default function AgentBookingsPage() {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
-                                            <a href={`mailto:${booking.user?.email}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
+                                            <a href={`mailto:${displayEmail}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
                                                 <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[var(--primary)]/10">
                                                     <Mail className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-0.5">Email Address</p>
-                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{booking.user?.email}</span>
+                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{displayEmail}</span>
                                                 </div>
                                             </a>
-                                            <a href={`tel:${booking.user?.phone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
+                                            <a href={`tel:${displayPhone}`} className="flex items-start gap-4 p-5 bg-white/40 rounded-2xl border border-white/60 hover:border-[var(--primary)]/40 transition-all group overflow-hidden">
                                                 <div className="bg-white/60 p-2.5 rounded-xl group-hover:bg-[var(--primary)]/10">
                                                     <Phone className="h-4 w-4 text-[var(--primary)]" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-0.5">Phone Number</p>
-                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{booking.user?.phone || 'Not provided'}</span>
+                                                    <span className="truncate text-sm font-bold text-[var(--color-primary-font)] block">{displayPhone}</span>
                                                 </div>
                                             </a>
                                         </div>
@@ -853,15 +899,8 @@ export default function AgentBookingsPage() {
                                         </div>
                                         <h3 className="text-xl font-bold text-[var(--color-primary-font)]">Tour Logistics</h3>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 flex-1">
-                                        <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-2 leading-none">Meeting Point</p>
-                                            <p className="font-bold text-[var(--color-primary-font)] text-sm">{booking.package?.destination || 'Primary Hub'}</p>
-                                        </div>
-                                        <div className="p-5 bg-white/40 rounded-2xl border border-white/60">
-                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] mb-2 leading-none">Check-in Time</p>
-                                            <p className="font-bold text-[var(--color-primary-font)] text-sm">09:00 AM</p>
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-4">
+
                                         <div className="p-5 bg-white/40 rounded-2xl border border-white/60 flex flex-col justify-between">
                                             <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-[0.2em] leading-none mb-2">Category</p>
                                             <Badge className="bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20 font-black uppercase py-0.5 px-3 text-[9px] rounded-full w-fit">
@@ -936,12 +975,45 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-[var(--color-primary-font)]">What's Included</h3>
                                     </div>
                                     <div className="space-y-2.5">
-                                        {(booking.package?.included_items || ['Expert Professional Guide', 'Premium Accommodation (4*)', 'All Local Transportation', 'Entrance Fees to Major Sights', 'Buffet Breakfast & Welcome Dinner']).map((item, idx) => (
-                                            <div key={idx} className="flex items-start gap-2.5">
-                                                <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                                <span className="text-sm font-bold text-[var(--color-primary-font)]/70 leading-tight">{item}</span>
-                                            </div>
-                                        ))}
+                                        {(() => {
+                                            const inclusions = [];
+                                            
+                                            // 1. Standard included_items (old/fallback list)
+                                            if (booking.package?.included_items && booking.package.included_items.length > 0) {
+                                                inclusions.push(...booking.package.included_items);
+                                            }
+                                            
+                                            // 2. Structured Inclusions Dictionary
+                                            if (booking.package?.inclusions) {
+                                                Object.entries(booking.package.inclusions).forEach(([key, val]: [string, any]) => {
+                                                    if (val && val.included) {
+                                                        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                                                        inclusions.push(`${label}${val.details ? `: ${val.details}` : ''}`);
+                                                    }
+                                                });
+                                            }
+                                            
+                                            // 3. Custom Services (New)
+                                            if (booking.package?.custom_services && booking.package.custom_services.length > 0) {
+                                                booking.package.custom_services.forEach((service: any) => {
+                                                    if (service.isIncluded) {
+                                                        inclusions.push(service.heading);
+                                                    }
+                                                });
+                                            }
+
+                                            // Fallback if absolutely empty
+                                            const displayInclusions = inclusions.length > 0 
+                                                ? inclusions 
+                                                : ['Expert Professional Guide', 'Premium Accommodation (4*)', 'All Local Transportation', 'Entrance Fees to Major Sights', 'Buffet Breakfast & Welcome Dinner'];
+
+                                            return displayInclusions.map((item, idx) => (
+                                                <div key={idx} className="flex items-start gap-2.5">
+                                                    <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                                    <span className="text-sm font-bold text-[var(--color-primary-font)]/70 leading-tight">{item}</span>
+                                                </div>
+                                            ));
+                                        })()}
                                     </div>
                                 </section>
                                 <section className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
@@ -952,20 +1024,38 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-[var(--color-primary-font)]">Cancellation Policy</h3>
                                     </div>
                                     <ul className="space-y-3">
-                                        <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-                                            <div>
-                                                <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Full Refund</p>
-                                                <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
-                                            </div>
-                                        </li>
-                                        <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-                                            <div>
-                                                <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
-                                                <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made between 7-14 days before travel date.</p>
-                                            </div>
-                                        </li>
+                                        {booking.package?.cancellation_rules && booking.package.cancellation_rules.length > 0 ? (
+                                            booking.package.cancellation_rules.map((rule: any, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                    <div>
+                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">
+                                                            {rule.refundPercentage}% Refund
+                                                        </p>
+                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">
+                                                            Cancellations made {rule.daysBefore}+ days before travel date.
+                                                        </p>
+                                                    </div>
+                                                </li>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                    <div>
+                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Full Refund</p>
+                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
+                                                    </div>
+                                                </li>
+                                                <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                    <div>
+                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
+                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made between 7-14 days before travel date.</p>
+                                                    </div>
+                                                </li>
+                                            </>
+                                        )}
                                     </ul>
                                 </section>
                             </div>
@@ -1090,13 +1180,7 @@ export default function AgentBookingsPage() {
                                                     </div>
                                                     <span className="text-slate-100 font-mono">₹{(booking.total_amount - (booking.total_amount / 1.18) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center font-bold text-emerald-400">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                                        <span className="text-sm">Agent Discounts Applied</span>
-                                                    </div>
-                                                    <span className="font-mono">-₹0.00</span>
-                                                </div>
+
 
                                                 <div className="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-end sm:items-center gap-6">
                                                     <div className="flex flex-wrap items-center gap-4">
@@ -1136,24 +1220,54 @@ export default function AgentBookingsPage() {
                             </Button>
 
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-                                {booking.status !== 'cancelled' && hasPermission('bookings', 'edit') && (
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => handleCancelBooking(booking.id)}
-                                        disabled={cancelMutation.isPending}
-                                        className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest"
-                                    >
-                                        <Trash2 className="h-4 w-4 mr-2" /> {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Booking'}
-                                    </Button>
+                                {booking.status === 'confirmed' && hasPermission('bookings', 'edit') && (
+                                    showCancelConfirm ? (
+                                        <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-2xl border border-red-200 shadow-sm animate-in zoom-in-95 duration-200">
+                                            <span className="text-[11px] font-black text-red-600 uppercase tracking-widest ml-3 mr-2">Confirm?</span>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => setShowCancelConfirm(false)}
+                                                className="h-10 px-4 font-black text-slate-500 hover:bg-slate-100 rounded-xl text-[11px] uppercase tracking-widest"
+                                            >
+                                                No
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    cancelMutation.mutate(booking.id, {
+                                                        onSettled: () => setShowCancelConfirm(false)
+                                                    })
+                                                }}
+                                                disabled={cancelMutation.isPending}
+                                                className="h-10 px-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[11px] uppercase tracking-widest flex items-center gap-2"
+                                            >
+                                                {cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                Yes, Cancel
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setShowCancelConfirm(true)}
+                                            className="h-12 px-6 font-black text-red-600 hover:bg-red-50 hover:text-red-700 rounded-2xl text-[11px] uppercase tracking-widest"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-2" /> Cancel Booking
+                                        </Button>
+                                    )
                                 )}
                                 {hasPermission('bookings', 'edit') && (
                                     <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-[var(--color-primary-font)]/80 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
                                         <Edit className="h-4 w-4 mr-2" /> Modify Trip
                                     </Button>
                                 )}
-                                <Button className="h-12 px-10 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-2xl shadow-xl shadow-[var(--button-glow)] transition-all text-[11px] uppercase tracking-widest gap-2">
-                                    <Download className="h-4 w-4" /> Download Full Invoice
-                                </Button>
+                                {booking.status === 'confirmed' && (
+                                    <Button 
+                                        onClick={handleDownloadInvoice}
+                                        disabled={isDownloading}
+                                        className="h-12 px-10 bg-gradient-to-r from-[var(--button-bg)] to-[var(--button-bg-light)] text-white font-black rounded-2xl shadow-xl shadow-[var(--button-glow)] transition-all text-[11px] uppercase tracking-widest gap-2">
+                                        {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                        {isDownloading ? 'Downloading...' : 'Download Full Invoice'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </DialogFooter>

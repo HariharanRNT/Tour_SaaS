@@ -122,11 +122,11 @@ export default function SubscriptionPage() {
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
             const subs: Subscription[] = await res.json();
 
-            const now = new Date();
-            const active = subs.find(s => s.status === 'active' && new Date(s.end_date) > now);
+            const todayStr = new Date().toISOString().split('T')[0];
+            const active = subs.find(s => s.status === 'active' && s.end_date >= todayStr);
             const upcoming = subs.filter(s => s.status === 'upcoming');
             const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
-                || (s.status === 'active' && new Date(s.end_date) <= now));
+                || (s.status === 'active' && s.end_date < todayStr));
             const paused = subs.filter(s => s.status === 'on_hold');
 
             return { active, upcoming, history, paused };
@@ -805,7 +805,7 @@ export default function SubscriptionPage() {
                                         <ArrowLeft className="h-4 w-4 rotate-180" /> Compare Plans
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 rounded-[32px] p-0 shadow-2xl">
                                     <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10 flex items-center justify-between">
                                         <DialogHeader>
                                             <DialogTitle className="text-2xl font-black text-[var(--color-primary-font)] tracking-tight uppercase flex items-center gap-2">

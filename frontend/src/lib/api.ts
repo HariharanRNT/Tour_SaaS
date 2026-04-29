@@ -109,7 +109,15 @@ api.interceptors.response.use(
     },
     (error) => {
         if (error.response?.status === 401) {
-            if (typeof window !== 'undefined') {
+            // Check if this is an auth request (login/register/otp)
+            // We don't want to redirect to login page if the user just entered wrong credentials
+            const isAuthRequest = error.config?.url?.includes('/auth/login') || 
+                                  error.config?.url?.includes('/auth/google-login') ||
+                                  error.config?.url?.includes('/auth/register') ||
+                                  error.config?.url?.includes('/auth/verify-login-otp') ||
+                                  error.config?.url?.includes('/auth/send-login-otp');
+
+            if (typeof window !== 'undefined' && !isAuthRequest) {
                 localStorage.removeItem('token')
                 localStorage.removeItem('user')
                 // Avoid infinite redirect if already on login
@@ -328,6 +336,11 @@ export const fetchAdminPlans = async () => {
 
 export const fetchAdminSubscriptions = async () => {
     const response = await api.get('/subscriptions/admin/subscriptions')
+    return response.data
+}
+
+export const updateAdminSubscriptionStatus = async (id: string, status: string) => {
+    const response = await api.patch(`/subscriptions/admin/subscriptions/${id}/status`, { status })
     return response.data
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { authAPI } from '@/lib/api'
 
 interface User {
@@ -63,19 +63,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initAuth()
     }, [])
 
-    const login = (token: string, userData: User) => {
+    const login = useCallback((token: string, userData: User) => {
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(userData))
         setUser(userData)
-    }
+    }, [])
 
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         setUser(null)
-    }
+    }, [])
 
-    const refreshUser = async () => {
+    const refreshUser = useCallback(async () => {
         try {
             const freshUser = await authAPI.getCurrentUser()
             localStorage.setItem('user', JSON.stringify(freshUser))
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Failed to refresh user:', error)
         }
-    }
+    }, [])
 
     const isSubUser = user?.role?.toUpperCase() === 'SUB_USER'
 

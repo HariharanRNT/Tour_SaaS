@@ -1,6 +1,6 @@
 """Package schemas for API requests and responses"""
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
@@ -82,6 +82,13 @@ class CustomService(BaseModel):
 
 class PackageBase(BaseModel):
     title: str = Field(..., max_length=100)
+    
+    @field_validator('title')
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Package title cannot be empty or just whitespace")
+        return v.strip()
     slug: Optional[str] = None
     destination: str
     duration_days: int
@@ -137,6 +144,15 @@ class PackageCreate(PackageBase):
 
 class PackageUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=100)
+
+    @field_validator('title')
+    @classmethod
+    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not v.strip():
+            raise ValueError("Package title cannot be empty or just whitespace")
+        return v.strip()
     slug: Optional[str] = None
     destination: Optional[str] = None
     duration_days: Optional[int] = None

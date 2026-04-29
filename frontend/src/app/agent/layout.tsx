@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { RoleGuard } from "@/components/auth/role-guard"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { AdminHeader } from "@/components/admin/AdminHeader"
@@ -14,7 +15,15 @@ export default function AgentLayout({
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-    const { user } = useAuth()
+    const pathname = usePathname()
+    const { user, refreshUser, isSubUser } = useAuth()
+
+    // Real-time permission sync: Refresh user data on every navigation for sub-users
+    useEffect(() => {
+        if (isSubUser) {
+            refreshUser()
+        }
+    }, [pathname, isSubUser, refreshUser])
 
     return (
         <RoleGuard allowedRoles={['agent', 'AGENT', 'sub_user', 'SUB_USER']}>

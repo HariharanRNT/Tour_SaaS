@@ -103,7 +103,7 @@ export default function AgentEnquiriesPage() {
     })
 
     useEffect(() => {
-        if (isSubUser && !hasPermission('packages', 'view')) {
+        if (isSubUser && !hasPermission('enquiries', 'view')) {
             router.push('/agent/dashboard')
         }
     }, [isSubUser, hasPermission, router])

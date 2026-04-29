@@ -176,12 +176,16 @@ const formatDuration = (minutes: number) => {
     return `${hours}h ${mins}m`;
 };
 
+const timeToMinutes = (time?: string) => {
+    if (!time) return null;
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+};
+
 const calculateDurationMinutes = (start?: string, end?: string) => {
-    if (!start || !end) return 0;
-    const [sH, sM] = start.split(':').map(Number);
-    const [eH, eM] = end.split(':').map(Number);
-    const startTotal = sH * 60 + sM;
-    const endTotal = eH * 60 + eM;
+    const startTotal = timeToMinutes(start);
+    const endTotal = timeToMinutes(end);
+    if (startTotal === null || endTotal === null) return 0;
     return endTotal - startTotal;
 };
 
@@ -502,13 +506,12 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                 is_optional: false
                             }
 
-                            // Add to appropriate time slot
-                            if (organized[dayNumber][timeSlot as keyof DayActivities]) {
-                                (organized[dayNumber][timeSlot as keyof DayActivities] as Activity[]).push(convertedActivity)
+                            // Add to appropriate time slot (Limit to 10)
+                            const targetSlot = (organized[dayNumber][timeSlot as keyof DayActivities] ? timeSlot : 'full_day') as keyof DayActivities
+                            if (organized[dayNumber][targetSlot].length < 10) {
+                                (organized[dayNumber][targetSlot] as Activity[]).push(convertedActivity)
                             } else {
-                                // Default to full_day if time slot not recognized
-                                console.warn(`[ItineraryBuilder] Unknown time slot '${timeSlot}', defaulting to full_day`)
-                                organized[dayNumber].full_day.push(convertedActivity)
+                                console.warn(`[ItineraryBuilder] Limit reached for ${targetSlot} on day ${dayNumber}, skipping activity: ${activity.title}`)
                             }
                         })
                     })
@@ -692,6 +695,57 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
             return
         }
 
+        // Time Validation
+        const startMinutes = timeToMinutes(newActivity.start_time);
+        const endMinutes = timeToMinutes(newActivity.end_time);
+
+        if (startMinutes !== null && endMinutes !== null) {
+            if (endMinutes <= startMinutes) {
+                toast.error('End time must be after start time');
+                return;
+            }
+
+            // Check for overlapping activities on the same day
+            const dayActivities = activities[currentDay];
+            if (dayActivities) {
+                const allDayActivities = [
+                    ...(dayActivities.morning || []),
+                    ...(dayActivities.afternoon || []),
+                    ...(dayActivities.evening || []),
+                    ...(dayActivities.night || []),
+                    ...(dayActivities.half_day || []),
+                    ...(dayActivities.full_day || [])
+                ];
+
+                const hasOverlap = allDayActivities.some(activity => {
+                    // Skip if we're editing the current activity
+                    if (editingId && activity.id === editingId) return false;
+
+                    const existingStart = timeToMinutes(activity.start_time);
+                    const existingEnd = timeToMinutes(activity.end_time);
+
+                    if (existingStart === null || existingEnd === null) return false;
+
+                    // Standard overlap detection: (StartA < EndB) and (EndA > StartB)
+                    return startMinutes < existingEnd && endMinutes > existingStart;
+                });
+
+                if (hasOverlap) {
+                    toast.error('This activity overlaps with another scheduled activity on this day.');
+                    return;
+                }
+            }
+        }
+
+        // Check for 10 activities limit (only for new activities, not edits)
+        if (!editingId) {
+            const currentSlotCount = activities[currentDay]?.[selectedTimeSlot as keyof DayActivities]?.length || 0
+            if (currentSlotCount >= 10) {
+                toast.error(`You can only add up to 10 activities in the ${timeSlotConfig[selectedTimeSlot as keyof typeof timeSlotConfig].label} section.`)
+                return
+            }
+        }
+
         if (newActivity.title.length > 100) {
             toast.error('Activity title cannot exceed 100 characters')
             return
@@ -872,16 +926,29 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
     }
 
     const handleDeleteActivity = async (activityId: string) => {
-        if (!confirm('Delete this activity?')) return
-
-        try {
-            await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${activityId}`, {
-                method: 'DELETE'
-            })
-            loadItinerary()
-        } catch (error) {
-            console.error('Failed to delete activity:', error)
-        }
+        setAlertConfig({
+            open: true,
+            title: 'Delete Activity',
+            message: 'Are you sure you want to delete this activity? This action cannot be undone.',
+            variant: 'destructive',
+            onConfirm: async () => {
+                const toastId = toast.loading('Deleting activity...')
+                try {
+                    const response = await fetch(`${API_URL}/api/v1/admin-simple/packages-simple/${packageId}/itinerary-items/${activityId}`, {
+                        method: 'DELETE'
+                    })
+                    if (response.ok) {
+                        toast.success('Activity deleted!', { id: toastId })
+                        loadItinerary()
+                    } else {
+                        throw new Error('Failed to delete activity')
+                    }
+                } catch (error) {
+                    console.error('Failed to delete activity:', error)
+                    toast.error('Error deleting activity', { id: toastId })
+                }
+            }
+        })
     }
 
     const getDayActivities = (day: number): DayActivities => {
@@ -944,6 +1011,13 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
             if (targetDayStr && targetSlotStr) {
                 const day = parseInt(targetDayStr)
                 const slot = targetSlotStr as keyof DayActivities
+
+                // Check for 10 activities limit
+                const currentSlotCount = activities[day]?.[slot]?.length || 0
+                if (currentSlotCount >= 10) {
+                    toast.error(`You can only add up to 10 activities in the ${timeSlotConfig[slot as keyof typeof timeSlotConfig].label} section.`)
+                    return
+                }
 
                 // Switch to the drop target day
                 setCurrentDay(day)
@@ -1085,6 +1159,13 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
     }
 
     const handleOpenAddForm = (slot: string) => {
+        // Check for 10 activities limit
+        const currentSlotCount = activities[currentDay]?.[slot as keyof DayActivities]?.length || 0
+        if (currentSlotCount >= 10) {
+            toast.error(`You can only add up to 10 activities in the ${timeSlotConfig[slot as keyof typeof timeSlotConfig].label} section.`)
+            return
+        }
+
         setSelectedTimeSlot(slot)
         setActivityDuration(null)
         setIsAutoCalculated(false)
@@ -1670,7 +1751,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                                                             maxLength={1000}
                                                         />
                                                         <div className="mt-2 h-1 w-full bg-black/5 rounded-full overflow-hidden">
-                                                            <div 
+                                                            <div
                                                                 className={cn(
                                                                     "h-full transition-all duration-300",
                                                                     (newActivity.description?.length || 0) > 900 ? "bg-red-500" : "bg-[var(--primary)]"
@@ -1899,12 +1980,12 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                         <AlertDialogCancel className="bg-white/50 border-white/40 text-black hover:bg-white/80 rounded-xl px-6 h-11 transition-all">
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
                             onClick={alertConfig.onConfirm}
                             className={cn(
                                 "rounded-xl px-8 h-11 font-bold tracking-wide transition-all",
-                                alertConfig.variant === 'destructive' 
-                                    ? "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200" 
+                                alertConfig.variant === 'destructive'
+                                    ? "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200"
                                     : "bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary)]/20"
                             )}
                         >
@@ -1926,7 +2007,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                             Choose the target day number you want to copy all activities to.
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="py-6">
                         <div className="space-y-2">
                             <Label htmlFor="target-day" className="text-[10px] font-black uppercase tracking-widest text-black/50 ml-1">Target Day Number</Label>
@@ -1954,14 +2035,14 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                     </div>
 
                     <DialogFooter className="gap-3">
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             onClick={() => setCopyDialog(prev => ({ ...prev, open: false }))}
                             className="bg-white/30 border-white/30 text-black hover:bg-white/50 rounded-xl px-6 h-11 transition-all"
                         >
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={executeCopyToDay}
                             disabled={!copyDialog.targetDay}
                             className="bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary)]/20 rounded-xl px-8 h-11 font-bold tracking-wide transition-all"
