@@ -289,8 +289,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 const end = new Date(start)
                 end.setDate(start.getDate() + duration)
 
-                depDate = start.toISOString().split('T')[0]
-                retDate = end.toISOString().split('T')[0]
+                depDate = format(start, 'yyyy-MM-dd')
+                retDate = format(end, 'yyyy-MM-dd')
             }
 
             // Map standard city names to airport codes if needed
@@ -430,7 +430,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 // Mock session-like structure for preview
                 setSession({
                     ...data,
-                    start_date: new Date().toISOString().split('T')[0], // Default to today
+                    start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
                         departure_location: searchParams.get('origin') || 'MAA',
@@ -483,7 +483,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 // Mock session-like structure for preview
                 setSession({
                     ...data,
-                    start_date: new Date().toISOString().split('T')[0], // Default to today
+                    start_date: format(new Date(), 'yyyy-MM-dd'), // Default to today
                     travelers: { adults: 2, children: 0, infants: 0 },
                     preferences: {
                         departure_location: searchParams.get('origin') || 'MAA',
@@ -626,7 +626,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     destination: session.destination || session.title || slug || 'Trip',
                     duration_days: session.duration_days || 5,
                     duration_nights: session.duration_nights || 4,
-                    start_date: session.start_date || new Date().toISOString().split('T')[0],
+                    start_date: session.start_date || format(new Date(), 'yyyy-MM-dd'),
                     travelers: travelers,
                     preferences: session.preferences || {},
                     package_id: session.id || packageId
@@ -751,7 +751,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         }
 
         // Get travel date from form or fallback
-        const travelDate = enquiryForm.travelDate ? format(enquiryForm.travelDate, 'yyyy-MM-dd') : (queryDate || session?.start_date || new Date().toISOString().split('T')[0])
+        const travelDate = enquiryForm.travelDate ? format(enquiryForm.travelDate, 'yyyy-MM-dd') : (queryDate || session?.start_date || format(new Date(), 'yyyy-MM-dd'))
         const totalTravellers = Math.max(travelers.adults + travelers.children, 1)
 
         setSendingEnquiry(true)

@@ -128,7 +128,7 @@ export default function CreateItineraryPage() {
                                             value={startDate}
                                             onChange={(e) => setStartDate(e.target.value)}
                                             className="pl-10"
-                                            min={new Date().toISOString().split('T')[0]}
+                                            min={new Date().toLocaleDateString('en-CA')}
                                         />
                                     </div>
                                 </div>
@@ -143,7 +143,7 @@ export default function CreateItineraryPage() {
                                             value={endDate}
                                             onChange={(e) => setEndDate(e.target.value)}
                                             className="pl-10"
-                                            min={startDate || new Date().toISOString().split('T')[0]}
+                                            min={startDate || new Date().toLocaleDateString('en-CA')}
                                         />
                                     </div>
                                 </div>

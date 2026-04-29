@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Script from 'next/script';
@@ -122,7 +123,7 @@ export default function SubscriptionPage() {
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
             const subs: Subscription[] = await res.json();
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
             const active = subs.find(s => s.status === 'active' && s.end_date >= todayStr);
             const upcoming = subs.filter(s => s.status === 'upcoming');
             const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
@@ -1047,8 +1048,15 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.start}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                                        max={format(new Date(), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                            const newStart = e.target.value;
+                                            setHistoryDateFilter(prev => ({ 
+                                                ...prev, 
+                                                start: newStart,
+                                                end: (prev.end && newStart && newStart > prev.end) ? newStart : prev.end
+                                            }))
+                                        }}
                                     />
                                     <span className="text-slate-300">|</span>
                                     <span className="text-xs text-[var(--color-primary-font)]/60 font-medium">To:</span>
@@ -1056,8 +1064,16 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.end}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                                        min={historyDateFilter.start}
+                                        max={format(new Date(), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                            const newEnd = e.target.value;
+                                            setHistoryDateFilter(prev => ({ 
+                                                ...prev, 
+                                                end: newEnd,
+                                                start: (prev.start && newEnd && newEnd < prev.start) ? newEnd : prev.start
+                                            }))
+                                        }}
                                     />
                                     {(historyDateFilter.start || historyDateFilter.end) && (
                                         <Button
