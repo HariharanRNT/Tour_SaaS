@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, UUID4
+from pydantic import BaseModel, ConfigDict, UUID4, Field
 from decimal import Decimal
 from typing import Optional, List
 from datetime import datetime
@@ -54,7 +54,7 @@ class ActivityResponse(ActivityBase):
     model_config = ConfigDict(from_attributes=True)
 
 class DestinationBase(BaseModel):
-    name: str
+    name: str = Field(..., max_length=50)
     country: str
     description: Optional[str] = None
     image_url: Optional[str] = None
@@ -66,7 +66,7 @@ class DestinationCreate(DestinationBase):
     pass
 
 class DestinationUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=50)
     country: Optional[str] = None
     description: Optional[str] = None
     image_url: Optional[str] = None

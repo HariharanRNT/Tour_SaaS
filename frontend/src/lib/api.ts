@@ -143,7 +143,7 @@ export const authAPI = {
         return response.data
     },
 
-    googleLogin: async (token: string, role: string = 'customer') => {
+    googleLogin: async (token: string, role: string = 'CUSTOMER') => {
         const response = await api.post('/auth/google-login', { token, role })
         return response.data
     },

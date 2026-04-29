@@ -429,6 +429,7 @@ function LoginContent() {
                                                     <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${passwordFocused || password ? 'text-black' : 'text-black/30'}`} />
                                                     <Input
                                                         id="password" type={showPassword ? 'text' : 'password'}
+                                                        maxLength={50}
                                                         value={password} onChange={(e) => setPassword(e.target.value)}
                                                         onFocus={() => setPasswordFocused(true)}
                                                         onBlur={() => setPasswordFocused(false)}

@@ -101,7 +101,11 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
             onClose()
         } catch (error: any) {
             console.error('Failed to save sub-user:', error)
-            toast.error(error.response?.data?.detail || 'Failed to save sub-user')
+            const detail = error.response?.data?.detail
+            const errorMessage = typeof detail === 'string' 
+                ? detail 
+                : (Array.isArray(detail) ? detail[0]?.msg : 'Failed to save sub-user')
+            toast.error(errorMessage)
         } finally {
             setLoading(false)
         }
@@ -143,6 +147,9 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">First Name</label>
                             <Input 
                                 required
+                                maxLength={50}
+                                pattern="[A-Za-z\s]+"
+                                title="Please enter only letters and spaces"
                                 value={formData.first_name}
                                 onChange={e => setFormData({ ...formData, first_name: e.target.value })}
                                 placeholder="e.g. Rahul"
@@ -153,6 +160,9 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             <label className="text-[11px] font-black text-black uppercase tracking-widest pl-1">Last Name</label>
                             <Input 
                                 required
+                                maxLength={50}
+                                pattern="[A-Za-z\s]+"
+                                title="Please enter only letters and spaces"
                                 value={formData.last_name}
                                 onChange={e => setFormData({ ...formData, last_name: e.target.value })}
                                 placeholder="e.g. Sharma"
@@ -164,6 +174,7 @@ export function SubUserModal({ isOpen, onClose, onSuccess, subUser }: SubUserMod
                             <Input 
                                 required
                                 type="email"
+                                maxLength={100}
                                 disabled={isEdit}
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}

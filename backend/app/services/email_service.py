@@ -10,7 +10,14 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     @staticmethod
-    async def send_email(to_email: str, subject: str, body: str, attachments: list = None, smtp_config: dict = None):
+    async def send_email(
+        to_email: str, 
+        subject: str, 
+        body: str, 
+        attachments: list = None, 
+        smtp_config: dict = None,
+        cc_emails: list = None
+    ):
         """
         Sends an email with optional multiple attachments.
         attachments: list of dicts like {"bytes": b"", "filename": ""}
@@ -23,12 +30,12 @@ class EmailService:
             provider = "smtp"
 
         if provider == "sendgrid" and settings.SENDGRID_API_KEY:
-            return await EmailService._send_via_sendgrid(to_email, subject, body, attachments)
+            return await EmailService._send_via_sendgrid(to_email, subject, body, attachments, cc_emails=cc_emails)
         else:
-            return await EmailService._send_via_smtp(to_email, subject, body, attachments, smtp_config)
+            return await EmailService._send_via_smtp(to_email, subject, body, attachments, smtp_config, cc_emails=cc_emails)
 
     @staticmethod
-    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachments: list = None):
+    async def _send_via_sendgrid(to_email: str, subject: str, body: str, attachments: list = None, cc_emails: list = None):
         import sendgrid
         from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType, Disposition
         import base64
@@ -40,6 +47,10 @@ class EmailService:
         to_email_obj = To(to_email)
         content = Content("text/html", body)
         mail = Mail(from_email, to_email_obj, subject, content)
+        
+        if cc_emails:
+            for cc in cc_emails:
+                mail.add_cc(cc)
 
         if attachments:
             for attach in attachments:
@@ -68,7 +79,7 @@ class EmailService:
             return False
 
     @staticmethod
-    async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None):
+    async def _send_via_smtp(to_email, subject, body, attachments=None, smtp_config=None, cc_emails=None):
         """Sends email via SMTP with multiple attachment support"""
         
         # Determine SMTP settings (Agent vs System)
@@ -85,7 +96,10 @@ class EmailService:
             if encryption in ["ssl", "implicit"]:
                 use_tls = True
                 start_tls = False
-            else:
+            elif encryption == "none":
+                use_tls = False
+                start_tls = False
+            else: # tls, starttls or default
                 use_tls = False
                 start_tls = True
         else:
@@ -108,6 +122,8 @@ class EmailService:
         message = MIMEMultipart("mixed")
         message["From"] = f"{from_name} <{from_email}>"
         message["To"] = to_email
+        if cc_emails:
+            message["Cc"] = ", ".join(cc_emails)
         message["Subject"] = subject
 
         # Create the body (HTML with a simple plain-text fallback)

@@ -160,8 +160,8 @@ async def update_smtp_settings(
         smtp_settings.from_name = settings_in.from_name
         smtp_settings.encryption_type = settings_in.encryption_type
         
-        # Only update password if provided
-        if settings_in.password:
+        # Only update password if provided and not the mask
+        if settings_in.password and settings_in.password != "********":
             smtp_settings.password = encrypt_value(settings_in.password)
             
     await db.commit()
@@ -185,11 +185,11 @@ async def test_smtp_connection(
     password_to_use = settings_in.password
     source = "request"
     
-    # If password is empty in request, try to fetch from DB
-    if not password_to_use:
+    # If password is empty or the mask in request, try to fetch from DB
+    if not password_to_use or password_to_use == "********":
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Password empty in test request for agent {agent_profile.id}. Attempting fallback to DB.")
+        logger.info(f"Password empty or masked in test request for agent {agent_profile.id}. Attempting fallback to DB.")
         stmt = select(AgentSMTPSettings).where(AgentSMTPSettings.agent_id == agent_profile.id)
         result = await db.execute(stmt)
         saved_settings = result.scalar_one_or_none()
@@ -200,12 +200,12 @@ async def test_smtp_connection(
              source = "database (decrypted)"
              logger.info("Found saved password in DB and decrypted it.")
         else:
-             logger.warning(f"No saved password found in DB for agent {agent_id}.")
+             logger.warning(f"No saved password found in DB for agent {agent_profile.id}.")
              raise HTTPException(status_code=400, detail="Password is required to test connection. Please enter it or save it first.")
     else:
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Using password provided in test request for agent {agent_id}.")
+        logger.info(f"Using password provided in test request for agent {agent_profile.id}.")
 
     # Construct config dict
     smtp_config = {
@@ -236,7 +236,7 @@ async def test_smtp_connection(
     </div>
     """
     
-    target_email = agent_user.email
+    target_email = settings_in.from_email
             
     if not target_email:
         raise HTTPException(status_code=400, detail="Could not determine where to send test email.")
@@ -288,8 +288,8 @@ async def update_razorpay_settings(
         # Update
         rp_settings.key_id = settings_in.key_id
         
-        # Only update secret if provided
-        if settings_in.key_secret:
+        # Only update secret if provided and not the mask
+        if settings_in.key_secret and settings_in.key_secret != "********":
             rp_settings.key_secret = encrypt_value(settings_in.key_secret)
             
     await db.commit()
@@ -384,24 +384,44 @@ async def get_public_settings(
     """
     Get public settings (brand name, homepage customizations) for the current domain.
     """
-    stmt = select(Agent).where(Agent.domain == domain)
-    result = await db.execute(stmt)
-    agent = result.scalar_one_or_none()
+    from app.models import User
     
-    if not agent:
+    # 1. Fetch Agent joined with User to check activation status
+    stmt = select(Agent, User.is_active).join(User, Agent.user_id == User.id).where(Agent.domain == domain)
+    result = await db.execute(stmt)
+    row = result.first()
+    
+    agent = None
+    is_active = True
+    
+    if row:
+        agent, is_active = row
+    else:
         # Fallback ONLY for localhost/development
         if settings.DEBUG or settings.APP_ENV == "development" or domain in ['localhost', '127.0.0.1', 'rnt.local']:
             # Pick an agent that actually has settings if possible, otherwise just any
-            stmt = select(Agent).order_by(Agent.homepage_settings.isnot(None).desc()).limit(1)
+            stmt = select(Agent, User.is_active).join(User, Agent.user_id == User.id).order_by(Agent.homepage_settings.isnot(None).desc()).limit(1)
             result = await db.execute(stmt)
-            agent = result.scalar_one_or_none()
-            
+            row = result.first()
+            if row:
+                agent, is_active = row
+    
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found for this domain")
+        
+    # 2. Block access if agent is deactivated
+    if not is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="This service is currently unavailable. Please contact support."
+        )
         
     return {
         "agent_id": agent.user_id,
         "agency_name": agent.agency_name,
+        "gst_applicable": agent.gst_applicable,
+        "gst_percentage": float(agent.gst_percentage) if agent.gst_percentage is not None else 18.0,
+        "gst_inclusive": agent.gst_inclusive,
         "homepage_settings": agent.homepage_settings or {},
         "website_pages_config": agent.website_pages_config or {}
     }

@@ -122,6 +122,7 @@ function ResetPasswordForm() {
                     <Input
                         type={showPassword ? "text" : "password"}
                         value={newPassword}
+                        maxLength={50}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
                         className="glass-input h-12 pl-10 pr-10 border-white/20 bg-none focus:bg-white/20 rounded-xl"
@@ -165,6 +166,7 @@ function ResetPasswordForm() {
                     <Input
                         type={showPassword ? "text" : "password"}
                         value={confirmPassword}
+                        maxLength={50}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         className={cn(

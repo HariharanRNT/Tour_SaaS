@@ -26,6 +26,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { headers } from "next/headers";
 import { FaviconHandler } from "@/components/FaviconHandler";
+import { ServiceUnavailable } from "@/components/ServiceUnavailable";
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,10 @@ async function getInitialTheme() {
         });
 
         console.log(`[SSR] Theme fetch status: ${res.status} for ${hostname}`);
+
+        if (res.status === 403) {
+            return { error: 'DEACTIVATED' };
+        }
 
         if (!res.ok) {
             const errorText = await res.text();
@@ -143,12 +148,13 @@ export default async function RootLayout({
     children: React.ReactNode;
 }>) {
     const initialTheme = await getInitialTheme();
+    const isDeactivated = initialTheme?.error === 'DEACTIVATED';
     const homepageSettings = initialTheme?.homepage_settings || null;
 
     return (
         <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${dmSans.variable} ${inter.variable} ${jakarta.variable} ${sora.variable} ${playfair.variable} ${mono.variable} ${script.variable} ${rounded.variable}`}>
             <head>
-                {initialTheme?.id && <meta name="agent-id" content={initialTheme.id} />}
+                {initialTheme?.agent_id && <meta name="agent-id" content={initialTheme.agent_id} />}
                 <ThemeInitializer initialSettings={homepageSettings} />
                 <FaviconHandler 
                     agentLogo={homepageSettings?.navbar_logo_image} 
@@ -159,15 +165,19 @@ export default async function RootLayout({
                 )}
             </head>
             <body className="antialiased">
-                <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
-                    <Providers>
-                        <ScrollToTop />
-                        <MainLayout>
-                            {children}
-                        </MainLayout>
-                        <Toaster richColors position="top-right" />
-                    </Providers>
-                </ThemeProvider>
+                {isDeactivated ? (
+                    <ServiceUnavailable />
+                ) : (
+                    <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
+                        <Providers>
+                            <ScrollToTop />
+                            <MainLayout>
+                                {children}
+                            </MainLayout>
+                            <Toaster richColors position="top-right" />
+                        </Providers>
+                    </ThemeProvider>
+                )}
             </body>
         </html>
     );

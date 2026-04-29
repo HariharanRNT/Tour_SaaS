@@ -71,3 +71,7 @@ export function isValidUrl(url: string): boolean {
         return false
     }
 }
+
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
+export const NAME_REGEX = /^[a-zA-Z\s\-']+$/

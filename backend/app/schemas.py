@@ -12,6 +12,15 @@ from app.models import (
 )
 
 
+# Bulk Operation Schemas
+class BulkDeleteRequest(BaseModel):
+    ids: List[UUID4]
+
+class BulkStatusUpdateRequest(BaseModel):
+    ids: List[UUID4]
+    is_active: bool
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Input Sanitization Helpers (B-01 XSS / B-02 SQLi)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -21,6 +30,12 @@ _SQL_PATTERN = re.compile(
     re.IGNORECASE
 )
 _PHONE_RE = re.compile(r'^\+?[\d\s\-().]{7,15}$')
+_DOMAIN_RE = re.compile(
+    r'^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$',
+    re.IGNORECASE
+)
+_GST_RE = re.compile(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$')
+_NAME_RE = re.compile(r"^[a-zA-Z\s\-']+$")
 
 
 def strip_xss(value: str) -> str:
@@ -42,8 +57,8 @@ def reject_sql(value: str, field_name: str = 'field') -> str:
 # User Schemas
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
-    first_name: Optional[str] = Field(None, min_length=0, max_length=100)
-    last_name: Optional[str] = Field(None, min_length=0, max_length=100)
+    first_name: Optional[str] = Field(None, min_length=0, max_length=50)
+    last_name: Optional[str] = Field(None, min_length=0, max_length=50)
     phone: Optional[str] = None
 
     @field_validator('first_name', 'last_name', mode='before')
@@ -53,6 +68,8 @@ class UserBase(BaseModel):
             return v
         v = strip_xss(v).strip()
         reject_sql(v, 'name')
+        if v and not _NAME_RE.match(v):
+            raise ValueError('Name contains invalid characters. Use only letters, spaces, hyphens, or apostrophes.')
         return v
 
     @field_validator('phone', mode='before')
@@ -67,20 +84,21 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    password: str = Field(..., min_length=8, max_length=128)
-    domain: Optional[str] = Field(None, max_length=100)
+    email: EmailStr = Field(...)
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=8, max_length=50)
+    domain: Optional[str] = Field(None, max_length=50)
     
     # Agent Specific
-    agency_name: Optional[str] = Field(None, max_length=200)
-    company_legal_name: Optional[str] = Field(None, max_length=200)
-    business_address: Optional[str] = Field(None, max_length=500)
-    city: Optional[str] = Field(None, max_length=100)
-    state: Optional[str] = Field(None, max_length=100)
-    country: Optional[str] = Field(None, max_length=100)
-    gst_no: Optional[str] = Field(None, max_length=20)
-    tax_id: Optional[str] = Field(None, max_length=50)
+    agency_name: Optional[str] = Field(None, max_length=50)
+    company_legal_name: Optional[str] = Field(None, max_length=50)
+    business_address: Optional[str] = Field(None, max_length=200)
+    city: Optional[str] = Field(None, max_length=50)
+    state: Optional[str] = Field(None, max_length=50)
+    country: Optional[str] = Field(None, max_length=50)
+    gst_no: Optional[str] = Field(None, max_length=15)
+    tax_id: Optional[str] = Field(None, max_length=20)
     currency: Optional[str] = Field("INR", min_length=3, max_length=3)
     commission_type: Optional[str] = "percentage"
     commission_value: Optional[Decimal] = Field(0.0, ge=0)
@@ -91,9 +109,11 @@ class UserCreate(UserBase):
     def validate_names_strict(cls, v):
         if not isinstance(v, str) or not v.strip():
             raise ValueError('Field cannot be empty or whitespace only.')
-        v = strip_xss(v)
+        v = strip_xss(v).strip()
         reject_sql(v, 'name')
-        return v.strip()
+        if not _NAME_RE.match(v):
+            raise ValueError('Name contains invalid characters. Use only letters, spaces, hyphens, or apostrophes.')
+        return v
 
     @field_validator('phone', mode='before')
     @classmethod
@@ -105,31 +125,89 @@ class UserCreate(UserBase):
             raise ValueError('Phone number must be 7–15 digits.')
         return v
 
+    @field_validator('domain', mode='before')
+    @classmethod
+    def validate_domain(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip().lower()
+        if v and not _DOMAIN_RE.match(v):
+            raise ValueError('Invalid domain format. Use example.com')
+        return v
+
+    @field_validator('gst_no', mode='before')
+    @classmethod
+    def validate_gst(cls, v):
+        if not v:
+            return None
+        v = str(v).strip().upper()
+        if v and not _GST_RE.match(v):
+            raise ValueError('Invalid GST number format. Must be 15 characters (e.g., 22AAAAA0000A1Z5)')
+        return v
+
+    @field_validator('currency', mode='before')
+    @classmethod
+    def validate_currency(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip().upper()
+        if v and (not v.isalpha() or len(v) != 3):
+            raise ValueError('Currency must be a 3-letter ISO code (e.g., INR, USD).')
+        return v
+
+
+class AdminAgentCreate(UserCreate):
+    agency_name: str = Field(..., min_length=1, max_length=50)
+    company_legal_name: str = Field(..., min_length=1, max_length=50)
+    domain: str = Field(..., min_length=1, max_length=50)
+    business_address: str = Field(..., min_length=1, max_length=200)
+    city: str = Field(..., min_length=1, max_length=50)
+    state: str = Field(..., min_length=1, max_length=50)
+    country: str = Field(..., min_length=1, max_length=50)
+
+    @field_validator('agency_name', 'company_legal_name', 'business_address', 'city', 'state', 'country', mode='before')
+    @classmethod
+    def validate_agent_fields_strict(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError('Field cannot be empty or whitespace only.')
+        v = strip_xss(v)
+        reject_sql(v, 'field')
+        return v.strip()
 
 class UserUpdate(BaseModel):
     # Personal
-    first_name: Optional[str] = Field(None, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
+    first_name: Optional[str] = Field(None, max_length=50)
+    last_name: Optional[str] = Field(None, max_length=50)
     phone: Optional[str] = None
     
     # Agency
-    agency_name: Optional[str] = Field(None, max_length=200)
-    company_legal_name: Optional[str] = Field(None, max_length=200)
-    domain: Optional[str] = Field(None, max_length=100)
-    business_address: Optional[str] = Field(None, max_length=500)
-    city: Optional[str] = Field(None, max_length=100)
-    state: Optional[str] = Field(None, max_length=100)
-    country: Optional[str] = Field(None, max_length=100)
+    agency_name: Optional[str] = Field(None, max_length=50)
+    company_legal_name: Optional[str] = Field(None, max_length=50)
+    domain: Optional[str] = Field(None, max_length=50)
+    business_address: Optional[str] = Field(None, max_length=200)
+    city: Optional[str] = Field(None, max_length=50)
+    state: Optional[str] = Field(None, max_length=50)
+    country: Optional[str] = Field(None, max_length=50)
     
     # Financial
-    gst_no: Optional[str] = Field(None, max_length=20)
-    tax_id: Optional[str] = Field(None, max_length=50)
+    gst_no: Optional[str] = Field(None, max_length=15)
+    tax_id: Optional[str] = Field(None, max_length=20)
     currency: Optional[str] = Field(None, min_length=3, max_length=3)
     commission_type: Optional[str] = None
     commission_value: Optional[Decimal] = Field(None, ge=0)
     
     # Status
     is_active: Optional[bool] = None
+
+    @field_validator('domain', mode='before')
+    @classmethod
+    def validate_domain_update(cls, v):
+        if v is None:
+            return v
+        v = str(v).strip().lower()
+        if v and not _DOMAIN_RE.match(v):
+            raise ValueError('Invalid domain format. Use example.com')
+        return v
 
     @field_validator(
         'first_name', 'last_name', 'agency_name', 'company_legal_name', 
@@ -172,8 +250,8 @@ class AgentRegistration(BaseModel):
     phone: str
     
     # Credentials
-    password: str = Field(..., min_length=8, max_length=128)
-    confirm_password: str = Field(..., min_length=8, max_length=128)
+    password: str = Field(..., min_length=8, max_length=50)
+    confirm_password: str = Field(..., min_length=8, max_length=50)
 
     @field_validator(
         'agency_name', 'company_legal_name', 'business_address',
@@ -232,12 +310,19 @@ class AgentRegistration(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=50)
 
 
 class GoogleLoginRequest(BaseModel):
     token: str
     role: Optional[UserRole] = UserRole.CUSTOMER
+
+    @field_validator('role', mode='before')
+    @classmethod
+    def validate_role_case(cls, v):
+        if isinstance(v, str):
+            return v.upper()
+        return v
 
 
 class UserResponse(UserBase):
@@ -288,13 +373,20 @@ class UserMinimalResponse(BaseModel):
 
 # Agent Settings Schemas
 class AgentSMTPSettingsBase(BaseModel):
-    host: str
-    port: int
-    username: str
-    password: Optional[str] = None  # Optional on update (to keep existing)
-    from_email: str 
-    from_name: str
-    encryption_type: str = "tls"
+    host: str = Field(..., min_length=1, max_length=50)
+    port: int = Field(..., ge=1, le=65535)
+    username: EmailStr = Field(..., max_length=50)
+    password: Optional[str] = None  # No limit here to allow encrypted strings in responses
+    from_email: EmailStr = Field(..., max_length=50) 
+    from_name: str = Field(..., min_length=1, max_length=50)
+    encryption_type: str = Field("tls", max_length=20)
+
+    @field_validator('host', 'username', 'from_email', 'from_name', mode='before')
+    @classmethod
+    def trim_whitespace(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 class AgentGeneralSettingsUpdate(BaseModel):
     currency: Optional[str] = Field("INR", min_length=3, max_length=3)
@@ -303,7 +395,7 @@ class AgentGeneralSettingsUpdate(BaseModel):
     gst_percentage: Optional[Decimal] = Field(Decimal("18.00"), ge=0, le=100)
 
 class AgentSMTPSettingsCreate(AgentSMTPSettingsBase):
-    pass
+    password: Optional[str] = Field(None, max_length=50) # Limit only on input
 
 class AgentSMTPSettingsResponse(AgentSMTPSettingsBase):
     id: UUID4
@@ -317,11 +409,19 @@ class AgentSMTPSettingsResponse(AgentSMTPSettingsBase):
         from_attributes = True
 
 class AgentRazorpaySettingsBase(BaseModel):
-    key_id: str
-    key_secret: Optional[str] = None # Optional on update
+    key_id: str = Field(..., min_length=1, max_length=50)
+    key_secret: Optional[str] = None # No limit here to allow encrypted strings in responses
+
+    @field_validator('key_id', 'key_secret', mode='before')
+    @classmethod
+    def trim_whitespace(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 class AgentRazorpaySettingsCreate(AgentRazorpaySettingsBase):
-    pass
+    key_secret: Optional[str] = Field(None, max_length=50) # Limit only on input
+
 
 class AgentRazorpaySettingsResponse(AgentRazorpaySettingsBase):
     id: UUID4
@@ -655,6 +755,10 @@ class PackageBase(BaseModel):
     inclusions: InclusionsSchema = InclusionsSchema()
     exclusions: dict = {}
     custom_services: List[dict] = []
+    # GST Configuration
+    gst_applicable: Optional[bool] = None
+    gst_percentage: Optional[Decimal] = None
+    gst_mode: Optional[str] = None
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -714,6 +818,10 @@ class PackageUpdate(BaseModel):
     inclusions: Optional[InclusionsSchema] = None
     exclusions: Optional[dict] = None
     custom_services: Optional[List[dict]] = None
+    # GST Configuration
+    gst_applicable: Optional[bool] = None
+    gst_percentage: Optional[Decimal] = None
+    gst_mode: Optional[str] = None
 
     @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
@@ -942,12 +1050,12 @@ class PaymentOrderResponse(BaseModel):
 # Enquiry Schemas
 class EnquiryBase(BaseModel):
     package_id: Optional[UUID4] = None
-    customer_name: str = Field(..., min_length=1, max_length=200)
-    email: EmailStr
+    customer_name: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr = Field(..., max_length=50)
     phone: str
     travel_date: date
     travellers: int = Field(..., ge=1)
-    message: Optional[str] = Field(None, max_length=2000)
+    message: Optional[str] = Field(None, max_length=500)
 
     @field_validator('customer_name', 'message', mode='before')
     @classmethod
@@ -1267,8 +1375,8 @@ class VerifyOTPRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str # This can be a verification session ID or same OTP/Email combo
     email: EmailStr
-    new_password: str = Field(..., min_length=8)
-    confirm_password: str = Field(..., min_length=8)
+    new_password: str = Field(..., min_length=8, max_length=50)
+    confirm_password: str = Field(..., min_length=8, max_length=50)
 
     @field_validator('confirm_password')
     @classmethod
@@ -1281,7 +1389,7 @@ class ResetPasswordRequest(BaseModel):
 # Agent Login OTP Schemas
 class SendLoginOTPRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=50)
 
 class VerifyLoginOTPRequest(BaseModel):
     email: EmailStr

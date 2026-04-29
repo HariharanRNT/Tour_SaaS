@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatError } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
+import { useGoogleLogin } from '@react-oauth/google'
 
 export default function RegisterPage() {
     const router = useRouter()
@@ -80,6 +81,26 @@ export default function RegisterPage() {
             formData.terms
         )
     }
+
+    const handleGoogleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setLoading(true)
+            setError('')
+            try {
+                // For customer registration via Google, we explicitly pass 'CUSTOMER' role
+                const data = await authAPI.googleLogin(tokenResponse.access_token, 'CUSTOMER')
+                authLogin(data.access_token, data.user)
+                router.push('/')
+            } catch (err: any) {
+                setError(formatError(err))
+            } finally {
+                setLoading(false)
+            }
+        },
+        onError: () => {
+            setError('Google Login failed. Please try again.')
+        }
+    })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -221,6 +242,8 @@ export default function RegisterPage() {
                                         <Button
                                             type="button"
                                             variant="outline"
+                                            onClick={() => handleGoogleLogin()}
+                                            disabled={loading}
                                             className="w-full h-10 rounded-xl bg-white/40 backdrop-blur-md border-white/50 hover:bg-white/60 hover:border-black/30 text-black font-bold text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                                         >
                                             <svg className="h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
@@ -290,6 +313,7 @@ export default function RegisterPage() {
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={formData.password}
+                                                    maxLength={50}
                                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                     placeholder="Security Password"
                                                     className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-black/60"

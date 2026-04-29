@@ -385,7 +385,7 @@ export default function CityActivityManager({ params }: { params: { city: string
             <div className="glass-panel border-b border-white/10 shrink-0 relative z-30 m-6 mb-2 rounded-[32px]">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-5">
+                        <div className="flex items-center gap-5 flex-1 min-w-0">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -394,12 +394,12 @@ export default function CityActivityManager({ params }: { params: { city: string
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
-                            <div>
-                                <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight" style={{ color: 'var(--primary)' }}>
-                                    <MapPin className="h-6 w-6 text-[var(--primary)]" />
-                                    {cityName.charAt(0).toUpperCase() + cityName.slice(1)}
+                            <div className="min-w-0 flex-1">
+                                <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight text-[var(--primary)]" style={{ color: 'var(--primary)' }}>
+                                    <MapPin className="h-6 w-6 text-[var(--primary)] shrink-0" />
+                                    <span className="truncate break-all">{cityName.charAt(0).toUpperCase() + cityName.slice(1)}</span>
                                 </h1>
-                                <p className="text-slate-700/80 text-sm mt-1 font-medium">Manage all activities for this destination</p>
+                                <p className="text-slate-700/80 text-sm mt-1 font-medium truncate">Manage all activities for this destination</p>
                             </div>
                         </div>
 
@@ -492,9 +492,9 @@ export default function CityActivityManager({ params }: { params: { city: string
 
                                             <CardContent className="p-4 pt-3 flex flex-wrap gap-2.5 z-20 relative">
                                                 {/* Category Tag Pill */}
-                                                <div className={`flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${tagBg} ${tagText} border border-current shadow-sm`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${dotColor} mr-1.5`} />
-                                                    {activity.category}
+                                                <div className={`flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${tagBg} ${tagText} border border-current shadow-sm max-w-[110px]`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${dotColor} mr-1.5 shrink-0`} />
+                                                    <span className="truncate">{activity.category}</span>
                                                 </div>
 
                                                 {/* Duration Pill */}

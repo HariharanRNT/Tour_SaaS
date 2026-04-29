@@ -53,8 +53,8 @@ const registrationSchema = z.object({
     last_name: z.string().min(2, 'Last name is required'),
     email: z.string().email('Invalid work email'),
     phone: z.string().min(8, 'Valid mobile number is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm_password: z.string(),
+    password: z.string().min(8, 'Password must be at least 8 characters').max(50, 'Password must be at most 50 characters'),
+    confirm_password: z.string().max(50),
     captcha: z.string().min(1, 'Solve the puzzle')
 }).refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
@@ -531,6 +531,7 @@ export default function AgentRegisterPage() {
                                                         <Input
                                                             {...register('password')}
                                                             type={showPassword ? "text" : "password"}
+                                                            maxLength={50}
                                                             placeholder="••••••••"
                                                             className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />
@@ -560,6 +561,7 @@ export default function AgentRegisterPage() {
                                                         <Input
                                                             {...register('confirm_password')}
                                                             type={showConfirmPassword ? "text" : "password"}
+                                                            maxLength={50}
                                                             placeholder="••••••••"
                                                             className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.confirm_password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />

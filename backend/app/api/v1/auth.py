@@ -244,6 +244,24 @@ async def login(
         elif user.role == UserRole.AGENT and user.approval_status == ApprovalStatus.REJECTED:
              raise HTTPException(status_code=400, detail="Your registration request was rejected. Please contact support.")
         raise HTTPException(status_code=400, detail="Account is inactive")
+    
+    # 2b. REAL-TIME AGENT DEACTIVATION CHECK
+    # If the parent agent is deactivated, block access for sub-users and customers
+    if user.role == UserRole.SUB_USER:
+        if user.sub_user_profile and user.sub_user_profile.agent:
+            if not user.sub_user_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact your administrator."
+                )
+    
+    elif user.role == UserRole.CUSTOMER:
+        if user.customer_profile and user.customer_profile.agent:
+            if not user.customer_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact support."
+                )
 
     # 3. Handle Role-Based Logic (OTP DISABLED FOR AGENTS)
     # if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
@@ -668,6 +686,23 @@ async def send_login_otp(
         raise HTTPException(status_code=400, detail="Account is inactive")
     
     logger.warning(f"✅ Step 4: User is active")
+    
+    # 4c. REAL-TIME AGENT DEACTIVATION CHECK (for OTP resend)
+    if user.role == UserRole.SUB_USER:
+        if user.sub_user_profile and user.sub_user_profile.agent:
+            if not user.sub_user_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact your administrator."
+                )
+    
+    elif user.role == UserRole.CUSTOMER:
+        if user.customer_profile and user.customer_profile.agent:
+            if not user.customer_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact support."
+                )
 
     # 4b. Validate Agent or Sub-User Domain restriction on resend
     if user.role in [UserRole.AGENT, UserRole.SUB_USER]:
@@ -871,6 +906,23 @@ async def verify_login_otp(
     # 4. Check if user is active
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Account is inactive")
+
+    # 4b. REAL-TIME AGENT DEACTIVATION CHECK (at OTP verification)
+    if user.role == UserRole.SUB_USER:
+        if user.sub_user_profile and user.sub_user_profile.agent:
+            if not user.sub_user_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact your administrator."
+                )
+    
+    elif user.role == UserRole.CUSTOMER:
+        if user.customer_profile and user.customer_profile.agent:
+            if not user.customer_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact support."
+                )
     
     # 5. Delete OTP from Redis
     await OTPService.delete_login_otp(data.email)
@@ -966,6 +1018,23 @@ async def forgot_password(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This email ID is not registered."
         )
+    
+    # 2b. REAL-TIME AGENT DEACTIVATION CHECK (for Forgot Password)
+    if user.role == UserRole.SUB_USER:
+        if user.sub_user_profile and user.sub_user_profile.agent:
+            if not user.sub_user_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact your administrator."
+                )
+    
+    elif user.role == UserRole.CUSTOMER:
+        if user.customer_profile and user.customer_profile.agent:
+            if not user.customer_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact support."
+                )
     
     # 3. Generate 6-digit OTP
     otp = OTPService.generate_otp()

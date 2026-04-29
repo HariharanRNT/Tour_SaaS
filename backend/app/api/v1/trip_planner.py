@@ -639,11 +639,12 @@ async def get_trip_session(
                t.created_at, t.expires_at, p.price_per_person, p.description, t.flight_details,
                a.gst_inclusive, a.gst_percentage, p.feature_image_url, d.image_url as destination_image_url,
                p.gst_mode, p.gst_percentage as package_gst_percentage, p.gst_applicable,
-               p.cancellation_enabled, p.cancellation_rules, p.package_mode, p.destinations
+               p.cancellation_enabled, p.cancellation_rules, p.package_mode, p.destinations,
+               p.country, p.category, p.created_by
         FROM trip_planning_sessions t
         LEFT JOIN packages p ON t.matched_package_id = p.id
         LEFT JOIN popular_destinations d ON t.destination = d.name
-        LEFT JOIN agents a ON p.created_by = a.id
+        LEFT JOIN agents a ON p.created_by = a.user_id
         WHERE t.id = :session_id AND t.status = 'active' AND t.expires_at > NOW()
     """)
     
@@ -749,7 +750,7 @@ async def get_trip_session(
     agent_settings = {}
     if matched_package_id:
         # Get from package creator
-        agent_stmt = select(Agent.homepage_settings).where(Agent.id == row[15]) # a.id
+        agent_stmt = select(Agent.homepage_settings).where(Agent.id == row[28]) # p.created_by
         agent_res = await db.execute(agent_stmt)
         agent_settings = agent_res.scalar() or {}
     
@@ -786,6 +787,8 @@ async def get_trip_session(
         "cancellation_rules": parse_json_field(row[23]),
         "package_mode": row[24] or 'single',
         "destinations": parse_json_field(row[25]),
+        "country": row[26],
+        "category": row[27],
         "homepage_settings": agent_settings
     }
 

@@ -23,7 +23,8 @@ async def _execute_email_send(
     html_body: str, 
     smtp_config: Optional[Dict[str, Any]],
     attachments: Optional[list],
-    notification_log_id: Optional[str]
+    notification_log_id: Optional[str],
+    cc_emails: Optional[list] = None
 ):
     from app.database import engine
     import os
@@ -59,7 +60,8 @@ async def _execute_email_send(
             subject=subject,
             body=html_body,
             attachments=resolved_attachments,
-            smtp_config=smtp_config
+            smtp_config=smtp_config,
+            cc_emails=cc_emails
         )
         print(f"[Celery] SMTP Success: {success}")
         
@@ -113,7 +115,10 @@ def send_email_task(
     attachment_filename: Optional[str] = None,
     notification_log_id: Optional[str] = None,
     attachments_b64: Optional[list] = None,
-    attachments: Optional[list] = None
+    attachments: Optional[list] = None,
+    cc_email: Optional[str] = None,
+    cc_emails: Optional[list] = None,
+    **kwargs
 ):
     """
     Celery task to send an email asynchronously.
@@ -147,11 +152,19 @@ def send_email_task(
         except Exception as e:
             logger.error(f"Failed to decode legacy b64 attachment: {e}")
 
+    # Consolidate CC emails
+    final_cc = []
+    if cc_email:
+        final_cc.append(cc_email)
+    if cc_emails:
+        final_cc.extend(cc_emails)
+
     # Run the async logic in a SINGLE asyncio.run call
     try:
         asyncio.run(_execute_email_send(
             to_email, subject, html_body, smtp_config, 
-            final_attachments, notification_log_id
+            final_attachments, notification_log_id,
+            cc_emails=final_cc
         ))
         logger.info(f"Async email work completed for {to_email}")
     except Exception as exc:

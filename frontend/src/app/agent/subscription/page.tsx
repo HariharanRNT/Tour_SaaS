@@ -176,6 +176,28 @@ export default function SubscriptionPage() {
         onSettled: () => setActivatingId(null)
     });
 
+    const cancelMutation = useMutation({
+        mutationFn: async (subId: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/v1/subscriptions/${subId}/cancel-request`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Cancellation request failed");
+            }
+            return res.json();
+        },
+        onSuccess: (data) => {
+            toast.success(data.message || "Cancellation request sent to administrators.");
+            queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to send cancellation request.");
+        }
+    });
+
     const getBillingCycleDisplay = (plan: Plan) => {
         if (plan.billing_cycle === 'monthly') return 'Monthly';
         if (plan.billing_cycle === 'yearly') return 'Yearly';
@@ -308,6 +330,19 @@ export default function SubscriptionPage() {
             action: () => {
                 setActivatingId(subId);
                 activateMutation.mutate(subId);
+                setConfirmDialog(prev => ({ ...prev, open: false }));
+            }
+        });
+    };
+
+    const handleCancelRequest = (subId: string) => {
+        setConfirmDialog({
+            open: true,
+            title: "Cancel Subscription?",
+            description: "This will send a cancellation request to our administrators. Your plan will remain active until they process your request or it expires naturally. We may contact you to confirm.",
+            confirmText: "Send Cancellation Request",
+            action: () => {
+                cancelMutation.mutate(subId);
                 setConfirmDialog(prev => ({ ...prev, open: false }));
             }
         });
@@ -568,8 +603,12 @@ export default function SubscriptionPage() {
                                             <DropdownMenuItem onClick={() => document.getElementById('available-plans')?.scrollIntoView({ behavior: 'smooth' })}>
                                                 Upgrade Plan
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
-                                                Cancel Subscription
+                                            <DropdownMenuItem 
+                                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                onClick={() => handleCancelRequest(activeSub.id)}
+                                                disabled={cancelMutation.isPending}
+                                            >
+                                                {cancelMutation.isPending ? "Sending Request..." : "Cancel Subscription"}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -1139,6 +1178,29 @@ export default function SubscriptionPage() {
                     </AlertDialogContent>
                 </AlertDialog>
             </div>
+            {/* Confirmation Dialog */}
+            <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, open }))}>
+                <AlertDialogContent className="glass-agent border-white/20">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold">{confirmDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-600 font-medium">
+                            {confirmDialog.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                confirmDialog.action();
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6"
+                        >
+                            {confirmDialog.confirmText || "Confirm"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

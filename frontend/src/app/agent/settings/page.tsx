@@ -227,8 +227,25 @@ export default function AgentSettingsPage() {
             toast.success(data.message || "Connection successful! Test email sent.")
         },
         onError: (error: any) => {
-            const detail = error.response?.data?.detail || error.message || "Connection failed. Check credentials."
-            toast.error(detail)
+            let errorMessage = "Connection failed. Check credentials.";
+            
+            if (error.response?.data?.detail) {
+                const detail = error.response.data.detail;
+                if (Array.isArray(detail)) {
+                    const errors = detail.map((err: any) => {
+                        const field = err.loc[err.loc.length - 1];
+                        const readableField = field.toString().replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+                        return `${readableField}: ${err.msg}`;
+                    });
+                    errorMessage = errors.join(" | ");
+                } else if (typeof detail === 'string') {
+                    errorMessage = detail;
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage)
         }
     })
 
@@ -246,29 +263,157 @@ export default function AgentSettingsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Trim whitespace from SMTP fields
+        const trimmedSmtp = {
+            ...smtp,
+            host: smtp.host.trim(),
+            username: smtp.username.trim(),
+            from_email: smtp.from_email.trim(),
+            from_name: smtp.from_name.trim(),
+            password: smtp.password?.trim() // Trimming password as well per user request for "SMTP fields"
+        };
+
+        // SMTP Mandatory Field Validation
+        if (!trimmedSmtp.host) {
+            toast.error("SMTP Host is required.");
+            scrollToSection('email-section');
+            return;
+        }
+        if (!trimmedSmtp.port) {
+            toast.error("SMTP Port is required.");
+            scrollToSection('email-section');
+            return;
+        }
+        if (!trimmedSmtp.username) {
+            toast.error("SMTP Username is required.");
+            scrollToSection('email-section');
+            return;
+        }
+        if (!trimmedSmtp.from_name) {
+            toast.error("Sender Name is required.");
+            scrollToSection('email-section');
+            return;
+        }
+        if (!trimmedSmtp.from_email) {
+            toast.error("Reply-To Email is required.");
+            scrollToSection('email-section');
+            return;
+        }
+        
+        // Password is required for initial setup
+        const isInitialSmtp = !originalSettings?.smtp?.host;
+        if (isInitialSmtp && !trimmedSmtp.password) {
+            toast.error("SMTP Password is required for initial setup.");
+            scrollToSection('email-section');
+            return;
+        }
+
+        // Email Format Validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedSmtp.username)) {
+            toast.error("Please enter a valid SMTP username (email address).");
+            scrollToSection('email-section');
+            return;
+        }
+        if (!emailRegex.test(trimmedSmtp.from_email)) {
+            toast.error("Please enter a valid from email address.");
+            scrollToSection('email-section');
+            return;
+        }
+
+        // Trim whitespace from Razorpay fields
+        const trimmedRazorpay = {
+            ...razorpay,
+            key_id: razorpay.key_id.trim(),
+            key_secret: razorpay.key_secret?.trim()
+        };
+
+        // Razorpay Mandatory Field Validation
+        if (!trimmedRazorpay.key_id) {
+            toast.error("Razorpay Key ID is required.");
+            scrollToSection('payment-section');
+            return;
+        }
+        
+        // Key Secret is required for initial setup
+        const isInitialRazorpay = !originalSettings?.razorpay?.key_id;
+        if (isInitialRazorpay && !trimmedRazorpay.key_secret) {
+            toast.error("Razorpay Key Secret is required for initial setup.");
+            scrollToSection('payment-section');
+            return;
+        }
+
         try {
             await Promise.all([
                 updateGeneralMutation.mutateAsync({ currency, ...gstDefaults }),
-                updateSmtpMutation.mutateAsync(smtp),
-                updateRazorpayMutation.mutateAsync(razorpay)
+                updateSmtpMutation.mutateAsync(trimmedSmtp),
+                updateRazorpayMutation.mutateAsync(trimmedRazorpay)
             ])
 
+            setSmtp(trimmedSmtp); // Update local state with trimmed values
+            setRazorpay(trimmedRazorpay); // Update local state with trimmed values
             setOriginalSettings({
                 currency,
                 gstDefaults,
-                smtp: { ...smtp, password: '' },
-                razorpay: { ...razorpay, key_secret: '' }
+                smtp: { ...trimmedSmtp, password: '' },
+                razorpay: { ...trimmedRazorpay, key_secret: '' }
             })
 
             toast.success("All settings updated successfully.")
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update settings:', error)
-            toast.error("Failed to update some settings. Please check details.")
+            
+            let errorMessage = "Failed to update some settings. Please check details.";
+            
+            if (error.response?.data?.detail) {
+                const detail = error.response.data.detail;
+                if (Array.isArray(detail)) {
+                    // Handle Pydantic validation errors
+                    const errors = detail.map((err: any) => {
+                        const field = err.loc[err.loc.length - 1];
+                        // Make field name more readable
+                        const readableField = field.toString().replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+                        return `${readableField}: ${err.msg}`;
+                    });
+                    errorMessage = errors.join(" | ");
+                } else if (typeof detail === 'string') {
+                    errorMessage = detail;
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
         }
     }
 
     const testSmtpConnection = () => {
-        testSmtpMutation.mutate(smtp)
+        // Trim whitespace before testing
+        const trimmedSmtp = {
+            ...smtp,
+            host: smtp.host.trim(),
+            username: smtp.username.trim(),
+            from_email: smtp.from_email.trim(),
+            from_name: smtp.from_name.trim(),
+            password: smtp.password?.trim()
+        };
+        
+        // Also update local state so the user sees the trimmed values
+        setSmtp(trimmedSmtp);
+        
+        // Validation for testing
+        if (!trimmedSmtp.host || !trimmedSmtp.username || !trimmedSmtp.from_email || !trimmedSmtp.from_name) {
+            toast.error("Please fill all mandatory SMTP fields before testing.");
+            return;
+        }
+
+        const isInitialSmtp = !originalSettings?.smtp?.host;
+        if (isInitialSmtp && !trimmedSmtp.password) {
+            toast.error("SMTP Password is required for testing initial setup.");
+            return;
+        }
+        
+        testSmtpMutation.mutate(trimmedSmtp)
     }
 
     // Keyboard shortcut for saving
@@ -307,6 +452,46 @@ export default function AgentSettingsPage() {
             });
         }
     }
+
+    const handleCopy = (text: string, label: string) => {
+        if (!text) return;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => toast.info(`${label} copied to clipboard`))
+                .catch(() => fallbackCopy(text, label));
+        } else {
+            fallbackCopy(text, label);
+        }
+    };
+
+    const fallbackCopy = (text: string, label: string) => {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // Ensure it's not visible but part of the DOM
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                toast.info(`${label} copied to clipboard`);
+            } else {
+                toast.error(`Failed to copy ${label}`);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            toast.error(`Failed to copy ${label}`);
+        }
+        
+        document.body.removeChild(textArea);
+    };
 
     if (isLoading || !originalSettings) {
         return (
@@ -537,6 +722,7 @@ export default function AgentSettingsPage() {
                                         className="glass-input h-12 font-medium rounded-lg"
                                         value={smtp.host}
                                         onChange={(e) => handleSmtpChange('host', e.target.value)}
+                                        maxLength={50}
                                     />
                                     <p className="text-xs font-medium text-[var(--color-primary-font)] italic">Example: smtp.mailtrap.io or smtp.gmail.com</p>
                                 </div>
@@ -554,6 +740,7 @@ export default function AgentSettingsPage() {
                                         className="glass-input h-12 font-bold rounded-lg"
                                         value={smtp.port}
                                         onChange={(e) => handleSmtpChange('port', parseInt(e.target.value))}
+                                        max={65535}
                                     />
                                 </div>
                             </div>
@@ -588,6 +775,7 @@ export default function AgentSettingsPage() {
                                         className="glass-input h-12 font-medium rounded-lg"
                                         value={smtp.from_name}
                                         onChange={(e) => handleSmtpChange('from_name', e.target.value)}
+                                        maxLength={50}
                                     />
                                     <p className="text-xs font-medium text-[var(--color-primary-font)]/70">Appears in the 'From' field of emails.</p>
                                 </div>
@@ -604,9 +792,11 @@ export default function AgentSettingsPage() {
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-primary-font)]/70 group-focus-within:text-[var(--primary)] transition-colors" />
                                         <Input
                                             id="smtp_user"
+                                            type="email"
                                             className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
                                             value={smtp.username}
                                             onChange={(e) => handleSmtpChange('username', e.target.value)}
+                                            maxLength={50}
                                         />
                                     </div>
                                 </div>
@@ -623,6 +813,7 @@ export default function AgentSettingsPage() {
                                             className="glass-input h-12 pl-11 pr-11 font-medium rounded-lg transition-all placeholder:text-[var(--color-primary-font)]/40 placeholder:italic"
                                             value={smtp.password}
                                             onChange={(e) => handleSmtpChange('password', e.target.value)}
+                                            maxLength={50}
                                         />
                                         <button
                                             type="button"
@@ -645,10 +836,12 @@ export default function AgentSettingsPage() {
                                 </Label>
                                 <Input
                                     id="from_email"
+                                    type="email"
                                     className="glass-input h-12 font-medium rounded-lg"
                                     value={smtp.from_email}
                                     onChange={(e) => handleSmtpChange('from_email', e.target.value)}
                                     placeholder="noreply@youragency.com"
+                                    maxLength={50}
                                 />
                                 <p className="text-[10px] font-medium text-[var(--color-primary-font)]/70">Usually the same as your login email.</p>
                             </div>
@@ -703,10 +896,7 @@ export default function AgentSettingsPage() {
                                             variant="ghost"
                                             size="sm"
                                             className="h-7 text-xs font-bold text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] bg-transparent px-2"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(razorpay.key_id);
-                                                toast.info("Key ID copied to clipboard");
-                                            }}
+                                            onClick={() => handleCopy(razorpay.key_id, "Key ID")}
                                         >
                                             <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
                                         </Button>
@@ -721,6 +911,7 @@ export default function AgentSettingsPage() {
                                             className="glass-input h-12 pl-12 font-medium rounded-lg transition-all"
                                             value={razorpay.key_id}
                                             onChange={(e) => handleRazorpayChange('key_id', e.target.value)}
+                                            maxLength={50}
                                         />
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
@@ -739,12 +930,7 @@ export default function AgentSettingsPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="h-7 text-xs font-bold text-[var(--color-primary-font)]/70 hover:text-[var(--primary)] bg-transparent px-2"
-                                                onClick={() => {
-                                                    if (razorpay.key_secret) {
-                                                        navigator.clipboard.writeText(razorpay.key_secret);
-                                                        toast.info("Secret copied to clipboard");
-                                                    }
-                                                }}
+                                                onClick={() => handleCopy(razorpay.key_secret || "", "Key Secret")}
                                                 disabled={!razorpay.key_secret}
                                             >
                                                 <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
@@ -762,6 +948,7 @@ export default function AgentSettingsPage() {
                                             className="glass-input h-12 pl-12 pr-11 font-medium rounded-lg transition-all placeholder:text-[var(--color-primary-font)]/40 italic"
                                             value={razorpay.key_secret}
                                             onChange={(e) => handleRazorpayChange('key_secret', e.target.value)}
+                                            maxLength={50}
                                         />
                                         <button
                                             type="button"

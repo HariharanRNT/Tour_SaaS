@@ -342,6 +342,7 @@ export default function MasterDataSettingsPage() {
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder={`e.g. ${modalType === 'tag' ? 'Surfing' : modalType === 'category' ? 'Water Sports' : 'Family Trip'}`}
                                         className="h-11 font-medium bg-slate-50/50"
+                                        maxLength={50}
                                     />
                                 </div>
                                 

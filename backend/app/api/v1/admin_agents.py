@@ -12,7 +12,7 @@ from app.database import get_db
 from app.models import User, UserRole, Agent, Customer
 from app.api.deps import get_current_admin
 from app.core.security import get_password_hash
-from app.schemas import UserCreate, UserResponse, UserUpdate
+from app.schemas import UserCreate, UserResponse, UserUpdate, BulkDeleteRequest, BulkStatusUpdateRequest, AdminAgentCreate
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ async def list_agents(
 
 @router.post("/agents", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_agent(
-    user_data: UserCreate,
+    user_data: AdminAgentCreate,
     db: AsyncSession = Depends(get_db),
     current_admin: User = Depends(get_current_admin)
 ):
@@ -116,6 +116,94 @@ async def create_agent(
     refreshed_user = result.scalar_one()
     
     return UserResponse.model_validate(refreshed_user)
+
+
+@router.post("/agents/bulk-delete")
+async def bulk_delete_agents(
+    request: BulkDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """Bulk delete agent accounts. Fails if any agent has packages."""
+    from app.models import Package
+    from sqlalchemy import update
+
+    # 1. Fetch all agents
+    stmt = select(User).where(User.id.in_(request.ids), User.role == UserRole.AGENT)
+    result = await db.execute(stmt)
+    agents = result.scalars().all()
+    
+    found_ids = {agent.id for agent in agents}
+    missing_ids = [str(id) for id in request.ids if id not in found_ids]
+    
+    if missing_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Some agents not found: {', '.join(missing_ids)}"
+        )
+
+    # 2. Check for associated Packages for ANY of the agents
+    pkg_stmt = select(Package).where(Package.created_by.in_(request.ids)).limit(1)
+    pkg_result = await db.execute(pkg_stmt)
+    if pkg_result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete agents with existing packages. Please delete or reassign packages first."
+        )
+
+    # 3. Check for associated Enquiries
+    from app.models import Enquiry
+    enq_stmt = select(Enquiry).where(Enquiry.agent_id.in_(request.ids)).limit(1)
+    enq_result = await db.execute(enq_stmt)
+    if enq_result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete agents with associated enquiries. Please process or delete enquiries first."
+        )
+
+    # 4. Check for associated Bookings
+    from app.models import Booking
+    from sqlalchemy import or_
+    book_stmt = select(Booking).where(
+        or_(Booking.agent_id.in_(request.ids), Booking.booked_by_user_id.in_(request.ids))
+    ).limit(1)
+    book_result = await db.execute(book_stmt)
+    if book_result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete agents with existing bookings. Please manage or archive bookings first."
+        )
+
+    # 5. Unlink Customers (Set agent_id = None)
+    unlink_stmt = update(Customer).where(Customer.agent_id.in_(request.ids)).values(agent_id=None)
+    await db.execute(unlink_stmt)
+    
+    # 6. Delete Agents
+    for agent in agents:
+        await db.delete(agent)
+    
+    await db.commit()
+    return {"message": f"Successfully deleted {len(agents)} agents"}
+
+
+@router.post("/agents/bulk-status")
+async def bulk_update_agents_status(
+    request: BulkStatusUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """Bulk enable or disable agent accounts"""
+    from sqlalchemy import update
+    
+    stmt = update(User).where(
+        User.id.in_(request.ids), 
+        User.role == UserRole.AGENT
+    ).values(is_active=request.is_active)
+    
+    result = await db.execute(stmt)
+    await db.commit()
+    
+    return {"message": f"Successfully updated status for {result.rowcount} agents"}
 
 
 @router.patch("/agents/{agent_id}/status")
@@ -248,13 +336,36 @@ async def delete_agent(
             detail="Cannot delete agent with existing packages. Please delete or reassign packages first."
         )
 
-    # 3. Unlink Customers (Set agent_id = None)
+    # 3. Check for associated Enquiries
+    from app.models import Enquiry
+    enq_stmt = select(Enquiry).where(Enquiry.agent_id == agent_id).limit(1)
+    enq_result = await db.execute(enq_stmt)
+    if enq_result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete agent with associated enquiries. Please process or delete enquiries first."
+        )
+
+    # 4. Check for associated Bookings
+    from app.models import Booking
+    from sqlalchemy import or_
+    book_stmt = select(Booking).where(
+        or_(Booking.agent_id == agent_id, Booking.booked_by_user_id == agent_id)
+    ).limit(1)
+    book_result = await db.execute(book_stmt)
+    if book_result.scalar_one_or_none():
+         raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete agent with existing bookings. Please manage or archive bookings first."
+        )
+
+    # 5. Unlink Customers (Set agent_id = None)
     # We do this manually because SQLAlchemy cascade might not be set for self-referential
     from sqlalchemy import update
     unlink_stmt = update(Customer).where(Customer.agent_id == agent_id).values(agent_id=None)
     await db.execute(unlink_stmt)
     
-    # 4. Delete Agent (Bookings cascade automatically)
+    # 7. Delete Agent (Bookings cascade automatically)
     await db.delete(agent)
     await db.commit()
 
