@@ -590,9 +590,9 @@ export default function AgentPackagesPage() {
                                                             <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center flex-shrink-0 text-lg font-bold">
                                                                 {pkg.title.charAt(0)}
                                                             </div>
-                                                            <div>
-                                                                <div className="font-semibold text-[var(--color-primary-font)]">{pkg.title}</div>
-                                                                <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 max-w-[200px] truncate">ID: {pkg.id.slice(0, 8)}...</div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-semibold text-[var(--color-primary-font)] truncate" title={pkg.title}>{pkg.title}</div>
+                                                                <div className="text-xs text-[var(--color-primary-font)]/60 mt-0.5 truncate">ID: {pkg.id.slice(0, 8)}...</div>
                                                             </div>
                                                         </div>
                                                     </TableCell>
@@ -605,8 +605,8 @@ export default function AgentPackagesPage() {
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <MapPin className="h-4 w-4 text-[var(--color-primary-font)]/40" />
-                                                                    <span className="font-medium text-[var(--color-primary-font)]/80">{pkg.destination}</span>
+                                                                    <MapPin className="h-4 w-4 text-[var(--color-primary-font)]/40 shrink-0" />
+                                                                    <span className="font-medium text-[var(--color-primary-font)]/80 truncate max-w-[150px]" title={pkg.destination}>{pkg.destination}</span>
                                                                 </>
                                                             )}
                                                         </div>

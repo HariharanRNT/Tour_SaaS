@@ -112,7 +112,7 @@ class InvoiceService:
                     <tr>
                         <th>Description</th>
                         <th>Billing Cycle</th>
-                        <th style="text-align: right;">Amount (INR)</th>
+                        <th style="text-align: right;">Amount INR</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -132,15 +132,15 @@ class InvoiceService:
             <table style="width: 50%; margin-left: auto;">
                 <tr>
                     <td style="border: none;">Subtotal</td>
-                    <td style="text-align: right; border: none;">{base_price:.2f}</td>
+                    <td style="text-align: right; border: none;">INR {base_price:.2f}</td>
                 </tr>
                 <tr>
                     <td style="border: none;">GST (18%)</td>
-                    <td style="text-align: right; border: none;">{gst_amount:.2f}</td>
+                    <td style="text-align: right; border: none;">INR {gst_amount:.2f}</td>
                 </tr>
                 <tr class="total-row">
                     <td style="border-top: 2px solid #333; font-size: 16px;">Total</td>
-                    <td style="text-align: right; border-top: 2px solid #333; font-size: 16px;">{total_amount:.2f}</td>
+                    <td style="text-align: right; border-top: 2px solid #333; font-size: 16px;">INR {total_amount:.2f}</td>
                 </tr>
             </table>
 
@@ -174,11 +174,54 @@ class InvoiceService:
         try:
             # Data Preparation
             package = booking.package
+            agent = booking.agent
+            agent_profile = getattr(agent, 'agent_profile', None) if agent else None
+            
             total_amount = float(booking.total_amount)
-            # Standard GST is 18% in the requirement
-            gst_rate = 18
-            base_price = total_amount / (1 + (gst_rate / 100))
-            gst_amount = total_amount - base_price
+            
+            # Determine GST Settings (Package-specific first, then Agent defaults)
+            gst_applicable = True
+            gst_percentage = 18.0
+            gst_mode = 'inclusive'
+            
+            if package:
+                # Package specific overrides
+                if package.gst_applicable is not None:
+                    gst_applicable = package.gst_applicable
+                
+                if package.gst_percentage is not None:
+                    gst_percentage = float(package.gst_percentage)
+                elif agent_profile:
+                    gst_percentage = float(agent_profile.gst_percentage)
+                
+                if package.gst_mode:
+                    gst_mode = package.gst_mode
+                elif agent_profile:
+                    gst_mode = 'inclusive' if agent_profile.gst_inclusive else 'exclusive'
+            elif agent_profile:
+                # Fallback to Agent defaults
+                gst_applicable = agent_profile.gst_applicable
+                gst_percentage = float(agent_profile.gst_percentage)
+                gst_mode = 'inclusive' if agent_profile.gst_inclusive else 'exclusive'
+
+            # Calculate Split
+            if not gst_applicable or gst_percentage == 0:
+                base_price = total_amount
+                gst_amount = 0.0
+                display_gst_rate = 0
+            else:
+                if gst_mode == 'inclusive':
+                    base_price = total_amount / (1 + (gst_percentage / 100))
+                    gst_amount = total_amount - base_price
+                else:
+                    # If it was exclusive, total_amount already includes it
+                    base_price = total_amount / (1 + (gst_percentage / 100))
+                    gst_amount = total_amount - base_price
+                    # Note: For exclusive packages, the booking.total_amount stored in DB 
+                    # SHOULD already be the total (Base + GST). 
+                    # So the math to derive base from total is the same as inclusive 
+                    # once the total is known.
+                display_gst_rate = gst_percentage
             
             # Format Date
             if booking.created_at:
@@ -208,9 +251,8 @@ class InvoiceService:
                         res = rem[-2:] + "," + res
                         rem = rem[:-2]
                     res = rem + "," + res
-                # NO SPACE between symbol and number to prevent wrapping
-                # Entity is safest with embedded fonts
-                return f"&#8377;{res}.{dec}"
+                # Replace symbol with INR as requested
+                return f"INR {res}.{dec}"
 
             # Status Badge Logic
             status = "PENDING"
@@ -227,7 +269,6 @@ class InvoiceService:
                 badge_text = "#DC2626" # red-600
 
             # Biller Details (Agent)
-            agent = booking.agent
             bill_from_name = "RNT Travel"
             bill_from_address = "Chennai, Tamil Nadu"
             bill_from_city = ""
@@ -237,7 +278,6 @@ class InvoiceService:
 
             if agent:
                  # Custom logo from agent profile
-                 agent_profile = getattr(agent, 'agent_profile', None)
                  if agent_profile and agent_profile.homepage_settings and isinstance(agent_profile.homepage_settings, dict):
                       custom_logo = agent_profile.homepage_settings.get("navbar_logo_image")
                       if custom_logo:
@@ -269,7 +309,7 @@ class InvoiceService:
             # Correct Traveler Labeling
             travelers_count = booking.number_of_travelers
             travelers_label = f"{travelers_count} {'Traveler' if travelers_count == 1 else 'Travelers'}"
-            duration_str = f"{package.duration_days}D / {package.duration_nights}N"
+            duration_str = f"{package.duration_days}D / {package.duration_nights}N" if package else "N/A"
             
             # HTML Template
             html_template = f"""
@@ -413,7 +453,7 @@ class InvoiceService:
                     .col-details {{ width: 32%; }}
                     .col-duration {{ width: 18%; white-space: nowrap; }}
                     .col-amount {{ width: 18%; text-align: right; white-space: nowrap; }}
-
+ 
                     .pkg-name {{
                         font-weight: bold;
                         color: #1A1A2E;
@@ -495,7 +535,7 @@ class InvoiceService:
                         </td>
                     </tr>
                 </table>
-
+ 
                 <!-- Billing Info -->
                 <div class="billing-section">
                     <table class="billing-table">
@@ -517,7 +557,7 @@ class InvoiceService:
                         </tr>
                     </table>
                 </div>
-
+ 
                 <!-- Booking Details Table -->
                 <div class="section-head" style="margin-left: 12px;">Booking Details</div>
                 <table class="details-table">
@@ -532,8 +572,8 @@ class InvoiceService:
                     <tbody>
                         <tr>
                             <td class="col-description">
-                                <div class="pkg-name">{package.title}</div>
-                                <div class="dest-name">{package.destination}</div>
+                                <div class="pkg-name">{package.title if package else "Custom Trip"}</div>
+                                <div class="dest-name">{package.destination if package else booking.flight_origin or "Multiple Destinations"}</div>
                             </td>
                             <td class="col-details">
                                 <div>Travel: {booking.travel_date.strftime("%d %b %Y")}</div>
@@ -546,7 +586,7 @@ class InvoiceService:
                         </tr>
                     </tbody>
                 </table>
-
+ 
                 <!-- Totals Section -->
                 <table style="width: 100%;">
                     <tr>
@@ -558,7 +598,7 @@ class InvoiceService:
                                     <td class="total-value amount-text">{format_inr(base_price)}</td>
                                 </tr>
                                 <tr>
-                                    <td class="total-label">GST ({gst_rate}%)</td>
+                                    <td class="total-label">GST ({display_gst_rate}%)</td>
                                     <td class="total-value amount-text">{format_inr(gst_amount)}</td>
                                 </tr>
                                 <tr class="grand-total-row">

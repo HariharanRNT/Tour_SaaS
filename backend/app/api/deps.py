@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.database import get_db
-from app.models import User, UserRole, SubUser
+from app.models import User, UserRole, SubUser, Customer
 from app.core.security import decode_access_token
 from app.config import settings
 
@@ -54,8 +54,11 @@ async def get_current_user(
     query = select(User).where(User.id == user_id).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
-        selectinload(User.customer_profile),
-        selectinload(User.sub_user_profile).selectinload(SubUser.permissions),
+        selectinload(User.customer_profile).selectinload(Customer.agent),
+        selectinload(User.sub_user_profile).options(
+            selectinload(SubUser.permissions),
+            selectinload(SubUser.agent)
+        ),
         selectinload(User.subscription)
     )
     
@@ -67,7 +70,25 @@ async def get_current_user(
         raise credentials_exception
     
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail="Account is inactive")
+
+    # REAL-TIME AGENT DEACTIVATION CHECK
+    # If the parent agent is deactivated, block access for sub-users and customers
+    if user.role == UserRole.SUB_USER:
+        if user.sub_user_profile and user.sub_user_profile.agent:
+            if not user.sub_user_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact your administrator."
+                )
+    
+    elif user.role == UserRole.CUSTOMER:
+        if user.customer_profile and user.customer_profile.agent:
+            if not user.customer_profile.agent.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This service is currently unavailable. Please contact support."
+                )
 
     # For SUB_USER: attach permissions and parent agent_id from JWT payload
     if user.role == UserRole.SUB_USER:

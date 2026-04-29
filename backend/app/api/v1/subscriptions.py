@@ -9,13 +9,14 @@ from datetime import date, timedelta
 
 from app.database import get_db
 from app.api.deps import get_current_active_user, get_current_active_superuser, check_permission
-from app.models import User, SubscriptionPlan, Subscription, Invoice, Notification
+from app.models import User, SubscriptionPlan, Subscription, Invoice, Notification, Agent, UserRole
 from app.schemas import (
     SubscriptionPlanCreate, SubscriptionPlanResponse,
     SubscriptionResponse, InvoiceResponse, SubscriptionPlanUpdate,
     SubscriptionPurchaseResponse, SubscriptionPaymentVerification,
     MessageResponse
 )
+from app.tasks.email_tasks import send_email_task
 
 router = APIRouter()
 
@@ -694,3 +695,86 @@ async def verify_subscription_payment(
     
     status_msg = "activated" if sub.status == 'active' else "queued as upcoming"
     return MessageResponse(message=f"Subscription verified and {status_msg}")
+
+@router.post("/{subscription_id}/cancel-request", response_model=MessageResponse)
+async def request_subscription_cancellation(
+    subscription_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Request cancellation of a subscription.
+    This does NOT cancel the subscription immediately.
+    It notifies all admins via email and in-portal notifications.
+    """
+    from sqlalchemy.orm import selectinload
+    
+    # 1. Verify subscription exists and belongs to user
+    stmt = select(Subscription).where(
+        Subscription.id == subscription_id,
+        Subscription.user_id == current_user.agent_id
+    ).options(selectinload(Subscription.plan))
+    result = await db.execute(stmt)
+    subscription = result.scalar_one_or_none()
+    
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found or not active")
+        
+    # 2. Get Agent details for the notification
+    stmt = select(Agent).where(Agent.user_id == current_user.agent_id)
+    result = await db.execute(stmt)
+    agent = result.scalar_one_or_none()
+    agency_name = agent.agency_name if agent else "Unknown Agency"
+    
+    # 3. Find all Admins to notify
+    stmt = select(User).where(User.role == UserRole.ADMIN, User.is_active == True)
+    result = await db.execute(stmt)
+    admins = result.scalars().all()
+    
+    if not admins:
+        # Fallback if no admins found (unlikely in prod)
+        print("Warning: No active admins found to notify about subscription cancellation")
+        
+    # 4. Create Notifications and Send Emails
+    for admin in admins:
+        # In-portal notification
+        notification = Notification(
+            user_id=admin.id,
+            type="warning",
+            title="Subscription Cancellation Request",
+            message=f"Agent '{agency_name}' ({current_user.email}) has requested to cancel their '{subscription.plan.name}' subscription."
+        )
+        db.add(notification)
+        
+        # Email notification
+        subject = f"Cancellation Request: {agency_name}"
+        html_body = f"""
+        <div style="font-family: sans-serif; padding: 20px; color: #1a202c;">
+            <h2 style="color: #e53e3e;">Subscription Cancellation Request</h2>
+            <p>Hello {admin.first_name or 'Admin'},</p>
+            <p>An agent has requested to cancel their subscription. Please review this request in the admin portal.</p>
+            
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #edf2f7;">
+                <p style="margin: 5px 0;"><strong>Agency:</strong> {agency_name}</p>
+                <p style="margin: 5px 0;"><strong>Agent Email:</strong> {current_user.email}</p>
+                <p style="margin: 5px 0;"><strong>Current Plan:</strong> {subscription.plan.name}</p>
+                <p style="margin: 5px 0;"><strong>Expiry Date:</strong> {subscription.end_date}</p>
+            </div>
+            
+            <p>Please contact the agent to understand their reasons or process the cancellation manually if required.</p>
+            
+            <hr style="border: none; border-top: 1px solid #edf2f7; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #718096;">This is an automated notification from the Tour SaaS Platform.</p>
+        </div>
+        """
+        
+        # Trigger async email task
+        send_email_task.delay(
+            to_email=admin.email,
+            subject=subject,
+            html_body=html_body
+        )
+
+    await db.commit()
+    
+    return MessageResponse(message="Cancellation request sent to administrators. They will contact you shortly.")

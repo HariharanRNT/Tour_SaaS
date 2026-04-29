@@ -604,9 +604,24 @@ export default function ReportsPage() {
                                     <PremiumCalendar
                                         mode="single"
                                         selected={customRange.from}
-                                        onSelect={(date) => setCustomRange({ ...customRange, from: date as Date })}
+                                        onSelect={(date) => {
+                                            const newFrom = date as Date
+                                            setCustomRange(prev => ({
+                                                ...prev,
+                                                from: newFrom,
+                                                // Adjust 'to' if it's now before 'from'
+                                                to: (prev.to && newFrom && newFrom > prev.to) ? newFrom : prev.to
+                                            }))
+                                        }}
                                         onClear={() => setCustomRange({ ...customRange, from: undefined })}
-                                        onToday={() => setCustomRange({ ...customRange, from: new Date() })}
+                                        onToday={() => {
+                                            const today = new Date()
+                                            setCustomRange(prev => ({
+                                                ...prev,
+                                                from: today,
+                                                to: (prev.to && today > prev.to) ? today : prev.to
+                                            }))
+                                        }}
                                         disabled={(date) => date > new Date()}
                                         initialFocus
                                         mode_type="completed"
@@ -634,10 +649,36 @@ export default function ReportsPage() {
                                     <PremiumCalendar
                                         mode="single"
                                         selected={customRange.to}
-                                        onSelect={(date) => setCustomRange({ ...customRange, to: date as Date })}
+                                        onSelect={(date) => {
+                                            const newTo = date as Date
+                                            setCustomRange(prev => ({
+                                                ...prev,
+                                                to: newTo,
+                                                // Adjust 'from' if it's now after 'to'
+                                                from: (prev.from && newTo && newTo < prev.from) ? newTo : prev.from
+                                            }))
+                                        }}
                                         onClear={() => setCustomRange({ ...customRange, to: undefined })}
-                                        onToday={() => setCustomRange({ ...customRange, to: new Date() })}
-                                        disabled={(date) => date > new Date() || (customRange.from ? isBefore(date, customRange.from) : false)}
+                                        onToday={() => {
+                                            const today = new Date()
+                                            setCustomRange(prev => ({
+                                                ...prev,
+                                                to: today,
+                                                from: (prev.from && today < prev.from) ? today : prev.from
+                                            }))
+                                        }}
+                                        disabled={(date) => {
+                                            const today = new Date();
+                                            today.setHours(23, 59, 59, 999);
+                                            if (date > today) return true;
+                                            
+                                            if (customRange.from) {
+                                                const fromDate = new Date(customRange.from);
+                                                fromDate.setHours(0, 0, 0, 0);
+                                                return date < fromDate;
+                                            }
+                                            return false;
+                                        }}
                                         initialFocus
                                         mode_type="completed"
                                     />

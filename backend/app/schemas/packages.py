@@ -20,7 +20,7 @@ class CancellationRule(BaseModel):
 
 
 class TripStyleCreate(BaseModel):
-    name: str
+    name: str = Field(..., max_length=50)
     icon: Optional[str] = None
 
 class TripStyleResponse(BaseModel):
@@ -35,7 +35,7 @@ class TripStyleResponse(BaseModel):
 
 
 class ActivityTagCreate(BaseModel):
-    name: str
+    name: str = Field(..., max_length=50)
     icon: Optional[str] = None
     category_id: Optional[UUID] = None
 
@@ -52,7 +52,7 @@ class ActivityTagResponse(BaseModel):
 
 
 class ActivityCategoryCreate(BaseModel):
-    name: str
+    name: str = Field(..., max_length=50)
 
 class ActivityCategoryResponse(BaseModel):
     id: UUID

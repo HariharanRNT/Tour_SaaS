@@ -79,7 +79,7 @@ import 'react-phone-input-2/lib/style.css'
 import { Country, State, City } from 'country-state-city'
 import { ICountry, IState, ICity } from 'country-state-city'
 import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { cn, formatError, EMAIL_REGEX, GST_REGEX, NAME_REGEX } from '@/lib/utils'
 import * as XLSX from 'xlsx'
 
 
@@ -158,10 +158,10 @@ export default function AdminAgentsPage() {
         },
         onError: (error: any) => {
             if (error.response?.status === 409) {
-                setConflictMessage(error.response?.data?.detail || 'This email has already registered')
+                setConflictMessage(formatError(error) || 'This email has already registered')
                 setShowConflictModal(true)
             } else {
-                toast.error(error.response?.data?.detail || error.message || 'Failed to create agent')
+                toast.error(formatError(error))
             }
         }
     })
@@ -177,7 +177,9 @@ export default function AdminAgentsPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agents'] })
             setAgentToDelete(null)
-        } })
+        },
+        onError: (error: any) => toast.error(formatError(error))
+    })
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: string, data: any }) => apiUpdateAgent(id, data),
@@ -188,10 +190,10 @@ export default function AdminAgentsPage() {
         },
         onError: (error: any) => {
             if (error.response?.status === 409) {
-                setConflictMessage(error.response?.data?.detail || 'This email has already registered')
+                setConflictMessage(formatError(error) || 'This email has already registered')
                 setShowConflictModal(true)
             } else {
-                toast.error(error.response?.data?.detail || error.message || 'Failed to update agent')
+                toast.error(formatError(error))
             }
         }
     })
@@ -204,7 +206,7 @@ export default function AdminAgentsPage() {
             setShowBulkDeleteDialog(false)
             toast.success('Agents deleted successfully')
         },
-        onError: () => toast.error('Failed to delete agents')
+        onError: (error: any) => toast.error(formatError(error))
     })
 
     const bulkStatusMutation = useMutation({
@@ -214,7 +216,7 @@ export default function AdminAgentsPage() {
             setSelectedAgents(new Set())
             toast.success(`Agents ${variables.is_active ? 'activated' : 'deactivated'} successfully`)
         },
-        onError: () => toast.error('Failed to update status')
+        onError: (error: any) => toast.error(formatError(error))
     })
 
     // Derived stats
@@ -287,6 +289,7 @@ export default function AdminAgentsPage() {
 
     // Validation states
     const [emailValid, setEmailValid] = useState<boolean | null>(null)
+    const [domainValid, setDomainValid] = useState<boolean | null>(null)
 
 
     // Password strength calculator
@@ -301,15 +304,15 @@ export default function AdminAgentsPage() {
         setPasswordStrength(strength)
     }, [newAgent.password])
 
-    // Email validation
+    // Domain validation
     useEffect(() => {
-        if (newAgent.email.length === 0) {
-            setEmailValid(null)
+        if (newAgent.domain.length === 0) {
+            setDomainValid(null)
             return
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        setEmailValid(emailRegex.test(newAgent.email))
-    }, [newAgent.email])
+        const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i
+        setDomainValid(domainRegex.test(newAgent.domain))
+    }, [newAgent.domain])
 
     // Confirmation Dialog State
     const [confirmAction, setConfirmAction] = useState<{
@@ -324,7 +327,7 @@ export default function AdminAgentsPage() {
                 toast.success('Agent approved successfully');
                 setConfirmAction(null);
             },
-            onError: (error: any) => toast.error(error.message)
+            onError: (error: any) => toast.error(formatError(error))
         })
     }
 
@@ -334,19 +337,100 @@ export default function AdminAgentsPage() {
                 toast.success('Agent rejected');
                 setConfirmAction(null);
             },
-            onError: (error: any) => toast.error(error.message)
+            onError: (error: any) => toast.error(formatError(error))
         })
     }
 
     const handleCreateAgent = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        // Mandatory Field Validation
+        if (!newAgent.agency_name.trim()) {
+            toast.error("Agency Name is required");
+            return;
+        }
+        if (!newAgent.company_legal_name.trim()) {
+            toast.error("Company Legal Name is required");
+            return;
+        }
+        if (!newAgent.domain.trim()) {
+            toast.error("Website / Domain Name is required");
+            return;
+        }
+        if (domainValid === false) {
+            toast.error('Please enter a valid domain name (e.g., example.com)')
+            return
+        }
+        if (!newAgent.business_address.trim()) {
+            toast.error("Business Address is required");
+            return;
+        }
+        if (!newAgent.country.trim()) {
+            toast.error("Country is required");
+            return;
+        }
+        if (!newAgent.state.trim()) {
+            toast.error("State is required");
+            return;
+        }
+        if (!newAgent.city.trim()) {
+            toast.error("City is required");
+            return;
+        }
+        if (!newAgent.first_name.trim()) {
+            toast.error("First Name is required");
+            return;
+        }
+        if (!newAgent.last_name.trim()) {
+            toast.error("Last Name is required");
+            return;
+        }
+        if (!newAgent.email.trim()) {
+            toast.error("Email is required");
+            return;
+        }
+        if (!newAgent.password.trim()) {
+            toast.error("Password is required");
+            return;
+        }
+        if (newAgent.password.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
+        // Specific Format Validation
+        if (!EMAIL_REGEX.test(newAgent.email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+        if (!NAME_REGEX.test(newAgent.first_name)) {
+            toast.error("First Name contains invalid characters");
+            return;
+        }
+        if (!NAME_REGEX.test(newAgent.last_name)) {
+            toast.error("Last Name contains invalid characters");
+            return;
+        }
+        if (newAgent.gst_no && !GST_REGEX.test(newAgent.gst_no.toUpperCase().trim())) {
+            toast.error("Invalid GST format. Must be 15 characters (e.g., 22AAAAA0000A1Z5)");
+            return;
+        }
+        if (newAgent.currency && (newAgent.currency.length !== 3 || !/^[a-zA-Z]+$/.test(newAgent.currency))) {
+            toast.error("Currency must be a 3-letter ISO code (e.g., INR, USD)");
+            return;
+        }
+        if (newAgent.tax_id && newAgent.tax_id.length > 20) {
+            toast.error("Tax ID cannot exceed 20 characters");
+            return;
+        }
+
         const payload = {
             ...newAgent,
             country: Country.getCountryByCode(newAgent.country)?.name || newAgent.country,
             state: State.getStateByCodeAndCountry(newAgent.state, newAgent.country)?.name || newAgent.state,
             commission_value: newAgent.commission_value ? Number(newAgent.commission_value) : 0,
             phone: newAgent.phone || null,
-            gst_no: newAgent.gst_no || null,
+            gst_no: newAgent.gst_no ? newAgent.gst_no.toUpperCase().trim() : null,
             tax_id: newAgent.tax_id || null,
             agency_name: newAgent.agency_name || null,
             company_legal_name: newAgent.company_legal_name || null,
@@ -362,7 +446,7 @@ export default function AdminAgentsPage() {
                 toast.success(`Agent ${is_active ? 'activated' : 'deactivated'} successfully`);
                 setConfirmAction(null);
             },
-            onError: () => toast.error('Failed to update status')
+            onError: (error: any) => toast.error(formatError(error))
         })
     }
 
@@ -411,13 +495,70 @@ export default function AdminAgentsPage() {
         e.preventDefault()
         if (!agentToEdit) return
 
+        // Mandatory Field Validation for Edit
+        if (!editForm.agency_name.trim()) {
+            toast.error("Agency Name is required");
+            return;
+        }
+        if (!editForm.company_legal_name.trim()) {
+            toast.error("Company Legal Name is required");
+            return;
+        }
+        if (!editForm.domain.trim()) {
+            toast.error("Website / Domain Name is required");
+            return;
+        }
+        if (!editForm.business_address.trim()) {
+            toast.error("Business Address is required");
+            return;
+        }
+        if (!editForm.first_name.trim()) {
+            toast.error("First Name is required");
+            return;
+        }
+        if (!editForm.last_name.trim()) {
+            toast.error("Last Name is required");
+            return;
+        }
+
+        // Specific Format Validation for Edit
+        if (!NAME_REGEX.test(editForm.first_name)) {
+            toast.error("First Name contains invalid characters");
+            return;
+        }
+        if (!NAME_REGEX.test(editForm.last_name)) {
+            toast.error("Last Name contains invalid characters");
+            return;
+        }
+        if (editForm.gst_no && !GST_REGEX.test(editForm.gst_no.toUpperCase().trim())) {
+            toast.error("Invalid GST format. Must be 15 characters (e.g., 22AAAAA0000A1Z5)");
+            return;
+        }
+        if (editForm.currency && (editForm.currency.length !== 3 || !/^[a-zA-Z]+$/.test(editForm.currency))) {
+            toast.error("Currency must be a 3-letter ISO code (e.g., INR, USD)");
+            return;
+        }
+        if (editForm.tax_id && editForm.tax_id.length > 20) {
+            toast.error("Tax ID cannot exceed 20 characters");
+            return;
+        }
+
+        // Domain validation for edit form
+        if (editForm.domain) {
+            const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i
+            if (!domainRegex.test(editForm.domain)) {
+                toast.error('Please enter a valid domain name (e.g., example.com)')
+                return
+            }
+        }
+
         const payload = {
             ...editForm,
             country: Country.getCountryByCode(editForm.country)?.name || editForm.country,
             state: State.getStateByCodeAndCountry(editForm.state, editForm.country)?.name || editForm.state,
             commission_value: editForm.commission_value ? Number(editForm.commission_value) : 0,
             phone: editForm.phone || null,
-            gst_no: editForm.gst_no || null,
+            gst_no: editForm.gst_no ? editForm.gst_no.toUpperCase().trim() : null,
             tax_id: editForm.tax_id || null,
             agency_name: editForm.agency_name || null,
             company_legal_name: editForm.company_legal_name || null,
@@ -648,7 +789,7 @@ export default function AdminAgentsPage() {
 
                             </DialogTrigger>
 
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0">
                                 <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
                                     <DialogHeader>
                                         <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Add New <span className="text-orange-600">Agent</span></DialogTitle>
@@ -662,7 +803,7 @@ export default function AdminAgentsPage() {
                                     {/* Collapsible Sections */}
                                     <Accordion type="multiple" defaultValue={[]} className="space-y-4">
                                         {/* Agency Details */}
-                                        <AccordionItem value="agency" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                        <AccordionItem value="agency" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                             <AccordionTrigger className="hover:no-underline py-5">
                                                 <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-data-[state=open]:bg-orange-600 transition-colors duration-300">
@@ -678,6 +819,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="agency_name"
                                                             required
+                                                            maxLength={50}
                                                             placeholder="Your Travel Agency"
                                                             value={newAgent.agency_name}
                                                             onChange={e => {
@@ -692,6 +834,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="company_legal_name"
                                                             required
+                                                            maxLength={50}
                                                             placeholder="Legal entity name"
                                                             value={newAgent.company_legal_name}
                                                             onChange={e => {
@@ -704,23 +847,36 @@ export default function AdminAgentsPage() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label htmlFor="domain" className="font-semibold">Website / Domain Name *</Label>
-                                                    <Input
-                                                        id="domain"
-                                                        required
-                                                        placeholder="example.com"
-                                                        value={newAgent.domain}
-                                                        onChange={e => {
-                                                            setNewAgent({ ...newAgent, domain: e.target.value })
-                                                            setFormTouched(true)
-                                                        }}
-                                                        className="h-11"
-                                                    />
+                                                    <div className="relative">
+                                                        <Input
+                                                            id="domain"
+                                                            required
+                                                            maxLength={50}
+                                                            placeholder="example.com"
+                                                            value={newAgent.domain}
+                                                            onChange={e => {
+                                                                setNewAgent({ ...newAgent, domain: e.target.value })
+                                                                setFormTouched(true)
+                                                            }}
+                                                            className="h-11 pr-10"
+                                                        />
+                                                        {domainValid !== null && (
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                                {domainValid ? (
+                                                                    <Check className="h-5 w-5 text-green-500" />
+                                                                ) : (
+                                                                    <X className="h-5 w-5 text-red-500" />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label htmlFor="business_address" className="font-semibold">Business Address *</Label>
                                                     <Input
                                                         id="business_address"
                                                         required
+                                                        maxLength={200}
                                                         placeholder="Street address, building, floor"
                                                         value={newAgent.business_address}
                                                         onChange={e => {
@@ -794,7 +950,7 @@ export default function AdminAgentsPage() {
                                         </AccordionItem>
 
                                         {/* Personal Details */}
-                                        <AccordionItem value="personal" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                        <AccordionItem value="personal" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                             <AccordionTrigger className="hover:no-underline py-5">
                                                 <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-data-[state=open]:bg-blue-600 transition-colors duration-300">
@@ -810,6 +966,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="first_name"
                                                             required
+                                                            maxLength={50}
                                                             placeholder="Enter first name"
                                                             value={newAgent.first_name}
                                                             onChange={e => {
@@ -824,6 +981,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="last_name"
                                                             required
+                                                            maxLength={50}
                                                             placeholder="Enter last name"
                                                             value={newAgent.last_name}
                                                             onChange={e => {
@@ -842,6 +1000,7 @@ export default function AdminAgentsPage() {
                                                                 id="email"
                                                                 type="email"
                                                                 required
+                                                                maxLength={50}
                                                                 placeholder="agent@company.com"
                                                                 value={newAgent.email}
                                                                 onChange={e => {
@@ -891,6 +1050,7 @@ export default function AdminAgentsPage() {
                                                             type={showPassword ? "text" : "password"}
                                                             required
                                                             minLength={8}
+                                                            maxLength={50}
                                                             placeholder="Minimum 8 characters"
                                                             value={newAgent.password}
                                                             onChange={e => {
@@ -928,7 +1088,7 @@ export default function AdminAgentsPage() {
                                         </AccordionItem>
 
                                         {/* Financial Details */}
-                                        <AccordionItem value="financial" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                        <AccordionItem value="financial" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                             <AccordionTrigger className="hover:no-underline py-5">
                                                 <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-data-[state=open]:bg-emerald-600 transition-colors duration-300">
@@ -958,6 +1118,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="currency"
                                                             placeholder="INR"
+                                                            maxLength={3}
                                                             value={newAgent.currency}
                                                             onChange={e => {
                                                                 setNewAgent({ ...newAgent, currency: e.target.value })
@@ -971,6 +1132,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="tax_id"
                                                             placeholder="Tax identification number"
+                                                            maxLength={20}
                                                             value={newAgent.tax_id}
                                                             onChange={e => {
                                                                 setNewAgent({ ...newAgent, tax_id: e.target.value })
@@ -1132,7 +1294,7 @@ export default function AdminAgentsPage() {
 
                 {/* Main Table Card Wrapper */}
                 <div className="bg-white/5 backdrop-blur-2xl rounded-[40px] p-1 border border-white/10 shadow-2xl">
-                    <Card className="border-0 shadow-none overflow-hidden rounded-[38px] bg-white/10 backdrop-blur-md border border-white/20">
+                    <Card className="shadow-none overflow-hidden rounded-[38px] bg-white/10 backdrop-blur-md border border-white/20">
 
                         <CardHeader className="bg-white/10 border-b border-white/20 py-8 px-8 sticky top-0 z-10">
                             <div className="flex flex-col gap-6">
@@ -1570,7 +1732,7 @@ export default function AdminAgentsPage() {
 
                 {/* Edit Agent Dialog */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0 shadow-2xl">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/70 backdrop-blur-[40px] border border-white/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[32px] p-0">
                         <div className="sticky top-0 z-20 bg-white/60 backdrop-blur-3xl px-8 py-6 border-b border-white/10">
                             <DialogHeader>
                                 <DialogTitle className="text-3xl font-black text-slate-800 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Edit Agent <span className="text-orange-600">Details</span></DialogTitle>
@@ -1584,7 +1746,7 @@ export default function AdminAgentsPage() {
                             {/* Collapsible Sections */}
                             <Accordion type="multiple" defaultValue={['agency', 'personal']} className="space-y-4">
                                 {/* Agency Details */}
-                                <AccordionItem value="agency" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                <AccordionItem value="agency" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                     <AccordionTrigger className="hover:no-underline py-5">
                                         <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-data-[state=open]:bg-orange-600 transition-colors duration-300">
@@ -1596,18 +1758,22 @@ export default function AdminAgentsPage() {
                                     <AccordionContent className="space-y-4 pb-4 px-1">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="edit_agency_name" className="font-semibold">Agency Name</Label>
+                                                <Label htmlFor="edit_agency_name" className="font-semibold">Agency Name *</Label>
                                                 <Input
                                                     id="edit_agency_name"
+                                                    required
+                                                    maxLength={50}
                                                     value={editForm.agency_name}
                                                     onChange={e => setEditForm({ ...editForm, agency_name: e.target.value })}
                                                     className="h-11"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="edit_company_legal_name" className="font-semibold">Company Legal Name</Label>
+                                                <Label htmlFor="edit_company_legal_name" className="font-semibold">Company Legal Name *</Label>
                                                 <Input
                                                     id="edit_company_legal_name"
+                                                    required
+                                                    maxLength={50}
                                                     value={editForm.company_legal_name}
                                                     onChange={e => setEditForm({ ...editForm, company_legal_name: e.target.value })}
                                                     className="h-11"
@@ -1615,18 +1781,22 @@ export default function AdminAgentsPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="edit_domain" className="font-semibold">Website / Domain Name</Label>
+                                            <Label htmlFor="edit_domain" className="font-semibold">Website / Domain Name *</Label>
                                             <Input
                                                 id="edit_domain"
+                                                required
+                                                maxLength={50}
                                                 value={editForm.domain}
                                                 onChange={e => setEditForm({ ...editForm, domain: e.target.value })}
                                                 className="h-11"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="edit_business_address" className="font-semibold">Business Address</Label>
+                                            <Label htmlFor="edit_business_address" className="font-semibold">Business Address *</Label>
                                             <Input
                                                 id="edit_business_address"
+                                                required
+                                                maxLength={200}
                                                 value={editForm.business_address}
                                                 onChange={e => setEditForm({ ...editForm, business_address: e.target.value })}
                                                 className="h-11"
@@ -1687,7 +1857,7 @@ export default function AdminAgentsPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                                 {/* Contact Details */}
-                                <AccordionItem value="personal" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                <AccordionItem value="personal" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                     <AccordionTrigger className="hover:no-underline py-5">
                                         <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-data-[state=open]:bg-blue-600 transition-colors duration-300">
@@ -1699,18 +1869,22 @@ export default function AdminAgentsPage() {
                                     <AccordionContent className="space-y-4 pb-4 px-1">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="edit_first_name" className="font-semibold">First Name</Label>
+                                                <Label htmlFor="edit_first_name" className="font-semibold">First Name *</Label>
                                                 <Input
                                                     id="edit_first_name"
+                                                    required
+                                                    maxLength={50}
                                                     value={editForm.first_name}
                                                     onChange={e => setEditForm({ ...editForm, first_name: e.target.value })}
                                                     className="h-11"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="edit_last_name" className="font-semibold">Last Name</Label>
+                                                <Label htmlFor="edit_last_name" className="font-semibold">Last Name *</Label>
                                                 <Input
                                                     id="edit_last_name"
+                                                    required
+                                                    maxLength={50}
                                                     value={editForm.last_name}
                                                     onChange={e => setEditForm({ ...editForm, last_name: e.target.value })}
                                                     className="h-11"
@@ -1749,7 +1923,7 @@ export default function AdminAgentsPage() {
                                 </AccordionItem>
 
                                 {/* Financial Details */}
-                                <AccordionItem value="financial" className="border-0 rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
+                                <AccordionItem value="financial" className="rounded-[28px] px-6 bg-white/20 backdrop-blur-2xl border border-white/40 mb-6 shadow-sm group hover:bg-white/30 transition-all duration-500">
                                     <AccordionTrigger className="hover:no-underline py-5">
                                         <h3 className="font-black text-slate-700 text-lg flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-data-[state=open]:bg-emerald-600 transition-colors duration-300">
@@ -1774,6 +1948,7 @@ export default function AdminAgentsPage() {
                                                 <Label htmlFor="edit_currency" className="font-semibold">Currency</Label>
                                                 <Input
                                                     id="edit_currency"
+                                                    maxLength={3}
                                                     value={editForm.currency}
                                                     onChange={e => setEditForm({ ...editForm, currency: e.target.value })}
                                                     className="h-11"
@@ -1783,6 +1958,7 @@ export default function AdminAgentsPage() {
                                                 <Label htmlFor="edit_tax_id" className="font-semibold">Tax ID</Label>
                                                 <Input
                                                     id="edit_tax_id"
+                                                    maxLength={20}
                                                     value={editForm.tax_id}
                                                     onChange={e => setEditForm({ ...editForm, tax_id: e.target.value })}
                                                     className="h-11"

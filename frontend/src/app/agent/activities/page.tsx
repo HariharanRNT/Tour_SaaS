@@ -194,8 +194,8 @@ export default function ActivitiesMasterPage() {
             return
         }
 
-        if (trimmedName.length > 100) {
-            toast.error('Destination name must be at most 100 characters long')
+        if (trimmedName.length > 50) {
+            toast.error('Destination name must be at most 50 characters long')
             return
         }
 
@@ -430,11 +430,11 @@ export default function ActivitiesMasterPage() {
                                                     </div>
 
                                                     <div className="flex items-center h-6 mb-2">
-                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-[var(--color-primary-font)] text-[10px] uppercase tracking-widest">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mr-2 animate-pulse shadow-[0_0_8px_var(--primary-glow)]" />
-                                                            {dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}
-                                                            <span className="mx-2 opacity-30">|</span>
-                                                            {dest.package_count} {dest.package_count === 1 ? 'Package' : 'Packages'}
+                                                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold border border-[var(--primary-light)]/30 bg-[var(--primary-light)]/10 text-[var(--color-primary-font)] text-[10px] uppercase tracking-widest max-w-full">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mr-2 animate-pulse shadow-[0_0_8px_var(--primary-glow)] shrink-0" />
+                                                            <span className="truncate">{dest.activity_count} {dest.activity_count === 1 ? 'Activity' : 'Activities'}</span>
+                                                            <span className="mx-2 opacity-30 shrink-0">|</span>
+                                                            <span className="truncate">{dest.package_count} {dest.package_count === 1 ? 'Package' : 'Packages'}</span>
                                                         </div>
                                                     </div>
 
@@ -608,7 +608,7 @@ export default function ActivitiesMasterPage() {
                             {isEditing ? 'Edit Destination' : 'New Destination'}
                         </DialogTitle>
                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255, 122, 69, 0.5), transparent)', margin: '0 auto 12px', width: '80%' }}></div>
-                        <DialogDescription style={{ color: 'var(--color-primary-font)', opacity: 0.7, fontWeight: 400, fontSize: '15px' }}>
+                        <DialogDescription className="break-all w-full" style={{ color: 'var(--color-primary-font)', opacity: 0.7, fontWeight: 400, fontSize: '15px' }}>
                             {isEditing ? `Update details for ${editingDestOriginalName}.` : 'Enter the name of the new destination to manage its activities.'}
                         </DialogDescription>
                     </div>
@@ -628,7 +628,7 @@ export default function ActivitiesMasterPage() {
                                         setNewCityName(val);
                                     }}
                                     minLength={3}
-                                    maxLength={100}
+                                    maxLength={50}
                                     placeholder="e.g., Bali, Paris, Tokyo"
                                     className="w-full transition-all duration-300 focus:outline-none focus:ring-0 placeholder:text-[var(--color-primary-font)]/30 text-[var(--color-primary-font)] font-semibold"
                                     style={{

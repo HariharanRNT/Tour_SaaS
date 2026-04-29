@@ -72,7 +72,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
-import { bookingsAPI } from '@/lib/api'
+import { bookingsAPI, fetchAgentSettings } from '@/lib/api'
 import { Booking, Traveler } from '@/types'
 
 export default function AgentBookingsPage() {
@@ -104,6 +104,12 @@ export default function AgentBookingsPage() {
         },
         staleTime: 30000, // 30 seconds
         refetchOnWindowFocus: true
+    })
+
+    const { data: agentSettings } = useQuery({
+        queryKey: ['agent-settings'],
+        queryFn: fetchAgentSettings,
+        staleTime: 300000 // 5 minutes
     })
 
     const bookings = bookingsData || []
@@ -395,7 +401,12 @@ export default function AgentBookingsPage() {
                                             mode_type={activeTab as "upcoming" | "completed"}
                                             selected={startDate ? new Date(startDate) : undefined}
                                             onSelect={(date) => {
-                                                setStartDate(date ? format(date, 'yyyy-MM-dd') : '')
+                                                const dateStr = date ? format(date, 'yyyy-MM-dd') : ''
+                                                setStartDate(dateStr)
+                                                // Enforce end date >= start date
+                                                if (dateStr && endDate && dateStr > endDate) {
+                                                    setEndDate(dateStr)
+                                                }
                                                 setIsFromOpen(false)
                                             }}
                                             onClear={() => {
@@ -403,7 +414,11 @@ export default function AgentBookingsPage() {
                                                 setIsFromOpen(false)
                                             }}
                                             onToday={() => {
-                                                setStartDate(format(new Date(), 'yyyy-MM-dd'))
+                                                const today = format(new Date(), 'yyyy-MM-dd')
+                                                setStartDate(today)
+                                                if (endDate && today > endDate) {
+                                                    setEndDate(today)
+                                                }
                                                 setIsFromOpen(false)
                                             }}
                                             initialFocus
@@ -429,15 +444,41 @@ export default function AgentBookingsPage() {
                                         mode_type={activeTab as "upcoming" | "completed"}
                                         selected={endDate ? new Date(endDate) : undefined}
                                         onSelect={(date) => {
-                                            setEndDate(date ? format(date, 'yyyy-MM-dd') : '')
+                                            const dateStr = date ? format(date, 'yyyy-MM-dd') : ''
+                                            setEndDate(dateStr)
+                                            // Enforce start date <= end date
+                                            if (dateStr && startDate && dateStr < startDate) {
+                                                setStartDate(dateStr)
+                                            }
                                             setIsToOpen(false)
+                                        }}
+                                        disabled={(date) => {
+                                            // Combine mode_type logic with range logic
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            
+                                            const isPastDisabled = activeTab === "upcoming" && date < today;
+                                            const isFutureDisabled = activeTab === "completed" && date > today;
+                                            
+                                            if (isPastDisabled || isFutureDisabled) return true;
+                                            
+                                            if (startDate) {
+                                                const start = new Date(startDate);
+                                                start.setHours(0, 0, 0, 0);
+                                                return date < start;
+                                            }
+                                            return false;
                                         }}
                                         onClear={() => {
                                             setEndDate('')
                                             setIsToOpen(false)
                                         }}
                                         onToday={() => {
-                                            setEndDate(format(new Date(), 'yyyy-MM-dd'))
+                                            const today = format(new Date(), 'yyyy-MM-dd')
+                                            setEndDate(today)
+                                            if (startDate && today < startDate) {
+                                                setStartDate(today)
+                                            }
                                             setIsToOpen(false)
                                         }}
                                         initialFocus
@@ -1003,14 +1044,12 @@ export default function AgentBookingsPage() {
                                             }
 
                                             // Fallback if absolutely empty
-                                            const displayInclusions = inclusions.length > 0 
-                                                ? inclusions 
-                                                : ['Expert Professional Guide', 'Premium Accommodation (4*)', 'All Local Transportation', 'Entrance Fees to Major Sights', 'Buffet Breakfast & Welcome Dinner'];
+                                            const displayInclusions = inclusions;
 
                                             return displayInclusions.map((item, idx) => (
                                                 <div key={idx} className="flex items-start gap-2.5">
                                                     <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                                    <span className="text-sm font-bold text-[var(--color-primary-font)]/70 leading-tight">{item}</span>
+                                                    <span className="text-sm font-bold text-[var(--color-primary-font)]/70 leading-tight break-words overflow-hidden w-full">{item}</span>
                                                 </div>
                                             ));
                                         })()}
@@ -1032,29 +1071,20 @@ export default function AgentBookingsPage() {
                                                         <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">
                                                             {rule.refundPercentage}% Refund
                                                         </p>
-                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">
+                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">
                                                             Cancellations made {rule.daysBefore}+ days before travel date.
                                                         </p>
                                                     </div>
                                                 </li>
                                             ))
                                         ) : (
-                                            <>
                                                 <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
                                                     <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                                                     <div>
-                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Full Refund</p>
-                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made 15+ days before travel date. Processing fee applies.</p>
+                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Non Refundable</p>
+                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">This package is non-refundable upon booking confirmation.</p>
                                                     </div>
                                                 </li>
-                                                <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-                                                    <div>
-                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Partial Refund (50%)</p>
-                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal">Cancellations made between 7-14 days before travel date.</p>
-                                                    </div>
-                                                </li>
-                                            </>
                                         )}
                                     </ul>
                                 </section>
@@ -1086,7 +1116,7 @@ export default function AgentBookingsPage() {
                                                                         </div>
                                                                         <div className="space-y-1">
                                                                             <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">Street / Landmark</p>
-                                                                            <p className="text-[var(--color-primary-font)]">{parsed.contact_info.address || 'Not specified'}</p>
+                                                                            <p className="text-[var(--color-primary-font)] break-words">{parsed.contact_info.address || 'Not specified'}</p>
                                                                         </div>
                                                                         <div className="space-y-1">
                                                                             <p className="text-[10px] uppercase font-black text-[var(--color-primary-font)]/80 tracking-tighter">City/State</p>
@@ -1118,7 +1148,7 @@ export default function AgentBookingsPage() {
                                                                             {Object.entries(parsed.flight_details).map(([key, value]) => (
                                                                                 <div key={key} className="space-y-0.5">
                                                                                     <p className="text-[9px] uppercase font-bold text-slate-500">{key.replace(/_/g, ' ')}</p>
-                                                                                    <p className="font-mono text-xs">{String(value)}</p>
+                                                                                    <p className="font-mono text-xs break-all">{String(value)}</p>
                                                                                 </div>
                                                                             ))}
                                                                         </div>
@@ -1130,7 +1160,7 @@ export default function AgentBookingsPage() {
                                                                             <Info className="h-12 w-12" />
                                                                         </div>
                                                                         <p className="text-[11px] uppercase font-black text-indigo-700 tracking-widest mb-3">Special Requests Notes</p>
-                                                                        <p className="text-[var(--color-primary-font)]/80 leading-relaxed italic text-base">"{parsed.requests}"</p>
+                                                                        <p className="text-[var(--color-primary-font)]/80 leading-relaxed italic text-base break-words">"{parsed.requests}"</p>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1166,20 +1196,34 @@ export default function AgentBookingsPage() {
                                                     <span>Amount</span>
                                                 </div>
                                                 <div className="h-px bg-white/10" />
-                                                <div className="flex justify-between items-center font-bold">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                                                        <span className="text-sm text-slate-300">Base Price (Per Person x {travelerCount})</span>
-                                                    </div>
-                                                    <span className="text-slate-100 font-mono">₹{((booking.total_amount / 1.18) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center font-bold">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                                                        <span className="text-sm text-slate-300">Taxes & Service Fees (18%)</span>
-                                                    </div>
-                                                    <span className="text-slate-100 font-mono">₹{(booking.total_amount - (booking.total_amount / 1.18) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                                </div>
+                                                {(() => {
+                                                    const pkg = booking.package;
+                                                    const gstRate = pkg?.gst_percentage ?? agentSettings?.gst_percentage ?? 18;
+                                                    const isGstApplicable = pkg?.gst_applicable ?? agentSettings?.gst_applicable ?? true;
+                                                    
+                                                    const total = booking.total_amount || 0;
+                                                    const basePrice = isGstApplicable ? (total / (1 + (gstRate / 100))) : total;
+                                                    const gstAmt = total - basePrice;
+
+                                                    return (
+                                                        <>
+                                                            <div className="flex justify-between items-center font-bold">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                                                                    <span className="text-sm text-slate-300">Base Price (Per Person x {travelerCount})</span>
+                                                                </div>
+                                                                <span className="text-slate-100 font-mono">₹{(basePrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center font-bold">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                                                                    <span className="text-sm text-slate-300">Taxes & Service Fees ({isGstApplicable ? `${gstRate}%` : 'N/A'})</span>
+                                                                </div>
+                                                                <span className="text-slate-100 font-mono">₹{(gstAmt || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
 
 
                                                 <div className="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-end sm:items-center gap-6">

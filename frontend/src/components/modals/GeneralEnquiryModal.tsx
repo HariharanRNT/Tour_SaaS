@@ -34,17 +34,33 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
     })
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [errors, setErrors] = useState<Record<string, string>>({})
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {}
+        if (!formData.name.trim()) newErrors.name = 'Name is required'
+        else if (formData.name.length > 50) newErrors.name = 'Name cannot exceed 50 characters'
+
+        if (!formData.email.trim()) newErrors.email = 'Email is required'
+        else if (formData.email.length > 50) newErrors.email = 'Email cannot exceed 50 characters'
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format'
+
+        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
+
+        if (!formData.message.trim()) newErrors.message = 'Message is required'
+        else if (formData.message.length > 500) newErrors.message = 'Message cannot exceed 500 characters'
+
+        if (!formData.travelDate) newErrors.travelDate = 'Travel date is required'
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!formData.message) {
-            toast.error('Please enter your message')
-            return
-        }
-
-        if (!formData.name || !formData.email || !formData.phone) {
-            toast.error('Please fill in all contact details')
+        if (!validate()) {
+            toast.error('Please correct the errors in the form')
             return
         }
 
@@ -116,32 +132,49 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                     <Input
                                         id="name"
                                         placeholder="Full Name"
-                                        className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900"
+                                        className={cn(
+                                            "pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900",
+                                            errors.name && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                                        )}
                                         value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        onChange={e => {
+                                            setFormData({ ...formData, name: e.target.value })
+                                            if (errors.name) setErrors({ ...errors, name: '' })
+                                        }}
+                                        maxLength={50}
                                         required
                                     />
                                 </div>
+                                {errors.name && <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold">{errors.name}</p>}
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Phone Number</Label>
-                                <PhoneInput
-                                    country={'in'}
-                                    value={formData.phone}
-                                    onChange={(val) => setFormData({ ...formData, phone: val })}
-                                    placeholder="+91 ..."
-                                    inputProps={{
-                                        id: 'phone',
-                                        name: 'phone',
-                                        required: true,
-                                    }}
-                                    containerClass="!w-full !border-none"
-                                    inputClass="!w-full !h-10 !bg-slate-50 !border-slate-200 focus:!border-[var(--primary)] focus:!ring-[var(--primary-glow)] !rounded-xl !transition-all !pl-12 !font-sans !text-sm"
-                                    buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-slate-100 !transition-colors"
-                                    dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
-                                    searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
-                                    enableSearch={true}
-                                />
+                                <div className={cn(
+                                    "rounded-xl overflow-hidden",
+                                    errors.phone && "ring-1 ring-red-500"
+                                )}>
+                                    <PhoneInput
+                                        country={'in'}
+                                        value={formData.phone}
+                                        onChange={(val) => {
+                                            setFormData({ ...formData, phone: val })
+                                            if (errors.phone) setErrors({ ...errors, phone: '' })
+                                        }}
+                                        placeholder="+91 ..."
+                                        inputProps={{
+                                            id: 'phone',
+                                            name: 'phone',
+                                            required: true,
+                                        }}
+                                        containerClass="!w-full !border-none"
+                                        inputClass="!w-full !h-10 !bg-slate-50 !border-slate-200 focus:!border-[var(--primary)] focus:!ring-[var(--primary-glow)] !rounded-xl !transition-all !pl-12 !font-sans !text-sm"
+                                        buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-slate-100 !transition-colors"
+                                        dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
+                                        searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
+                                        enableSearch={true}
+                                    />
+                                </div>
+                                {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold">{errors.phone}</p>}
                             </div>
                         </div>
 
@@ -153,12 +186,20 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                     id="email"
                                     type="email"
                                     placeholder="email@example.com"
-                                    className="pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900"
+                                    className={cn(
+                                        "pl-10 h-10 bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all text-slate-900",
+                                        errors.email && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                                    )}
                                     value={formData.email}
-                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    onChange={e => {
+                                        setFormData({ ...formData, email: e.target.value })
+                                        if (errors.email) setErrors({ ...errors, email: '' })
+                                    }}
+                                    maxLength={50}
                                     required
                                 />
                             </div>
+                            {errors.email && <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold">{errors.email}</p>}
                         </div>
 
                         <div className="space-y-1.5">
@@ -168,11 +209,24 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                 <Textarea
                                     id="message"
                                     placeholder="I want to plan a trip to Japan, please share available packages."
-                                    className="pl-10 min-h-[80px] bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all resize-none text-slate-900"
+                                    className={cn(
+                                        "pl-10 min-h-[80px] bg-slate-50 border-slate-200 focus:border-[var(--primary)] focus:ring-[var(--primary-glow)] rounded-xl transition-all resize-none text-slate-900",
+                                        errors.message && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                                    )}
                                     value={formData.message}
-                                    onChange={e => setFormData({ ...formData, message: e.target.value })}
+                                    onChange={e => {
+                                        setFormData({ ...formData, message: e.target.value })
+                                        if (errors.message) setErrors({ ...errors, message: '' })
+                                    }}
+                                    maxLength={500}
                                     required
                                 />
+                            </div>
+                            <div className="flex justify-between items-center mt-1 px-1">
+                                {errors.message ? (
+                                    <p className="text-[10px] text-red-500 font-bold">{errors.message}</p>
+                                ) : <div />}
+                                <p className="text-[9px] text-slate-400 font-medium">{formData.message.length}/500</p>
                             </div>
                         </div>
 
@@ -185,14 +239,15 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                             variant="outline"
                                             className={cn(
                                                 "w-full h-10 justify-start text-left font-normal bg-slate-50 border-slate-200 hover:bg-slate-100 rounded-xl transition-all",
-                                                !formData.travelDate ? "text-slate-400" : "text-slate-900 font-semibold"
+                                                !formData.travelDate ? "text-slate-400" : "text-slate-900 font-semibold",
+                                                errors.travelDate && "border-red-500"
                                             )}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4 text-[var(--primary)]" />
                                             {formData.travelDate ? format(formData.travelDate, "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 z-[120]" align="start">
+                                    <PopoverContent className="w-auto p-0 z-[1200]" align="start">
                                         <Calendar
                                             mode="single"
                                             selected={formData.travelDate}
@@ -216,6 +271,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                                         />
                                     </PopoverContent>
                                 </Popover>
+                                {errors.travelDate && <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold">{errors.travelDate}</p>}
                             </div>
                             <div className="space-y-1.5">
                                 <Label htmlFor="travelers" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">Number of Adults</Label>

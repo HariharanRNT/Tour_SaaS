@@ -42,9 +42,5 @@ async def _generate_package_pdf_async(package_id: str):
 @celery_app.task(name="app.tasks.pdf_tasks.generate_package_pdf_task")
 def generate_package_pdf_task(package_id: str):
     """Celery task to generate and cache package itinerary PDF"""
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-         # This shouldn't happen in a fresh celery worker process usually
-         asyncio.ensure_future(_generate_package_pdf_async(package_id))
-    else:
-         loop.run_until_complete(_generate_package_pdf_async(package_id))
+    asyncio.run(_generate_package_pdf_async(package_id))
+

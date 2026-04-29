@@ -64,7 +64,8 @@ class CustomerNotificationService:
         data: Dict[str, Any],
         agent_user: Optional[User],
         attachments: Optional[list] = None, # List of {"bytes": b"", "filename": ""}
-        booking_id: Optional[str] = None
+        booking_id: Optional[str] = None,
+        cc_emails: Optional[list] = None
     ):
         """
         Internal method to generate HTML and enqueue the email via Celery.
@@ -180,7 +181,8 @@ class CustomerNotificationService:
                 html_body=html_body,
                 smtp_config=smtp_config,
                 attachments_b64=attachments_b64,
-                notification_log_id=log_id_str
+                notification_log_id=log_id_str,
+                cc_emails=cc_emails
             )
             logger.info(f"Successfully enqueued {template_type} email to {to_email} with {len(attachments_b64)} attachments")
         except Exception as e:
@@ -235,51 +237,56 @@ class CustomerNotificationService:
         return None
 
     @staticmethod
-    def _resolve_recipient_info(booking: Booking) -> tuple[str, str]:
+    def _resolve_recipient_info(booking: Booking) -> tuple[str, str, Optional[list]]:
         """
-        Resolves the best recipient email and name for notifications.
-        Returns: (email, name)
+        Resolves the best recipient email, name, and CC emails for notifications.
+        Returns: (email, name, cc_emails)
         """
         import json
         
-        # Default to booking user (whoever initiated/owns the booking)
-        email = booking.user.email if booking.user else None
+        registered_email = booking.user.email if booking.user else None
         name = f"{booking.user.first_name} {booking.user.last_name}" if booking.user else "Customer"
         
-        # 1. Check for Agent fallback
-        # If the user is an AGENT, it means they are booking on behalf of someone.
-        user_role = str(booking.user.role).upper() if booking.user and hasattr(booking.user.role, 'value') else str(booking.user.role).upper() if booking.user else ""
+        to_email = registered_email
+        cc_emails = []
         
-        is_agent_booking = "AGENT" in user_role
+        # Extract checkout email from special_requests if available
+        checkout_email = None
+        if booking.special_requests:
+            try:
+                meta = json.loads(booking.special_requests)
+                checkout_email = meta.get('customer_payment_email')
+            except:
+                pass
         
-        logger.info(f"Checking for agent booking: role='{user_role}', is_agent_booking={is_agent_booking}")
-        
-        if is_agent_booking:
-            # Try to find payment email from metadata captured in BookingOrchestrator
-            if booking.special_requests:
-                try:
-                    meta = json.loads(booking.special_requests)
-                    payment_email = meta.get('customer_payment_email')
-                    if payment_email:
-                        email = payment_email
-                        logger.info(f"Using payment email for notification: {email}")
-                except:
-                    pass
+        # Logic: If checkout email exists and is different from registered email,
+        # set checkout as To and registered as CC.
+        if checkout_email:
+            checkout_email = checkout_email.strip().lower()
+            reg_email_compare = registered_email.strip().lower() if registered_email else None
             
-            # Use Primary Traveler name if current user is the agent
-            if booking.travelers:
-                primary = next((t for t in booking.travelers if t.is_primary), booking.travelers[0])
-                if primary:
-                    name = f"{primary.first_name} {primary.last_name}"
-                    logger.info(f"Using primary traveler name for notification: {name}")
+            if reg_email_compare and checkout_email != reg_email_compare:
+                to_email = checkout_email
+                cc_emails = [registered_email]
+                logger.info(f"Checkout email ({checkout_email}) differs from registered ({registered_email}). Adding CC.")
+            else:
+                to_email = checkout_email or registered_email
+        
+        # Role-based name resolution (keep existing logic)
+        user_role = str(booking.user.role).upper() if booking.user and hasattr(booking.user.role, 'value') else str(booking.user.role).upper() if booking.user else ""
+        if "AGENT" in user_role and booking.travelers:
+            primary = next((t for t in booking.travelers if t.is_primary), booking.travelers[0])
+            if primary:
+                name = f"{primary.first_name} {primary.last_name}"
+                logger.info(f"Using primary traveler name for notification: {name}")
 
-        logger.info(f"RESOLVED NOTIFICATION RECIPIENT: email={email}, name={name} (is_agent_booking={is_agent_booking})")
-        return email, name
+        logger.info(f"RESOLVED NOTIFICATION RECIPIENT: to={to_email}, name={name}, cc={cc_emails}")
+        return to_email, name, (cc_emails if cc_emails else None)
 
     @staticmethod
     async def send_booking_confirmation(booking: Booking):
         """Sends Booking Confirmation using Customer_notification.txt template 1"""
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         
         if not recipient_email:
             logger.warning(f"Could not resolve recipient email for booking confirmation: {booking.booking_reference}")
@@ -302,7 +309,8 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=None,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
@@ -310,7 +318,7 @@ class CustomerNotificationService:
         """Sends Payment Receipt using Customer_notification.txt template 2 with attached invoice PDF"""
         from app.services.invoice_service import InvoiceService
         
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             logger.warning(f"Could not resolve recipient email for payment receipt: {booking.booking_reference}")
             return
@@ -358,14 +366,15 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=attachments,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
     async def send_itinerary_details(booking: Booking):
         """Sends Itinerary Details using 'travel_itinerary' template"""
         from app.services.itinerary_pdf_service import ItineraryPdfService
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
     
@@ -401,14 +410,15 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=attachments,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
     
     @staticmethod
     async def send_booking_invoice(booking: Booking):
         """Sends Booking Invoice using 'booking_invoice' template (Pre-payment)"""
         from app.services.invoice_service import InvoiceService
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
     
@@ -441,13 +451,14 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=attachments,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
     async def send_booking_status_update(booking: Booking):
         """Sends Booking Status Update using Customer_notification.txt template 4"""
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
 
@@ -464,13 +475,14 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=None,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
     async def send_trip_reminder(booking: Booking, days_prior: int):
         """Sends Trip Reminder (7d, 3d, 1d) using Customer_notification.txt templates 5 & 6"""
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
 
@@ -496,7 +508,8 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=None,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
@@ -510,7 +523,7 @@ class CustomerNotificationService:
         Uses the 'booking_cancellation' template.
         refund_status: 'succeeded' | 'pending' | 'failed'
         """
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
 
@@ -541,7 +554,8 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=None,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
@@ -557,7 +571,7 @@ class CustomerNotificationService:
             logger.warning(f"Cannot send agent cancellation alert: Agent email not found for booking {booking.id}")
             return
 
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, _ = CustomerNotificationService._resolve_recipient_info(booking)
 
         data = {
             "customer_name": customer_name,
@@ -589,7 +603,7 @@ class CustomerNotificationService:
         from app.services.invoice_service import InvoiceService
         from app.services.itinerary_pdf_service import ItineraryPdfService
         
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             logger.warning(f"ABORTING combined notification for {booking.booking_reference}: No recipient email found.")
             return
@@ -636,7 +650,8 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=attachments,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
     @staticmethod
@@ -645,7 +660,7 @@ class CustomerNotificationService:
         Sends a 'Refund Confirmed' email when Razorpay webhook confirms refund.processed.
         This is the SECOND email — the definitive confirmation to the customer.
         """
-        recipient_email, customer_name = CustomerNotificationService._resolve_recipient_info(booking)
+        recipient_email, customer_name, cc_emails = CustomerNotificationService._resolve_recipient_info(booking)
         if not recipient_email:
             return
 
@@ -662,7 +677,8 @@ class CustomerNotificationService:
             data,
             agent_user,
             attachments=None,
-            booking_id=str(booking.id)
+            booking_id=str(booking.id),
+            cc_emails=cc_emails
         )
 
 

@@ -183,7 +183,7 @@ async def verify_payment(
         payment.status = PaymentStatus.FAILED
         if booking:
             booking.payment_status = PaymentStatus.FAILED
-            booking.status = BookingStatus.INITIATED
+            booking.status = BookingStatus.CANCELLED
         await db.commit()
         raise BadRequestException("Invalid payment signature")
     
@@ -247,7 +247,7 @@ async def verify_payment(
         
         # Mark as FAILED on verification/orchestration error
         booking.payment_status = PaymentStatus.FAILED
-        booking.status = BookingStatus.INITIATED
+        booking.status = BookingStatus.CANCELLED
         payment.status = PaymentStatus.FAILED
         await db.commit()
         

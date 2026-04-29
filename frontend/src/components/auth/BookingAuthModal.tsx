@@ -517,6 +517,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                         <Input
                                                             type="password"
                                                             value={resetPassword}
+                                                            maxLength={50}
                                                             onChange={(e) => setResetPassword(e.target.value)}
                                                             className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                             placeholder="••••••••"
@@ -531,6 +532,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                         <Input
                                                             type="password"
                                                             value={confirmResetPassword}
+                                                            maxLength={50}
                                                             onChange={(e) => setConfirmResetPassword(e.target.value)}
                                                             className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                             placeholder="••••••••"
@@ -653,6 +655,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                         <Input
                                             type={showPassword ? "text" : "password"}
                                             value={password}
+                                            maxLength={50}
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 pr-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                             placeholder="••••••••"
@@ -676,6 +679,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={confirmPassword}
+                                                    maxLength={50}
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                                     className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                     placeholder="••••••••"

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { formatCurrency, formatDate, formatDuration, formatError } from '@/lib/utils'
-import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle, User } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle, AlertCircle, FileText, ChevronRight, Check, XCircle, User, Clock, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
@@ -55,6 +55,11 @@ function CheckoutContent() {
     const [showInactivePlanModal, setShowInactivePlanModal] = useState(false)
     const [currentOrder, setCurrentOrder] = useState<any>(null)
     const [currentBookingId, setCurrentBookingId] = useState<string>('')
+    const bookingIdRef = useRef<string>('')
+
+    useEffect(() => {
+        bookingIdRef.current = currentBookingId
+    }, [currentBookingId])
 
     // Contact Details
     const [contactEmail, setContactEmail] = useState('')
@@ -71,6 +76,8 @@ function CheckoutContent() {
 
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isPackageDetailsOpen, setIsPackageDetailsOpen] = useState(false)
+    const [timeLeft, setTimeLeft] = useState<number | null>(null)
+    const [isSessionExpired, setIsSessionExpired] = useState(false)
 
 
     const handleTravelerChange = (index: number, field: keyof Traveler, value: string) => {
@@ -201,6 +208,44 @@ function CheckoutContent() {
 
         fetchSession()
 
+        // Initialize Session Timer (10 Minutes)
+        const initTimer = () => {
+            const expiryKey = `checkout_expiry_${sessionId}`
+            const storedExpiry = localStorage.getItem(expiryKey)
+            let expiryTime: number
+
+            if (storedExpiry) {
+                expiryTime = parseInt(storedExpiry)
+            } else {
+                expiryTime = Date.now() + 10 * 60 * 1000 // 10 minutes
+                localStorage.setItem(expiryKey, expiryTime.toString())
+            }
+
+            const updateTimer = () => {
+                const now = Date.now()
+                const diff = Math.max(0, Math.floor((expiryTime - now) / 1000))
+                setTimeLeft(diff)
+
+                if (diff <= 0) {
+                    setIsSessionExpired(true)
+                    handleSessionExpiry()
+                    return false
+                }
+                return true
+            }
+
+            if (updateTimer()) {
+                const interval = setInterval(() => {
+                    if (!updateTimer()) {
+                        clearInterval(interval)
+                    }
+                }, 1000)
+                return () => clearInterval(interval)
+            }
+        }
+
+        const cleanupTimer = initTimer()
+
         // Initialize Razorpay Script
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -208,7 +253,34 @@ function CheckoutContent() {
         document.body.appendChild(script);
 
         setCountryStates(State.getStatesOfCountry('IN'))
+        return () => {
+            if (cleanupTimer) cleanupTimer()
+        }
     }, [sessionId])
+
+    const handleSessionExpiry = async () => {
+        // 1. Cancel booking if created
+        const bookingId = bookingIdRef.current
+        if (bookingId) {
+            try {
+                await bookingsAPI.cancel(bookingId)
+            } catch (e) {
+                console.error("Failed to cancel booking on expiry", e)
+            }
+        }
+
+        // 2. Delete session
+        if (sessionId) {
+            try {
+                await tripPlannerAPI.deleteSession(sessionId)
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            } catch (e) {
+                console.error("Failed to delete session on expiry", e)
+            }
+        }
+
+        toast.error("Session Expired. Please start over.")
+    }
 
     // Recalculate total when GST settings or travelers change
     useEffect(() => {
@@ -228,6 +300,8 @@ function CheckoutContent() {
             setTotalAmount(subTotal)
         }
     }, [sessionData, travelers, gstSettings])
+
+    const isInternational = sessionData?.category === 'International' || (sessionData?.country && !['India', 'IN'].includes(sessionData.country))
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {}
@@ -311,6 +385,20 @@ function CheckoutContent() {
                 } else if (t.type === 'ADULT' && age < 12) {
                     newErrors[`dob_age_${idx}`] = "Adult must be at least 12 years"
                     isValid = false
+                }
+            }
+
+            // Passport Validation
+            if (isInternational) {
+                if (!t.passport_number?.trim()) {
+                    newErrors[`passport_${idx}`] = "Passport is mandatory for international"
+                    isValid = false
+                } else {
+                    const passportValue = t.passport_number.trim().toUpperCase()
+                    if (!/^[A-Z0-9]{6,12}$/.test(passportValue)) {
+                        newErrors[`passport_${idx}`] = "Invalid passport format (6-12 alphanumeric)"
+                        isValid = false
+                    }
                 }
             }
         })
@@ -700,21 +788,18 @@ function CheckoutContent() {
                         </div>
 
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Payment Failed</h2>
-                            <p className="text-[var(--color-primary-font)] opacity-70 text-sm max-w-[300px] mx-auto">
-                                We couldn&apos;t process your payment. The booking has been cancelled. Please try again.
+                            <h2 className="text-2xl font-black text-[var(--color-primary-font)] mb-2">Payment Failed</h2>
+                            <p className="text-[var(--color-primary-font)]/60 text-sm mb-8">
+                                We couldn't process your payment. This booking has been marked as failed. You can check its status in your bookings dashboard.
                             </p>
                         </div>
 
                         <div className="flex flex-col w-full gap-3 mt-2">
                             <Button
-                                onClick={() => {
-                                    setStep('DETAILS')
-                                    setConfirmationError(null)
-                                }}
+                                onClick={() => router.push('/bookings')}
                                 className="w-full h-12 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold shadow-lg shadow-[var(--primary)]/20"
                             >
-                                Try Again
+                                View My Bookings
                             </Button>
                             <Button
                                 variant="ghost"
@@ -722,6 +807,43 @@ function CheckoutContent() {
                                 className="w-full h-12 rounded-xl text-[var(--color-primary-font)] opacity-60 hover:opacity-100 font-bold"
                             >
                                 Back to Home
+                            </Button>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )
+    }
+
+    if (isSessionExpired) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4 font-sans relative overflow-hidden">
+                <div className="fixed inset-0 min-h-screen w-full pointer-events-none z-[-2] bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[#FFF3EC]" />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative group w-full flex justify-center max-w-[480px]"
+                >
+                    <div className="relative overflow-hidden w-full p-10 rounded-[32px] border border-white/25 bg-white/20 backdrop-blur-[25px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] text-center flex flex-col items-center gap-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-xl animate-pulse" />
+                            <Clock className="h-16 w-16 text-orange-500 relative z-10" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-[var(--color-primary-font)]">Session Expired</h2>
+                            <p className="text-[var(--color-primary-font)] opacity-70 text-sm max-w-[300px] mx-auto">
+                                Your checkout session has timed out for security reasons. Any pending booking has been cancelled.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col w-full gap-3 mt-2">
+                            <Button
+                                onClick={() => window.location.href = '/'}
+                                className="w-full h-12 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold shadow-lg shadow-[var(--primary)]/20"
+                            >
+                                <RefreshCcw className="w-4 h-4 mr-2" />
+                                Start New Search
                             </Button>
                         </div>
                     </div>
@@ -760,7 +882,19 @@ function CheckoutContent() {
             <div className="pt-6 relative z-50">
                 <div className="container mx-auto px-4 lg:max-w-6xl">
                     <div className="glass-floating-nav bg-white/15 backdrop-blur-xl border border-white/35 rounded-[50px] shadow-[0_4px_30px_var(--primary-glow)] flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-8 py-3">
-                        <h1 className="text-xl font-bold text-[var(--color-primary-font)] drop-shadow-sm font-display tracking-wide">Checkout</h1>
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-xl font-bold text-[var(--color-primary-font)] drop-shadow-sm font-display tracking-wide">Checkout</h1>
+                            
+                            {/* Session Timer */}
+                            {timeLeft !== null && (
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${timeLeft < 60 ? 'bg-red-500/20 border-red-500/30 text-red-600 animate-pulse' : 'bg-white/20 border-white/30 text-[var(--color-primary-font)]'}`}>
+                                    <Clock className="w-4 h-4" />
+                                    <span className="text-xs font-bold font-mono">
+                                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Agent Context Banner */}
                         {customerId && (
@@ -820,6 +954,7 @@ function CheckoutContent() {
                                         onChange={handleTravelerChange}
                                         errors={errors}
                                         travelDate={sessionData?.start_date || "2024-06-01"}
+                                        isInternational={isInternational}
                                     />
                                 </div>
                             ))}

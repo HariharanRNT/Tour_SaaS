@@ -101,15 +101,30 @@ export default function BookingDetailsPage() {
             const data = await bookingsAPI.getById(id)
             setBooking(data)
 
-            // Fetch agent GST settings as fallback
+            // Use Package-specific GST settings if available, otherwise fallback to Agent defaults
+            let settings: any = null;
             try {
-                const settings = await agentAPI.getPublicSettings()
-                setGstSettings({
-                    inclusive: settings.homepage_settings?.gst_inclusive ?? false,
-                    percentage: settings.homepage_settings?.gst_percentage ?? 18
-                })
+                settings = await agentAPI.getPublicSettings();
             } catch (e) {
-                console.error("Failed to load fallback GST settings", e)
+                console.error("Failed to load agent settings for GST fallback", e);
+            }
+
+            if (data.package) {
+                const pkg = data.package;
+                if (pkg.gst_applicable !== false) {
+                    setGstSettings({
+                        inclusive: pkg.gst_mode === 'inclusive' || (pkg.gst_mode === null && (settings?.gst_inclusive ?? settings?.homepage_settings?.gst_inclusive ?? false)),
+                        percentage: pkg.gst_percentage ?? settings?.gst_percentage ?? settings?.homepage_settings?.gst_percentage ?? 18
+                    });
+                } else {
+                    // Not applicable
+                    setGstSettings({ inclusive: true, percentage: 0 });
+                }
+            } else if (settings) {
+                setGstSettings({
+                    inclusive: settings.gst_inclusive ?? settings.homepage_settings?.gst_inclusive ?? false,
+                    percentage: settings.gst_percentage ?? settings.homepage_settings?.gst_percentage ?? 18
+                });
             }
         } catch (error) {
             console.error("Failed to load booking details", error)
@@ -623,7 +638,7 @@ export default function BookingDetailsPage() {
                                             <div className="h-5 w-5 rounded bg-black/5 flex items-center justify-center text-black">
                                                 <Check className="h-3 w-3" />
                                             </div>
-                                            <span className="label-text !text-black">{item}</span>
+                                            <span className="label-text !text-black break-words overflow-hidden w-full">{item}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -812,11 +827,15 @@ export default function BookingDetailsPage() {
                                     <div className="space-y-3 pt-6 border-t border-black/5">
                                         <div className="flex justify-between items-center text-[12px]">
                                             <span className="label-text">Base Fare</span>
-                                            <span className="value-text">{formatCurrency(booking.total_amount)}</span>
+                                            <span className="value-text">
+                                                {formatCurrency(gstSettings.percentage > 0 ? (booking.total_amount / (1 + gstSettings.percentage / 100)) : booking.total_amount)}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between items-center text-[12px]">
                                             <span className="label-text">GST & Platform Fee</span>
-                                            <span className="text-[9px] font-bold text-black bg-black/5 px-2 py-0.5 rounded border border-black/10 uppercase tracking-widest">Included</span>
+                                            <span className="text-[9px] font-bold text-black bg-black/5 px-2 py-0.5 rounded border border-black/10 uppercase tracking-widest">
+                                                {gstSettings.inclusive ? 'Included' : `${gstSettings.percentage}% (${formatCurrency(booking.total_amount - (booking.total_amount / (1 + gstSettings.percentage / 100)))})`}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between items-center text-[12px]">
                                             <span className="label-text">Reference</span>

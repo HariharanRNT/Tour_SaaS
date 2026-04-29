@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
-import { Loader2, MapPin, Calendar, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { Loader2, MapPin, Calendar as CalendarIcon, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -36,6 +37,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import { Calendar } from '@/components/ui/calendar'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface Activity {
     id?: string
@@ -155,8 +162,10 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         name: '',
         email: '',
         phone: '',
-        message: ''
+        message: '',
+        travelDate: undefined as Date | undefined
     })
+    const [enquiryErrors, setEnquiryErrors] = useState<Record<string, string>>({})
     const [sendingEnquiry, setSendingEnquiry] = useState(false)
 
     // GST Settings State
@@ -238,6 +247,16 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
             loadSession()
         }
     }, [sessionId, mode, packageId, slug])
+
+    // Sync enquiry travel date when session loads
+    useEffect(() => {
+        if (session?.start_date) {
+            setEnquiryForm(prev => ({
+                ...prev,
+                travelDate: new Date(session.start_date)
+            }))
+        }
+    }, [session?.start_date])
 
 
 
@@ -706,14 +725,33 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         }
     }
 
+    const validateEnquiry = () => {
+        const errors: Record<string, string> = {}
+        if (!enquiryForm.name.trim()) errors.name = 'Name is required'
+        else if (enquiryForm.name.length > 50) errors.name = 'Name cannot exceed 50 characters'
+
+        if (!enquiryForm.email.trim()) errors.email = 'Email is required'
+        else if (enquiryForm.email.length > 50) errors.email = 'Email cannot exceed 50 characters'
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(enquiryForm.email)) errors.email = 'Invalid email format'
+
+        if (!enquiryForm.phone.trim()) errors.phone = 'Phone number is required'
+
+        if (!enquiryForm.travelDate) errors.travelDate = 'Travel date is required'
+
+        if (enquiryForm.message && enquiryForm.message.length > 500) errors.message = 'Message cannot exceed 500 characters'
+
+        setEnquiryErrors(errors)
+        return Object.keys(errors).length === 0
+    }
+
     const handleSendEnquiry = async () => {
-        if (!enquiryForm.name || !enquiryForm.email || !enquiryForm.phone) {
-            toast.error('Please fill in all required fields')
+        if (!validateEnquiry()) {
+            toast.error('Please correct the errors in the form')
             return
         }
 
-        // Get travel date from URL param or session
-        const travelDate = queryDate || session?.start_date || new Date().toISOString().split('T')[0]
+        // Get travel date from form or fallback
+        const travelDate = enquiryForm.travelDate ? format(enquiryForm.travelDate, 'yyyy-MM-dd') : (queryDate || session?.start_date || new Date().toISOString().split('T')[0])
         const totalTravellers = Math.max(travelers.adults + travelers.children, 1)
 
         setSendingEnquiry(true)
@@ -745,7 +783,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
             toast.success('Your enquiry has been sent! The agent will contact you shortly.')
             setIsEnquiryModalOpen(false)
-            setEnquiryForm({ name: '', email: '', phone: '', message: '' })
+            setEnquiryForm({ name: '', email: '', phone: '', message: '', travelDate: session?.start_date ? new Date(session.start_date) : undefined })
+            setEnquiryErrors({})
         } catch (err: any) {
             console.error('Enquiry error:', err)
             toast.error(err.message || 'Failed to send enquiry. Please try again.')
@@ -850,7 +889,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                         <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
                             <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
                                 <div className="p-2 bg-[var(--button-bg)] rounded-xl shadow-inner">
-                                    <Calendar className="h-4 w-4 text-white" />
+                                    <CalendarIcon className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Dates</p>
@@ -1470,29 +1509,46 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     <Input
                                         placeholder="Full Name"
                                         value={enquiryForm.name}
-                                        onChange={(e) => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
-                                        className="h-11 bg-white/50 border-white/40 text-slate-900 font-medium"
+                                        onChange={(e) => {
+                                            setEnquiryForm(prev => ({ ...prev, name: e.target.value }))
+                                            if (enquiryErrors.name) setEnquiryErrors(prev => ({ ...prev, name: '' }))
+                                        }}
+                                        maxLength={50}
+                                        className={cn(
+                                            "h-11 bg-white/50 border-white/40 text-slate-900 font-medium",
+                                            enquiryErrors.name && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                                        )}
                                     />
+                                    {enquiryErrors.name && <p className="text-[10px] text-red-500 mt-1 font-bold">{enquiryErrors.name}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[var(--color-primary-font)]">Phone Number <span className="text-red-500">*</span></Label>
-                                    <PhoneInput
-                                        country={'in'}
-                                        value={enquiryForm.phone}
-                                        onChange={(val) => setEnquiryForm(prev => ({ ...prev, phone: val }))}
-                                        placeholder="+91 ..."
-                                        inputProps={{
-                                            id: 'phone',
-                                            name: 'phone',
-                                            required: true,
-                                        }}
-                                        containerClass="!w-full !border-none"
-                                        inputClass="!w-full !h-11 !bg-white/50 !border-white/40 !rounded-xl !transition-all !pl-12 !font-sans !text-slate-900 !font-medium"
-                                        buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-white/80 !transition-colors"
-                                        dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
-                                        searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
-                                        enableSearch={true}
-                                    />
+                                    <div className={cn(
+                                        "rounded-xl overflow-hidden",
+                                        enquiryErrors.phone && "ring-1 ring-red-500"
+                                    )}>
+                                        <PhoneInput
+                                            country={'in'}
+                                            value={enquiryForm.phone}
+                                            onChange={(val) => {
+                                                setEnquiryForm(prev => ({ ...prev, phone: val }))
+                                                if (enquiryErrors.phone) setEnquiryErrors(prev => ({ ...prev, phone: '' }))
+                                            }}
+                                            placeholder="+91 ..."
+                                            inputProps={{
+                                                id: 'phone',
+                                                name: 'phone',
+                                                required: true,
+                                            }}
+                                            containerClass="!w-full !border-none"
+                                            inputClass="!w-full !h-11 !bg-white/50 !border-white/40 !rounded-xl !transition-all !pl-12 !font-sans !text-slate-900 !font-medium"
+                                            buttonClass="!bg-transparent !border-none !rounded-l-xl hover:!bg-white/80 !transition-colors"
+                                            dropdownClass="!rounded-xl !shadow-2xl !border-none !bg-white/95 !backdrop-blur-xl !py-2"
+                                            searchClass="!rounded-lg !border-slate-200 !mx-2 !mb-2"
+                                            enableSearch={true}
+                                        />
+                                    </div>
+                                    {enquiryErrors.phone && <p className="text-[10px] text-red-500 mt-1 font-bold">{enquiryErrors.phone}</p>}
                                 </div>
                             </div>
 
@@ -1502,9 +1558,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     type="email"
                                     placeholder="email@example.com"
                                     value={enquiryForm.email}
-                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
-                                    className="h-11 bg-white/50 border-white/40 text-slate-900 font-medium"
+                                    onChange={(e) => {
+                                        setEnquiryForm(prev => ({ ...prev, email: e.target.value }))
+                                        if (enquiryErrors.email) setEnquiryErrors(prev => ({ ...prev, email: '' }))
+                                    }}
+                                    maxLength={50}
+                                    className={cn(
+                                        "h-11 bg-white/50 border-white/40 text-slate-900 font-medium",
+                                        enquiryErrors.email && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                                    )}
                                 />
+                                {enquiryErrors.email && <p className="text-[10px] text-red-500 mt-1 font-bold">{enquiryErrors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -1512,19 +1576,66 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 <Textarea
                                     placeholder="Tell us about special requirements..."
                                     value={enquiryForm.message}
-                                    onChange={(e) => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
-                                    className="min-h-[100px] bg-white/50 border-white/40 resize-none text-slate-900 font-medium"
+                                    onChange={(e) => {
+                                        setEnquiryForm(prev => ({ ...prev, message: e.target.value }))
+                                        if (enquiryErrors.message) setEnquiryErrors(prev => ({ ...prev, message: '' }))
+                                    }}
+                                    maxLength={500}
+                                    className={cn(
+                                        "min-h-[100px] bg-white/50 border-white/40 resize-none text-slate-900 font-medium",
+                                        enquiryErrors.message && "border-red-500"
+                                    )}
                                 />
+                                <div className="flex justify-between items-center px-1">
+                                    {enquiryErrors.message ? (
+                                        <p className="text-[10px] text-red-500 font-bold">{enquiryErrors.message}</p>
+                                    ) : <div />}
+                                    <p className="text-[9px] text-slate-400 font-medium">{(enquiryForm.message || '').length}/500</p>
+                                </div>
                             </div>
 
-                            <div className="bg-[var(--primary)]/5 p-4 rounded-xl border border-[var(--primary)]/10 text-xs text-[var(--color-primary-font)]/70 space-y-2">
-                                <div className="flex justify-between font-bold">
-                                    <span>Travel Date:</span>
-                                    <span>{session?.start_date}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[var(--color-primary-font)]">Travel Date <span className="text-red-500">*</span></Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full h-11 justify-start text-left font-medium bg-white/50 border-white/40 hover:bg-white/80 rounded-xl transition-all text-slate-900",
+                                                    !enquiryForm.travelDate ? "text-slate-400" : "text-slate-900",
+                                                    enquiryErrors.travelDate && "border-red-500"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4 text-[var(--primary)]" />
+                                                {enquiryForm.travelDate ? format(enquiryForm.travelDate, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 z-[1200]" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={enquiryForm.travelDate}
+                                                onSelect={(date: Date | undefined) => {
+                                                    setEnquiryForm(prev => ({ ...prev, travelDate: date }))
+                                                    if (enquiryErrors.travelDate) setEnquiryErrors(prev => ({ ...prev, travelDate: '' }))
+                                                }}
+                                                initialFocus
+                                                disabled={(date: Date) => {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+                                                    return date < today;
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    {enquiryErrors.travelDate && <p className="text-[10px] text-red-500 mt-1 font-bold">{enquiryErrors.travelDate}</p>}
                                 </div>
-                                <div className="flex justify-between font-bold">
-                                    <span>Travelers:</span>
-                                    <span>{travelers.adults + travelers.children + travelers.infants} People</span>
+                                <div className="space-y-2">
+                                    <Label className="text-[var(--color-primary-font)]">Travelers</Label>
+                                    <div className="h-11 flex items-center px-4 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-sm font-bold text-[var(--color-primary-font)]">
+                                        <Users className="h-4 w-4 mr-2 text-[var(--primary)]" />
+                                        {travelers.adults + travelers.children + travelers.infants} People
+                                    </div>
                                 </div>
                             </div>
                         </div>

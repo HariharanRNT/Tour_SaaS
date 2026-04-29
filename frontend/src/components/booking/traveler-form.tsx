@@ -32,11 +32,12 @@ interface TravelerFormProps {
     onChange: (index: number, field: keyof Traveler, value: string) => void
     errors?: Record<string, string>
     travelDate: string
+    isInternational?: boolean
 }
 
 import { FloatingLabelInput } from "@/components/ui/floating-input"
 
-export function TravelerForm({ traveler, index, onChange, errors = {}, travelDate }: TravelerFormProps) {
+export function TravelerForm({ traveler, index, onChange, errors = {}, travelDate, isInternational }: TravelerFormProps) {
     // Parse existing DOB or default
     const [y, m, d] = traveler.date_of_birth ? traveler.date_of_birth.split('-') : ['', '', '']
 
@@ -303,10 +304,14 @@ export function TravelerForm({ traveler, index, onChange, errors = {}, travelDat
 
                 <FloatingLabelInput
                     id={`pass-${index}`}
-                    label="Passport Number (Optional for Domestic)"
+                    label={isInternational ? "Passport Number *" : "Passport Number (Optional)"}
                     value={traveler.passport_number}
-                    onChange={(e: any) => onChange(index, 'passport_number', e.target.value.toUpperCase())}
-                    maxLength={20}
+                    onChange={(e: any) => {
+                        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        onChange(index, 'passport_number', val);
+                    }}
+                    error={errors[`passport_${index}`]}
+                    maxLength={12}
                     className="!h-14 !bg-white/25 !border-white/40 !rounded-[14px] focus:!bg-white/40 focus:!border-[var(--primary)] focus:!ring-[3px] focus:!ring-[var(--primary)]/25 !text-black !font-bold transition-all"
                 />
             </div>
