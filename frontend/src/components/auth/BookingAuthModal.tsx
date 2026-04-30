@@ -180,9 +180,13 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         setError('')
 
         if (!validateEmail(email)) return setError('Invalid email address')
+        if (email.length > 250) return setError('Email must be under 250 characters')
         if (!firstName.trim()) return setError('First name is required')
+        if (firstName.length > 50) return setError('First name must be under 50 characters')
         if (!lastName.trim()) return setError('Last name is required')
+        if (lastName.length > 50) return setError('Last name must be under 50 characters')
         if (password.length < 8) return setError('Password must be at least 8 characters')
+        if (password.length > 50) return setError('Password must be under 50 characters')
         if (password !== confirmPassword) return setError('Passwords do not match')
 
         setLoading(true)
@@ -563,6 +567,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                     <Input
                                                         type="email"
                                                         value={email}
+                                                        maxLength={250}
                                                         onChange={(e) => setEmail(e.target.value)}
                                                         className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                         placeholder="traveler@example.com"
@@ -601,6 +606,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                 <div className="relative group">
                                                     <Input
                                                         value={firstName}
+                                                        maxLength={50}
                                                         onChange={(e) => setFirstName(e.target.value)}
                                                         className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                         placeholder="John"
@@ -613,6 +619,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                 <div className="relative group">
                                                     <Input
                                                         value={lastName}
+                                                        maxLength={50}
                                                         onChange={(e) => setLastName(e.target.value)}
                                                         className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                         placeholder="Doe"
@@ -630,6 +637,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                         <Input
                                             type="email"
                                             value={email}
+                                            maxLength={250}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                             placeholder="traveler@example.com"

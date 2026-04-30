@@ -91,8 +91,8 @@ class PackageBase(BaseModel):
         return v.strip()
     slug: Optional[str] = None
     destination: str
-    duration_days: int
-    duration_nights: int
+    duration_days: Optional[int] = Field(None, ge=1)
+    duration_nights: Optional[int] = Field(None, ge=0)
     # trip_style stores a JSON-encoded list in the DB; trip_styles is the canonical frontend field
     trip_style: Optional[str] = None          # raw DB column (kept for backward compat)
     category: Optional[str] = "Adventure"
@@ -140,6 +140,8 @@ class PackageBase(BaseModel):
 
 class PackageCreate(PackageBase):
     country: str  # Mandatory on creation
+    duration_days: int = Field(..., ge=1, le=60)
+    duration_nights: int = Field(..., ge=0, le=59)
 
 
 class PackageUpdate(BaseModel):
@@ -155,8 +157,8 @@ class PackageUpdate(BaseModel):
         return v.strip()
     slug: Optional[str] = None
     destination: Optional[str] = None
-    duration_days: Optional[int] = None
-    duration_nights: Optional[int] = None
+    duration_days: Optional[int] = Field(None, ge=1, le=60)
+    duration_nights: Optional[int] = Field(None, ge=0, le=59)
     trip_style: Optional[str] = None          # raw DB column (kept for backward compat)
     price_per_person: Optional[float] = None
     max_group_size: Optional[int] = None

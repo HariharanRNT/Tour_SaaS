@@ -201,11 +201,6 @@ async def create_booking(
         subtotal = (package_price + flight_price) * chargeable_travelers_count
         total_amount = subtotal
         
-        # Apply GST Logic
-        gst_percentage = 18.0
-        is_gst_inclusive = False
-        gst_applicable = True
-
         # 1. Determine the Agent whose settings apply
         real_agent_id = None
         if current_user.role in [UserRole.AGENT]:
@@ -215,8 +210,16 @@ async def create_booking(
                 real_agent_id = current_user.sub_user_profile.agent_id
         else:
             real_agent_id = package.created_by or current_user.agent_id
+
+        # === Robust GST Resolution Logic ===
+        # Priority: 1. Package Settings (if not None) -> 2. Agent Settings (if not None) -> 3. System Defaults
         
-        # 2. Load Agent Settings
+        # System Defaults
+        gst_applicable = True
+        gst_percentage = 18.0
+        is_gst_inclusive = False # Default to exclusive
+
+        # 1. Load Agent Settings (Base Layer)
         if real_agent_id:
             from app.models import Agent
             agent_stmt = select(Agent).where(Agent.user_id == real_agent_id)
@@ -224,27 +227,38 @@ async def create_booking(
             agent_obj = agent_result.scalar_one_or_none()
             
             if agent_obj:
-                if agent_obj.gst_applicable is False:
-                    gst_applicable = False
-                else:
-                    gst_percentage = float(agent_obj.gst_percentage) if agent_obj.gst_percentage is not None else 18.0
-                    is_gst_inclusive = agent_obj.gst_inclusive if agent_obj.gst_inclusive is not None else False
-        
-        # 3. Package-specific overrides (Take priority)
-        if package.gst_applicable is False:
-            gst_applicable = False
-        elif package.gst_applicable is True:
-            gst_applicable = True
-            if package.gst_mode:
-                is_gst_inclusive = (package.gst_mode == 'inclusive')
-            if package.gst_percentage is not None:
-                gst_percentage = float(package.gst_percentage)
-        
-        # 4. Final Calculation
-        if gst_applicable and not is_gst_inclusive:
-            gst_amount = subtotal * (gst_percentage / 100)
-            total_amount = subtotal + gst_amount
+                if agent_obj.gst_applicable is not None:
+                    gst_applicable = agent_obj.gst_applicable
+                
+                if gst_applicable:
+                    if agent_obj.gst_percentage is not None:
+                        gst_percentage = float(agent_obj.gst_percentage)
+                    if agent_obj.gst_inclusive is not None:
+                        is_gst_inclusive = agent_obj.gst_inclusive
+
+        # 2. Package Overrides (Top Layer)
+        if package:
+            if package.gst_applicable is not None:
+                gst_applicable = package.gst_applicable
+            
+            if gst_applicable:
+                if package.gst_percentage is not None:
+                    gst_percentage = float(package.gst_percentage)
+                if package.gst_mode:
+                    is_gst_inclusive = (package.gst_mode == 'inclusive')
+
+        # 3. Final Total Calculation
+        if gst_applicable:
+            if is_gst_inclusive:
+                # GST is already in the package price
+                total_amount = subtotal
+                # Note: We don't change total_amount here, it's already subtotal
+            else:
+                # GST must be added on top
+                gst_amount = subtotal * (gst_percentage / 100)
+                total_amount = subtotal + gst_amount
         else:
+            # No GST applicable
             total_amount = subtotal
         
         # Generate booking reference

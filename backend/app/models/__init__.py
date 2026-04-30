@@ -1072,7 +1072,7 @@ class SubUser(Base):
 class SubUserPermission(Base):
     """
     Per-module access grants for a SubUser.
-    module: dashboard | packages | activities | bookings | billing | finance_reports | settings
+    module: dashboard | packages | activities | bookings | billing | finance_reports | settings | customers | enquiries
     access_level: view | edit | full
     """
     __tablename__ = "sub_user_permissions"

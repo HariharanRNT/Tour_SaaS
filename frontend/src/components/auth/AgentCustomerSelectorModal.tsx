@@ -105,8 +105,8 @@ export function AgentCustomerSelectorModal() {
         }
 
         // Length validation (already enforced by maxLength, but good for safety)
-        if (first_name.length > 50 || last_name.length > 50 || email.length > 50 || (phone && phone.length > 50)) {
-            setCreateError('Fields cannot exceed 50 characters.')
+        if (first_name.length > 50 || last_name.length > 50 || email.length > 250 || (phone && phone.length > 50)) {
+            setCreateError('Fields exceed allowed character limits.')
             return
         }
 
@@ -361,7 +361,7 @@ export function AgentCustomerSelectorModal() {
                                             placeholder="customer@email.com"
                                             className="h-11 bg-black/5 border-black/10 rounded-xl text-black focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
                                             required
-                                            maxLength={50}
+                                            maxLength={250}
                                         />
                                     </div>
 

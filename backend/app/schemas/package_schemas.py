@@ -47,8 +47,8 @@ class PackageWithItineraryResponse(BaseModel):
     title: str
     slug: Optional[str] = None
     destination: str
-    duration_days: int
-    duration_nights: Optional[int] = None
+    duration_days: Optional[int] = Field(None, ge=1)
+    duration_nights: Optional[int] = Field(None, ge=0)
     country: Optional[str] = None
     price_per_person: Decimal
     description: str

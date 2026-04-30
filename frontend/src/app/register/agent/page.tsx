@@ -42,23 +42,24 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const registrationSchema = z.object({
-    agency_name: z.string().min(2, 'Agency name is required'),
-    company_legal_name: z.string().min(2, 'Legal entity name is required'),
-    domain: z.string().url('Invalid business domain URL (e.g., https://agency.com)'),
-    business_address: z.string().min(10, 'Full office address is required'),
-    country: z.string().min(1, 'Country is required'),
-    state: z.string().min(1, 'State is required'),
-    city: z.string().min(1, 'City is required'),
-    first_name: z.string().min(2, 'First name is required'),
-    last_name: z.string().min(2, 'Last name is required'),
-    email: z.string().email('Invalid work email'),
-    phone: z.string().min(8, 'Valid mobile number is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters').max(50, 'Password must be at most 50 characters'),
+    agency_name: z.string().min(2, 'Agency name is required').max(200, 'Agency name must be under 200 characters'),
+    company_legal_name: z.string().min(2, 'Legal entity name is required').max(200, 'Legal name must be under 200 characters'),
+    domain: z.string().url('Invalid business domain URL (e.g., https://agency.com)').max(100, 'Domain must be under 100 characters'),
+    business_address: z.string().min(10, 'Full office address is required').max(500, 'Address must be under 500 characters'),
+    country: z.string().min(1, 'Country is required').max(100),
+    state: z.string().min(1, 'State is required').max(100),
+    city: z.string().min(1, 'City is required').max(100),
+    first_name: z.string().min(2, 'First name is required').max(50, 'First name must be under 50 characters'),
+    last_name: z.string().min(2, 'Last name is required').max(50, 'Last name must be under 50 characters'),
+    email: z.string().email('Invalid work email').max(250, 'Email must be under 250 characters'),
+    phone: z.string().min(8, 'Valid mobile number is required').max(15, 'Phone number must be under 15 digits'),
+    password: z.string().min(8, 'Password must be at least 8 characters').max(50, 'Password must be under 50 characters'),
     confirm_password: z.string().max(50),
     captcha: z.string().min(1, 'Solve the puzzle')
 }).refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
-    path: ["confirm_password"] })
+    path: ["confirm_password"]
+})
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>
 
@@ -313,6 +314,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Agency Name</Label>
                                                     <Input
                                                         {...register('agency_name')}
+                                                        maxLength={200}
                                                         placeholder="e.g., Wanderlust Travels"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.agency_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -322,6 +324,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Legal Entity Name</Label>
                                                     <Input
                                                         {...register('company_legal_name')}
+                                                        maxLength={200}
                                                         placeholder="Full legal entity name"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.company_legal_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -334,6 +337,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Business Domain</Label>
                                                     <Input
                                                         {...register('domain')}
+                                                        maxLength={100}
                                                         placeholder="https://wanderlust.com"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.domain ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -343,6 +347,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Headquarters Address</Label>
                                                     <Input
                                                         {...register('business_address')}
+                                                        maxLength={500}
                                                         placeholder="Full office address"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.business_address ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -462,6 +467,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">First Name</Label>
                                                     <Input
                                                         {...register('first_name')}
+                                                        maxLength={50}
                                                         placeholder="e.g., John"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.first_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -471,6 +477,7 @@ export default function AgentRegisterPage() {
                                                     <Label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Last Name</Label>
                                                     <Input
                                                         {...register('last_name')}
+                                                        maxLength={50}
                                                         placeholder="e.g., Doe"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.last_name ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -484,6 +491,7 @@ export default function AgentRegisterPage() {
                                                     <Input
                                                         {...register('email')}
                                                         type="email"
+                                                        maxLength={250}
                                                         placeholder="contact@agency.com"
                                                         className={`h-14 bg-white/40 border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all shadow-sm ${errors.email ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                     />
@@ -584,6 +592,7 @@ export default function AgentRegisterPage() {
                                                 </Label>
                                                 <Input
                                                     {...register('captcha')}
+                                                    maxLength={3}
                                                     placeholder="Solve"
                                                     className={`h-20 bg-white shadow-inner border border-slate-100 rounded-3xl transition-all font-[1000] text-5xl text-center tracking-[0.3em] text-black placeholder:text-slate-400 focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 ${errors.captcha ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                 />

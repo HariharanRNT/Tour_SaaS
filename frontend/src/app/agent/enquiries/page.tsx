@@ -358,14 +358,14 @@ export default function AgentEnquiriesPage() {
                                                     </div>
                                                 </div>
 
-                                                <h3 className="text-xl font-bold text-[var(--color-primary-font)]">
+                                                <h3 className="text-xl font-bold text-[var(--color-primary-font)] break-all">
                                                     {enquiry.package_name_snapshot}
                                                 </h3>
 
                                                 <div className="flex flex-wrap gap-4 text-sm text-[var(--color-primary-font)]/70">
-                                                    <div className="flex items-center gap-2">
-                                                        <User className="h-4 w-4 text-[var(--primary)]" />
-                                                        <span className="font-bold">{enquiry.customer_name}</span>
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <User className="h-4 w-4 text-[var(--primary)] shrink-0" />
+                                                        <span className="font-bold break-all">{enquiry.customer_name}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="h-4 w-4 text-[var(--primary)]" />
@@ -426,214 +426,222 @@ export default function AgentEnquiriesPage() {
 
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
                 <DialogContent className="sm:max-w-lg bg-white/80 backdrop-blur-2xl border-white/40 rounded-[32px] p-0 overflow-hidden shadow-2xl">
-                    <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-5 py-4 text-white">
-                        <h2 className="text-lg font-bold mb-0.5">Enquiry Details</h2>
-                        <p className="text-white/70 text-[10px] font-bold">{selectedEnquiry?.package_name_snapshot}</p>
-                    </div>
+                    <div className="flex flex-col max-h-[85vh]">
+                        <div className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] px-5 py-3 text-white shrink-0">
+                            <h2 className="text-lg font-bold mb-0.5">Enquiry Details</h2>
+                            <p className="text-white/70 text-[10px] font-bold">{selectedEnquiry?.package_name_snapshot}</p>
+                        </div>
 
-                    {conversionResult ? (
-                        <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] space-y-4 animate-in fade-in zoom-in duration-300">
-                            <div className="flex flex-col items-center text-center space-y-3">
-                                <div className="h-14 w-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
-                                    <Check className="h-7 w-7" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h3 className="text-xl font-bold text-emerald-600">Converted Successfully!</h3>
-                                    <p className="text-emerald-600/70 text-sm font-bold">Booking Reference: {conversionResult.booking?.booking_reference}</p>
-                                </div>
-                            </div>
+                        <div className="overflow-y-auto custom-scrollbar p-5">
+                            {conversionResult ? (
+                                <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] space-y-4 animate-in fade-in zoom-in duration-300">
+                                    <div className="flex flex-col items-center text-center space-y-3">
+                                        <div className="h-14 w-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
+                                            <Check className="h-7 w-7" />
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            <h3 className="text-xl font-bold text-emerald-600">Converted Successfully!</h3>
+                                            <p className="text-emerald-600/70 text-sm font-bold">Booking Reference: {conversionResult.booking?.booking_reference}</p>
+                                        </div>
+                                    </div>
 
-                            {conversionResult.payment_link && (
-                                <div className="p-5 bg-white rounded-2xl border border-emerald-500/20 space-y-3">
-                                    <p className="text-xs font-black uppercase tracking-widest text-emerald-600">Sharable Payment Link</p>
-                                    <div className="flex gap-2">
-                                        <Input readOnly value={conversionResult.payment_link} className="bg-emerald-50/50 border-emerald-200" />
+                                    {conversionResult.payment_link && (
+                                        <div className="p-5 bg-white rounded-2xl border border-emerald-500/20 space-y-3">
+                                            <p className="text-xs font-black uppercase tracking-widest text-emerald-600">Sharable Payment Link</p>
+                                            <div className="flex gap-2">
+                                                <Input readOnly value={conversionResult.payment_link} className="bg-emerald-50/50 border-emerald-200" />
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(conversionResult.payment_link)
+                                                        toast.success("Link copied to clipboard!")
+                                                    }}
+                                                    className="border-emerald-200 text-emerald-600 font-bold px-6"
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-center pt-1">
                                         <Button
                                             variant="outline"
+                                            className="rounded-full h-10 px-6 text-sm font-bold border-emerald-200 text-emerald-600"
                                             onClick={() => {
-                                                navigator.clipboard.writeText(conversionResult.payment_link)
-                                                toast.success("Link copied to clipboard!")
+                                                setIsDetailsOpen(false)
+                                                setConversionResult(null)
                                             }}
-                                            className="border-emerald-200 text-emerald-600 font-bold px-6"
                                         >
-                                            Copy
+                                            Close Details
                                         </Button>
                                     </div>
                                 </div>
-                            )}
+                            ) : (
+                                <div className="space-y-4">
+                                    <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="space-y-4">
+                                            <div className="p-3 bg-white/40 rounded-xl border border-white/60">
+                                                <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Customer</p>
+                                                <p className="font-bold text-sm leading-tight break-all">{selectedEnquiry?.customer_name}</p>
+                                                <div className="mt-1.5 space-y-0.5">
+                                                    <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70 break-all">
+                                                        <Mail className="h-3 w-3 shrink-0" /> {selectedEnquiry?.email}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70 break-all">
+                                                        <Phone className="h-3 w-3 shrink-0" /> {selectedEnquiry?.phone}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="p-3 bg-white/40 rounded-xl border border-white/60">
+                                                <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Trip Details</p>
+                                                <p className="font-bold text-sm leading-tight break-all">{selectedEnquiry?.package_name_snapshot}</p>
+                                                <div className="mt-1.5 space-y-0.5">
+                                                    <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                        <Calendar className="h-3 w-3" /> {selectedEnquiry?.travel_date ? format(new Date(selectedEnquiry.travel_date), 'dd MMM yyyy') : ''}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
+                                                        <Users className="h-3 w-3" /> {selectedEnquiry?.travellers} Guests
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
 
-                                <div className="flex justify-center pt-1">
+                                    {selectedEnquiry?.message && (
+                                        <section>
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Customer Message</p>
+                                            <div className="p-3 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-[11px] italic text-[var(--color-primary-font)] break-all">
+                                                &quot;{selectedEnquiry.message}&quot;
+                                            </div>
+                                        </section>
+                                    )}
+
+                                    {/* Agent Notes */}
+                                    <section>
+                                        <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Agent Notes</p>
+                                        <Textarea
+                                            placeholder="Add internal notes about this enquiry..."
+                                            defaultValue={selectedEnquiry?.agent_notes || ''}
+                                            className="bg-white/50 border-white/40 min-h-[60px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold text-[11px]"
+                                            onBlur={async (e) => {
+                                                if (!selectedEnquiry) return
+                                                const token = localStorage.getItem('token')
+                                                const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+                                                await fetch(`${API_URL}/api/v1/enquiries/agent/${selectedEnquiry.id}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Domain': domain },
+                                                    body: JSON.stringify({ agent_notes: e.target.value })
+                                                })
+                                            }}
+                                        />
+                                    </section>
+
+                                    {/* Quote History */}
+                                    <section className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest">Quote History</p>
+                                            <History className="h-3 w-3 text-slate-300" />
+                                        </div>
+                                        {loadingHistory ? (
+                                            <div className="h-20 bg-slate-50 flex items-center justify-center rounded-2xl animate-pulse">
+                                                <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+                                            </div>
+                                        ) : quoteHistory.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {quoteHistory.map((quote: any) => (
+                                                    <div key={quote.id} className="p-3 bg-white/40 border border-white/60 rounded-xl flex items-center justify-between hover:bg-white/60 transition-all">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-8 w-8 bg-blue-600/10 rounded-lg flex items-center justify-center text-blue-600">
+                                                                <FileText className="h-4 w-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[13px] font-bold">Quote for {quote.quoted_packages?.length} Packages</p>
+                                                                <p className="text-[9px] text-slate-400 font-bold uppercase">{format(new Date(quote.quote_sent_at), 'dd MMM yyyy, hh:mm a')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+                                                                <a href={`${API_URL}${quote.pdf_url}`} target="_blank" rel="noopener noreferrer">
+                                                                    <ExternalLink className="h-4 w-4 text-slate-400" />
+                                                                </a>
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+                                                                <a href={`${API_URL}${quote.pdf_url}`} download>
+                                                                    <Download className="h-4 w-4 text-slate-400" />
+                                                                </a>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-center">
+                                                <p className="text-[11px] text-slate-400 font-bold">No quotes sent yet.</p>
+                                            </div>
+                                        )}
+                                    </section>
+                                </div>
+                            )}
+                        </div>
+
+                        {!conversionResult && (
+                            <div className="p-5 pt-3 border-t border-black/5 bg-white/50 shrink-0">
+                                <div className="flex flex-wrap gap-2">
                                     <Button
-                                        variant="outline"
-                                        className="rounded-full h-10 px-6 text-sm font-bold border-emerald-200 text-emerald-600"
+                                        className="h-10 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold shadow-lg shadow-blue-500/20"
                                         onClick={() => {
-                                            setIsDetailsOpen(false)
-                                            setConversionResult(null)
+                                            setIsDetailsOpen(false);
+                                            setIsQuoteBuilderOpen(true);
                                         }}
                                     >
-                                        Close Details
+                                        <Sparkles className="h-3.5 w-3.5 mr-2" /> Send with AI
                                     </Button>
-                                </div>
-                        </div>
-                    ) : (
-                        <div className="p-5 space-y-4">
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-white/40 rounded-xl border border-white/60">
-                                        <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Customer</p>
-                                        <p className="font-bold text-sm leading-tight">{selectedEnquiry?.customer_name}</p>
-                                        <div className="mt-1.5 space-y-0.5">
-                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
-                                                <Mail className="h-3 w-3" /> {selectedEnquiry?.email}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
-                                                <Phone className="h-3 w-3" /> {selectedEnquiry?.phone}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-white/40 rounded-xl border border-white/60">
-                                        <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1">Trip Details</p>
-                                        <p className="font-bold text-sm leading-tight">{selectedEnquiry?.package_name_snapshot}</p>
-                                        <div className="mt-1.5 space-y-0.5">
-                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
-                                                <Calendar className="h-3 w-3" /> {selectedEnquiry?.travel_date ? format(new Date(selectedEnquiry.travel_date), 'dd MMM yyyy') : ''}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-[11px] text-[var(--color-primary-font)]/70">
-                                                <Users className="h-3 w-3" /> {selectedEnquiry?.travellers} Guests
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
-                            {selectedEnquiry?.message && (
-                                <section>
-                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Customer Message</p>
-                                    <div className="p-3 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-[11px] italic text-[var(--color-primary-font)]">
-                                        &quot;{selectedEnquiry.message}&quot;
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Agent Notes */}
-                            <section>
-                                <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Agent Notes</p>
-                                <Textarea
-                                    placeholder="Add internal notes about this enquiry..."
-                                    defaultValue={selectedEnquiry?.agent_notes || ''}
-                                    className="bg-white/50 border-white/40 min-h-[60px] resize-none rounded-xl text-[var(--color-primary-font)] font-semibold text-[11px]"
-                                    onBlur={async (e) => {
-                                        if (!selectedEnquiry) return
-                                        const token = localStorage.getItem('token')
-                                        const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-                                        await fetch(`${API_URL}/api/v1/enquiries/agent/${selectedEnquiry.id}`, {
-                                            method: 'PUT',
-                                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Domain': domain },
-                                            body: JSON.stringify({ agent_notes: e.target.value })
-                                        })
-                                    }}
-                                />
-                            </section>
-                            
-                            {/* Quote History */}
-                            <section className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest">Quote History</p>
-                                    <History className="h-3 w-3 text-slate-300" />
-                                </div>
-                                {loadingHistory ? (
-                                    <div className="h-20 bg-slate-50 flex items-center justify-center rounded-2xl animate-pulse">
-                                        <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
-                                    </div>
-                                ) : quoteHistory.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {quoteHistory.map((quote: any) => (
-                                            <div key={quote.id} className="p-3 bg-white/40 border border-white/60 rounded-xl flex items-center justify-between hover:bg-white/60 transition-all">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-8 w-8 bg-blue-600/10 rounded-lg flex items-center justify-center text-blue-600">
-                                                        <FileText className="h-4 w-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[13px] font-bold">Quote for {quote.quoted_packages?.length} Packages</p>
-                                                        <p className="text-[9px] text-slate-400 font-bold uppercase">{format(new Date(quote.quote_sent_at), 'dd MMM yyyy, hh:mm a')}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
-                                                        <a href={`${API_URL}${quote.pdf_url}`} target="_blank" rel="noopener noreferrer">
-                                                            <ExternalLink className="h-4 w-4 text-slate-400" />
-                                                        </a>
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
-                                                        <a href={`${API_URL}${quote.pdf_url}`} download>
-                                                            <Download className="h-4 w-4 text-slate-400" />
-                                                        </a>
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-center">
-                                        <p className="text-[11px] text-slate-400 font-bold">No quotes sent yet.</p>
-                                    </div>
-                                )}
-                            </section>
-
-                            <div className="flex flex-wrap gap-2 pt-3 border-t border-black/5">
-                                <Button
-                                    className="h-10 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold shadow-lg shadow-blue-500/20"
-                                    onClick={() => {
-                                        setIsDetailsOpen(false);
-                                        setIsQuoteBuilderOpen(true);
-                                    }}
-                                >
-                                    <Sparkles className="h-3.5 w-3.5 mr-2" /> Send with AI
-                                </Button>
-                                {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
-                                    <Button
-                                        className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold"
-                                        disabled={updateStatusMutation.isPending}
-                                        onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONTACTED' })}
-                                    >
-                                        Mark Contacted
-                                    </Button>
-                                )}
-
-                                {['NEW', 'CONTACTED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
-                                    <>
+                                    {(selectedEnquiry?.status || '').toUpperCase() === 'NEW' && (
                                         <Button
-                                            className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold"
+                                            className="h-10 px-5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-bold"
                                             disabled={updateStatusMutation.isPending}
-                                            onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONFIRMED' })}
+                                            onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONTACTED' })}
                                         >
-                                            Confirm
+                                            Mark Contacted
                                         </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-bold"
-                                            disabled={updateStatusMutation.isPending}
-                                            onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
-                                        >
-                                            Reject
-                                        </Button>
-                                    </>
-                                )}
+                                    )}
 
-                                {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
-                                    <Button
-                                        className="h-10 px-6 rounded-full bg-[var(--primary)] text-white font-black text-[13px] shadow-lg shadow-[var(--primary-glow)]"
-                                        disabled={convertToBookingMutation.isPending}
-                                        onClick={() => convertToBookingMutation.mutate(selectedEnquiry!.id)}
-                                    >
-                                        <Check className="h-4 w-4 mr-2" /> Convert to Booking
-                                    </Button>
-                                )}
+                                    {['NEW', 'CONTACTED'].includes((selectedEnquiry?.status || '').toUpperCase()) && (
+                                        <>
+                                            <Button
+                                                className="h-10 px-5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold"
+                                                disabled={updateStatusMutation.isPending}
+                                                onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'CONFIRMED' })}
+                                            >
+                                                Confirm
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="h-10 px-5 rounded-full border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-bold"
+                                                disabled={updateStatusMutation.isPending}
+                                                onClick={() => updateStatusMutation.mutate({ id: selectedEnquiry!.id, status: 'REJECTED' })}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </>
+                                    )}
+
+                                    {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
+                                        <Button
+                                            className="h-10 px-6 rounded-full bg-[var(--primary)] text-white font-black text-[13px] shadow-lg shadow-[var(--primary-glow)]"
+                                            disabled={convertToBookingMutation.isPending}
+                                            onClick={() => convertToBookingMutation.mutate(selectedEnquiry!.id)}
+                                        >
+                                            <Check className="h-4 w-4 mr-2" /> Convert to Booking
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
 

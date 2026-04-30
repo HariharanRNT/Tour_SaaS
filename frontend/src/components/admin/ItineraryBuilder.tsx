@@ -685,58 +685,7 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
         }
     }
 
-
-
-    // ... (rest of imports/state)
-
-    const handleAddActivity = async () => {
-        if (!newActivity.title || !selectedTimeSlot) {
-            toast.error('Please fill in all fields')
-            return
-        }
-
-        // Time Validation
-        const startMinutes = timeToMinutes(newActivity.start_time);
-        const endMinutes = timeToMinutes(newActivity.end_time);
-
-        if (startMinutes !== null && endMinutes !== null) {
-            if (endMinutes <= startMinutes) {
-                toast.error('End time must be after start time');
-                return;
-            }
-
-            // Check for overlapping activities on the same day
-            const dayActivities = activities[currentDay];
-            if (dayActivities) {
-                const allDayActivities = [
-                    ...(dayActivities.morning || []),
-                    ...(dayActivities.afternoon || []),
-                    ...(dayActivities.evening || []),
-                    ...(dayActivities.night || []),
-                    ...(dayActivities.half_day || []),
-                    ...(dayActivities.full_day || [])
-                ];
-
-                const hasOverlap = allDayActivities.some(activity => {
-                    // Skip if we're editing the current activity
-                    if (editingId && activity.id === editingId) return false;
-
-                    const existingStart = timeToMinutes(activity.start_time);
-                    const existingEnd = timeToMinutes(activity.end_time);
-
-                    if (existingStart === null || existingEnd === null) return false;
-
-                    // Standard overlap detection: (StartA < EndB) and (EndA > StartB)
-                    return startMinutes < existingEnd && endMinutes > existingStart;
-                });
-
-                if (hasOverlap) {
-                    toast.error('This activity overlaps with another scheduled activity on this day.');
-                    return;
-                }
-            }
-        }
-
+    const executeActivitySave = async () => {
         // Check for 10 activities limit (only for new activities, not edits)
         if (!editingId) {
             const currentSlotCount = activities[currentDay]?.[selectedTimeSlot as keyof DayActivities]?.length || 0
@@ -798,20 +747,157 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
                     setSelectedTimeSlot('')
                     setEditingId(null)
                     setUploadProgress(0)
+                    setIsAutoCalculated(false)
                     setIsSuccess(false)
                     loadItinerary()
-                }, 1000)
+                }, 800)
             } else {
-                const err = await response.json()
-                console.error("API Error:", err)
-                alert(`Failed to save: ${err.detail || 'Unknown error'}`)
+                const error = await response.json()
+                toast.error(error.detail || 'Failed to save activity')
             }
         } catch (error) {
-            console.error('Failed to add/edit activity:', error)
-            alert('Failed to save activity')
+            toast.error('Network error. Please try again.')
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleAddActivity = async () => {
+        if (!newActivity.title || !selectedTimeSlot) {
+            toast.error('Please fill in all fields')
+            return
+        }
+
+        // Time Validation
+        const startMinutes = timeToMinutes(newActivity.start_time);
+        const endMinutes = timeToMinutes(newActivity.end_time);
+
+        if (startMinutes !== null && endMinutes !== null) {
+            const isNextDay = endMinutes <= startMinutes;
+
+            // 1. Check against previous day's overflow
+            if (currentDay > 1) {
+                const prevDayActivities = activities[currentDay - 1];
+                if (prevDayActivities) {
+                    const allPrev = [
+                        ...(prevDayActivities.morning || []),
+                        ...(prevDayActivities.afternoon || []),
+                        ...(prevDayActivities.evening || []),
+                        ...(prevDayActivities.night || []),
+                        ...(prevDayActivities.half_day || []),
+                        ...(prevDayActivities.full_day || [])
+                    ];
+
+                    const hasPrevOverlap = allPrev.some(activity => {
+                        const pStart = timeToMinutes(activity.start_time);
+                        const pEnd = timeToMinutes(activity.end_time);
+                        if (pStart !== null && pEnd !== null && pEnd <= pStart) {
+                            // Activity from yesterday ends today at pEnd
+                            return startMinutes < pEnd;
+                        }
+                        return false;
+                    });
+
+                    if (hasPrevOverlap) {
+                        toast.error('This time slot is already occupied by an activity from the previous day.');
+                        return;
+                    }
+                }
+            }
+
+            // 2. Check against next day's activities (if this one overflows)
+            if (isNextDay) {
+                const nextDayActivities = activities[currentDay + 1];
+                if (nextDayActivities) {
+                    const allNext = [
+                        ...(nextDayActivities.morning || []),
+                        ...(nextDayActivities.afternoon || []),
+                        ...(nextDayActivities.evening || []),
+                        ...(nextDayActivities.night || []),
+                        ...(nextDayActivities.half_day || []),
+                        ...(nextDayActivities.full_day || [])
+                    ];
+
+                    const hasNextOverlap = allNext.some(activity => {
+                        const nStart = timeToMinutes(activity.start_time);
+                        if (nStart !== null) {
+                            // Activity tomorrow starts before this one ends
+                            return nStart < endMinutes;
+                        }
+                        return false;
+                    });
+
+                    if (hasNextOverlap) {
+                        toast.error('This activity overlaps with a scheduled activity on the next day.');
+                        return;
+                    }
+                }
+            }
+
+            // 3. Check for overlapping activities on the same day
+            const dayActivities = activities[currentDay];
+            if (dayActivities) {
+                const allDayActivities = [
+                    ...(dayActivities.morning || []),
+                    ...(dayActivities.afternoon || []),
+                    ...(dayActivities.evening || []),
+                    ...(dayActivities.night || []),
+                    ...(dayActivities.half_day || []),
+                    ...(dayActivities.full_day || [])
+                ];
+
+                const hasOverlap = allDayActivities.some(activity => {
+                    // Skip if we're editing the current activity
+                    if (editingId && activity.id === editingId) return false;
+
+                    const existingStart = timeToMinutes(activity.start_time);
+                    const existingEnd = timeToMinutes(activity.end_time);
+
+                    if (existingStart === null || existingEnd === null) return false;
+
+                    // Handle same-day wrap-around logic
+                    const currentStart = startMinutes;
+                    const currentEnd = isNextDay ? 1440 : endMinutes;
+                    const compareStart = existingStart;
+                    const compareEnd = (existingEnd <= existingStart) ? 1440 : existingEnd;
+
+                    // Standard overlap: (StartA < EndB) and (EndA > StartB)
+                    const sameDayOverlap = currentStart < compareEnd && currentEnd > compareStart;
+
+                    if (sameDayOverlap) return true;
+
+                    // If existing activity also overflowed from yesterday, check its morning part
+                    // But here we are comparing two activities on the SAME day_number.
+                    // If an activity on THIS day overflows to TOMORROW, it only occupies currentDay from start to 1440.
+                    // If an existing activity on THIS day overflowed from YESTERDAY, it's not possible 
+                    // because we store the "overflowing" part within the same day_number object.
+
+                    return false;
+                });
+
+                if (hasOverlap) {
+                    toast.error('This activity overlaps with another scheduled activity on this day.');
+                    return;
+                }
+            }
+
+            // If everything is okay and it's a next-day activity, show confirmation
+            if (isNextDay) {
+                setAlertConfig({
+                    open: true,
+                    title: 'Next Day Activity',
+                    message: 'This activity continues to the next day. (e.g., 23:10 to 04:00). Do you want to proceed?',
+                    variant: 'default',
+                    onConfirm: () => {
+                        setAlertConfig({ open: false, title: '', message: '', onConfirm: () => { } });
+                        executeActivitySave();
+                    }
+                });
+                return;
+            }
+        }
+
+        executeActivitySave();
     }
 
     const uploadImage = async (file: File): Promise<string> => {

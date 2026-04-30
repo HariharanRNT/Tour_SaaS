@@ -584,7 +584,7 @@ export default function SubscriptionPage() {
                                                 Auto-Renews
                                             </Badge>
                                         </div>
-                                        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-1">{activeSub.plan.name}</h3>
+                                        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-1 break-all">{activeSub.plan.name}</h3>
                                         <p className="text-[var(--color-primary-font)]/80 font-medium flex items-center gap-2">
                                             {getBillingCycleDisplay(activeSub.plan)} Billing
                                             <span className="w-1 h-1 rounded-full bg-slate-400"></span>
@@ -945,8 +945,8 @@ export default function SubscriptionPage() {
                                     >
                                         {/* Header Section */}
                                         <div className="text-center mb-3">
-                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] mb-4 flex items-center justify-center gap-2">
-                                                <span className="text-2xl">{icon}</span> {plan.name}
+                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] mb-4 flex flex-wrap items-center justify-center gap-2 break-all px-4">
+                                                <span className="text-2xl flex-shrink-0">{icon}</span> {plan.name}
                                             </h3>
 
                                             <div className="flex flex-col items-center">
@@ -996,7 +996,7 @@ export default function SubscriptionPage() {
                                                                                     <Check className="h-3 w-3 text-emerald-600" />
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="text-sm font-medium text-[var(--color-primary-font)]/80 leading-snug group-hover/item:text-[var(--color-primary-font)] transition-colors">
+                                                                            <span className="text-sm font-medium text-[var(--color-primary-font)]/80 leading-snug group-hover/item:text-[var(--color-primary-font)] transition-colors break-all">
                                                                                 {item}
                                                                             </span>
                                                                         </li>
@@ -1109,7 +1109,7 @@ export default function SubscriptionPage() {
                                                         <div className={`p-1 rounded-full ${theme.bg}`}>
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
                                                         </div>
-                                                        {sub.plan.name}
+                                                        <span className="break-all">{sub.plan.name}</span>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <Badge variant="secondary" className={`

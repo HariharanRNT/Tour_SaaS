@@ -796,7 +796,7 @@ export default function AgentSettingsPage() {
                                             className="glass-input h-12 pl-11 font-medium rounded-lg transition-all"
                                             value={smtp.username}
                                             onChange={(e) => handleSmtpChange('username', e.target.value)}
-                                            maxLength={50}
+                                            maxLength={200}
                                         />
                                     </div>
                                 </div>
@@ -841,7 +841,7 @@ export default function AgentSettingsPage() {
                                     value={smtp.from_email}
                                     onChange={(e) => handleSmtpChange('from_email', e.target.value)}
                                     placeholder="noreply@youragency.com"
-                                    maxLength={50}
+                                    maxLength={200}
                                 />
                                 <p className="text-[10px] font-medium text-[var(--color-primary-font)]/70">Usually the same as your login email.</p>
                             </div>
