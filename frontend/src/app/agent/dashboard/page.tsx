@@ -788,16 +788,29 @@ export default function AgentDashboard() {
                                 type="date"
                                 className="w-auto bg-white/50 border-white/50 rounded-full"
                                 value={customStart}
-                                max={new Date().toISOString().split('T')[0]}
-                                onChange={e => setCustomStart(e.target.value)}
+                                max={format(new Date(), 'yyyy-MM-dd')}
+                                onChange={e => {
+                                    const newStart = e.target.value
+                                    setCustomStart(newStart)
+                                    if (newStart && customEnd && newStart > customEnd) {
+                                        setCustomEnd(newStart)
+                                    }
+                                }}
                             />
                             <span className="text-[var(--color-primary-font)] font-medium">-</span>
                             <Input
                                 type="date"
                                 className="w-auto bg-white/50 border-white/50 rounded-full"
                                 value={customEnd}
-                                max={new Date().toISOString().split('T')[0]}
-                                onChange={e => setCustomEnd(e.target.value)}
+                                min={customStart}
+                                max={format(new Date(), 'yyyy-MM-dd')}
+                                onChange={e => {
+                                    const newEnd = e.target.value
+                                    setCustomEnd(newEnd)
+                                    if (newEnd && customStart && newEnd < customStart) {
+                                        setCustomStart(newEnd)
+                                    }
+                                }}
                             />
                             <Button onClick={applyCustomFilter} size="sm" className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white rounded-full shadow-md hover:-translate-y-0.5 transition-all">
                                 Apply

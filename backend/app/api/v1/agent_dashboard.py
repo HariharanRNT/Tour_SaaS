@@ -31,7 +31,7 @@ async def get_agent_dashboard_stats(
         filter_start = None
         filter_end = None
         
-        now = datetime.utcnow()
+        now = datetime.now()
         
         if filter_type == '1D':
             filter_start = now - timedelta(days=1)

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { format, addMonths, subMonths } from 'date-fns'
+import { format, addMonths, subMonths, differenceInDays } from 'date-fns'
 import {
     Calendar,
     MapPin,
@@ -13,7 +13,6 @@ import {
     Search,
     Filter,
     ArrowLeft,
-    MoreHorizontal,
     RefreshCw,
     Download,
     CreditCard,
@@ -26,7 +25,6 @@ import {
     Info,
     FileText,
     Loader2,
-    Edit,
     Trash2,
     FileSpreadsheet,
     FileDown,
@@ -42,14 +40,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
@@ -693,26 +683,6 @@ export default function AgentBookingsPage() {
                             </div>
 
                             <div className="flex items-center gap-2 self-end sm:self-start">
-
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-[42px] w-[42px] rounded-full bg-white/20 border border-white/40 text-[var(--color-primary-font)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] hover:border-[var(--primary)]/30 backdrop-blur-md transition-all">
-                                            <MoreHorizontal className="h-5 w-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-52 p-2 glass-popover">
-                                        <DropdownMenuItem onClick={() => { setSelectedBooking(booking); setIsDetailsOpen(true); }} className="cursor-pointer rounded-xl h-11 glass-popover-item">
-                                            <Info className="h-4 w-4 mr-3" /> <span className="font-bold">View Full Details</span>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuSeparator className="bg-white/10" />
-                                        {booking.status === 'confirmed' && hasPermission('bookings', 'edit') && (
-                                            <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)} className="cursor-pointer rounded-xl h-11 text-red-600 focus:text-red-400 glass-popover-item">
-                                                <Trash2 className="h-4 w-4 mr-3" /> <span className="font-bold">Request Cancellation</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
                             </div>
                         </div>
 
@@ -778,6 +748,31 @@ export default function AgentBookingsPage() {
         if (!booking) return null;
 
         const travelerCount = booking.number_of_travelers || (booking.travelers ? booking.travelers.length : 0);
+
+        const calculateEstimatedRefund = () => {
+            if (!booking.package?.cancellation_rules || booking.package.cancellation_rules.length === 0) {
+                return { amount: 0, percentage: 0 };
+            }
+
+            const travelDate = new Date(booking.travel_date);
+            const today = new Date();
+            const diffDays = differenceInDays(travelDate, today);
+
+            const rules = [...booking.package.cancellation_rules].sort((a, b) => b.daysBefore - a.daysBefore);
+            
+            let applicableRefundPercentage = 0;
+            for (const rule of rules) {
+                if (diffDays >= rule.daysBefore) {
+                    applicableRefundPercentage = rule.refundPercentage;
+                    break;
+                }
+            }
+
+            const refundAmount = (booking.total_amount * applicableRefundPercentage) / 100;
+            return { amount: refundAmount, percentage: applicableRefundPercentage };
+        };
+
+        const estimatedRefund = calculateEstimatedRefund();
 
         let contactInfo: any = null;
         try {
@@ -1224,7 +1219,43 @@ export default function AgentBookingsPage() {
                                                         </>
                                                     );
                                                 })()}
-
+                                                {((booking.status === 'cancelled' || booking.payment_status === 'refunded') && (booking.refund || booking.refund_amount)) && (
+                                                    <div className="mt-8 p-6 bg-red-500/10 border border-red-500/20 rounded-[2rem] animate-in slide-in-from-top-4 duration-500">
+                                                        <div className="flex items-center gap-3 mb-4">
+                                                            <div className="bg-red-500/20 p-2 rounded-xl">
+                                                                <RefreshCw className="h-4 w-4 text-red-400" />
+                                                            </div>
+                                                            <h4 className="text-sm font-black text-red-400 uppercase tracking-widest">Refund Information</h4>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Refund Amount</p>
+                                                                <p className="text-xl font-black text-white">₹{(booking.refund?.refund_amount || booking.refund_amount || 0).toLocaleString()}</p>
+                                                            </div>
+                                                            {booking.refund?.refund_percentage && (
+                                                                <div>
+                                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Percentage</p>
+                                                                    <p className="text-xl font-black text-slate-300">{booking.refund.refund_percentage}%</p>
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Refund Status</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`h-1.5 w-1.5 rounded-full ${booking.refund?.status === 'succeeded' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                                                                    <span className="text-[10px] font-black uppercase text-slate-300 tracking-tighter">
+                                                                        {booking.refund?.status || 'Initiated'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {booking.refund?.razorpay_refund_id && (
+                                                            <div className="mt-4 pt-4 border-t border-white/5">
+                                                                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Refund Reference</p>
+                                                                <p className="text-[10px] font-mono text-slate-400">{booking.refund.razorpay_refund_id}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 <div className="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-end sm:items-center gap-6">
                                                     <div className="flex flex-wrap items-center gap-4">
@@ -1266,27 +1297,32 @@ export default function AgentBookingsPage() {
                             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
                                 {booking.status === 'confirmed' && hasPermission('bookings', 'edit') && (
                                     showCancelConfirm ? (
-                                        <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-2xl border border-red-200 shadow-sm animate-in zoom-in-95 duration-200">
-                                            <span className="text-[11px] font-black text-red-600 uppercase tracking-widest ml-3 mr-2">Confirm?</span>
-                                            <Button
-                                                variant="ghost"
-                                                onClick={() => setShowCancelConfirm(false)}
-                                                className="h-10 px-4 font-black text-slate-500 hover:bg-slate-100 rounded-xl text-[11px] uppercase tracking-widest"
-                                            >
-                                                No
-                                            </Button>
-                                            <Button
-                                                onClick={() => {
-                                                    cancelMutation.mutate(booking.id, {
-                                                        onSettled: () => setShowCancelConfirm(false)
-                                                    })
-                                                }}
-                                                disabled={cancelMutation.isPending}
-                                                className="h-10 px-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[11px] uppercase tracking-widest flex items-center gap-2"
-                                            >
-                                                {cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                Yes, Cancel
-                                            </Button>
+                                        <div className="flex flex-col items-end gap-3 bg-red-50/50 p-4 rounded-[2rem] border border-red-100 shadow-sm animate-in zoom-in-95 duration-200">
+                                            <div className="flex flex-col items-end mr-2">
+                                                <span className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Estimated Refund to Customer</span>
+                                                <span className="text-xl font-black text-red-600">₹{estimatedRefund.amount.toLocaleString()} <span className="text-[10px] opacity-60">({estimatedRefund.percentage}%)</span></span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => setShowCancelConfirm(false)}
+                                                    className="h-10 px-6 font-black text-slate-500 hover:bg-slate-100 rounded-xl text-[11px] uppercase tracking-widest"
+                                                >
+                                                    No, Keep It
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        cancelMutation.mutate(booking.id, {
+                                                            onSettled: () => setShowCancelConfirm(false)
+                                                        })
+                                                    }}
+                                                    disabled={cancelMutation.isPending}
+                                                    className="h-10 px-8 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-red-500/20"
+                                                >
+                                                    {cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    Yes, Cancel Now
+                                                </Button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <Button
@@ -1297,11 +1333,6 @@ export default function AgentBookingsPage() {
                                             <Trash2 className="h-4 w-4 mr-2" /> Cancel Booking
                                         </Button>
                                     )
-                                )}
-                                {hasPermission('bookings', 'edit') && (
-                                    <Button variant="outline" className="h-12 px-6 font-black border-slate-200 text-[var(--color-primary-font)]/80 hover:bg-transparent rounded-2xl text-[11px] uppercase tracking-widest">
-                                        <Edit className="h-4 w-4 mr-2" /> Modify Trip
-                                    </Button>
                                 )}
                                 {booking.status === 'confirmed' && (
                                     <Button 

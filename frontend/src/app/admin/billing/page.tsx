@@ -518,8 +518,8 @@ export default function AdminBillingPage() {
 
                                                 <CardHeader className="p-[24px] pb-[16px]">
                                                     <div className="flex justify-between items-start mb-[20px]">
-                                                        <div className="space-y-[8px]">
-                                                            <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight" style={{ color: theme.main }}>{plan.name}</h3>
+                                                        <div className="space-y-[8px] min-w-0">
+                                                            <h3 className="text-[17px] font-[800] font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.1px] leading-tight break-words" style={{ color: theme.main }}>{plan.name}</h3>
                                                             <div className={cn(
                                                                 "inline-flex items-center px-[10px] py-[4px] rounded-[20px] text-[10px] font-black uppercase tracking-[1px] gap-1.5 backdrop-blur-md border",
                                                                 plan.is_active ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : "bg-slate-100/10 text-slate-700 border-slate-100/20"
@@ -586,11 +586,11 @@ export default function AdminBillingPage() {
                                                             return features && features.length > 0 ? (
                                                                 <ul className="grid gap-[10px] mb-[20px]">
                                                                     {features.map((f: string, i: number) => (
-                                                                        <li key={i} className="flex items-center text-[13px] font-normal text-slate-900">
-                                                                            <div className="mr-[10px]" style={{ color: theme.main }}>
+                                                                        <li key={i} className="flex items-start text-[13px] font-normal text-slate-900">
+                                                                            <div className="mr-[10px] mt-0.5 shrink-0" style={{ color: theme.main }}>
                                                                                 <CheckCircle2 className="h-4 w-4" />
                                                                             </div>
-                                                                            {f}
+                                                                            <span className="break-words">{f}</span>
                                                                         </li>
                                                                     ))}
                                                                 </ul>

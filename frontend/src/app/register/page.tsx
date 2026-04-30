@@ -76,8 +76,12 @@ export default function RegisterPage() {
         return (
             emailValid &&
             formData.password.length >= 8 &&
+            formData.password.length <= 50 &&
+            formData.email.length <= 250 &&
             formData.first_name.trim().length > 0 &&
+            formData.first_name.length <= 50 &&
             formData.last_name.trim().length > 0 &&
+            formData.last_name.length <= 50 &&
             formData.terms
         )
     }
@@ -263,6 +267,7 @@ export default function RegisterPage() {
                                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                                 <Input
                                                     value={formData.first_name}
+                                                    maxLength={50}
                                                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                                                     placeholder="First Name"
                                                     className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium placeholder:text-black/60"
@@ -273,6 +278,7 @@ export default function RegisterPage() {
                                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 group-focus-within/input:text-black transition-colors" />
                                                 <Input
                                                     value={formData.last_name}
+                                                    maxLength={50}
                                                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                                                     placeholder="Last Name"
                                                     className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 transition-all text-sm font-medium placeholder:text-black/60"
@@ -286,6 +292,7 @@ export default function RegisterPage() {
                                             <Input
                                                 type="email"
                                                 value={formData.email}
+                                                maxLength={250}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="Email Address"
                                                 className="h-10 pl-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-black/60"

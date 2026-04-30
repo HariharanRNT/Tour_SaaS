@@ -417,11 +417,11 @@ export default function CreatePackagePage() {
 
     // Auto-generate slug from title
     useEffect(() => {
-        if (formData.title && !formData.slug) {
+        if (formData.title && !formData.slug && !isSlugEdited) {
             console.log(`[SlugGen] Auto-generating slug for: "${formData.title}"`);
             updateFormData('slug', generateSlug(formData.title));
         }
-    }, [formData.title, formData.slug])
+    }, [formData.title, formData.slug, isSlugEdited])
 
     const loadPackageData = async (id: string) => {
         setLoading(true)
@@ -544,11 +544,24 @@ export default function CreatePackagePage() {
     }
 
     const updateFormData = (field: keyof PackageFormData, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }))
         if (field === 'duration_days') {
-            setFormData(prev => ({ ...prev, duration_nights: Math.max(0, value - 1) }))
+            const numVal = parseInt(value);
+            if (isNaN(numVal)) {
+                setFormData(prev => ({ ...prev, duration_days: '' as any, duration_nights: '' as any }));
+                return;
+            }
+            const cappedValue = Math.min(numVal, 60);
+            setFormData(prev => ({ ...prev, duration_days: cappedValue, duration_nights: Math.max(0, cappedValue - 1) }))
         } else if (field === 'duration_nights') {
-            setFormData(prev => ({ ...prev, duration_days: value + 1 }))
+            const numVal = parseInt(value);
+            if (isNaN(numVal)) {
+                setFormData(prev => ({ ...prev, duration_nights: '' as any, duration_days: '' as any }));
+                return;
+            }
+            const cappedValue = Math.min(numVal, 59);
+            setFormData(prev => ({ ...prev, duration_nights: cappedValue, duration_days: cappedValue + 1 }))
+        } else {
+            setFormData(prev => ({ ...prev, [field]: value }))
         }
     }
 
@@ -757,6 +770,7 @@ export default function CreatePackagePage() {
         if (targetStep > activeStep) {
             const missingFields: string[] = [];
             if (!formData.title || !formData.title.trim()) missingFields.push("Package Title");
+            if (!formData.slug || !formData.slug.trim()) missingFields.push("URL Slug");
             if (formData.package_mode === 'multi') {
                 if (formData.destinations.length === 0) missingFields.push("Destinations");
                 else if (formData.destinations.some(d => !d.city || !d.country || (d.days || 0) <= 0)) {
@@ -910,10 +924,25 @@ export default function CreatePackagePage() {
             try {
                 const parsed = JSON.parse(error.message)
                 if (parsed.detail) {
-                    errorMsg = parsed.detail
+                    if (Array.isArray(parsed.detail)) {
+                        errorMsg = parsed.detail.map((err: any) => {
+                            const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : 'Field'
+                            return `${field}: ${err.msg}`
+                        }).join('\n')
+                    } else if (typeof parsed.detail === 'string') {
+                        if (parsed.detail.includes('validation errors')) {
+                            errorMsg = parsed.detail.replace('Internal server error: ', '').trim()
+                        } else {
+                            errorMsg = parsed.detail
+                        }
+                    }
                 }
-            } catch { /* ignore */ }
-            toast.error(errorMsg)
+            } catch {
+                if (error.message && !error.message.includes('[object Object]')) {
+                    errorMsg = error.message
+                }
+            }
+            toast.error(errorMsg, { duration: 5000 })
         } finally {
             setSaving(false)
         }
@@ -1345,7 +1374,7 @@ export default function CreatePackagePage() {
 
                                 <div className="space-y-2">
                                     <Label className={cn("text-xs font-bold uppercase tracking-wider", formData.slug ? "text-[var(--primary)]" : "text-black")}>
-                                        URL Slug <span className="text-black/40 font-normal">(Optional — will auto-generate)</span>
+                                        URL Slug <span className="text-red-500">*</span>
                                     </Label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1800,6 +1829,7 @@ export default function CreatePackagePage() {
                                             <Input
                                                 type="number"
                                                 min="0"
+                                                max={59}
                                                 readOnly={formData.package_mode === 'multi'}
                                                 value={formData.duration_nights}
                                                 onChange={(e) => updateFormData('duration_nights', parseInt(e.target.value))}
@@ -1814,6 +1844,7 @@ export default function CreatePackagePage() {
                                             <Input
                                                 type="number"
                                                 min="1"
+                                                max={60}
                                                 readOnly={formData.package_mode === 'multi'}
                                                 value={formData.duration_days}
                                                 onChange={(e) => updateFormData('duration_days', parseInt(e.target.value))}

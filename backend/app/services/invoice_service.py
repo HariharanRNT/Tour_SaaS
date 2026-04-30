@@ -179,49 +179,49 @@ class InvoiceService:
             
             total_amount = float(booking.total_amount)
             
-            # Determine GST Settings (Package-specific first, then Agent defaults)
+            # Determine GST Settings (Cascading: Package -> Agent -> Default)
             gst_applicable = True
             gst_percentage = 18.0
-            gst_mode = 'inclusive'
+            is_gst_inclusive = False
             
+            # 1. Base Layer: Agent Settings
+            if agent_profile:
+                if agent_profile.gst_applicable is not None:
+                    gst_applicable = agent_profile.gst_applicable
+                
+                if gst_applicable:
+                    if agent_profile.gst_percentage is not None:
+                        gst_percentage = float(agent_profile.gst_percentage)
+                    if agent_profile.gst_inclusive is not None:
+                        is_gst_inclusive = agent_profile.gst_inclusive
+
+            # 2. Top Layer: Package Overrides
             if package:
-                # Package specific overrides
                 if package.gst_applicable is not None:
                     gst_applicable = package.gst_applicable
                 
-                if package.gst_percentage is not None:
-                    gst_percentage = float(package.gst_percentage)
-                elif agent_profile:
-                    gst_percentage = float(agent_profile.gst_percentage)
-                
-                if package.gst_mode:
-                    gst_mode = package.gst_mode
-                elif agent_profile:
-                    gst_mode = 'inclusive' if agent_profile.gst_inclusive else 'exclusive'
-            elif agent_profile:
-                # Fallback to Agent defaults
-                gst_applicable = agent_profile.gst_applicable
-                gst_percentage = float(agent_profile.gst_percentage)
-                gst_mode = 'inclusive' if agent_profile.gst_inclusive else 'exclusive'
+                if gst_applicable:
+                    if package.gst_percentage is not None:
+                        gst_percentage = float(package.gst_percentage)
+                    if package.gst_mode:
+                        is_gst_inclusive = (package.gst_mode == 'inclusive')
 
-            # Calculate Split
+            # 3. Calculate Split for Invoice Display
             if not gst_applicable or gst_percentage == 0:
                 base_price = total_amount
                 gst_amount = 0.0
                 display_gst_rate = 0
+                gst_label = "GST"
             else:
-                if gst_mode == 'inclusive':
-                    base_price = total_amount / (1 + (gst_percentage / 100))
-                    gst_amount = total_amount - base_price
-                else:
-                    # If it was exclusive, total_amount already includes it
-                    base_price = total_amount / (1 + (gst_percentage / 100))
-                    gst_amount = total_amount - base_price
-                    # Note: For exclusive packages, the booking.total_amount stored in DB 
-                    # SHOULD already be the total (Base + GST). 
-                    # So the math to derive base from total is the same as inclusive 
-                    # once the total is known.
+                # Math is the same for both inclusive/exclusive once total_amount is known
+                # We derive base from total
+                base_price = total_amount / (1 + (gst_percentage / 100))
+                gst_amount = total_amount - base_price
                 display_gst_rate = gst_percentage
+                gst_label = f"GST ({gst_percentage}%) {'(Included)' if is_gst_inclusive else '(Added)'}"
+            
+            # Use base_price for the line item as well to show clear breakdown
+            line_item_amount = base_price
             
             # Format Date
             if booking.created_at:
@@ -582,7 +582,7 @@ class InvoiceService:
                             <td class="col-duration">
                                 {duration_str}
                             </td>
-                            <td class="col-amount amount-text">{format_inr(base_price)}</td>
+                            <td class="col-amount amount-text">{format_inr(line_item_amount)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -598,7 +598,7 @@ class InvoiceService:
                                     <td class="total-value amount-text">{format_inr(base_price)}</td>
                                 </tr>
                                 <tr>
-                                    <td class="total-label">GST ({display_gst_rate}%)</td>
+                                    <td class="total-label">{gst_label}</td>
                                     <td class="total-value amount-text">{format_inr(gst_amount)}</td>
                                 </tr>
                                 <tr class="grand-total-row">

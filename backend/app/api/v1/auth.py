@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import User, UserRole, Customer, Agent, SubUser
 from app.schemas import UserCreate, UserResponse, Token, UserLogin, LoginResponse, GoogleLoginRequest, AgentRegistration
@@ -997,115 +998,127 @@ async def forgot_password(
     db: AsyncSession = Depends(get_db)
 ):
     """Initiate password reset flow"""
-    # 1. Check Rate Limit
-    if not await OTPService.check_rate_limit(data.email):
-        logger.warning(f"Password reset OTP rate limit exceeded for: {data.email}")
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="OTP request limit exceeded. Please try again after 1 hour."
-        )
-
-    # 2. Check if email exists in customer table (Requirement: check if exists in customer table)
-    # Actually, the user asked to check if email exists in customer table.
-    # But User model is what handles auth. Let's check User first then Customer if needed.
-    # The requirement says "Check if the email exists in the customer table".
-    stmt = select(User).where(User.email == data.email)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="This email ID is not registered."
-        )
-    
-    # 2b. REAL-TIME AGENT DEACTIVATION CHECK (for Forgot Password)
-    if user.role == UserRole.SUB_USER:
-        if user.sub_user_profile and user.sub_user_profile.agent:
-            if not user.sub_user_profile.agent.is_active:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="This service is currently unavailable. Please contact your administrator."
-                )
-    
-    elif user.role == UserRole.CUSTOMER:
-        if user.customer_profile and user.customer_profile.agent:
-            if not user.customer_profile.agent.is_active:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="This service is currently unavailable. Please contact support."
-                )
-    
-    # 3. Generate 6-digit OTP
-    otp = OTPService.generate_otp()
-    
-    # DIAGNOSTIC: Write to file to verify OTP generation
-    import os
+    logger.info(f"Forgot password request received for email: {data.email}")
     try:
-        log_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "otp_log.txt")
-        with open(log_file, "a") as f:
-            from datetime import datetime
-            f.write(f"\n{'='*60}\n")
-            f.write(f"Timestamp: {datetime.now()}\n")
-            f.write(f"Type: PASSWORD RESET\n")
-            f.write(f"Email: {data.email}\n")
-            f.write(f"OTP: {otp}\n")
-            f.write(f"{'='*60}\n")
-    except Exception as e:
-        pass  # Silently fail if file write fails
-    
-    # Log to terminal securely via Uvicorn logger
-    otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email})\n{'='*50}\n"
-    logger.warning(otp_msg)
-    print(otp_msg, flush=True)
-    
-    # 4. Store OTP in Redis
-    if not await OTPService.store_otp(data.email, otp):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate secure OTP. Please try again."
+        # 1. Check Rate Limit
+        if not await OTPService.check_rate_limit(data.email):
+            logger.warning(f"Password reset OTP rate limit exceeded for: {data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="OTP request limit exceeded. Please try again after 1 hour."
+            )
+
+        # 2. Check if email exists
+        stmt = select(User).where(User.email == data.email).options(
+            selectinload(User.admin_profile),
+            selectinload(User.agent_profile),
+            selectinload(User.customer_profile),
+            selectinload(User.sub_user_profile)
         )
-    
-    # 5. Send Email
-    subject = "Your Password Reset OTP"
-    body = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #2563eb; text-align: center;">RNT Tour</h2>
-        <p>Hello {user.first_name or 'there'},</p>
-        <p>You requested to reset your password. Use the OTP below to proceed. This OTP is valid for 5 minutes.</p>
-        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
-            {otp}
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="This email ID is not registered."
+            )
+        
+        # 2b. REAL-TIME AGENT DEACTIVATION CHECK
+        agent_id_to_check = None
+        if user.role == UserRole.SUB_USER and user.sub_user_profile:
+            agent_id_to_check = user.sub_user_profile.agent_id
+        elif user.role == UserRole.CUSTOMER and user.customer_profile:
+            agent_id_to_check = user.customer_profile.agent_id
+            
+        if agent_id_to_check:
+            # Fetch agent's user record directly to avoid lazy loading issues
+            agent_user_stmt = select(User).where(User.id == agent_id_to_check)
+            agent_user_res = await db.execute(agent_user_stmt)
+            agent_user = agent_user_res.scalar_one_or_none()
+            if agent_user and not agent_user.is_active:
+                detail = "This service is currently unavailable. Please contact your administrator." if user.role == UserRole.SUB_USER else "This service is currently unavailable. Please contact support."
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+
+        # 3. Generate 6-digit OTP
+        otp = OTPService.generate_otp()
+        
+        # Log to terminal securely
+        otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email})\n{'='*50}\n"
+        logger.warning(otp_msg)
+        print(otp_msg, flush=True)
+        
+        # 4. Store OTP in Redis
+        if not await OTPService.store_otp(data.email, otp):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate secure OTP. Please try again."
+            )
+        
+        # 5. Determine Greeting Name
+        # Safe way to get first name without relying on complex property logic
+        greeting_name = "there"
+        if user.role == UserRole.ADMIN and user.admin_profile:
+            greeting_name = user.admin_profile.first_name or "Admin"
+        elif user.role == UserRole.AGENT and user.agent_profile:
+            greeting_name = user.agent_profile.first_name or "Agent"
+        elif user.customer_profile: # Covers CUSTOMER and SUB_USER (who has a customer profile)
+            greeting_name = user.customer_profile.first_name or "there"
+
+        # 6. Build Email
+        subject = "Your Password Reset OTP"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;">RNT Tour</h2>
+            <p>Hello {greeting_name},</p>
+            <p>You requested to reset your password. Use the OTP below to proceed. This OTP is valid for 5 minutes.</p>
+            <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; border-radius: 8px; margin: 20px 0;">
+                {otp}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">If you didn't request this, please ignore this email or contact support if you have concerns.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
         </div>
-        <p style="color: #64748b; font-size: 14px;">If you didn't request this, please ignore this email or contact support if you have concerns.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 RNT Tour. All rights reserved.</p>
-    </div>
-    """
-    
-    # Check if user is an agent's customer to use agent's SMTP if available
-    smtp_config = None
-    if user.role == UserRole.CUSTOMER and user.customer_profile and user.customer_profile.agent_id:
-        from sqlalchemy.orm import selectinload
-        agent_stmt = select(Agent).where(Agent.user_id == user.customer_profile.agent_id).options(
-            selectinload(Agent.smtp_settings)
-        )
-        agent_res = await db.execute(agent_stmt)
-        agent = agent_res.scalar_one_or_none()
-        if agent and agent.smtp_settings:
-            s = agent.smtp_settings
-            smtp_config = {
-                "host": s.host,
-                "port": s.port,
-                "user": s.username,
-                "password": decrypt_value(s.password),
-                "from_email": s.from_email,
-                "from_name": s.from_name,
-                "encryption_type": s.encryption_type
-            }
-    
-    await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
-    
-    return {"message": "OTP sent successfully to your registered email."}
+        """
+        
+        # 7. Check SMTP Config
+        smtp_config = None
+        # Use agent's SMTP if it's a customer or sub-user
+        target_agent_id = None
+        if user.role == UserRole.CUSTOMER and user.customer_profile:
+            target_agent_id = user.customer_profile.agent_id
+        elif user.role == UserRole.SUB_USER and user.sub_user_profile:
+            target_agent_id = user.sub_user_profile.agent_id
+
+        if target_agent_id:
+            # Fetch Agent settings
+            agent_settings_stmt = select(Agent).where(Agent.user_id == target_agent_id).options(
+                selectinload(Agent.smtp_settings)
+            )
+            agent_settings_res = await db.execute(agent_settings_stmt)
+            agent_obj = agent_settings_res.scalar_one_or_none()
+            if agent_obj and agent_obj.smtp_settings:
+                s = agent_obj.smtp_settings
+                smtp_config = {
+                    "host": s.host,
+                    "port": s.port,
+                    "user": s.username,
+                    "password": decrypt_value(s.password),
+                    "from_email": s.from_email,
+                    "from_name": s.from_name,
+                    "encryption_type": s.encryption_type
+                }
+        
+        await EmailService.send_email(user.email, subject, body, smtp_config=smtp_config)
+        
+        return {"message": "OTP sent successfully to your registered email."}
+    except Exception as e:
+        import traceback
+        logger.error(f"Error in forgot_password: {str(e)}")
+        traceback.print_exc()
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/verify-otp")

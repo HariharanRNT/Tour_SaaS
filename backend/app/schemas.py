@@ -56,7 +56,7 @@ def reject_sql(value: str, field_name: str = 'field') -> str:
 
 # User Schemas
 class UserBase(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[EmailStr] = Field(None, max_length=250)
     first_name: Optional[str] = Field(None, min_length=0, max_length=50)
     last_name: Optional[str] = Field(None, min_length=0, max_length=50)
     phone: Optional[str] = None
@@ -84,7 +84,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    email: EmailStr = Field(...)
+    email: EmailStr = Field(..., max_length=250)
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
     password: str = Field(..., min_length=8, max_length=50)
@@ -244,9 +244,9 @@ class AgentRegistration(BaseModel):
     city: str = Field(..., min_length=1, max_length=100)
     
     # Contact Details
-    first_name: str = Field(..., min_length=1)
-    last_name: str = Field(..., min_length=1)
-    email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr = Field(..., max_length=250)
     phone: str
     
     # Credentials
@@ -309,7 +309,7 @@ class AgentRegistration(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=250)
     password: str = Field(..., max_length=50)
 
 
@@ -375,9 +375,9 @@ class UserMinimalResponse(BaseModel):
 class AgentSMTPSettingsBase(BaseModel):
     host: str = Field(..., min_length=1, max_length=50)
     port: int = Field(..., ge=1, le=65535)
-    username: EmailStr = Field(..., max_length=50)
+    username: EmailStr = Field(..., max_length=200)
     password: Optional[str] = None  # No limit here to allow encrypted strings in responses
-    from_email: EmailStr = Field(..., max_length=50) 
+    from_email: EmailStr = Field(..., max_length=200) 
     from_name: str = Field(..., min_length=1, max_length=50)
     encryption_type: str = Field("tls", max_length=20)
 
@@ -724,8 +724,8 @@ class PackageBase(BaseModel):
     description: str = Field(..., min_length=0, max_length=5000)
     destination: str = Field(..., min_length=0, max_length=100)
     country: Optional[str] = Field(None, max_length=100)
-    duration_days: int = Field(..., ge=1)
-    duration_nights: int = Field(..., ge=0)
+    duration_days: Optional[int] = Field(None, ge=1)
+    duration_nights: Optional[int] = Field(None, ge=0)
     trip_style: Optional[str] = Field(None, max_length=1000)
     price_per_person: Decimal = Field(..., ge=0)
     max_group_size: int = Field(20, ge=1)
@@ -776,6 +776,8 @@ class PackageCreate(PackageBase):
     description: str = Field(..., min_length=1, max_length=5000)
     destination: str = Field(..., min_length=1, max_length=100)
     country: str = Field(..., min_length=1, max_length=100)
+    duration_days: int = Field(..., ge=1, le=60)
+    duration_nights: int = Field(..., ge=0, le=59)
     is_public: bool = True
     itinerary_items: List[ItineraryItemBase] = []
     availability: List[PackageAvailabilityBase] = []
@@ -786,8 +788,8 @@ class PackageUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     destination: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(None, max_length=100)
-    duration_days: Optional[int] = Field(None, ge=1)
-    duration_nights: Optional[int] = Field(None, ge=0)
+    duration_days: Optional[int] = Field(None, ge=1, le=60)
+    duration_nights: Optional[int] = Field(None, ge=0, le=59)
     trip_style: Optional[str] = Field(None, max_length=1000)
     price_per_person: Optional[Decimal] = Field(None, ge=0)
     max_group_size: Optional[int] = Field(None, ge=1)
@@ -1051,7 +1053,7 @@ class PaymentOrderResponse(BaseModel):
 class EnquiryBase(BaseModel):
     package_id: Optional[UUID4] = None
     customer_name: str = Field(..., min_length=1, max_length=50)
-    email: EmailStr = Field(..., max_length=50)
+    email: EmailStr = Field(..., max_length=250)
     phone: str
     travel_date: date
     travellers: int = Field(..., ge=1)
@@ -1366,15 +1368,15 @@ class SubscriptionPaymentVerification(BaseModel):
 
 # Password Reset Schemas
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=250)
 
 class VerifyOTPRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=250)
     otp: str = Field(..., min_length=6, max_length=6)
 
 class ResetPasswordRequest(BaseModel):
     token: str # This can be a verification session ID or same OTP/Email combo
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=250)
     new_password: str = Field(..., min_length=8, max_length=50)
     confirm_password: str = Field(..., min_length=8, max_length=50)
 
@@ -1443,9 +1445,9 @@ class SubUserPermissionOut(SubUserPermissionIn):
 
 
 class SubUserCreate(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr = Field(..., max_length=250)
     phone: Optional[str] = None
     role_label: str = Field("Custom", max_length=100)
     permissions: List[SubUserPermissionIn] = []
@@ -1509,7 +1511,7 @@ class AgentQuickCreateCustomer(BaseModel):
     """Schema for agent quick-creating a customer during the booking flow."""
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
-    email: EmailStr = Field(..., max_length=50)
+    email: EmailStr = Field(..., max_length=250)
     phone: Optional[str] = Field(None, max_length=50)
     send_credentials: bool = False  # Whether to email login creds to the customer
 

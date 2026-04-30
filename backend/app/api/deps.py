@@ -95,6 +95,7 @@ async def get_current_user(
         parent_agent_id = payload.get("agent_id")
         # Attach as dynamic attributes so endpoints can inspect them
         user._sub_user_agent_id = parent_agent_id
+        user._sub_user_permissions = payload.get("permissions", [])
         
         # Fetch parent agent's domain via a separate targeted query
         # (avoids complex cross-entity selectinload chaining)
@@ -202,7 +203,7 @@ def check_permission(module: str, required_level: str):
             return current_user
             
         if current_user.role == UserRole.SUB_USER:
-            perms = getattr(current_user, "_sub_user_permissions", [])
+            perms = current_user.permissions
             # Find permission for this module
             module_perm = next((p for p in perms if p.get("module") == module), None)
             

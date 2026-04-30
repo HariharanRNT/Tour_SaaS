@@ -284,9 +284,9 @@ function PlanTripContent() {
         return {
             package_mode: 'all',
             duration_min: 1,
-            duration_max: 7,
+            duration_max: 60,
             price_min: 0,
-            price_max: 20000,
+            price_max: 500000,
             trip_styles: style ? [style] : [] as string[],
             activities: [] as string[],
             countries: [] as string[]
@@ -354,7 +354,7 @@ function PlanTripContent() {
             minPrice: minPrice === Infinity ? 0 : minPrice,
             maxPrice: maxPrice === -Infinity ? 500000 : maxPrice,
             minDur: minDur === Infinity ? 1 : minDur,
-            maxDur: maxDur === -Infinity ? 30 : maxDur
+            maxDur: maxDur === -Infinity ? 60 : maxDur
         }
     }, [packages, availableActivities, availableTripStyles])
 
@@ -555,7 +555,7 @@ function PlanTripContent() {
 
             // Duration ranges
             if (filters.duration_min > 1) params.append('duration_min', filters.duration_min.toString())
-            if (filters.duration_max < 30) params.append('duration_max', filters.duration_max.toString())
+            if (filters.duration_max < 60) params.append('duration_max', filters.duration_max.toString())
 
             // Price ranges — backend expects min_price / max_price
             if (filters.price_min > 0) params.append('min_price', filters.price_min.toString())
@@ -654,7 +654,7 @@ function PlanTripContent() {
 
     const removeFilter = (key: string, value?: string) => {
         if (key === 'package_mode') setFilters(prev => ({ ...prev, package_mode: 'all' }))
-        else if (key === 'duration') setFilters(prev => ({ ...prev, duration_min: 1, duration_max: 30 }))
+        else if (key === 'duration') setFilters(prev => ({ ...prev, duration_min: 1, duration_max: 60 }))
         else if (key === 'price') setFilters(prev => ({ ...prev, price_min: 0, price_max: 500000 }))
         else if (key === 'searchQuery') {
             setSearchQuery('');
@@ -674,7 +674,7 @@ function PlanTripContent() {
         setFilters({
             package_mode: 'all',
             duration_min: 1,
-            duration_max: 30,
+            duration_max: 60,
             price_min: 0,
             price_max: 500000,
             trip_styles: [],
@@ -781,7 +781,7 @@ function PlanTripContent() {
     const FilterPanel = () => {
         const activeFilterCount = (
             (filters.package_mode !== 'all' ? 1 : 0) +
-            (filters.duration_min > 1 || filters.duration_max < 30 ? 1 : 0) +
+            (filters.duration_min > 1 || filters.duration_max < 60 ? 1 : 0) +
             (filters.price_min > 0 || filters.price_max < 500000 ? 1 : 0) +
             filters.trip_styles.length +
             filters.activities.length +
@@ -862,7 +862,7 @@ function PlanTripContent() {
 
                         <div className="flex flex-wrap gap-2 mb-4">
                             {['1-3', '4-6', '7-10', '10+'].map(range => {
-                                const [minLabel, maxLabel] = range.includes('+') ? [10, 30] : range.split('-').map(Number);
+                                const [minLabel, maxLabel] = range.includes('+') ? [10, 60] : range.split('-').map(Number);
                                 const isActive = filters.duration_min === minLabel && filters.duration_max === maxLabel;
                                 const count = packages.filter(p => p.duration_days >= minLabel && p.duration_days <= maxLabel).length;
                                 const isDisabled = count === 0;
@@ -893,7 +893,7 @@ function PlanTripContent() {
                             </div>
                             <Slider
                                 value={[filters.duration_min, filters.duration_max]}
-                                min={1} max={30} step={1}
+                                min={1} max={60} step={1}
                                 onValueChange={(vals) => setFilters(prev => ({ ...prev, duration_min: vals[0], duration_max: vals[1] }))}
                             />
                         </div>

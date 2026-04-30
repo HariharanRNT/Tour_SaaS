@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Script from 'next/script';
@@ -122,7 +123,7 @@ export default function SubscriptionPage() {
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
             const subs: Subscription[] = await res.json();
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
             const active = subs.find(s => s.status === 'active' && s.end_date >= todayStr);
             const upcoming = subs.filter(s => s.status === 'upcoming');
             const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
@@ -583,7 +584,7 @@ export default function SubscriptionPage() {
                                                 Auto-Renews
                                             </Badge>
                                         </div>
-                                        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-1">{activeSub.plan.name}</h3>
+                                        <h3 className="text-3xl font-bold text-[var(--color-primary-font)] mb-1 break-all">{activeSub.plan.name}</h3>
                                         <p className="text-[var(--color-primary-font)]/80 font-medium flex items-center gap-2">
                                             {getBillingCycleDisplay(activeSub.plan)} Billing
                                             <span className="w-1 h-1 rounded-full bg-slate-400"></span>
@@ -944,8 +945,8 @@ export default function SubscriptionPage() {
                                     >
                                         {/* Header Section */}
                                         <div className="text-center mb-3">
-                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] mb-4 flex items-center justify-center gap-2">
-                                                <span className="text-2xl">{icon}</span> {plan.name}
+                                            <h3 className="text-lg font-bold text-[var(--color-primary-font)] mb-4 flex flex-wrap items-center justify-center gap-2 break-all px-4">
+                                                <span className="text-2xl flex-shrink-0">{icon}</span> {plan.name}
                                             </h3>
 
                                             <div className="flex flex-col items-center">
@@ -995,7 +996,7 @@ export default function SubscriptionPage() {
                                                                                     <Check className="h-3 w-3 text-emerald-600" />
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="text-sm font-medium text-[var(--color-primary-font)]/80 leading-snug group-hover/item:text-[var(--color-primary-font)] transition-colors">
+                                                                            <span className="text-sm font-medium text-[var(--color-primary-font)]/80 leading-snug group-hover/item:text-[var(--color-primary-font)] transition-colors break-all">
                                                                                 {item}
                                                                             </span>
                                                                         </li>
@@ -1047,8 +1048,15 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.start}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, start: e.target.value }))}
+                                        max={format(new Date(), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                            const newStart = e.target.value;
+                                            setHistoryDateFilter(prev => ({ 
+                                                ...prev, 
+                                                start: newStart,
+                                                end: (prev.end && newStart && newStart > prev.end) ? newStart : prev.end
+                                            }))
+                                        }}
                                     />
                                     <span className="text-slate-300">|</span>
                                     <span className="text-xs text-[var(--color-primary-font)]/60 font-medium">To:</span>
@@ -1056,8 +1064,16 @@ export default function SubscriptionPage() {
                                         type="date"
                                         className="text-xs border-0 p-1 outline-none text-[var(--color-primary-font)]/60"
                                         value={historyDateFilter.end}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        onChange={(e) => setHistoryDateFilter(prev => ({ ...prev, end: e.target.value }))}
+                                        min={historyDateFilter.start}
+                                        max={format(new Date(), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                            const newEnd = e.target.value;
+                                            setHistoryDateFilter(prev => ({ 
+                                                ...prev, 
+                                                end: newEnd,
+                                                start: (prev.start && newEnd && newEnd < prev.start) ? newEnd : prev.start
+                                            }))
+                                        }}
                                     />
                                     {(historyDateFilter.start || historyDateFilter.end) && (
                                         <Button
@@ -1093,7 +1109,7 @@ export default function SubscriptionPage() {
                                                         <div className={`p-1 rounded-full ${theme.bg}`}>
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
                                                         </div>
-                                                        {sub.plan.name}
+                                                        <span className="break-all">{sub.plan.name}</span>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <Badge variant="secondary" className={`

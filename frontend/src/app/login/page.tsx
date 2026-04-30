@@ -401,6 +401,7 @@ function LoginContent() {
                                                     <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors duration-300 z-10 ${emailFocused || email ? 'text-black' : 'text-black/30'}`} />
                                                     <Input
                                                         id="email" type="email" value={email}
+                                                        maxLength={250}
                                                         onChange={handleEmailChange} onBlur={handleEmailBlur}
                                                         onFocus={() => setEmailFocused(true)}
                                                         className={`
