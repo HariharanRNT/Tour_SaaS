@@ -2435,7 +2435,7 @@ export default function CreatePackagePage() {
                                                 key={style.id}
                                                 onClick={() => toggleTripStyle(style.id)}
                                                 className={cn(
-                                                    "glass-style-card relative cursor-pointer p-4 flex flex-col items-center justify-center gap-3 fade-up-enter group",
+                                                    "glass-style-card relative cursor-pointer pt-4 px-4 pb-7 flex flex-col items-center justify-center gap-3 fade-up-enter group overflow-hidden",
                                                     isSelected ? "active" : ""
                                                 )}
                                                 style={{
@@ -2488,7 +2488,7 @@ export default function CreatePackagePage() {
 
                                                 {/* Label */}
                                                 <span className={cn(
-                                                    "text-xs font-bold text-center tracking-wide transition-colors z-10",
+                                                    "text-xs font-bold text-center tracking-wide transition-colors z-10 w-full break-all leading-tight",
                                                     isSelected ? "text-[var(--primary)] font-semibold" : "text-black group-hover:text-[var(--primary)]"
                                                 )}>
                                                     {style.label}
@@ -2626,7 +2626,7 @@ export default function CreatePackagePage() {
                                                                     key={activity.id}
                                                                     variant="outline"
                                                                     className={cn(
-                                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
+                                                                        "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm whitespace-normal break-all text-center justify-center",
                                                                         isSelected
                                                                             ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
                                                                             : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
@@ -2655,7 +2655,7 @@ export default function CreatePackagePage() {
                                                                 key={activity.id}
                                                                 variant="outline"
                                                                 className={cn(
-                                                                    "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm",
+                                                                    "cursor-pointer px-4 py-2 text-sm font-medium transition-all group rounded-full border shadow-sm whitespace-normal break-all text-center justify-center",
                                                                     isSelected
                                                                         ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white border-transparent shadow-[var(--primary-glow)]"
                                                                         : "bg-white/10 backdrop-blur-md text-black border-white/40 hover:bg-white/20 hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"

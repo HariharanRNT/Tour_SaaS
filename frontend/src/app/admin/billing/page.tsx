@@ -180,9 +180,10 @@ export default function AdminBillingPage() {
         const successSubscriptions = subscriptions.filter((s: Subscription) => 
             s.status !== 'pending_payment' && s.status !== 'failed'
         );
+        const successStatuses = ['active', 'upcoming', 'expired', 'completed', 'on_hold'];
         const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active').length;
         const mrr = successSubscriptions
-            .filter((s: Subscription) => s.status === 'active')
+            .filter((s: Subscription) => s.status === 'active' || s.status === 'upcoming')
             .reduce((sum: number, s: Subscription) => {
                 const price = Number(s.plan?.price) || 0;
                 const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
@@ -191,9 +192,12 @@ export default function AdminBillingPage() {
                 return sum + price;
             }, 0);
 
+        const payingCount = successSubscriptions.filter((s: Subscription) => s.status === 'active' || s.status === 'upcoming').length;
+
         return {
             totalSubscriptions: successSubscriptions.length,
             activeSubscriptions: activeCount,
+            payingCount: payingCount,
             mrr: Math.round(mrr),
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
             recentChanges: currentMonthSubscriptions.filter((s: Subscription) => s.status !== 'pending_payment' && s.status !== 'failed').length
@@ -411,7 +415,7 @@ export default function AdminBillingPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <h4 className="text-[36px] font-black text-[#111111] font-['Outfit'] tracking-tighter leading-none">₹{stats.mrr.toLocaleString()}</h4>
-                                    <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">MRR from active plans</p>
+                                    <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">MRR from active & queued plans</p>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-orange-400" />
                             </CardContent>
@@ -544,7 +548,12 @@ export default function AdminBillingPage() {
                                                                 <DropdownMenuSeparator className="my-2 bg-transparent" />
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleDeletePlan(plan.id, plan.name)}
-                                                                    className="rounded-xl font-bold py-3 px-4 text-red-500 focus:bg-red-50 focus:text-red-600"
+                                                                    disabled={subscriberCount > 0}
+                                                                    title={subscriberCount > 0 ? "Cannot delete plan with subscription history. Deactivate it instead." : ""}
+                                                                    className={cn(
+                                                                        "rounded-xl font-bold py-3 px-4 focus:bg-red-50",
+                                                                        subscriberCount > 0 ? "text-slate-400 cursor-not-allowed" : "text-red-500 focus:text-red-600"
+                                                                    )}
                                                                 >
                                                                     <Trash className="h-4 w-4 mr-3" /> Delete
                                                                 </DropdownMenuItem>
@@ -822,7 +831,7 @@ export default function AdminBillingPage() {
                                     {[
                                         { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
                                         { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.payingCount > 0 ? Math.round(stats.mrr / stats.payingCount).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
                                         <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
                                             <div className="flex justify-between items-start mb-4">

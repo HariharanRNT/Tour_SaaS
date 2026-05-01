@@ -30,13 +30,14 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
             const token = localStorage.getItem('token')
             const headers = { 'Authorization': `Bearer ${token}` }
 
-            let queryParams = ''
+            const params = new URLSearchParams();
             if (dateRange?.from) {
-                queryParams += `&start_date=${format(dateRange.from, 'yyyy-MM-dd')}`
+                params.append('start_date', format(dateRange.from, 'yyyy-MM-dd'));
             }
             if (dateRange?.to) {
-                queryParams += `&end_date=${format(dateRange.to, 'yyyy-MM-dd')}`
+                params.append('end_date', format(dateRange.to, 'yyyy-MM-dd'));
             }
+            const queryParams = params.toString();
 
             const [summaryRes, trendsRes, agentRes, planRes, paymentRes] = await Promise.all([
                 fetch(`${API_URL}/api/v1/reports/revenue/summary?${queryParams}`, { headers }),

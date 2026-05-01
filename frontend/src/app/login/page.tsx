@@ -507,15 +507,6 @@ function LoginContent() {
                                                     Are you a traveler?{' '}
                                                     <Link href="/" className="text-black hover:underline">Book your trip here</Link>
                                                 </p>
-
-                                                <div className="mt-2.5 pt-2.5 border-t border-[#FFCBA4]/10 relative">
-                                                    <div className="bg-white/5 backdrop-blur-sm p-2 rounded-[14px] border border-white/10 flex flex-col gap-1.5">
-                                                        <Link href="/register/agent" className="w-full h-9 flex items-center justify-center text-black hover:text-white font-bold text-[12px] bg-white/30 rounded-lg border border-black/20 hover:bg-black transition-all group/agent">
-                                                            Register as Agent
-                                                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                                        </Link>
-                                                    </div>
-                                                </div>
                                             </div>
                                         </form>
                                     </motion.div>

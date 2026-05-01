@@ -530,6 +530,25 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
                                                     </div>
                                                 </div>
+
+                                                {/* Password Requirements */}
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 opacity-80">
+                                                    {[
+                                                        { label: '8+ chars', valid: resetPassword.length >= 8 },
+                                                        { label: 'Uppercase', valid: /[A-Z]/.test(resetPassword) },
+                                                        { label: 'Number', valid: /[0-9]/.test(resetPassword) },
+                                                        { label: 'Special', valid: /[^A-Za-z0-9]/.test(resetPassword) },
+                                                    ].map((req, i) => (
+                                                        <div key={i} className={cn(
+                                                            "flex items-center gap-1 text-[10px] font-bold tracking-tight transition-colors duration-300",
+                                                            req.valid ? "text-green-600" : "text-black/40"
+                                                        )}>
+                                                            {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-black/20" />}
+                                                            {req.label}
+                                                        </div>
+                                                    ))}
+                                                </div>
+
                                                 <div className="space-y-1">
                                                     <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm New Password</label>
                                                     <div className="relative group">

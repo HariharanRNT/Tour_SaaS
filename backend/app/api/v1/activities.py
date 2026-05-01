@@ -125,16 +125,15 @@ async def get_destinations(
         Destination.is_popular,
         Destination.is_active,
         Destination.display_order,
-        over(
-            func.row_number(),
+        func.row_number().over(
             partition_by=func.lower(Destination.name),
-            order_by=Destination.agent_id.desc() # Non-null agent_id comes first
+            order_by=Destination.agent_id.desc().nulls_last() # Non-null agent_id (the specific agent) comes first
         ).label("rn")
     ).where(
         or_(Destination.agent_id == current_user.agent_id, Destination.agent_id == None)
     ).subquery()
     
-    resolved_dest = select(metadata_priority).where(text("rn = 1")).subquery()
+    resolved_dest = select(metadata_priority).where(metadata_priority.c.rn == 1).subquery()
 
     # Get paginated results with metadata and activity counts
     # DRIVE the query from the UNION above ensuring we find cities without activities (like Tokyo)

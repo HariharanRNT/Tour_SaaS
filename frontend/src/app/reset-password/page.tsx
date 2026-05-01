@@ -136,6 +136,25 @@ function ResetPasswordForm() {
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                 </div>
+                
+                {/* Password Requirements */}
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5 px-1 pt-1 opacity-80">
+                    {[
+                        { label: '8+ characters', valid: newPassword.length >= 8 },
+                        { label: 'Uppercase', valid: /[A-Z]/.test(newPassword) },
+                        { label: 'Number', valid: /[0-9]/.test(newPassword) },
+                        { label: 'Special char', valid: /[^A-Za-z0-9]/.test(newPassword) },
+                    ].map((req, i) => (
+                        <div key={i} className={cn(
+                            "flex items-center gap-1 text-[10px] font-bold tracking-tight transition-colors duration-300",
+                            req.valid ? "text-green-600" : "text-gray-400"
+                        )}>
+                            {req.valid ? <CheckCircle className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-gray-300" />}
+                            {req.label}
+                        </div>
+                    ))}
+                </div>
+
                 {/* Strength Meter */}
                 {newPassword && (
                     <div className="px-1 mt-2">
