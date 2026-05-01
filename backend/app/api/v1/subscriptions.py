@@ -279,10 +279,10 @@ async def get_my_subscription(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get current user's subscription history"""
+    """Get current user's subscription history (resolves parent agent for sub-users)"""
     from sqlalchemy.orm import selectinload
     stmt = select(Subscription).where(
-        Subscription.user_id == current_user.id
+        Subscription.user_id == current_user.agent_id_resolved
     ).options(selectinload(Subscription.plan)).order_by(Subscription.created_at.desc())
     
     result = await db.execute(stmt)
@@ -306,7 +306,7 @@ async def check_subscription_expiry(
 
     # Capture current active plan name BEFORE expiry check (for the toast message)
     current_stmt = select(Subscription).where(
-        Subscription.user_id == current_user.id,
+        Subscription.user_id == current_user.agent_id_resolved,
         Subscription.status == 'active'
     ).options(selectinload(Subscription.plan))
     current_active_before = (await db.execute(current_stmt)).scalar_one_or_none()
@@ -320,7 +320,7 @@ async def check_subscription_expiry(
             was_expired = True
 
     # Run auto-activate logic (marks expired → completed, activates next queued)
-    new_active = await SubscriptionService.check_and_auto_activate(current_user.id, db)
+    new_active = await SubscriptionService.check_and_auto_activate(current_user.agent_id_resolved, db)
 
     auto_activated_plan = None
     if was_expired and new_active:
@@ -350,7 +350,7 @@ async def manual_activate_plan(
     from app.services.subscription_service import SubscriptionService
     
     try:
-        activated_sub = await SubscriptionService.manual_activate_upcoming(current_user.id, subscription_id, db)
+        activated_sub = await SubscriptionService.manual_activate_upcoming(current_user.agent_id_resolved, subscription_id, db)
         return activated_sub
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -693,7 +693,7 @@ async def verify_subscription_payment(
 
     # 5. Create Invoice
     new_invoice = Invoice(
-        user_id=current_user.id,
+        user_id=sub.user_id,
         subscription_id=sub.id,
         amount=plan.price,
         status='paid',

@@ -209,8 +209,8 @@ export default function MasterDataSettingsPage() {
                                     {item.icon}
                                 </span>
                             )}
-                            <div className="flex flex-col items-center gap-1">
-                                <span className="text-sm font-bold text-slate-800 text-center leading-tight">
+                            <div className="flex flex-col items-center gap-1 w-full">
+                                <span className="text-sm font-bold text-slate-800 text-center leading-tight w-full px-1" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                                     {item.name}
                                 </span>
                                 {type === 'tag' && item.category_id && (

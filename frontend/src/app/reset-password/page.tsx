@@ -34,7 +34,7 @@ function ResetPasswordForm() {
     const getPasswordStrength = (pass: string) => {
         if (!pass) return 0
         let score = 0
-        if (pass.length >= 8 && pass.length <= 50) score++
+        if (pass.length >= 8 && pass.length <= 14) score++
         if (/[A-Z]/.test(pass)) score++
         if (/[a-z]/.test(pass)) score++
         if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score++
@@ -54,8 +54,8 @@ function ResetPasswordForm() {
             return
         }
 
-        if (newPassword.length < 8 || newPassword.length > 50) {
-            setError('Password must be 8-50 characters')
+        if (newPassword.length < 8 || newPassword.length > 14) {
+            setError('Password must be 8-14 characters')
             return
         }
 
@@ -127,7 +127,7 @@ function ResetPasswordForm() {
                     <Input
                         type={showPassword ? "text" : "password"}
                         value={newPassword}
-                        maxLength={50}
+                        maxLength={14}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
                         className="glass-input h-12 pl-10 pr-10 border-white/20 bg-none focus:bg-white/20 rounded-xl"
@@ -145,7 +145,7 @@ function ResetPasswordForm() {
                 {/* Password Requirements */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 px-1 pt-1 opacity-80">
                     {[
-                        { label: '8-50 chars', valid: newPassword.length >= 8 && newPassword.length <= 50 },
+                        { label: '8-14 chars', valid: newPassword.length >= 8 && newPassword.length <= 14 },
                         { label: 'Uppercase', valid: /[A-Z]/.test(newPassword) },
                         { label: 'Lowercase', valid: /[a-z]/.test(newPassword) },
                         { label: 'Number/Symbol', valid: /[0-9]/.test(newPassword) || /[^A-Za-z0-9]/.test(newPassword) },
@@ -190,7 +190,7 @@ function ResetPasswordForm() {
                     <Input
                         type={showPassword ? "text" : "password"}
                         value={confirmPassword}
-                        maxLength={50}
+                        maxLength={14}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         className={cn(

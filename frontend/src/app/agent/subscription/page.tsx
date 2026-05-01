@@ -52,18 +52,14 @@ interface Subscription {
 export default function SubscriptionPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { refreshUser } = useAuth();
-
-    // Check if sub-user (they shouldn't be here)
+    const { refreshUser, hasPermission, isSubUser } = useAuth();
+    
+    // Check permissions
     useEffect(() => {
-        const userStr = localStorage.getItem('user')
-        if (userStr) {
-            const user = JSON.parse(userStr)
-            if (user.role?.toLowerCase() === 'sub_user') {
-                router.push('/agent/dashboard')
-            }
+        if (isSubUser && !hasPermission('billing', 'view')) {
+            router.push('/agent/dashboard');
         }
-    }, [router])
+    }, [isSubUser, hasPermission, router]);
 
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [activatingId, setActivatingId] = useState<string | null>(null);
@@ -595,7 +591,10 @@ export default function SubscriptionPage() {
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button className="bg-white/60 backdrop-blur-sm text-violet-700 hover:bg-white/80 border border-white/70 shadow-sm font-semibold group rounded-full">
+                                            <Button 
+                                                className="bg-white/60 backdrop-blur-sm text-violet-700 hover:bg-white/80 border border-white/70 shadow-sm font-semibold group rounded-full"
+                                                disabled={isSubUser && !hasPermission('billing', 'edit')}
+                                            >
                                                 Manage Plan
                                                 <ChevronDown className="ml-2 h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
                                             </Button>
@@ -750,7 +749,7 @@ export default function SubscriptionPage() {
                                             </div>
                                             <Button
                                                 onClick={() => handleActivate(sub.id)}
-                                                disabled={activatingId === sub.id}
+                                                disabled={activatingId === sub.id || (isSubUser && !hasPermission('billing', 'edit'))}
                                                 variant="outline"
                                                 className="border-purple-600 text-purple-700 hover:bg-purple-100"
                                             >
@@ -797,26 +796,7 @@ export default function SubscriptionPage() {
                                         </div>
 
                                         <div className="flex flex-wrap items-center gap-3 md:justify-end">
-                                            <Button
-                                                onClick={() => handleActivate(sub.id, true)}
-                                                disabled={activatingId === sub.id}
-                                                className="bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 shadow-md border-0"
-                                            >
-                                                {activatingId === sub.id ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
-                                                Resume Now
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                className="bg-white border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-                                            >
-                                                Change Date
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                className="text-amber-700 hover:bg-amber-100 hover:text-amber-900"
-                                            >
-                                                Cancel Pause
-                                            </Button>
+                                            {/* Buttons removed as per request */}
                                         </div>
                                     </div>
                                 </div>
@@ -1017,7 +997,7 @@ export default function SubscriptionPage() {
                                                     : 'bg-white hover:bg-transparent text-[var(--color-primary-font)] border-2 border-slate-100 hover:border-slate-200 shadow-none'
                                                     }`}
                                                 onClick={() => handlePurchase(plan)}
-                                                disabled={processingId === plan.id}
+                                                disabled={processingId === plan.id || (isSubUser && !hasPermission('billing', 'edit'))}
                                             >
                                                 {processingId === plan.id ? <Loader2 className="animate-spin mr-2" /> : null}
                                                 {activeSub

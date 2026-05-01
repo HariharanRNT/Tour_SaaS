@@ -819,7 +819,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="agency_name"
                                                             required
-                                                            maxLength={50}
+                                                            maxLength={200}
                                                             placeholder="Your Travel Agency"
                                                             value={newAgent.agency_name}
                                                             onChange={e => {
@@ -834,7 +834,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="company_legal_name"
                                                             required
-                                                            maxLength={50}
+                                                            maxLength={200}
                                                             placeholder="Legal entity name"
                                                             value={newAgent.company_legal_name}
                                                             onChange={e => {
@@ -851,7 +851,7 @@ export default function AdminAgentsPage() {
                                                         <Input
                                                             id="domain"
                                                             required
-                                                            maxLength={50}
+                                                            maxLength={100}
                                                             placeholder="example.com"
                                                             value={newAgent.domain}
                                                             onChange={e => {
@@ -876,7 +876,7 @@ export default function AdminAgentsPage() {
                                                     <Input
                                                         id="business_address"
                                                         required
-                                                        maxLength={200}
+                                                        maxLength={500}
                                                         placeholder="Street address, building, floor"
                                                         value={newAgent.business_address}
                                                         onChange={e => {
@@ -1000,7 +1000,7 @@ export default function AdminAgentsPage() {
                                                                 id="email"
                                                                 type="email"
                                                                 required
-                                                                maxLength={50}
+                                                                maxLength={250}
                                                                 placeholder="agent@company.com"
                                                                 value={newAgent.email}
                                                                 onChange={e => {

@@ -139,6 +139,19 @@ async def create_agent_package(
     try:
         logger.info(f"Creating package for agent {current_agent.agent_id}: {package_data.dict()}")
         
+        # Check for existing package with same title for this agent (case-insensitive)
+        from sqlalchemy import func
+        stmt = select(Package).where(
+            func.lower(Package.title) == func.lower(package_data.title),
+            Package.created_by == current_agent.agent_id
+        )
+        result = await db.execute(stmt)
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A package with the name '{package_data.title}' already exists."
+            )
+        
         # Generate unique slug (and ID manually to allow re-fetching safely)
         package_id = uuid.uuid4()
         from app.services.package_service import PackageService
@@ -261,6 +274,9 @@ async def create_agent_package(
         created_package = result.scalar_one()
         
         return created_package
+    except HTTPException:
+        await db.rollback()
+        raise
     except Exception as e:
         logger.error(f"Error creating package: {str(e)}", exc_info=True)
         await db.rollback()
@@ -321,6 +337,21 @@ async def update_agent_package(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Package not found"
         )
+        
+    # Check for duplicate title if being updated
+    if package_data.title and package_data.title != package.title:
+        from sqlalchemy import func
+        stmt = select(Package).where(
+            func.lower(Package.title) == func.lower(package_data.title),
+            Package.created_by == current_agent.agent_id,
+            Package.id != package_id
+        )
+        result = await db.execute(stmt)
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A package with the name '{package_data.title}' already exists."
+            )
     
     # Update fields
     update_data = package_data.dict(exclude_unset=True)

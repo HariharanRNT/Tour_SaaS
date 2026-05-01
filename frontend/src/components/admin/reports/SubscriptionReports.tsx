@@ -36,14 +36,18 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
             if (dateRange?.to) {
                 params.append('end_date', format(dateRange.to, 'yyyy-MM-dd'));
             }
-            const queryParams = params.toString();
+            const queryParams = params.toString() ? `?${params.toString()}` : '';
+            
+            const trendsParams = new URLSearchParams(params);
+            trendsParams.set('period', 'month');
+            const trendsQueryParams = `?${trendsParams.toString()}`;
 
             // Fetch all subscription reports
             const [summaryRes, trendsRes, plansRes, renewalsRes] = await Promise.all([
-                fetch(`${API_URL}/api/v1/reports/subscriptions/summary?${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/subscriptions/trends?period=month${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/subscriptions/plans?${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/subscriptions/renewals?${queryParams}`, { headers })
+                fetch(`${API_URL}/api/v1/reports/subscriptions/summary${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/trends${trendsQueryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/plans${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/subscriptions/renewals${queryParams}`, { headers })
             ])
 
             if (summaryRes.ok) setSummary(await summaryRes.json())

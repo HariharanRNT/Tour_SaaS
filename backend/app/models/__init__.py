@@ -190,15 +190,23 @@ class User(Base):
     
     @property
     def subscription_status(self):
-        if not self.subscription:
+        target = self
+        if self.role == UserRole.SUB_USER and self.sub_user_profile and self.sub_user_profile.agent:
+            target = self.sub_user_profile.agent
+            
+        if not target.subscription:
             return None
-        return self.subscription.status
+        return target.subscription.status
 
     @property
     def subscription_end_date(self):
-        if not self.subscription:
+        target = self
+        if self.role == UserRole.SUB_USER and self.sub_user_profile and self.sub_user_profile.agent:
+            target = self.sub_user_profile.agent
+            
+        if not target.subscription:
             return None
-        return self.subscription.end_date
+        return target.subscription.end_date
 
     @property
     def sub_user_id(self):

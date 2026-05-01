@@ -736,10 +736,13 @@ export default function AdminBillingPage() {
                                                                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap",
                                                                     sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" :
                                                                         (sub.status === 'cancelled' || sub.status === 'failed' || sub.status === 'pending_payment') ? "bg-red-400/10 text-red-600 border-red-400/20" :
-                                                                            sub.status === 'expired' ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
+                                                                            (sub.status === 'expired' || sub.status === 'completed') ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
                                                                                 "bg-amber-400/10 text-amber-600 border-amber-400/20"
                                                                 )}>
-                                                                    {sub.status === 'pending_payment' ? 'Failed' : sub.status.replace('_', ' ')}
+                                                                    {sub.status === 'pending_payment' ? 'Failed' : 
+                                                                     sub.status === 'upcoming' ? 'Queue' : 
+                                                                     sub.status === 'completed' ? 'Expired' : 
+                                                                     sub.status.replace('_', ' ')}
                                                                 </span>
                                                             </TableCell>
                                                             <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
@@ -830,7 +833,7 @@ export default function AdminBillingPage() {
                                     {[
                                         { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
                                         { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.totalSubscriptions > 0 ? Math.round(stats.totalRevenue / stats.totalSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.totalRevenue / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
                                         <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
                                             <div className="flex justify-between items-start mb-4">

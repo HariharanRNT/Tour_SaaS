@@ -57,7 +57,7 @@ async def get_current_user(
         selectinload(User.customer_profile).selectinload(Customer.agent),
         selectinload(User.sub_user_profile).options(
             selectinload(SubUser.permissions),
-            selectinload(SubUser.agent)
+            selectinload(SubUser.agent).selectinload(User.subscription)
         ),
         selectinload(User.subscription)
     )

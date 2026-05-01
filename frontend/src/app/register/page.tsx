@@ -53,7 +53,7 @@ export default function RegisterPage() {
 
         // Password Strength Calculation (0-4)
         let strength = 0
-        if (formData.password.length >= 8 && formData.password.length <= 50) strength++
+        if (formData.password.length >= 8 && formData.password.length <= 14) strength++
         if (/[A-Z]/.test(formData.password)) strength++
         if (/[a-z]/.test(formData.password)) strength++
         if (/[0-9]/.test(formData.password) || /[^A-Za-z0-9]/.test(formData.password)) strength++
@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
     const getPasswordRequirements = () => {
         return [
-            { label: '8-50 characters', valid: formData.password.length >= 8 && formData.password.length <= 50 },
+            { label: '8-14 characters', valid: formData.password.length >= 8 && formData.password.length <= 14 },
             { label: 'Uppercase letter', valid: /[A-Z]/.test(formData.password) },
             { label: 'Lowercase letter', valid: /[a-z]/.test(formData.password) },
             { label: 'Number or Symbol', valid: /[0-9]/.test(formData.password) || /[^A-Za-z0-9]/.test(formData.password) },
@@ -77,7 +77,7 @@ export default function RegisterPage() {
         return (
             emailValid &&
             formData.password.length >= 8 &&
-            formData.password.length <= 50 &&
+            formData.password.length <= 14 &&
             /[A-Z]/.test(formData.password) &&
             /[a-z]/.test(formData.password) &&
             formData.email.length <= 250 &&
@@ -323,7 +323,7 @@ export default function RegisterPage() {
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={formData.password}
-                                                    maxLength={50}
+                                                    maxLength={14}
                                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                     placeholder="Security Password"
                                                     className="h-10 pl-10 pr-10 bg-orange-50/30 border-orange-100/50 rounded-xl focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/5 transition-all text-sm font-medium placeholder:text-black/60"
