@@ -248,11 +248,12 @@ async def create_booking(
                     is_gst_inclusive = (package.gst_mode == 'inclusive')
 
         # 3. Final Total Calculation
+        gst_amount = 0.0
         if gst_applicable:
             if is_gst_inclusive:
-                # GST is already in the package price
+                # GST is calculated as a percentage of the total price (Tax on Gross)
+                gst_amount = subtotal * (gst_percentage / 100)
                 total_amount = subtotal
-                # Note: We don't change total_amount here, it's already subtotal
             else:
                 # GST must be added on top
                 gst_amount = subtotal * (gst_percentage / 100)
@@ -260,6 +261,10 @@ async def create_booking(
         else:
             # No GST applicable
             total_amount = subtotal
+            gst_amount = 0.0
+        
+        # Calculate base_amount (Revenue for agent after tax)
+        base_amount = total_amount - gst_amount
         
         # Generate booking reference
         booking_reference = generate_booking_reference()
@@ -296,6 +301,11 @@ async def create_booking(
             status=BookingStatus.PENDING,
             payment_status=PaymentStatus.PENDING,
             agent_id=effective_agent_id,
+            # GST breakdown at time of booking
+            gst_percentage=gst_percentage if gst_applicable else 0,
+            gst_amount=gst_amount if gst_applicable else 0,
+            is_gst_inclusive=is_gst_inclusive,
+            base_amount=base_amount, # Amount after subtracting tax
             # Track the actual person who made the booking (agent/sub-user)
             booked_by_user_id=(
                 current_user.id

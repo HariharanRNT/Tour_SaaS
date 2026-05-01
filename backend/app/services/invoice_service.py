@@ -207,18 +207,31 @@ class InvoiceService:
                         is_gst_inclusive = (package.gst_mode == 'inclusive')
 
             # 3. Calculate Split for Invoice Display
-            if not gst_applicable or gst_percentage == 0:
-                base_price = total_amount
-                gst_amount = 0.0
-                display_gst_rate = 0
-                gst_label = "GST"
+            # Prioritize stored values from the booking
+            if hasattr(booking, 'gst_percentage') and booking.gst_percentage is not None and \
+               hasattr(booking, 'gst_amount') and booking.gst_amount is not None and \
+               hasattr(booking, 'base_amount') and booking.base_amount is not None:
+                gst_percentage = float(booking.gst_percentage)
+                gst_amount = float(booking.gst_amount)
+                base_price = float(booking.base_amount)
+                is_gst_inclusive = getattr(booking, 'is_gst_inclusive', is_gst_inclusive)
+                gst_applicable = gst_percentage > 0
             else:
-                # Math is the same for both inclusive/exclusive once total_amount is known
-                # We derive base from total
-                base_price = total_amount / (1 + (gst_percentage / 100))
-                gst_amount = total_amount - base_price
-                display_gst_rate = gst_percentage
-                gst_label = f"GST ({gst_percentage}%) {'(Included)' if is_gst_inclusive else '(Added)'}"
+                # Fallback logic for legacy data or missing fields
+                if not gst_applicable or gst_percentage == 0:
+                    base_price = total_amount
+                    gst_amount = 0.0
+                else:
+                    if is_gst_inclusive:
+                        # New logic: Tax on Gross
+                        gst_amount = total_amount * (gst_percentage / 100)
+                    else:
+                        # Exclusive logic: Tax extracted from total
+                        gst_amount = total_amount - (total_amount / (1 + (gst_percentage / 100)))
+                    base_price = total_amount - gst_amount
+
+            display_gst_rate = gst_percentage
+            gst_label = f"GST ({gst_percentage}%) {'(Included)' if is_gst_inclusive else '(Added)'}"
             
             # Use base_price for the line item as well to show clear breakdown
             line_item_amount = base_price

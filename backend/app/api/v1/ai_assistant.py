@@ -17,7 +17,9 @@ from app.schemas.ai_assistant_schemas import (
     PackageGenerationRequest,
     PackageGenerationResponse,
     ConversationHistoryResponse,
-    ChatMessage
+    ChatMessage,
+    FilterExtractionRequest,
+    FilterExtractionResponse
 )
 from app.core.redis import get_redis
 from app.api.deps import get_current_agent, get_optional_current_user
@@ -301,4 +303,31 @@ async def delete_conversation(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting conversation: {str(e)}"
+        )
+
+
+@router.post("/extract-filters", response_model=FilterExtractionResponse)
+async def extract_search_filters(
+    request: FilterExtractionRequest
+):
+    """
+    Extract search filters from natural language query using Gemini
+    """
+    try:
+        result = await gemini_service.extract_search_filters(request.query)
+        
+        if not result.get("success"):
+            return FilterExtractionResponse(
+                success=False,
+                error=result.get("error", "Failed to extract filters")
+            )
+            
+        return FilterExtractionResponse(
+            success=True,
+            filters=result.get("filters")
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error extracting filters: {str(e)}"
         )

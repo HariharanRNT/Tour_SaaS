@@ -81,6 +81,9 @@ async def create_agent(
     )
     db.add(new_agent_user)
     await db.flush()
+    
+    # Set agent_id to self
+    new_agent_user.agent_id = new_agent_user.id
 
     new_agent_profile = Agent(
         user_id=new_agent_user.id,

@@ -87,8 +87,14 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     
     # Google Gemini AI
-    GEMINI_API_KEY: str = ""
+    GEMINI_API_KEYS: str = "" # Comma separated list of keys
     GEMINI_MODEL: str = "gemini-2.5-flash"
+    
+    @property
+    def gemini_api_key_list(self) -> List[str]:
+        if not self.GEMINI_API_KEYS:
+            return []
+        return [k.strip() for k in self.GEMINI_API_KEYS.split(",") if k.strip()]
     
     # Pexels API
     PEXELS_API_KEY: str = ""

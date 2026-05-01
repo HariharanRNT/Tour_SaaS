@@ -680,18 +680,20 @@ async def get_agent_financial_report(
             if b.status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] and b.payment_status == PaymentStatus.SUCCEEDED:
                 stats["total_bookings"] += 1
                 amount = float(b.total_amount)
-                amount = float(b.total_amount)
                 stats["gross_revenue"] += amount
                 
-                # GST Calculation (simulating the breakdown)
-                # If total_amount was inclusive, taxes = total * (gst / (100+gst))
-                # If total_amount was exclusive, total = base + tax -> tax = total - (total / (1 + (gst/100)))
-                # Since we don't store if a specific booking was inclusive/exclusive, we use agent default
+                # GST Calculation: Use stored values
                 tax = 0.0
-                if default_inclusive:
-                    tax = amount * (default_gst / (100 + default_gst))
+                if b.gst_amount is not None:
+                    tax = float(b.gst_amount)
                 else:
-                    tax = amount - (amount / (1 + (default_gst / 100)))
+                    # Fallback
+                    if default_inclusive:
+                        # Tax on Gross for inclusive
+                        tax = amount * (default_gst / 100)
+                    else:
+                        # Extract tax from total for exclusive
+                        tax = amount - (amount / (1 + (default_gst / 100)))
                 
                 stats["taxes"] += tax
                 stats["net_revenue"] += (amount - 0.0) # gross - discounts

@@ -990,6 +990,11 @@ class BookingResponse(BaseModel):
     refund_amount: Optional[Decimal] = None
     cancelled_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    # GST Snapshot Fields
+    gst_percentage: Optional[Decimal] = None
+    gst_amount: Optional[Decimal] = None
+    is_gst_inclusive: Optional[bool] = None
+    base_amount: Optional[Decimal] = None
     travelers: List[TravelerResponse] = []
     
     class Config:

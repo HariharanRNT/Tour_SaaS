@@ -2093,11 +2093,9 @@ export default function CreatePackagePage() {
                                                     ) : (formData.gst_applicable && formData.gst_mode === 'inclusive') ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
-                                                            <span className="text-black opacity-50 line-through text-sm">₹{(formData.price_per_person + (formData.price_per_person * formData.gst_percentage / 100)).toLocaleString('en-IN')}</span>
-                                                            <ArrowRight className="w-3 h-3 text-[var(--primary)]" />
                                                             <span className="font-bold text-black">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'black' }}>
-                                                                Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST
+                                                                Includes ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
                                                         </div>
                                                     ) : (

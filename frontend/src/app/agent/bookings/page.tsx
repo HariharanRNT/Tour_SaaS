@@ -1192,13 +1192,37 @@ export default function AgentBookingsPage() {
                                                 </div>
                                                 <div className="h-px bg-white/10" />
                                                 {(() => {
-                                                    const pkg = booking.package;
-                                                    const gstRate = pkg?.gst_percentage ?? agentSettings?.gst_percentage ?? 18;
-                                                    const isGstApplicable = pkg?.gst_applicable ?? agentSettings?.gst_applicable ?? true;
-                                                    
-                                                    const total = booking.total_amount || 0;
-                                                    const basePrice = isGstApplicable ? (total / (1 + (gstRate / 100))) : total;
-                                                    const gstAmt = total - basePrice;
+                                                    // 1. Use stored values from booking if available (Historical Data)
+                                                    let gstRate = booking.gst_percentage;
+                                                    let isGstInclusive = booking.is_gst_inclusive;
+                                                    let gstAmt = booking.gst_amount;
+                                                    let basePrice = booking.base_amount;
+
+                                                    // 2. Fallback for legacy data (should be handled by migration but just in case)
+                                                    if (gstRate === undefined || gstAmt === undefined || basePrice === undefined) {
+                                                        const pkg = booking.package;
+                                                        const fallbackRate = pkg?.gst_percentage ?? agentSettings?.gst_percentage ?? 18;
+                                                        const isGstApplicable = pkg?.gst_applicable ?? agentSettings?.gst_applicable ?? true;
+                                                        const isInclusive = pkg?.gst_mode === 'inclusive' || (agentSettings?.gst_inclusive ?? false);
+                                                        
+                                                        const total = booking.total_amount || 0;
+                                                        
+                                                        if (!isGstApplicable) {
+                                                            gstRate = 0;
+                                                            gstAmt = 0;
+                                                            basePrice = total;
+                                                        } else {
+                                                            gstRate = fallbackRate;
+                                                            if (isInclusive) {
+                                                                // New logic: Tax on Gross
+                                                                gstAmt = total * (fallbackRate / 100);
+                                                            } else {
+                                                                // Exclusive logic: Tax extracted from total (Total = Base + Tax)
+                                                                gstAmt = total - (total / (1 + (fallbackRate / 100)));
+                                                            }
+                                                            basePrice = total - gstAmt;
+                                                        }
+                                                    }
 
                                                     return (
                                                         <>
@@ -1212,7 +1236,10 @@ export default function AgentBookingsPage() {
                                                             <div className="flex justify-between items-center font-bold">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                                                                    <span className="text-sm text-slate-300">Taxes & Service Fees ({isGstApplicable ? `${gstRate}%` : 'N/A'})</span>
+                                                                    <span className="text-sm text-slate-300">
+                                                                        Taxes & Service Fees ({gstRate !== undefined ? `${gstRate}%` : 'N/A'}) 
+                                                                        {isGstInclusive !== undefined && <span className="ml-1 opacity-60">({isGstInclusive ? 'Inclusive' : 'Exclusive'})</span>}
+                                                                    </span>
                                                                 </div>
                                                                 <span className="text-slate-100 font-mono">₹{(gstAmt || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                             </div>

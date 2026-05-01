@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,54 +16,6 @@ const ALLOWED_ACTIVITIES = [
   'Photography', 'Festivals', 'Sightseeing', 'Shopping',
   'Cruise', 'Wildlife', 'Adventure Sports', 'Hiking'
 ]
-
-// ─────────────────────────────────────────────────────────────────────────────
-// System prompt — deterministic JSON extraction
-// ─────────────────────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a travel package filter extraction engine for a tour booking platform.
-Your ONLY job is to parse a user's natural-language travel query and return a single valid JSON object — no markdown, no explanation, no extra text, just the raw JSON.
-
-Extract the following fields. Use null for any field not mentioned or unclear:
-
-{
-  "destination": string | null,
-  "country": string | null,
-  "minBudget": number | null,
-  "maxBudget": number | null,
-  "minDays": number | null,
-  "maxDays": number | null,
-  "nights": number | null,
-  "tripStyle": string[] | null,
-  "activities": string[] | null,
-  "packageType": "single_city" | "multi_city" | null,
-  "travelMonth": string | null,
-  "groupSize": number | null
-}
-
-Rules:
-- If user says "4 days", set minDays=4 and maxDays=4.
-- If user says "4-6 days", set minDays=4 and maxDays=6.
-- If user says "minimum ₹17000 budget", set minBudget=17000 and maxBudget=null.
-- If user says "5-7 nights", set minDays=5 and maxDays=7 (treat nights as days).
-- Always return valid JSON. Never return explanatory prose.
-- If the entire query is unrelated to travel, return: {"error": "not_travel_query"}`
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Safe JSON parsing — handles Gemini's occasional markdown fences / extra text
-// ─────────────────────────────────────────────────────────────────────────────
-function safeParseJSON(text: string): Record<string, any> {
-  const trimmed = text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '')
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    // Try to extract by finding the outermost {...}
-    const match = trimmed.match(/\{[\s\S]*\}/)
-    if (match) {
-      return JSON.parse(match[0])
-    }
-    throw new Error('Invalid AI response — could not extract JSON')
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Whitelist normalizer — filters out values not in our allowed lists
@@ -95,56 +46,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query too long (max 500 characters)' }, { status: 400 })
     }
 
-    // ── 2. Gemini API key check ─────────────────────────────────────────────
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      console.error('GEMINI_API_KEY is not set')
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 })
-    }
-
-    // ── 3. Call Gemini ──────────────────────────────────────────────────────
-    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: geminiModel,
-      systemInstruction: SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json',
-      }
-    })
-
-    const result = await model.generateContent(query)
-    const rawText = result.response.text()
-
-    // ── 4. Safe parse ───────────────────────────────────────────────────────
-    let parsed: Record<string, any>
+    // ── 2. Call Backend Gemini ──────────────────────────────────────────────
+    // Instead of calling Google SDK directly here, we call our backend
+    // which has the API key and logic.
+    let parsed: any;
     try {
-      parsed = safeParseJSON(rawText)
-    } catch (e) {
-      console.error('JSON parse failed:', rawText)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ai-assistant/extract-filters`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Backend extraction failed')
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'AI extraction failed')
+      }
+
+      parsed = result.filters
+    } catch (e: any) {
+      console.error('AI extraction error:', e)
       return NextResponse.json(
-        { error: 'AI returned an unreadable response. Please try again.' },
+        { error: e.message || 'Failed to process AI request' },
         { status: 502 }
       )
     }
 
-    // ── 5. Not a travel query ───────────────────────────────────────────────
+    // ── 3. Not a travel query ───────────────────────────────────────────────
     if (parsed.error === 'not_travel_query') {
       return NextResponse.json({ error: 'not_travel_query' }, { status: 422 })
     }
 
-    // ── 6. Whitelist normalization ──────────────────────────────────────────
+    // ── 4. Whitelist normalization ──────────────────────────────────────────
     parsed.tripStyle = normalizeArray(parsed.tripStyle, ALLOWED_TRIP_STYLES)
     parsed.activities = normalizeArray(parsed.activities, ALLOWED_ACTIVITIES)
-
-    // ── 7. Budget per-person normalization ──────────────────────────────────
-    // Our packages show price_per_person, so if groupSize is given,
-    // divide budgets so filters match correctly.
-    // Strategy: keep budget as-is (per package) since plan-trip filters
-    // compare against price_per_person. Group-size division is optional.
-    // We explicitly do NOT divide here — prices on the platform are per-person already.
-    // Store groupSize for banner display.
 
     return NextResponse.json({ filters: parsed })
   } catch (err: any) {

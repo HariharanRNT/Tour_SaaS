@@ -712,34 +712,40 @@ async def get_agent_financial_report(
                 stats["gross_revenue"] += amount
                 stats["refund_amount"] += refund
                 
-                # GST Calculation
-                # Tax should be calculated on the net amount (amount - refund)
-                net_amount = amount - refund
+                # GST Calculation: Use stored values if available, fallback to package/agent settings only if missing
                 tax = 0.0
-                
-                # Determine effective GST settings for this booking/package
-                pkg = b.package
-                if pkg:
-                    # Priority: 1. Package Settings (if not None) -> 2. Agent Settings (default_gst_applicable)
-                    gst_applicable = pkg.gst_applicable if pkg.gst_applicable is not None else default_gst_applicable
-                    
-                    if gst_applicable:
-                        gst_percentage = float(pkg.gst_percentage if pkg.gst_percentage is not None else default_gst)
-                        # gst_mode: 'inclusive' or 'exclusive'
-                        gst_mode = pkg.gst_mode if pkg.gst_mode is not None else ('inclusive' if default_inclusive else 'exclusive')
-                        
-                        # Calculation: tax = total - (total / (1 + gst/100))
-                        # This works for both inclusive and exclusive because total_amount in DB is the final price paid by customer.
-                        if gst_percentage > 0:
-                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100)))
+                if b.gst_amount is not None:
+                    # If there's a refund, we pro-rate the tax reduction
+                    # (Assuming tax in DB is for the full amount)
+                    full_tax = float(b.gst_amount)
+                    if amount > 0:
+                        tax = full_tax * ((amount - refund) / amount)
+                    else:
+                        tax = 0.0
                 else:
-                    # Fallback if package is missing
-                    if default_gst_applicable and default_gst > 0:
-                        tax = net_amount - (net_amount / (1 + (default_gst / 100)))
+                    # Fallback logic for legacy data (though migration should have handled it)
+                    net_amount = amount - refund
+                    pkg = b.package
+                    gst_percentage = 0.0
+                    if pkg:
+                        gst_percentage = float(pkg.gst_percentage if pkg.gst_percentage is not None else default_gst)
+                    else:
+                        gst_percentage = default_gst
+                    
+                    gst_mode = pkg.gst_mode if (pkg and pkg.gst_mode) else ('inclusive' if default_inclusive else 'exclusive')
+                    
+                    if gst_percentage > 0:
+                        if gst_mode == 'inclusive':
+                            # New logic: Tax is a flat percentage of the total
+                            tax = net_amount * (gst_percentage / 100)
+                        else:
+                            # Exclusive logic: net_amount is Total (Base + Tax)
+                            # Tax = Total - (Total / (1 + Rate/100))
+                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100)))
                 
                 stats["taxes"] += tax
-                stats["net_revenue"] += net_amount
-                stats["final_earnings"] += (net_amount - tax)
+                stats["net_revenue"] += (amount - refund)
+                stats["final_earnings"] += (amount - refund - tax)
 
         # Convert to list and sort by date desc
         report_list = list(financial_data.values())

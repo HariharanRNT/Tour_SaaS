@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Optional
 from sqlalchemy import (
     Column, String, Boolean, Integer, Text, Date, DateTime, Numeric, Float,
-    ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint, CheckConstraint
+    ForeignKey, Enum as SQLEnum, ARRAY, text, JSON, UniqueConstraint, CheckConstraint, Index
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -78,7 +78,8 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, index=True, nullable=False)
+    agent_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(SQLEnum(UserRole, native_enum=False), default=UserRole.CUSTOMER, nullable=False)
     email_verified = Column(Boolean, default=False)
@@ -90,6 +91,22 @@ class User(Base):
     # Google Auth
     google_id = Column(String, unique=True, index=True, nullable=True)
     profile_picture_url = Column(String, nullable=True)
+
+    __table_args__ = (
+        Index(
+            "uq_user_email_global",
+            "email",
+            unique=True,
+            postgresql_where=text("role != 'CUSTOMER'")
+        ),
+        Index(
+            "uq_user_email_agent",
+            "email",
+            "agent_id",
+            unique=True,
+            postgresql_where=text("role = 'CUSTOMER'")
+        ),
+    )
 
     # Proxy Properties
     @property
@@ -117,20 +134,20 @@ class User(Base):
         return getattr(self.profile, 'domain', None) if self.profile else None
 
     @property
-    def agent_id(self):
-        """Returns the ID of the agent/agency this user belongs to."""
+    def agent_id_resolved(self):
+        """
+        Legacy property to resolve agent_id. 
+        Prefer using the actual agent_id column.
+        """
+        if self.agent_id:
+            return self.agent_id
+            
         if self.role == UserRole.AGENT:
             return self.id
         
         # Check for JWT-injected agent_id (set in deps.py)
         if hasattr(self, '_sub_user_agent_id') and self._sub_user_agent_id:
             return self._sub_user_agent_id
-            
-        # Fallback to profile (for Customer or SubUser)
-        if self.role == UserRole.SUB_USER and self.sub_user_profile:
-            return self.sub_user_profile.agent_id
-        if self.role == UserRole.CUSTOMER and self.customer_profile:
-            return self.customer_profile.agent_id
             
         return None
 
@@ -565,6 +582,12 @@ class Booking(Base):
     special_requests = Column(Text, nullable=True)
     tripjack_booking_id = Column(String(50), nullable=True)
     enquiry_id = Column(UUID(as_uuid=True), ForeignKey("enquiries.id"), nullable=True, unique=True)
+    
+    # GST / Tax breakdown at time of booking
+    gst_percentage = Column(Numeric(5, 2), nullable=True)
+    gst_amount = Column(Numeric(10, 2), nullable=True)
+    is_gst_inclusive = Column(Boolean, default=False)
+    base_amount = Column(Numeric(10, 2), nullable=True) # total_amount - gst_amount (if exclusive) or total_amount - gst_amount (if inclusive)
     
     # Flight selection details (for booking intent)
     flight_origin = Column(String(50), nullable=True)

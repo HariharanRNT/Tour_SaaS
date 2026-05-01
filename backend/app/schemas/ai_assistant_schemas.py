@@ -97,3 +97,15 @@ class ConversationHistoryResponse(BaseModel):
     messages: List[ChatMessage]
     created_at: datetime
     updated_at: datetime
+
+
+class FilterExtractionRequest(BaseModel):
+    """Request to extract filters from query"""
+    query: str = Field(..., min_length=1, max_length=1000)
+
+
+class FilterExtractionResponse(BaseModel):
+    """Response from filter extraction"""
+    success: bool
+    filters: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None

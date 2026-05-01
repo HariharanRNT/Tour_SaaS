@@ -101,20 +101,32 @@ async def quick_create_customer(
     if not agent_id:
         raise HTTPException(status_code=403, detail="Could not resolve parent agent.")
 
-    # Check email not already registered
-    result = await db.execute(select(User).where(User.email == data.email))
+    # Check email not already registered for THIS agent
+    result = await db.execute(
+        select(User).where(
+            User.email == data.email,
+            User.role == UserRole.CUSTOMER,
+            User.agent_id == agent_id
+        )
+    )
     existing = result.scalar_one_or_none()
     if existing:
-        if existing.role == UserRole.CUSTOMER:
-            raise HTTPException(
-                status_code=409,
-                detail="Customer already exists. Please search and select them."
-            )
-        else:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Email is already registered as {existing.role.value}. Cannot create as customer."
-            )
+        raise HTTPException(
+            status_code=409,
+            detail="Customer already exists for your agency. Please search and select them."
+        )
+    
+    # Check if email exists as a non-customer (global uniqueness)
+    non_customer_stmt = select(User).where(
+        User.email == data.email,
+        User.role != UserRole.CUSTOMER
+    )
+    non_customer_res = await db.execute(non_customer_stmt)
+    if non_customer_res.scalar_one_or_none():
+         raise HTTPException(
+            status_code=409,
+            detail=f"This email is already registered as an Agent or Sub-User."
+        )
 
     # Generate temp password
     temp_password = _generate_temp_password()
@@ -124,6 +136,7 @@ async def quick_create_customer(
         email=data.email,
         password_hash=get_password_hash(temp_password),
         role=UserRole.CUSTOMER,
+        agent_id=agent_id,
         is_active=True,
         email_verified=True,  # Created by agent — treat as verified
     )
@@ -214,20 +227,27 @@ async def create_customer(
     current_agent: User = Depends(check_permission("customers", "edit"))
 ):
     """Create a new customer for the agent (full form with password)"""
-    # Check if user already exists
-    result = await db.execute(select(User).where(User.email == user_data.email))
+    agent_id = _resolve_agent_id(current_agent)
+
+    # Check if user already exists for THIS agent
+    result = await db.execute(
+        select(User).where(
+            User.email == user_data.email,
+            User.role == UserRole.CUSTOMER,
+            User.agent_id == agent_id
+        )
+    )
     existing_user = result.scalar_one_or_none()
     
     if existing_user:
-        raise ConflictException("this email has already registered")
-    
-    agent_id = _resolve_agent_id(current_agent)
+        raise ConflictException("this email has already registered with your agency")
 
     # Create new customer associated with the agent
     user = User(
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
         role=UserRole.CUSTOMER,
+        agent_id=agent_id,
         is_active=True,
         email_verified=True  # Assume verified since created by agent
     )
