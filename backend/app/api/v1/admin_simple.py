@@ -28,25 +28,25 @@ async def get_dashboard_stats(
 ):
     """Get aggregated stats for admin dashboard with date filtering"""
     try:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         
         # Calculate Date Filters
         filter_start = None
         filter_end = None
         
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if filter_type == '1D':
-            filter_start = now - timedelta(days=1)
+            filter_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         elif filter_type == '7D':
-            filter_start = now - timedelta(days=7)
+            filter_start = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         elif filter_type == '30D':
-            filter_start = now - timedelta(days=30)
+            filter_start = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
         elif filter_type == 'CUSTOM' and start_date:
             try:
-                filter_start = datetime.strptime(start_date, "%Y-%m-%d")
+                filter_start = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
                 if end_date:
-                    filter_end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1) # Include full end day
+                    filter_end = (datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)).replace(tzinfo=timezone.utc)
             except ValueError:
                 pass # Invalid date format, ignore
         
@@ -64,20 +64,20 @@ async def get_dashboard_stats(
         change_label = "vs last month"
         
         if filter_type == '1D':
-            prev_start = now - timedelta(days=2)
-            prev_end = now - timedelta(days=1)
+            prev_start = (now - timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+            prev_end = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
             change_label = "vs yesterday"
         elif filter_type == '7D':
-            prev_start = now - timedelta(days=14)
-            prev_end = now - timedelta(days=7)
+            prev_start = (now - timedelta(days=14)).replace(hour=0, minute=0, second=0, microsecond=0)
+            prev_end = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
             change_label = "vs last week"
         elif filter_type == '30D':
-            prev_start = now - timedelta(days=60)
-            prev_end = now - timedelta(days=30)
+            prev_start = (now - timedelta(days=60)).replace(hour=0, minute=0, second=0, microsecond=0)
+            prev_end = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
             change_label = "vs last month"
         else: # ALL or custom
-            prev_start = now - timedelta(days=60)
-            prev_end = now - timedelta(days=30)
+            prev_start = (now - timedelta(days=60)).replace(hour=0, minute=0, second=0, microsecond=0)
+            prev_end = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
             change_label = "vs last month"
 
         def apply_prev_filter(q, date_field):

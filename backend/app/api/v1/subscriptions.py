@@ -76,18 +76,29 @@ async def delete_plan(
     if plan.is_active:
         raise HTTPException(status_code=400, detail="Cannot delete an active subscription plan. Deactivate it first.")
 
-    # Check for active subscriptions to this plan
-    result = await db.execute(select(Subscription).where(Subscription.plan_id == plan_id, Subscription.status == 'active'))
-    active_subs = result.scalars().first()
+    # Check for any subscriptions to this plan (Active, Expired, etc.)
+    result = await db.execute(select(Subscription).where(Subscription.plan_id == plan_id))
+    existing_subs = result.scalars().first()
     
-    if active_subs:
-        # If active subscriptions exist, soft delete/archive instead (set active=False)
-        # But if the user explicitly wants to delete, we should likely block it or force it.
-        # For now, let's just block deletion if active subs exist and tell admin to deactivate instead.
-        raise HTTPException(status_code=400, detail="Cannot delete plan with active subscriptions. Deactivate it instead.")
+    if existing_subs:
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete this plan because it has history of subscriptions. You can only 'Deactivate' it to hide it from agents."
+        )
 
-    await db.delete(plan)
-    await db.commit()
+    try:
+        await db.delete(plan)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        # Handle foreign key constraint violation
+        if "foreign key constraint" in str(e).lower() or "IntegrityError" in str(e):
+             raise HTTPException(
+                 status_code=400, 
+                 detail="Cannot delete this plan because it is still referenced by existing subscriptions (even if they are inactive). Please delete those subscriptions first or keep the plan as 'Inactive'."
+             )
+        raise HTTPException(status_code=500, detail=f"Failed to delete plan: {str(e)}")
+
     return {"message": "Plan deleted successfully"}
 
 @router.post("/plans", response_model=SubscriptionPlanResponse)

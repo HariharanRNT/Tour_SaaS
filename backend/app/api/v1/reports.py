@@ -19,12 +19,21 @@ async def get_subscription_summary(
     current_admin = Depends(get_current_admin)
 ):
     """Get subscription summary statistics"""
-    query = select(func.count(Subscription.id))
+    query = select(func.count(Subscription.id)).where(Subscription.status != 'pending_payment')
     
     if start_date:
-        query = query.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        query = query.filter(Subscription.created_at >= start_dt)
     if end_date:
-        query = query.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone, timedelta
+            # If it's just a date, make it end of day
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        query = query.filter(Subscription.created_at <= end_dt)
     
     total = (await db.execute(query)).scalar() or 0
 
@@ -37,7 +46,7 @@ async def get_subscription_summary(
     )).scalar() or 0
     
     upcoming = (await db.execute(
-        query.filter(Subscription.status == 'pending_payment')
+        query.filter(Subscription.status == 'upcoming')
     )).scalar() or 0
     
     paused = 0 
@@ -72,9 +81,17 @@ async def get_subscription_trends(
         stmt = select(year_col, month_col, count_col)
         
         if start_date:
-            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+            start_dt = datetime.fromisoformat(start_date)
+            if start_dt.tzinfo is None:
+                from datetime import timezone
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at >= start_dt)
         if end_date:
-            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            end_dt = datetime.fromisoformat(end_date)
+            if end_dt.tzinfo is None:
+                from datetime import timezone
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at <= end_dt)
             
         stmt = stmt.group_by(year_col, month_col)\
             .order_by(year_col, month_col)\
@@ -97,9 +114,17 @@ async def get_subscription_trends(
         stmt = select(year_col, count_col)
         
         if start_date:
-            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+            start_dt = datetime.fromisoformat(start_date)
+            if start_dt.tzinfo is None:
+                from datetime import timezone
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at >= start_dt)
         if end_date:
-            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            end_dt = datetime.fromisoformat(end_date)
+            if end_dt.tzinfo is None:
+                from datetime import timezone
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at <= end_dt)
             
         stmt = stmt.group_by(year_col)\
             .order_by(year_col)
@@ -128,12 +153,21 @@ async def get_plan_analytics(
         SubscriptionPlan.name,
         func.count(Subscription.id).label('subscription_count'),
         func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
+     .where(Subscription.status.in_(['active', 'upcoming']))
 
     if start_date:
-        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at <= end_dt)
         
     stmt = stmt.group_by(SubscriptionPlan.id, SubscriptionPlan.name)
      
@@ -169,9 +203,17 @@ async def get_renewal_stats(
     """Get subscription renewal vs cancellation statistics"""
     base_query = select(func.count(Subscription.id))
     if start_date:
-        base_query = base_query.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        base_query = base_query.filter(Subscription.created_at >= start_dt)
     if end_date:
-        base_query = base_query.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        base_query = base_query.filter(Subscription.created_at <= end_dt)
 
     total = (await db.execute(base_query)).scalar() or 0
     renewals = (await db.execute(
@@ -200,12 +242,21 @@ async def get_revenue_summary(
 ):
     """Get total revenue summary"""
     stmt = select(func.sum(SubscriptionPlan.price))\
-        .join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
+        .join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
+        .where(Subscription.status.in_(['active', 'upcoming']))
     
     if start_date:
-        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at <= end_dt)
     
     total_revenue = (await db.execute(stmt)).scalar() or 0
     
@@ -228,12 +279,21 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, month_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
+            .where(Subscription.status.in_(['active', 'upcoming']))
 
         if start_date:
-            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+            start_dt = datetime.fromisoformat(start_date)
+            if start_dt.tzinfo is None:
+                from datetime import timezone
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at >= start_dt)
         if end_date:
-            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            end_dt = datetime.fromisoformat(end_date)
+            if end_dt.tzinfo is None:
+                from datetime import timezone
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at <= end_dt)
             
         stmt = stmt.group_by(year_col, month_col)\
             .order_by(year_col, month_col)\
@@ -254,12 +314,21 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
+            .where(Subscription.status.in_(['active', 'upcoming']))
 
         if start_date:
-            stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+            start_dt = datetime.fromisoformat(start_date)
+            if start_dt.tzinfo is None:
+                from datetime import timezone
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at >= start_dt)
         if end_date:
-            stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+            end_dt = datetime.fromisoformat(end_date)
+            if end_dt.tzinfo is None:
+                from datetime import timezone
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            stmt = stmt.filter(Subscription.created_at <= end_dt)
             
         stmt = stmt.group_by(year_col)\
             .order_by(year_col)
@@ -292,12 +361,21 @@ async def get_revenue_by_agent(
         func.sum(SubscriptionPlan.price).label('total_revenue')
     ).join(Subscription, Subscription.user_id == Agent.user_id)\
      .join(User, User.id == Agent.user_id)\
-     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
+     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
+     .where(Subscription.status.in_(['active', 'upcoming']))
 
     if start_date:
-        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at <= end_dt)
         
     stmt = stmt.group_by(Agent.id, Agent.first_name, Agent.last_name, User.email)
      
@@ -329,12 +407,21 @@ async def get_revenue_by_plan(
         SubscriptionPlan.price,
         func.count(Subscription.id).label('subscription_count'),
         func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
+     .where(Subscription.status.in_(['active', 'upcoming']))
 
     if start_date:
-        stmt = stmt.filter(Subscription.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Subscription.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Subscription.created_at <= end_dt)
     
     stmt = stmt.group_by(SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price)
     
@@ -367,9 +454,17 @@ async def get_payment_status_breakdown(
     )
 
     if start_date:
-        stmt = stmt.filter(Payment.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Payment.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Payment.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Payment.created_at <= end_dt)
         
     stmt = stmt.group_by(Payment.status)
     
@@ -398,9 +493,17 @@ async def get_booking_summary(
     total_query = select(func.count(Booking.id))
     
     if start_date:
-        total_query = total_query.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        total_query = total_query.filter(Booking.created_at >= start_dt)
     if end_date:
-        total_query = total_query.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        total_query = total_query.filter(Booking.created_at <= end_dt)
     
     total = (await db.execute(total_query)).scalar() or 0
     
@@ -455,9 +558,17 @@ async def get_bookings_by_agent(
      .join(User, User.id == Agent.user_id)
 
     if start_date:
-        stmt = stmt.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Booking.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Booking.created_at <= end_dt)
         
     stmt = stmt.group_by(Agent.id, Agent.first_name, Agent.last_name, User.email, enquiry_sub.c.total_enquiries)
      
@@ -494,9 +605,17 @@ async def get_bookings_by_package(
     ).join(Booking, Booking.package_id == Package.id)
 
     if start_date:
-        stmt = stmt.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.filter(Booking.created_at >= start_dt)
     if end_date:
-        stmt = stmt.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        stmt = stmt.filter(Booking.created_at <= end_dt)
         
     stmt = stmt.group_by(Package.id, Package.title)\
      .order_by(desc(total_bookings_col))\
@@ -526,9 +645,17 @@ async def get_booking_conversion(
     """Get booking conversion rates"""
     base_query = select(func.count(Booking.id))
     if start_date:
-        base_query = base_query.filter(Booking.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        if start_dt.tzinfo is None:
+            from datetime import timezone
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        base_query = base_query.filter(Booking.created_at >= start_dt)
     if end_date:
-        base_query = base_query.filter(Booking.created_at <= datetime.fromisoformat(end_date))
+        end_dt = datetime.fromisoformat(end_date)
+        if end_dt.tzinfo is None:
+            from datetime import timezone
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        base_query = base_query.filter(Booking.created_at <= end_dt)
 
     total = (await db.execute(base_query)).scalar() or 0
     completed = (await db.execute(

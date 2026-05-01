@@ -220,7 +220,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* KPI Cards Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <StatCard
                         title="Total Revenue"
                         value={`₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
@@ -231,7 +231,6 @@ export default function AdminDashboard() {
                         colorClass="bg-emerald-500"
                         accentColor="bg-emerald-500"
                         link="/admin/billing"
-                        sparkData={stats.sparklines.revenue}
                     />
                     <StatCard
                         title="Active Agents"
@@ -243,7 +242,6 @@ export default function AdminDashboard() {
                         colorClass="bg-blue-500"
                         accentColor="bg-blue-500"
                         link="/admin/agents"
-                        sparkData={stats.sparklines.agents}
                     />
                     <StatCard
                         title="Expiring Soon"
@@ -254,25 +252,6 @@ export default function AdminDashboard() {
                         colorClass="bg-rose-500"
                         accentColor="bg-rose-500"
                         link="/admin/billing"
-                        sparkData={stats.sparklines.bookings}
-                    />
-                </div>
-
-                {/* Quick Stats Row - Restyled as GlassCards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-1">
-                    <StatCard
-                        title="Total Bookings"
-                        value={stats.totalBookings}
-                        secondMetric="Lifetime count"
-                        icon={Calendar}
-                        colorClass="bg-indigo-600"
-                    />
-                    <StatCard
-                        title="Pending Payments"
-                        value={`₹${(stats.pendingPaymentsValue / 1000).toFixed(1)}k`}
-                        secondMetric="Awaiting clearing"
-                        icon={CreditCard}
-                        colorClass="bg-amber-600"
                     />
                     <StatCard
                         title="Active Plans"
@@ -280,13 +259,7 @@ export default function AdminDashboard() {
                         secondMetric="Current subscribers"
                         icon={CheckCircle2}
                         colorClass="bg-emerald-600"
-                    />
-                    <StatCard
-                        title="Conversion Rate"
-                        value={`${stats.conversionRate}%`}
-                        secondMetric="Visit to booking"
-                        icon={TrendingUp}
-                        colorClass="bg-rose-600"
+                        link="/admin/billing"
                     />
                 </div>
 
