@@ -706,25 +706,18 @@ async def get_agent_financial_report(
             
             stats = financial_data[d_str]
             if b.status in [BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED] and b.payment_status in [PaymentStatus.SUCCEEDED, PaymentStatus.PAID]:
-                stats["total_bookings"] += 1 # Count all paid bookings including cancelled ones
+                stats["total_bookings"] += 1
                 amount = float(b.total_amount)
                 refund = float(b.refund_amount or 0.0)
                 stats["gross_revenue"] += amount
                 stats["refund_amount"] += refund
                 
-                # GST Calculation: Use stored values if available, fallback to package/agent settings only if missing
+                # GST Calculation: Use full original tax even if there's a refund (per requirement)
                 tax = 0.0
                 if b.gst_amount is not None:
-                    # If there's a refund, we pro-rate the tax reduction
-                    # (Assuming tax in DB is for the full amount)
-                    full_tax = float(b.gst_amount)
-                    if amount > 0:
-                        tax = full_tax * ((amount - refund) / amount)
-                    else:
-                        tax = 0.0
+                    tax = float(b.gst_amount)
                 else:
-                    # Fallback logic for legacy data (though migration should have handled it)
-                    net_amount = amount - refund
+                    # Fallback logic for legacy data
                     pkg = b.package
                     gst_percentage = 0.0
                     if pkg:
@@ -735,17 +728,17 @@ async def get_agent_financial_report(
                     gst_mode = pkg.gst_mode if (pkg and pkg.gst_mode) else ('inclusive' if default_inclusive else 'exclusive')
                     
                     if gst_percentage > 0:
+                        # Calculate tax on the full amount (excluding refund deduction for tax calculation)
                         if gst_mode == 'inclusive':
-                            # Formula: Base = Total / (1 + Tax%), Tax = Total - Base
-                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100))) if gst_percentage > 0 else 0.0
+                            tax = amount - (amount / (1 + (gst_percentage / 100)))
                         else:
-                            # Exclusive logic: net_amount is Total (Base + Tax)
-                            # Tax = Total - (Total / (1 + Rate/100))
-                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100))) if gst_percentage > 0 else 0.0
+                            # If exclusive, the amount stored is likely already Total (Base + Tax)
+                            tax = amount - (amount / (1 + (gst_percentage / 100)))
                 
                 stats["taxes"] += tax
-                stats["net_revenue"] += (amount - refund)
-                stats["final_earnings"] += (amount - refund - tax)
+                # Net Revenue = Gross - Tax - Refund
+                stats["net_revenue"] += (amount - tax - refund)
+                stats["final_earnings"] += (amount - tax - refund)
 
         # Convert to list and sort by date desc
         report_list = list(financial_data.values())

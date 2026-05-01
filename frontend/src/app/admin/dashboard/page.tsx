@@ -167,9 +167,9 @@ export default function AdminDashboard() {
 
                 {link && (
                     <div className="mt-5 pt-4 border-t border-white/10 group/link">
-                                <Link href={link} className="text-[10px] font-bold text-orange-600 hover:text-orange-700 flex items-center transition-all uppercase tracking-widest underline decoration-orange-500/20 underline-offset-4">
-                                    View Details <ArrowRight className="h-3 w-3 ml-2 group-hover/link:translate-x-1 transition-transform" />
-                                </Link>
+                        <Link href={link} className="text-[10px] font-bold text-orange-600 hover:text-orange-700 flex items-center transition-all uppercase tracking-widest underline decoration-orange-500/20 underline-offset-4">
+                            View Details <ArrowRight className="h-3 w-3 ml-2 group-hover/link:translate-x-1 transition-transform" />
+                        </Link>
                     </div>
                 )}
             </GlassCard>
@@ -263,10 +263,10 @@ export default function AdminDashboard() {
                     />
                 </div>
 
-                {/* Charts & Activity Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-                    {/* Revenue Chart - Expanded to 3 columns for better readability */}
-                    <div className="lg:col-span-3">
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 gap-5">
+                    {/* Revenue Chart - Full Width */}
+                    <div>
                         <Card className="h-full rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] group relative">
                             <div className="bg-white/20 backdrop-blur-md border-b border-white/10 py-8 px-8 flex flex-row items-center justify-between z-10 relative">
                                 <div>
@@ -282,68 +282,16 @@ export default function AdminDashboard() {
                             </CardContent>
                         </Card>
                     </div>
-
-                    {/* Activity Feed Container - 1 column */}
-                    <div className="lg:col-span-1">
-                        <Card className="h-full rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-0 overflow-hidden transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] group relative">
-                            <div className="bg-white/20 backdrop-blur-md border-b border-white/10 py-8 px-6 flex flex-row items-center justify-between">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h2 className="text-[13px] font-bold tracking-[1px] uppercase text-black">Smart Feed</h2>
-                                    </div>
-                                    <CardDescription className="text-black font-medium text-[11px] mt-1">Global system events</CardDescription>
-                                </div>
-                                <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-sm">
-                                    <Activity className="h-5 w-5 text-indigo-600" />
-                                </div>
-                            </div>
-                            <CardContent className="p-6 overflow-y-auto max-h-[600px] scrollbar-hide">
-                                <RecentActivityFeed activities={stats.packageAnalytics?.agentActivities || []} />
-                            </CardContent>
-                        </Card>
-                    </div>
                 </div>
 
                 {/* Section Title for Monitoring */}
                 <div className="pt-6">
-                    <h2 className="text-[10px] font-black text-black uppercase tracking-[0.3em] mb-2 px-1">Health & Monitoring</h2>
+                    <h2 className="text-[10px] font-black text-black uppercase tracking-[0.3em] mb-2 px-1">Monitoring</h2>
                     <div className="h-px bg-gradient-to-r from-slate-200 via-transparent to-transparent w-full" />
                 </div>
 
                 {/* Business Monitoring Masonry-Style Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 content-start items-stretch">
-                    {/* Subscription Health Card */}
-                    <Card className="rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] hover:border-orange-500/30 group relative">
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-[13px] font-bold tracking-[1px] uppercase text-black">Plan Health</h3>
-                                <LayoutDashboard className="h-5 w-5 text-black group-hover:text-emerald-500 transition-colors" />
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-tight">
-                                        <span className="text-black">Retention</span>
-                                        <span className="text-emerald-600">84%</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100/50 rounded-full overflow-hidden">
-                                        <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" style={{ width: '84%' }} />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-tight">
-                                        <span className="text-black">Churn Rate</span>
-                                        <span className="text-rose-600">2.4%</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100/50 rounded-full overflow-hidden">
-                                        <div className="h-full bg-rose-500 rounded-full" style={{ width: '12%' }} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </Card>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 content-start items-stretch">
                     {/* Performance Ranking Card */}
                     <Card className="rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] hover:border-orange-500/30 group relative">
                         <div>
@@ -392,56 +340,7 @@ export default function AdminDashboard() {
                                     <p className="text-[11px] font-bold text-black uppercase tracking-widest mb-1">Upcoming Renewals</p>
                                     <p className="text-lg font-black text-black">{stats.renewals.length} agents</p>
                                 </div>
-                                <div>
-
-
-                                </div>
                             </div>
-                        </div>
-
-                        <div className="mt-6">
-
-                        </div>
-                    </Card>
-
-                    {/* Infrastructure Health Card */}
-                    <Card className="rounded-[24px] backdrop-blur-[18px] bg-white/18 border border-white/25 p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_30px_rgba(0,0,0,0.15)] hover:border-orange-500/30 group relative">
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-[13px] font-bold tracking-[1px] uppercase text-black">System Status</h3>
-                                <ShieldAlert className="h-5 w-5 text-black" />
-                            </div>
-
-                            <div className="space-y-3">
-                                {stats.health.system.map((sys: any, i: number) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                        <span className="text-[11px] font-bold text-black uppercase tracking-widest">{sys.name}</span>
-                                        <div className={cn(
-                                            "flex items-center gap-2 px-2.5 py-1 rounded-full border min-w-[100px] justify-center backdrop-blur-sm transition-all",
-                                            sys.status === 'Operational'
-                                                ? 'bg-emerald-500/12 border-emerald-500/20'
-                                                : 'bg-rose-500/12 border-rose-500/20'
-                                        )}>
-                                            <div className={cn(
-                                                "h-1.5 w-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]",
-                                                sys.status === 'Operational' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
-                                            )} />
-                                            <span className={cn(
-                                                "text-[9px] font-black uppercase tracking-tight",
-                                                sys.status === 'Operational' ? 'text-emerald-600' : 'text-rose-600'
-                                            )}>
-                                                {sys.status}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                            <button className="text-[10px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-700 transition-colors underline decoration-orange-500/30 underline-offset-4">
-                                Run Diagnostics
-                            </button>
                         </div>
                     </Card>
                 </div>

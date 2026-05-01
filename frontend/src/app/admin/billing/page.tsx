@@ -160,15 +160,13 @@ export default function AdminBillingPage() {
     const planSubscriberCounts = plans.map((p: SubscriptionPlan) => ({
         id: p.id,
         name: p.name,
-        count: currentMonthSubscriptions.filter((s: Subscription) => 
-            s.plan.id === p.id && 
-            s.status !== 'pending_payment' && 
-            s.status !== 'failed'
+        count: currentMonthSubscriptions.filter((s: Subscription) =>
+            s.plan.id === p.id &&
+            ['active', 'upcoming', 'completed'].includes(s.status)
         ).length,
-        totalCount: subscriptions.filter((s: Subscription) => 
-            s.plan.id === p.id && 
-            s.status !== 'pending_payment' && 
-            s.status !== 'failed'
+        totalCount: subscriptions.filter((s: Subscription) =>
+            s.plan.id === p.id &&
+            ['active', 'upcoming', 'completed'].includes(s.status)
         ).length
     }));
 
@@ -177,13 +175,13 @@ export default function AdminBillingPage() {
         : 0;
 
     const stats = (() => {
-        const successSubscriptions = subscriptions.filter((s: Subscription) => 
-            s.status !== 'pending_payment' && s.status !== 'failed'
+        const successSubscriptions = subscriptions.filter((s: Subscription) =>
+            ['active', 'upcoming', 'completed'].includes(s.status)
         );
         const successStatuses = ['active', 'upcoming', 'expired', 'completed', 'on_hold'];
         const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active').length;
         const mrr = successSubscriptions
-            .filter((s: Subscription) => s.status === 'active' || s.status === 'upcoming')
+            .filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status))
             .reduce((sum: number, s: Subscription) => {
                 const price = Number(s.plan?.price) || 0;
                 const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
@@ -192,15 +190,24 @@ export default function AdminBillingPage() {
                 return sum + price;
             }, 0);
 
-        const payingCount = successSubscriptions.filter((s: Subscription) => s.status === 'active' || s.status === 'upcoming').length;
+        const totalRevenue = plans.reduce((sum: number, plan: SubscriptionPlan) => {
+            const count = subscriptions.filter((s: Subscription) => 
+                s.plan.id === plan.id && 
+                ['active', 'upcoming', 'completed'].includes(s.status)
+            ).length;
+            return sum + (count * Number(plan.price));
+        }, 0);
+
+        const payingCount = successSubscriptions.filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status)).length;
 
         return {
             totalSubscriptions: successSubscriptions.length,
             activeSubscriptions: activeCount,
             payingCount: payingCount,
             mrr: Math.round(mrr),
+            totalRevenue: totalRevenue,
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
-            recentChanges: currentMonthSubscriptions.filter((s: Subscription) => s.status !== 'pending_payment' && s.status !== 'failed').length
+            recentChanges: currentMonthSubscriptions.filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status)).length
         };
     })();
 
@@ -234,7 +241,7 @@ export default function AdminBillingPage() {
         if (!newPlan.name.trim()) newErrors.name = "Plan name is required";
         else if (newPlan.name.length > 50) newErrors.name = "Plan name cannot exceed 50 characters";
         else {
-            const isDuplicate = plans.some((p: SubscriptionPlan) => 
+            const isDuplicate = plans.some((p: SubscriptionPlan) =>
                 p.id !== editingId && p.name.trim().toLowerCase() === newPlan.name.trim().toLowerCase()
             );
             if (isDuplicate) newErrors.name = "A plan with this name already exists";
@@ -392,11 +399,11 @@ export default function AdminBillingPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <h4 className="text-[36px] font-black text-[#111111] font-['Outfit'] tracking-tighter leading-none">{stats.activeSubscriptions}</h4>
-                                    <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">
+                                    {/* <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">
                                         {stats.totalSubscriptions > 0
                                             ? `${Math.round((stats.activeSubscriptions / stats.totalSubscriptions) * 100)}% of total`
                                             : '0% total'}
-                                    </p>
+                                    </p> */}
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-emerald-400" />
                             </CardContent>
@@ -455,7 +462,7 @@ export default function AdminBillingPage() {
                                     >
                                         {tab === 'plans' ? `Plans` : tab === 'subscriptions' ? 'Subscriptions' : 'Financials'}
                                         {tab === 'plans' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{plans.length}</span>}
-                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{stats.activeSubscriptions}</span>}
+                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{stats.totalSubscriptions}</span>}
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
@@ -464,15 +471,13 @@ export default function AdminBillingPage() {
                         <TabsContent value="plans" className="outline-none pt-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
                                 {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                    const subscriberCount = subscriptions.filter((s: Subscription) => 
-                                        s.plan.id === plan.id && 
-                                        s.status !== 'pending_payment' && 
-                                        s.status !== 'failed'
+                                    const subscriberCount = subscriptions.filter((s: Subscription) =>
+                                        s.plan.id === plan.id &&
+                                        ['active', 'upcoming', 'completed'].includes(s.status)
                                     ).length;
-                                    const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) => 
-                                        s.plan.id === plan.id && 
-                                        s.status !== 'pending_payment' && 
-                                        s.status !== 'failed'
+                                    const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) =>
+                                        s.plan.id === plan.id &&
+                                        ['active', 'upcoming', 'completed'].includes(s.status)
                                     ).length;
                                     const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
 
@@ -671,13 +676,13 @@ export default function AdminBillingPage() {
                                                     <TableRow>
                                                         <TableCell colSpan={7} className="h-72 text-center">
                                                             <div className="flex flex-col items-center justify-center gap-4 opacity-50">
-                                                                 <div className="p-4 bg-white/5 rounded-full border border-white/10">
-                                                                     <CreditCard className="h-10 w-10 text-[#7c3010]" />
-                                                                 </div>
-                                                                 <div className="space-y-1">
-                                                                     <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No subscriptions found</p>
-                                                                     <p className="text-[#92400e] text-xs font-medium">When agents subscribe to plans, they will appear here.</p>
-                                                                 </div>
+                                                                <div className="p-4 bg-white/5 rounded-full border border-white/10">
+                                                                    <CreditCard className="h-10 w-10 text-[#7c3010]" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No subscriptions found</p>
+                                                                    <p className="text-[#92400e] text-xs font-medium">When agents subscribe to plans, they will appear here.</p>
+                                                                </div>
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>
@@ -705,74 +710,74 @@ export default function AdminBillingPage() {
                                                 ) : (
                                                     filteredSubscriptions.map((sub: Subscription, i: number) => (
                                                         <TableRow key={sub.id} className="border-b border-white/5 hover:bg-white/5 group transition-all h-20">
-                                                                <TableCell className="pl-8">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={cn(
-                                                                            "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs",
-                                                                            `bg-indigo-400/10 text-indigo-300 border border-indigo-400/20`
-                                                                        )}>
-                                                                            {(sub.user?.agency_name || sub.user_id).substring(0, 2).toUpperCase()}
-                                                                        </div>
-                                                                        <div className="space-y-0.5">
-                                                                            <p className="font-bold text-[#1c1c1c] text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
-                                                                                {sub.user?.agency_name || sub.user_id}
-                                                                            </p>
-                                                                            <p className="text-[11px] text-[#92400e] font-semibold tracking-[0.5px]">
-                                                                                {sub.user?.agency_name ? `Agent: ${sub.user_id.substring(0, 8)}` : `ID: ${sub.id.substring(0, 8)}`}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                </TableCell>
-                                                                <TableCell className="p-4">
-                                                                    <span className="text-[13px] font-medium text-[#1c1c1c] font-['Plus_Jakarta_Sans',sans-serif]">{sub.plan.name}</span>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <span className={cn(
-                                                                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap",
-                                                                        sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" : 
-                                                                        sub.status === 'cancelled' ? "bg-red-400/10 text-red-600 border-red-400/20" :
-                                                                        sub.status === 'expired' ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
-                                                                        "bg-amber-400/10 text-amber-600 border-amber-400/20"
+                                                            <TableCell className="pl-8">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={cn(
+                                                                        "h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs",
+                                                                        `bg-indigo-400/10 text-indigo-300 border border-indigo-400/20`
                                                                     )}>
-                                                                        {sub.status.replace('_', ' ')}
-                                                                    </span>
-                                                                </TableCell>
-                                                                <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
-                                                                <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.end_date), 'MMM dd, yyyy')}</TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                                                            <div className="h-full bg-slate-900 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
-                                                                        </div>
-                                                                        <span className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
+                                                                        {(sub.user?.agency_name || sub.user_id).substring(0, 2).toUpperCase()}
                                                                     </div>
-                                                                </TableCell>
-                                                                <TableCell className="pr-8 text-right">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/10 h-9 w-9">
-                                                                                <MoreVertical className="h-4 w-4 text-[#7c3010]" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl min-w-[150px]">
-                                                                            <DropdownMenuItem 
-                                                                                onClick={() => handleToggleSubStatus(sub)}
-                                                                                className={cn(
-                                                                                    "rounded-xl font-bold py-2.5 px-4 text-xs hover:bg-white/10 cursor-pointer",
-                                                                                    sub.status === 'active' ? "text-red-400" : "text-emerald-400"
-                                                                                )}
-                                                                            >
-                                                                                {sub.status === 'active' ? (
-                                                                                    <><Power className="h-4 w-4 mr-2" /> Deactivate Subscription</>
-                                                                                ) : (
-                                                                                    <><CheckCircle2 className="h-4 w-4 mr-2" /> Activate Subscription</>
-                                                                                )}
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))
+                                                                    <div className="space-y-0.5">
+                                                                        <p className="font-bold text-[#1c1c1c] text-[14px] font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+                                                                            {sub.user?.agency_name || sub.user_id}
+                                                                        </p>
+                                                                        <p className="text-[11px] text-[#92400e] font-semibold tracking-[0.5px]">
+                                                                            {sub.user?.agency_name ? `Agent: ${sub.user_id.substring(0, 8)}` : `ID: ${sub.id.substring(0, 8)}`}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="p-4">
+                                                                <span className="text-[13px] font-medium text-[#1c1c1c] font-['Plus_Jakarta_Sans',sans-serif]">{sub.plan.name}</span>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <span className={cn(
+                                                                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap",
+                                                                    sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" :
+                                                                        (sub.status === 'cancelled' || sub.status === 'failed' || sub.status === 'pending_payment') ? "bg-red-400/10 text-red-600 border-red-400/20" :
+                                                                            sub.status === 'expired' ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
+                                                                                "bg-amber-400/10 text-amber-600 border-amber-400/20"
+                                                                )}>
+                                                                    {sub.status === 'pending_payment' ? 'Failed' : sub.status.replace('_', ' ')}
+                                                                </span>
+                                                            </TableCell>
+                                                            <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
+                                                            <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.end_date), 'MMM dd, yyyy')}</TableCell>
+                                                            <TableCell>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-20 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                                        <div className="h-full bg-slate-900 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]" style={{ width: `${Math.min(100, (sub.current_bookings_usage / (sub.plan.booking_limit || 1)) * 100)}%` }} />
+                                                                    </div>
+                                                                    <span className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.5px] font-['Outfit']">{sub.current_bookings_usage}/{sub.plan.booking_limit === -1 ? '∞' : sub.plan.booking_limit}</span>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="pr-8 text-right">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/10 h-9 w-9">
+                                                                            <MoreVertical className="h-4 w-4 text-[#7c3010]" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end" className="rounded-2xl p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-2xl min-w-[150px]">
+                                                                        <DropdownMenuItem
+                                                                            onClick={() => handleToggleSubStatus(sub)}
+                                                                            className={cn(
+                                                                                "rounded-xl font-bold py-2.5 px-4 text-xs hover:bg-white/10 cursor-pointer",
+                                                                                sub.status === 'active' ? "text-red-400" : "text-emerald-400"
+                                                                            )}
+                                                                        >
+                                                                            {sub.status === 'active' ? (
+                                                                                <><Power className="h-4 w-4 mr-2" /> Deactivate Subscription</>
+                                                                            ) : (
+                                                                                <><CheckCircle2 className="h-4 w-4 mr-2" /> Activate Subscription</>
+                                                                            )}
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
                                                 )}
                                             </TableBody>
                                         </Table>
@@ -787,10 +792,9 @@ export default function AdminBillingPage() {
                                     <div className="text-[20px] font-bold text-[#111111] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
                                         {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                            const subCount = subscriptions.filter((s: Subscription) => 
-                                                s.plan.id === plan.id && 
-                                                s.status !== 'pending_payment' && 
-                                                s.status !== 'failed'
+                                            const subCount = subscriptions.filter((s: Subscription) =>
+                                                s.plan.id === plan.id &&
+                                                ['active', 'upcoming', 'completed'].includes(s.status)
                                             ).length;
                                             const revenue = subCount * Number(plan.price);
                                             const colors = ['#f97316', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#0ea5e9'];
@@ -816,12 +820,7 @@ export default function AdminBillingPage() {
                                         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                                             <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Estimated Revenue</div>
                                             <div className="text-[20px] font-black text-[#111111] font-['Outfit'] tracking-tight">
-                                                ₹{plans.reduce((sum: number, p: SubscriptionPlan) => 
-                                                    sum + (subscriptions.filter((s: Subscription) => 
-                                                        s.plan.id === p.id && 
-                                                        s.status !== 'pending_payment' && 
-                                                        s.status !== 'failed'
-                                                    ).length * Number(p.price)), 0).toLocaleString('en-IN')}
+                                                ₹{stats.totalRevenue.toLocaleString('en-IN')}
                                             </div>
                                         </div>
                                     </div>
@@ -831,7 +830,7 @@ export default function AdminBillingPage() {
                                     {[
                                         { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
                                         { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.payingCount > 0 ? Math.round(stats.mrr / stats.payingCount).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.totalSubscriptions > 0 ? Math.round(stats.totalRevenue / stats.totalSubscriptions).toLocaleString() : 0}`, sub: 'Per subscriber', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
                                         <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
                                             <div className="flex justify-between items-start mb-4">
@@ -1115,11 +1114,11 @@ Feature 3`}
                             <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-2">
                                 <Trash className="h-8 w-8 stroke-[2.5px]" />
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <DialogTitle className="text-[22px] font-bold text-slate-900 font-['Plus_Jakarta_Sans'] tracking-tight">Delete Plan?</DialogTitle>
                                 <DialogDescription className="text-slate-600 font-medium text-[14px] leading-relaxed">
-                                    Are you sure you want to delete <span className="text-slate-900 font-bold">"{planToDelete?.name}"</span>? 
+                                    Are you sure you want to delete <span className="text-slate-900 font-bold">"{planToDelete?.name}"</span>?
                                     This action cannot be undone and may affect active subscribers.
                                 </DialogDescription>
                             </div>

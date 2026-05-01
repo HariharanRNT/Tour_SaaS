@@ -296,9 +296,9 @@ export default function AdminAgentsPage() {
     useEffect(() => {
         const password = newAgent.password
         let strength = 0
-        if (password.length >= 8) strength++
-        if (password.length >= 12) strength++
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
+        if (password.length >= 8 && password.length <= 14) strength++
+        if (/[A-Z]/.test(password)) strength++
+        if (/[a-z]/.test(password)) strength++
         if (/\d/.test(password)) strength++
         if (/[^a-zA-Z0-9]/.test(password)) strength++
         setPasswordStrength(strength)
@@ -389,12 +389,12 @@ export default function AdminAgentsPage() {
             toast.error("Email is required");
             return;
         }
-        if (!newAgent.password.trim()) {
-            toast.error("Password is required");
+        if (newAgent.password.length < 8 || newAgent.password.length > 14) {
+            toast.error("Password must be 8-14 characters");
             return;
         }
-        if (newAgent.password.length < 8) {
-            toast.error("Password must be at least 8 characters");
+        if (!/[A-Z]/.test(newAgent.password) || !/[a-z]/.test(newAgent.password)) {
+            toast.error("Password must contain both uppercase and lowercase letters");
             return;
         }
 
@@ -1050,8 +1050,8 @@ export default function AdminAgentsPage() {
                                                             type={showPassword ? "text" : "password"}
                                                             required
                                                             minLength={8}
-                                                            maxLength={50}
-                                                            placeholder="Minimum 8 characters"
+                                                            maxLength={14}
+                                                            placeholder="8-14 characters"
                                                             value={newAgent.password}
                                                             onChange={e => {
                                                                 setNewAgent({ ...newAgent, password: e.target.value })
@@ -1079,7 +1079,7 @@ export default function AdminAgentsPage() {
                                                                 <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
                                                             </div>
                                                             <p className="text-xs text-slate-900">
-                                                                Use 8+ characters with a mix of letters, numbers & symbols
+                                                                Use 8-14 characters with uppercase and lowercase letters
                                                             </p>
                                                         </div>
                                                     )}

@@ -51,10 +51,11 @@ export default function RegisterPage() {
             setEmailValid(null)
         }
 
-        // Password Strength Calculation
+        // Password Strength Calculation (0-4)
         let strength = 0
-        if (formData.password.length >= 8) strength++
+        if (formData.password.length >= 8 && formData.password.length <= 50) strength++
         if (/[A-Z]/.test(formData.password)) strength++
+        if (/[a-z]/.test(formData.password)) strength++
         if (/[0-9]/.test(formData.password) || /[^A-Za-z0-9]/.test(formData.password)) strength++
         setPasswordStrength(strength)
 
@@ -66,17 +67,19 @@ export default function RegisterPage() {
 
     const getPasswordRequirements = () => {
         return [
-            { label: '8+ characters', valid: formData.password.length >= 8 },
+            { label: '8-50 characters', valid: formData.password.length >= 8 && formData.password.length <= 50 },
             { label: 'Uppercase letter', valid: /[A-Z]/.test(formData.password) },
+            { label: 'Lowercase letter', valid: /[a-z]/.test(formData.password) },
             { label: 'Number or Symbol', valid: /[0-9]/.test(formData.password) || /[^A-Za-z0-9]/.test(formData.password) },
         ]
     }
-
     const isFormValid = () => {
         return (
             emailValid &&
             formData.password.length >= 8 &&
             formData.password.length <= 50 &&
+            /[A-Z]/.test(formData.password) &&
+            /[a-z]/.test(formData.password) &&
             formData.email.length <= 250 &&
             formData.first_name.trim().length > 0 &&
             formData.first_name.length <= 50 &&

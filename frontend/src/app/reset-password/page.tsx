@@ -34,10 +34,10 @@ function ResetPasswordForm() {
     const getPasswordStrength = (pass: string) => {
         if (!pass) return 0
         let score = 0
-        if (pass.length >= 8) score++
+        if (pass.length >= 8 && pass.length <= 50) score++
         if (/[A-Z]/.test(pass)) score++
-        if (/[0-9]/.test(pass)) score++
-        if (/[^A-Za-z0-9]/.test(pass)) score++
+        if (/[a-z]/.test(pass)) score++
+        if (/[0-9]/.test(pass) || /[^A-Za-z0-9]/.test(pass)) score++
         return score
     }
 
@@ -54,8 +54,13 @@ function ResetPasswordForm() {
             return
         }
 
-        if (strength < 2) {
-            setError('Password is too weak')
+        if (newPassword.length < 8 || newPassword.length > 50) {
+            setError('Password must be 8-50 characters')
+            return
+        }
+
+        if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword)) {
+            setError('Password must contain both uppercase and lowercase letters')
             return
         }
 
@@ -140,10 +145,10 @@ function ResetPasswordForm() {
                 {/* Password Requirements */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 px-1 pt-1 opacity-80">
                     {[
-                        { label: '8+ characters', valid: newPassword.length >= 8 },
+                        { label: '8-50 chars', valid: newPassword.length >= 8 && newPassword.length <= 50 },
                         { label: 'Uppercase', valid: /[A-Z]/.test(newPassword) },
-                        { label: 'Number', valid: /[0-9]/.test(newPassword) },
-                        { label: 'Special char', valid: /[^A-Za-z0-9]/.test(newPassword) },
+                        { label: 'Lowercase', valid: /[a-z]/.test(newPassword) },
+                        { label: 'Number/Symbol', valid: /[0-9]/.test(newPassword) || /[^A-Za-z0-9]/.test(newPassword) },
                     ].map((req, i) => (
                         <div key={i} className={cn(
                             "flex items-center gap-1 text-[10px] font-bold tracking-tight transition-colors duration-300",

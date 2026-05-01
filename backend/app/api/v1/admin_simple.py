@@ -8,7 +8,6 @@ import uuid
 import json
 
 from app.database import get_db
-from app.database import get_db
 from app.models import (
     Package, PackageStatus, ItineraryItem, Booking, User, UserRole, 
     BookingStatus, Payment, PaymentStatus, Agent, Subscription,
@@ -161,10 +160,18 @@ async def get_dashboard_stats(
         result = await db.execute(cancel_stmt)
         cancelled_bookings = result.scalar() or 0
         
-        # 6. Agent Performance (Aggregate over the filtered period?)
-        # Let's apply filter to the booking join for revenue/count calculation
-        # 6. Agent Performance (Aggregate over the filtered period?)
-        # Let's apply filter to the booking join for revenue/count calculation
+        # 6. Agent Performance
+        booking_join_cond = (User.id == Booking.agent_id) & (
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED])
+        ) & (
+            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
+        )
+        
+        if filter_start:
+            booking_join_cond = booking_join_cond & (Booking.created_at >= filter_start)
+        if filter_end:
+            booking_join_cond = booking_join_cond & (Booking.created_at < filter_end)
+
         stmt = select(
             Agent.first_name,
             Agent.last_name,
@@ -172,15 +179,7 @@ async def get_dashboard_stats(
             User.is_active,
             func.count(Booking.id).label('booking_count'),
             func.sum(Booking.total_amount - func.coalesce(Booking.refund_amount, 0)).label('total_revenue')
-        ).join(Agent, Agent.user_id == User.id).outerjoin(Booking, (User.id == Booking.agent_id) & (
-            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED])
-        ) & (
-            Booking.payment_status.in_([PaymentStatus.SUCCEEDED, PaymentStatus.PAID])
-        ) & (
-            (Booking.created_at >= filter_start) if filter_start else True
-        ) & (
-            (Booking.created_at < filter_end) if filter_end else True
-        )).where(
+        ).join(Agent, Agent.user_id == User.id).outerjoin(Booking, booking_join_cond).where(
             User.role == UserRole.AGENT
         ).group_by(User.id, Agent.first_name, Agent.last_name, User.is_active, User.email)
         
@@ -269,13 +268,13 @@ async def get_dashboard_stats(
         # 8. Subscription Stats (Active & Nearing Expiry)
         # Subscription is imported at top level now
         
-        # Active Plans
-        sub_active_query = select(func.count(Subscription.id)).where(Subscription.status == 'active')
-        result = await db.execute(sub_active_query)
+        # Subscription Stats (Active, Upcoming, Completed)
+        sub_total_query = select(func.count(Subscription.id)).where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+        result = await db.execute(sub_total_query)
         active_subscriptions = result.scalar() or 0
         
         # Nearing Expiry (Active + Ends within 3 days)
-        expiry_threshold = datetime.utcnow().date() + timedelta(days=3)
+        expiry_threshold = now.date() + timedelta(days=3)
         # Fetch details instead of just count
         sub_expiry_stmt = select(
             Agent.first_name,
@@ -299,17 +298,11 @@ async def get_dashboard_stats(
         ]
 
         # 9. Monthly Trends (Last 6 Months)
-        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        six_months_ago = now - timedelta(days=180)
         
         # 10. YTM Trends (From Jan 1st of current year)
-        jan_1st = datetime(now.year, 1, 1)
+        jan_1st = datetime(now.year, 1, 1, tzinfo=timezone.utc)
         
-        # Fetch bookings for last 6 months
-        # booking_trend_stmt = select(Booking.created_at, Booking.total_amount).where(
-        #     Booking.created_at >= six_months_ago,
-        #     Booking.status.in_([BookingStatus.CONFIRMED.value, BookingStatus.COMPLETED.value])
-        # )
-
         # Fetch subscription payments for trends (covering both 6-month and YTM)
         trend_payments_stmt = select(Payment.created_at, Payment.amount).where(
             Payment.created_at >= min(six_months_ago, jan_1st),
@@ -330,47 +323,51 @@ async def get_dashboard_stats(
         # Aggregate Monthly Trends (Last 6 Months)
         monthly_trends_map = {}
         for i in range(5, -1, -1):
-            date = datetime.utcnow() - timedelta(days=i*30)
-            key = date.strftime("%Y-%m")
-            monthly_trends_map[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
+            date_iter = now - timedelta(days=i*30)
+            key = date_iter.strftime("%Y-%m")
+            monthly_trends_map[key] = {"name": date_iter.strftime("%b"), "revenue": 0, "subscriptions": 0}
 
         for b in all_trend_payments:
-            key = b[0].strftime("%Y-%m")
-            if key in monthly_trends_map:
-                monthly_trends_map[key]["revenue"] += float(b[1] or 0)
+            if b[0]:
+                key = b[0].strftime("%Y-%m")
+                if key in monthly_trends_map:
+                    monthly_trends_map[key]["revenue"] += float(b[1] or 0)
         
         for s in all_trend_subs:
-            key = s[0].strftime("%Y-%m")
-            if key in monthly_trends_map:
-                monthly_trends_map[key]["subscriptions"] += 1
+            if s[0]:
+                key = s[0].strftime("%Y-%m")
+                if key in monthly_trends_map:
+                    monthly_trends_map[key]["subscriptions"] += 1
                 
         monthly_trends = list(monthly_trends_map.values())
 
         # Aggregate YTM Trends (Jan 1st to Current Month)
         ytm_trends_map = {}
         for m in range(1, now.month + 1):
-            date = datetime(now.year, m, 1)
-            key = date.strftime("%Y-%m")
-            ytm_trends_map[key] = {"name": date.strftime("%b"), "revenue": 0, "subscriptions": 0}
+            date_iter = datetime(now.year, m, 1, tzinfo=timezone.utc)
+            key = date_iter.strftime("%Y-%m")
+            ytm_trends_map[key] = {"name": date_iter.strftime("%b"), "revenue": 0, "subscriptions": 0}
 
         for b in all_trend_payments:
-            key = b[0].strftime("%Y-%m")
-            if key in ytm_trends_map:
-                ytm_trends_map[key]["revenue"] += float(b[1] or 0)
+            if b[0]:
+                key = b[0].strftime("%Y-%m")
+                if key in ytm_trends_map:
+                    ytm_trends_map[key]["revenue"] += float(b[1] or 0)
         
         for s in all_trend_subs:
-            key = s[0].strftime("%Y-%m")
-            if key in ytm_trends_map:
-                ytm_trends_map[key]["subscriptions"] += 1
+            if s[0]:
+                key = s[0].strftime("%Y-%m")
+                if key in ytm_trends_map:
+                    ytm_trends_map[key]["subscriptions"] += 1
         
         ytm_trends = list(ytm_trends_map.values())
 
         # 11. Weekly Trends (Last 6 Weeks)
-        six_weeks_ago = datetime.utcnow() - timedelta(weeks=6)
+        six_weeks_ago = now - timedelta(weeks=6)
         weekly_stats = {}
         
         # Initialize last 6 weeks
-        current_week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday()) # Start of this week (Monday)
+        current_week_start = now - timedelta(days=now.weekday()) # Start of this week (Monday)
         
         for i in range(5, -1, -1):
             week_start = current_week_start - timedelta(weeks=i)
@@ -379,14 +376,14 @@ async def get_dashboard_stats(
             weekly_stats[key] = {"name": label, "revenue": 0, "subscriptions": 0, "sort_date": week_start}
 
         for b in all_trend_payments:
-            b_date = b[0].replace(tzinfo=None) if b[0] and b[0].tzinfo else b[0]
+            b_date = b[0]
             if b_date and b_date >= six_weeks_ago:
                 key = b_date.strftime("%Y-%W")
                 if key in weekly_stats:
                     weekly_stats[key]["revenue"] += float(b[1] or 0)
         
         for s in all_trend_subs:
-            s_date = s[0].replace(tzinfo=None) if s[0] and s[0].tzinfo else s[0]
+            s_date = s[0]
             if s_date and s_date >= six_weeks_ago:
                 key = s_date.strftime("%Y-%W")
                 if key in weekly_stats:
@@ -409,14 +406,6 @@ async def get_dashboard_stats(
         
         agent_activities = []
         for u, a in recent_users:
-            # Determine activity type
-            # 1. Created recently (within last 24h/1h of created_at) or updated_at is None
-            # 2. Deactivated (is_active = False)
-            # 3. Updated (updated_at > created_at)
-            
-            activity_type = "UPDATED"
-            action_title = "Agent Updated"
-            icon_type = "edit"
             display_time = u.updated_at or u.created_at
             
             # Simple heuristic
@@ -438,6 +427,10 @@ async def get_dashboard_stats(
                 activity_type = "DEACTIVATED"
                 action_title = "Agent Deactivated"
                 icon_type = "block"
+            else:
+                activity_type = "UPDATED"
+                action_title = "Agent Updated"
+                icon_type = "edit"
             
             agent_activities.append({
                 "type": activity_type,
@@ -457,14 +450,14 @@ async def get_dashboard_stats(
             daily_stats[key] = {"name": label, "revenue": 0, "subscriptions": 0, "date_obj": day}
         
         for b in all_trend_payments:
-            b_date = b[0].replace(tzinfo=None) if b[0] and b[0].tzinfo else b[0]
+            b_date = b[0]
             if b_date and b_date >= seven_days_ago:
                 key = b_date.strftime("%Y-%m-%d")
                 if key in daily_stats:
                     daily_stats[key]["revenue"] += float(b[1] or 0)
         
         for s in all_trend_subs:
-            s_date = s[0].replace(tzinfo=None) if s[0] and s[0].tzinfo else s[0]
+            s_date = s[0]
             if s_date and s_date >= seven_days_ago:
                 key = s_date.strftime("%Y-%m-%d")
                 if key in daily_stats:

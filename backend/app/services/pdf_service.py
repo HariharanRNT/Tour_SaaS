@@ -390,13 +390,67 @@ class PDFService:
         for idx, pkg in enumerate(packages):
             quoted_price = price_map.get(str(pkg.id), pkg.price_per_person)
             
-            # Inclusions/Exclusions logic
+            # Inclusions/Exclusions logic - Aggregate from multiple fields
+            all_inclusions = []
+            all_exclusions = []
+
             try:
-                 inclusions = pkg.included_items if isinstance(pkg.included_items, list) else json.loads(pkg.included_items or '[]')
-                 exclusions = pkg.excluded_items if isinstance(pkg.excluded_items, list) else json.loads(pkg.excluded_items or '[]')
-            except:
-                 inclusions = []
-                 exclusions = []
+                # 1. Legacy list items
+                legacy_inc = pkg.included_items if isinstance(pkg.included_items, list) else json.loads(pkg.included_items or '[]')
+                legacy_exc = pkg.excluded_items if isinstance(pkg.excluded_items, list) else json.loads(pkg.excluded_items or '[]')
+                all_inclusions.extend(legacy_inc)
+                all_exclusions.extend(legacy_exc)
+
+                # 2. Structured inclusions (dict)
+                if pkg.inclusions and isinstance(pkg.inclusions, dict):
+                    # Mapping of internal keys to human readable labels
+                    inc_labels = {
+                        'flights': 'Flights',
+                        'transportation': 'Transportation',
+                        'hotel': 'Accommodation',
+                        'visaAssistance': 'Visa Assistance',
+                        'travelInsurance': 'Travel Insurance',
+                        'tourGuide': 'Tour Guide',
+                        'foodAndDining': 'Meals & Dining',
+                        'supportAndServices': 'Support & Services'
+                    }
+                    for key, label in inc_labels.items():
+                        item = pkg.inclusions.get(key)
+                        if item and isinstance(item, dict) and item.get('included'):
+                            detail = item.get('details')
+                            if detail:
+                                all_inclusions.append(f"{label}: {detail}")
+                            else:
+                                all_inclusions.append(label)
+
+                # 3. Custom services
+                if pkg.custom_services and isinstance(pkg.custom_services, list):
+                    for service in pkg.custom_services:
+                        if not isinstance(service, dict):
+                            continue
+                        if not service.get('visibleToCustomer', True):
+                            continue
+                            
+                        heading = service.get('heading')
+                        desc = service.get('description')
+                        text = f"{heading}: {desc}" if desc else heading
+                        
+                        if service.get('isIncluded', True):
+                            all_inclusions.append(text)
+                        else:
+                            all_exclusions.append(text)
+                
+                # Deduplicate and filter out empty strings
+                all_inclusions = [str(i).strip() for i in all_inclusions if i and str(i).strip()]
+                # Use dict.fromkeys to deduplicate while preserving order
+                all_inclusions = list(dict.fromkeys(all_inclusions))
+                
+                all_exclusions = [str(e).strip() for e in all_exclusions if e and str(e).strip()]
+                all_exclusions = list(dict.fromkeys(all_exclusions))
+                
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Error parsing inclusions/exclusions: {e}")
 
             # Page break for subsequent packages
             page_break = 'style="page-break-before: always;"' if idx > 0 else ""
@@ -408,10 +462,12 @@ class PDFService:
                     <div class="package-meta">{pkg.destination.upper()} &bull; {pkg.duration_days} DAYS &bull; {pkg.duration_nights} NIGHTS</div>
                 </div>
                 
+                {f'''
                 <div class="section-title">Package Highlights</div>
                 <div class="highlight-grid">
-                    {" ".join([f'<span class="highlight-item">{h}</span>' for h in inclusions[:8]])}
+                    {" ".join([f'<span class="highlight-item">{h}</span>' for h in all_inclusions[:8]])}
                 </div>
+                ''' if all_inclusions else ""}
 
                 <div class="section-title">Daily Itinerary</div>
                 <div class="itinerary-container">
@@ -456,29 +512,35 @@ class PDFService:
                     <p style="font-size: 10px; color: #94a3b8; margin-top: 8px;">* Prices are inclusive of all applicable taxes. All rates are subject to availability at the time of booking.</p>
                 </div>
 
+                {f'''
                 <div class="section-title">Standard Terms</div>
                 <div class="inc-exc-container">
                     <table class="inc-exc-table">
                         <tr>
+                            {" ".join([f"""
                             <td class="inc-exc-cell">
                                 <div class="inc-box">
                                     <div class="inc-title">WHAT'S INCLUDED</div>
                                     <ul class="inc-list">
-                                        {" ".join([f'<li>{i}</li>' for i in inclusions])}
+                                        {" ".join([f'<li>{i}</li>' for i in all_inclusions])}
                                     </ul>
                                 </div>
                             </td>
+                            """ if all_inclusions else "",
+                            f"""
                             <td class="inc-exc-cell">
                                 <div class="exc-box">
                                     <div class="exc-title">WHAT'S NOT INCLUDED</div>
                                     <ul class="inc-list">
-                                        {" ".join([f'<li>{e}</li>' for e in exclusions])}
+                                        {" ".join([f'<li>{e}</li>' for e in all_exclusions])}
                                     </ul>
                                 </div>
                             </td>
+                            """ if all_exclusions else ""])}
                         </tr>
                     </table>
                 </div>
+                ''' if all_inclusions or all_exclusions else ""}
             </div>
             """
 

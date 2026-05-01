@@ -310,7 +310,11 @@ export default function AgentBookingsPage() {
                             </div>
                             <div className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 shadow-sm flex items-center gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-font)]/60">Completed:</span>
-                                <span className="text-xs font-black text-[var(--color-primary-font)]">{filterBookings('completed', true).length}</span>
+                                <span className="text-xs font-black text-[var(--color-primary-font)]">{bookings.filter((b: Booking) => b.status === 'completed').length}</span>
+                            </div>
+                            <div className="px-3 py-1.5 rounded-full bg-red-500/10 backdrop-blur-md border border-red-500/20 shadow-sm flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-red-600/70">Cancelled:</span>
+                                <span className="text-xs font-black text-red-600">{bookings.filter((b: Booking) => b.status === 'cancelled').length}</span>
                             </div>
                         </div>
                     </div>

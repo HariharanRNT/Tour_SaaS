@@ -1950,15 +1950,18 @@ button,
 }
 
 /* Specific overrides for status-based buttons */
-.bg-primary, 
-[class*="bg-[var(--primary)]"],
-.bg-\[var\(--primary\)\] {
+button.bg-primary, 
+button[class*="bg-[var(--primary)]"],
+.btn.bg-primary,
+.btn[class*="bg-[var(--primary)]"] {
   color: var(--button-text, var(--button-text-color, #000000)) !important;
 }
 
 /* Ensure outline buttons keep their primary border/text color */
-.border-primary,
-.border-\[var\(--primary\)\] {
+button.border-primary,
+button[class*="border-[var(--primary)]"],
+.btn.border-primary,
+.btn[class*="border-[var(--primary)]"] {
   color: var(--primary) !important;
 }
 
