@@ -123,10 +123,10 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
         # Refund applies to base fare only — GST portion is forfeited entirely.
         # Back-calculate base fare based on the mode used at booking time
         if is_gst_inclusive:
-            # Inclusive: Base = Total - (Total * Rate/100)
-            base_fare = paid - (paid * (gst_percentage / 100))
+            # Inclusive: Base = Total / (1 + Rate/100)
+            base_fare = paid / (1 + gst_percentage / 100) if gst_percentage > 0 else paid
         else:
-            # Exclusive: Base = Total / (1 + Rate/100)
+            # Exclusive: Total already includes tax, so back-calculating base uses same formula
             base_fare = paid / (1 + gst_percentage / 100) if gst_percentage > 0 else paid
             
         amount = round(base_fare * pct / 100, 2)
@@ -249,7 +249,8 @@ async def process_cancellation(
     try:
         # 3. Calculate refund based on package cancellation rules
         package = booking.package
-        rules = (package.cancellation_rules or []) if package else []
+        # Prioritize rules stored in booking (snapshot) over dynamic package rules
+        rules = booking.cancellation_rules if (booking.cancellation_rules and len(booking.cancellation_rules) > 0) else ((package.cancellation_rules or []) if package else [])
         calc = calculate_refund(booking, rules)
 
         if calc["days_before"] < 0:

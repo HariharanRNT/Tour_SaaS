@@ -2095,7 +2095,7 @@ export default function CreatePackagePage() {
                                                             <span className="font-bold text-black text-[11px] uppercase tracking-wider">Preview:</span>
                                                             <span className="font-bold text-black">₹{formData.price_per_person.toLocaleString('en-IN')}</span>
                                                             <span className="font-bold px-2 py-0.5 rounded text-[12px]" style={{ background: 'var(--primary-glow)', color: 'black' }}>
-                                                                Includes ₹{(formData.price_per_person * formData.gst_percentage / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
+                                                                Includes ₹{(formData.price_per_person - (formData.price_per_person / (1 + (formData.gst_percentage / 100)))).toLocaleString('en-IN', { maximumFractionDigits: 2 })} GST ({formData.gst_percentage}%)
                                                             </span>
                                                         </div>
                                                     ) : (
@@ -2926,7 +2926,7 @@ export default function CreatePackagePage() {
 
                                                                         // 2. Get presigned URL
                                                                         const token = localStorage.getItem('token');
-                                                                        const presignedRes = await fetch('http://localhost:8000/api/v1/presigned-url', {
+                                                                        const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
                                                                             method: 'POST',
                                                                             headers: {
                                                                                 'Authorization': `Bearer ${token}`,

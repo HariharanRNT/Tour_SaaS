@@ -995,6 +995,8 @@ class BookingResponse(BaseModel):
     gst_amount: Optional[Decimal] = None
     is_gst_inclusive: Optional[bool] = None
     base_amount: Optional[Decimal] = None
+    cancellation_enabled: Optional[bool] = None
+    cancellation_rules: Optional[List[dict]] = None
     travelers: List[TravelerResponse] = []
     
     class Config:

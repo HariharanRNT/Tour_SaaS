@@ -736,12 +736,12 @@ async def get_agent_financial_report(
                     
                     if gst_percentage > 0:
                         if gst_mode == 'inclusive':
-                            # New logic: Tax is a flat percentage of the total
-                            tax = net_amount * (gst_percentage / 100)
+                            # Formula: Base = Total / (1 + Tax%), Tax = Total - Base
+                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100))) if gst_percentage > 0 else 0.0
                         else:
                             # Exclusive logic: net_amount is Total (Base + Tax)
                             # Tax = Total - (Total / (1 + Rate/100))
-                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100)))
+                            tax = net_amount - (net_amount / (1 + (gst_percentage / 100))) if gst_percentage > 0 else 0.0
                 
                 stats["taxes"] += tax
                 stats["net_revenue"] += (amount - refund)

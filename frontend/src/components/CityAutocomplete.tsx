@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { debounce } from 'lodash'
+import { API_URL } from '@/lib/api'
 
 interface CityAutocompleteProps {
     countryName: string
@@ -102,7 +103,7 @@ export function CityAutocomplete({
             try {
                 let data = []
                 try {
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/locations/cities?country=${encodeURIComponent(countryName)}`)
+                    const response = await fetch(`${API_URL}/api/v1/locations/cities?country=${encodeURIComponent(countryName)}`)
                     if (response.ok) {
                         data = await response.json()
                     }

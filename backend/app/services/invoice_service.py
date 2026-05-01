@@ -223,12 +223,14 @@ class InvoiceService:
                     gst_amount = 0.0
                 else:
                     if is_gst_inclusive:
-                        # New logic: Tax on Gross
-                        gst_amount = total_amount * (gst_percentage / 100)
+                        # Formula: Base = Total / (1 + Tax%), Tax = Total - Base
+                        base_price = total_amount / (1 + (gst_percentage / 100)) if gst_percentage > 0 else total_amount
+                        gst_amount = total_amount - base_price
                     else:
-                        # Exclusive logic: Tax extracted from total
-                        gst_amount = total_amount - (total_amount / (1 + (gst_percentage / 100)))
-                    base_price = total_amount - gst_amount
+                        # Exclusive: Base was the subtotal before adding tax
+                        # So back-calculating from total (which has tax) uses the same formula
+                        base_price = total_amount / (1 + (gst_percentage / 100)) if gst_percentage > 0 else total_amount
+                        gst_amount = total_amount - base_price
 
             display_gst_rate = gst_percentage
             gst_label = f"GST ({gst_percentage}%) {'(Included)' if is_gst_inclusive else '(Added)'}"

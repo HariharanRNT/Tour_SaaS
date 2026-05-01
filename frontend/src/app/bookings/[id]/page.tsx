@@ -920,8 +920,9 @@ export default function BookingDetailsPage() {
                                             <h4 className="section-title">Cancellation Rules</h4>
                                         </div>
 
-                                        {booking.package?.cancellation_enabled ? (
+                                        {(booking.cancellation_enabled ?? booking.package?.cancellation_enabled) ? (
                                             <div className="space-y-3">
+
                                                 {/* Parent Container with subtle tint */}
                                                 <div className="bg-emerald-500/5 border border-black/5 rounded-[24px] p-4 space-y-3">
                                                     <div className="flex items-center gap-2 mb-2 text-emerald-800/80 px-2">
@@ -930,7 +931,10 @@ export default function BookingDetailsPage() {
                                                     </div>
 
                                                     {(() => {
-                                                        const rules = [...(booking.package.cancellation_rules || [])].sort((a, b) => b.daysBefore - a.daysBefore);
+                                                        const rawRules = (booking.cancellation_rules && booking.cancellation_rules.length > 0)
+                                                            ? booking.cancellation_rules
+                                                            : booking.package?.cancellation_rules || [];
+                                                        const rules = [...rawRules].sort((a, b) => b.daysBefore - a.daysBefore);
                                                         const totalAmount = booking.total_amount;
                                                         const gstApplicable = true; // Bookings always have GST calculated at checkout
                                                         let gstAmount = 0;

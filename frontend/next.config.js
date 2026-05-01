@@ -8,6 +8,10 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
+                hostname: 'toursaas1.s3.ap-southeast-2.amazonaws.com',
+            },
+            {
+                protocol: 'https',
                 hostname: 'toursaas.s3.us-east-1.amazonaws.com',
             },
             {
