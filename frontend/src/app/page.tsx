@@ -201,7 +201,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                 const allPackages = response.data.packages || []
                 const publicPackages = allPackages.filter((pkg: Package) => pkg.is_public !== false)
                 setPackages(publicPackages)
-                
+
                 // Fallback: If no cheapest slug yet from dedicated fetch, pick from these packages
                 if (response.data.packages && response.data.packages.length > 0 && !cheapestPackageSlug) {
                     const localCheapest = [...response.data.packages].sort((a, b) => a.price_per_person - b.price_per_person)[0];
@@ -349,7 +349,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                     {isLoading ? <span className="h-6 w-32 bg-white/10 rounded animate-pulse inline-block" /> : (hpSettings?.secondaryBtnText || theme.hero_cta_secondary_text || "See Sample Itinerary")}
                                 </Button>
 
-                                 <Link href="/plan-trip?search=all">
+                                <Link href="/plan-trip?search=all">
                                     <Button size="lg" className="h-[56px] px-8 text-[18px] text-white hover:scale-[1.03] transition-all duration-300 group font-bold"
                                         style={{
                                             background: 'linear-gradient(135deg, var(--button-bg), var(--button-bg-light))',
@@ -576,7 +576,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                 </motion.div>
                             </div>
 
-                            <div 
+                            <div
                                 ref={destScrollRef}
                                 onMouseDown={handleMouseDown}
                                 onMouseLeave={handleMouseLeave}
@@ -606,7 +606,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
                                             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--primary)] to-[var(--primary-light)]" />
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                        
+
                                         <div className="absolute top-3 right-3 z-10">
                                             <Badge className="bg-black/40 backdrop-blur-md text-white border-white/10 text-[10px] font-bold px-2 py-0.5 rounded-full">
                                                 {dest.pkg_count} {dest.pkg_count === 1 ? 'Package' : 'Packages'}
@@ -615,7 +615,7 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
 
                                         <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:bottom-6">
                                             <h3 className="text-lg font-bold text-white leading-tight mb-2">{dest.name}</h3>
-                                            
+
                                             <div className="flex items-center gap-1 text-[10px] font-bold text-[#f4f4f6] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                                                 Explore <ArrowRight className="h-3 w-3" />
                                             </div>
@@ -707,9 +707,9 @@ export default function Home({ searchParams }: { searchParams: { site?: string }
             <AISearchModal open={showAISearch} onClose={() => setShowAISearch(false)} />
 
             {/* General Enquiry Modal */}
-            <GeneralEnquiryModal 
-                isOpen={showEnquiryModal} 
-                onClose={() => setShowEnquiryModal(false)} 
+            <GeneralEnquiryModal
+                isOpen={showEnquiryModal}
+                onClose={() => setShowEnquiryModal(false)}
                 agentId={publicSettings?.agent_id}
             />
         </div>

@@ -28,29 +28,33 @@ async def register(
 ):
     """Register a new user"""
     try:
-        # Check if user already exists
-        result = await db.execute(select(User).where(User.email == user_data.email))
-        existing_user = result.scalar_one_or_none()
-        
-        if existing_user:
-            raise ConflictException("this email has already registered")
-        
-        # Use domain from URL context (header)
+        # 1. Resolve Agent Domain Context
         registration_domain = domain
-        
-        # Find Agent Profile for this domain
         agent_user_id = None
-        if registration_domain and registration_domain != "localhost":
+        if registration_domain and registration_domain not in ["localhost", "127.0.0.1", "rnt.local"]:
             agent_query = await db.execute(select(Agent).where(Agent.domain == registration_domain))
             agent_profile = agent_query.scalar_one_or_none()
             if agent_profile:
                 agent_user_id = agent_profile.user_id
+
+        # 2. Check if customer already exists for THIS agent domain
+        stmt = select(User).where(
+            User.email == user_data.email,
+            User.role == UserRole.CUSTOMER,
+            User.agent_id == agent_user_id
+        )
+        result = await db.execute(stmt)
+        existing_user = result.scalar_one_or_none()
         
+        if existing_user:
+            raise ConflictException("You have already registered with this agency.")
+            
         # Create User (Auth)
         user = User(
             email=user_data.email,
             password_hash=get_password_hash(user_data.password),
             role=UserRole.CUSTOMER,
+            agent_id=agent_user_id,
             is_active=True
         )
         db.add(user)
@@ -142,6 +146,9 @@ async def register_agent(
     db.add(user)
     await db.flush()
     
+    # Set agent_id to self for agents
+    user.agent_id = user.id
+    
     # Create Agent Profile
     agent = Agent(
         user_id=user.id,
@@ -220,7 +227,15 @@ async def login(
     from app.services.email_service import EmailService
     from app.utils.crypto import decrypt_value
 
-    # 1. Find user by email
+    # 0. Resolve Agent from domain
+    agent_id = None
+    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+        agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
+        agent_profile = agent_q.scalar_one_or_none()
+        if agent_profile:
+            agent_id = agent_profile.user_id
+
+    # 1. Find user by email (Global lookup first to differentiate errors)
     stmt = select(User).where(User.email == form_data.username).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
@@ -234,8 +249,18 @@ async def login(
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     
-    # 2. Basic authentication check
-    if not user or not verify_password(form_data.password, user.password_hash):
+    # 2. Check if user exists anywhere
+    if not user:
+        raise UnauthorizedException("Incorrect email or password")
+    
+    # 3. Domain scoping check
+    if agent_id:
+        # On a specific agent domain, user must belong to that agent OR be an admin
+        if user.agent_id != agent_id and user.role != UserRole.ADMIN:
+            raise UnauthorizedException("This email is not registered for this domain")
+    
+    # 4. Authentication (Password) check
+    if not verify_password(form_data.password, user.password_hash):
         raise UnauthorizedException("Incorrect email or password")
     
     if not user.is_active:
@@ -543,8 +568,21 @@ async def google_login(
             detail=f"Invalid Google token: {str(e)}"
         )
 
-    # Check if user exists
-    stmt = select(User).where(User.email == email).options(
+    # 0. Resolve Agent Domain Context
+    agent_id = None
+    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+         agent_query = await db.execute(select(Agent).where(Agent.domain == domain))
+         agent_profile = agent_query.scalar_one_or_none()
+         if agent_profile:
+             agent_id = agent_profile.user_id
+
+    # 1. Check if user exists (domain-scoped for customers)
+    stmt = select(User).where(User.email == email)
+    if agent_id:
+        # Match customer of this agent OR any global user (Admin/Agent)
+        stmt = stmt.where((User.agent_id == agent_id) | (User.role != UserRole.CUSTOMER))
+    
+    stmt = stmt.options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile),
         selectinload(User.customer_profile)
@@ -583,6 +621,7 @@ async def google_login(
             email=email,
             password_hash=get_password_hash(random_password),
             role=UserRole.CUSTOMER,
+            agent_id=agent_id,
             is_active=True,
             email_verified=True, # Trusted via Google
             google_id=google_id,
@@ -596,15 +635,9 @@ async def google_login(
             user_id=user.id,
             first_name=first_name,
             last_name=last_name,
-            phone=None # Phone not always available from Google
+            phone=None,
+            agent_id=agent_id
         )
-        
-        # If logging in on an agent domain, associate with that agent
-        if domain and domain != "localhost":
-             agent_query = await db.execute(select(Agent).where(Agent.domain == domain))
-             agent_profile = agent_query.scalar_one_or_none()
-             if agent_profile:
-                 customer.agent_id = agent_profile.user_id
         
         db.add(customer)
         await db.commit()
@@ -648,8 +681,21 @@ async def send_login_otp(
     from app.services.otp_service import OTPService
     from app.services.email_service import EmailService
     
-    # 1. Find user by email
-    stmt = select(User).where(User.email == data.email).options(
+    # 0. Resolve Agent from domain
+    agent_id = None
+    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+        agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
+        agent_profile = agent_q.scalar_one_or_none()
+        if agent_profile:
+            agent_id = agent_profile.user_id
+
+    # 1. Find user by email and domain-scope
+    stmt = select(User).where(User.email == data.email)
+    
+    if agent_id:
+        stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
+    
+    stmt = stmt.options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
@@ -995,21 +1041,34 @@ from datetime import datetime, timedelta
 @router.post("/forgot-password")
 async def forgot_password(
     data: ForgotPasswordRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
 ):
     """Initiate password reset flow"""
-    logger.info(f"Forgot password request received for email: {data.email}")
+    logger.info(f"Forgot password request received for email: {data.email} on domain: {domain}")
     try:
-        # 1. Check Rate Limit
-        if not await OTPService.check_rate_limit(data.email):
-            logger.warning(f"Password reset OTP rate limit exceeded for: {data.email}")
+        # 1. Resolve Agent Domain Context
+        agent_id = None
+        if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+            agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
+            agent_profile = agent_q.scalar_one_or_none()
+            if agent_profile:
+                agent_id = agent_profile.user_id
+
+        # 2. Check Rate Limit
+        if not await OTPService.check_rate_limit(data.email, agent_id):
+            logger.warning(f"Password reset OTP rate limit exceeded for: {data.email} (agent: {agent_id})")
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="OTP request limit exceeded. Please try again after 1 hour."
             )
 
-        # 2. Check if email exists
-        stmt = select(User).where(User.email == data.email).options(
+        # 3. Check if email exists in this scope
+        stmt = select(User).where(User.email == data.email)
+        if agent_id:
+             stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
+        
+        stmt = stmt.options(
             selectinload(User.admin_profile),
             selectinload(User.agent_profile),
             selectinload(User.customer_profile),
@@ -1040,19 +1099,18 @@ async def forgot_password(
                 detail = "This service is currently unavailable. Please contact your administrator." if user.role == UserRole.SUB_USER else "This service is currently unavailable. Please contact support."
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
-        # 3. Generate 6-digit OTP
+        # 4. Generate 6-digit OTP
         otp = OTPService.generate_otp()
         
         # Log to terminal securely
-        otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email})\n{'='*50}\n"
+        otp_msg = f"\n{'='*50}\n🔑 PASSWORD RESET OTP: {otp} (for {data.email} agent: {agent_id})\n{'='*50}\n"
         logger.warning(otp_msg)
-        print(otp_msg, flush=True)
         
-        # 4. Store OTP in Redis
-        if not await OTPService.store_otp(data.email, otp):
+        # 5. Store OTP in Redis
+        if not await OTPService.store_otp(data.email, otp, agent_id):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to generate secure OTP. Please try again."
+                detail="Failed to generate OTP. Please try again."
             )
 
         # 5. Check if user is active
@@ -1141,15 +1199,21 @@ async def forgot_password(
 @router.post("/verify-otp")
 async def verify_otp(
     data: VerifyOTPRequest,
+    domain: str = Depends(get_current_domain),
     db: AsyncSession = Depends(get_db)
 ):
     """Verify OTP provided by user"""
-    # 1. Verify against Redis
-    is_valid = await OTPService.verify_otp(data.email, data.otp)
-    
-    if not is_valid:
+    # 0. Resolve Agent Domain Context
+    agent_id = None
+    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+        agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
+        agent_profile = agent_q.scalar_one_or_none()
+        if agent_profile:
+            agent_id = agent_profile.user_id
+
+    if not await OTPService.verify_otp(data.email, data.otp, agent_id):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired OTP"
         )
         
@@ -1159,31 +1223,41 @@ async def verify_otp(
 @router.post("/reset-password")
 async def reset_password(
     data: ResetPasswordRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    domain: str = Depends(get_current_domain)
 ):
-    """Reset password using verified OTP/Token"""
-    # 1. Find User
+    """Reset password using verified OTP"""
+    # 0. Resolve Agent Domain Context
+    agent_id = None
+    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+        agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
+        agent_profile = agent_q.scalar_one_or_none()
+        if agent_profile:
+            agent_id = agent_profile.user_id
+
+    # 1. Verify OTP one last time to ensure process integrity
+    if not await OTPService.verify_otp(data.email, data.token, agent_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset session"
+        )
+    
+    # 2. Update password
     stmt = select(User).where(User.email == data.email)
-    res = await db.execute(stmt)
-    user = res.scalar_one_or_none()
+    if agent_id:
+         stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
+    
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    # 2. Verify OTP/Token again from Redis
-    is_valid = await OTPService.verify_otp(data.email, data.token)
-    
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Invalid or expired reset session"
-        )
         
     # 3. Update Password
     user.password_hash = get_password_hash(data.new_password)
     
     # 4. Clear OTP from Redis
-    await OTPService.delete_otp(data.email)
+    await OTPService.delete_otp(data.email, agent_id)
     
     await db.commit()
     

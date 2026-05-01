@@ -329,6 +329,11 @@ export const generateAIPackage = async (conversation_id: string) => {
     return response.data
 }
 
+export const extractSearchFilters = async (query: string) => {
+    const response = await api.post('/ai-assistant/extract-filters', { query })
+    return response.data
+}
+
 export const fetchAdminPlans = async () => {
     const response = await api.get('/subscriptions/admin/plans')
     return response.data

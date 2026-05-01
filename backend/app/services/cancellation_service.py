@@ -106,23 +106,33 @@ def calculate_refund(booking: Booking, rules: list) -> dict:
     pct = float(applicable["refundPercentage"]) if applicable else 0.0
     fare_type = (applicable or {}).get("fareType", None)
 
-    # --- GST-aware refund calculation ---
-    package = booking.package
-    gst_applicable = bool(getattr(package, "gst_applicable", False))
-    gst_percentage = float(getattr(package, "gst_percentage", 0) or 0)
+    # --- GST-aware refund calculation (Snapshot-Aware) ---
+    # Prioritize stored values from the booking record
+    if hasattr(booking, 'gst_percentage') and booking.gst_percentage is not None:
+        gst_applicable = float(booking.gst_percentage) > 0
+        gst_percentage = float(booking.gst_percentage)
+        is_gst_inclusive = getattr(booking, 'is_gst_inclusive', False)
+    else:
+        # Fallback to current package settings for legacy data
+        package = booking.package
+        gst_applicable = bool(getattr(package, "gst_applicable", False))
+        gst_percentage = float(getattr(package, "gst_percentage", 0) or 0)
+        is_gst_inclusive = (getattr(package, "gst_mode", "exclusive") == "inclusive")
 
     if gst_applicable and fare_type == "base_fare":
         # Refund applies to base fare only — GST portion is forfeited entirely.
-        # The customer always paid the total (base + GST).
-        # Back-calculate base fare: baseFare = totalPaid / (1 + gstPct/100)
-        if gst_percentage > 0:
-            base_fare = paid / (1 + gst_percentage / 100)
+        # Back-calculate base fare based on the mode used at booking time
+        if is_gst_inclusive:
+            # Inclusive: Base = Total - (Total * Rate/100)
+            base_fare = paid - (paid * (gst_percentage / 100))
         else:
-            base_fare = paid  # 0% GST edge case — identical result either way
+            # Exclusive: Base = Total / (1 + Rate/100)
+            base_fare = paid / (1 + gst_percentage / 100) if gst_percentage > 0 else paid
+            
         amount = round(base_fare * pct / 100, 2)
         logger.info(
-            f"[Booking {booking.id}] fare_type=base_fare → base_fare=₹{base_fare:.2f}, "
-            f"refund=₹{amount} ({pct}% of base)"
+            f"[Booking {booking.id}] fare_type=base_fare ({'Incl' if is_gst_inclusive else 'Excl'}) → "
+            f"base_fare=₹{base_fare:.2f}, refund=₹{amount} ({pct}% of base)"
         )
     else:
         # total_fare, absent fareType, or GST not applicable → flat % of total paid

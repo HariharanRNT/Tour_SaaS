@@ -99,6 +99,10 @@ export interface Booking {
     flight_details?: string
     refund?: BookingRefund
     booked_by?: User
+    gst_percentage?: number
+    gst_amount?: number
+    is_gst_inclusive?: boolean
+    base_amount?: number
 }
 
 export interface BookingRefund {

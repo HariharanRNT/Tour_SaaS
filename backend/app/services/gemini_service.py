@@ -11,12 +11,58 @@ from app.services.pexels_service import pexels_service
 
 
 class GeminiService:
-    """Service for interacting with Google Gemini API"""
+    """Service for interacting with Google Gemini API with automatic key rotation"""
     
     def __init__(self):
-        """Initialize Gemini client with API key"""
-        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        """Initialize Gemini clients with API keys from settings"""
+        self.api_keys = settings.gemini_api_key_list
+        self.current_key_index = 0
         self.model_name = settings.GEMINI_MODEL
+        
+    def _get_client(self):
+        """Get the current Gemini client"""
+        if not self.api_keys:
+            raise Exception("No Gemini API keys configured in GEMINI_API_KEYS")
+        return genai.Client(api_key=self.api_keys[self.current_key_index])
+
+    def _switch_key(self):
+        """Switch to the next API key in the list"""
+        if len(self.api_keys) > 1:
+            self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+            print(f"[GeminiService] Switched to API key index {self.current_key_index}")
+            return True
+        return False
+
+    def generate_content(self, model: str, contents: Any, config: Any) -> Any:
+        """Generate content with automatic failover to next API key on rate limits or server errors"""
+        max_attempts = len(self.api_keys)
+        last_error = None
+
+        for attempt in range(max_attempts):
+            client = self._get_client()
+            try:
+                return client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=config
+                )
+            except Exception as e:
+                last_error = e
+                error_str = str(e).upper()
+                
+                # Check for rate limit (429) or server errors (500, 503)
+                is_retryable = any(code in error_str for code in ["429", "500", "502", "503", "504"]) or \
+                               any(term in error_str for term in ["QUOTA", "EXHAUSTED", "LIMIT", "OVERLOAD"])
+                
+                if is_retryable and attempt < max_attempts - 1:
+                    print(f"[GeminiService] Key {self.current_key_index} failed ({error_str}). Retrying with next key...")
+                    self._switch_key()
+                else:
+                    # If not retryable or no more keys, raise the error
+                    raise e
+        
+        if last_error:
+            raise last_error
         
     def _get_base_system_prompt(self) -> str:
         """Get the base system prompt for travel planning"""
@@ -187,7 +233,7 @@ Return ONLY the following JSON structure with no additional text or markdown:
             )
             
             # Generate response
-            response = self.client.models.generate_content(
+            response = self.generate_content(
                 model=self.model_name,
                 contents=contents,
                 config=config
@@ -227,7 +273,7 @@ Return ONLY the following JSON structure with no additional text or markdown:
                 temperature=0.7,
             )
             
-            response = self.client.models.generate_content(
+            response = self.generate_content(
                 model=self.model_name,
                 contents=prompt,
                 config=config
@@ -345,7 +391,7 @@ Return the COMPLETE updated itinerary in the same JSON format, with all modifica
                 temperature=0.7,
             )
             
-            response = self.client.models.generate_content(
+            response = self.generate_content(
                 model=self.model_name,
                 contents=prompt,
                 config=config
@@ -410,7 +456,7 @@ RULES:
             # Ensure model name is properly prefixed for the SDK
             effective_model = self.model_name if self.model_name.startswith("models/") else f"models/{self.model_name}"
             
-            response = self.client.models.generate_content(
+            response = self.generate_content(
                 model=effective_model,
                 contents=prompt,
                 config=config
@@ -604,7 +650,7 @@ CURRENT CONVERSATION CONTEXT:
 
             print("[GeminiService] Calling Gemini API...")
             try:
-                response = self.client.models.generate_content(
+                response = self.generate_content(
                     model=self.model_name,
                     contents=contents,
                     config=config
@@ -667,7 +713,7 @@ CURRENT CONVERSATION CONTEXT:
                         # No tools here to force text
                     )
 
-                    final_response = self.client.models.generate_content(
+                    final_response = self.generate_content(
                         model=self.model_name,
                         contents=contents,
                         config=final_config
@@ -905,6 +951,82 @@ CURRENT CONVERSATION CONTEXT:
         except Exception as e:
             print(f"Tool execution error: {e}")
             return {"error": str(e)}
+
+    async def extract_search_filters(self, query: str) -> Dict:
+        """
+        Extract search filters from a natural language query
+        """
+        try:
+            system_prompt = """You are a travel package filter extraction engine for a tour booking platform.
+Your ONLY job is to parse a user's natural-language travel query and return a single valid JSON object — no markdown, no explanation, no extra text, just the raw JSON.
+
+Extract the following fields. Use null for any field not mentioned or unclear:
+
+{
+  "destination": string | null,
+  "country": string | null,
+  "minBudget": number | null,
+  "maxBudget": number | null,
+  "minDays": number | null,
+  "maxDays": number | null,
+  "nights": number | null,
+  "tripStyle": string[] | null,
+  "activities": string[] | null,
+  "packageType": "single_city" | "multi_city" | null,
+  "travelMonth": string | null,
+  "groupSize": number | null
+}
+
+Rules:
+- If user says "4 days", set minDays=4 and maxDays=4.
+- If user says "4-6 days", set minDays=4 and maxDays=6.
+- If user says "minimum ₹17000 budget", set minBudget=17000 and maxBudget=null.
+- If user says "5-7 nights", set minDays=5 and maxDays=7 (treat nights as days).
+- Always return valid JSON. Never return explanatory prose.
+- If the entire query is unrelated to travel, return: {"error": "not_travel_query"}"""
+
+            config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.1,
+            )
+            
+            response = self.generate_content(
+                model=self.model_name,
+                contents=query,
+                config=config
+            )
+            
+            response_text = response.text.strip()
+            
+            # Basic cleanup if not already clean JSON
+            if "```json" in response_text:
+                response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
+            
+            try:
+                data = json.loads(response_text)
+            except Exception:
+                # Fallback extraction
+                import re
+                match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if match:
+                    data = json.loads(match.group())
+                else:
+                    raise
+            
+            return {
+                "success": True,
+                "filters": data
+            }
+            
+        except Exception as e:
+            print(f"[GeminiService] Filter extraction error: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
 
 # Singleton instance
 gemini_service = GeminiService()

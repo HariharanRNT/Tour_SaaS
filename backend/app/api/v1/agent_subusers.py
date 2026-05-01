@@ -122,6 +122,7 @@ async def create_sub_user(
         email=data.email,
         password_hash=get_password_hash(temp_password),
         role=UserRole.SUB_USER,
+        agent_id=agent.id,
         is_active=True,
         email_verified=True,
     )

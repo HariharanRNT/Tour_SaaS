@@ -825,18 +825,55 @@ export default function BookingDetailsPage() {
                                     </div>
 
                                     <div className="space-y-3 pt-6 border-t border-black/5">
-                                        <div className="flex justify-between items-center text-[12px]">
-                                            <span className="label-text">Base Fare</span>
-                                            <span className="value-text">
-                                                {formatCurrency(gstSettings.percentage > 0 ? (booking.total_amount / (1 + gstSettings.percentage / 100)) : booking.total_amount)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[12px]">
-                                            <span className="label-text">GST & Platform Fee</span>
-                                            <span className="text-[9px] font-bold text-black bg-black/5 px-2 py-0.5 rounded border border-black/10 uppercase tracking-widest">
-                                                {gstSettings.inclusive ? 'Included' : `${gstSettings.percentage}% (${formatCurrency(booking.total_amount - (booking.total_amount / (1 + gstSettings.percentage / 100)))})`}
-                                            </span>
-                                        </div>
+                                        {(() => {
+                                            // 1. Use stored values from booking if available (Historical Data)
+                                            let gstRate = booking.gst_percentage;
+                                            let isGstInclusive = booking.is_gst_inclusive;
+                                            let gstAmt = booking.gst_amount;
+                                            let basePrice = booking.base_amount;
+
+                                            // 2. Fallback for legacy data
+                                            if (gstRate === undefined || gstAmt === undefined || basePrice === undefined) {
+                                                const fallbackRate = gstSettings.percentage;
+                                                const isInclusive = gstSettings.inclusive;
+                                                const total = booking.total_amount || 0;
+                                                
+                                                if (fallbackRate === 0) {
+                                                    gstRate = 0;
+                                                    gstAmt = 0;
+                                                    basePrice = total;
+                                                } else {
+                                                    gstRate = fallbackRate;
+                                                    if (isInclusive) {
+                                                        // New logic: Tax on Gross
+                                                        gstAmt = total * (fallbackRate / 100);
+                                                    } else {
+                                                        // Exclusive logic: Tax extracted from total
+                                                        gstAmt = total - (total / (1 + (fallbackRate / 100)));
+                                                    }
+                                                    basePrice = total - gstAmt;
+                                                }
+                                            }
+
+                                            return (
+                                                <>
+                                                    <div className="flex justify-between items-center text-[12px]">
+                                                        <span className="label-text">Base Fare</span>
+                                                        <span className="value-text">
+                                                            {formatCurrency(basePrice || 0)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-[12px]">
+                                                        <span className="label-text">
+                                                            GST & Platform Fee ({gstRate}%{isGstInclusive !== undefined ? ` ${isGstInclusive ? 'Incl' : 'Excl'}` : ''})
+                                                        </span>
+                                                        <span className="text-[12px] font-bold text-black">
+                                                            {formatCurrency(gstAmt || 0)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
                                         <div className="flex justify-between items-center text-[12px]">
                                             <span className="label-text">Reference</span>
                                             <span className="meta-text font-mono">{booking.booking_reference}</span>
