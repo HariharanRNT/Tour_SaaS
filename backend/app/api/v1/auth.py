@@ -235,7 +235,8 @@ async def login(
         if agent_profile:
             agent_id = agent_profile.user_id
 
-    # 1. Find user by email (Global lookup first to differentiate errors)
+    # 1. Find user by email — fetch ALL matching records (same email can exist as CUSTOMER
+    #    for different agents AND as AGENT/SUB_USER globally with the same email address)
     stmt = select(User).where(User.email == form_data.username).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
@@ -247,17 +248,39 @@ async def login(
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    
+    all_users = result.scalars().all()
+
     # 2. Check if user exists anywhere
-    if not user:
+    if not all_users:
         raise UnauthorizedException("Incorrect email or password")
-    
-    # 3. Domain scoping check
+
+    # 3. Domain scoping: pick the best-matching user record for this domain context.
+    #    Priority: ADMIN > AGENT (self-domain) > SUB_USER (parent-domain) > CUSTOMER (agent-scoped)
+    #    This handles the case where the same email exists as both a CUSTOMER for one agent
+    #    and as an AGENT/SUB_USER record (e.g., Vinith registered as a customer on abc.com
+    #    but is also an Agent logging into xyz.com).
+    user = None
     if agent_id:
-        # On a specific agent domain, user must belong to that agent OR be an admin
-        if user.agent_id != agent_id and user.role != UserRole.ADMIN:
+        # On an agent portal domain — prefer non-customer records first
+        for candidate in all_users:
+            if candidate.role == UserRole.ADMIN:
+                user = candidate
+                break
+            if candidate.role in [UserRole.AGENT, UserRole.SUB_USER]:
+                user = candidate
+                break
+        # Fallback: try a customer scoped to this exact agent domain
+        if user is None:
+            for candidate in all_users:
+                if candidate.role == UserRole.CUSTOMER and candidate.agent_id == agent_id:
+                    user = candidate
+                    break
+        # If still no match, deny access (email exists but not for this domain)
+        if user is None:
             raise UnauthorizedException("This email is not registered for this domain")
+    else:
+        # No specific agent domain (e.g. admin portal / localhost) — just take the first record
+        user = all_users[0]
     
     # 4. Authentication (Password) check
     if not verify_password(form_data.password, user.password_hash):
@@ -689,13 +712,9 @@ async def send_login_otp(
         if agent_profile:
             agent_id = agent_profile.user_id
 
-    # 1. Find user by email and domain-scope
-    stmt = select(User).where(User.email == data.email)
-    
-    if agent_id:
-        stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
-    
-    stmt = stmt.options(
+    # 1. Find user by email — fetch ALL matching records (same email can exist as CUSTOMER
+    #    for different agents AND as AGENT/SUB_USER globally)
+    stmt = select(User).where(User.email == data.email).options(
         selectinload(User.admin_profile),
         selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
         selectinload(User.customer_profile).selectinload(Customer.agent).selectinload(User.agent_profile).selectinload(Agent.smtp_settings),
@@ -704,14 +723,36 @@ async def send_login_otp(
         )
     )
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    
-    logger.warning(f"✅ Step 1: User lookup complete. Found: {user is not None}")
-    
+    all_users = result.scalars().all()
+
+    logger.warning(f"✅ Step 1: User lookup complete. Found {len(all_users)} record(s)")
+
     # Generic error message to prevent user enumeration
-    if not user:
+    if not all_users:
         logger.warning(f"❌ User not found for email: {data.email}")
         raise UnauthorizedException("Invalid email or password")
+
+    # Pick the best-matching user for this domain context.
+    # On an agent portal, prefer AGENT/SUB_USER over CUSTOMER records.
+    user = None
+    if agent_id:
+        for candidate in all_users:
+            if candidate.role == UserRole.ADMIN:
+                user = candidate
+                break
+            if candidate.role in [UserRole.AGENT, UserRole.SUB_USER]:
+                user = candidate
+                break
+        if user is None:
+            for candidate in all_users:
+                if candidate.role == UserRole.CUSTOMER and candidate.agent_id == agent_id:
+                    user = candidate
+                    break
+        if user is None:
+            logger.warning(f"❌ No matching user for email {data.email} on domain agent_id={agent_id}")
+            raise UnauthorizedException("Invalid email or password")
+    else:
+        user = all_users[0]
     
     # 2. Verify user role (Allow Agent, Customer, and Sub-User)
     if user.role not in [UserRole.AGENT, UserRole.CUSTOMER, UserRole.SUB_USER]:

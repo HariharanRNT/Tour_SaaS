@@ -242,7 +242,7 @@ export default function AdminLoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         onFocus={() => setPasswordFocused(true)}
                                         onBlur={() => setPasswordFocused(false)}
-                                        maxLength={50}
+                                        maxLength={14}
                                         className={`
                                     pl-12 pr-12 h-14 bg-white/35 backdrop-blur-[10px] border border-white/40 rounded-[18px] 
                                     transition-all duration-300 text-[#5C2500] font-medium 

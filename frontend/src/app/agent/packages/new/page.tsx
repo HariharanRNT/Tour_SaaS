@@ -921,28 +921,43 @@ export default function CreatePackagePage() {
         } catch (error: any) {
             console.error('Failed to save package:', error)
             let errorMsg = 'Failed to save package details. Please try again.'
+            
             try {
-                const parsed = JSON.parse(error.message)
-                if (parsed.detail) {
-                    if (Array.isArray(parsed.detail)) {
-                        errorMsg = parsed.detail.map((err: any) => {
+                // Try to parse the error message if it's a JSON string (from our throw)
+                let errorData = null
+                try {
+                    errorData = JSON.parse(error.message)
+                } catch {
+                    // If error.message is not JSON, use it as is if it's a string
+                    if (typeof error.message === 'string' && error.message.length > 0) {
+                        errorMsg = error.message
+                    }
+                }
+
+                if (errorData && errorData.detail) {
+                    const detail = errorData.detail
+                    if (Array.isArray(detail)) {
+                        errorMsg = detail.map((err: any) => {
                             const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : 'Field'
                             return `${field}: ${err.msg}`
                         }).join('\n')
-                    } else if (typeof parsed.detail === 'string') {
-                        if (parsed.detail.includes('validation errors')) {
-                            errorMsg = parsed.detail.replace('Internal server error: ', '').trim()
-                        } else {
-                            errorMsg = parsed.detail
-                        }
+                    } else if (typeof detail === 'string') {
+                        // Clean up technical prefixes
+                        errorMsg = detail
+                            .replace(/^Internal server error: /i, '')
+                            .replace(/^Failed to (create|update) package: /i, '')
+                            .replace(/^[45]\d{2}: /i, '') // Strip status codes like 400: or 500:
+                            .trim()
                     }
                 }
-            } catch {
-                if (error.message && !error.message.includes('[object Object]')) {
-                    errorMsg = error.message
-                }
+            } catch (innerError) {
+                console.error('Error parsing error message:', innerError)
             }
-            toast.error(errorMsg, { duration: 5000 })
+            
+            toast.error(errorMsg, {
+                duration: 5000,
+                id: 'package-save-error' // Use ID to prevent duplicate toasts
+            })
         } finally {
             setSaving(false)
         }

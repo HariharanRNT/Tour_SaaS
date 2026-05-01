@@ -185,7 +185,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         if (firstName.length > 50) return setError('First name must be under 50 characters')
         if (!lastName.trim()) return setError('Last name is required')
         if (lastName.length > 50) return setError('Last name must be under 50 characters')
-        if (password.length < 8 || password.length > 50) return setError('Password must be 8-50 characters')
+        if (password.length < 8 || password.length > 14) return setError('Password must be 8-14 characters')
         if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) return setError('Password must contain both uppercase and lowercase letters')
         if (password !== confirmPassword) return setError('Passwords do not match')
 
@@ -256,7 +256,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        if (resetPassword.length < 8 || resetPassword.length > 50) return setError('Password must be 8-50 characters')
+        if (resetPassword.length < 8 || resetPassword.length > 14) return setError('Password must be 8-14 characters')
         if (!/[A-Z]/.test(resetPassword) || !/[a-z]/.test(resetPassword)) return setError('Password must contain both uppercase and lowercase letters')
         if (resetPassword !== confirmResetPassword) return setError('Passwords do not match')
 
@@ -301,7 +301,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     })
 
     const getPasswordRequirements = () => [
-        { label: '8-50 chars', valid: password.length >= 8 && password.length <= 50 },
+        { label: '8-14 chars', valid: password.length >= 8 && password.length <= 14 },
         { label: 'Uppercase', valid: /[A-Z]/.test(password) },
         { label: 'Lowercase', valid: /[a-z]/.test(password) },
         { label: 'Match', valid: password === confirmPassword && password.length > 0 }
@@ -524,7 +524,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                             <Input
                                                                 type="password"
                                                                 value={resetPassword}
-                                                                maxLength={50}
+                                                                maxLength={14}
                                                                 onChange={(e) => setResetPassword(e.target.value)}
                                                                 className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                                 placeholder="••••••••"
@@ -537,7 +537,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                     {/* Password Requirements */}
                                                     <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 opacity-80">
                                                         {[
-                                                            { label: '8-50 chars', valid: resetPassword.length >= 8 && resetPassword.length <= 50 },
+                                                            { label: '8-14 chars', valid: resetPassword.length >= 8 && resetPassword.length <= 14 },
                                                             { label: 'Uppercase', valid: /[A-Z]/.test(resetPassword) },
                                                             { label: 'Lowercase', valid: /[a-z]/.test(resetPassword) },
                                                             { label: 'Symbol/Num', valid: /[0-9]/.test(resetPassword) || /[^A-Za-z0-9]/.test(resetPassword) },
@@ -558,7 +558,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                             <Input
                                                                 type="password"
                                                                 value={confirmResetPassword}
-                                                                maxLength={50}
+                                                                maxLength={14}
                                                                 onChange={(e) => setConfirmResetPassword(e.target.value)}
                                                                 className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                                 placeholder="••••••••"
@@ -571,7 +571,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
 
                                                 <Button
                                                     type="submit"
-                                                    disabled={loading || resetPassword.length < 8 || resetPassword.length > 50 || !/[A-Z]/.test(resetPassword) || !/[a-z]/.test(resetPassword)}
+                                                    disabled={loading || resetPassword.length < 8 || resetPassword.length > 14 || !/[A-Z]/.test(resetPassword) || !/[a-z]/.test(resetPassword)}
                                                     className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5 mt-2"
                                                 >
                                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Reset Password'}
@@ -685,7 +685,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                 <Input
                                                     type={showPassword ? "text" : "password"}
                                                     value={password}
-                                                    maxLength={50}
+                                                    maxLength={14}
                                                     onChange={(e) => setPassword(e.target.value)}
                                                     className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 pr-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                     placeholder="••••••••"
@@ -709,7 +709,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                         <Input
                                                             type={showPassword ? "text" : "password"}
                                                             value={confirmPassword}
-                                                            maxLength={50}
+                                                            maxLength={14}
                                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                                             className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
                                                             placeholder="••••••••"
@@ -722,7 +722,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                                 <div className="flex gap-1 h-1.5 mt-2 px-1">
                                                     {[1, 2, 3, 4].map((level) => {
                                                         const strength =
-                                                            (password.length >= 8 && password.length <= 50 ? 1 : 0) +
+                                                            (password.length >= 8 && password.length <= 14 ? 1 : 0) +
                                                             (/[A-Z]/.test(password) ? 1 : 0) +
                                                             (/[a-z]/.test(password) ? 1 : 0) +
                                                             (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password) ? 1 : 0);

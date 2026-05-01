@@ -41,7 +41,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
 
             const [summaryRes, trendsRes, agentRes, planRes, paymentRes] = await Promise.all([
                 fetch(`${API_URL}/api/v1/reports/revenue/summary?${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/revenue/trends?period=month${queryParams}`, { headers }),
+                fetch(`${API_URL}/api/v1/reports/revenue/trends?period=month&${queryParams}`, { headers }),
                 fetch(`${API_URL}/api/v1/reports/revenue/by-agent?${queryParams}`, { headers }),
                 fetch(`${API_URL}/api/v1/reports/revenue/by-plan?${queryParams}`, { headers }),
                 fetch(`${API_URL}/api/v1/reports/revenue/payment-status?${queryParams}`, { headers })

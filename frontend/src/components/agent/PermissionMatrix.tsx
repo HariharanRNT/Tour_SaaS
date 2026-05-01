@@ -108,7 +108,7 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
                         {isActive && (
                             <div 
                                 onClick={(e) => e.stopPropagation()}
-                                className="mt-4 pt-3 border-t border-black/5 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300"
+                                className="mt-4 pt-3 border-t border-black/5 flex flex-wrap items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300"
                             >
                                 <span className="text-[10px] font-black text-black uppercase tracking-widest mr-1">Access:</span>
                                 
@@ -127,28 +127,15 @@ export function PermissionMatrix({ permissions, onChange }: PermissionMatrixProp
 
                                 <button
                                     type="button"
-                                    onClick={() => setLevel(mod.id, 'edit')}
-                                    className={cn(
-                                        "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all",
-                                        perm.access_level === 'edit' 
-                                            ? "bg-orange-500 text-white shadow-md shadow-orange-500/20" 
-                                            : "bg-black/5 text-black hover:bg-black/10 font-bold"
-                                    )}
-                                >
-                                    <Edit3 className="w-3 h-3" /> Edit
-                                </button>
-
-                                <button
-                                    type="button"
                                     onClick={() => setLevel(mod.id, 'full')}
                                     className={cn(
                                         "flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all",
-                                        perm.access_level === 'full' 
+                                        (perm.access_level === 'full' || perm.access_level === 'edit')
                                             ? "bg-purple-600 text-white shadow-md shadow-purple-600/20" 
                                             : "bg-black/5 text-black hover:bg-black/10 font-bold"
                                     )}
                                 >
-                                    <Shield className="w-3 h-3" /> Full
+                                    <Shield className="w-3 h-3" /> Full Access
                                 </button>
                             </div>
                         )}
