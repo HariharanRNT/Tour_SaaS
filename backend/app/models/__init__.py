@@ -600,6 +600,8 @@ class Booking(Base):
     # Cancellation / Refund
     refund_amount = Column(Numeric(10, 2), nullable=True)
     cancelled_at  = Column(DateTime(timezone=True), nullable=True)
+    cancellation_enabled = Column(Boolean, default=False)
+    cancellation_rules   = Column(JSON, default=list)  # Snapshot of rules at time of booking
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

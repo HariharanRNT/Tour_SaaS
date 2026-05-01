@@ -750,7 +750,11 @@ export default function AgentBookingsPage() {
         const travelerCount = booking.number_of_travelers || (booking.travelers ? booking.travelers.length : 0);
 
         const calculateEstimatedRefund = () => {
-            if (!booking.package?.cancellation_rules || booking.package.cancellation_rules.length === 0) {
+            const rulesSource = (booking.cancellation_rules && booking.cancellation_rules.length > 0)
+                ? booking.cancellation_rules
+                : booking.package?.cancellation_rules;
+
+            if (!rulesSource || rulesSource.length === 0) {
                 return { amount: 0, percentage: 0 };
             }
 
@@ -758,7 +762,7 @@ export default function AgentBookingsPage() {
             const today = new Date();
             const diffDays = differenceInDays(travelDate, today);
 
-            const rules = [...booking.package.cancellation_rules].sort((a, b) => b.daysBefore - a.daysBefore);
+            const rules = [...rulesSource].sort((a, b) => b.daysBefore - a.daysBefore);
             
             let applicableRefundPercentage = 0;
             for (const rule of rules) {
@@ -1058,29 +1062,37 @@ export default function AgentBookingsPage() {
                                         <h3 className="text-lg font-black text-[var(--color-primary-font)]">Cancellation Policy</h3>
                                     </div>
                                     <ul className="space-y-3">
-                                        {booking.package?.cancellation_rules && booking.package.cancellation_rules.length > 0 ? (
-                                            booking.package.cancellation_rules.map((rule: any, idx: number) => (
-                                                <li key={idx} className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-                                                    <div>
-                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">
-                                                            {rule.refundPercentage}% Refund
-                                                        </p>
-                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">
-                                                            Cancellations made {rule.daysBefore}+ days before travel date.
-                                                        </p>
-                                                    </div>
-                                                </li>
-                                            ))
-                                        ) : (
-                                                <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
-                                                    <div>
-                                                        <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Non Refundable</p>
-                                                        <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">This package is non-refundable upon booking confirmation.</p>
-                                                    </div>
-                                                </li>
-                                        )}
+                                        {(() => {
+                                            const rulesSource = (booking.cancellation_rules && booking.cancellation_rules.length > 0)
+                                                ? booking.cancellation_rules
+                                                : booking.package?.cancellation_rules;
+                                            
+                                            if (rulesSource && rulesSource.length > 0) {
+                                                return rulesSource.map((rule: any, idx: number) => (
+                                                    <li key={idx} className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
+                                                        <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                        <div>
+                                                            <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">
+                                                                {rule.refundPercentage}% Refund
+                                                            </p>
+                                                            <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">
+                                                                Cancellations made {rule.daysBefore}+ days before travel date.
+                                                            </p>
+                                                        </div>
+                                                    </li>
+                                                ));
+                                            } else {
+                                                return (
+                                                    <li className="flex items-start gap-2.5 bg-transparent p-3 rounded-2xl border border-slate-100">
+                                                        <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                        <div>
+                                                            <p className="text-xs font-black text-[var(--color-primary-font)] mb-0.5 uppercase tracking-tighter">Non Refundable</p>
+                                                            <p className="text-[11px] font-bold text-[var(--color-primary-font)]/60 leading-normal break-words">This package is non-refundable upon booking confirmation.</p>
+                                                        </div>
+                                                    </li>
+                                                );
+                                            }
+                                        })()}
                                     </ul>
                                 </section>
                             </div>

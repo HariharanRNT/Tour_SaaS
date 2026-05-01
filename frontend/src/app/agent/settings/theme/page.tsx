@@ -911,7 +911,7 @@ export default function AgentThemeSettingsPage() {
 
             // 2. Get presigned URL
             const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch(`${API_URL}/api/v1/upload/presigned-url`, {
+            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -964,7 +964,7 @@ export default function AgentThemeSettingsPage() {
             });
 
             const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch(`${API_URL}/api/v1/upload/presigned-url`, {
+            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

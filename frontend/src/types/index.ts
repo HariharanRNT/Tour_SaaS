@@ -103,6 +103,8 @@ export interface Booking {
     gst_amount?: number
     is_gst_inclusive?: boolean
     base_amount?: number
+    cancellation_enabled?: boolean
+    cancellation_rules?: Array<{ daysBefore: number; refundPercentage: number }>
 }
 
 export interface BookingRefund {

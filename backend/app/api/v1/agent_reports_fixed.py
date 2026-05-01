@@ -689,11 +689,11 @@ async def get_agent_financial_report(
                 else:
                     # Fallback
                     if default_inclusive:
-                        # Tax on Gross for inclusive
-                        tax = amount * (default_gst / 100)
+                        # Formula: Base = Total / (1 + Tax%), Tax = Total - Base
+                        tax = amount - (amount / (1 + (default_gst / 100))) if default_gst > 0 else 0.0
                     else:
-                        # Extract tax from total for exclusive
-                        tax = amount - (amount / (1 + (default_gst / 100)))
+                        # Extract tax from total for exclusive (same back-calculation)
+                        tax = amount - (amount / (1 + (default_gst / 100))) if default_gst > 0 else 0.0
                 
                 stats["taxes"] += tax
                 stats["net_revenue"] += (amount - 0.0) # gross - discounts

@@ -251,9 +251,11 @@ async def create_booking(
         gst_amount = 0.0
         if gst_applicable:
             if is_gst_inclusive:
-                # GST is calculated as a percentage of the total price (Tax on Gross)
-                gst_amount = subtotal * (gst_percentage / 100)
+                # GST is calculated using the formula: Base = Total / (1 + Tax%)
+                # Tax = Total - Base
                 total_amount = subtotal
+                base_amount_val = total_amount / (1 + (gst_percentage / 100)) if gst_percentage > 0 else total_amount
+                gst_amount = total_amount - base_amount_val
             else:
                 # GST must be added on top
                 gst_amount = subtotal * (gst_percentage / 100)
@@ -306,6 +308,9 @@ async def create_booking(
             gst_amount=gst_amount if gst_applicable else 0,
             is_gst_inclusive=is_gst_inclusive,
             base_amount=base_amount, # Amount after subtracting tax
+            # Cancellation Policy Snapshot
+            cancellation_enabled=package.cancellation_enabled,
+            cancellation_rules=package.cancellation_rules,
             # Track the actual person who made the booking (agent/sub-user)
             booked_by_user_id=(
                 current_user.id
@@ -380,11 +385,15 @@ async def cancel_booking_preview(
         raise BadRequestException("Cannot cancel a completed booking")
 
     package = booking.package
-    rules = (package.cancellation_rules or []) if package else []
+    # Prioritize rules stored in booking (snapshot) over dynamic package rules
+    rules = booking.cancellation_rules if (booking.cancellation_rules and len(booking.cancellation_rules) > 0) else ((package.cancellation_rules or []) if package else [])
     calc = cancellation_service.calculate_refund(booking, rules)
 
+    # Use booking level toggle if set, otherwise fallback to package
+    can_cancel = booking.cancellation_enabled if hasattr(booking, 'cancellation_enabled') else (bool(package and package.cancellation_enabled))
+
     return CancelPreviewResponse(
-        cancellation_enabled=bool(package and package.cancellation_enabled),
+        cancellation_enabled=can_cancel,
         days_before=calc["days_before"],
         paid_amount=calc["paid_amount"],
         refund_amount=calc["refund_amount"],

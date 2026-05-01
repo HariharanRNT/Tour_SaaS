@@ -21,7 +21,7 @@ export const uploadFileToS3 = async (file: File, folder: string = "packages") =>
         const token = localStorage.getItem('token');
         
         // 1. Get presigned URL
-        const { data } = await api.post('/upload/presigned-url', {
+        const { data } = await api.post('/presigned-url', {
             file_name: file.name,
             content_type: file.type,
             folder: folder

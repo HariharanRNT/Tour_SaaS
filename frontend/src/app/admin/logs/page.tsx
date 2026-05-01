@@ -11,8 +11,9 @@ import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { Card, CardContent, CardDescription } from '@/components/ui/card'
+import { API_URL } from '@/lib/api'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE = API_URL
 
 // ─────────────────────────────────────────────────────
 // Types

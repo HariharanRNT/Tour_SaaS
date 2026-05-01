@@ -342,14 +342,24 @@ export default function BookingsPage() {
                                                 </div>
 
                                                 {/* Cancellation Policy Info Pill */}
-                                                {booking.package?.cancellation_enabled ? (
+                                                {(booking.cancellation_enabled ?? booking.package?.cancellation_enabled) ? (
                                                     <div className="flex items-center gap-2 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-100 shadow-sm">
                                                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                                         <div>
                                                             <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">Policy</p>
                                                             <p className="text-[10px] font-bold text-emerald-800 leading-none">
-                                                                {booking.package.cancellation_rules?.[0] ? `${booking.package.cancellation_rules[0].daysBefore}d (${booking.package.cancellation_rules[0].refundPercentage}%)` : 'Cancellable'}
-                                                                {booking.package.cancellation_rules && booking.package.cancellation_rules.length > 1 ? '...' : ''}
+                                                                {(() => {
+                                                                    const rules = (booking.cancellation_rules && booking.cancellation_rules.length > 0)
+                                                                        ? booking.cancellation_rules
+                                                                        : booking.package?.cancellation_rules;
+                                                                    return rules?.[0] ? `${rules[0].daysBefore}d (${rules[0].refundPercentage}%)` : 'Cancellable';
+                                                                })()}
+                                                                {(() => {
+                                                                    const rules = (booking.cancellation_rules && booking.cancellation_rules.length > 0)
+                                                                        ? booking.cancellation_rules
+                                                                        : booking.package?.cancellation_rules;
+                                                                    return rules && rules.length > 1 ? '...' : '';
+                                                                })()}
                                                             </p>
                                                         </div>
                                                     </div>

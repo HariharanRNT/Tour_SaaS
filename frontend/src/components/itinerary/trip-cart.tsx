@@ -74,13 +74,21 @@ export function TripCart({
     const totalServicesPrice = services.reduce((sum, service) => sum + service.price, 0)
 
     // GST Calculation
+    // GST Calculation
     let gstAmount = 0
     let subTotal = totalBasePrice + totalServicesPrice
     let grandTotal = subTotal
 
-    if (gstSettings && !gstSettings.inclusive) {
-        gstAmount = (subTotal * gstSettings.percentage) / 100
-        grandTotal = subTotal + gstAmount
+    if (gstSettings) {
+        if (gstSettings.inclusive) {
+            // Formula: Base = Total / (1 + Tax%), Tax = Total - Base
+            const base = subTotal / (1 + (gstSettings.percentage / 100))
+            gstAmount = subTotal - base
+            grandTotal = subTotal
+        } else {
+            gstAmount = (subTotal * gstSettings.percentage) / 100
+            grandTotal = subTotal + gstAmount
+        }
     }
 
     return (
@@ -243,7 +251,13 @@ export function TripCart({
                                     <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-0.5", cardStyle === 'glassy' ? "text-white/60" : "text-[var(--color-primary-font)]/60")}>Total Amount</span>
                                 )}
                                 {gstSettings && gstSettings.inclusive && !isEnquiry && (
-                                    <span className="text-[9px] text-emerald-500 font-black tracking-widest">INC. ALL TAXES</span>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[9px] text-emerald-500 font-black tracking-widest uppercase">Inc. All Taxes</span>
+                                        <div className="flex flex-col text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                                            <span>Base: ₹{(subTotal - gstAmount).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                            <span>Tax: ₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </div>
                                 )}
                                 {(priceGuaranteed || isEnquiry) && (
                                     <div className={cn(
