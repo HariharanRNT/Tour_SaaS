@@ -53,8 +53,12 @@ const registrationSchema = z.object({
     last_name: z.string().min(2, 'Last name is required').max(50, 'Last name must be under 50 characters'),
     email: z.string().email('Invalid work email').max(250, 'Email must be under 250 characters'),
     phone: z.string().min(8, 'Valid mobile number is required').max(15, 'Phone number must be under 15 digits'),
-    password: z.string().min(8, 'Password must be at least 8 characters').max(50, 'Password must be under 50 characters'),
-    confirm_password: z.string().max(50),
+    password: z.string()
+        .min(8, 'Password must be 8-14 characters')
+        .max(14, 'Password must be 8-14 characters')
+        .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+        .regex(/[a-z]/, 'Password must contain at least one lowercase letter'),
+    confirm_password: z.string().max(14),
     captcha: z.string().min(1, 'Solve the puzzle')
 }).refine((data) => data.password === data.confirm_password, {
     message: "Passwords don't match",
@@ -111,11 +115,10 @@ export default function AgentRegisterPage() {
             return
         }
         let strength = 0
-        if (password.length >= 8) strength++
-        if (password.length >= 12) strength++
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
-        if (/\d/.test(password)) strength++
-        if (/[^a-zA-Z0-9]/.test(password)) strength++
+        if (password.length >= 8 && password.length <= 14) strength++
+        if (/[A-Z]/.test(password)) strength++
+        if (/[a-z]/.test(password)) strength++
+        if (/\d/.test(password) || /[^a-zA-Z0-9]/.test(password)) strength++
         setPasswordStrength(strength)
     }, [password])
 
@@ -539,7 +542,7 @@ export default function AgentRegisterPage() {
                                                         <Input
                                                             {...register('password')}
                                                             type={showPassword ? "text" : "password"}
-                                                            maxLength={50}
+                                                            maxLength={14}
                                                             placeholder="••••••••"
                                                             className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />
@@ -569,7 +572,7 @@ export default function AgentRegisterPage() {
                                                         <Input
                                                             {...register('confirm_password')}
                                                             type={showConfirmPassword ? "text" : "password"}
-                                                            maxLength={50}
+                                                            maxLength={14}
                                                             placeholder="••••••••"
                                                             className={`h-14 bg-white/40 border border-white/60 rounded-2xl px-5 font-bold text-black placeholder:text-slate-500 focus:bg-white focus:border-[var(--primary)] focus:ring-4 focus:ring-orange-500/5 transition-all pr-12 shadow-sm ${errors.confirm_password ? 'border-red-400 ring-1 ring-red-400/20' : ''}`}
                                                         />

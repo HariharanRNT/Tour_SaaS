@@ -117,10 +117,10 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
             } else {
                 authLogin(response.access_token, response.user)
                 onClose()
-                
+
                 // Handle success actions
                 if (onSuccess) onSuccess()
-                
+
                 // Handle redirection
                 const redirect = sessionStorage.getItem('redirectAfterLogin')
                 if (redirect) {
@@ -139,7 +139,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         e.preventDefault()
         setOtpError('')
         if (otp.length !== 6) return setOtpError('Please enter a 6-digit OTP')
-        
+
         setLoading(true)
         try {
             const data = await authAPI.verifyLoginOTP(email, otp)
@@ -185,8 +185,8 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
         if (firstName.length > 50) return setError('First name must be under 50 characters')
         if (!lastName.trim()) return setError('Last name is required')
         if (lastName.length > 50) return setError('Last name must be under 50 characters')
-        if (password.length < 8) return setError('Password must be at least 8 characters')
-        if (password.length > 50) return setError('Password must be under 50 characters')
+        if (password.length < 8 || password.length > 50) return setError('Password must be 8-50 characters')
+        if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) return setError('Password must contain both uppercase and lowercase letters')
         if (password !== confirmPassword) return setError('Passwords do not match')
 
         setLoading(true)
@@ -197,15 +197,15 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                 first_name: firstName,
                 last_name: lastName
             })
-            
+
             setRegistrationSuccess(true)
-            
+
             // Allow user to see the success message before proceeding
             setTimeout(() => {
                 authLogin(data.access_token, data.user)
                 onClose()
                 if (onSuccess) onSuccess()
-                
+
                 const redirect = sessionStorage.getItem('redirectAfterLogin')
                 if (redirect) {
                     sessionStorage.removeItem('redirectAfterLogin')
@@ -256,7 +256,8 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        if (resetPassword.length < 8) return setError('Password must be at least 8 characters')
+        if (resetPassword.length < 8 || resetPassword.length > 50) return setError('Password must be 8-50 characters')
+        if (!/[A-Z]/.test(resetPassword) || !/[a-z]/.test(resetPassword)) return setError('Password must contain both uppercase and lowercase letters')
         if (resetPassword !== confirmResetPassword) return setError('Passwords do not match')
 
         setLoading(true)
@@ -300,7 +301,9 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
     })
 
     const getPasswordRequirements = () => [
-        { label: '8+ chars', valid: password.length >= 8 },
+        { label: '8-50 chars', valid: password.length >= 8 && password.length <= 50 },
+        { label: 'Uppercase', valid: /[A-Z]/.test(password) },
+        { label: 'Lowercase', valid: /[a-z]/.test(password) },
         { label: 'Match', valid: password === confirmPassword && password.length > 0 }
     ]
 
@@ -345,7 +348,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                         <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] text-white shadow-lg shadow-[var(--primary)]/30 mb-2 ring-4 ring-white/10">
                             <ShieldCheck className="w-5 h-5" />
                         </div>
-                        <h2 className="text-[18px] font-bold text-black tracking-tight">Complete Booking</h2>
+                        {/* <h2 className="text-[18px] font-bold text-black tracking-tight">Complete Booking</h2> */}
                         <p className="text-black/70 text-[13px] mt-0.5">Sign in to secure your adventure</p>
                     </div>
 
@@ -396,10 +399,10 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                 </div>
                                 <h3 className="text-xl font-bold text-black">Password Reset!</h3>
                                 <p className="text-black/70 text-sm px-6">Your password has been successfully reset. You can now login with your new password.</p>
-                                <Button 
-                                    onClick={() => { 
-                                        setForgotSuccess(false); 
-                                        setActiveTab('login'); 
+                                <Button
+                                    onClick={() => {
+                                        setForgotSuccess(false);
+                                        setActiveTab('login');
                                         setPassword('');
                                     }}
                                     className="mt-4 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white border-0 rounded-xl px-8"
@@ -415,351 +418,351 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                 exit={{ opacity: 0, x: activeTab === 'login' && !requireOtp ? 20 : -20 }}
                                 transition={{ duration: 0.2 }}
                             >
-                            {(error || otpError) && (
-                                <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-800 text-xs animate-shake">
-                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                                    <span>{error || otpError}</span>
-                                </div>
-                            )}
-
-                            {requireOtp ? (
-                                <form onSubmit={handleVerifyOTP} className="space-y-4">
-                                    <div className="text-center mb-6">
-                                        <p className="text-sm text-black/80">Enter the verification code sent to <strong className="text-black">{email}</strong></p>
+                                {(error || otpError) && (
+                                    <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-800 text-xs animate-shake">
+                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                        <span>{error || otpError}</span>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
-                                        <div className="relative group">
-                                            <Input
-                                                value={otp}
-                                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                placeholder="••••••"
-                                                required
-                                            />
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
+                                )}
+
+                                {requireOtp ? (
+                                    <form onSubmit={handleVerifyOTP} className="space-y-4">
+                                        <div className="text-center mb-6">
+                                            <p className="text-sm text-black/80">Enter the verification code sent to <strong className="text-black">{email}</strong></p>
                                         </div>
-                                    </div>
-                                    
-                                    <Button
-                                        type="submit"
-                                        disabled={loading || otp.length !== 6}
-                                        className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
-                                    >
-                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
-                                    </Button>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
+                                            <div className="relative group">
+                                                <Input
+                                                    value={otp}
+                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                    className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                    placeholder="••••••"
+                                                    required
+                                                />
+                                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
+                                            </div>
+                                        </div>
 
-                                    <div className="text-center mt-6 flex flex-col items-center gap-2">
-                                        <p className="text-sm text-black/70">
-                                            Didn&apos;t receive code?
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={handleResendOTP}
-                                            disabled={resendCooldown > 0 || loading}
-                                            className="text-black font-bold text-sm hover:underline disabled:opacity-50 disabled:hover:no-underline flex items-center justify-center gap-2"
+                                        <Button
+                                            type="submit"
+                                            disabled={loading || otp.length !== 6}
+                                            className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
                                         >
-                                            {resendCooldown > 0 ? (
-                                                `Resend in ${resendCooldown}s`
-                                            ) : (
-                                                'Resend OTP'
-                                            )}
-                                        </button>
-                                        <div className="text-[10px] text-black/40 font-mono tracking-wider mt-2 bg-black/5 px-3 py-1 rounded-full">
-                                            Code valid for: {getTimeRemaining()}
-                                        </div>
-                                    </div>
-                                </form>
-                            ) : activeTab === 'forgot' ? (
-                                <>
-                                    {requireResetOtp ? (
-                                        <form onSubmit={handleVerifyResetOTP} className="space-y-4">
-                                            <div className="text-center mb-6">
-                                                <p className="text-sm text-black/80">Enter the reset code sent to <strong className="text-black">{email}</strong></p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
-                                                <div className="relative group">
-                                                    <Input
-                                                        value={otp}
-                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                        placeholder="••••••"
-                                                        required
-                                                    />
-                                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
-                                                </div>
-                                            </div>
-                                            
-                                            <Button
-                                                type="submit"
-                                                disabled={loading || otp.length !== 6}
-                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
-                                            >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Reset Code'}
-                                            </Button>
+                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Code'}
+                                        </Button>
 
-                                            <div className="text-center mt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setRequireResetOtp(false)}
-                                                    className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
-                                                >
-                                                    Change Email
-                                                </button>
+                                        <div className="text-center mt-6 flex flex-col items-center gap-2">
+                                            <p className="text-sm text-black/70">
+                                                Didn&apos;t receive code?
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={handleResendOTP}
+                                                disabled={resendCooldown > 0 || loading}
+                                                className="text-black font-bold text-sm hover:underline disabled:opacity-50 disabled:hover:no-underline flex items-center justify-center gap-2"
+                                            >
+                                                {resendCooldown > 0 ? (
+                                                    `Resend in ${resendCooldown}s`
+                                                ) : (
+                                                    'Resend OTP'
+                                                )}
+                                            </button>
+                                            <div className="text-[10px] text-black/40 font-mono tracking-wider mt-2 bg-black/5 px-3 py-1 rounded-full">
+                                                Code valid for: {getTimeRemaining()}
                                             </div>
-                                        </form>
-                                    ) : requireNewPassword ? (
-                                        <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
-                                            <div className="text-center mb-4">
-                                                <p className="text-sm text-black/80 font-medium">Create New Password</p>
-                                            </div>
-                                            <div className="space-y-3">
+                                        </div>
+                                    </form>
+                                ) : activeTab === 'forgot' ? (
+                                    <>
+                                        {requireResetOtp ? (
+                                            <form onSubmit={handleVerifyResetOTP} className="space-y-4">
+                                                <div className="text-center mb-6">
+                                                    <p className="text-sm text-black/80">Enter the reset code sent to <strong className="text-black">{email}</strong></p>
+                                                </div>
                                                 <div className="space-y-1">
-                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">New Password</label>
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">6-Digit Code</label>
                                                     <div className="relative group">
                                                         <Input
-                                                            type="password"
-                                                            value={resetPassword}
-                                                            maxLength={50}
-                                                            onChange={(e) => setResetPassword(e.target.value)}
-                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                            placeholder="••••••••"
+                                                            value={otp}
+                                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 text-center text-xl tracking-[0.5em] font-bold focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="••••••"
                                                             required
+                                                        />
+                                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30 group-focus-within:text-black" />
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    disabled={loading || otp.length !== 6}
+                                                    className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
+                                                >
+                                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify Reset Code'}
+                                                </Button>
+
+                                                <div className="text-center mt-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRequireResetOtp(false)}
+                                                        className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
+                                                    >
+                                                        Change Email
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        ) : requireNewPassword ? (
+                                            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                                                <div className="text-center mb-4">
+                                                    <p className="text-sm text-black/80 font-medium">Create New Password</p>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">New Password</label>
+                                                        <div className="relative group">
+                                                            <Input
+                                                                type="password"
+                                                                value={resetPassword}
+                                                                maxLength={50}
+                                                                onChange={(e) => setResetPassword(e.target.value)}
+                                                                className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                                placeholder="••••••••"
+                                                                required
+                                                            />
+                                                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Password Requirements */}
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 opacity-80">
+                                                        {[
+                                                            { label: '8-50 chars', valid: resetPassword.length >= 8 && resetPassword.length <= 50 },
+                                                            { label: 'Uppercase', valid: /[A-Z]/.test(resetPassword) },
+                                                            { label: 'Lowercase', valid: /[a-z]/.test(resetPassword) },
+                                                            { label: 'Symbol/Num', valid: /[0-9]/.test(resetPassword) || /[^A-Za-z0-9]/.test(resetPassword) },
+                                                        ].map((req, i) => (
+                                                            <div key={i} className={cn(
+                                                                "flex items-center gap-1 text-[10px] font-bold tracking-tight transition-colors duration-300",
+                                                                req.valid ? "text-green-600" : "text-black/40"
+                                                            )}>
+                                                                {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-black/20" />}
+                                                                {req.label}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="space-y-1">
+                                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm New Password</label>
+                                                        <div className="relative group">
+                                                            <Input
+                                                                type="password"
+                                                                value={confirmResetPassword}
+                                                                maxLength={50}
+                                                                onChange={(e) => setConfirmResetPassword(e.target.value)}
+                                                                className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                                placeholder="••••••••"
+                                                                required
+                                                            />
+                                                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    disabled={loading || resetPassword.length < 8 || resetPassword.length > 50 || !/[A-Z]/.test(resetPassword) || !/[a-z]/.test(resetPassword)}
+                                                    className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5 mt-2"
+                                                >
+                                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Reset Password'}
+                                                </Button>
+                                            </form>
+                                        ) : (
+                                            <form onSubmit={handleForgotPassword} className="space-y-4">
+                                                <div className="text-center mb-6 px-4">
+                                                    <p className="text-sm text-black/80 font-medium">Reset your password</p>
+                                                    <p className="text-xs text-black/50 mt-1">Enter your email and we'll send you an OTP to reset your password.</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            type="email"
+                                                            value={email}
+                                                            maxLength={250}
+                                                            onChange={(e) => setEmail(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="traveler@example.com"
+                                                            required
+                                                        />
+                                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
+                                                >
+                                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send OTP'}
+                                                </Button>
+
+                                                <div className="text-center mt-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setActiveTab('login')}
+                                                        className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
+                                                    >
+                                                        <ArrowLeft className="w-3 h-3" /> Back to Login
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        )}
+                                    </>
+                                ) : (
+                                    <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-3">
+                                        {activeTab === 'register' && (
+                                            <div className="grid grid-cols-2 gap-3 mb-1">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">First Name</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            value={firstName}
+                                                            maxLength={50}
+                                                            onChange={(e) => setFirstName(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="John"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Last Name</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            value={lastName}
+                                                            maxLength={50}
+                                                            onChange={(e) => setLastName(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="Doe"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
+                                            <div className="relative group">
+                                                <Input
+                                                    type="email"
+                                                    value={email}
+                                                    maxLength={250}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                    placeholder="traveler@example.com"
+                                                />
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1 text-black">
+                                            <div className="flex justify-between items-center px-1">
+                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest">Password</label>
+                                                {activeTab === 'login' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setActiveTab('forgot'); setError(''); }}
+                                                        className="text-[10px] font-bold text-black hover:underline uppercase tracking-tight cursor-pointer relative z-10"
+                                                    >
+                                                        Forgot?
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="relative group">
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={password}
+                                                    maxLength={50}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 pr-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                    placeholder="••••••••"
+                                                />
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {activeTab === 'register' && (
+                                            <>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm Password</label>
+                                                    <div className="relative group">
+                                                        <Input
+                                                            type={showPassword ? "text" : "password"}
+                                                            value={confirmPassword}
+                                                            maxLength={50}
+                                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
+                                                            placeholder="••••••••"
                                                         />
                                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
                                                     </div>
                                                 </div>
 
-                                                {/* Password Requirements */}
-                                                <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 opacity-80">
-                                                    {[
-                                                        { label: '8+ chars', valid: resetPassword.length >= 8 },
-                                                        { label: 'Uppercase', valid: /[A-Z]/.test(resetPassword) },
-                                                        { label: 'Number', valid: /[0-9]/.test(resetPassword) },
-                                                        { label: 'Special', valid: /[^A-Za-z0-9]/.test(resetPassword) },
-                                                    ].map((req, i) => (
-                                                        <div key={i} className={cn(
-                                                            "flex items-center gap-1 text-[10px] font-bold tracking-tight transition-colors duration-300",
-                                                            req.valid ? "text-green-600" : "text-black/40"
-                                                        )}>
+                                                {/* Password Strength Bar */}
+                                                <div className="flex gap-1 h-1.5 mt-2 px-1">
+                                                    {[1, 2, 3, 4].map((level) => {
+                                                        const strength =
+                                                            (password.length >= 8 && password.length <= 50 ? 1 : 0) +
+                                                            (/[A-Z]/.test(password) ? 1 : 0) +
+                                                            (/[a-z]/.test(password) ? 1 : 0) +
+                                                            (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password) ? 1 : 0);
+                                                        return (
+                                                            <div
+                                                                key={level}
+                                                                className={cn(
+                                                                    "h-full flex-1 rounded-full transition-all duration-500",
+                                                                    strength >= level ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]" : "bg-white/5"
+                                                                )}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2 px-1 pt-1 opacity-80 mb-2">
+                                                    {getPasswordRequirements().map((req, i) => (
+                                                        <div key={i} className={cn("flex items-center gap-1 text-[11px] font-bold tracking-tight", req.valid ? "text-green-600" : "text-black/40")}>
                                                             {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-black/20" />}
                                                             {req.label}
                                                         </div>
                                                     ))}
                                                 </div>
-
-                                                <div className="space-y-1">
-                                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm New Password</label>
-                                                    <div className="relative group">
-                                                        <Input
-                                                            type="password"
-                                                            value={confirmResetPassword}
-                                                            maxLength={50}
-                                                            onChange={(e) => setConfirmResetPassword(e.target.value)}
-                                                            className="bg-white/10 border-white/20 text-black rounded-xl h-11 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                            placeholder="••••••••"
-                                                            required
-                                                        />
-                                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <Button
-                                                type="submit"
-                                                disabled={loading || resetPassword.length < 8}
-                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5 mt-2"
-                                            >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Reset Password'}
-                                            </Button>
-                                        </form>
-                                    ) : (
-                                        <form onSubmit={handleForgotPassword} className="space-y-4">
-                                            <div className="text-center mb-6 px-4">
-                                                <p className="text-sm text-black/80 font-medium">Reset your password</p>
-                                                <p className="text-xs text-black/50 mt-1">Enter your email and we'll send you an OTP to reset your password.</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
-                                                <div className="relative group">
-                                                    <Input
-                                                        type="email"
-                                                        value={email}
-                                                        maxLength={250}
-                                                        onChange={(e) => setEmail(e.target.value)}
-                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-12 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                        placeholder="traveler@example.com"
-                                                        required
-                                                    />
-                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
-                                                </div>
-                                            </div>
-                                            
-                                            <Button
-                                                type="submit"
-                                                disabled={loading}
-                                                className="w-full h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:opacity-90 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all hover:-translate-y-0.5"
-                                            >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send OTP'}
-                                            </Button>
-
-                                            <div className="text-center mt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setActiveTab('login')}
-                                                    className="text-black font-bold text-xs hover:underline flex items-center justify-center gap-1 mx-auto"
-                                                >
-                                                    <ArrowLeft className="w-3 h-3" /> Back to Login
-                                                </button>
-                                            </div>
-                                        </form>
-                                    )}
-                                </>
-                            ) : (
-                                <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-3">
-                                    {activeTab === 'register' && (
-                                        <div className="grid grid-cols-2 gap-3 mb-1">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">First Name</label>
-                                                <div className="relative group">
-                                                    <Input
-                                                        value={firstName}
-                                                        maxLength={50}
-                                                        onChange={(e) => setFirstName(e.target.value)}
-                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                        placeholder="John"
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Last Name</label>
-                                                <div className="relative group">
-                                                    <Input
-                                                        value={lastName}
-                                                        maxLength={50}
-                                                        onChange={(e) => setLastName(e.target.value)}
-                                                        className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-3 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                        placeholder="Doe"
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>
-                                    <div className="relative group">
-                                        <Input
-                                            type="email"
-                                            value={email}
-                                            maxLength={250}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                            placeholder="traveler@example.com"
-                                        />
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1 text-black">
-                                    <div className="flex justify-between items-center px-1">
-                                        <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest">Password</label>
-                                        {activeTab === 'login' && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => { setActiveTab('forgot'); setError(''); }}
-                                                className="text-[10px] font-bold text-black hover:underline uppercase tracking-tight cursor-pointer relative z-10"
-                                            >
-                                                Forgot?
-                                            </button>
+                                            </>
                                         )}
-                                    </div>
-                                    <div className="relative group">
-                                        <Input
-                                            type={showPassword ? "text" : "password"}
-                                            value={password}
-                                            maxLength={50}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 pr-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                            placeholder="••••••••"
-                                        />
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black transition-colors"
+
+                                        <Button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
                                         >
-                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {activeTab === 'register' && (
-                                    <>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Confirm Password</label>
-                                            <div className="relative group">
-                                                <Input
-                                                    type={showPassword ? "text" : "password"}
-                                                    value={confirmPassword}
-                                                    maxLength={50}
-                                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="bg-white/10 border-white/20 text-black rounded-xl h-10 pl-10 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all"
-                                                    placeholder="••••••••"
-                                                />
-                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/30 group-focus-within:text-black" />
-                                            </div>
-                                        </div>
-
-                                        {/* Password Strength Bar */}
-                                        <div className="flex gap-1 h-1.5 mt-2 px-1">
-                                            {[1, 2, 3, 4].map((level) => {
-                                                const strength =
-                                                    (password.length >= 8 ? 1 : 0) +
-                                                    (/[A-Z]/.test(password) ? 1 : 0) +
-                                                    (/[0-9]/.test(password) ? 1 : 0) +
-                                                    (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
-                                                return (
-                                                    <div
-                                                        key={level}
-                                                        className={cn(
-                                                            "h-full flex-1 rounded-full transition-all duration-500",
-                                                            strength >= level ? "bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]" : "bg-white/5"
-                                                        )}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2 px-1 pt-1 opacity-80 mb-2">
-                                            {getPasswordRequirements().map((req, i) => (
-                                                <div key={i} className={cn("flex items-center gap-1 text-[11px] font-bold tracking-tight", req.valid ? "text-green-600" : "text-black/40")}>
-                                                    {req.valid ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-black/20" />}
-                                                    {req.label}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
+                                            {loading ? (
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                            ) : (
+                                                activeTab === 'login' ? 'Login to Continue' : 'Create Account'
+                                            )}
+                                        </Button>
+                                    </form>
                                 )}
-
-                                <Button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white font-bold rounded-2xl shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 border border-white/10"
-                                >
-                                    {loading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        activeTab === 'login' ? 'Login to Continue' : 'Create Account'
-                                    )}
-                                </Button>
-                            </form>
-                        )}
-                        </motion.div>
+                            </motion.div>
                         )}
                     </AnimatePresence>
 
@@ -787,23 +790,23 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                 {/* Footer Section */}
                 <div className="bg-white/5 border-t border-white/10 px-6 py-4 text-center">
                     <p className="text-[10px] text-black/40 font-bold uppercase tracking-wider">
-                        {activeTab === 'forgot' 
-                            ? "Remember your password? " 
-                            : activeTab === 'login' 
-                                ? "New around here? " 
+                        {activeTab === 'forgot'
+                            ? "Remember your password? "
+                            : activeTab === 'login'
+                                ? "New around here? "
                                 : "Already have an account? "}
                         <button
-                            onClick={() => { 
-                                setActiveTab(activeTab === 'register' ? 'login' : activeTab === 'forgot' ? 'login' : 'register'); 
-                                setError(''); 
+                            onClick={() => {
+                                setActiveTab(activeTab === 'register' ? 'login' : activeTab === 'forgot' ? 'login' : 'register');
+                                setError('');
                             }}
                             className="text-black hover:underline"
                         >
-                            {activeTab === 'forgot' 
-                                ? "Back to Login" 
-                                : activeTab === 'login' 
-                                     ? "Join the adventure" 
-                                     : "Welcome back"}
+                            {activeTab === 'forgot'
+                                ? "Back to Login"
+                                : activeTab === 'login'
+                                    ? "Join the adventure"
+                                    : "Welcome back"}
                         </button>
                     </p>
                 </div>

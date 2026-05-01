@@ -513,7 +513,7 @@ export default function AgentEnquiriesPage() {
                                     {selectedEnquiry?.message && (
                                         <section>
                                             <p className="text-[9px] font-black text-[var(--color-primary-font)]/50 uppercase tracking-widest mb-1.5">Customer Message</p>
-                                            <div className="p-3 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-[11px] italic text-[var(--color-primary-font)] break-all">
+                                            <div className="p-3 bg-[var(--primary)]/5 rounded-xl border border-[var(--primary)]/10 text-[11px] !font-bold !text-black break-all">
                                                 &quot;{selectedEnquiry.message}&quot;
                                             </div>
                                         </section>

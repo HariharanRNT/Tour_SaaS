@@ -28,10 +28,34 @@ def _resolve_agent_id(current_user: User) -> Optional[str]:
     return None
 
 
-def _generate_temp_password(length: int = 12) -> str:
-    """Generate a secure random password."""
-    alphabet = string.ascii_letters + string.digits + "!@#$%"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+def _generate_temp_password(length: int = 10) -> str:
+    """Generate a secure random password satisfying complexity requirements (8-14 chars, upper, lower)."""
+    # Ensure length is within 8-14
+    length = max(8, min(14, length))
+    
+    # Required character sets
+    lower = string.ascii_lowercase
+    upper = string.ascii_uppercase
+    digits = string.digits
+    special = "!@#$%"
+    
+    # Ensure at least one from each required set
+    password = [
+        secrets.choice(lower),
+        secrets.choice(upper),
+        secrets.choice(digits),
+        secrets.choice(special)
+    ]
+    
+    # Fill remaining length with random choices from all sets
+    all_chars = lower + upper + digits + special
+    password += [secrets.choice(all_chars) for _ in range(length - 4)]
+    
+    # Shuffle to avoid predictable pattern
+    import random
+    random.shuffle(password)
+    
+    return ''.join(password)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

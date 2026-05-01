@@ -91,12 +91,12 @@ class UserCreate(UserBase):
     domain: Optional[str] = Field(None, max_length=50)
     
     # Agent Specific
-    agency_name: Optional[str] = Field(None, max_length=50)
-    company_legal_name: Optional[str] = Field(None, max_length=50)
-    business_address: Optional[str] = Field(None, max_length=200)
-    city: Optional[str] = Field(None, max_length=50)
-    state: Optional[str] = Field(None, max_length=50)
-    country: Optional[str] = Field(None, max_length=50)
+    agency_name: Optional[str] = Field(None, max_length=200)
+    company_legal_name: Optional[str] = Field(None, max_length=200)
+    business_address: Optional[str] = Field(None, max_length=500)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
     gst_no: Optional[str] = Field(None, max_length=15)
     tax_id: Optional[str] = Field(None, max_length=20)
     currency: Optional[str] = Field("INR", min_length=3, max_length=3)
@@ -145,6 +145,15 @@ class UserCreate(UserBase):
             raise ValueError('Invalid GST number format. Must be 15 characters (e.g., 22AAAAA0000A1Z5)')
         return v
 
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v):
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter.')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter.')
+        return v
+
     @field_validator('currency', mode='before')
     @classmethod
     def validate_currency(cls, v):
@@ -157,13 +166,13 @@ class UserCreate(UserBase):
 
 
 class AdminAgentCreate(UserCreate):
-    agency_name: str = Field(..., min_length=1, max_length=50)
-    company_legal_name: str = Field(..., min_length=1, max_length=50)
-    domain: str = Field(..., min_length=1, max_length=50)
-    business_address: str = Field(..., min_length=1, max_length=200)
-    city: str = Field(..., min_length=1, max_length=50)
-    state: str = Field(..., min_length=1, max_length=50)
-    country: str = Field(..., min_length=1, max_length=50)
+    agency_name: str = Field(..., min_length=1, max_length=200)
+    company_legal_name: str = Field(..., min_length=1, max_length=200)
+    domain: str = Field(..., min_length=1, max_length=100)
+    business_address: str = Field(..., min_length=1, max_length=500)
+    city: str = Field(..., min_length=1, max_length=100)
+    state: str = Field(..., min_length=1, max_length=100)
+    country: str = Field(..., min_length=1, max_length=100)
 
     @field_validator('agency_name', 'company_legal_name', 'business_address', 'city', 'state', 'country', mode='before')
     @classmethod
@@ -181,13 +190,13 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     
     # Agency
-    agency_name: Optional[str] = Field(None, max_length=50)
-    company_legal_name: Optional[str] = Field(None, max_length=50)
-    domain: Optional[str] = Field(None, max_length=50)
-    business_address: Optional[str] = Field(None, max_length=200)
-    city: Optional[str] = Field(None, max_length=50)
-    state: Optional[str] = Field(None, max_length=50)
-    country: Optional[str] = Field(None, max_length=50)
+    agency_name: Optional[str] = Field(None, max_length=200)
+    company_legal_name: Optional[str] = Field(None, max_length=200)
+    domain: Optional[str] = Field(None, max_length=100)
+    business_address: Optional[str] = Field(None, max_length=500)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
     
     # Financial
     gst_no: Optional[str] = Field(None, max_length=15)
@@ -250,8 +259,8 @@ class AgentRegistration(BaseModel):
     phone: str
     
     # Credentials
-    password: str = Field(..., min_length=8, max_length=50)
-    confirm_password: str = Field(..., min_length=8, max_length=50)
+    password: str = Field(..., min_length=8, max_length=14)
+    confirm_password: str = Field(..., min_length=8, max_length=14)
 
     @field_validator(
         'agency_name', 'company_legal_name', 'business_address',
@@ -298,6 +307,15 @@ class AgentRegistration(BaseModel):
         domain_re = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-\.]{0,253}[a-zA-Z0-9]$')
         if not domain_re.match(v):
             raise ValueError('Domain must be a valid hostname (e.g., myagency.com).')
+        return v
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v):
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter.')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter.')
         return v
 
     @field_validator('confirm_password')
