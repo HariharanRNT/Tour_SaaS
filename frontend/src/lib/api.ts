@@ -10,17 +10,19 @@ export const api = axios.create({
 })
 
 /**
- * Upload a file directly to S3 using a presigned URL
+ * Upload a file directly to S3 using a presigned URL with fallback to backend upload
  */
 export const uploadFileToS3 = async (file: File, folder: string = "packages") => {
     // Restrict image size to 5MB
     if (file.size > 5 * 1024 * 1024) {
         throw new Error('Image size must be less than 5MB');
     }
+    
+    const token = localStorage.getItem('token');
+    let finalUrl = '';
+
     try {
-        const token = localStorage.getItem('token');
-        
-        // 1. Get presigned URL
+        // 1. Try Direct S3 Upload via Presigned URL
         const { data } = await api.post('/presigned-url', {
             file_name: file.name,
             content_type: file.type,
@@ -38,11 +40,34 @@ export const uploadFileToS3 = async (file: File, folder: string = "packages") =>
             }
         });
 
-        return file_url;
+        finalUrl = file_url;
     } catch (error) {
-        console.error('S3 Upload Error:', error);
-        throw error;
+        console.warn('Direct S3 Upload failed, trying backend fallback...', error);
     }
+
+    // 3. Fallback to backend mediated upload if S3 failed
+    if (!finalUrl) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', folder);
+
+            const response = await api.post('/upload', formData, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            finalUrl = response.data.url;
+            console.log('Backend fallback upload successful');
+        } catch (fallbackError) {
+            console.error('All upload methods failed:', fallbackError);
+            throw new Error('File upload failed. Please check your connection.');
+        }
+    }
+
+    return finalUrl;
 };
 
 // Add auth token and domain to requests
