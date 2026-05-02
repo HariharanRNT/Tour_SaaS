@@ -1340,6 +1340,8 @@ class SubscriptionBase(BaseModel):
     status: str
     start_date: date
     end_date: date
+    # Precise UTC expiry timestamp – takes priority over end_date for expiry logic
+    expires_at: Optional[datetime] = None
     auto_renew: bool = True
     
     @field_validator('auto_renew', mode='before')
@@ -1354,6 +1356,7 @@ class SubscriptionResponse(SubscriptionBase):
     current_bookings_usage: int
     plan: SubscriptionPlanResponse
     created_at: datetime
+    updated_at: Optional[datetime] = None
     
     @field_validator('current_bookings_usage', mode='before')
     @classmethod

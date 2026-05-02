@@ -2656,7 +2656,51 @@ export default function AgentThemeSettingsPage() {
                                         className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
-                                        Preview
+                                        Preview Home
+                                    </Button>
+                                )}
+
+                                {activeTab === 'plantrip' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.open(`${window.location.origin}/plan-trip`, '_blank')}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview Plan Trip
+                                    </Button>
+                                )}
+
+                                {activeTab === 'itinerary' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.open(`${window.location.origin}/plan-trip`, '_blank')}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview Itinerary
+                                    </Button>
+                                )}
+
+                                {activeTab === 'cart' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.open(`${window.location.origin}/checkout`, '_blank')}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview Cart
+                                    </Button>
+                                )}
+
+                                {activeTab === 'mybooking' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.open(`${window.location.origin}/bookings`, '_blank')}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview My Booking
                                     </Button>
                                 )}
 

@@ -37,7 +37,7 @@ export default function SubUsersPage() {
     const [subUsers, setSubUsers] = useState<any[]>([])
 
     useEffect(() => {
-        if (isSubUser && !hasPermission('settings', 'view')) {
+        if (isSubUser && !hasPermission('sub_users', 'view')) {
             router.push('/agent/dashboard')
         }
     }, [isSubUser, hasPermission, router])
@@ -125,7 +125,7 @@ export default function SubUsersPage() {
                     <p className="text-sm text-[var(--color-primary-font)]/50 font-medium">Manage your team's access to the agent portal</p>
                 </div>
                 
-                {hasPermission('settings', 'edit') && (
+                {hasPermission('sub_users', 'edit') && (
                     <Button 
                         onClick={() => {
                             setSelectedSubUser(null)
@@ -235,14 +235,14 @@ export default function SubUsersPage() {
                                         <td className="px-6 py-5">
                                             <div className="flex justify-center">
                                                 <button 
-                                                    onClick={() => hasPermission('settings', 'edit') && handleToggleStatus(user.id, user.is_active)}
-                                                    disabled={!hasPermission('settings', 'edit')}
+                                                    onClick={() => hasPermission('sub_users', 'edit') && handleToggleStatus(user.id, user.is_active)}
+                                                    disabled={!hasPermission('sub_users', 'edit')}
                                                     className={cn(
                                                         "flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all",
                                                         user.is_active 
                                                             ? "bg-green-100 text-green-700 hover:bg-green-200" 
                                                             : "bg-red-100 text-red-700 hover:bg-red-200",
-                                                        !hasPermission('settings', 'edit') && "opacity-60 cursor-not-allowed"
+                                                        !hasPermission('sub_users', 'edit') && "opacity-60 cursor-not-allowed"
                                                     )}
                                                 >
                                                     {user.is_active ? (
@@ -261,7 +261,7 @@ export default function SubUsersPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="rounded-2xl border-black/5 shadow-2xl p-1 w-48">
-                                                    {hasPermission('settings', 'edit') ? (
+                                                    {hasPermission('sub_users', 'edit') ? (
                                                         <>
                                                             <DropdownMenuItem 
                                                                 onClick={() => {

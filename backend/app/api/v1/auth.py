@@ -114,11 +114,10 @@ async def register(
             user=UserResponse.model_validate(user)
         )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Registration failed: {str(e)}")
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed. Please try again later.")
 
 
 @router.post("/register/agent", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -132,7 +131,7 @@ async def register_agent(
     # Check if user already exists
     result = await db.execute(select(User).where(User.email == agent_data.email))
     if result.scalar_one_or_none():
-        raise ConflictException("this email has already registered")
+        raise ConflictException("This email is already registered. Please login instead.")
     
     # Create User (Auth)
     user = User(
@@ -247,7 +246,22 @@ async def login(
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    users = result.scalars().all()
+    
+    # Resolve user if multiple matches found (e.g. Admin who is also a Customer)
+    user = None
+    if len(users) == 1:
+        user = users[0]
+    elif len(users) > 1:
+        # 1. If on an agent domain, look for customer of that agent first
+        if agent_id:
+            user = next((u for u in users if u.agent_id == agent_id and u.role == UserRole.CUSTOMER), None)
+        
+        # 2. Fallback: prioritize Admin/Agent roles
+        if not user:
+            user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
+        
+        logger.info(f"Multiple users found for login {form_data.username}, resolved to role: {user.role}")
     
     # 2. Check if user exists anywhere
     if not user:
@@ -587,8 +601,25 @@ async def google_login(
         selectinload(User.agent_profile),
         selectinload(User.customer_profile)
     )
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    try:
+        result = await db.execute(stmt)
+        users = result.scalars().all()
+        
+        # Resolve which user to use if multiple found
+        user = None
+        if len(users) == 1:
+            user = users[0]
+        elif len(users) > 1:
+            # Prioritize Admin/Agent roles over Customer roles if multiple matches found
+            # This handles cases where an admin might also have a customer account with the same email
+            user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
+            logger.info(f"Multiple users found for {email}, resolved to role: {user.role}")
+    except Exception as e:
+        logger.error(f"Error during user lookup for Google login: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while looking up your account. Please try again later."
+        )
 
     if user:
         # Update google_id if not set
@@ -601,7 +632,7 @@ async def google_login(
         
         # If user exists but is inactive
         if not user.is_active:
-             raise HTTPException(status_code=400, detail="Account is inactive")
+             raise HTTPException(status_code=400, detail="Your account is currently inactive. Please contact support.")
              
     else:
         # Registration Flow for New User
@@ -609,7 +640,7 @@ async def google_login(
         if data.role != UserRole.CUSTOMER:
              raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only Customer accounts can be created via Google Login"
+                detail="Google login is only available for traveler accounts. Please use your email and password to log in as an agent."
             )
 
         # Handle formatting
@@ -704,7 +735,16 @@ async def send_login_otp(
         )
     )
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    users = result.scalars().all()
+    
+    # Resolve user if multiple matches found
+    user = None
+    if len(users) == 1:
+        user = users[0]
+    elif len(users) > 1:
+        # Prioritize non-customer roles for OTP login (usually agents/admins)
+        user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
+        logger.info(f"Multiple users found for OTP {data.email}, resolved to role: {user.role}")
     
     logger.warning(f"✅ Step 1: User lookup complete. Found: {user is not None}")
     

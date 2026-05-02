@@ -74,7 +74,13 @@ class InvoiceService:
                 .client-info {{ margin-bottom: 30px; }}
                 table {{ width: 100%; border-collapse: collapse; margin-bottom: 30px; }}
                 th {{ background-color: #f8fafc; text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }}
-                td {{ padding: 12px; border-bottom: 1px solid #eee; }}
+                td {{ 
+                    padding: 12px; 
+                    border-bottom: 1px solid #eee; 
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    word-break: break-all;
+                }}
                 .total-row {{ font-weight: bold; }}
                 .footer {{ margin-top: 50px; text-align: center; color: #777; font-size: 10px; }}
             </style>
@@ -463,6 +469,9 @@ class InvoiceService:
                         padding: 10px 12px;
                         border-bottom: 1px solid #E8E8F0;
                         vertical-align: top;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        word-break: break-all;
                     }}
                     .col-description {{ width: 32%; }}
                     .col-details {{ width: 32%; }}

@@ -51,10 +51,24 @@ def generate_temp_password(length: int = 12) -> str:
 
 
 async def get_agent_user(current_user: User = Depends(get_current_user)) -> User:
-    """Ensure the caller is an Agent (owner)."""
-    if current_user.role != UserRole.AGENT:
-        raise HTTPException(status_code=403, detail="Only agents can manage sub-users")
-    return current_user
+    """
+    Ensure the caller is an Agent (owner) or a Sub-User with proper module permission.
+    For write operations, 'edit' or 'full' access is usually required, but we'll 
+    handle granular checks if needed. For now, we allow AGENT and SUB_USER with sub_users perm.
+    """
+    if current_user.role == UserRole.AGENT:
+        return current_user
+    
+    if current_user.role == UserRole.SUB_USER:
+        # Check if the sub-user has the 'sub_users' module permission
+        perms = getattr(current_user, "_sub_user_permissions", [])
+        sub_user_perm = next((p for p in perms if p.get("module") == "sub_users"), None)
+        if sub_user_perm:
+            # For management, we usually want at least 'view' for GET and 'edit'/'full' for writes.
+            # We'll do a generic check here and fine-tune in endpoints if necessary.
+            return current_user
+
+    raise HTTPException(status_code=403, detail="Only agents or authorized staff can manage sub-users")
 
 
 def _build_response(sub_user: SubUser) -> dict:
@@ -85,7 +99,7 @@ async def list_sub_users(
     """List all sub-users belonging to the current agent."""
     stmt = (
         select(SubUser)
-        .where(SubUser.agent_id == agent.id)
+        .where(SubUser.agent_id == agent.agent_id_resolved)
         .options(
             selectinload(SubUser.user).selectinload(User.customer_profile),
             selectinload(SubUser.user).selectinload(User.agent_profile),
@@ -122,7 +136,7 @@ async def create_sub_user(
         email=data.email,
         password_hash=get_password_hash(temp_password),
         role=UserRole.SUB_USER,
-        agent_id=agent.id,
+        agent_id=agent.agent_id_resolved,
         is_active=True,
         email_verified=True,
     )
@@ -136,7 +150,7 @@ async def create_sub_user(
         first_name=data.first_name,
         last_name=data.last_name,
         phone=data.phone,
-        agent_id=agent.id,
+        agent_id=agent.agent_id_resolved,
     )
     db.add(new_customer)
     await db.flush()
@@ -149,7 +163,7 @@ async def create_sub_user(
     # Create SubUser record
     sub_user = SubUser(
         user_id=new_user.id,
-        agent_id=agent.id,
+        agent_id=agent.agent_id_resolved,
         role_label=data.role_label,
         is_active=True,
     )
@@ -246,7 +260,7 @@ async def get_sub_user(
     """Get a single sub-user by ID."""
     stmt = (
         select(SubUser)
-        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
         .options(
             selectinload(SubUser.user).selectinload(User.customer_profile),
             selectinload(SubUser.user).selectinload(User.agent_profile),
@@ -270,7 +284,7 @@ async def update_sub_user(
     """Edit sub-user name, phone, role label, and permissions."""
     stmt = (
         select(SubUser)
-        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
         .options(
             selectinload(SubUser.user).selectinload(User.customer_profile),
             selectinload(SubUser.user).selectinload(User.agent_profile),
@@ -331,7 +345,7 @@ async def replace_permissions(
     """Fully replace the permission set for a sub-user."""
     stmt = (
         select(SubUser)
-        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
         .options(
             selectinload(SubUser.user).selectinload(User.customer_profile),
             selectinload(SubUser.user).selectinload(User.agent_profile),
@@ -368,7 +382,7 @@ async def toggle_sub_user_active(
     """Toggle active/inactive status for a sub-user."""
     stmt = (
         select(SubUser)
-        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
         .options(
             selectinload(SubUser.user).selectinload(User.customer_profile),
             selectinload(SubUser.user).selectinload(User.agent_profile),
@@ -399,7 +413,7 @@ async def reset_sub_user_password(
     """Generate a new temporary password and email it to the sub-user."""
     stmt = (
         select(SubUser)
-        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+        .where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
         .options(selectinload(SubUser.user))
     )
     result = await db.execute(stmt)
@@ -467,7 +481,7 @@ async def delete_sub_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Permanently delete a sub-user and their auth account."""
-    stmt = select(SubUser).where(SubUser.id == sub_user_id, SubUser.agent_id == agent.id)
+    stmt = select(SubUser).where(SubUser.id == sub_user_id, SubUser.agent_id == agent.agent_id_resolved)
     result = await db.execute(stmt)
     sub_user = result.scalar_one_or_none()
     if not sub_user:

@@ -419,9 +419,11 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                 transition={{ duration: 0.2 }}
                             >
                                 {(error || otpError) && (
-                                    <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-800 text-xs animate-shake">
-                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                                        <span>{error || otpError}</span>
+                                    <div className="mb-6 p-4 bg-red-50/10 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-700 text-sm animate-shake shadow-sm backdrop-blur-sm">
+                                        <div className="bg-red-500 rounded-full p-1 shrink-0">
+                                            <AlertCircle className="w-3.5 h-3.5 text-white" />
+                                        </div>
+                                        <span className="font-medium leading-tight">{error || otpError}</span>
                                     </div>
                                 )}
 
