@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { compressImage, uploadToS3 } from '@/lib/image-upload-utils';
+import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils';
 import { API_URL } from '@/lib/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -869,15 +869,29 @@ export default function AgentThemeSettingsPage() {
                 })
             });
 
-            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-            const { upload_url, file_url } = await presignedRes.json();
+            let finalUrl = '';
+            if (presignedRes.ok) {
+                const { upload_url, file_url } = await presignedRes.json();
+                // 3. Try Direct upload to S3
+                const success = await uploadToS3(compressedFile, upload_url);
+                if (success) {
+                    finalUrl = file_url;
+                }
+            }
 
-            // 3. Direct upload to S3
-            const success = await uploadToS3(compressedFile, upload_url);
-            if (!success) throw new Error('S3 upload failed');
+            // 4. Fallback to backend upload
+            if (!finalUrl) {
+                console.log('S3 upload failed, falling back to backend upload...');
+                const backendUrl = await uploadToBackend(compressedFile, 'homepage');
+                if (backendUrl) {
+                    finalUrl = backendUrl;
+                } else {
+                    throw new Error('All upload methods failed');
+                }
+            }
 
-            // 4. Update state
-            hpField('backgroundImageUrl', file_url);
+            // 5. Update state
+            hpField('backgroundImageUrl', finalUrl);
             toast.success('Background image updated! ✓', { id: toastId });
         } catch (err: any) {
             console.error(err);
@@ -924,15 +938,29 @@ export default function AgentThemeSettingsPage() {
                 })
             });
 
-            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-            const { upload_url, file_url } = await presignedRes.json();
+            let finalUrl = '';
+            if (presignedRes.ok) {
+                const { upload_url, file_url } = await presignedRes.json();
+                // 3. Try Direct upload to S3
+                const success = await uploadToS3(compressedFile, upload_url);
+                if (success) {
+                    finalUrl = file_url;
+                }
+            }
 
-            // 3. Direct upload to S3
-            const success = await uploadToS3(compressedFile, upload_url);
-            if (!success) throw new Error('S3 upload failed');
+            // 4. Fallback to backend upload
+            if (!finalUrl) {
+                console.log('S3 upload failed, falling back to backend upload...');
+                const backendUrl = await uploadToBackend(compressedFile, 'logos');
+                if (backendUrl) {
+                    finalUrl = backendUrl;
+                } else {
+                    throw new Error('All upload methods failed');
+                }
+            }
 
-            // 4. Update state
-            hpField('navbar_logo_image', file_url);
+            // 5. Update state
+            hpField('navbar_logo_image', finalUrl);
             toast.success('Logo updated successfully ✓', { id: toastId });
         } catch (err: any) {
             console.error(err);
@@ -977,13 +1005,28 @@ export default function AgentThemeSettingsPage() {
                 })
             });
 
-            if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-            const { upload_url, file_url } = await presignedRes.json();
+            let finalUrl = '';
+            if (presignedRes.ok) {
+                const { upload_url, file_url } = await presignedRes.json();
+                // Try direct upload
+                const success = await uploadToS3(compressedFile, upload_url);
+                if (success) {
+                    finalUrl = file_url;
+                }
+            }
 
-            const success = await uploadToS3(compressedFile, upload_url);
-            if (!success) throw new Error('S3 upload failed');
+            // Fallback to backend upload
+            if (!finalUrl) {
+                console.log('S3 upload failed, falling back to backend upload...');
+                const backendUrl = await uploadToBackend(compressedFile, 'favicons');
+                if (backendUrl) {
+                    finalUrl = backendUrl;
+                } else {
+                    throw new Error('All upload methods failed');
+                }
+            }
 
-            hpField('favicon_url', file_url);
+            hpField('favicon_url', finalUrl);
             toast.success('Favicon updated successfully ✓', { id: toastId });
         } catch (err: any) {
             console.error(err);

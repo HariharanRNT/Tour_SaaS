@@ -31,7 +31,7 @@ import { EMAIL_VARIABLES, EmailTemplateType } from "@/constants/email-variables"
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import api, { API_URL } from "@/lib/api";
 import { toast } from "sonner";
-import { compressImage, uploadToS3 } from "@/lib/image-upload-utils";
+import { compressImage, uploadToS3, uploadToBackend } from "@/lib/image-upload-utils";
 
 interface EmailTemplateEditorProps {
   initialTemplates?: Record<string, any>;
@@ -262,24 +262,40 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         initialQuality: 0.8
       });
 
-      const token = localStorage.getItem('token') || '';
-      const presignedRes = await api.post("/presigned-url", {
-        file_name: compressedFile.name,
-        content_type: compressedFile.type,
-        folder: 'email-templates'
-      });
-
-      const { upload_url, file_url } = presignedRes.data;
-      const success = await uploadToS3(compressedFile, upload_url);
+      let finalUrl = '';
       
-      if (!success) throw new Error("S3 upload failed");
+      try {
+        const presignedRes = await api.post("/presigned-url", {
+          file_name: compressedFile.name,
+          content_type: compressedFile.type,
+          folder: 'email-templates'
+        });
+
+        const { upload_url, file_url } = presignedRes.data;
+        const success = await uploadToS3(compressedFile, upload_url);
+        if (success) {
+          finalUrl = file_url;
+        }
+      } catch (err) {
+        console.error("Presigned URL or S3 upload failed:", err);
+      }
+
+      if (!finalUrl) {
+        console.log("Falling back to backend upload...");
+        const backendUrl = await uploadToBackend(compressedFile, 'email-templates');
+        if (backendUrl) {
+          finalUrl = backendUrl;
+        } else {
+          throw new Error("S3 and Backend upload failed");
+        }
+      }
 
       if (isHeader) {
-        updateActiveTemplate({ header_image_url: file_url, show_header: true });
+        updateActiveTemplate({ header_image_url: finalUrl, show_header: true });
       } else {
         const currentBodyImage = templates[activeTab].body_image || { width: '100%', alt: '', align: 'center' };
         updateActiveTemplate({ 
-          body_image: { ...currentBodyImage, url: file_url },
+          body_image: { ...currentBodyImage, url: finalUrl },
           show_body_image: true 
         });
       }

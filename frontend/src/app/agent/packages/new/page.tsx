@@ -27,7 +27,7 @@ import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { compressImage, uploadToS3 } from '@/lib/image-upload-utils'
+import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 
 interface PackageFormData {
@@ -2954,19 +2954,35 @@ export default function CreatePackagePage() {
                                                                             })
                                                                         });
 
-                                                                        if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-                                                                        const { upload_url, file_url } = await presignedRes.json();
+                                                                        let finalUrl = '';
+                                                                        
+                                                                        if (presignedRes.ok) {
+                                                                            const { upload_url, file_url } = await presignedRes.json();
+                                                                            
+                                                                            // 3. Try Direct upload to S3
+                                                                            const success = await uploadToS3(compressedFile, upload_url);
+                                                                            if (success) {
+                                                                                finalUrl = file_url;
+                                                                            }
+                                                                        }
 
-                                                                        // 3. Direct upload to S3
-                                                                        const success = await uploadToS3(compressedFile, upload_url);
-                                                                        if (!success) throw new Error('S3 upload failed');
+                                                                        // 4. Fallback to backend upload if S3 failed or presigned URL failed
+                                                                        if (!finalUrl) {
+                                                                            console.log('S3 upload failed or not available, falling back to backend upload...');
+                                                                            const backendUrl = await uploadToBackend(compressedFile, 'packages');
+                                                                            if (backendUrl) {
+                                                                                finalUrl = backendUrl;
+                                                                            } else {
+                                                                                throw new Error('All upload methods failed');
+                                                                            }
+                                                                        }
 
-                                                                        // 4. Update form state
-                                                                        updateFormData('feature_image_url', file_url);
+                                                                        // 5. Update form state
+                                                                        updateFormData('feature_image_url', finalUrl);
                                                                         toast.success('Image uploaded successfully!', { id: toastId });
                                                                     } catch (err) {
-                                                                        console.error(err);
-                                                                        toast.error('Upload failed', { id: toastId });
+                                                                        console.error('Upload error:', err);
+                                                                        toast.error('Upload failed. Please try again.', { id: toastId });
                                                                     }
                                                                 }
                                                             }}
