@@ -138,16 +138,16 @@ export default function CityActivityManager({ params }: { params: { city: string
             const newImageObj = {
                 image_url: 'loading',
                 display_order: newImages.length,
-                _tempId: tempId // just for internal tracking if needed
+                _tempId: tempId
             }
             newImages.push(newImageObj)
             handleRowChange(rowIndex, 'images', newImages)
 
             try {
+                // Use the updated utility that handles compression and robust upload
                 const url = await uploadFileToS3(file, 'activities')
 
                 if (url) {
-                    // Update the loading placeholder with actual URL
                     setActivityRows(currentRows => {
                         const updatedRows = [...currentRows]
                         const targetRow = { ...updatedRows[rowIndex] }
@@ -155,26 +155,20 @@ export default function CityActivityManager({ params }: { params: { city: string
 
                         const imgIdx = targetImages.findIndex((img: any) => img.image_url === 'loading' || (img as any)._tempId === tempId)
                         if (imgIdx !== -1) {
-                            targetImages[imgIdx] = {
-                                ...targetImages[imgIdx],
-                                image_url: url
-                            }
+                            targetImages[imgIdx] = { ...targetImages[imgIdx], image_url: url }
                         } else {
-                            // Fallback if not found
-                            targetImages.push({
-                                image_url: url,
-                                display_order: targetImages.length
-                            })
+                            targetImages.push({ image_url: url, display_order: targetImages.length })
                         }
 
                         targetRow.images = targetImages
                         updatedRows[rowIndex] = targetRow
                         return updatedRows
                     })
+                    toast.success('Image uploaded successfully')
                 }
             } catch (error) {
                 console.error("Upload error:", error)
-                toast.error("Failed to upload image")
+                toast.error("Failed to upload image. Please try again.")
 
                 // Remove the loading placeholder on failure
                 setActivityRows(currentRows => {

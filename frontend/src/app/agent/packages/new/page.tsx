@@ -27,7 +27,7 @@ import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils'
+import { compressImage, uploadToS3, uploadToBackend, uploadImage } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 
 interface PackageFormData {
@@ -2926,58 +2926,9 @@ export default function CreatePackagePage() {
                                                             onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
-                                                                    // Restrict image size to 5MB
-                                                                    if (file.size > 5 * 1024 * 1024) {
-                                                                        toast.error('Image size must be less than 5MB');
-                                                                        return;
-                                                                    }
                                                                     const toastId = toast.loading('Optimizing and uploading image...');
                                                                     try {
-                                                                        // 1. Compress image
-                                                                        const compressedFile = await compressImage(file, {
-                                                                            maxWidthOrHeight: 1920,
-                                                                            initialQuality: 0.8
-                                                                        });
-
-                                                                        // 2. Get presigned URL
-                                                                        const token = localStorage.getItem('token');
-                                                                        const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
-                                                                            method: 'POST',
-                                                                            headers: {
-                                                                                'Authorization': `Bearer ${token}`,
-                                                                                'Content-Type': 'application/json'
-                                                                            },
-                                                                            body: JSON.stringify({
-                                                                                file_name: compressedFile.name,
-                                                                                content_type: compressedFile.type,
-                                                                                folder: 'packages'
-                                                                            })
-                                                                        });
-
-                                                                        let finalUrl = '';
-                                                                        
-                                                                        if (presignedRes.ok) {
-                                                                            const { upload_url, file_url } = await presignedRes.json();
-                                                                            
-                                                                            // 3. Try Direct upload to S3
-                                                                            const success = await uploadToS3(compressedFile, upload_url);
-                                                                            if (success) {
-                                                                                finalUrl = file_url;
-                                                                            }
-                                                                        }
-
-                                                                        // 4. Fallback to backend upload if S3 failed or presigned URL failed
-                                                                        if (!finalUrl) {
-                                                                            console.log('S3 upload failed or not available, falling back to backend upload...');
-                                                                            const backendUrl = await uploadToBackend(compressedFile, 'packages');
-                                                                            if (backendUrl) {
-                                                                                finalUrl = backendUrl;
-                                                                            } else {
-                                                                                throw new Error('All upload methods failed');
-                                                                            }
-                                                                        }
-
-                                                                        // 5. Update form state
+                                                                        const finalUrl = await uploadImage(file, 'packages');
                                                                         updateFormData('feature_image_url', finalUrl);
                                                                         toast.success('Image uploaded successfully!', { id: toastId });
                                                                     } catch (err) {

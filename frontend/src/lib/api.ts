@@ -9,65 +9,13 @@ export const api = axios.create({
     }
 })
 
+import { uploadImage } from './image-upload-utils';
+
 /**
  * Upload a file directly to S3 using a presigned URL with fallback to backend upload
  */
 export const uploadFileToS3 = async (file: File, folder: string = "packages") => {
-    // Restrict image size to 5MB
-    if (file.size > 5 * 1024 * 1024) {
-        throw new Error('Image size must be less than 5MB');
-    }
-    
-    const token = localStorage.getItem('token');
-    let finalUrl = '';
-
-    try {
-        // 1. Try Direct S3 Upload via Presigned URL
-        const { data } = await api.post('/presigned-url', {
-            file_name: file.name,
-            content_type: file.type,
-            folder: folder
-        }, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const { upload_url, file_url } = data;
-
-        // 2. Upload to S3 directly
-        await axios.put(upload_url, file, {
-            headers: {
-                'Content-Type': file.type
-            }
-        });
-
-        finalUrl = file_url;
-    } catch (error) {
-        console.warn('Direct S3 Upload failed, trying backend fallback...', error);
-    }
-
-    // 3. Fallback to backend mediated upload if S3 failed
-    if (!finalUrl) {
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('folder', folder);
-
-            const response = await api.post('/upload', formData, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            
-            finalUrl = response.data.url;
-            console.log('Backend fallback upload successful');
-        } catch (fallbackError) {
-            console.error('All upload methods failed:', fallbackError);
-            throw new Error('File upload failed. Please check your connection.');
-        }
-    }
-
-    return finalUrl;
+    return await uploadImage(file, folder);
 };
 
 // Add auth token and domain to requests

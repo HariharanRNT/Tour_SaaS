@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils';
+import { compressImage, uploadToS3, uploadToBackend, uploadImage } from '@/lib/image-upload-utils';
 import { API_URL } from '@/lib/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -839,58 +839,13 @@ export default function AgentThemeSettingsPage() {
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
 
-        // Restrict image size to 5MB
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Image size must be less than 5MB');
-            return;
-        }
-
         setImageUploading(true);
         const toastId = toast.loading('Optimizing and uploading background image...');
         try {
-            // 1. Compress image
-            const compressedFile = await compressImage(file, {
+            const finalUrl = await uploadImage(file, 'homepage', {
                 maxWidthOrHeight: 1920,
                 initialQuality: 0.8
             });
-
-            // 2. Get presigned URL
-            const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    file_name: compressedFile.name,
-                    content_type: compressedFile.type,
-                    folder: 'homepage'
-                })
-            });
-
-            let finalUrl = '';
-            if (presignedRes.ok) {
-                const { upload_url, file_url } = await presignedRes.json();
-                // 3. Try Direct upload to S3
-                const success = await uploadToS3(compressedFile, upload_url);
-                if (success) {
-                    finalUrl = file_url;
-                }
-            }
-
-            // 4. Fallback to backend upload
-            if (!finalUrl) {
-                console.log('S3 upload failed, falling back to backend upload...');
-                const backendUrl = await uploadToBackend(compressedFile, 'homepage');
-                if (backendUrl) {
-                    finalUrl = backendUrl;
-                } else {
-                    throw new Error('All upload methods failed');
-                }
-            }
-
-            // 5. Update state
             hpField('backgroundImageUrl', finalUrl);
             toast.success('Background image updated! ✓', { id: toastId });
         } catch (err: any) {
@@ -906,60 +861,14 @@ export default function AgentThemeSettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Restrict image size to 5MB
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Logo image size must be less than 5MB');
-            return;
-        }
-
         setLogoUploading(true);
         const toastId = toast.loading('Optimizing and uploading logo...');
 
         try {
-            // 1. Compress image (Logo usually smaller, but let's stick to 1920 max or maybe smaller?)
-            // For logo, we might want smaller dimensions, but 1920 is a safe max.
-            const compressedFile = await compressImage(file, {
-                maxWidthOrHeight: 800, // Logos don't need to be 1920
+            const finalUrl = await uploadImage(file, 'logos', {
+                maxWidthOrHeight: 800,
                 initialQuality: 0.8
             });
-
-            // 2. Get presigned URL
-            const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    file_name: compressedFile.name,
-                    content_type: compressedFile.type,
-                    folder: 'logos'
-                })
-            });
-
-            let finalUrl = '';
-            if (presignedRes.ok) {
-                const { upload_url, file_url } = await presignedRes.json();
-                // 3. Try Direct upload to S3
-                const success = await uploadToS3(compressedFile, upload_url);
-                if (success) {
-                    finalUrl = file_url;
-                }
-            }
-
-            // 4. Fallback to backend upload
-            if (!finalUrl) {
-                console.log('S3 upload failed, falling back to backend upload...');
-                const backendUrl = await uploadToBackend(compressedFile, 'logos');
-                if (backendUrl) {
-                    finalUrl = backendUrl;
-                } else {
-                    throw new Error('All upload methods failed');
-                }
-            }
-
-            // 5. Update state
             hpField('navbar_logo_image', finalUrl);
             toast.success('Logo updated successfully ✓', { id: toastId });
         } catch (err: any) {
@@ -975,57 +884,14 @@ export default function AgentThemeSettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Restrict image size to 5MB
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Favicon size must be less than 5MB');
-            return;
-        }
-
         setFaviconUploading(true);
         const toastId = toast.loading('Optimizing and uploading favicon...');
 
         try {
-            // Favicon should be small and square
-            const compressedFile = await compressImage(file, {
+            const finalUrl = await uploadImage(file, 'favicons', {
                 maxWidthOrHeight: 128, 
                 initialQuality: 0.9
             });
-
-            const token = localStorage.getItem('token') || '';
-            const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    file_name: compressedFile.name,
-                    content_type: compressedFile.type,
-                    folder: 'favicons'
-                })
-            });
-
-            let finalUrl = '';
-            if (presignedRes.ok) {
-                const { upload_url, file_url } = await presignedRes.json();
-                // Try direct upload
-                const success = await uploadToS3(compressedFile, upload_url);
-                if (success) {
-                    finalUrl = file_url;
-                }
-            }
-
-            // Fallback to backend upload
-            if (!finalUrl) {
-                console.log('S3 upload failed, falling back to backend upload...');
-                const backendUrl = await uploadToBackend(compressedFile, 'favicons');
-                if (backendUrl) {
-                    finalUrl = backendUrl;
-                } else {
-                    throw new Error('All upload methods failed');
-                }
-            }
-
             hpField('favicon_url', finalUrl);
             toast.success('Favicon updated successfully ✓', { id: toastId });
         } catch (err: any) {

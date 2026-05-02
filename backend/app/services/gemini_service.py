@@ -557,11 +557,13 @@ RULES:
 
 TOOLS:
 You have access to the following tools:
-- search_packages: Search for packages based on criteria (location, duration, budget, etc.)
+- search_packages: Search for packages based on criteria.
 - get_package_details: Get full details for a specific package ID.
 
 IMPORTANT BEHAVIOR:
 - When a user asks about packages, ALWAYS use `search_packages` first.
+- CRITICAL: Extract EVERY filter the user mentions. If they say "Dubai 5 days under 40k luxury", call `search_packages(location='Dubai', duration_days=5, max_price=40000, travel_style='luxury')`.
+- DO NOT ignore any part of the user's request. Combined queries must use combined filters.
 - When a user wants to "Book", "Proceed", "Configure" or "Select" a specific package, YOU MUST call `get_package_details` with the package_id. 
 - DO NOT say "I cannot book". Instead, say "Great! Let's get that set up for you" and call `get_package_details`. This will show the booking interface to the user.
 - If the user selects a package from the list verbally (e.g., "I choose the first one" or "The Kerala package"), call `get_package_details` for that package.
@@ -626,7 +628,7 @@ CURRENT CONVERSATION CONTEXT:
                 types.Tool(function_declarations=[
                     types.FunctionDeclaration(
                         name="search_packages",
-                        description="Search for travel packages based on criteria. Use this when the user mentions destination, budget, duration, or travel style.",
+                        description="Search for travel packages based on criteria. Call this whenever the user mentions ANY combination of destination, budget, duration (days/nights), or travel style.",
                         parameters=types.Schema(
                             type="OBJECT",
                             properties={
@@ -635,7 +637,7 @@ CURRENT CONVERSATION CONTEXT:
                                 "duration_nights": types.Schema(type="INTEGER", description="Number of nights for the trip"),
                                 "min_price": types.Schema(type="NUMBER", description="Minimum budget per person in INR"),
                                 "max_price": types.Schema(type="NUMBER", description="Maximum budget per person in INR"),
-                                "travel_style": types.Schema(type="STRING", description="Travel style or category (e.g., luxury, budget, beach, adventure)"),
+                                "travel_style": types.Schema(type="STRING", description="Travel style or category (e.g., luxury, budget, honeymoon, adventure)"),
                                 "booking_type": types.Schema(type="STRING", description="INSTANT or ENQUIRY booking mode")
                             }
                         )
@@ -805,6 +807,7 @@ CURRENT CONVERSATION CONTEXT:
             
             async with AsyncSessionLocal() as db:
                 if name == "search_packages":
+                    print(f"[GeminiService] Tool: search_packages with args: {args}")
                     # Update session context if filters are present
                     if session_state and "conversationContext" in session_state:
                         ctx = session_state["conversationContext"]
@@ -841,21 +844,28 @@ CURRENT CONVERSATION CONTEXT:
                                 Package.duration_days >= limit - tolerance,
                                 Package.duration_days <= limit + tolerance
                             ))
-                        elif args.get("duration_nights"):
-                            # If only nights provided
-                            limit = args["duration_nights"]
-                            tolerance = 1 if strict else 2
-                            query = query.where(and_(
-                                Package.duration_nights >= limit - tolerance,
-                                Package.duration_nights <= limit + tolerance
-                            ))
+                        
+                        if args.get("duration_nights"):
+                            # Only apply nights filter if days filter wasn't already applied, or if strict
+                            if not args.get("duration_days") or strict:
+                                limit = args["duration_nights"]
+                                tolerance = 1 if strict else 2
+                                query = query.where(and_(
+                                    Package.duration_nights >= limit - tolerance,
+                                    Package.duration_nights <= limit + tolerance
+                                ))
                             
                         if args.get("travel_style"):
                             style = args["travel_style"]
-                            query = query.where(or_(
-                                Package.trip_style.ilike(f"%{style}%"),
-                                Package.category.ilike(f"%{style}%")
-                            ))
+                            # If not strict, we skip the travel style filter to allow more results
+                            if strict:
+                                query = query.where(or_(
+                                    Package.trip_style.ilike(f"%{style}%"),
+                                    Package.category.ilike(f"%{style}%")
+                                ))
+                            else:
+                                # For non-strict, we omit it to avoid empty results but let other filters work
+                                pass
 
                         if args.get("booking_type"):
                             query = query.where(Package.booking_type == args["booking_type"])
