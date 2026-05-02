@@ -436,14 +436,25 @@ Return the COMPLETE updated itinerary in the same JSON format, with all modifica
             # Enhanced print for debugging in terminal
             print(f"\n[GeminiService] --- ANALYZING ENQUIRY CONTEXT ---\n{message}\n---------------------------------------------")
             
-            system_instruction = """You are a professional travel agent assistant. Your goal is to extract structured filter data from travel enquiries.
-            
-RULES:
-1. Extract ALL mentioned destinations (cities, states, countries).
-2. If the customer message is brief/vague, ALWAYS look for the destination in the "Interesting Package" field.
-3. If no specific destination is found but a region is implied, include the region.
-4. "budgetHint" should be a number string only.
-5. Return ONLY valid JSON."""
+            system_instruction = """You are a highly skilled travel consultant assistant. Your task is to extract structured travel parameters from a customer's enquiry message.
+
+EXTRACT THESE FIELDS:
+1. **destinations**: A list of all specific cities, states, or countries mentioned. If a specific package name is mentioned (e.g. 'Amazing Kerala'), extract the location from it ('Kerala').
+2. **days**: The number of days requested (integer). 
+3. **nights**: The number of nights requested (integer). 
+   - Note: If only '4 nights' is mentioned, assume '5 days'. If only '5 days' is mentioned, assume '4 nights'.
+4. **guests**: Total number of people (integer). Look for phrases like '2 adults', 'couple', 'family of 4'.
+5. **tripStyle**: The primary vibe/category (e.g., 'Honeymoon', 'Adventure', 'Luxury', 'Budget', 'Family').
+6. **budgetHint**: The total or per-person budget mentioned. Return as a plain number string (e.g. '50000').
+7. **keywords**: Any specific activities or interests mentioned (e.g., 'beach', 'scuba diving', 'temples').
+
+RULES FOR COMBINATIONS:
+- If multiple filters are present (e.g. "Dubai 5 days under 40k luxury"), extract EVERY single one into its respective field.
+- Do not let one filter overwrite another.
+- Be precise: '3 days' is different from '3 nights'.
+- If the message is 'Dubai with 50000 budget for 4 days luxury', your output must capture all four elements.
+
+OUTPUT FORMAT: Return ONLY a valid JSON object. No prose, no markdown code blocks."""
 
             prompt = f"Analyze this context and return JSON:\n\n{message}"
 
@@ -615,16 +626,17 @@ CURRENT CONVERSATION CONTEXT:
                 types.Tool(function_declarations=[
                     types.FunctionDeclaration(
                         name="search_packages",
-                        description="Search for travel packages based on criteria. USE THIS FIRST when user asks for packages.",
+                        description="Search for travel packages based on criteria. Use this when the user mentions destination, budget, duration, or travel style.",
                         parameters=types.Schema(
                             type="OBJECT",
                             properties={
-                                "location": types.Schema(type="STRING", description="Destination city, state or country"),
-                                "duration_days": types.Schema(type="INTEGER", description="Number of days"),
-                                "min_price": types.Schema(type="NUMBER", description="Minimum budget"),
-                                "max_price": types.Schema(type="NUMBER", description="Maximum budget"),
-                                "travel_style": types.Schema(type="STRING", description="Travel style (beach, mountain, cultural, etc.)"),
-                                "booking_type": types.Schema(type="STRING", description="Booking type: INSTANT or ENQUIRY")
+                                "location": types.Schema(type="STRING", description="Destination city, state, or country"),
+                                "duration_days": types.Schema(type="INTEGER", description="Number of days for the trip"),
+                                "duration_nights": types.Schema(type="INTEGER", description="Number of nights for the trip"),
+                                "min_price": types.Schema(type="NUMBER", description="Minimum budget per person in INR"),
+                                "max_price": types.Schema(type="NUMBER", description="Maximum budget per person in INR"),
+                                "travel_style": types.Schema(type="STRING", description="Travel style or category (e.g., luxury, budget, beach, adventure)"),
+                                "booking_type": types.Schema(type="STRING", description="INSTANT or ENQUIRY booking mode")
                             }
                         )
                     ),
@@ -807,48 +819,84 @@ CURRENT CONVERSATION CONTEXT:
                         if args.get("duration_days"): ctx["days"] = args["duration_days"]
                         if args.get("travel_style"): ctx["trip_style"] = args["travel_style"]
 
-                    query = select(Package).where(Package.status == PackageStatus.PUBLISHED)
-                    
-                    # Filter by Admin ID (if provided)
-                    if admin_id:
-                        query = query.where(Package.created_by == admin_id)
-                    
-                    if args.get("location"):
-                        loc = args["location"]
-                        query = query.where(or_(
-                            Package.destination.ilike(f"%{loc}%"),
-                            Package.country.ilike(f"%{loc}%"),
-                            Package.title.ilike(f"%{loc}%")
-                        ))
-                    
-                    if args.get("duration_days"):
-                        limit = args["duration_days"]
-                        # Loose match: +/- 2 days
-                        query = query.where(and_(
-                            Package.duration_days >= limit - 2,
-                            Package.duration_days <= limit + 2
-                        ))
+                    async def run_search(strict=True):
+                        query = select(Package).where(Package.status == PackageStatus.PUBLISHED)
                         
-                    if args.get("travel_style"):
-                        style = args["travel_style"]
-                        query = query.where(or_(
-                            Package.trip_style.ilike(f"%{style}%"),
-                            Package.category.ilike(f"%{style}%")
-                        ))
+                        if admin_id:
+                            query = query.where(Package.created_by == admin_id)
+                        
+                        if args.get("location"):
+                            loc = args["location"]
+                            query = query.where(or_(
+                                Package.destination.ilike(f"%{loc}%"),
+                                Package.country.ilike(f"%{loc}%"),
+                                Package.title.ilike(f"%{loc}%")
+                            ))
+                        
+                        if args.get("duration_days"):
+                            limit = args["duration_days"]
+                            # Loose match: +/- 1 day if strict, +/- 3 days if not
+                            tolerance = 1 if strict else 3
+                            query = query.where(and_(
+                                Package.duration_days >= limit - tolerance,
+                                Package.duration_days <= limit + tolerance
+                            ))
+                        elif args.get("duration_nights"):
+                            # If only nights provided
+                            limit = args["duration_nights"]
+                            tolerance = 1 if strict else 2
+                            query = query.where(and_(
+                                Package.duration_nights >= limit - tolerance,
+                                Package.duration_nights <= limit + tolerance
+                            ))
+                            
+                        if args.get("travel_style"):
+                            style = args["travel_style"]
+                            query = query.where(or_(
+                                Package.trip_style.ilike(f"%{style}%"),
+                                Package.category.ilike(f"%{style}%")
+                            ))
 
-                    if args.get("booking_type"):
-                        query = query.where(Package.booking_type == args["booking_type"])
+                        if args.get("booking_type"):
+                            query = query.where(Package.booking_type == args["booking_type"])
 
-                    if args.get("max_price"):
-                        query = query.where(Package.price_per_person <= args["max_price"])
-                        
-                    if args.get("min_price"):
-                        query = query.where(Package.price_per_person >= args["min_price"])
-                        
-                    # Limit results
-                    query = query.limit(5)
-                    result = await db.execute(query)
-                    packages = result.scalars().all()
+                        if args.get("max_price"):
+                            # If not strict, allow 20% margin
+                            limit = args["max_price"]
+                            if not strict: limit *= 1.2
+                            query = query.where(Package.price_per_person <= limit)
+                            
+                        if args.get("min_price"):
+                            limit = args["min_price"]
+                            if not strict: limit *= 0.8
+                            query = query.where(Package.price_per_person >= limit)
+                            
+                        query = query.limit(5)
+                        result = await db.execute(query)
+                        return result.scalars().all()
+
+                    # Try strict search first
+                    packages = await run_search(strict=True)
+                    
+                    # If no results, try relaxing the search (only if we have filters other than location)
+                    if not packages and (args.get("duration_days") or args.get("max_price") or args.get("travel_style")):
+                        print("[GeminiService] No packages found with strict filters. Retrying with relaxed filters...")
+                        packages = await run_search(strict=False)
+                    
+                    if not packages and args.get("location"):
+                         # Last resort: just match location
+                         print("[GeminiService] Still no packages. Falling back to location-only search...")
+                         query = select(Package).where(and_(
+                             Package.status == PackageStatus.PUBLISHED,
+                             or_(
+                                 Package.destination.ilike(f"%{args['location']}%"),
+                                 Package.country.ilike(f"%{args['location']}%")
+                             )
+                         ))
+                         if admin_id: query = query.where(Package.created_by == admin_id)
+                         query = query.limit(5)
+                         result = await db.execute(query)
+                         packages = result.scalars().all()
                     
                     def parse_included(items):
                         if not items:
@@ -957,33 +1005,29 @@ CURRENT CONVERSATION CONTEXT:
         Extract search filters from a natural language query
         """
         try:
-            system_prompt = """You are a travel package filter extraction engine for a tour booking platform.
-Your ONLY job is to parse a user's natural-language travel query and return a single valid JSON object — no markdown, no explanation, no extra text, just the raw JSON.
+            system_prompt = """You are a high-precision travel query parser for TourSaaS. Your goal is to convert natural language queries into structured search filters.
 
-Extract the following fields. Use null for any field not mentioned or unclear:
+FIELDS TO EXTRACT:
+- **destination**: The city, state, or country mentioned.
+- **country**: The country mentioned (if applicable).
+- **minBudget**: Minimum price (number).
+- **maxBudget**: Maximum price (number).
+- **minDays**: Minimum duration in days (number).
+- **maxDays**: Maximum duration in days (number).
+- **nights**: Number of nights (number).
+- **tripStyle**: List of styles (e.g. ['Luxury', 'Adventure']).
+- **activities**: List of specific activities (e.g. ['Surfing', 'Hiking']).
+- **packageType**: 'single_city' or 'multi_city'.
+- **travelMonth**: The month mentioned.
 
-{
-  "destination": string | null,
-  "country": string | null,
-  "minBudget": number | null,
-  "maxBudget": number | null,
-  "minDays": number | null,
-  "maxDays": number | null,
-  "nights": number | null,
-  "tripStyle": string[] | null,
-  "activities": string[] | null,
-  "packageType": "single_city" | "multi_city" | null,
-  "travelMonth": string | null,
-  "groupSize": number | null
-}
+RULES FOR COMPLEX QUERIES:
+1. If a user provides a combination (e.g. "Paris under 1.5L for 5 days luxury"), extract ALL components.
+2. If only one number is provided for budget/days, use it for both min and max fields (e.g. "5 days" -> minDays:5, maxDays:5).
+3. Handle "under", "below", "max" as maxBudget/maxDays.
+4. Handle "above", "minimum", "min" as minBudget/minDays.
+5. If the query specifies nights, extract them into the 'nights' field and assume days = nights + 1 if days are not mentioned.
 
-Rules:
-- If user says "4 days", set minDays=4 and maxDays=4.
-- If user says "4-6 days", set minDays=4 and maxDays=6.
-- If user says "minimum ₹17000 budget", set minBudget=17000 and maxBudget=null.
-- If user says "5-7 nights", set minDays=5 and maxDays=7 (treat nights as days).
-- Always return valid JSON. Never return explanatory prose.
-- If the entire query is unrelated to travel, return: {"error": "not_travel_query"}"""
+CRITICAL: Return ONLY a valid JSON object. No explanation, no markdown."""
 
             config = types.GenerateContentConfig(
                 system_instruction=system_prompt,
