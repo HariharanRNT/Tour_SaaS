@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { activitiesAPI, API_URL, uploadFileToS3 } from '@/lib/api'
+import { compressImage } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 import { Activity, ActivityCreate, TimeSlotPreference } from '@/types/activities'
 import { ActivityImageGallery } from '@/components/ui/activity-image-gallery'
@@ -144,7 +145,12 @@ export default function CityActivityManager({ params }: { params: { city: string
             handleRowChange(rowIndex, 'images', newImages)
 
             try {
-                const url = await uploadFileToS3(file, 'activities')
+                // First compress the image to ensure it's well under Vercel's 4.5MB payload limit
+                const compressedFile = await compressImage(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1920
+                });
+                const url = await uploadFileToS3(compressedFile, 'activities');
 
                 if (url) {
                     // Update the loading placeholder with actual URL

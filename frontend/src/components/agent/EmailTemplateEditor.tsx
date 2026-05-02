@@ -29,9 +29,9 @@ import {
 import { DEFAULT_STRUCTURED_CONTENT, MASTER_SHELLS, StructuredEmailContent } from "@/constants/email-structured-defaults";
 import { EMAIL_VARIABLES, EmailTemplateType } from "@/constants/email-variables";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import api, { API_URL } from "@/lib/api";
+import api, { API_URL, uploadFileToS3 } from "@/lib/api";
 import { toast } from "sonner";
-import { compressImage, uploadToS3, uploadToBackend } from "@/lib/image-upload-utils";
+import { compressImage } from "@/lib/image-upload-utils";
 
 interface EmailTemplateEditorProps {
   initialTemplates?: Record<string, any>;
@@ -262,32 +262,10 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
         initialQuality: 0.8
       });
 
-      let finalUrl = '';
-      
-      try {
-        const presignedRes = await api.post("/presigned-url", {
-          file_name: compressedFile.name,
-          content_type: compressedFile.type,
-          folder: 'email-templates'
-        });
-
-        const { upload_url, file_url } = presignedRes.data;
-        const success = await uploadToS3(compressedFile, upload_url);
-        if (success) {
-          finalUrl = file_url;
-        }
-      } catch (err) {
-        console.error("Presigned URL or S3 upload failed:", err);
-      }
-
+      // Upload via backend proxy (avoids S3 CORS issues from Vercel)
+      const finalUrl = await uploadFileToS3(compressedFile, 'email-templates');
       if (!finalUrl) {
-        console.log("Falling back to backend upload...");
-        const backendUrl = await uploadToBackend(compressedFile, 'email-templates');
-        if (backendUrl) {
-          finalUrl = backendUrl;
-        } else {
-          throw new Error("S3 and Backend upload failed");
-        }
+        throw new Error('Upload failed. Please check your connection and try again.');
       }
 
       if (isHeader) {

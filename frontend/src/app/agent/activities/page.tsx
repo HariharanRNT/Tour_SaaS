@@ -44,6 +44,7 @@ import {
 import { cn, isValidUrl } from '@/lib/utils'
 import { Plus, Search, MapPin, Trash2, Edit, ChevronLeft, ChevronRight, MoreHorizontal, Activity as ActivityIcon, ArrowRight, ChevronDown, Upload, Link2, Loader2, MoreVertical } from 'lucide-react'
 import { activitiesAPI, API_URL, uploadFileToS3 } from '@/lib/api'
+import { compressImage } from '@/lib/image-upload-utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -735,7 +736,11 @@ export default function ActivitiesMasterPage() {
 
                                                 setIsUploading(true)
                                                 try {
-                                                    const s3Url = await uploadFileToS3(file, 'destinations')
+                                                    const compressedFile = await compressImage(file, {
+                                                        maxSizeMB: 1,
+                                                        maxWidthOrHeight: 1920
+                                                    });
+                                                    const s3Url = await uploadFileToS3(compressedFile, 'destinations')
                                                     setNewCityImage(s3Url)
                                                     toast.success('Image uploaded to S3 successfully')
                                                 } catch (err) {
