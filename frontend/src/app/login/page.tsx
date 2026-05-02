@@ -389,9 +389,11 @@ function LoginContent() {
                                     <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
                                         <form onSubmit={handleLogin} className="space-y-4">
                                             {error && (
-                                                <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded-xl flex items-center gap-2 text-xs">
-                                                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                                                    <span>{error}</span>
+                                                <div className="bg-red-50/40 backdrop-blur-md border border-red-200/50 text-red-900 px-4 py-3 rounded-2xl flex items-start gap-3 text-sm shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                                                    <div className="bg-red-500 rounded-full p-1 shrink-0 mt-0.5">
+                                                        <AlertCircle className="h-3 w-3 text-white" />
+                                                    </div>
+                                                    <span className="font-semibold leading-snug">{error}</span>
                                                 </div>
                                             )}
 

@@ -43,6 +43,7 @@ interface Subscription {
     status: string;
     start_date: string;
     end_date: string;
+    expires_at?: string | null; // precise UTC expiry timestamp
     current_bookings_usage: number;
     updated_at?: string;
     created_at?: string;
@@ -119,11 +120,18 @@ export default function SubscriptionPage() {
             if (!res.ok) throw new Error('Failed to fetch subscriptions');
             const subs: Subscription[] = await res.json();
 
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            const active = subs.find(s => s.status === 'active' && s.end_date >= todayStr);
+            const now = Date.now();
+            // Use expires_at if present for a precise check, fall back to end_date string
+            const isSubActive = (s: Subscription) => {
+                if (s.status !== 'active') return false;
+                if (s.expires_at) return new Date(s.expires_at).getTime() > now;
+                return s.end_date >= format(new Date(), 'yyyy-MM-dd');
+            };
+
+            const active = subs.find(isSubActive);
             const upcoming = subs.filter(s => s.status === 'upcoming');
             const history = subs.filter(s => ['completed', 'expired', 'cancelled'].includes(s.status)
-                || (s.status === 'active' && s.end_date < todayStr));
+                || (s.status === 'active' && !isSubActive(s)));
             const paused = subs.filter(s => s.status === 'on_hold');
 
             return { active, upcoming, history, paused };
@@ -282,31 +290,36 @@ export default function SubscriptionPage() {
         if (countdownRef.current) clearInterval(countdownRef.current);
         if (!activeSub) return;
 
+        // Prefer expires_at for exact time; fall back to end_date (treated as end of that day)
+        const expiryMs = activeSub.expires_at
+            ? new Date(activeSub.expires_at).getTime()
+            : new Date(activeSub.end_date + 'T23:59:59').getTime();
+
         const updateCountdown = () => {
-            const msLeft = new Date(activeSub.end_date).getTime() - Date.now();
+            const msLeft = expiryMs - Date.now();
             if (msLeft <= 0) {
                 setCountdownText('Expired');
                 clearInterval(countdownRef.current!);
-                // Trigger a reload to pick up the new state after expiry
                 queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
                 return;
             }
             const hoursLeft = Math.floor(msLeft / (1000 * 3600));
             const minsLeft = Math.floor((msLeft % (1000 * 3600)) / 60000);
+            const secsLeft = Math.floor((msLeft % 60000) / 1000);
             if (hoursLeft >= 1) {
-                setCountdownText(`${hoursLeft} hr${hoursLeft > 1 ? 's' : ''} left`);
+                setCountdownText(`${hoursLeft}h ${minsLeft}m left`);
             } else if (minsLeft >= 1) {
-                setCountdownText(`${minsLeft} min left`);
+                setCountdownText(`${minsLeft}m ${secsLeft}s left`);
             } else {
-                setCountdownText('Expiring soon');
+                setCountdownText(`${secsLeft}s left`);
             }
         };
 
-        const msToExpiry = new Date(activeSub.end_date).getTime() - Date.now();
+        const msToExpiry = expiryMs - Date.now();
         if (msToExpiry < 24 * 3600 * 1000) {
-            // Less than 24h: start live countdown
+            // Less than 24h: start live countdown (update every second)
             updateCountdown();
-            countdownRef.current = setInterval(updateCountdown, 30000); // update every 30s
+            countdownRef.current = setInterval(updateCountdown, 1000);
         } else {
             setCountdownText('');
         }
@@ -503,16 +516,25 @@ export default function SubscriptionPage() {
         }
     };
 
-    const getDaysRemaining = (endDate: string): number => {
-        if (!endDate) return 0;
-        const diff = new Date(endDate).getTime() - Date.now();
+    const getDaysRemaining = (sub: Subscription): number => {
+        const expiryMs = sub.expires_at
+            ? new Date(sub.expires_at).getTime()
+            : new Date(sub.end_date + 'T23:59:59').getTime();
+        const diff = expiryMs - Date.now();
         const days = Math.ceil(diff / (1000 * 3600 * 24));
         return days > 0 ? days : 0;
     };
 
+    // Helper: get the precise expiry timestamp (prefer expires_at)
+    const getExpiryTime = (sub: Subscription): number => {
+        return sub.expires_at
+            ? new Date(sub.expires_at).getTime()
+            : new Date(sub.end_date + 'T23:59:59').getTime();
+    };
+
     // Returns formatted time remaining: days, hours, minutes, or countdown
-    const getExpiryLabel = (endDate: string): { text: string; isUrgent: boolean } => {
-        const msLeft = new Date(endDate).getTime() - Date.now();
+    const getExpiryLabel = (sub: Subscription): { text: string; isUrgent: boolean } => {
+        const msLeft = getExpiryTime(sub) - Date.now();
         if (msLeft <= 0) return { text: 'Expired', isUrgent: true };
         const daysLeft = Math.floor(msLeft / (1000 * 3600 * 24));
         if (daysLeft >= 1) return { text: `${daysLeft} day${daysLeft > 1 ? 's' : ''} left`, isUrgent: daysLeft < 7 };
@@ -622,13 +644,16 @@ export default function SubscriptionPage() {
                                             Expires On
                                         </div>
                                         <div className="text-lg font-bold text-[var(--color-primary-font)]">
-                                            {new Date(activeSub.end_date).toLocaleDateString()}
+                                            {activeSub.expires_at
+                                                ? new Date(activeSub.expires_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                                                : new Date(activeSub.end_date).toLocaleDateString()
+                                            }
                                         </div>
-                                        <div className={`text-xs font-semibold mt-1 flex items-center gap-1 ${getExpiryLabel(activeSub.end_date).isUrgent ? 'text-red-600' : 'text-emerald-600'}`}>
-                                            {getExpiryLabel(activeSub.end_date).isUrgent && getDaysRemaining(activeSub.end_date) < 1 && (
+                                        <div className={`text-xs font-semibold mt-1 flex items-center gap-1 ${getExpiryLabel(activeSub).isUrgent ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            {getExpiryLabel(activeSub).isUrgent && getDaysRemaining(activeSub) < 1 && (
                                                 <Clock className="h-3 w-3 animate-pulse" />
                                             )}
-                                            {getExpiryLabel(activeSub.end_date).text}
+                                            {getExpiryLabel(activeSub).text}
                                         </div>
                                     </div>
 
@@ -641,8 +666,8 @@ export default function SubscriptionPage() {
                                             ₹{activeSub.plan.price.toLocaleString()}
                                         </div>
                                         <div className="text-xs font-semibold mt-1 text-indigo-600">
-                                            {getDaysRemaining(activeSub.end_date) > 0
-                                                ? `Due in ${getDaysRemaining(activeSub.end_date)} day${getDaysRemaining(activeSub.end_date) > 1 ? 's' : ''}`
+                                            {getDaysRemaining(activeSub) > 0
+                                                ? `Due in ${getDaysRemaining(activeSub)} day${getDaysRemaining(activeSub) > 1 ? 's' : ''}`
                                                 : 'Due today'}
                                         </div>
                                     </div>
@@ -676,8 +701,10 @@ export default function SubscriptionPage() {
                                             )}
                                             {(() => {
                                                 const start = new Date(activeSub.start_date).getTime();
-                                                const end = new Date(activeSub.end_date).getTime();
-                                                const now = new Date().getTime();
+                                                const end = activeSub.expires_at
+                                                    ? new Date(activeSub.expires_at).getTime()
+                                                    : new Date(activeSub.end_date).getTime();
+                                                const now = Date.now();
                                                 const total = end - start;
                                                 const elapsed = now - start;
                                                 const percent = Math.min(Math.round((elapsed / total) * 100), 100);
@@ -691,8 +718,10 @@ export default function SubscriptionPage() {
                                             style={{
                                                 width: `${(() => {
                                                     const start = new Date(activeSub.start_date).getTime();
-                                                    const end = new Date(activeSub.end_date).getTime();
-                                                    const now = new Date().getTime();
+                                                    const end = activeSub.expires_at
+                                                        ? new Date(activeSub.expires_at).getTime()
+                                                        : new Date(activeSub.end_date).getTime();
+                                                    const now = Date.now();
                                                     const total = end - start;
                                                     const elapsed = now - start;
                                                     return Math.min(((elapsed / total) * 100), 100);

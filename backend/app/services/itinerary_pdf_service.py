@@ -137,6 +137,9 @@ class ItineraryPdfService:
                         padding: 12px;
                         border: 1px solid #d1d5db;
                         vertical-align: top;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        word-break: break-all;
                     }}
                     .destination-row td {{
                         background-color: #e5e7eb; /* Light grey */
@@ -155,10 +158,10 @@ class ItineraryPdfService:
                 <table>
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Morning</th>
-                            <th>Afternoon</th>
-                            <th>Evening</th>
+                            <th style="width: 15%;">Date</th>
+                            <th style="width: 28%;">Morning</th>
+                            <th style="width: 28%;">Afternoon</th>
+                            <th style="width: 28%;">Evening</th>
                         </tr>
                     </thead>
                     <tbody>

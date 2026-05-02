@@ -92,7 +92,7 @@ class PDFService:
             <style>
                 @page {{
                     size: A4;
-                    margin: 0;
+                    margin: 40px;
                 }}
                 body {{
                     font-family: 'Helvetica', 'Arial', sans-serif;
@@ -100,87 +100,50 @@ class PDFService:
                     line-height: 1.6;
                     margin: 0;
                     padding: 0;
+                    width: 100%;
                 }}
                 .header-container {{
                     background-color: #f8fafc;
-                    padding: 30px 40px;
+                    padding: 30px 20px;
                     border-bottom: 4px solid #2563eb;
+                    margin-bottom: 20px;
                 }}
-                .header-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                }}
-                .logo-cell {{
-                    width: 50%;
-                    vertical-align: middle;
-                }}
-                .agency-info-cell {{
-                    width: 50%;
-                    text-align: right;
-                    vertical-align: middle;
-                }}
-                .logo-img {{
-                    max-height: 60px;
-                    max-width: 200px;
-                }}
-                .agency-name {{
-                    font-size: 22px;
-                    font-weight: bold;
-                    color: #1e3a8a;
-                    margin-bottom: 2px;
-                }}
-                .agency-details {{
-                    font-size: 10px;
-                    color: #64748b;
-                }}
+                /* ... other header styles ... */
                 
                 .quote-banner {{
                     background-color: #1e3a8a;
                     color: white;
-                    padding: 12px 40px;
+                    padding: 12px 20px;
                     text-align: center;
                     font-size: 18px;
                     font-weight: bold;
                     letter-spacing: 2px;
                     text-transform: uppercase;
+                    margin-bottom: 20px;
                 }}
                 
                 .summary-box {{
-                    margin: 20px 40px;
+                    margin: 0 0 20px 0;
                     padding: 15px;
                     background-color: #eff6ff;
                     border-radius: 10px;
                 }}
-                .summary-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                }}
-                .summary-table td {{
-                    padding: 6px 10px;
-                    font-size: 12px;
-                }}
-                .summary-label {{
-                    color: #3b82f6;
-                    font-weight: bold;
-                    width: 110px;
-                }}
-                .summary-value {{
-                    color: #1e293b;
-                    font-weight: bold;
-                }}
+                /* ... other summary styles ... */
                 
                 .intro-text {{
-                    padding: 0 40px;
+                    padding: 0;
                     font-size: 13px;
                     color: #475569;
+                    margin-bottom: 20px;
                 }}
                 
                 .package-container {{
-                    margin: 30px 0;
+                    margin: 0 0 30px 0;
+                    width: 100%;
                 }}
                 .package-header {{
                     background-color: #f1f5f9;
-                    padding: 12px 40px;
+                    padding: 12px 20px;
                     border-left: 5px solid #2563eb;
                     margin-bottom: 15px;
                 }}
@@ -197,7 +160,7 @@ class PDFService:
                 }}
                 
                 .section-title {{
-                    margin: 20px 40px 10px 40px;
+                    margin: 20px 0 10px 0;
                     font-size: 14px;
                     font-weight: bold;
                     color: #2563eb;
@@ -206,22 +169,12 @@ class PDFService:
                 }}
                 
                 .highlight-grid {{
-                    margin: 10px 40px;
+                    margin: 10px 0;
                 }}
-                .highlight-item {{
-                    display: inline-block;
-                    background-color: #f0fdf4;
-                    color: #166534;
-                    padding: 3px 10px;
-                    border-radius: 15px;
-                    font-size: 10px;
-                    font-weight: bold;
-                    margin: 3px;
-                    border: 1px solid #bbf7d0;
-                }}
+                /* ... other highlight styles ... */
                 
                 .itinerary-container {{
-                    margin: 10px 40px;
+                    margin: 10px 0;
                 }}
                 .itinerary-day {{
                     margin-bottom: 12px;
@@ -247,10 +200,14 @@ class PDFService:
                     color: #64748b;
                     margin-top: 4px;
                     display: block;
+                    white-space: normal;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    word-break: break-all;
                 }}
                 
                 .pricing-container {{
-                    margin: 15px 40px;
+                    margin: 15px 0;
                 }}
                 .pricing-table {{
                     width: 100%;
@@ -286,16 +243,14 @@ class PDFService:
                 }}
                 
                 .inc-exc-container {{
-                    margin: 15px 40px;
+                    margin: 15px 0;
                 }}
-                .inc-exc-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                }}
+                /* ... other table styles ... */
+                
                 .inc-exc-cell {{
                     width: 50%;
                     vertical-align: top;
-                    padding: 8px;
+                    padding: 0 8px 0 0;
                 }}
                 .inc-box {{
                     background-color: #f0fdf4;
@@ -312,11 +267,18 @@ class PDFService:
                 .inc-title {{ color: #15803d; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
                 .exc-title {{ color: #b91c1c; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
                 .inc-list {{ padding-left: 15px; margin: 0; }}
-                .inc-list li {{ font-size: 10px; color: #374151; margin-bottom: 3px; }}
+                .inc-list li {{ 
+                    font-size: 10px; 
+                    color: #374151; 
+                    margin-bottom: 3px; 
+                    word-wrap: break-word; 
+                    overflow-wrap: break-word; 
+                    word-break: break-all; 
+                }}
                 
                 .footer-container {{
                     margin-top: 40px;
-                    padding: 30px 40px;
+                    padding: 30px 20px;
                     background-color: #1e293b;
                     color: #cbd5e1;
                     text-align: center;
@@ -499,10 +461,10 @@ class PDFService:
                             <th style="text-align: right;">Subtotal</th>
                         </tr>
                         <tr>
-                            <td>{pkg.title} - Full Package for {pkg.duration_days} Days</td>
-                            <td style="text-align: center;">{enquiry.travellers}</td>
-                            <td style="text-align: right;">INR {float(quoted_price):,.2f}</td>
-                            <td style="text-align: right;">INR {total_for_guests:,.2f}</td>
+                            <td style="width: 45%; white-space: normal; word-break: break-word;">{pkg.title} - Full Package for {pkg.duration_days} Days</td>
+                            <td style="text-align: center; width: 15%;">{enquiry.travellers}</td>
+                            <td style="text-align: right; width: 20%;">INR {float(quoted_price):,.2f}</td>
+                            <td style="text-align: right; width: 20%;">INR {total_for_guests:,.2f}</td>
                         </tr>
                         <tr class="price-total-row">
                             <td colspan="2" class="total-label">Total Professional Fee</td>

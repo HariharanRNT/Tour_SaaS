@@ -248,8 +248,12 @@ class User(Base):
         if not target.subscription or target.subscription.status != 'active':
             return False
         
-        from datetime import date
-        return target.subscription.end_date >= date.today()
+        from datetime import datetime, timezone, date
+        sub = target.subscription
+        # Use precise expires_at if available, otherwise fall back to end_date (date-only)
+        if sub.expires_at is not None:
+            return sub.expires_at > datetime.now(timezone.utc)
+        return sub.end_date >= date.today()
     
     # Relationships
     subscription = relationship(
@@ -881,6 +885,9 @@ class Subscription(Base):
     status = Column(String, default="active") # active, expired, cancelled, trial
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
+    # Precise expiry: exact UTC datetime when the subscription becomes invalid.
+    # Takes priority over end_date for all expiry checks.
+    expires_at = Column(DateTime(timezone=True), nullable=True)
     current_bookings_usage = Column(Integer, default=0)
     auto_renew = Column(Boolean, default=True)
     

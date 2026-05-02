@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 from uuid import UUID
 from sqlalchemy import select, and_, desc, asc
 from sqlalchemy.orm import selectinload
@@ -6,6 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Subscription, SubscriptionPlan, User, Payment, PaymentStatus, Invoice
 from app.services.invoice_service import InvoiceService
 from app.services.email_service import EmailService
+
+def _utcnow() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 class SubscriptionService:
     @staticmethod
@@ -42,7 +46,7 @@ class SubscriptionService:
         """
         Core Logic:
         1. Check current active sub.
-        2. If expired or limit reached -> Mark 'completed'.
+        2. If expired (by expires_at or end_date) or limit reached -> Mark 'completed'.
         3. If no active sub (or just completed) -> Find 'upcoming'.
         4. If upcoming found -> Activate it.
         5. Return the potentially NEW active sub.
@@ -56,16 +60,20 @@ class SubscriptionService:
         result = await db.execute(stmt)
         active_subs = result.scalars().all()
         
+        now_utc = _utcnow()
         best_active = None
         
         for sub in active_subs:
-            # Check validity
-            is_expired_date = sub.end_date < date.today()
+            # Check validity using expires_at (precise) or end_date (fallback)
+            if sub.expires_at is not None:
+                is_expired_date = sub.expires_at <= now_utc
+            else:
+                is_expired_date = sub.end_date < date.today()
             
             # Check grace period
             is_grace_expired = False
             if sub.status == 'halted':
-                if sub.grace_period_ends_at and sub.grace_period_ends_at.date() < date.today():
+                if sub.grace_period_ends_at and sub.grace_period_ends_at <= now_utc:
                     is_grace_expired = True
 
             # Check limit (if not unlimited)
@@ -77,15 +85,12 @@ class SubscriptionService:
                 print(f"[SubscriptionService] Grace period expired for halted sub {sub.id}. Marking expired.")
                 sub.status = 'expired'
             elif is_expired_date or is_limit_reached:
-                print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Date={is_expired_date}, Limit={is_limit_reached}")
+                print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Expired={is_expired_date}, Limit={is_limit_reached}")
                 sub.status = 'completed'
             elif best_active is None:
-                # This is the "best" valid active sub (latest end_date due to our sort)
+                # This is the "best" valid active sub
                 best_active = sub
             else:
-                # We already have a "best" active sub, but this one is also valid and active.
-                # This shouldn't happen normally, but we keep it active or queue it?
-                # For now, if it's valid and active, we leave it, but best_active is what we return.
                 pass
 
         if len(active_subs) > 0:
@@ -108,34 +113,41 @@ class SubscriptionService:
     async def activate_subscription(subscription: Subscription, db: AsyncSession):
         """
         Activates a specific subscription immediately.
-        Sets start_date = Today, end_date = Today + Duration.
+        Sets start_date = Today, end_date = Today + Duration (date display).
+        Sets expires_at = UTC now + exact hours for precise expiry.
         """
         print(f"[SubscriptionService] Activating subscription {subscription.id}")
         
-        # Calculate new dates
-        today = date.today()
-        # Assume monthly if not specified or check plan
+        now_utc = _utcnow()
+        today = now_utc.date()
+
         # We need the plan loaded
         if not subscription.plan:
-            # Reload if plan is missing
             await db.refresh(subscription, attribute_names=['plan'])
             
-        # Calculate duration
+        # Calculate duration in hours for precise timestamp
         billing_cycle = subscription.plan.billing_cycle
         if billing_cycle == 'yearly':
-            duration_days = 365
+            duration_hours = 365 * 24
         elif billing_cycle == 'quarterly':
-            duration_days = 90
+            duration_hours = 90 * 24
         elif billing_cycle == 'monthly':
-            duration_days = 30
+            duration_hours = 30 * 24
+        elif billing_cycle == 'daily':
+            duration_hours = 24
         elif billing_cycle == 'custom':
-            duration_days = subscription.plan.duration_days or 30 # Fallback
+            duration_days = subscription.plan.duration_days or 30
+            duration_hours = duration_days * 24
         else:
-            duration_days = 30 # Default
+            duration_hours = 30 * 24  # Default: 30 days
         
+        duration_days = duration_hours // 24
+
         subscription.status = 'active'
         subscription.start_date = today
         subscription.end_date = today + timedelta(days=duration_days)
+        # Precise expiry: exactly duration_hours from activation moment
+        subscription.expires_at = now_utc + timedelta(hours=duration_hours)
         subscription.current_bookings_usage = 0
         
         await db.commit()
@@ -154,10 +166,10 @@ class SubscriptionService:
              # User HAS a valid active plan. Queue this new one.
              print(f"[SubscriptionService] Queueing new sub {new_sub.id} as 'upcoming'")
              new_sub.status = 'upcoming'
-             # Set tentative dates (optional, can be updated on activation)
+             # Set tentative dates (will be recalculated precisely on actual activation)
              new_sub.start_date = active_sub.end_date + timedelta(days=1)
              
-             # Calculate duration for upcoming
+             # Calculate duration for tentative upcoming dates
              cycle = new_sub.plan.billing_cycle
              if cycle == 'yearly':
                  duration = 365
@@ -165,12 +177,16 @@ class SubscriptionService:
                  duration = 90
              elif cycle == 'monthly':
                  duration = 30
+             elif cycle == 'daily':
+                 duration = 1
              elif cycle == 'custom':
                  duration = new_sub.plan.duration_days or 30
              else:
                  duration = 30
                  
              new_sub.end_date = new_sub.start_date + timedelta(days=duration)
+             # Tentative expires_at — will be overwritten with precise UTC on activation
+             new_sub.expires_at = None
         else:
              # No active plan. Activate immediately.
              print(f"[SubscriptionService] Activating new sub {new_sub.id} immediately")
@@ -271,11 +287,30 @@ class SubscriptionService:
             # Don't fail the transaction just because email failed logic
 
     @staticmethod
+    async def expire_active_plans(user_id: UUID, exclude_id: UUID, db: AsyncSession):
+        """
+        Mark all currently active/halted/on_hold plans (except the one being activated)
+        as 'expired'. Called whenever a queued plan is promoted to active.
+        """
+        stmt = select(Subscription).where(
+            Subscription.user_id == user_id,
+            Subscription.id != exclude_id,
+            Subscription.status.in_(['active', 'halted', 'on_hold'])
+        )
+        result = await db.execute(stmt)
+        plans_to_expire = result.scalars().all()
+        for plan in plans_to_expire:
+            print(f"[SubscriptionService] Expiring superseded plan {plan.id} (was '{plan.status}')")
+            plan.status = 'expired'
+        if plans_to_expire:
+            await db.commit()
+
+    @staticmethod
     async def manual_activate_upcoming(user_id: UUID, subscription_id: UUID, db: AsyncSession):
         """
         User manually clicks 'Activate Now' on an upcoming OR 'on_hold' plan.
         1. Find the target plan (must be upcoming or on_hold).
-        2. Put current active plan (if any) 'on_hold'.
+        2. Expire any currently active plan — the new one supersedes it.
         3. Activate target plan.
         """
         stmt = select(Subscription).where(
@@ -288,22 +323,13 @@ class SubscriptionService:
         if not target_sub:
             raise ValueError("Subscription not found or not in upcoming/on_hold state")
             
-        # Handle current active
-        current_active = await SubscriptionService.get_active_subscription(user_id, db)
-        if current_active:
-            print(f"[SubscriptionService] Moving active sub {current_active.id} to 'on_hold'")
-            current_active.status = 'on_hold'
+        # Expire any currently active / halted / on_hold plans (they are superseded)
+        await SubscriptionService.expire_active_plans(user_id, exclude_id=subscription_id, db=db)
             
         print(f"[SubscriptionService] Activating target sub {target_sub.id} (was {target_sub.status})")
         
-        if target_sub.status == 'on_hold' and target_sub.end_date > date.today():
-             # Just resume
-             target_sub.status = 'active'
-             await db.commit()
-             await db.refresh(target_sub)
-        else:
-             # Full activation (reset dates for New/Expired items)
-             await SubscriptionService.activate_subscription(target_sub, db)
+        # Full activation (reset dates)
+        await SubscriptionService.activate_subscription(target_sub, db)
              
         return target_sub
 
@@ -335,23 +361,37 @@ class SubscriptionService:
             print(f"Payment {payment_id} already processed")
             return
 
-        # Extend Validity
+        # Extend Validity — use precise datetime arithmetic
+        now_utc = _utcnow()
         cycle = sub.plan.billing_cycle
         if cycle == 'yearly':
-            days = 365
+            hours = 365 * 24
         elif cycle == 'quarterly':
-            days = 90
+            hours = 90 * 24
         elif cycle == 'monthly':
-            days = 30
+            hours = 30 * 24
+        elif cycle == 'daily':
+            hours = 24
+        elif cycle == 'custom':
+            hours = (sub.plan.duration_days or 30) * 24
         else:
-            days = 30
-            
-        # If already active and not expired, extend from end_date
-        if sub.end_date > date.today():
-             sub.end_date = sub.end_date + timedelta(days=days)
+            hours = 30 * 24
+
+        days = hours // 24
+
+        # If still active, extend from current expires_at (or end_date fallback)
+        if sub.expires_at and sub.expires_at > now_utc:
+            sub.expires_at = sub.expires_at + timedelta(hours=hours)
+            sub.end_date = sub.expires_at.date()
+        elif sub.end_date > now_utc.date():
+            # No expires_at but end_date still valid — extend from end_date
+            sub.end_date = sub.end_date + timedelta(days=days)
+            sub.expires_at = now_utc + timedelta(hours=hours)
         else:
-             sub.end_date = date.today() + timedelta(days=days)
-             sub.status = 'active'
+            # Already expired — restart fresh from now
+            sub.end_date = now_utc.date() + timedelta(days=days)
+            sub.expires_at = now_utc + timedelta(hours=hours)
+            sub.status = 'active'
              
         # Create Payment
         payment = Payment(
@@ -376,4 +416,4 @@ class SubscriptionService:
         db.add(invoice)
         
         await db.commit()
-        print(f"Renewal processed for {sub.id}. New end date: {sub.end_date}")
+        print(f"Renewal processed for {sub.id}. New expires_at: {sub.expires_at}")

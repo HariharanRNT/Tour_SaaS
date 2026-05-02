@@ -176,10 +176,10 @@ export default function AdminBillingPage() {
 
     const stats = (() => {
         const successSubscriptions = subscriptions.filter((s: Subscription) =>
-            ['active', 'upcoming', 'completed'].includes(s.status)
+            ['active', 'upcoming', 'completed', 'expired', 'cancelled', 'on_hold', 'trial'].includes(s.status)
         );
-        const successStatuses = ['active', 'upcoming', 'expired', 'completed', 'on_hold'];
-        const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active').length;
+        const successStatuses = ['active', 'upcoming', 'expired', 'completed', 'on_hold', 'cancelled', 'trial'];
+        const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active' || s.status === 'trial').length;
         const mrr = successSubscriptions
             .filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status))
             .reduce((sum: number, s: Subscription) => {
@@ -462,7 +462,7 @@ export default function AdminBillingPage() {
                                     >
                                         {tab === 'plans' ? `Plans` : tab === 'subscriptions' ? 'Subscriptions' : 'Financials'}
                                         {tab === 'plans' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{plans.length}</span>}
-                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{stats.totalSubscriptions}</span>}
+                                        {tab === 'subscriptions' && <span className="ml-2 py-0.5 px-2 bg-white/10 data-[state=active]:bg-white/20 rounded-full text-[10px] font-black">{subscriptions.length}</span>}
                                     </TabsTrigger>
                                 ))}
                             </TabsList>

@@ -195,7 +195,7 @@ async def list_all_subscriptions(
 ):
     """List all user subscriptions (Admin only)"""
     from sqlalchemy.orm import selectinload
-    from datetime import date
+    from datetime import datetime, timezone
     
     stmt = select(Subscription).options(
         selectinload(Subscription.plan),
@@ -204,14 +204,20 @@ async def list_all_subscriptions(
     result = await db.execute(stmt)
     subscriptions = result.scalars().all()
     
-    # Auto-expire active subscriptions that have passed their end date
+    # Auto-expire active subscriptions that have passed their expiry time
     updated = False
-    today = date.today()
+    now_utc = datetime.now(timezone.utc)
+    today = now_utc.date()
     for sub in subscriptions:
-        if sub.status == 'active' and sub.end_date < today:
-            sub.status = 'expired'
-            db.add(sub)
-            updated = True
+        if sub.status == 'active':
+            expired = (
+                (sub.expires_at is not None and sub.expires_at <= now_utc) or
+                (sub.expires_at is None and sub.end_date < today)
+            )
+            if expired:
+                sub.status = 'expired'
+                db.add(sub)
+                updated = True
             
     if updated:
         await db.commit()
@@ -231,7 +237,7 @@ async def update_subscription_status(
     """Update a subscription status (Admin only)"""
     from sqlalchemy.orm import selectinload
     from app.services.subscription_service import SubscriptionService
-    from datetime import date
+    from datetime import datetime, timezone
     
     stmt = select(Subscription).where(Subscription.id == subscription_id).options(
         selectinload(Subscription.plan),
@@ -250,21 +256,21 @@ async def update_subscription_status(
 
     # Special handling for activating a plan
     if new_status == 'active':
-        # Check if plan is actually expired by date
-        if subscription.end_date < date.today():
+        # Check if plan is actually expired by datetime
+        now_utc = datetime.now(timezone.utc)
+        expired = (
+            (subscription.expires_at is not None and subscription.expires_at <= now_utc) or
+            (subscription.expires_at is None and subscription.end_date < now_utc.date())
+        )
+        if expired:
              raise HTTPException(status_code=400, detail="Cannot activate an expired plan. Please extend the end date or create a new subscription.")
         
-        # Move any currently active plans to 'on_hold' to prevent multiple active plans
-        stmt = select(Subscription).where(
-            Subscription.user_id == subscription.user_id,
-            Subscription.id != subscription.id,
-            Subscription.status == 'active'
+        # Expire any currently active plans — the newly activated plan supersedes them
+        await SubscriptionService.expire_active_plans(
+            user_id=subscription.user_id,
+            exclude_id=subscription.id,
+            db=db
         )
-        result = await db.execute(stmt)
-        other_active_subs = result.scalars().all()
-        for other_sub in other_active_subs:
-            other_sub.status = 'on_hold'
-            db.add(other_sub)
 
     subscription.status = new_status
     db.add(subscription)
@@ -297,12 +303,15 @@ async def check_subscription_expiry(
 ):
     """
     Called on every subscription page load.
-    1. Checks if current active plan is expired.
+    1. Checks if current active plan is expired (by precise expires_at).
     2. If expired → marks it complete, auto-activates next queued plan.
     3. Returns new state so frontend can show correct UI without a full reload.
     """
     from app.services.subscription_service import SubscriptionService
     from sqlalchemy.orm import selectinload
+    from datetime import datetime, timezone
+
+    now_utc = datetime.now(timezone.utc)
 
     # Capture current active plan name BEFORE expiry check (for the toast message)
     current_stmt = select(Subscription).where(
@@ -314,10 +323,13 @@ async def check_subscription_expiry(
     was_expired = False
 
     if current_active_before:
-        from datetime import date
-        if current_active_before.end_date < date.today():
+        # Check using precise expires_at, fall back to end_date
+        if current_active_before.expires_at is not None:
+            was_expired = current_active_before.expires_at <= now_utc
+        else:
+            was_expired = current_active_before.end_date < now_utc.date()
+        if was_expired:
             expired_plan_name = current_active_before.plan.name
-            was_expired = True
 
     # Run auto-activate logic (marks expired → completed, activates next queued)
     new_active = await SubscriptionService.check_and_auto_activate(current_user.agent_id_resolved, db)
@@ -334,6 +346,7 @@ async def check_subscription_expiry(
         "new_active_sub": {
             "id": str(new_active.id),
             "plan_name": new_active.plan.name,
+            "expires_at": new_active.expires_at.isoformat() if new_active.expires_at else str(new_active.end_date),
             "end_date": str(new_active.end_date),
             "status": new_active.status,
         } if new_active else None
