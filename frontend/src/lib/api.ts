@@ -9,13 +9,41 @@ export const api = axios.create({
     }
 })
 
-import { uploadImage } from './image-upload-utils';
-
 /**
- * Upload a file directly to S3 using a presigned URL with fallback to backend upload
+ * Upload a file to S3 via the backend proxy.
+ * 
+ * WHY: Direct S3 presigned PUT uploads are blocked by CORS when the S3 bucket 
+ * does not have the calling origin (e.g. tour-admin-saas.vercel.app) in its 
+ * CORS configuration. The backend proxy avoids this because the upload is 
+ * server-to-server (no browser CORS preflight).
  */
 export const uploadFileToS3 = async (file: File, folder: string = "packages") => {
-    return await uploadImage(file, folder);
+    // Restrict image size to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size must be less than 5MB');
+    }
+    
+    const token = localStorage.getItem('token');
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
+
+        const response = await api.post('/upload', formData, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        const finalUrl = response.data.url;
+        if (!finalUrl) throw new Error('Backend returned no URL');
+        return finalUrl;
+    } catch (error) {
+        console.error('S3 Upload Error (via backend proxy):', error);
+        throw new Error('File upload failed. Please check your connection and try again.');
+    }
 };
 
 // Add auth token and domain to requests

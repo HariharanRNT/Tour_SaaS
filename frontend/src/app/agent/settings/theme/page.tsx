@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { compressImage, uploadToS3, uploadToBackend, uploadImage } from '@/lib/image-upload-utils';
+import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils';
 import { API_URL } from '@/lib/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -839,13 +839,24 @@ export default function AgentThemeSettingsPage() {
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
 
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size must be less than 5MB');
+            return;
+        }
+
         setImageUploading(true);
         const toastId = toast.loading('Optimizing and uploading background image...');
         try {
-            const finalUrl = await uploadImage(file, 'homepage', {
+            // Compress then upload via backend proxy (avoids S3 CORS issues)
+            const compressedFile = await compressImage(file, {
                 maxWidthOrHeight: 1920,
                 initialQuality: 0.8
             });
+
+            const finalUrl = await uploadToBackend(compressedFile, 'homepage');
+            if (!finalUrl) throw new Error('Upload failed. Please try again.');
+
             hpField('backgroundImageUrl', finalUrl);
             toast.success('Background image updated! ✓', { id: toastId });
         } catch (err: any) {
@@ -861,14 +872,25 @@ export default function AgentThemeSettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Logo image size must be less than 5MB');
+            return;
+        }
+
         setLogoUploading(true);
         const toastId = toast.loading('Optimizing and uploading logo...');
 
         try {
-            const finalUrl = await uploadImage(file, 'logos', {
+            // Compress then upload via backend proxy (avoids S3 CORS issues)
+            const compressedFile = await compressImage(file, {
                 maxWidthOrHeight: 800,
                 initialQuality: 0.8
             });
+
+            const finalUrl = await uploadToBackend(compressedFile, 'logos');
+            if (!finalUrl) throw new Error('Logo upload failed. Please try again.');
+
             hpField('navbar_logo_image', finalUrl);
             toast.success('Logo updated successfully ✓', { id: toastId });
         } catch (err: any) {
@@ -884,14 +906,25 @@ export default function AgentThemeSettingsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Favicon size must be less than 5MB');
+            return;
+        }
+
         setFaviconUploading(true);
         const toastId = toast.loading('Optimizing and uploading favicon...');
 
         try {
-            const finalUrl = await uploadImage(file, 'favicons', {
-                maxWidthOrHeight: 128, 
+            // Compress then upload via backend proxy (avoids S3 CORS issues)
+            const compressedFile = await compressImage(file, {
+                maxWidthOrHeight: 128,
                 initialQuality: 0.9
             });
+
+            const finalUrl = await uploadToBackend(compressedFile, 'favicons');
+            if (!finalUrl) throw new Error('Favicon upload failed. Please try again.');
+
             hpField('favicon_url', finalUrl);
             toast.success('Favicon updated successfully ✓', { id: toastId });
         } catch (err: any) {

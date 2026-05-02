@@ -13,7 +13,6 @@ import { toast } from 'sonner'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { API_URL } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { uploadImage as robustUpload } from '@/lib/image-upload-utils'
 import {
     DndContext,
     closestCenter,
@@ -901,16 +900,49 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
         executeActivitySave();
     }
 
-
     const uploadImage = async (file: File): Promise<string> => {
+        // Restrict image size to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error(`Image "${file.name}" exceeds 5MB limit`)
+            throw new Error('File too large')
+        }
+
         setIsUploading(true)
         setUploadProgress(10)
 
         try {
-            // Use the robust upload utility that handles compression and fallback
-            const url = await robustUpload(file, 'itinerary-items');
+            const formData = new FormData()
+            formData.append('file', file)
+            // Optional: Append folder if needed, e.g., 'itinerary-items'
+            // formData.append('folder', 'itinerary-items')
+
+            const token = localStorage.getItem('token')
+
+            // Mock progress for better UX since fetch doesn't support progress events easily
+            const timer = setInterval(() => {
+                setUploadProgress(prev => {
+                    if (prev >= 90) return 90
+                    return prev + 10
+                })
+            }, 200)
+
+            const response = await fetch(`${API_URL}/api/v1/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            })
+
+            clearInterval(timer)
             setUploadProgress(100)
-            return url
+
+            if (!response.ok) {
+                throw new Error('Upload failed')
+            }
+
+            const data = await response.json()
+            return data.url
         } catch (error) {
             console.error('Upload error:', error)
             toast.error('Failed to upload image')

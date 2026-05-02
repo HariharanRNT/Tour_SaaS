@@ -27,7 +27,7 @@ import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { compressImage, uploadToS3, uploadToBackend, uploadImage } from '@/lib/image-upload-utils'
+import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 
 interface PackageFormData {
@@ -2926,9 +2926,26 @@ export default function CreatePackagePage() {
                                                             onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
+                                                                    // Restrict image size to 5MB
+                                                                    if (file.size > 5 * 1024 * 1024) {
+                                                                        toast.error('Image size must be less than 5MB');
+                                                                        return;
+                                                                    }
                                                                     const toastId = toast.loading('Optimizing and uploading image...');
                                                                     try {
-                                                                        const finalUrl = await uploadImage(file, 'packages');
+                                                                        // 1. Compress image
+                                                                        const compressedFile = await compressImage(file, {
+                                                                            maxWidthOrHeight: 1920,
+                                                                            initialQuality: 0.8
+                                                                        });
+
+                                                                        // Upload via backend proxy (avoids S3 CORS issues)
+                                                                        const backendUrl = await uploadToBackend(compressedFile, 'packages');
+                                                                        if (!backendUrl) {
+                                                                            throw new Error('Upload failed. Please try again.');
+                                                                        }
+                                                                        const finalUrl = backendUrl;
+                                                                        // 5. Update form state
                                                                         updateFormData('feature_image_url', finalUrl);
                                                                         toast.success('Image uploaded successfully!', { id: toastId });
                                                                     } catch (err) {

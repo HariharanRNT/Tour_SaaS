@@ -20,14 +20,13 @@ export async function compressImage(file: File, options: CompressionOptions = {}
     useWebWorker: true,
     initialQuality: 0.8,
     fileType: 'image/webp', // Default to WebP for better compression
-    ...options
-  };
+    ...options };
 
   try {
     const compressedFile = await imageCompression(file, defaultOptions);
     console.log(`Original size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
     console.log(`Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
-
+    
     // Ensure the filename is preserved (though type might change)
     const newFileName = file.name.replace(/\.[^/.]+$/, "") + (defaultOptions.fileType === 'image/webp' ? '.webp' : '.jpg');
     return new File([compressedFile], newFileName, { type: compressedFile.type });
@@ -46,9 +45,7 @@ export async function uploadToS3(file: File, uploadUrl: string): Promise<boolean
       method: 'PUT',
       body: file,
       headers: {
-        'Content-Type': file.type
-      }
-    });
+        'Content-Type': file.type } });
 
     if (!response.ok) {
       console.error(`S3 upload failed with status: ${response.status}`);
@@ -92,67 +89,4 @@ export async function uploadToBackend(file: File, folder: string = "packages"): 
     console.error('Backend upload failed:', error);
     return null;
   }
-}
-
-/**
- * Robust image upload utility that handles compression, direct S3 upload, 
- * and backend fallback.
- */
-export async function uploadImage(
-  file: File,
-  folder: string = "packages",
-  options: CompressionOptions = {}
-): Promise<string> {
-  // 1. Compress image
-  const compressedFile = await compressImage(file, options);
-
-  const token = localStorage.getItem('token');
-  let finalUrl = '';
-
-  try {
-    // 2. Get presigned URL from backend
-    const presignedRes = await fetch(`${API_URL}/api/v1/presigned-url`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        file_name: compressedFile.name,
-        content_type: compressedFile.type,
-        folder: folder
-      })
-    });
-
-    if (presignedRes.ok) {
-      const { upload_url, file_url } = await presignedRes.json();
-
-      // 3. Try Direct upload to S3
-      console.log('Attempting direct S3 upload...');
-      const success = await uploadToS3(compressedFile, upload_url);
-      if (success) {
-        finalUrl = file_url;
-        console.log('Direct S3 upload successful');
-      } else {
-        console.warn('Direct S3 upload failed, falling back to backend...');
-      }
-    } else {
-      console.warn('Failed to get presigned URL, falling back to backend...');
-    }
-  } catch (err) {
-    console.warn('Direct S3 upload flow encountered an error, falling back to backend...', err);
-  }
-
-  // 4. Fallback to backend upload if direct failed
-  if (!finalUrl) {
-    console.log('Using backend proxy for upload...');
-    const backendUrl = await uploadToBackend(compressedFile, folder);
-    if (backendUrl) {
-      finalUrl = backendUrl;
-    } else {
-      throw new Error('All upload methods failed. Please check your connection and try again.');
-    }
-  }
-
-  return finalUrl;
 }
