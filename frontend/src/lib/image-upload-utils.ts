@@ -1,4 +1,5 @@
 import imageCompression from 'browser-image-compression';
+import { API_URL } from './api';
 
 export interface CompressionOptions {
   maxWidthOrHeight?: number;
@@ -47,12 +48,45 @@ export async function uploadToS3(file: File, uploadUrl: string): Promise<boolean
         'Content-Type': file.type } });
 
     if (!response.ok) {
-      throw new Error(`S3 upload failed with status: ${response.status}`);
+      console.error(`S3 upload failed with status: ${response.status}`);
+      return false;
     }
 
     return true;
   } catch (error) {
     console.error('Direct S3 upload failed:', error);
     return false;
+  }
+}
+
+/**
+ * Uploads a file to the backend, which then handles S3 upload or local storage.
+ * This avoids CORS issues with direct S3 uploads.
+ */
+export async function uploadToBackend(file: File, folder: string = "packages"): Promise<string | null> {
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+
+    const response = await fetch(`${API_URL}/api/v1/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Upload failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error('Backend upload failed:', error);
+    return null;
   }
 }

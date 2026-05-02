@@ -81,7 +81,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "static/uploads"
     
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,https://tout-saas.vercel.app"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://tout-saas.vercel.app,https://tour-saas.vercel.app,https://tour-admin-saas.vercel.app"
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60
