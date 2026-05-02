@@ -23,8 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils';
-import { API_URL } from '@/lib/api';
+import { compressImage } from '@/lib/image-upload-utils';
+import { API_URL, uploadFileToS3 } from '@/lib/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CUSTOM_THEME_STORAGE_KEY = 'agent_custom_theme';
@@ -854,7 +854,7 @@ export default function AgentThemeSettingsPage() {
                 initialQuality: 0.8
             });
 
-            const finalUrl = await uploadToBackend(compressedFile, 'homepage');
+            const finalUrl = await uploadFileToS3(compressedFile, 'homepage');
             if (!finalUrl) throw new Error('Upload failed. Please try again.');
 
             hpField('backgroundImageUrl', finalUrl);
@@ -888,7 +888,7 @@ export default function AgentThemeSettingsPage() {
                 initialQuality: 0.8
             });
 
-            const finalUrl = await uploadToBackend(compressedFile, 'logos');
+            const finalUrl = await uploadFileToS3(compressedFile, 'logos');
             if (!finalUrl) throw new Error('Logo upload failed. Please try again.');
 
             hpField('navbar_logo_image', finalUrl);
@@ -922,7 +922,7 @@ export default function AgentThemeSettingsPage() {
                 initialQuality: 0.9
             });
 
-            const finalUrl = await uploadToBackend(compressedFile, 'favicons');
+            const finalUrl = await uploadFileToS3(compressedFile, 'favicons');
             if (!finalUrl) throw new Error('Favicon upload failed. Please try again.');
 
             hpField('favicon_url', finalUrl);

@@ -17,7 +17,7 @@ export const api = axios.create({
  * CORS configuration. The backend proxy avoids this because the upload is 
  * server-to-server (no browser CORS preflight).
  */
-export const uploadFileToS3 = async (file: File, folder: string = "packages") => {
+export const uploadFileToS3 = async (file: File, folder: string = "packages", onProgress?: (progress: number) => void) => {
     // Restrict image size to 5MB
     if (file.size > 5 * 1024 * 1024) {
         throw new Error('Image size must be less than 5MB');
@@ -34,6 +34,12 @@ export const uploadFileToS3 = async (file: File, folder: string = "packages") =>
             headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress && progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(percentCompleted);
+                }
             }
         });
         

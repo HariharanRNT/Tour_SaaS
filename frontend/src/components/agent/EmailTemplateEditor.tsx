@@ -29,9 +29,9 @@ import {
 import { DEFAULT_STRUCTURED_CONTENT, MASTER_SHELLS, StructuredEmailContent } from "@/constants/email-structured-defaults";
 import { EMAIL_VARIABLES, EmailTemplateType } from "@/constants/email-variables";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import api, { API_URL } from "@/lib/api";
+import api, { API_URL, uploadFileToS3 } from "@/lib/api";
 import { toast } from "sonner";
-import { compressImage, uploadToS3, uploadToBackend } from "@/lib/image-upload-utils";
+import { compressImage } from "@/lib/image-upload-utils";
 
 interface EmailTemplateEditorProps {
   initialTemplates?: Record<string, any>;
@@ -263,7 +263,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
       });
 
       // Upload via backend proxy (avoids S3 CORS issues from Vercel)
-      const finalUrl = await uploadToBackend(compressedFile, 'email-templates');
+      const finalUrl = await uploadFileToS3(compressedFile, 'email-templates');
       if (!finalUrl) {
         throw new Error('Upload failed. Please check your connection and try again.');
       }

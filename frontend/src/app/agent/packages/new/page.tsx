@@ -20,14 +20,14 @@ import {
 import { ItineraryBuilder } from '@/components/admin/ItineraryBuilder'
 import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { toast } from 'sonner'
-import { API_URL } from '@/lib/api'
+import { API_URL, uploadFileToS3 } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
 import { Country } from 'country-state-city'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { compressImage, uploadToS3, uploadToBackend } from '@/lib/image-upload-utils'
+import { compressImage } from '@/lib/image-upload-utils'
 import { useAuth } from '@/context/AuthContext'
 
 interface PackageFormData {
@@ -2940,7 +2940,7 @@ export default function CreatePackagePage() {
                                                                         });
 
                                                                         // Upload via backend proxy (avoids S3 CORS issues)
-                                                                        const backendUrl = await uploadToBackend(compressedFile, 'packages');
+                                                                        const backendUrl = await uploadFileToS3(compressedFile, 'packages');
                                                                         if (!backendUrl) {
                                                                             throw new Error('Upload failed. Please try again.');
                                                                         }
