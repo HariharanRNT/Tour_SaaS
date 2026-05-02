@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Sun, Cloud, Sunset, Moon, GripVertical, Calendar, C
 import { toast } from 'sonner'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { API_URL, uploadFileToS3 } from '@/lib/api'
+import { compressImage } from '@/lib/image-upload-utils'
 import { cn } from '@/lib/utils'
 import {
     DndContext,
@@ -905,7 +906,11 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
         setUploadProgress(10)
 
         try {
-            const url = await uploadFileToS3(file, 'itinerary-items', (progress) => {
+            const compressedFile = await compressImage(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920
+            });
+            const url = await uploadFileToS3(compressedFile, 'itinerary-items', (progress) => {
                 setUploadProgress(progress)
             })
             return url
