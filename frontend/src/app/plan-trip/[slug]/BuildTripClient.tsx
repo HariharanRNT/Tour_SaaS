@@ -1253,6 +1253,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
 
                         {/* Cancellation Policy Section */}
+                        {((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && (
                         <section className="pt-16 pb-8 border-t border-gray-100">
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="h-10 w-1.5 rounded-full bg-[var(--button-bg)]" />
@@ -1369,6 +1370,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                             )}
                         </section>
+                        )}
 
                         <InclusionsSection inclusions={session.inclusions} exclusions={session.exclusions} custom_services={session.custom_services} />
                     </div>
@@ -1398,7 +1400,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     onCheckout={handleCheckout}
                                     disabled={mode === 'preview'}
                                     gstSettings={gstSettings || undefined}
-                                    cancellationEnabled={session.cancellation_enabled}
+                                    cancellationEnabled={((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && session.cancellation_enabled}
                                     bookingType={session.booking_type}
                                     priceLabel={session.price_label}
                                 />
@@ -1475,7 +1477,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                             onCheckout={handleCheckout}
                             disabled={mode === 'preview'}
                             gstSettings={gstSettings || undefined}
-                            cancellationEnabled={session.cancellation_enabled}
+                            cancellationEnabled={((session?.booking_type || '').toUpperCase() !== 'ENQUIRY') && session.cancellation_enabled}
                             bookingType={session.booking_type}
                             priceLabel={session.price_label}
                         />
