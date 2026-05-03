@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, CheckCircle, Clock, Pause, XCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { Users, CheckCircle, Clock, XCircle, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
@@ -85,9 +85,9 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                 {[
                     { label: 'TOTAL SUBS', value: summary?.total || 0, sub: 'All subscriptions', icon: Users, color: '#6366F1', bg: '#EEF2FF', border: '#6366F1' },
                     { label: 'ACTIVE', value: summary?.active || 0, sub: 'Currently active', icon: CheckCircle, color: '#10B981', bg: '#DCFCE7', border: '#10B981' },
-                    { label: 'COMPLETED', value: summary?.completed || 0, sub: 'Finished plans', icon: CheckCircle, color: '#3B82F6', bg: '#DBEAFE', border: '#3B82F6' },
-                    { label: 'UPCOMING', value: summary?.upcoming || 0, sub: 'Starting soon', icon: Clock, color: '#F59E0B', bg: '#FEF3C7', border: '#F59E0B' },
-                    { label: 'PAUSED', value: summary?.paused || 0, sub: 'On hold', icon: Pause, color: '#1e293b', bg: '#F1F5F9', border: '#1e293b' },
+                    { label: 'EXPIRED', value: summary?.completed || 0, sub: 'Expired plans', icon: Clock, color: '#3B82F6', bg: '#DBEAFE', border: '#3B82F6' },
+                    { label: 'QUEUE', value: summary?.upcoming || 0, sub: 'Starting soon', icon: RefreshCw, color: '#F59E0B', bg: '#FEF3C7', border: '#F59E0B' },
+                    { label: 'FAILED', value: summary?.paused || 0, sub: 'Payment Failed', icon: AlertCircle, color: '#EA580C', bg: '#FFF7ED', border: '#EA580C' },
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' }
                 ].map((item, index) => (
                     <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden h-[130px] rounded-[16px]">
