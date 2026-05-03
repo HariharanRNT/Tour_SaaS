@@ -701,8 +701,8 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
             return
         }
 
-        if (newActivity.description && newActivity.description.length > 300) {
-            toast.error('Activity description cannot exceed 300 characters')
+        if (newActivity.description && newActivity.description.length > 1000) {
+            toast.error('Activity description cannot exceed 1000 characters')
             return
         }
 

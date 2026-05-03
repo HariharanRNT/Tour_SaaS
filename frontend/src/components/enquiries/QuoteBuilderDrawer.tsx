@@ -132,7 +132,22 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
-            setAvailablePackages(data.items || [])
+            const packages = data.items || []
+            setAvailablePackages(packages)
+
+            // Auto-select the enquiry's package if it exists
+            if (enquiry?.package_id) {
+                const linkedPkg = packages.find((p: Package) => p.id === enquiry.package_id)
+                if (linkedPkg) {
+                    setSelectedPackages([{
+                        packageId: linkedPkg.id,
+                        packageName: linkedPkg.title,
+                        quotedPrice: linkedPkg.price_per_person,
+                        isCustomPrice: false,
+                        _pkg: linkedPkg
+                    }])
+                }
+            }
         } catch (err) {
             toast.error("Failed to load packages")
         } finally {
@@ -238,6 +253,11 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
     }
 
     const filteredPackages = availablePackages.filter(p => {
+        // If it's a package-based enquiry, ONLY show that specific package
+        if (enquiry?.package_id) {
+            return p.id === enquiry.package_id
+        }
+
         // 1. Manual search query
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim()
@@ -670,34 +690,22 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                 
                                                 <div className="w-full md:w-64 space-y-2">
                                                     <label className="text-[10px] font-black uppercase text-slate-400">
-                                                        {p._pkg.booking_type === 'ENQUIRY' ? 'QUOTE PRICE' : 'PRICE'}
+                                                        QUOTE PRICE
                                                     </label>
                                                     
-                                                    {p._pkg.booking_type === 'ENQUIRY' ? (
-                                                        <div className="space-y-1">
-                                                            <div className="relative">
-                                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">INR</span>
-                                                                <Input 
-                                                                    type="text"
-                                                                    inputMode="numeric" 
-                                                                    className="h-12 pl-12 rounded-xl bg-white border-2 border-slate-100 focus:border-blue-600 font-bold"
-                                                                    value={p.quotedPrice}
-                                                                    onChange={(e) => handlePriceChange(p.packageId, e.target.value)}
-                                                                />
-                                                            </div>
-                                                            <p className="text-[10px] text-slate-400 font-medium">Customizable for Enquiry packages</p>
+                                                    <div className="space-y-1">
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">INR</span>
+                                                            <Input 
+                                                                type="text"
+                                                                inputMode="numeric" 
+                                                                className="h-12 pl-12 rounded-xl bg-white border-2 border-slate-100 focus:border-blue-600 font-bold"
+                                                                value={p.quotedPrice}
+                                                                onChange={(e) => handlePriceChange(p.packageId, e.target.value)}
+                                                            />
                                                         </div>
-                                                    ) : (
-                                                        <div className="space-y-1">
-                                                            <div className="h-12 px-5 bg-slate-100/50 rounded-xl flex items-center gap-3 border border-slate-100">
-                                                                <span className="font-bold text-slate-500">INR</span>
-                                                                <span className="font-black text-slate-700">{p._pkg.price_per_person.toLocaleString()}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                                                                🔒 Fixed price — Instant Booking package
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                                        <p className="text-[10px] text-slate-400 font-medium">Customizable for your quote</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

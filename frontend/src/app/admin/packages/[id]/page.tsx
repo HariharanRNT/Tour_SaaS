@@ -153,8 +153,8 @@ export default function PackageDetailPage() {
             return
         }
 
-        if (formData.description && formData.description.length > 300) {
-            toast.error('Activity description cannot exceed 300 characters')
+        if (formData.description && formData.description.length > 1000) {
+            toast.error('Activity description cannot exceed 1000 characters')
             return
         }
 
@@ -444,9 +444,9 @@ export default function PackageDetailPage() {
                                 <Label htmlFor="description">Description (Optional)</Label>
                                 <span className={cn(
                                     "text-[10px] font-bold px-2 py-0.5 rounded-full transition-all",
-                                    (formData.description?.length || 0) > 280 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
+                                    (formData.description?.length || 0) > 900 ? "bg-red-50 text-red-500" : "bg-black/5 text-black/40"
                                 )}>
-                                    {formData.description?.length || 0} / 300
+                                    {formData.description?.length || 0} / 1000
                                 </span>
                             </div>
                             <Textarea
@@ -455,7 +455,7 @@ export default function PackageDetailPage() {
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 placeholder="Briefly describe what happens..."
                                 rows={3}
-                                maxLength={300}
+                                maxLength={1000}
                             />
                         </div>
                         <div className="space-y-2">

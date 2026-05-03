@@ -79,7 +79,7 @@ export default function AgentEnquiriesPage() {
     const [activeTab, setActiveTab] = useState('ALL')
     const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-    const [conversionResult, setConversionResult] = useState<any>(null)
+
     const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined, preset: string }>({
         from: subMonths(new Date(), 1),
         to: new Date(),
@@ -154,33 +154,7 @@ export default function AgentEnquiriesPage() {
         }
     })
 
-    const convertToBookingMutation = useMutation({
-        mutationFn: async (id: string) => {
-            const token = localStorage.getItem('token')
-            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-            const res = await fetch(`${API_URL}/api/v1/enquiries/agent/${id}/convert-to-booking`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'X-Domain': domain
-                }
-            })
-            if (!res.ok) {
-                const errData = await res.json()
-                throw new Error(errData.detail || 'Failed to convert to booking')
-            }
-            return res.json()
-        },
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['agent-enquiries'] })
-            queryClient.invalidateQueries({ queryKey: ['agent-bookings'] })
-            setConversionResult(data)
-            toast.success('Converted to booking successfully!')
-        },
-        onError: (error: any) => {
-            toast.error(error.message)
-        }
-    })
+
 
     const filteredEnquiries = enquiries.filter(enquiry => {
         const received = new Date(enquiry.created_at)
@@ -433,51 +407,6 @@ export default function AgentEnquiriesPage() {
                         </div>
 
                         <div className="overflow-y-auto custom-scrollbar p-5">
-                            {conversionResult ? (
-                                <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] space-y-4 animate-in fade-in zoom-in duration-300">
-                                    <div className="flex flex-col items-center text-center space-y-3">
-                                        <div className="h-14 w-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
-                                            <Check className="h-7 w-7" />
-                                        </div>
-                                        <div className="space-y-0.5">
-                                            <h3 className="text-xl font-bold text-emerald-600">Converted Successfully!</h3>
-                                            <p className="text-emerald-600/70 text-sm font-bold">Booking Reference: {conversionResult.booking?.booking_reference}</p>
-                                        </div>
-                                    </div>
-
-                                    {conversionResult.payment_link && (
-                                        <div className="p-5 bg-white rounded-2xl border border-emerald-500/20 space-y-3">
-                                            <p className="text-xs font-black uppercase tracking-widest text-emerald-600">Sharable Payment Link</p>
-                                            <div className="flex gap-2">
-                                                <Input readOnly value={conversionResult.payment_link} className="bg-emerald-50/50 border-emerald-200" />
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(conversionResult.payment_link)
-                                                        toast.success("Link copied to clipboard!")
-                                                    }}
-                                                    className="border-emerald-200 text-emerald-600 font-bold px-6"
-                                                >
-                                                    Copy
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-center pt-1">
-                                        <Button
-                                            variant="outline"
-                                            className="rounded-full h-10 px-6 text-sm font-bold border-emerald-200 text-emerald-600"
-                                            onClick={() => {
-                                                setIsDetailsOpen(false)
-                                                setConversionResult(null)
-                                            }}
-                                        >
-                                            Close Details
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
                                 <div className="space-y-4">
                                     <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div className="space-y-4">
@@ -584,10 +513,9 @@ export default function AgentEnquiriesPage() {
                                         )}
                                     </section>
                                 </div>
-                            )}
                         </div>
 
-                        {!conversionResult && (
+
                             <div className="p-5 pt-3 border-t border-black/5 bg-white/50 shrink-0">
                                 <div className="flex flex-wrap gap-2">
                                     <Button
@@ -629,18 +557,10 @@ export default function AgentEnquiriesPage() {
                                         </>
                                     )}
 
-                                    {(selectedEnquiry?.status || '').toUpperCase() === 'CONFIRMED' && (
-                                        <Button
-                                            className="h-10 px-6 rounded-full bg-[var(--primary)] text-white font-black text-[13px] shadow-lg shadow-[var(--primary-glow)]"
-                                            disabled={convertToBookingMutation.isPending}
-                                            onClick={() => convertToBookingMutation.mutate(selectedEnquiry!.id)}
-                                        >
-                                            <Check className="h-4 w-4 mr-2" /> Convert to Booking
-                                        </Button>
-                                    )}
+
                                 </div>
                             </div>
-                        )}
+
                     </div>
                 </DialogContent>
             </Dialog>
