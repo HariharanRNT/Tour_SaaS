@@ -19,7 +19,7 @@ async def get_subscription_summary(
     current_admin = Depends(get_current_admin)
 ):
     """Get subscription summary statistics"""
-    query = select(func.count(Subscription.id)).where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+    query = select(func.count(Subscription.id))
     
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -38,11 +38,11 @@ async def get_subscription_summary(
     total = (await db.execute(query)).scalar() or 0
 
     active = (await db.execute(
-        query.filter(Subscription.status == 'active')
+        query.filter(Subscription.status.in_(['active', 'trial']))
     )).scalar() or 0
 
     completed = (await db.execute(
-        query.filter(Subscription.status == 'completed')
+        query.filter(Subscription.status.in_(['completed', 'expired']))
     )).scalar() or 0
     
     upcoming = (await db.execute(
@@ -50,7 +50,7 @@ async def get_subscription_summary(
     )).scalar() or 0
     
     paused = (await db.execute(
-        query.filter(Subscription.status == 'on_hold')
+        query.filter(Subscription.status.in_(['on_hold', 'failed', 'pending_payment']))
     )).scalar() or 0
     
     cancelled = (await db.execute(
@@ -155,8 +155,7 @@ async def get_plan_analytics(
         SubscriptionPlan.name,
         func.count(Subscription.id).label('subscription_count'),
         func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
 
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -244,8 +243,7 @@ async def get_revenue_summary(
 ):
     """Get total revenue summary"""
     stmt = select(func.sum(SubscriptionPlan.price))\
-        .join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-        .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+        .join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
     
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -281,8 +279,7 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, month_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
 
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -316,8 +313,7 @@ async def get_revenue_trends(
         revenue_col = func.sum(SubscriptionPlan.price).label('revenue')
         
         stmt = select(year_col, revenue_col)\
-            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+            .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
 
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -363,9 +359,7 @@ async def get_revenue_by_agent(
         func.sum(SubscriptionPlan.price).label('total_revenue')
     ).join(Subscription, Subscription.user_id == Agent.user_id)\
      .join(User, User.id == Agent.user_id)\
-     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-     .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
-
+     .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
         if start_dt.tzinfo is None:
@@ -408,9 +402,7 @@ async def get_revenue_by_plan(
         SubscriptionPlan.name,
         SubscriptionPlan.price,
         func.count(Subscription.id).label('subscription_count'),
-        func.sum(SubscriptionPlan.price).label('total_revenue')
-    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+    ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)
 
     if start_date:
         start_dt = datetime.fromisoformat(start_date)

@@ -268,8 +268,14 @@ async def get_dashboard_stats(
         # 8. Subscription Stats (Active & Nearing Expiry)
         # Subscription is imported at top level now
         
-        # Subscription Stats (Active, Upcoming, Completed)
-        sub_total_query = select(func.count(Subscription.id)).where(Subscription.status.in_(['active', 'upcoming', 'completed']))
+        # Subscription Stats (Only truly active or trial plans)
+        sub_total_query = select(func.count(Subscription.id)).where(
+            Subscription.status == 'active',
+            sql_case(
+                (Subscription.expires_at != None, Subscription.expires_at > now),
+                else_=Subscription.end_date >= now.date()
+            )
+        )
         result = await db.execute(sub_total_query)
         active_subscriptions = result.scalar() or 0
         

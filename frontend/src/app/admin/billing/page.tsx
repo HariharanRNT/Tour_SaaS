@@ -9,7 +9,8 @@ import {
     createSubscriptionPlan,
     updateSubscriptionPlan,
     deleteSubscriptionPlan,
-    updateAdminSubscriptionStatus
+    updateAdminSubscriptionStatus,
+    fetchDashboardStats
 } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -146,6 +147,11 @@ export default function AdminBillingPage() {
         onError: (err: any) => toast.error(`Failed to update subscription: ${formatError(err)}`)
     });
 
+    const { data: dashboardStats } = useQuery({
+        queryKey: ['dashboard-stats', 'ALL'],
+        queryFn: () => fetchDashboardStats('ALL')
+    });
+
     const isCurrentMonth = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -162,11 +168,11 @@ export default function AdminBillingPage() {
         name: p.name,
         count: currentMonthSubscriptions.filter((s: Subscription) =>
             s.plan.id === p.id &&
-            ['active', 'upcoming', 'completed'].includes(s.status)
+            ['active', 'trial'].includes(s.status)
         ).length,
         totalCount: subscriptions.filter((s: Subscription) =>
             s.plan.id === p.id &&
-            ['active', 'upcoming', 'completed'].includes(s.status)
+            ['active', 'trial'].includes(s.status)
         ).length
     }));
 
@@ -178,10 +184,9 @@ export default function AdminBillingPage() {
         const successSubscriptions = subscriptions.filter((s: Subscription) =>
             ['active', 'upcoming', 'completed', 'expired', 'cancelled', 'on_hold', 'trial'].includes(s.status)
         );
-        const successStatuses = ['active', 'upcoming', 'expired', 'completed', 'on_hold', 'cancelled', 'trial'];
-        const activeCount = successSubscriptions.filter((s: Subscription) => s.status === 'active' || s.status === 'trial').length;
-        const mrr = successSubscriptions
-            .filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status))
+        const activeCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
+        const mrr = subscriptions
+            .filter((s: Subscription) => s.status === 'active')
             .reduce((sum: number, s: Subscription) => {
                 const price = Number(s.plan?.price) || 0;
                 const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
@@ -190,15 +195,9 @@ export default function AdminBillingPage() {
                 return sum + price;
             }, 0);
 
-        const totalRevenue = plans.reduce((sum: number, plan: SubscriptionPlan) => {
-            const count = subscriptions.filter((s: Subscription) => 
-                s.plan.id === plan.id && 
-                ['active', 'upcoming', 'completed'].includes(s.status)
-            ).length;
-            return sum + (count * Number(plan.price));
-        }, 0);
+        const totalRevenue = dashboardStats?.totalRevenue || 0;
 
-        const payingCount = successSubscriptions.filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status)).length;
+        const payingCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
 
         return {
             totalSubscriptions: successSubscriptions.length,
@@ -207,7 +206,7 @@ export default function AdminBillingPage() {
             mrr: Math.round(mrr),
             totalRevenue: totalRevenue,
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
-            recentChanges: currentMonthSubscriptions.filter((s: Subscription) => ['active', 'upcoming', 'completed'].includes(s.status)).length
+            recentChanges: currentMonthSubscriptions.filter((s: Subscription) => s.status === 'active').length
         };
     })();
 
@@ -473,11 +472,11 @@ export default function AdminBillingPage() {
                                 {plans.map((plan: SubscriptionPlan, idx: number) => {
                                     const subscriberCount = subscriptions.filter((s: Subscription) =>
                                         s.plan.id === plan.id &&
-                                        ['active', 'upcoming', 'completed'].includes(s.status)
+                                        ['active', 'trial'].includes(s.status)
                                     ).length;
                                     const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) =>
                                         s.plan.id === plan.id &&
-                                        ['active', 'upcoming', 'completed'].includes(s.status)
+                                        ['active', 'trial'].includes(s.status)
                                     ).length;
                                     const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
 
@@ -739,9 +738,10 @@ export default function AdminBillingPage() {
                                                                             (sub.status === 'expired' || sub.status === 'completed') ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
                                                                                 "bg-amber-400/10 text-amber-600 border-amber-400/20"
                                                                 )}>
-                                                                    {sub.status === 'pending_payment' ? 'Failed' : 
+                                                                    {sub.status === 'pending_payment' || sub.status === 'failed' ? 'Failed' : 
                                                                      sub.status === 'upcoming' ? 'Queue' : 
-                                                                     sub.status === 'completed' ? 'Expired' : 
+                                                                     (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' : 
+                                                                     sub.status === 'on_hold' ? 'Payment Failed' :
                                                                      sub.status.replace('_', ' ')}
                                                                 </span>
                                                             </TableCell>
@@ -833,7 +833,7 @@ export default function AdminBillingPage() {
                                     {[
                                         { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
                                         { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.totalRevenue / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
                                         <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
                                             <div className="flex justify-between items-start mb-4">
