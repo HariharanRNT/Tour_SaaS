@@ -662,7 +662,7 @@ export default function AgentDashboard() {
                                     </span>
                                 </h1>
                                 <div className="flex items-center gap-3 mt-1.5 text-sm font-medium text-[var(--color-primary-font)]/70">
-                                    <span className="">Here's what's happening today:</span>
+                                    <span className="">Here&apos;s what&apos;s happening today:</span>
                                     <div className="hidden sm:flex items-center gap-2">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-xs font-semibold ${stats.todayBookings > 0
                                             ? "bg-orange-50 text-[#F59E0B] border-orange-100"

@@ -209,7 +209,7 @@ export default function BookingsPage() {
                             </div>
                             <h3 className="text-xl font-semibold mb-2 text-black">No bookings yet</h3>
                             <p className="text-black/60 mb-6 max-w-md mx-auto">
-                                You haven't made any bookings yet. Start planning your dream vacation today!
+                                You haven&apos;t made any bookings yet. Start planning your dream vacation today!
                             </p>
                             <Link href="/plan-trip">
                                 <Button className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-semibold px-8 shadow-lg shadow-blue-200">

@@ -430,7 +430,7 @@ export function AgentCustomerSelectorModal() {
                 {/* Footer badge */}
                 <div className="border-t border-black/5 px-6 py-3 bg-black/[0.02] text-center shrink-0">
                     <p className="text-[10px] text-black/30 font-bold uppercase tracking-wider">
-                        🔒 Booking will be recorded under the selected customer's account
+                        🔒 Booking will be recorded under the selected customer&apos;s account
                     </p>
                 </div>
             </motion.div>

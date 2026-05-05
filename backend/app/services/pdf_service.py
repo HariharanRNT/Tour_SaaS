@@ -49,13 +49,15 @@ class PDFService:
         """Build the HTML string for the PDF with a modern design."""
         import os
         import json
+        import html
         
         # Map quoted prices for easy lookup
         price_map = {str(item['packageId']): item['quotedPrice'] for item in quoted_data}
         
-        agency_name = agent_profile.agency_name or "Your Travel Agency"
-        agency_contact = f"{agent_profile.phone or ''} | {agent_profile.user.email}"
-        agency_address = agent_profile.business_address or ""
+        agency_name = html.escape(agent_profile.agency_name or "Your Travel Agency")
+        agency_contact = html.escape(f"{agent_profile.phone or ''} | {agent_profile.user.email}")
+        agency_address = html.escape(agent_profile.business_address or "")
+        customer_name = html.escape(enquiry.customer_name)
         
         # Logo handling (similar to invoice_service)
         company_logo_url = ""
@@ -324,7 +326,7 @@ class PDFService:
                 <table class="summary-table">
                     <tr>
                         <td class="summary-label">PREPARED FOR</td>
-                        <td class="summary-value">{enquiry.customer_name}</td>
+                        <td class="summary-value">{customer_name}</td>
                         <td class="summary-label">QUOTE REF</td>
                         <td class="summary-value">ENQ-{enquiry.id.hex[:6].upper()}</td>
                     </tr>
@@ -344,7 +346,7 @@ class PDFService:
             </div>
             
             <div class="intro-text">
-                <p>Dear <strong>{enquiry.customer_name}</strong>,</p>
+                <p>Dear <strong>{customer_name}</strong>,</p>
                 <p>It was a pleasure connecting with you. Based on your travel preferences, we have curated the following exclusive travel packages. Each itinerary has been designed to provide an unforgettable experience.</p>
             </div>
         """
@@ -403,11 +405,11 @@ class PDFService:
                             all_exclusions.append(text)
                 
                 # Deduplicate and filter out empty strings
-                all_inclusions = [str(i).strip() for i in all_inclusions if i and str(i).strip()]
+                all_inclusions = [html.escape(str(i).strip()) for i in all_inclusions if i and str(i).strip()]
                 # Use dict.fromkeys to deduplicate while preserving order
                 all_inclusions = list(dict.fromkeys(all_inclusions))
                 
-                all_exclusions = [str(e).strip() for e in all_exclusions if e and str(e).strip()]
+                all_exclusions = [html.escape(str(e).strip()) for e in all_exclusions if e and str(e).strip()]
                 all_exclusions = list(dict.fromkeys(all_exclusions))
                 
             except Exception as e:
@@ -420,8 +422,8 @@ class PDFService:
             html += f"""
             <div class="package-container" {page_break}>
                 <div class="package-header">
-                    <div class="package-title">{pkg.title}</div>
-                    <div class="package-meta">{pkg.destination.upper()} &bull; {pkg.duration_days} DAYS &bull; {pkg.duration_nights} NIGHTS</div>
+                    <div class="package-title">{html.escape(pkg.title)}</div>
+                    <div class="package-meta">{html.escape(pkg.destination.upper())} &bull; {pkg.duration_days} DAYS &bull; {pkg.duration_nights} NIGHTS</div>
                 </div>
                 
                 {f'''
@@ -441,8 +443,8 @@ class PDFService:
                 html += f"""
                 <div class="itinerary-day">
                     <span class="day-badge">DAY {item.day_number}</span>
-                    <span class="day-title">{item.title}</span>
-                    <span class="day-desc">{desc}</span>
+                    <span class="day-title">{html.escape(item.title)}</span>
+                    <span class="day-desc">{html.escape(desc)}</span>
                 </div>
                 """
 
@@ -461,7 +463,7 @@ class PDFService:
                             <th style="text-align: right;">Subtotal</th>
                         </tr>
                         <tr>
-                            <td style="width: 45%; white-space: normal; word-break: break-word;">{pkg.title} - Full Package for {pkg.duration_days} Days</td>
+                            <td style="width: 45%; white-space: normal; word-break: break-word;">{html.escape(pkg.title)} - Full Package for {pkg.duration_days} Days</td>
                             <td style="text-align: center; width: 15%;">{enquiry.travellers}</td>
                             <td style="text-align: right; width: 20%;">INR {float(quoted_price):,.2f}</td>
                             <td style="text-align: right; width: 20%;">INR {total_for_guests:,.2f}</td>

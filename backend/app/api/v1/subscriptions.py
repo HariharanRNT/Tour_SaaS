@@ -180,6 +180,11 @@ async def update_plan(
     if 'features' in update_data and isinstance(update_data['features'], list):
         update_data['features'] = json.dumps(update_data['features'])
         
+    # If price or billing cycle changes, we MUST invalidate the Razorpay Plan ID 
+    # because Razorpay Plans are immutable. A new one will be created on the next purchase.
+    if 'price' in update_data or 'billing_cycle' in update_data or 'currency' in update_data:
+        db_plan.razorpay_plan_id = None
+
     for field, value in update_data.items():
         setattr(db_plan, field, value)
         
@@ -410,6 +415,7 @@ async def upgrade_subscription(
         status='active',
         start_date=start_date,
         end_date=end_date,
+        price_at_purchase=plan.price,
         current_bookings_usage=0,
         auto_renew=True
     )
@@ -469,6 +475,7 @@ async def purchase_subscription(
         status='pending_payment',
         start_date=date.today(),
         end_date=date.today() + timedelta(days=365 if plan.billing_cycle == 'yearly' else 30),
+        price_at_purchase=plan.price,
         current_bookings_usage=0
     )
     db.add(new_sub)
@@ -524,9 +531,18 @@ async def purchase_subscription(
          try:
             # Create actual subscription
             # Total count: 120 cycles (10 years)
+            # Set reasonable total_count based on cycle (Razorpay max is usually 100)
+            total_count = 12 # Default 1 year for monthly/yearly
+            if plan.billing_cycle == 'daily':
+                total_count = 99
+            elif plan.billing_cycle == 'monthly':
+                total_count = 60 # 5 years
+            elif plan.billing_cycle == 'yearly':
+                total_count = 10 # 10 years
+
             subscription_id_rzp = rzp.create_subscription(
                 plan_id=plan.razorpay_plan_id,
-                total_count=120,
+                total_count=total_count,
                 customer_notify=1,
                 notes={
                     "user_id": str(current_user.agent_id),
@@ -663,11 +679,14 @@ async def verify_subscription_payment(
                  raise HTTPException(status_code=400, detail=f"Payment status is {fetched_payment['status']}, expected 'captured' or 'authorized'")
             
             # B. Amount Check
-            expected_amount_paise = int(plan.price * 100)
+            # Use price_at_purchase if available, fallback to current plan price
+            expected_price = sub.price_at_purchase if sub.price_at_purchase is not None else plan.price
+            expected_amount_paise = int(expected_price * 100)
+            
             if fetched_payment['amount'] != expected_amount_paise:
                  raise HTTPException(
                      status_code=400, 
-                     detail=f"Amount mismatch: Paid {fetched_payment['amount']/100}, Expected {plan.price}"
+                     detail=f"Amount mismatch: Paid {fetched_payment['amount']/100}, Expected {expected_price}"
                  )
                  
             # C. Currency Check
@@ -694,7 +713,7 @@ async def verify_subscription_payment(
             razorpay_payment_id=verification_data.razorpay_payment_id,
             razorpay_order_id=verification_data.razorpay_order_id, # Might be None for subscriptions
             razorpay_signature=verification_data.razorpay_signature,
-            amount=plan.price,
+            amount=sub.price_at_purchase if sub.price_at_purchase is not None else plan.price,
             currency="INR",
             status=PaymentStatus.SUCCEEDED
         )
@@ -708,7 +727,7 @@ async def verify_subscription_payment(
     new_invoice = Invoice(
         user_id=sub.user_id,
         subscription_id=sub.id,
-        amount=plan.price,
+        amount=sub.price_at_purchase if sub.price_at_purchase is not None else plan.price,
         status='paid',
         issue_date=date.today(),
         due_date=date.today()

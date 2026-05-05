@@ -109,7 +109,7 @@ export function InclusionsSection({ inclusions, exclusions, custom_services = []
         <section className="space-y-8 mt-12 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-300">
             <div className="flex flex-col gap-2">
                 <h2 className="text-3xl font-bold text-black tracking-tight flex items-center gap-3">
-                    What's Included <span className="text-[var(--primary)]">&</span> Excluded
+                    What&apos;s Included <span className="text-[var(--primary)]">&amp;</span> Excluded
                 </h2>
                 <div className="h-1.5 w-24 bg-[var(--primary)] rounded-full" />
             </div>

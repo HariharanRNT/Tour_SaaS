@@ -888,6 +888,7 @@ class Subscription(Base):
     # Precise expiry: exact UTC datetime when the subscription becomes invalid.
     # Takes priority over end_date for all expiry checks.
     expires_at = Column(DateTime(timezone=True), nullable=True)
+    price_at_purchase = Column(Numeric(10, 2), nullable=True)
     current_bookings_usage = Column(Integer, default=0)
     auto_renew = Column(Boolean, default=True)
     

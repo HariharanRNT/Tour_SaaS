@@ -73,7 +73,7 @@ export function ActivityBrowser({ activities, loading, onAddToDay }: ActivityBro
             {filteredActivities.length === 0 && searchTerm && (
                 <div className="text-center py-8">
                     <p className="text-black font-bold">
-                        No activities match "{searchTerm}"
+                        No activities match &quot;{searchTerm}&quot;
                     </p>
                 </div>
             )}

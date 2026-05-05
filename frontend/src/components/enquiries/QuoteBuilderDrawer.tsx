@@ -34,7 +34,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card' // eslint-disable-line @typescript-eslint/no-unused-vars
+import { Card, CardContent } from '@/components/ui/card' // eslint-disable-line
 import { toast } from 'sonner'
 import { API_URL } from '@/lib/api'
 import { format } from 'date-fns'
@@ -806,7 +806,7 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                     <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
                                         <FileText className="h-5 w-5 text-amber-600 mt-0.5" />
                                         <p className="text-xs text-amber-700 font-bold leading-relaxed">
-                                            The generated travel quote PDF will be automatically attached as a professional file named "Travel_Quote_{enquiry?.customer_name.replace(' ', '_')}.pdf".
+                                            The generated travel quote PDF will be automatically attached as a professional file named &quot;Travel_Quote_{enquiry?.customer_name.replace(' ', '_')}.pdf&quot;.
                                         </p>
                                     </div>
                                 </div>

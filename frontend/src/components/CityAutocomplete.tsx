@@ -238,7 +238,7 @@ export function CityAutocomplete({
                                     >
                                         <Check className="h-4 w-4 opacity-0" />
                                         <div className="flex flex-col">
-                                            <span>Use "{inputValue.trim()}"</span>
+                                            <span>Use &quot;{inputValue.trim()}&quot;</span>
                                             <span className="text-[10px] opacity-70">Add custom city</span>
                                         </div>
                                     </button>
@@ -252,7 +252,7 @@ export function CityAutocomplete({
                                 
                                 {filteredResults.length === 0 && inputValue.trim() && (
                                     <div className="px-3 py-2 text-[10px] text-black uppercase tracking-wider font-bold text-center border-t border-white/10 mt-1">
-                                        Can't find your city? Press Enter to add it
+                                        Can&apos;t find your city? Press Enter to add it
                                     </div>
                                 )}
                             </>

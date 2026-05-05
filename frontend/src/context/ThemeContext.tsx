@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { themes, Theme } from '@/lib/themes';
 import { API_URL } from '@/lib/api';
@@ -38,7 +38,7 @@ export function ThemeProvider({
     const isExemptPath = pathname?.startsWith('/admin') || pathname === '/register/agent';
 
     // Helper to apply root variables
-    const applyColors = (s: any) => {
+    const applyColors = useCallback((s: any) => {
         const root = document.documentElement;
         if (!root || !s) return;
 
@@ -108,7 +108,7 @@ export function ThemeProvider({
         if (s.font_color || s.fontColor) {
             root.style.setProperty('--project-font-color', s.font_color || s.fontColor);
         }
-    };
+    }, [isExemptPath]);
 
     const setActiveTheme = (theme: string) => {
         if (themes[theme] || theme === 'custom' || theme === 'default') {
@@ -226,8 +226,7 @@ export function ThemeProvider({
         };
 
         syncThemeWithAPI();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isExemptPath, JSON.stringify(initialSettings)]);
+    }, [isExemptPath, initialSettings, applyColors, activeTheme]);
 
     useEffect(() => {
         // Stop loading once we have some theme state (even if default)
@@ -279,10 +278,10 @@ export function ThemeProvider({
 
         const isBrandOrange = currentTheme.primary === '#F97316';
         root.style.setProperty('--sidebar-bg', `rgba(${isBrandOrange ? '55, 45, 100' : '40, 30, 80'}, 0.50)`);
-    }, [activeTheme, initialSettings, isExemptPath]);
+    }, [activeTheme, initialSettings, isExemptPath, applyColors]);
 
     // Construct common theme data for the app to consume
-    const getThemeData = () => {
+    const getThemeData = useCallback(() => {
         if (activeTheme === 'custom') {
             const p = initialSettings?.primaryColor || initialSettings?.primary_color || initialSettings?.primary || '#F97316';
             const sec = initialSettings?.secondaryColor || initialSettings?.secondary_color || initialSettings?.secondary || '#FB923C';
@@ -300,7 +299,7 @@ export function ThemeProvider({
             };
         }
         return themes[activeTheme] || themes.default;
-    }
+    }, [activeTheme, initialSettings]);
 
     const contextValue = React.useMemo(() => ({
         activeTheme,
@@ -308,7 +307,7 @@ export function ThemeProvider({
         themeData: getThemeData(),
         isLoading,
         publicSettings
-    }), [activeTheme, isLoading, publicSettings, initialSettings]); // initialSettings included as getThemeData uses it
+    }), [activeTheme, isLoading, publicSettings, getThemeData]); // initialSettings included via getThemeData dependency
 
     return (
         <ThemeContext.Provider value={contextValue}>

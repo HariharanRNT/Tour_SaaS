@@ -24,7 +24,7 @@ import {
     Loader2, Plus, Edit, Trash, Check, FileText, ArrowLeft,
     TrendingUp, Users, DollarSign, Calendar, MoreVertical,
     Search, X, ArrowUpDown, Download, CheckCircle2, Star,
-    Zap, Power, CreditCard, Activity, Sparkles
+    Zap, Power, CreditCard, Activity, Sparkles, Info
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -67,6 +67,7 @@ interface Subscription {
     start_date: string;
     end_date: string;
     current_bookings_usage: number;
+    price_at_purchase?: number;
 }
 
 export default function AdminBillingPage() {
@@ -184,26 +185,36 @@ export default function AdminBillingPage() {
         const successSubscriptions = subscriptions.filter((s: Subscription) =>
             ['active', 'upcoming', 'completed', 'expired', 'cancelled', 'on_hold', 'trial'].includes(s.status)
         );
-        const activeCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
-        const mrr = subscriptions
-            .filter((s: Subscription) => s.status === 'active')
-            .reduce((sum: number, s: Subscription) => {
-                const price = Number(s.plan?.price) || 0;
-                const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
-                if (cycle === 'yearly') return sum + (price / 12);
-                if (cycle === 'quarterly') return sum + (price / 3);
-                return sum + price;
-            }, 0);
+        const activeSubs = subscriptions.filter((s: Subscription) => ['active', 'cancelled', 'upcoming'].includes(s.status));
+        const activeCount = activeSubs.length;
+
+        // MRR Calculation with high precision
+        const mrr = activeSubs.reduce((sum: number, s: Subscription) => {
+            const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
+            const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
+            if (cycle === 'yearly') return sum + (price / 12);
+            if (cycle === 'quarterly') return sum + (price / 3);
+            return sum + price;
+        }, 0);
+
+        // ARR Calculation from original source prices
+        const arr = activeSubs.reduce((sum: number, s: Subscription) => {
+            const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
+            const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
+            if (cycle === 'yearly') return sum + price;
+            if (cycle === 'quarterly') return sum + (price * 4);
+            return sum + (price * 12);
+        }, 0);
 
         const totalRevenue = dashboardStats?.totalRevenue || 0;
-
-        const payingCount = subscriptions.filter((s: Subscription) => s.status === 'active').length;
+        const payingCount = activeCount;
 
         return {
             totalSubscriptions: successSubscriptions.length,
-            activeSubscriptions: activeCount,
+            activeSubscriptions: subscriptions.filter((s: Subscription) => s.status === 'active').length,
             payingCount: payingCount,
-            mrr: Math.round(mrr),
+            mrr: mrr,
+            arr: arr,
             totalRevenue: totalRevenue,
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
             recentChanges: currentMonthSubscriptions.filter((s: Subscription) => s.status === 'active').length
@@ -420,8 +431,19 @@ export default function AdminBillingPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="text-[36px] font-black text-[#111111] font-['Outfit'] tracking-tighter leading-none">₹{stats.mrr.toLocaleString()}</h4>
-                                    <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">MRR from active & queued plans</p>
+                                    <h4 className="text-[36px] font-black text-[#111111] font-['Outfit'] tracking-tighter leading-none">
+                                        ₹{stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </h4>
+                                    <div className="flex items-center gap-1.5 relative group">
+                                        <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">MRR from active & queued plans</p>
+                                        <Info className="h-3 w-3 text-[#92400e] opacity-60 cursor-help" />
+                                        
+                                        {/* Custom Premium Tooltip */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900/95 backdrop-blur-md text-white text-[11px] font-medium rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 border border-white/10 scale-95 group-hover:scale-100">
+                                            MRR is calculated as yearly_price / 12 for yearly plans
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95" />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-orange-400" />
                             </CardContent>
@@ -472,11 +494,11 @@ export default function AdminBillingPage() {
                                 {plans.map((plan: SubscriptionPlan, idx: number) => {
                                     const subscriberCount = subscriptions.filter((s: Subscription) =>
                                         s.plan.id === plan.id &&
-                                        ['active', 'trial'].includes(s.status)
+                                        ['active', 'trial', 'cancelled', 'upcoming'].includes(s.status)
                                     ).length;
                                     const monthlySubscriberCount = currentMonthSubscriptions.filter((s: Subscription) =>
                                         s.plan.id === plan.id &&
-                                        ['active', 'trial'].includes(s.status)
+                                        ['active', 'trial', 'cancelled', 'upcoming'].includes(s.status)
                                     ).length;
                                     const isMostPopular = monthlySubscriberCount === maxSubscribers && maxSubscribers > 0;
 
@@ -566,7 +588,7 @@ export default function AdminBillingPage() {
                                                     </div>
 
                                                     <div className="flex items-baseline gap-[6px]">
-                                                        <span className="text-[32px] font-[800] text-[#0F172A] tracking-[-1px] font-['Outfit']">₹{Math.floor(plan.price).toLocaleString('en-IN')}</span>
+                                                        <span className="text-[32px] font-[800] text-[#0F172A] tracking-[-1px] font-['Outfit']">₹{plan.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                         <span className="text-slate-800 font-normal text-[13px] ml-[6px]">/ {plan.billing_cycle === 'monthly' ? 'month' : plan.billing_cycle === 'yearly' ? 'year' : 'day'}</span>
                                                     </div>
                                                 </CardHeader>
@@ -694,7 +716,7 @@ export default function AdminBillingPage() {
                                                                 </div>
                                                                 <div className="space-y-1">
                                                                     <p className="text-[#111111] font-black uppercase text-[12px] tracking-widest">No matching results</p>
-                                                                    <p className="text-[#92400e] text-xs font-medium">No subscriptions found for "{searchQuery}"</p>
+                                                                    <p className="text-[#92400e] text-xs font-medium">No subscriptions found for &quot;{searchQuery}&quot;</p>
                                                                 </div>
                                                                 <Button
                                                                     variant="outline"
@@ -795,11 +817,16 @@ export default function AdminBillingPage() {
                                     <div className="text-[20px] font-bold text-[#111111] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
                                         {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                            const subCount = subscriptions.filter((s: Subscription) =>
-                                                s.plan.id === plan.id &&
-                                                ['active', 'upcoming', 'completed'].includes(s.status)
-                                            ).length;
-                                            const revenue = subCount * Number(plan.price);
+                                            const planMRRContribution = subscriptions
+                                                .filter((s: Subscription) => s.plan.id === plan.id && ['active', 'cancelled', 'upcoming'].includes(s.status))
+                                                .reduce((sum: number, s: Subscription) => {
+                                                    const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
+                                                    const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
+                                                    if (cycle === 'yearly') return sum + (price / 12);
+                                                    if (cycle === 'quarterly') return sum + (price / 3);
+                                                    return sum + price;
+                                                }, 0);
+                                            const revenue = planMRRContribution;
                                             const colors = ['#f97316', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#0ea5e9'];
                                             const color = colors[idx % colors.length];
 
@@ -810,20 +837,20 @@ export default function AdminBillingPage() {
                                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                         <motion.div
                                                             initial={{ width: 0 }}
-                                                            animate={{ width: `${Math.min(100, (revenue / (stats.mrr * 12 || 1)) * 100)}%` }}
+                                                            animate={{ width: `${Math.min(100, (revenue / (stats.mrr || 1)) * 100)}%` }}
                                                             className="h-full rounded-full"
                                                             style={{ backgroundColor: color }}
                                                         />
                                                     </div>
-                                                    <div className="w-24 text-right text-[14px] font-semibold text-[#111111] font-['Outfit'] tracking-tight">₹{Math.floor(revenue).toLocaleString('en-IN')}</div>
+                                                    <div className="w-24 text-right text-[14px] font-semibold text-[#111111] font-['Outfit'] tracking-tight">₹{revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                                 </div>
                                             );
                                         })}
 
                                         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                                            <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Estimated Revenue</div>
+                                            <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Monthly Recurring Revenue (MRR)</div>
                                             <div className="text-[20px] font-black text-[#111111] font-['Outfit'] tracking-tight">
-                                                ₹{stats.totalRevenue.toLocaleString('en-IN')}
+                                                ₹{stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                     </div>
@@ -831,9 +858,9 @@ export default function AdminBillingPage() {
 
                                 <div className="space-y-4">
                                     {[
-                                        { label: 'MRR', value: `₹${stats.mrr.toLocaleString()}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
-                                        { label: 'ARR', value: `₹${(stats.mrr * 12).toLocaleString()}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? Math.round(stats.mrr / stats.activeSubscriptions).toLocaleString() : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
+                                        { label: 'MRR', value: `₹${stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
+                                        { label: 'ARR', value: `₹${stats.arr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? (stats.mrr / stats.activeSubscriptions).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
                                         <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
                                             <div className="flex justify-between items-start mb-4">
@@ -1121,7 +1148,7 @@ Feature 3`}
                             <div className="space-y-2">
                                 <DialogTitle className="text-[22px] font-bold text-slate-900 font-['Plus_Jakarta_Sans'] tracking-tight">Delete Plan?</DialogTitle>
                                 <DialogDescription className="text-slate-600 font-medium text-[14px] leading-relaxed">
-                                    Are you sure you want to delete <span className="text-slate-900 font-bold">"{planToDelete?.name}"</span>?
+                                    Are you sure you want to delete <span className="text-slate-900 font-bold">&quot;{planToDelete?.name}&quot;</span>?
                                     This action cannot be undone and may affect active subscribers.
                                 </DialogDescription>
                             </div>

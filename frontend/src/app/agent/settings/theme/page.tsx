@@ -2470,7 +2470,7 @@ export default function AgentThemeSettingsPage() {
                                 </div>
 
                                 <p className="text-xs leading-relaxed opacity-70 italic">
-                                    "The most incredible experience of my life. Every detail was handled with care and sophistication."
+                                    &quot;The most incredible experience of my life. Every detail was handled with care and sophistication.&quot;
                                 </p>
 
                                 <div className="pt-2 flex items-center justify-between">

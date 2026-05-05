@@ -126,7 +126,7 @@ function OTPVerificationForm() {
 
             <div className="text-center space-y-4">
                 <p className="text-sm text-gray-500">
-                    Didn't receive the code?{' '}
+                    Didn&apos;t receive the code?{' '}
                     {timer > 0 ? (
                         <span className="text-blue-600 font-medium">Wait {timer}s</span>
                     ) : (

@@ -62,6 +62,13 @@ def _build_enquiry_email_html(
     enquiry_id: str
 ) -> str:
     """Build a styled HTML email body for the agent enquiry alert."""
+    import html
+    customer_name = html.escape(customer_name)
+    package_title = html.escape(package_title)
+    email = html.escape(email)
+    phone = html.escape(phone)
+    message = html.escape(message) if message else None
+    
     travel_date_str = str(travel_date)
     message_section = f"""
         <tr>

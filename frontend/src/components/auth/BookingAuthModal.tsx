@@ -583,7 +583,7 @@ export function BookingAuthModal({ isOpen, onClose, onSuccess, initialTab = 'log
                                             <form onSubmit={handleForgotPassword} className="space-y-4">
                                                 <div className="text-center mb-6 px-4">
                                                     <p className="text-sm text-black/80 font-medium">Reset your password</p>
-                                                    <p className="text-xs text-black/50 mt-1">Enter your email and we'll send you an OTP to reset your password.</p>
+                                                    <p className="text-xs text-black/50 mt-1">Enter your email and we&apos;ll send you an OTP to reset your password.</p>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[10px] font-bold text-black/50 uppercase tracking-widest ml-1">Email ID</label>

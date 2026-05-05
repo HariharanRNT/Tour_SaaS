@@ -25,10 +25,7 @@ class BulkStatusUpdateRequest(BaseModel):
 # Input Sanitization Helpers (B-01 XSS / B-02 SQLi)
 # ──────────────────────────────────────────────────────────────────────────────
 _HTML_TAG_RE = re.compile(r'<[^>]+>')
-_SQL_PATTERN = re.compile(
-    r"(--|;|\bDROP\b|\bTABLE\b|\bINSERT\b|\bDELETE\b|\bUPDATE\b|\bSELECT\b|\bUNION\b|'\\ *OR|xp_)",
-    re.IGNORECASE
-)
+
 _PHONE_RE = re.compile(r'^\+?[\d\s\-().]{7,15}$')
 _DOMAIN_RE = re.compile(
     r'^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$',
@@ -38,20 +35,14 @@ _GST_RE = re.compile(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$
 _NAME_RE = re.compile(r"^[a-zA-Z\s\-']+$")
 
 
+from app.utils.security_utils import sanitize_text, reject_sql
+
 def strip_xss(value: str) -> str:
-    """Strip HTML tags and unescape entities to prevent XSS persistence."""
+    """Sanitize using centralized security utils."""
     if value is None:
         return value
-    cleaned = _HTML_TAG_RE.sub('', value)
-    cleaned = html.unescape(cleaned)
-    return cleaned.strip()
+    return sanitize_text(value, allow_html=False)
 
-
-def reject_sql(value: str, field_name: str = 'field') -> str:
-    """Raise ValueError if value contains obvious SQL injection patterns."""
-    if value and _SQL_PATTERN.search(value):
-        raise ValueError(f"{field_name} contains invalid characters or reserved keywords.")
-    return value
 
 
 # User Schemas
@@ -778,7 +769,7 @@ class PackageBase(BaseModel):
     gst_percentage: Optional[Decimal] = None
     gst_mode: Optional[str] = None
 
-    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @field_validator('title', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
     @classmethod
     def sanitize_package_text(cls, v):
         """B-01/B-02/B-08: Strip XSS, reject SQLi. Empty strings allowed for legacy read compatibility."""
@@ -786,6 +777,15 @@ class PackageBase(BaseModel):
             return v
         v = strip_xss(v)
         reject_sql(v, 'field')
+        return v.strip()
+
+    @field_validator('description', mode='before')
+    @classmethod
+    def sanitize_package_description(cls, v):
+        if v is None or not isinstance(v, str):
+            return v
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=True, field_name='description')
         return v.strip()
 
 
@@ -1236,7 +1236,7 @@ class ActivityUpdate(BaseModel):
     rating: Optional[float] = Field(None, ge=0, le=5)
     location: Optional[str] = Field(None, max_length=200)
 
-    @field_validator('title', 'description', 'location', mode='before')
+    @field_validator('title', 'location', mode='before')
     @classmethod
     def sanitize_activity_text(cls, v):
         if not isinstance(v, str):
@@ -1244,6 +1244,15 @@ class ActivityUpdate(BaseModel):
         v = strip_xss(v).strip()
         reject_sql(v, 'field')
         return v
+
+    @field_validator('description', mode='before')
+    @classmethod
+    def sanitize_activity_description(cls, v):
+        if not isinstance(v, str):
+            return v
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=True, field_name='description')
+        return v.strip()
 
 class DayScheduleUpdate(BaseModel):
     day_number: int
@@ -1342,6 +1351,7 @@ class SubscriptionBase(BaseModel):
     end_date: date
     # Precise UTC expiry timestamp – takes priority over end_date for expiry logic
     expires_at: Optional[datetime] = None
+    price_at_purchase: Optional[Decimal] = None
     auto_renew: bool = True
     
     @field_validator('auto_renew', mode='before')

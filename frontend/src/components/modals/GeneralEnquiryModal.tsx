@@ -119,7 +119,7 @@ export default function GeneralEnquiryModal({ isOpen, onClose, agentId }: Genera
                             <DialogTitle className="text-xl font-black tracking-tight">Plan Your Dream Journey</DialogTitle>
                         </div>
                         <DialogDescription className="text-white/80 font-medium text-sm">
-                            Tell us what you're looking for, and we'll craft the perfect itinerary for you.
+                            Tell us what you&apos;re looking for, and we&apos;ll craft the perfect itinerary for you.
                         </DialogDescription>
                     </div>
 

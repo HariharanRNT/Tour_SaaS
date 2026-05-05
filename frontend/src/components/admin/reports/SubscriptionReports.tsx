@@ -81,13 +81,12 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
                 {[
                     { label: 'TOTAL SUBS', value: summary?.total || 0, sub: 'All subscriptions', icon: Users, color: '#6366F1', bg: '#EEF2FF', border: '#6366F1' },
                     { label: 'ACTIVE', value: summary?.active || 0, sub: 'Currently active', icon: CheckCircle, color: '#10B981', bg: '#DCFCE7', border: '#10B981' },
                     { label: 'EXPIRED', value: summary?.completed || 0, sub: 'Expired plans', icon: Clock, color: '#3B82F6', bg: '#DBEAFE', border: '#3B82F6' },
                     { label: 'QUEUE', value: summary?.upcoming || 0, sub: 'Starting soon', icon: RefreshCw, color: '#F59E0B', bg: '#FEF3C7', border: '#F59E0B' },
-                    { label: 'FAILED', value: summary?.paused || 0, sub: 'Payment Failed', icon: AlertCircle, color: '#EA580C', bg: '#FFF7ED', border: '#EA580C' },
                     { label: 'CANCELLED', value: summary?.cancelled || 0, sub: 'Terminated', icon: XCircle, color: '#EF4444', bg: '#FEE2E2', border: '#EF4444' }
                 ].map((item, index) => (
                     <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden h-[130px] rounded-[16px]">

@@ -160,7 +160,7 @@ export default function ReportsPage() {
         enabled: !!activePeriod,
     })
 
-    const packagePerformance = packagePerformanceData?.items || []
+    const packagePerformance = useMemo(() => packagePerformanceData?.items || [], [packagePerformanceData])
     const totalPackages = packagePerformanceData?.total || 0
     const totalPages = Math.ceil(totalPackages / limit)
 

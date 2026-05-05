@@ -43,7 +43,7 @@ export function TravelDaysSelector({ numberOfDays, onDaysChange }: TravelDaysSel
 
                     {numberOfDays > 0 && (
                         <p className="text-sm text-muted-foreground mt-2">
-                            You'll be planning activities for {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}
+                            You&apos;ll be planning activities for {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}
                         </p>
                     )}
                 </div>

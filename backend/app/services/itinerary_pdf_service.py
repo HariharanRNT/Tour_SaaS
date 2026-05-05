@@ -52,12 +52,14 @@ class ItineraryPdfService:
                 # Fallback for single destination or empty multi
                 day_to_header[1] = package.destination or "Itinerary"
             
+            import html
             for day_idx in range(1, max_day + 1):
                 # Check for destination header
                 if day_idx in day_to_header:
+                    header_text = html.escape(day_to_header[day_idx])
                     html_rows += f"""
                     <tr class="destination-row">
-                        <td colspan="4"><b>{day_to_header[day_idx]}</b></td>
+                        <td colspan="4"><b>{header_text}</b></td>
                     </tr>
                     """
                 
@@ -77,7 +79,7 @@ class ItineraryPdfService:
                     html_rows += f"""
                     <tr>
                         <td class="date-col">{date_text}</td>
-                        <td colspan="3">{full_day_item.title}</td>
+                        <td colspan="3">{html.escape(full_day_item.title)}</td>
                     </tr>
                     """
                 else:
@@ -89,7 +91,7 @@ class ItineraryPdfService:
                     def format_slot(slot_items):
                         if not slot_items:
                             return "At Leisure"
-                        return "<br/>".join([f"{item.title}" for item in slot_items])
+                        return "<br/>".join([f"{html.escape(item.title)}" for item in slot_items])
                         
                     morning_html = format_slot(morning_items)
                     afternoon_html = format_slot(afternoon_items)

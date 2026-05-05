@@ -114,7 +114,7 @@ export function ThemeInitializer({ initialSettings }: { initialSettings: any }) 
                 };
 
                 // 1. apply initial server settings first (Highest Priority for SSR)
-                const init = ${JSON.stringify(initialSettings)};
+                const init = ${initialSettings ? JSON.stringify(initialSettings).replace(/</g, '\\u003c') : 'null'};
                 if (init) {
                     apply(init);
                 }

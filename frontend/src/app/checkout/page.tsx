@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -120,6 +120,30 @@ function CheckoutContent() {
     }
 
 
+
+    const handleSessionExpiry = useCallback(async () => {
+        // 1. Cancel booking if created
+        const bookingId = bookingIdRef.current
+        if (bookingId) {
+            try {
+                await bookingsAPI.cancel(bookingId)
+            } catch (e) {
+                console.error("Failed to cancel booking on expiry", e)
+            }
+        }
+
+        // 2. Delete session
+        if (sessionId) {
+            try {
+                await tripPlannerAPI.deleteSession(sessionId)
+                localStorage.removeItem(`checkout_expiry_${sessionId}`)
+            } catch (e) {
+                console.error("Failed to delete session on expiry", e)
+            }
+        }
+
+        toast.error("Session Expired. Please start over.")
+    }, [sessionId])
 
     // Load Session & Settings
     useEffect(() => {
@@ -256,31 +280,7 @@ function CheckoutContent() {
         return () => {
             if (cleanupTimer) cleanupTimer()
         }
-    }, [sessionId])
-
-    const handleSessionExpiry = async () => {
-        // 1. Cancel booking if created
-        const bookingId = bookingIdRef.current
-        if (bookingId) {
-            try {
-                await bookingsAPI.cancel(bookingId)
-            } catch (e) {
-                console.error("Failed to cancel booking on expiry", e)
-            }
-        }
-
-        // 2. Delete session
-        if (sessionId) {
-            try {
-                await tripPlannerAPI.deleteSession(sessionId)
-                localStorage.removeItem(`checkout_expiry_${sessionId}`)
-            } catch (e) {
-                console.error("Failed to delete session on expiry", e)
-            }
-        }
-
-        toast.error("Session Expired. Please start over.")
-    }
+    }, [sessionId, handleSessionExpiry])
 
     // Recalculate total when GST settings or travelers change
     useEffect(() => {
@@ -790,7 +790,7 @@ function CheckoutContent() {
                         <div className="space-y-2">
                             <h2 className="text-2xl font-black text-[var(--color-primary-font)] mb-2">Payment Failed</h2>
                             <p className="text-[var(--color-primary-font)]/60 text-sm mb-8">
-                                We couldn't process your payment. This booking has been marked as failed. You can check its status in your bookings dashboard.
+                                We couldn&apos;t process your payment. This booking has been marked as failed. You can check its status in your bookings dashboard.
                             </p>
                         </div>
 

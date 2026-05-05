@@ -122,7 +122,7 @@ export default function SubUsersPage() {
                         <Users className="w-7 h-7 text-orange-500" />
                         Staff & Sub-Users
                     </h1>
-                    <p className="text-sm text-[var(--color-primary-font)]/50 font-medium">Manage your team's access to the agent portal</p>
+                    <p className="text-sm text-[var(--color-primary-font)]/50 font-medium">Manage your team&apos;s access to the agent portal</p>
                 </div>
                 
                 {hasPermission('sub_users', 'edit') && (

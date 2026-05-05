@@ -383,7 +383,7 @@ export default function AgentEnquiriesPage() {
                                     No enquiries found for this period
                                 </h3>
                                 <p className="mb-8 text-sm max-w-[300px] mx-auto opacity-60">
-                                    Try adjusting your date range or search filters to find what you're looking for.
+                                    Try adjusting your date range or search filters to find what you&apos;re looking for.
                                 </p>
                                 <Button
                                     variant="outline"

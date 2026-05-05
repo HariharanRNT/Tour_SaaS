@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface BlockProps {
     fields: any;
@@ -82,7 +83,7 @@ const TextBlock = ({ fields, globalDesign }: BlockProps) => {
                 <div 
                     className="prose prose-lg max-w-none text-slate-700 leading-relaxed"
                     style={{ color: globalDesign.text_color, fontFamily: globalDesign.font_family }}
-                    dangerouslySetInnerHTML={{ __html: fields.content?.replace(/\n/g, '<br />') }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(fields.content?.replace(/\n/g, '<br />') || '') }}
                 />
             </div>
         </section>
@@ -174,7 +175,7 @@ const ImageTextBlock = ({ fields, globalDesign }: BlockProps) => {
                         <h2 className="text-3xl md:text-5xl font-black leading-tight">{fields.title}</h2>
                         <div 
                             className="text-lg text-slate-600 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: fields.content?.replace(/\n/g, '<br />') }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(fields.content?.replace(/\n/g, '<br />') || '') }}
                         />
                     </div>
                     <div className="flex-1">

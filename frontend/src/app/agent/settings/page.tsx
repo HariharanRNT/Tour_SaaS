@@ -260,7 +260,7 @@ export default function AgentSettingsPage() {
     const submitting = updateGeneralMutation.isPending || updateSmtpMutation.isPending || updateRazorpayMutation.isPending;
     const testingSmtp = testSmtpMutation.isPending;
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault()
 
         // Trim whitespace from SMTP fields
@@ -385,7 +385,7 @@ export default function AgentSettingsPage() {
 
             toast.error(errorMessage);
         }
-    }
+    }, [smtp, razorpay, originalSettings, currency, gstDefaults, updateGeneralMutation, updateSmtpMutation, updateRazorpayMutation])
 
     const testSmtpConnection = () => {
         // Trim whitespace before testing
@@ -777,7 +777,7 @@ export default function AgentSettingsPage() {
                                         onChange={(e) => handleSmtpChange('from_name', e.target.value)}
                                         maxLength={50}
                                     />
-                                    <p className="text-xs font-medium text-[var(--color-primary-font)]/70">Appears in the 'From' field of emails.</p>
+                                    <p className="text-xs font-medium text-[var(--color-primary-font)]/70">Appears in the &apos;From&apos; field of emails.</p>
                                 </div>
                             </div>
 

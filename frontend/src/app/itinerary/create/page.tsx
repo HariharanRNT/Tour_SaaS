@@ -255,7 +255,7 @@ export default function CreateItineraryPage() {
                                 <CardHeader>
                                     <CardTitle>Available Activities</CardTitle>
                                     <CardDescription>
-                                        {itinerary.unassigned_activities.length} activities couldn't be auto-assigned
+                                        {itinerary.unassigned_activities.length} activities couldn&apos;t be auto-assigned
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>

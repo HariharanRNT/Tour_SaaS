@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { Clock, MapPin, Star, Users, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface ActivityDetailsModalProps {
     activity: Activity
@@ -166,7 +167,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                         </h3>
                                         <div
                                             className="text-black leading-relaxed text-base space-y-4 font-medium"
-                                            dangerouslySetInnerHTML={{ __html: activity.description || 'Experience the best of this destination with our guided activity.' }}
+                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(activity.description || 'Experience the best of this destination with our guided activity.') }}
                                         />
                                     </section>
 
@@ -249,7 +250,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                         <div className="h-6 w-6 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
                                             <Plus className="h-4 w-4" />
                                         </div>
-                                        What's Included
+                                        What&apos;s Included
                                     </h3>
                                     <ul className="space-y-2">
                                         {activity.included_items?.map((item, i) => (
@@ -265,7 +266,7 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                         <div className="h-6 w-6 rounded-lg bg-red-50 flex items-center justify-center text-red-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                                         </div>
-                                        What's Not Included
+                                        What&apos;s Not Included
                                     </h3>
                                     <ul className="space-y-2">
                                         {activity.excluded_items?.map((item, i) => (

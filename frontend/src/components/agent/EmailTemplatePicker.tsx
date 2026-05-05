@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Check, Send, Mail, Sun, Moon, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { sanitizeHtml } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -109,7 +110,7 @@ export function EmailTemplatePicker({
                         <p className="text-xl mb-4 text-slate-800 italic">Dear <strong>{data.customerName}</strong>,</p>
                         <div className="leading-relaxed text-slate-600 text-lg">
                             {customMessage ? (
-                                <p dangerouslySetInnerHTML={{ __html: resolvePlaceholders(customMessage).replace(/\n/g, '<br/>') }} />
+                                <p dangerouslySetInnerHTML={{ __html: sanitizeHtml(resolvePlaceholders(customMessage).replace(/\n/g, '<br/>')) }} />
                             ) : (
                                 <p>Your journey with us is officially confirmed. We are truly delighted to host you for the upcoming {p_the}<strong>{displayPackage}</strong>. Our team is now preparing all the details to ensure your trip is seamless and memorable.</p>
                             )}
@@ -178,10 +179,10 @@ export function EmailTemplatePicker({
                     
                     <div className="mb-10 space-y-4 px-2 text-left">
                         <h2 className="text-3xl font-black text-[#ff4b2b] tracking-tight">Aloha, {data.customerName}!</h2>
-                        <p className="text-xl leading-relaxed text-slate-600 font-medium italic">"The tan will fade, but the memories will last forever."</p>
+                        <p className="text-xl leading-relaxed text-slate-600 font-medium italic">&quot;The tan will fade, but the memories will last forever.&quot;</p>
                         <div className="text-lg leading-relaxed text-slate-700">
                             {customMessage ? (
-                                <p dangerouslySetInnerHTML={{ __html: resolvePlaceholders(customMessage).replace(/\n/g, '<br/>') }} />
+                                <p dangerouslySetInnerHTML={{ __html: sanitizeHtml(resolvePlaceholders(customMessage).replace(/\n/g, '<br/>')) }} />
                             ) : (
                                 <p>Get ready to soak up the sun. Your adventure to {p_the}<strong>{displayPackage}</strong> is fully reserved! Our team is already preparing for your arrival to ensure every moment is sun-drenched and stress-free.</p>
                             )}
@@ -239,7 +240,7 @@ export function EmailTemplatePicker({
                             <h2 className="text-3xl font-light tracking-tight leading-tight">Welcome to the Elite Tier, <br/> <span className="text-amber-400 font-medium">{data.customerName.split(' ')[0]}</span>.</h2>
                             <div className="text-slate-400 font-light text-lg leading-relaxed">
                                 {customMessage ? (
-                                    <p dangerouslySetInnerHTML={{ __html: resolvePlaceholders(customMessage).replace(/\n/g, '<br/>') }} />
+                                    <p dangerouslySetInnerHTML={{ __html: sanitizeHtml(resolvePlaceholders(customMessage).replace(/\n/g, '<br/>')) }} />
                                 ) : (
                                     <p>It is our privilege to confirm your passage for {p_the}<strong>{displayPackage}</strong>. Our concierges are currently finalizing every bespoke detail of your itinerary to ensure absolute perfection upon your arrival.</p>
                                 )}
@@ -300,7 +301,7 @@ export function EmailTemplatePicker({
                         <Mail className="w-8 h-8 text-[var(--primary)]" />
                         Choose Email Theme
                     </h2>
-                    <p className="text-slate-500 max-w-2xl text-lg">Select a visual style that matches your agent brand or the customer's travel personality.</p>
+                    <p className="text-slate-500 max-w-2xl text-lg">Select a visual style that matches your agent brand or the customer&apos;s travel personality.</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -396,7 +397,7 @@ export function EmailTemplatePicker({
             
             <div className="flex items-center gap-2 justify-center py-6 text-slate-400 text-sm font-medium">
                 <Info className="w-4 h-4" />
-                <span>You can edit the customer's personal details before sending if required.</span>
+                <span>You can edit the customer&apos;s personal details before sending if required.</span>
                 <button className="text-[var(--primary)] font-black hover:underline ml-1">Edit Info</button>
             </div>
         </div>

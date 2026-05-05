@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import Enum
 from app.models import BookingType, EnquiryPaymentType
 import json as _json
+from app.utils.security_utils import sanitize_text, reject_sql
 
 
 class CancellationRule(BaseModel):
@@ -88,6 +89,8 @@ class PackageBase(BaseModel):
     def validate_title(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("Package title cannot be empty or just whitespace")
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, 'title')
         return v.strip()
     slug: Optional[str] = None
     destination: str
@@ -100,6 +103,16 @@ class PackageBase(BaseModel):
     max_group_size: int = 20
     description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
+
+    @field_validator('description', 'destination', 'country', mode='before')
+    @classmethod
+    def sanitize_string_fields(cls, v, info):
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
+        return v
     is_public: bool = True
     included_items: List[str] = []
     excluded_items: List[str] = []
@@ -164,6 +177,16 @@ class PackageUpdate(BaseModel):
     max_group_size: Optional[int] = None
     description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
+
+    @field_validator('description', 'destination', 'country', mode='before')
+    @classmethod
+    def sanitize_update_fields(cls, v, info):
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
+        return v
     is_public: Optional[bool] = None
     included_items: Optional[List[str]] = None
     excluded_items: Optional[List[str]] = None
@@ -234,6 +257,16 @@ class ItineraryItemBase(BaseModel):
     day_number: int
     title: str = Field(..., max_length=100)
     description: Optional[str] = Field(None, max_length=1000)
+
+    @field_validator('title', 'description', mode='before')
+    @classmethod
+    def sanitize_itinerary_fields(cls, v, info):
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
+        return v
     time_slot: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None

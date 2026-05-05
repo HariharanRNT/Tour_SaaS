@@ -855,7 +855,7 @@ export default function CreatePackagePage() {
 
             const sanitisedRules = formData.cancellation_rules.map(r => {
                 if (!agentGstApplicable) {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    // eslint-disable-next-line
                     const { fareType: _dropped, ...rest } = r as any
                     return rest
                 }
@@ -1700,7 +1700,7 @@ export default function CreatePackagePage() {
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-sm font-semibold text-black">Inclusions & Exclusions</h3>
-                                    <p className="text-xs text-black opacity-80">What's covered in this package</p>
+                                    <p className="text-xs text-black opacity-80">What&apos;s covered in this package</p>
                                 </div>
                             </div>
                             <CardContent className="p-3">
@@ -1812,7 +1812,7 @@ export default function CreatePackagePage() {
                                             <div className="p-3 bg-black/5 rounded-full w-fit mx-auto mb-3">
                                                 <Sparkles className="w-5 h-5 text-black/20" />
                                             </div>
-                                            <p className="text-xs text-black/40 font-medium">[ ✦ ] No custom services added yet. Click "+ Add Custom Service" to add your own inclusions or exclusions.</p>
+                                            <p className="text-xs text-black/40 font-medium">[ ✦ ] No custom services added yet. Click &quot;+ Add Custom Service&quot; to add your own inclusions or exclusions.</p>
                                         </div>
                                     )}
                                 </div>
@@ -1992,7 +1992,7 @@ export default function CreatePackagePage() {
                                             <div className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-emerald-200/50">
                                                 <div className="space-y-0.5">
                                                     <Label className="text-[11px] font-black uppercase tracking-wider text-emerald-900">Enable GST for this package</Label>
-                                                    <p className="text-[10px] text-emerald-700 font-medium">When disabled, no tax is added to the customer's total.</p>
+                                                    <p className="text-[10px] text-emerald-700 font-medium">When disabled, no tax is added to the customer&apos;s total.</p>
                                                 </div>
                                                 <button
                                                     type="button"

@@ -48,7 +48,7 @@ export function TimeSlotSelector({ onSelect, onCancel, occupiedSlots }: TimeSlot
                 <CardHeader>
                     <CardTitle>Select Time Slot</CardTitle>
                     <CardDescription>
-                        Choose when you'd like to schedule this activity
+                        Choose when you&apos;d like to schedule this activity
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

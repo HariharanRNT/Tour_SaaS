@@ -112,7 +112,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                         </div>
                         <div>
                             <div className="text-[32px] font-extrabold text-[#0F172A] tracking-tight fa-outfit">
-                                ₹{summary?.total_revenue?.toLocaleString() || 0}
+                                ₹{summary?.total_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                             </div>
                             <p className="text-[12px] text-[#0f172a] font-medium mt-1">Total earnings from all plans</p>
                         </div>
@@ -135,7 +135,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                             </div>
                             <div>
                                 <div className="text-[24px] font-extrabold text-[#0F172A] tracking-tight leading-none">
-                                    ₹{item.value.toLocaleString()}
+                                    ₹{item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <p className="text-[11px] font-medium mt-1" style={{ color: item.color }}>{item.sub}</p>
                             </div>
@@ -177,7 +177,7 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#FFFFFF', border: 'none', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                     labelStyle={{ color: '#0f172a', fontSize: '12px', marginBottom: '4px' }}
-                                    formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                                    formatter={(value: any) => [`₹${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                                     itemStyle={{ color: '#0F172A', fontWeight: 'bold', fontSize: '14px' }}
                                 />
                                 <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} />

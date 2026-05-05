@@ -1,9 +1,10 @@
 """
 Pydantic schemas for AI Assistant functionality
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from app.utils.security_utils import sanitize_text, reject_sql
 
 
 class ChatMessage(BaseModel):
@@ -12,12 +13,29 @@ class ChatMessage(BaseModel):
     content: str = Field(..., description="Message content")
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
+    @field_validator('content', mode='before')
+    @classmethod
+    def sanitize_content(cls, v):
+        if not isinstance(v, str): return v
+        # Chat content should not have HTML tags
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, 'content')
+        return v
+
 
 class ChatRequest(BaseModel):
     """Request to send a chat message"""
     message: str = Field(..., min_length=1, max_length=2000, description="User's message")
     conversation_id: Optional[str] = Field(None, description="Conversation ID for context")
     mode: Optional[str] = Field("general", description="Chat mode: 'general' or 'package_search'")
+
+    @field_validator('message', mode='before')
+    @classmethod
+    def sanitize_message(cls, v):
+        if not isinstance(v, str): return v
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, 'message')
+        return v
 
 
 class ChatResponse(BaseModel):

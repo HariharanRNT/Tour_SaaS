@@ -38,7 +38,7 @@ export default function ContactPage() {
                                 Get in Touch
                             </motion.h1>
                             <p className="text-xl text-slate-500 max-w-2xl mx-auto">
-                                Have questions? We're here to help you plan your next perfect getaway.
+                                Have questions? We&apos;re here to help you plan your next perfect getaway.
                             </p>
                         </div>
 

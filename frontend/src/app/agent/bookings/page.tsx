@@ -974,7 +974,7 @@ export default function AgentBookingsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {booking.travelers?.map((traveler, index) => (
-                                        <div className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-[var(--primary)]/20 hover:bg-white hover:shadow-xl hover:shadow-[var(--primary-glow)] transition-all duration-500">
+                                        <div key={traveler.id || index} className="group bg-white/5 rounded-2xl p-5 border border-slate-100 hover:border-[var(--primary)]/20 hover:bg-white hover:shadow-xl hover:shadow-[var(--primary-glow)] transition-all duration-500">
                                             <div className="flex items-start gap-4">
                                                 <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center font-black text-[var(--color-primary-font)]/70 shrink-0 border border-slate-100 group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
                                                     {String(index + 1).padStart(2, '0')}
@@ -1016,7 +1016,7 @@ export default function AgentBookingsPage() {
                                         <div className="bg-emerald-50 p-2.5 rounded-xl">
                                             <ShieldCheck className="h-5 w-5 text-emerald-600" />
                                         </div>
-                                        <h3 className="text-lg font-black text-[var(--color-primary-font)]">What's Included</h3>
+                                        <h3 className="text-lg font-black text-[var(--color-primary-font)]">What&apos;s Included</h3>
                                     </div>
                                     <div className="space-y-2.5">
                                         {(() => {
@@ -1114,7 +1114,7 @@ export default function AgentBookingsPage() {
                                                 {(() => {
                                                     try {
                                                         const parsed = JSON.parse(booking.special_requests);
-                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-[var(--color-primary-font)]/80">"{booking.special_requests}"</p>;
+                                                        if (typeof parsed !== 'object' || parsed === null) return <p className="italic text-[var(--color-primary-font)]/80">&quot;{booking.special_requests}&quot;</p>;
 
                                                         return (
                                                             <div className="space-y-8">
@@ -1171,13 +1171,13 @@ export default function AgentBookingsPage() {
                                                                             <Info className="h-12 w-12" />
                                                                         </div>
                                                                         <p className="text-[11px] uppercase font-black text-indigo-700 tracking-widest mb-3">Special Requests Notes</p>
-                                                                        <p className="text-[var(--color-primary-font)]/80 leading-relaxed italic text-base break-words">"{parsed.requests}"</p>
+                                                                        <p className="text-[var(--color-primary-font)]/80 leading-relaxed italic text-base break-words">&quot;{parsed.requests}&quot;</p>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         );
                                                     } catch (e) {
-                                                        return <p className="italic bg-transparent p-6 rounded-3xl border border-slate-100">"{booking.special_requests}"</p>;
+                                                        return <p className="italic bg-transparent p-6 rounded-3xl border border-slate-100">&quot;{booking.special_requests}&quot;</p>;
                                                     }
                                                 })()}
                                             </div>

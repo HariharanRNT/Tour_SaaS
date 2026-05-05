@@ -150,6 +150,10 @@ class SubscriptionService:
         subscription.expires_at = now_utc + timedelta(hours=duration_hours)
         subscription.current_bookings_usage = 0
         
+        # Snapshot the price at time of activation if not already set (for reporting integrity)
+        if subscription.price_at_purchase is None:
+            subscription.price_at_purchase = subscription.plan.price
+        
         await db.commit()
         await db.refresh(subscription)
 
