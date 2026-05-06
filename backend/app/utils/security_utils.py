@@ -1,6 +1,7 @@
 import re
 import html
 import bleach
+import logging
 from typing import Any
 
 # Allowed tags for fields that require safe HTML (e.g., package descriptions)
@@ -9,9 +10,10 @@ ALLOWED_TAGS = [
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'span', 'div'
 ]
 ALLOWED_ATTRIBUTES = {
-    '*': ['class', 'style', 'id'],
     'a': ['href', 'title', 'target', 'rel']
 }
+
+logger = logging.getLogger("security")
 
 _SQL_PATTERN = re.compile(
     r"(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b|\bUNION\s+SELECT\b|\bSELECT\b.*\bFROM\b|\bINSERT\s+INTO\b|\bDELETE\s+FROM\b|\bUPDATE\b.*\bSET\b|'\s+OR\s+|xp_)",
@@ -31,8 +33,9 @@ def escape_all_html(value: str) -> str:
     return html.escape(value)
 
 def reject_sql(value: str, field_name: str = 'field') -> str:
-    """Raise ValueError if value contains obvious SQL injection patterns."""
+    """Raise ValueError if value contains obvious SQL injection patterns and logs the attempt."""
     if value and isinstance(value, str) and _SQL_PATTERN.search(value):
+        logger.warning(f"SUSPICIOUS SQL PATTERN BLOCKED: Field={field_name}, Value={value}")
         raise ValueError(f"{field_name} contains invalid characters or reserved keywords.")
     return value
 

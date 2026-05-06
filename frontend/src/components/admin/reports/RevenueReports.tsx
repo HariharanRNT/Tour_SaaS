@@ -18,7 +18,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
     const [trends, setTrends] = useState<any[]>([])
     const [agentRevenue, setAgentRevenue] = useState<any[]>([])
     const [planRevenue, setPlanRevenue] = useState<any[]>([])
-    const [paymentStatus, setPaymentStatus] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -39,12 +38,11 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
             }
             const queryParams = params.toString();
 
-            const [summaryRes, trendsRes, agentRes, planRes, paymentRes] = await Promise.all([
+            const [summaryRes, trendsRes, agentRes, planRes] = await Promise.all([
                 fetch(`${API_URL}/api/v1/reports/revenue/summary?${queryParams}`, { headers }),
                 fetch(`${API_URL}/api/v1/reports/revenue/trends?period=month&${queryParams}`, { headers }),
                 fetch(`${API_URL}/api/v1/reports/revenue/by-agent?${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/revenue/by-plan?${queryParams}`, { headers }),
-                fetch(`${API_URL}/api/v1/reports/revenue/payment-status?${queryParams}`, { headers })
+                fetch(`${API_URL}/api/v1/reports/revenue/by-plan?${queryParams}`, { headers })
             ])
 
             if (summaryRes.ok) setSummary(await summaryRes.json())
@@ -63,11 +61,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                 const data = await planRes.json()
                 setPlanRevenue(Array.isArray(data) ? data : [])
             }
-
-            if (paymentRes.ok) {
-                const data = await paymentRes.json()
-                setPaymentStatus(Array.isArray(data) ? data : [])
-            }
         } catch (error) {
             console.error('Error fetching revenue reports:', error)
         } finally {
@@ -78,11 +71,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
     if (loading) {
         return <div className="text-[#0f172a] text-center py-12">Loading reports...</div>
     }
-
-    // Calculate payment status totals
-    const paidTotal = paymentStatus.find(p => p.status === 'paid')?.amount || 0
-    const pendingTotal = paymentStatus.find(p => p.status === 'pending')?.amount || 0
-    const failedTotal = paymentStatus.find(p => p.status === 'failed')?.amount || 0
 
     // Calculate growth rate
     const calculateGrowth = () => {
@@ -98,9 +86,9 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-                {/* Total Revenue - Spans 2 cols */}
-                <Card className="col-span-1 md:col-span-2 bg-gradient-to-br from-[#10B981]/10 to-white border-[1.5px] border-[#10B981]/20 shadow-[0_4px_20px_rgba(16,185,129,0.1)] rounded-[16px] relative overflow-hidden h-[130px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Total Revenue */}
+                <Card className="bg-gradient-to-br from-[#10B981]/10 to-white border-[1.5px] border-[#10B981]/20 shadow-[0_4px_20px_rgba(16,185,129,0.1)] rounded-[16px] relative overflow-hidden h-[130px]">
                     <CardContent className="p-6 h-full flex flex-col justify-between relative z-10">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
@@ -118,31 +106,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Status Cards */}
-                {[
-                    { label: 'PAID', value: paidTotal, sub: 'Successful', icon: CheckCircle, color: '#10B981', bg: '#DCFCE7' },
-                    { label: 'PENDING', value: pendingTotal, sub: 'Awaiting', icon: Clock, color: '#F59E0B', bg: '#FEF3C7' },
-                    { label: 'FAILED', value: failedTotal, sub: 'Transactions', icon: XCircle, color: '#EF4444', bg: '#FEE2E2' }
-                ].map((item, index) => (
-                    <Card key={index} className="glass-card border-[1.5px] border-[#F1F5F9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden h-[130px] rounded-[16px]">
-                        <CardContent className="p-5 h-full flex flex-col justify-between relative z-10">
-                            <div className="flex justify-between items-start">
-                                <p className="text-[10px] font-bold text-[#1e293b] uppercase tracking-[1.2px]">{item.label}</p>
-                                <div className="h-8 w-8 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: `${item.color}1F` }}>
-                                    <item.icon className="h-[16px] w-[16px]" style={{ color: item.color }} />
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-[24px] font-extrabold text-[#0F172A] tracking-tight leading-none">
-                                    ₹{item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
-                                <p className="text-[11px] font-medium mt-1" style={{ color: item.color }}>{item.sub}</p>
-                            </div>
-                        </CardContent>
-                        <div className="absolute bottom-0 left-0 w-full h-[3px]" style={{ background: `linear-gradient(90deg, ${item.color}, ${item.color}4D)` }} />
-                    </Card>
-                ))}
             </div>
 
             {/* Charts */}

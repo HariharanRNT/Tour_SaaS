@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
-import { sanitizeHtml } from '@/lib/sanitize'
+import { sanitizeText } from '@/lib/sanitize'
 import { format } from 'date-fns'
 import { Loader2, MapPin, Calendar as CalendarIcon, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
@@ -948,8 +948,9 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                     </h2>
                                     <div
                                         className="text-black font-medium leading-relaxed text-lg max-w-5xl break-anywhere line-clamp-6"
-                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(session.description || '') }}
-                                    />
+                                    >
+                                        {sanitizeText(session.description || '')}
+                                    </div>
                                 </div>
                             </div>
                         </div>

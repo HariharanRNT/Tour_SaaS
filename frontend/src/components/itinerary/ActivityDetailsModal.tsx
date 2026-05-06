@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { Clock, MapPin, Star, Users, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { sanitizeHtml } from '@/lib/sanitize'
+import SafeHTML from '@/components/SafeHTML'
 
 interface ActivityDetailsModalProps {
     activity: Activity
@@ -165,9 +166,9 @@ export function ActivityDetailsModal({ activity, open, onOpenChange, onAddToDay 
                                             <div className="h-7 w-1.5 bg-[var(--primary)] rounded-full" />
                                             About this activity
                                         </h3>
-                                        <div
+                                        <SafeHTML
                                             className="text-black leading-relaxed text-base space-y-4 font-medium"
-                                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(activity.description || 'Experience the best of this destination with our guided activity.') }}
+                                            html={activity.description || 'Experience the best of this destination with our guided activity.'}
                                         />
                                     </section>
 

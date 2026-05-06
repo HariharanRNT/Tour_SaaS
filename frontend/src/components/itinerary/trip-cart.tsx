@@ -273,7 +273,7 @@ export function TripCart({
                             </div>
                             <div className="text-right">
                                 <span className={cn("text-3xl font-black tracking-tighter font-display", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>
-                                    {isEnquiry 
+                                    {isEnquiry
                                         ? (priceLabel || 'Request for enquiry')
                                         : `₹${grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                     }

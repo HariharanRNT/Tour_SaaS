@@ -22,6 +22,7 @@ import { CityAutocomplete } from '@/components/CityAutocomplete'
 import { toast } from 'sonner'
 import { API_URL, uploadFileToS3 } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { sanitizeText } from '@/lib/sanitize'
 import { Slider } from '@/components/ui/slider'
 import ServiceCard from '@/components/packages/ServiceCard'
 import { Badge } from '@/components/ui/badge'
@@ -889,6 +890,8 @@ export default function CreatePackagePage() {
                 },
                 body: JSON.stringify({
                     ...formData,
+                    description: sanitizeText(formData.description),
+                    title: sanitizeText(formData.title),
                     inclusions: trimmedInclusions,
                     custom_services: trimmedCustomServices,
                     gst_applicable: gstApplicableFinal,
@@ -1004,6 +1007,8 @@ export default function CreatePackagePage() {
                 },
                 body: JSON.stringify({
                     ...formData,
+                    description: sanitizeText(formData.description),
+                    title: sanitizeText(formData.title),
                     inclusions: trimmedInclusions,
                     custom_services: trimmedCustomServices,
                     gst_applicable: gstApplicableFinal,

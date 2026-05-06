@@ -13,6 +13,7 @@ from redis import asyncio as aioredis
 # Initialize Limiter
 limiter = Limiter(key_func=get_remote_address)
 
+from app.middleware.security_middleware import RequestSanitizationMiddleware
 from app.config import settings
 from app.api.v1 import (
     auth, packages, bookings, payments, tours, flights, templates, 
@@ -83,6 +84,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add global request sanitization middleware
+app.add_middleware(RequestSanitizationMiddleware)
 
 # Security Headers Middleware
 @app.middleware("http")
