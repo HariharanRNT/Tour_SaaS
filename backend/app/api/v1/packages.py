@@ -7,7 +7,7 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from slugify import slugify
 from app.database import get_db
-from app.models import Package, PackageImage, ItineraryItem, PackageAvailability, PackageStatus, UserRole, Agent, TripStyle, ActivityTag
+from app.models import Package, PackageImage, ItineraryItem, PackageAvailability, PackageStatus, UserRole, Agent, TripStyle, ActivityTag, User
 from app.schemas import (
     PackageCreate, PackageUpdate, PackageResponse,
     PackageListResponse, MessageResponse
@@ -571,7 +571,8 @@ async def get_package_itinerary_pdf(
     from app.services.itinerary_pdf_service import ItineraryPdfService
     
     query = select(Package).where(Package.id == package_id).options(
-        selectinload(Package.itinerary_items)
+        selectinload(Package.itinerary_items),
+        selectinload(Package.creator).selectinload(User.agent_profile)
     )
     result = await db.execute(query)
     package = result.scalar_one_or_none()

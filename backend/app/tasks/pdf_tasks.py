@@ -1,6 +1,6 @@
 from app.celery_app import celery_app
 from app.database import AsyncSessionLocal
-from app.models import Package
+from app.models import Package, User
 from app.services.itinerary_pdf_service import ItineraryPdfService
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -14,7 +14,8 @@ async def _generate_package_pdf_async(package_id: str):
     """Internal async logic for generating and caching PDF"""
     async with AsyncSessionLocal() as db:
         query = select(Package).where(Package.id == package_id).options(
-            selectinload(Package.itinerary_items)
+            selectinload(Package.itinerary_items),
+            selectinload(Package.creator).selectinload(User.agent_profile)
         )
         result = await db.execute(query)
         package = result.scalar_one_or_none()

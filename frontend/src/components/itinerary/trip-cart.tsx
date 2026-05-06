@@ -259,22 +259,11 @@ export function TripCart({
                                         </div>
                                     </div>
                                 )}
-                                {(priceGuaranteed || isEnquiry) && (
-                                    <div className={cn(
-                                        "mt-1 flex items-center gap-1.5 border px-2 py-0.5 rounded-md self-start shadow-sm",
-                                        cardStyle === 'glassy' ? "bg-white/10 border-white/20" : "bg-white border-slate-200"
-                                    )}>
-                                        <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                                        <span className={cn("text-[8px] font-black uppercase tracking-wider", cardStyle === 'glassy' ? "text-white/90" : "text-black")}>
-                                            {isEnquiry ? 'Price Locked' : 'Price Locked'}
-                                        </span>
-                                    </div>
-                                )}
                             </div>
                             <div className="text-right">
                                 <span className={cn("text-3xl font-black tracking-tighter font-display", cardStyle === 'glassy' ? "text-white" : "text-[var(--color-primary-font)]")}>
-                                    {isEnquiry
-                                        ? (priceLabel || 'Request for enquiry')
+                                    {isEnquiry 
+                                        ? (priceLabel || '')
                                         : `₹${grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
                                     }
                                 </span>

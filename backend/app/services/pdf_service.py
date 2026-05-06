@@ -1,7 +1,8 @@
 import os
 import json
 import uuid
-from datetime import datetime
+import html
+from datetime import datetime, timedelta
 from xhtml2pdf import pisa
 from io import BytesIO
 from typing import List, Dict, Any
@@ -17,13 +18,10 @@ class PDFService:
         quoted_data: List[Dict[str, Any]]
     ) -> str:
         """
-        Generate a branded PDF quote for travel packages.
-        Returns the relative URL to the generated PDF.
+        Generate a professional travel quotation PDF with optimized page breaking.
         """
-        # 1. Prepare HTML Template
         html_content = PDFService._build_quote_html(enquiry, packages, agent_profile, quoted_data)
         
-        # 2. Generate PDF
         pdf_filename = f"quote_{enquiry.id.hex[:8]}_{uuid.uuid4().hex[:6]}.pdf"
         static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "quotes")
         os.makedirs(static_dir, exist_ok=True)
@@ -36,7 +34,6 @@ class PDFService:
         if pisa_status.err:
             raise Exception(f"Failed to generate PDF: {pisa_status.err}")
             
-        # 3. Return relative URL
         return f"/static/quotes/{pdf_filename}"
 
     @staticmethod
@@ -46,47 +43,32 @@ class PDFService:
         agent_profile: Agent,
         quoted_data: List[Dict[str, Any]]
     ) -> str:
-        """Build the HTML string for the PDF with a modern design."""
-        import os
-        import json
-        import html
+        """Build a stable, page-break-optimized PDF template."""
         
-        # Map quoted prices for easy lookup
         price_map = {str(item['packageId']): item['quotedPrice'] for item in quoted_data}
-        
         agency_name = html.escape(agent_profile.agency_name or "Your Travel Agency")
-        agency_contact = html.escape(f"{agent_profile.phone or ''} | {agent_profile.user.email}")
-        agency_address = html.escape(agent_profile.business_address or "")
         customer_name = html.escape(enquiry.customer_name)
+        quote_ref = f"ENQ-{enquiry.id.hex[:6].upper()}"
         
-        # Logo handling (similar to invoice_service)
         company_logo_url = ""
         if agent_profile.homepage_settings:
             custom_logo = agent_profile.homepage_settings.get("navbar_logo_image")
             if custom_logo:
                 company_logo_url = custom_logo
         
-        # Standard logo fallback and xhtml2pdf protocol fix
         if not company_logo_url:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             logo_path = os.path.join(current_dir, "..", "..", "static", "logo.png")
             if os.path.exists(logo_path):
                 company_logo_url = "file:///" + os.path.abspath(logo_path).replace("\\", "/")
-        elif not company_logo_url.startswith(("http://", "https://", "file://")):
-            # If it's a relative path from static, resolve it
-            if company_logo_url.startswith("/static/"):
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                local_path = os.path.join(current_dir, "..", "..", company_logo_url.lstrip("/"))
-                if os.path.exists(local_path):
-                    company_logo_url = "file:///" + os.path.abspath(local_path).replace("\\", "/")
 
-        today = datetime.now().strftime("%d %B %Y")
+        today = datetime.now()
+        valid_until = (today + timedelta(days=7)).strftime("%d %B %Y")
         travel_date = enquiry.travel_date.strftime("%d %B %Y")
         
-        logo_html = f'<img src="{company_logo_url}" class="logo-img" />' if company_logo_url else f'<div class="agency-name">{agency_name}</div>'
-        agency_name_html = f'<div class="agency-name">{agency_name}</div>' if company_logo_url else ''
+        logo_html = f'<img src="{company_logo_url}" width="40" height="40" />' if company_logo_url else f'<div style="font-weight: bold; color: #1e3a5f; font-size: 18px;">{agency_name[:2].upper()}</div>'
 
-        html = f"""
+        html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -95,435 +77,203 @@ class PDFService:
                 @page {{
                     size: A4;
                     margin: 40px;
+                    margin-top: 100px;
+                    margin-bottom: 80px;
+                    @frame header_frame {{
+                        -pdf-frame-content: header_content;
+                        left: 40pt; width: 515pt; top: 30pt; height: 60pt;
+                    }}
+                    @frame footer_frame {{
+                        -pdf-frame-content: footer_content;
+                        left: 40pt; width: 515pt; top: 780pt; height: 60pt;
+                    }}
                 }}
+                
                 body {{
                     font-family: 'Helvetica', 'Arial', sans-serif;
-                    color: #1f2937;
+                    color: #2c3e50;
                     line-height: 1.6;
-                    margin: 0;
-                    padding: 0;
-                    width: 100%;
-                }}
-                .header-container {{
-                    background-color: #f8fafc;
-                    padding: 30px 20px;
-                    border-bottom: 4px solid #2563eb;
-                    margin-bottom: 20px;
-                }}
-                /* ... other header styles ... */
-                
-                .quote-banner {{
-                    background-color: #1e3a8a;
-                    color: white;
-                    padding: 12px 20px;
-                    text-align: center;
-                    font-size: 18px;
-                    font-weight: bold;
-                    letter-spacing: 2px;
-                    text-transform: uppercase;
-                    margin-bottom: 20px;
+                    font-size: 10px;
                 }}
                 
-                .summary-box {{
-                    margin: 0 0 20px 0;
+                /* Compact Fixed Header */
+                #header_content {{
+                    border-bottom: 1.5px solid #1e3a5f;
+                    padding-bottom: 5px;
+                }}
+                .header-table {{ width: 100%; }}
+                .header-ref {{ text-align: right; font-size: 9px; font-weight: bold; color: #1e3a5f; }}
+                
+                /* Layout Utilities */
+                .page-break {{ page-break-before: always; }}
+                .no-break {{ page-break-inside: avoid; break-inside: avoid; }}
+                
+                /* Sections */
+                .hero {{
+                    background-color: #fcfcfc;
                     padding: 15px;
-                    background-color: #eff6ff;
-                    border-radius: 10px;
-                }}
-                /* ... other summary styles ... */
-                
-                .intro-text {{
-                    padding: 0;
-                    font-size: 13px;
-                    color: #475569;
+                    border: 1px solid #eee;
                     margin-bottom: 20px;
+                    text-align: center;
+                }}
+                .quote-title {{ font-size: 20px; font-weight: bold; color: #1e3a5f; text-transform: uppercase; letter-spacing: 1px; }}
+                
+                .meta-table {{ width: 100%; margin-bottom: 25px; border-collapse: collapse; }}
+                .meta-box {{ background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 6px; text-align: center; width: 24%; }}
+                .meta-label {{ font-size: 7px; color: #95a5a6; font-weight: bold; text-transform: uppercase; }}
+                .meta-value {{ font-size: 9px; color: #2c3e50; font-weight: bold; }}
+                
+                .section-card {{
+                    background-color: #ffffff;
+                    margin-bottom: 25px;
                 }}
                 
-                .package-container {{
-                    margin: 0 0 30px 0;
-                    width: 100%;
-                }}
-                .package-header {{
-                    background-color: #f1f5f9;
-                    padding: 12px 20px;
-                    border-left: 5px solid #2563eb;
+                /* Itinerary Styling */
+                .day-block {{
+                    page-break-inside: avoid;
+                    break-inside: avoid;
                     margin-bottom: 15px;
                 }}
-                .package-title {{
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #0f172a;
-                }}
-                .package-meta {{
+                .day-label {{
                     font-size: 11px;
-                    color: #64748b;
                     font-weight: bold;
-                    margin-top: 3px;
-                }}
-                
-                .section-title {{
-                    margin: 20px 0 10px 0;
-                    font-size: 14px;
-                    font-weight: bold;
-                    color: #2563eb;
-                    border-bottom: 1px solid #e2e8f0;
-                    padding-bottom: 4px;
-                }}
-                
-                .highlight-grid {{
-                    margin: 10px 0;
-                }}
-                /* ... other highlight styles ... */
-                
-                .itinerary-container {{
-                    margin: 10px 0;
-                }}
-                .itinerary-day {{
-                    margin-bottom: 12px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px dashed #e2e8f0;
-                }}
-                .day-badge {{
-                    background-color: #2563eb;
-                    color: white;
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                    font-size: 10px;
-                    font-weight: bold;
-                    margin-right: 8px;
-                }}
-                .day-title {{
-                    font-size: 13px;
-                    font-weight: bold;
-                    color: #1e293b;
-                }}
-                .day-desc {{
-                    font-size: 11px;
-                    color: #64748b;
-                    margin-top: 4px;
-                    display: block;
-                    white-space: normal;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                    word-break: break-all;
-                }}
-                
-                .pricing-container {{
-                    margin: 15px 0;
-                }}
-                .pricing-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                    border: 1px solid #e2e8f0;
-                }}
-                .pricing-table th {{
-                    background-color: #f8fafc;
-                    padding: 10px;
-                    text-align: left;
-                    font-size: 11px;
-                    color: #64748b;
-                    border-bottom: 2px solid #e2e8f0;
-                }}
-                .pricing-table td {{
-                    padding: 10px;
-                    font-size: 12px;
-                    border-bottom: 1px solid #e2e8f0;
-                }}
-                .price-total-row {{
-                    background-color: #f0f9ff;
-                }}
-                .total-label {{
-                    font-weight: bold;
-                    color: #1e3a8a;
-                    font-size: 14px;
-                }}
-                .total-amount {{
-                    font-weight: 800;
-                    color: #2563eb;
-                    font-size: 16px;
-                    text-align: right;
-                }}
-                
-                .inc-exc-container {{
-                    margin: 15px 0;
-                }}
-                /* ... other table styles ... */
-                
-                .inc-exc-cell {{
-                    width: 50%;
-                    vertical-align: top;
-                    padding: 0 8px 0 0;
-                }}
-                .inc-box {{
-                    background-color: #f0fdf4;
-                    padding: 12px;
-                    border-radius: 6px;
-                    border: 1px solid #dcfce7;
-                }}
-                .exc-box {{
-                    background-color: #fef2f2;
-                    padding: 12px;
-                    border-radius: 6px;
-                    border: 1px solid #fee2e2;
-                }}
-                .inc-title {{ color: #15803d; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
-                .exc-title {{ color: #b91c1c; font-weight: bold; font-size: 12px; margin-bottom: 6px; }}
-                .inc-list {{ padding-left: 15px; margin: 0; }}
-                .inc-list li {{ 
-                    font-size: 10px; 
-                    color: #374151; 
-                    margin-bottom: 3px; 
-                    word-wrap: break-word; 
-                    overflow-wrap: break-word; 
-                    word-break: break-all; 
-                }}
-                
-                .footer-container {{
-                    margin-top: 40px;
-                    padding: 30px 20px;
-                    background-color: #1e293b;
-                    color: #cbd5e1;
-                    text-align: center;
-                }}
-                .footer-contact {{
-                    font-size: 14px;
-                    font-weight: bold;
-                    color: white;
+                    color: #ffffff;
+                    background-color: #1e3a5f;
+                    padding: 3px 10px;
+                    display: inline-block;
                     margin-bottom: 8px;
                 }}
-                .footer-text {{
-                    font-size: 10px;
-                    margin-bottom: 10px;
-                    line-height: 1.6;
+                .timeline-content {{
+                    border-left: 2px solid #1e3a5f;
+                    margin-left: 15px;
+                    padding-left: 15px;
                 }}
-                .powered-by {{
-                    font-size: 9px;
-                    opacity: 0.6;
+                .activity-title {{ font-size: 10px; font-weight: bold; color: #2c3e50; word-break: break-word; }}
+                .activity-desc {{ font-size: 9px; color: #7f8c8d; margin-top: 2px; word-break: break-word; }}
+                
+                /* Pricing Box */
+                .pricing-section {{
+                    page-break-inside: avoid;
+                    margin-top: 30px;
+                    border: 1px solid #eee;
+                    padding: 10px;
                 }}
+                .price-table {{ width: 100%; border-collapse: collapse; }}
+                .price-table th {{ background-color: #1e3a5f; color: white; font-size: 9px; padding: 8px; text-align: left; }}
+                .price-table td {{ padding: 8px; font-size: 9px; border-bottom: 1px solid #eee; }}
+                .total-row {{ background-color: #f8f9fa; border-top: 2px solid #1e3a5f; }}
+                .total-value {{ font-size: 16px; font-weight: bold; color: #1e3a5f; text-align: right; padding: 12px; }}
+                
+                /* Footer */
+                #footer_content {{ border-top: 1px solid #eee; padding-top: 10px; text-align: center; }}
+                .footer-text {{ font-size: 8px; color: #bdc3c7; }}
             </style>
         </head>
         <body>
-            <div class="header-container">
+            <div id="header_content">
                 <table class="header-table">
                     <tr>
-                        <td class="logo-cell">
-                            {logo_html}
+                        <td style="width: 50px;">{logo_html}</td>
+                        <td style="padding-left: 10px; vertical-align: middle;">
+                            <div style="font-size: 14px; font-weight: bold; color: #1e3a5f;">{agency_name}</div>
                         </td>
-                        <td class="agency-info-cell">
-                            {agency_name_html}
-                            <div class="agency-details">
-                                {agency_address}<br/>
-                                {agency_contact}
+                        <td class="header-ref">
+                            <div>QUOTE REF: {quote_ref}</div>
+                            <div style="font-size: 7px; color: #95a5a6; font-weight: normal; margin-top: 2px;">
+                                PAGE <pdf:pagenumber/> OF <pdf:pagecount/>
                             </div>
                         </td>
                     </tr>
                 </table>
             </div>
-            
-            <div class="quote-banner">Personalized Travel Quote</div>
-            
-            <div class="summary-box">
-                <table class="summary-table">
-                    <tr>
-                        <td class="summary-label">PREPARED FOR</td>
-                        <td class="summary-value">{customer_name}</td>
-                        <td class="summary-label">QUOTE REF</td>
-                        <td class="summary-value">ENQ-{enquiry.id.hex[:6].upper()}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">TRAVEL DATE</td>
-                        <td class="summary-value">{travel_date}</td>
-                        <td class="summary-label">ISSUE DATE</td>
-                        <td class="summary-value">{today}</td>
-                    </tr>
-                    <tr>
-                        <td class="summary-label">GUESTS</td>
-                        <td class="summary-value">{enquiry.travellers} Adults</td>
-                        <td class="summary-label">VALIDITY</td>
-                        <td class="summary-value">7 Days</td>
-                    </tr>
-                </table>
+
+            <div id="footer_content">
+                <div style="font-size: 10px; font-weight: bold; color: #1e3a5f; margin-bottom: 5px;">Contact us to confirm your booking</div>
+                <div class="footer-text">{agency_name} | Created for {customer_name}</div>
             </div>
             
-            <div class="intro-text">
-                <p>Dear <strong>{customer_name}</strong>,</p>
-                <p>It was a pleasure connecting with you. Based on your travel preferences, we have curated the following exclusive travel packages. Each itinerary has been designed to provide an unforgettable experience.</p>
+            <div class="hero">
+                <div class="quote-title">Travel Quotation</div>
+                <div style="font-size: 12px; color: #2980b9; margin-top: 5px;">Prepared for {customer_name}</div>
             </div>
+            
+            <table class="meta-table">
+                <tr>
+                    <td class="meta-box"><div class="meta-label">Quote Ref</div><div class="meta-value">{quote_ref}</div></td>
+                    <td style="width: 1%;"></td>
+                    <td class="meta-box"><div class="meta-label">Travel Date</div><div class="meta-value">{travel_date}</div></td>
+                    <td style="width: 1%;"></td>
+                    <td class="meta-box"><div class="meta-label">Guests</div><div class="meta-value">{enquiry.travellers} Person(s)</div></td>
+                    <td style="width: 1%;"></td>
+                    <td class="meta-box"><div class="meta-label">Valid Until</div><div class="meta-value">{valid_until}</div></td>
+                </tr>
+            </table>
         """
 
         for idx, pkg in enumerate(packages):
-            quoted_price = price_map.get(str(pkg.id), pkg.price_per_person)
+            quoted_price = float(price_map.get(str(pkg.id), pkg.price_per_person))
             
-            # Inclusions/Exclusions logic - Aggregate from multiple fields
-            all_inclusions = []
-            all_exclusions = []
+            itinerary_by_day = {}
+            for item in sorted(pkg.itinerary_items, key=lambda x: x.day_number):
+                if item.day_number not in itinerary_by_day:
+                    itinerary_by_day[item.day_number] = []
+                itinerary_by_day[item.day_number].append(item)
 
-            try:
-                # 1. Legacy list items
-                legacy_inc = pkg.included_items if isinstance(pkg.included_items, list) else json.loads(pkg.included_items or '[]')
-                legacy_exc = pkg.excluded_items if isinstance(pkg.excluded_items, list) else json.loads(pkg.excluded_items or '[]')
-                all_inclusions.extend(legacy_inc)
-                all_exclusions.extend(legacy_exc)
+            # Package always starts on a fresh page if it's not the first one
+            break_class = "page-break" if idx > 0 else ""
 
-                # 2. Structured inclusions (dict)
-                if pkg.inclusions and isinstance(pkg.inclusions, dict):
-                    # Mapping of internal keys to human readable labels
-                    inc_labels = {
-                        'flights': 'Flights',
-                        'transportation': 'Transportation',
-                        'hotel': 'Accommodation',
-                        'visaAssistance': 'Visa Assistance',
-                        'travelInsurance': 'Travel Insurance',
-                        'tourGuide': 'Tour Guide',
-                        'foodAndDining': 'Meals & Dining',
-                        'supportAndServices': 'Support & Services'
-                    }
-                    for key, label in inc_labels.items():
-                        item = pkg.inclusions.get(key)
-                        if item and isinstance(item, dict) and item.get('included'):
-                            detail = item.get('details')
-                            if detail:
-                                all_inclusions.append(f"{label}: {detail}")
-                            else:
-                                all_inclusions.append(label)
-
-                # 3. Custom services
-                if pkg.custom_services and isinstance(pkg.custom_services, list):
-                    for service in pkg.custom_services:
-                        if not isinstance(service, dict):
-                            continue
-                        if not service.get('visibleToCustomer', True):
-                            continue
-                            
-                        heading = service.get('heading')
-                        desc = service.get('description')
-                        text = f"{heading}: {desc}" if desc else heading
-                        
-                        if service.get('isIncluded', True):
-                            all_inclusions.append(text)
-                        else:
-                            all_exclusions.append(text)
-                
-                # Deduplicate and filter out empty strings
-                all_inclusions = [html.escape(str(i).strip()) for i in all_inclusions if i and str(i).strip()]
-                # Use dict.fromkeys to deduplicate while preserving order
-                all_inclusions = list(dict.fromkeys(all_inclusions))
-                
-                all_exclusions = [html.escape(str(e).strip()) for e in all_exclusions if e and str(e).strip()]
-                all_exclusions = list(dict.fromkeys(all_exclusions))
-                
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f"Error parsing inclusions/exclusions: {e}")
-
-            # Page break for subsequent packages
-            page_break = 'style="page-break-before: always;"' if idx > 0 else ""
-
-            html += f"""
-            <div class="package-container" {page_break}>
-                <div class="package-header">
-                    <div class="package-title">{html.escape(pkg.title)}</div>
-                    <div class="package-meta">{html.escape(pkg.destination.upper())} &bull; {pkg.duration_days} DAYS &bull; {pkg.duration_nights} NIGHTS</div>
+            html_content += f"""
+            <div class="section-card {break_class}">
+                <div style="border-left: 4px solid #1e3a5f; padding-left: 12px; margin-bottom: 15px;">
+                    <div style="font-size: 15px; font-weight: bold; color: #1e3a5f;">{html.escape(pkg.title)}</div>
+                    <div style="font-size: 8px; color: #7f8c8d;">{pkg.duration_days} Days in {html.escape(pkg.destination)}</div>
                 </div>
                 
-                {f'''
-                <div class="section-title">Package Highlights</div>
-                <div class="highlight-grid">
-                    {" ".join([f'<span class="highlight-item">{h}</span>' for h in all_inclusions[:8]])}
-                </div>
-                ''' if all_inclusions else ""}
-
-                <div class="section-title">Daily Itinerary</div>
-                <div class="itinerary-container">
+                <div style="font-size: 11px; font-weight: bold; color: #1e3a5f; margin-bottom: 10px; border-bottom: 1px solid #eee;">Plan Details</div>
             """
             
-            # Day-wise Itinerary
-            for item in pkg.itinerary_items:
-                desc = item.description[:400] + "..." if len(item.description) > 400 else item.description
-                html += f"""
-                <div class="itinerary-day">
-                    <span class="day-badge">DAY {item.day_number}</span>
-                    <span class="day-title">{html.escape(item.title)}</span>
-                    <span class="day-desc">{html.escape(desc)}</span>
-                </div>
+            for day_num in sorted(itinerary_by_day.keys()):
+                activities = itinerary_by_day[day_num]
+                html_content += f"""
+                <div class="day-block">
+                    <div class="day-label">DAY {day_num}</div>
+                    <div class="timeline-content">
                 """
+                for act in activities:
+                    html_content += f"""
+                        <div style="margin-bottom: 10px;">
+                            <div class="activity-title">• {html.escape(act.title)}</div>
+                            <div class="activity-desc">{html.escape(act.description)}</div>
+                        </div>
+                    """
+                html_content += "</div></div>"
 
-            # Pricing Table
-            total_for_guests = float(quoted_price) * enquiry.travellers
-            html += f"""
-                </div>
-
-                <div class="section-title">Investment Details</div>
-                <div class="pricing-container">
-                    <table class="pricing-table">
+            total_for_guests = quoted_price * enquiry.travellers
+            html_content += f"""
+                <div class="pricing-section">
+                    <table class="price-table">
                         <tr>
-                            <th>Description</th>
-                            <th style="text-align: center;">Quantity</th>
-                            <th style="text-align: right;">Unit Price</th>
-                            <th style="text-align: right;">Subtotal</th>
+                            <th style="width: 50%;">Description</th>
+                            <th style="width: 10%; text-align: center;">Qty</th>
+                            <th style="width: 20%; text-align: right;">Unit Price</th>
+                            <th style="width: 20%; text-align: right;">Subtotal</th>
                         </tr>
                         <tr>
-                            <td style="width: 45%; white-space: normal; word-break: break-word;">{html.escape(pkg.title)} - Full Package for {pkg.duration_days} Days</td>
-                            <td style="text-align: center; width: 15%;">{enquiry.travellers}</td>
-                            <td style="text-align: right; width: 20%;">INR {float(quoted_price):,.2f}</td>
-                            <td style="text-align: right; width: 20%;">INR {total_for_guests:,.2f}</td>
+                            <td><strong>{html.escape(pkg.title)}</strong></td>
+                            <td style="text-align: center;">{enquiry.travellers}</td>
+                            <td style="text-align: right;">₹ {quoted_price:,.2f}</td>
+                            <td style="text-align: right;">₹ {total_for_guests:,.2f}</td>
                         </tr>
-                        <tr class="price-total-row">
-                            <td colspan="2" class="total-label">Total Professional Fee</td>
-                            <td colspan="2" class="total-amount">INR {total_for_guests:,.2f}</td>
-                        </tr>
-                    </table>
-                    <p style="font-size: 10px; color: #94a3b8; margin-top: 8px;">* Prices are inclusive of all applicable taxes. All rates are subject to availability at the time of booking.</p>
-                </div>
-
-                {f'''
-                <div class="section-title">Standard Terms</div>
-                <div class="inc-exc-container">
-                    <table class="inc-exc-table">
-                        <tr>
-                            {" ".join([f"""
-                            <td class="inc-exc-cell">
-                                <div class="inc-box">
-                                    <div class="inc-title">WHAT'S INCLUDED</div>
-                                    <ul class="inc-list">
-                                        {" ".join([f'<li>{i}</li>' for i in all_inclusions])}
-                                    </ul>
-                                </div>
-                            </td>
-                            """ if all_inclusions else "",
-                            f"""
-                            <td class="inc-exc-cell">
-                                <div class="exc-box">
-                                    <div class="exc-title">WHAT'S NOT INCLUDED</div>
-                                    <ul class="inc-list">
-                                        {" ".join([f'<li>{e}</li>' for e in all_exclusions])}
-                                    </ul>
-                                </div>
-                            </td>
-                            """ if all_exclusions else ""])}
+                        <tr class="total-row">
+                            <td colspan="2" style="font-size: 11px; font-weight: bold; color: #1e3a5f; text-align: right;">Total Amount</td>
+                            <td colspan="2" class="total-value">₹ {total_for_guests:,.2f}</td>
                         </tr>
                     </table>
                 </div>
-                ''' if all_inclusions or all_exclusions else ""}
             </div>
             """
 
-        html += f"""
-            <div class="footer-container">
-                <div class="footer-contact">Ready to explore? Contact us today!</div>
-                <div class="footer-text">
-                    For bookings and inquiries, please reach out to us at <strong>{agent_profile.phone or ''}</strong> 
-                    or email <strong>{agent_profile.user.email}</strong>.<br/>
-                    This quote is valid for 7 days. Availability of packages is subject to change.
-                </div>
-                <div class="footer-text">
-                    &copy; 2026 {agency_name}. All rights reserved.
-                </div>
-                
-            </div>
-        </body>
-        </html>
-        """
-        return html
+        html_content += "</body></html>"
+        return html_content
 
 pdf_service = PDFService()

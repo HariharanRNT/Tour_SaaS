@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
 import { sanitizeText } from '@/lib/sanitize'
 import { format } from 'date-fns'
-import { Loader2, MapPin, Calendar as CalendarIcon, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon } from 'lucide-react'
+import { Loader2, MapPin, Calendar as CalendarIcon, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon, Mail } from 'lucide-react'
 import { getValidImageUrl } from '@/lib/utils/image'
 import { calculateRefundAmount, getFareTypeLabel } from '@/utils/cancellationUtils'
 import { TripCart } from '@/components/itinerary/trip-cart'
@@ -44,6 +44,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { ShareEmailModal } from '@/components/itinerary/ShareEmailModal'
 
 interface Activity {
     id?: string
@@ -171,6 +172,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     // GST Settings State
     const [gstSettings, setGstSettings] = useState<{ inclusive: boolean, percentage: number } | null>(null)
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
     // Itinerary Theme State
 
@@ -957,28 +959,31 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
 
                         {/* Itinerary Tabs - Clean & Modern */}
-                        <section>
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <section className="space-y-6">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="h-8 w-1 rounded-full" style={{ backgroundColor: '#3b82f6', backgroundImage: 'linear-gradient(to bottom, #3b82f6, #4f46e5)' }}></div>
                                     <h2 className="text-3xl font-bold text-[var(--color-primary-font)]">Day-by-Day Journey</h2>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    className="rounded-full border-[var(--color-primary-font)]/10 hover:bg-[var(--color-primary-font)]/5 text-[var(--color-primary-font)] gap-2 shadow-sm font-semibold"
-                                    onClick={() => {
-                                        // The original package ID is used for generating the PDF
-                                        // Handling both TripSession (has package_id) and Package modes (has id)
-                                        const pkgId = session?.package_id || session?.id || packageId;
-                                        if (pkgId) {
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        onClick={() => {
+                                            const pkgId = session?.package_id || session?.id || packageId;
                                             window.open(`${API_URL}/api/v1/packages/${pkgId}/itinerary-pdf`, '_blank');
-                                        } else {
-                                            alert("Could not locate the package ID required for the PDF.");
-                                        }
-                                    }}
-                                >
-                                    <Download className="h-4 w-4" /> Download PDF
-                                </Button>
+                                        }}
+                                        variant="outline"
+                                        className="h-11 rounded-xl bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-semibold gap-2 shadow-sm"
+                                    >
+                                        <Download className="h-4 w-4" /> Download PDF
+                                    </Button>
+                                    <Button
+                                        onClick={() => setIsShareModalOpen(true)}
+                                        variant="outline"
+                                        className="h-11 rounded-xl bg-white hover:bg-slate-50 border-slate-200 text-slate-700 font-semibold gap-2 shadow-sm"
+                                    >
+                                        <Mail className="h-4 w-4" /> Share via Email
+                                    </Button>
+                                </div>
                             </div>
 
                             <Tabs value={currentDay.toString()} onValueChange={(v) => setCurrentDay(parseInt(v))} className="w-full">
@@ -1422,7 +1427,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-[var(--color-primary-font)]">
                             {(session.booking_type || '').toUpperCase() === 'ENQUIRY' ? (
-                                session.price_label || 'Request for enquiry'
+                                session.price_label || ''
                             ) : (
                                 `₹${(() => {
                                     const totalTravelers = travelers.adults + travelers.children + (travelers.infants || 0)
@@ -1670,6 +1675,13 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                     </div>
                 </DialogContent>
             </Dialog>
+            <ShareEmailModal 
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                packageName={session.title || session.destination}
+                packageId={session.matched_package_id || session.id || packageId}
+                agentId={session.created_by}
+            />
         </div>
     )
 }

@@ -130,6 +130,7 @@ class PackageBase(BaseModel):
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
+    created_by: Optional[UUID] = None
     # Cancellation Policy
     cancellation_enabled: bool = False
     cancellation_rules: List[CancellationRule] = []
@@ -398,6 +399,7 @@ class PackageResponse(PackageBase):
                 'flight_cabin_class': getattr(obj, 'flight_cabin_class', 'ECONOMY'),
                 'flight_price_included': getattr(obj, 'flight_price_included', False),
                 'flight_baggage_note': getattr(obj, 'flight_baggage_note', None),
+                'created_by': getattr(obj, 'created_by', None),
                 'cancellation_enabled': getattr(obj, 'cancellation_enabled', False),
                 'cancellation_rules': getattr(obj, 'cancellation_rules', []) or [],
                 # Dual Booking

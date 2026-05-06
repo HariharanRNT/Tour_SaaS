@@ -71,6 +71,11 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
     const [generatedQuote, setGeneratedQuote] = useState<any>(null)
     const [isGenerating, setIsGenerating] = useState(false)
     const [isSending, setIsSending] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
     
     const [emailDraft, setEmailDraft] = useState({
         subject: `Travel Quote for your Trip - ${enquiry?.customer_name}`,
@@ -253,8 +258,9 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
     }
 
     const filteredPackages = availablePackages.filter(p => {
-        // If it's a package-based enquiry, ONLY show that specific package
-        if (enquiry?.package_id) {
+        // If it's a package-based enquiry AND we have AI filters active, focus on that package by default
+        // This preserves the "locked" experience initially but allows "Show All" or searching to override it.
+        if (enquiry?.package_id && aiData && !searchQuery.trim()) {
             return p.id === enquiry.package_id
         }
 
@@ -331,6 +337,8 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
             }
         }
     }, [aiData, hasFiltersApplied])
+
+    if (!isMounted) return null
 
     return (
         <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -571,6 +579,7 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                                                     packageName: p.title,
                                                                     quotedPrice: p.price_per_person,
                                                                     isCustomPrice: false,
+                                                                    _pkg: p // preserve reference for customization
                                                                 }))
                                                             setSelectedPackages(prev => [...prev, ...toAdd])
                                                         }
@@ -674,15 +683,15 @@ export function QuoteBuilderDrawer({ isOpen, onClose, enquiry }: QuoteBuilderDra
                                             <div key={p.packageId} className="flex flex-col md:flex-row items-center gap-6 p-6 bg-slate-50 rounded-[32px] border border-slate-100">
                                                 <div className="h-20 w-32 rounded-2xl overflow-hidden shadow-sm">
                                                     <img 
-                                                        src={resolveImageUrl(p._pkg.feature_image_url)} 
+                                                        src={resolveImageUrl(p._pkg?.feature_image_url)} 
                                                         className="w-full h-full object-cover" 
                                                     />
                                                 </div>
                                                 <div className="flex-1">
                                                     <h4 className="font-bold text-lg">{p.packageName}</h4>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <p className="text-slate-500 text-sm font-bold">Original: INR {p._pkg.price_per_person.toLocaleString()}</p>
-                                                        {p._pkg.booking_type === 'INSTANT' && (
+                                                        <p className="text-slate-500 text-sm font-bold">Original: INR {p._pkg?.price_per_person?.toLocaleString() || '0'}</p>
+                                                        {p._pkg?.booking_type === 'INSTANT' && (
                                                             <Badge variant="outline" className="bg-white text-[10px] uppercase font-bold py-0.5 border-slate-200">Instant</Badge>
                                                         )}
                                                     </div>

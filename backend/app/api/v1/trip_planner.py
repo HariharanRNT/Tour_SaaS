@@ -789,6 +789,7 @@ async def get_trip_session(
         "destinations": parse_json_field(row[25]),
         "country": row[26],
         "category": row[27],
+        "created_by": str(row[28]) if row[28] else None,
         "homepage_settings": agent_settings
     }
 

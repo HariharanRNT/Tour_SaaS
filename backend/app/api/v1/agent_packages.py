@@ -71,58 +71,69 @@ async def list_agent_packages(
     current_agent: User = Depends(get_current_agent)
 ):
     """List packages owned by current agent with pagination"""
-    # Calculate skip
-    skip = (page - 1) * limit
-    
-    # Base query
-    stmt = select(Package).where(Package.created_by == current_agent.agent_id)
-    
-    if status_filter and status_filter != 'all':
-        try:
-            stmt = stmt.where(Package.status == PackageStatus(status_filter.upper()))
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid status filter: '{status_filter}'. Valid values are: draft, published, archived")
-    
-    if destination and destination != 'all':
-        from sqlalchemy import or_
-        stmt = stmt.where(
-            or_(
-                Package.destination.ilike(f"%{destination}%"),
-                Package.title.ilike(f"%{destination}%")
+    try:
+        # Calculate skip
+        skip = (page - 1) * limit
+        
+        # Use resolved agent ID to handle both main agents and sub-users
+        # getattr is used for extra safety in case of dynamic attributes
+        owner_id = getattr(current_agent, 'agent_id', None) or current_agent.id
+        stmt = select(Package).where(Package.created_by == owner_id)
+        
+        if status_filter and status_filter != 'all':
+            try:
+                stmt = stmt.where(Package.status == PackageStatus(status_filter.upper()))
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid status filter: '{status_filter}'. Valid values are: draft, published, archived")
+        
+        if destination and destination != 'all':
+            from sqlalchemy import or_
+            stmt = stmt.where(
+                or_(
+                    Package.destination.ilike(f"%{destination}%"),
+                    Package.title.ilike(f"%{destination}%")
+                )
             )
+            
+        # Get total count first
+        from sqlalchemy import func
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total_result = await db.execute(count_stmt)
+        total = total_result.scalar() or 0
+        
+        # Apply sorting
+        if sort_order == "desc":
+            order_column = getattr(Package, sort_by).desc()
+        else:
+            order_column = getattr(Package, sort_by).asc()
+            
+        # Eager load relationships for list view too, or maybe just images
+        from sqlalchemy.orm import selectinload
+        stmt = stmt.options(
+            selectinload(Package.images),
+            selectinload(Package.itinerary_items),
+            selectinload(Package.availability),
+            selectinload(Package.trip_styles),
+            selectinload(Package.activity_tags)
+        ).order_by(order_column).offset(skip).limit(limit)
+        
+        result = await db.execute(stmt)
+        packages = result.scalars().all()
+        
+        return PaginatedPackageResponse(
+            items=packages,
+            total=total,
+            page=page,
+            limit=limit
         )
-        
-    # Get total count first
-    from sqlalchemy import func
-    count_stmt = select(func.count()).select_from(stmt.subquery())
-    total_result = await db.execute(count_stmt)
-    total = total_result.scalar() or 0
-    
-    # Apply sorting
-    if sort_order == "desc":
-        order_column = getattr(Package, sort_by).desc()
-    else:
-        order_column = getattr(Package, sort_by).asc()
-        
-    # Eager load relationships for list view too, or maybe just images
-    from sqlalchemy.orm import selectinload
-    stmt = stmt.options(
-        selectinload(Package.images),
-        selectinload(Package.itinerary_items),
-        selectinload(Package.availability),
-        selectinload(Package.trip_styles),
-        selectinload(Package.activity_tags)
-    ).order_by(order_column).offset(skip).limit(limit)
-    
-    result = await db.execute(stmt)
-    packages = result.scalars().all()
-    
-    return PaginatedPackageResponse(
-        items=packages,
-        total=total,
-        page=page,
-        limit=limit
-    )
+    except Exception as e:
+        import logging
+        import traceback
+        logging.getLogger(__name__).error(f"Error in list_agent_packages: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error while fetching packages: {str(e)}"
+        )
 
 
 @router.post("/packages", response_model=PackageResponse, status_code=status.HTTP_201_CREATED)
@@ -137,13 +148,14 @@ async def create_agent_package(
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"Creating package for agent {current_agent.agent_id}: {package_data.dict()}")
+        owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
+        logger.info(f"Creating package for agent {owner_id}: {package_data.dict()}")
         
         # Check for existing package with same title for this agent (case-insensitive)
         from sqlalchemy import func
         stmt = select(Package).where(
             func.lower(Package.title) == func.lower(package_data.title),
-            Package.created_by == current_agent.agent_id
+            Package.created_by == owner_id
         )
         result = await db.execute(stmt)
         if result.scalar_one_or_none():
@@ -205,7 +217,7 @@ async def create_agent_package(
             is_public=package_data.is_public,
             status=PackageStatus.DRAFT,
             is_template=False,
-            created_by=current_agent.agent_id,  # Assign to the parent agent/agency
+            created_by=owner_id,  # Assign to the parent agent/agency
             feature_image_url=package_data.feature_image_url,
             package_mode=package_data.package_mode,
             destinations=json.dumps(package_data.destinations) if package_data.destinations else "[]",
@@ -294,7 +306,7 @@ async def get_agent_package(
     current_agent: User = Depends(get_current_agent)
 ):
     """Get package details if owned by agent"""
-    from sqlalchemy.orm import selectinload
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(Package).options(
         selectinload(Package.itinerary_items),
         selectinload(Package.images),
@@ -303,7 +315,7 @@ async def get_agent_package(
         selectinload(Package.activity_tags)
     ).where(
         Package.id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -325,9 +337,10 @@ async def update_agent_package(
     current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Update package details if owned by agent"""
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -343,7 +356,7 @@ async def update_agent_package(
         from sqlalchemy import func
         stmt = select(Package).where(
             func.lower(Package.title) == func.lower(package_data.title),
-            Package.created_by == current_agent.agent_id,
+            Package.created_by == owner_id,
             Package.id != package_id
         )
         result = await db.execute(stmt)
@@ -476,9 +489,10 @@ async def delete_agent_package(
     current_agent: User = Depends(check_permission("packages", "full"))
 ):
     """Delete a package if owned by agent"""
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -551,9 +565,10 @@ async def toggle_agent_package_status(
     current_agent: User = Depends(check_permission("packages", "edit"))
 ):
     """Toggle package publish status if owned by agent"""
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     package = result.scalar_one_or_none()
@@ -596,9 +611,10 @@ async def add_agent_itinerary_item(
 ):
     """Add an activity to package itinerary"""
     # Verify ownership
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(Package).where(
         Package.id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
@@ -645,10 +661,11 @@ async def update_agent_itinerary_item(
     # Verify ownership implicitly via join or check package first.
     # We'll check the item directly but ensure package belongs to agent
     
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(ItineraryItem).join(Package).where(
         ItineraryItem.id == item_id,
         ItineraryItem.package_id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     item = result.scalar_one_or_none()
@@ -692,10 +709,11 @@ async def delete_agent_itinerary_item(
 ):
     """Delete an itinerary item"""
     # Verify ownership
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
     stmt = select(ItineraryItem).join(Package).where(
         ItineraryItem.id == item_id,
         ItineraryItem.package_id == package_id,
-        Package.created_by == current_agent.agent_id
+        Package.created_by == owner_id
     )
     result = await db.execute(stmt)
     if not result.scalar_one_or_none():
@@ -724,7 +742,8 @@ async def reorder_agent_itinerary_items(
 ):
     """Reorder itinerary items"""
     # Verify package ownership
-    stmt = select(Package).where(Package.id == package_id, Package.created_by == current_agent.agent_id)
+    owner_id = current_agent.agent_id if current_agent.agent_id else current_agent.id
+    stmt = select(Package).where(Package.id == package_id, Package.created_by == owner_id)
     if not (await db.execute(stmt)).scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Package not found")
 

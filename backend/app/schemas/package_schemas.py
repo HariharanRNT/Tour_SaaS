@@ -63,6 +63,7 @@ class PackageWithItineraryResponse(BaseModel):
     flight_cabin_class: str = "ECONOMY"
     flight_price_included: bool = False
     flight_baggage_note: Optional[str] = None
+    created_by: Optional[UUID] = None
     
     itinerary_by_day: List[PackageDayItinerary]
     

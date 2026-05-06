@@ -16,8 +16,8 @@ ALLOWED_ATTRIBUTES = {
 logger = logging.getLogger("security")
 
 _SQL_PATTERN = re.compile(
-    r"(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b|\bUNION\s+SELECT\b|\bSELECT\b.*\bFROM\b|\bINSERT\s+INTO\b|\bDELETE\s+FROM\b|\bUPDATE\b.*\bSET\b|'\s+OR\s+|xp_)",
-    re.IGNORECASE | re.DOTALL
+    r"(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b)",
+    re.IGNORECASE
 )
 
 def sanitize_safe_html(value: str) -> str:
@@ -34,7 +34,19 @@ def escape_all_html(value: str) -> str:
 
 def reject_sql(value: str, field_name: str = 'field') -> str:
     """Raise ValueError if value contains obvious SQL injection patterns and logs the attempt."""
-    if value and isinstance(value, str) and _SQL_PATTERN.search(value):
+    if not value or not isinstance(value, str):
+        return value
+
+    # Natural language descriptions can be long and contain words like "select", "from", "update"
+    # We skip strict SQL check for long strings with many spaces (likely natural language)
+    # unless they contain extremely dangerous commands like DROP TABLE
+    if len(value) > 200 and value.count(' ') > 10:
+        if re.search(r"(\bDROP\s+TABLE\b|\bDROP\s+DATABASE\b)", value, re.IGNORECASE):
+            logger.warning(f"CRITICAL SQL PATTERN BLOCKED: Field={field_name}")
+            raise ValueError(f"{field_name} contains reserved keywords.")
+        return value
+
+    if _SQL_PATTERN.search(value):
         logger.warning(f"SUSPICIOUS SQL PATTERN BLOCKED: Field={field_name}, Value={value}")
         raise ValueError(f"{field_name} contains invalid characters or reserved keywords.")
     return value

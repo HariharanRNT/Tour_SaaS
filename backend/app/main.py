@@ -92,19 +92,27 @@ app.add_middleware(RequestSanitizationMiddleware)
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
+    
+    # Allow frame embedding for previews (crucial for PDF viewing)
+    # Modern browsers prefer frame-ancestors in CSP
+    cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")] if settings.CORS_ORIGINS else ["*"]
+    frame_ancestors = " ".join(cors_origins) if "*" not in cors_origins else "*"
+    
     # Refined CSP: allow images from S3 and other trusted sources
+    # Added frame-ancestors to allow embedding in frontend app
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https: blob:; "
         "connect-src 'self' https:; "
-        "frame-src 'self' https://api.razorpay.com https://tdr.razorpay.com; "
-        "object-src 'none'; "
+        "frame-src 'self' blob: data: https://api.razorpay.com https://tdr.razorpay.com; "
+        f"frame-ancestors 'self' {frame_ancestors}; "
+        "object-src 'self'; "
         "base-uri 'self';"
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
