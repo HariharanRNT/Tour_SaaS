@@ -8,7 +8,7 @@ import { bookingsAPI, agentAPI, paymentsAPI } from '@/lib/api'
 import { useTheme } from '@/context/ThemeContext'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
-import { sanitizeHtml } from '@/lib/sanitize'
+import { sanitizeHTML } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -1098,7 +1098,7 @@ export default function BookingDetailsPage() {
                                     <p 
                                         className="text-[#6B7280] leading-relaxed text-[12px] px-1"
                                         dangerouslySetInnerHTML={{ 
-                                            __html: sanitizeHtml(cancelPreview.message
+                                            __html: sanitizeHTML(cancelPreview.message
                                                 .replace(/(₹[\d,]+\.?\d*)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
                                                 .replace(/(\d+%\s*refund)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
                                                 .replace(/(\d+\s*day\(s\))/g, '<span class="text-[#F97316] font-bold">$1</span>'))

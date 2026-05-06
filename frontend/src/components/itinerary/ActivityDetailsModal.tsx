@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { Clock, MapPin, Star, Users, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { sanitizeHtml } from '@/lib/sanitize'
+import { sanitizeHTML } from '@/lib/sanitize'
 import SafeHTML from '@/components/SafeHTML'
 
 interface ActivityDetailsModalProps {
