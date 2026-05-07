@@ -148,7 +148,6 @@ async def get_popular_destinations(
         query = query.where(Package.created_by == agent_subquery)
 
     # Order by most recently updated so we pick the best image per destination
-    from sqlalchemy.orm import selectinload
     query = query.options(selectinload(Package.images)).order_by(Package.updated_at.desc().nullslast(), Package.created_at.desc())
 
     result = await db.execute(query)
@@ -287,7 +286,6 @@ async def list_packages(
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
-    from sqlalchemy.orm import selectinload
     query = select(Package).options(selectinload(Package.dest_metadata)).where(Package.status == status)
 
     # Restrict packages based on Domain Context

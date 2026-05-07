@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from typing import List
 from uuid import UUID
 import uuid
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 
 from app.database import get_db
 from app.api.deps import get_current_active_user, get_current_active_superuser, check_permission
@@ -32,7 +33,6 @@ async def list_plans(
     plans = result.scalars().all()
 
     # Calculate Most Popular Plan
-    from sqlalchemy import func
     stmt = select(Subscription.plan_id, func.count(Subscription.id)).group_by(Subscription.plan_id).order_by(func.count(Subscription.id).desc()).limit(1)
     popularity_result = await db.execute(stmt)
     most_popular_plan = popularity_result.first()
@@ -199,8 +199,6 @@ async def list_all_subscriptions(
     current_user: User = Depends(get_current_active_superuser),
 ):
     """List all user subscriptions (Admin only)"""
-    from sqlalchemy.orm import selectinload
-    from datetime import datetime, timezone
     
     stmt = select(Subscription).options(
         selectinload(Subscription.plan),
@@ -240,9 +238,7 @@ async def update_subscription_status(
     current_user: User = Depends(get_current_active_superuser),
 ):
     """Update a subscription status (Admin only)"""
-    from sqlalchemy.orm import selectinload
     from app.services.subscription_service import SubscriptionService
-    from datetime import datetime, timezone
     
     stmt = select(Subscription).where(Subscription.id == subscription_id).options(
         selectinload(Subscription.plan),
@@ -291,7 +287,6 @@ async def get_my_subscription(
     current_user: User = Depends(get_current_active_user),
 ):
     """Get current user's subscription history (resolves parent agent for sub-users)"""
-    from sqlalchemy.orm import selectinload
     stmt = select(Subscription).where(
         Subscription.user_id == current_user.agent_id_resolved
     ).options(selectinload(Subscription.plan)).order_by(Subscription.created_at.desc())
@@ -313,8 +308,6 @@ async def check_subscription_expiry(
     3. Returns new state so frontend can show correct UI without a full reload.
     """
     from app.services.subscription_service import SubscriptionService
-    from sqlalchemy.orm import selectinload
-    from datetime import datetime, timezone
 
     now_utc = datetime.now(timezone.utc)
 
@@ -436,7 +429,6 @@ async def upgrade_subscription(
     await db.refresh(new_sub)
     
     # Re-fetch with relationship
-    from sqlalchemy.orm import selectinload
     stmt = select(Subscription).where(Subscription.id == new_sub.id).options(selectinload(Subscription.plan))
     result = await db.execute(stmt)
     return result.scalar_one()
@@ -589,7 +581,6 @@ async def verify_subscription_payment(
     logger.info(f"Verifying payment: sub_id={verification_data.razorpay_subscription_id}, order_id={verification_data.razorpay_order_id}, payment_id={verification_data.razorpay_payment_id}")
 
     # Fetch Subscription first to get stored Razorpay IDs
-    from sqlalchemy.orm import selectinload
     stmt = select(Subscription).where(Subscription.id == verification_data.subscription_id).options(selectinload(Subscription.plan))
     result = await db.execute(stmt)
     sub = result.scalar_one_or_none()
@@ -750,7 +741,6 @@ async def request_subscription_cancellation(
     This does NOT cancel the subscription immediately.
     It notifies all admins via email and in-portal notifications.
     """
-    from sqlalchemy.orm import selectinload
     
     # 1. Verify subscription exists and belongs to user
     stmt = select(Subscription).where(

@@ -7,6 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Sunrise, Sunset, Sun, Moon, Plus, Clock, MapPin, X, ChevronRight, Image as ImageIcon, Calendar } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import SafeHTML from '@/components/SafeHTML'
 
 // Define types locally if they aren't matching or import and adapt
 // We will adapt to what page.tsx is sending
@@ -516,9 +517,10 @@ export function DayPlanner({
                                             <div className="h-8 w-1.5 bg-[var(--primary)] rounded-full"></div>
                                             About this activity
                                         </h3>
-                                        <div className="text-black leading-relaxed text-lg whitespace-pre-wrap font-medium break-anywhere">
-                                            {selectedActivity.description}
-                                        </div>
+                                        <SafeHTML
+                                            className="text-black leading-relaxed text-lg font-medium break-anywhere"
+                                            html={selectedActivity.description}
+                                        />
                                     </div>
 
                                     <div className="mt-8 pt-8 border-t border-[var(--primary)]/10 flex justify-end">

@@ -769,14 +769,17 @@ class PackageBase(BaseModel):
     gst_percentage: Optional[Decimal] = None
     gst_mode: Optional[str] = None
 
-    @field_validator('title', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @field_validator('title', 'destination', 'country', 'trip_style', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
-    def sanitize_package_text(cls, v):
+    def sanitize_package_text(cls, v, info):
         """B-01/B-02/B-08: Strip XSS, reject SQLi. Empty strings allowed for legacy read compatibility."""
-        if v is None or not isinstance(v, str):
-            return v
-        v = strip_xss(v)
-        reject_sql(v, 'field')
+        if v is None: return v
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
         return v.strip()
 
     @field_validator('description', mode='before')
@@ -787,6 +790,49 @@ class PackageBase(BaseModel):
         from app.utils.security_utils import sanitize_text
         v = sanitize_text(v, allow_html=True, field_name='description')
         return v.strip()
+
+    @field_validator('included_items', 'excluded_items', 'flight_origin_cities', 'activities', mode='before')
+    @classmethod
+    def sanitize_lists(cls, v):
+        if not isinstance(v, list): return v
+        from app.utils.security_utils import sanitize_text
+        return [sanitize_text(str(item), allow_html=False) for item in v]
+
+    @field_validator('inclusions', 'exclusions', mode='before')
+    @classmethod
+    def sanitize_dicts(cls, v):
+        if not isinstance(v, dict): return v
+        from app.utils.security_utils import sanitize_text
+        sanitized = {}
+        for key, val in v.items():
+            if isinstance(val, dict):
+                new_val = dict(val)
+                if 'details' in new_val and isinstance(new_val['details'], str):
+                    new_val['details'] = sanitize_text(new_val['details'], allow_html=False)
+                sanitized[key] = new_val
+            else:
+                sanitized[key] = val
+        return sanitized
+
+    @field_validator('destinations', 'custom_services', mode='before')
+    @classmethod
+    def sanitize_complex_lists(cls, v, info):
+        if not isinstance(v, list): return v
+        from app.utils.security_utils import sanitize_text
+        sanitized = []
+        for item in v:
+            if isinstance(item, dict):
+                new_item = dict(item)
+                # For destinations: city, country
+                # For custom_services: heading, description
+                fields_to_sanitize = ['city', 'country', 'heading', 'description']
+                for field in fields_to_sanitize:
+                    if field in new_item and isinstance(new_item[field], str):
+                        new_item[field] = sanitize_text(new_item[field], allow_html=False)
+                sanitized.append(new_item)
+            else:
+                sanitized.append(item)
+        return sanitized
 
 
 class PackageCreate(PackageBase):
@@ -843,18 +889,60 @@ class PackageUpdate(BaseModel):
     gst_percentage: Optional[Decimal] = None
     gst_mode: Optional[str] = None
 
-    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', mode='before')
+    @field_validator('title', 'description', 'destination', 'country', 'trip_style', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
-    def sanitize_update_text(cls, v):
-        if v is None or not isinstance(v, str):
-            return v
-        v = strip_xss(v)
-        reject_sql(v, 'field')
-        # Update fields can be empty if they were meant to be cleared, 
-        # but usually we want at least 1 char if provided.
-        if v is not None and not v.strip():
-             return None # Or allow? For now, if provided, must be valid.
+    def sanitize_update_text(cls, v, info):
+        if v is None: return v
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
         return v.strip()
+
+    @field_validator('included_items', 'excluded_items', 'flight_origin_cities', 'activities', mode='before')
+    @classmethod
+    def sanitize_update_lists(cls, v):
+        if v is None: return v
+        if not isinstance(v, list): return v
+        from app.utils.security_utils import sanitize_text
+        return [sanitize_text(str(item), allow_html=False) for item in v]
+
+    @field_validator('inclusions', 'exclusions', mode='before')
+    @classmethod
+    def sanitize_update_dicts(cls, v):
+        if v is None: return v
+        if not isinstance(v, dict): return v
+        from app.utils.security_utils import sanitize_text
+        sanitized = {}
+        for key, val in v.items():
+            if isinstance(val, dict):
+                new_val = dict(val)
+                if 'details' in new_val and isinstance(new_val['details'], str):
+                    new_val['details'] = sanitize_text(new_val['details'], allow_html=False)
+                sanitized[key] = new_val
+            else:
+                sanitized[key] = val
+        return sanitized
+
+    @field_validator('destinations', 'custom_services', mode='before')
+    @classmethod
+    def sanitize_update_complex_lists(cls, v):
+        if v is None: return v
+        if not isinstance(v, list): return v
+        from app.utils.security_utils import sanitize_text
+        sanitized = []
+        for item in v:
+            if isinstance(item, dict):
+                new_item = dict(item)
+                for field in ['city', 'country', 'heading', 'description']:
+                    if field in new_item and isinstance(new_item[field], str):
+                        new_item[field] = sanitize_text(new_item[field], allow_html=False)
+                sanitized.append(new_item)
+            else:
+                sanitized.append(item)
+        return sanitized
 
 
 class PackageResponse(PackageBase):
@@ -1084,13 +1172,15 @@ class EnquiryBase(BaseModel):
     travellers: int = Field(..., ge=1)
     message: Optional[str] = Field(None, max_length=500)
 
-    @field_validator('customer_name', 'message', mode='before')
+    @field_validator('customer_name', 'email', 'phone', 'message', mode='before')
     @classmethod
-    def sanitize_enquiry_text(cls, v):
+    def sanitize_enquiry_text(cls, v, info):
         if v is None or not isinstance(v, str):
             return v
-        v = strip_xss(v)
-        reject_sql(v, 'field')
+        # All enquiry fields should be plain text
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, info.field_name)
         return v.strip()
 
 
@@ -1238,12 +1328,13 @@ class ActivityUpdate(BaseModel):
 
     @field_validator('title', 'location', mode='before')
     @classmethod
-    def sanitize_activity_text(cls, v):
+    def sanitize_activity_text(cls, v, info):
         if not isinstance(v, str):
             return v
-        v = strip_xss(v).strip()
-        reject_sql(v, 'field')
-        return v
+        from app.utils.security_utils import sanitize_text
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, info.field_name)
+        return v.strip()
 
     @field_validator('description', mode='before')
     @classmethod
@@ -1253,6 +1344,13 @@ class ActivityUpdate(BaseModel):
         from app.utils.security_utils import sanitize_text
         v = sanitize_text(v, allow_html=True, field_name='description')
         return v.strip()
+
+    @field_validator('activities', 'meals_included', mode='before')
+    @classmethod
+    def sanitize_activity_lists(cls, v):
+        if not isinstance(v, list): return v
+        from app.utils.security_utils import sanitize_text
+        return [sanitize_text(str(item), allow_html=False) for item in v]
 
 class DayScheduleUpdate(BaseModel):
     day_number: int

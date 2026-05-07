@@ -80,6 +80,15 @@ class CustomService(BaseModel):
     isIncluded: bool = True
     visibleToCustomer: bool = True
 
+    @field_validator('heading', 'description', mode='before')
+    @classmethod
+    def sanitize_custom_service(cls, v, info):
+        if not isinstance(v, str): return v
+        # Strip all HTML from custom service fields
+        v = sanitize_text(v, allow_html=False)
+        reject_sql(v, info.field_name)
+        return v
+
 
 class PackageBase(BaseModel):
     title: str = Field(..., max_length=100)
@@ -104,15 +113,54 @@ class PackageBase(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
 
-    @field_validator('description', 'destination', 'country', mode='before')
+    @field_validator('description', 'destination', 'country', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
     def sanitize_string_fields(cls, v, info):
+        if v is None: return v
         if not isinstance(v, str): return v
         # Allow HTML for description
         allow_html = info.field_name == 'description'
         v = sanitize_text(v, allow_html=allow_html)
         reject_sql(v, info.field_name)
         return v
+
+    @field_validator('included_items', 'excluded_items', 'flight_origin_cities', 'activities', mode='before')
+    @classmethod
+    def sanitize_lists(cls, v):
+        if not isinstance(v, list): return v
+        return [sanitize_text(str(item), allow_html=False) for item in v]
+
+    @field_validator('inclusions', 'exclusions', mode='before')
+    @classmethod
+    def sanitize_dicts(cls, v):
+        if not isinstance(v, dict): return v
+        sanitized = {}
+        for key, val in v.items():
+            if isinstance(val, dict):
+                # Standard inclusions/exclusions have a 'details' field
+                new_val = dict(val)
+                if 'details' in new_val and isinstance(new_val['details'], str):
+                    new_val['details'] = sanitize_text(new_val['details'], allow_html=False)
+                sanitized[key] = new_val
+            else:
+                sanitized[key] = val
+        return sanitized
+
+    @field_validator('destinations', mode='before')
+    @classmethod
+    def sanitize_destinations(cls, v):
+        if not isinstance(v, list): return v
+        sanitized = []
+        for d in v:
+            if isinstance(d, dict):
+                new_d = dict(d)
+                for field in ('city', 'country'):
+                    if field in new_d and isinstance(new_d[field], str):
+                        new_d[field] = sanitize_text(new_d[field], allow_html=False)
+                sanitized.append(new_d)
+            else:
+                sanitized.append(d)
+        return sanitized
     is_public: bool = True
     included_items: List[str] = []
     excluded_items: List[str] = []
@@ -179,15 +227,56 @@ class PackageUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     country: Optional[str] = None
 
-    @field_validator('description', 'destination', 'country', mode='before')
+    @field_validator('description', 'destination', 'country', 'flight_baggage_note', 'price_label', mode='before')
     @classmethod
     def sanitize_update_fields(cls, v, info):
+        if v is None: return v
         if not isinstance(v, str): return v
         # Allow HTML for description
         allow_html = info.field_name == 'description'
         v = sanitize_text(v, allow_html=allow_html)
         reject_sql(v, info.field_name)
         return v
+
+    @field_validator('included_items', 'excluded_items', 'flight_origin_cities', 'activities', mode='before')
+    @classmethod
+    def sanitize_update_lists(cls, v):
+        if v is None: return v
+        if not isinstance(v, list): return v
+        return [sanitize_text(str(item), allow_html=False) for item in v]
+
+    @field_validator('inclusions', 'exclusions', mode='before')
+    @classmethod
+    def sanitize_update_dicts(cls, v):
+        if v is None: return v
+        if not isinstance(v, dict): return v
+        sanitized = {}
+        for key, val in v.items():
+            if isinstance(val, dict):
+                new_val = dict(val)
+                if 'details' in new_val and isinstance(new_val['details'], str):
+                    new_val['details'] = sanitize_text(new_val['details'], allow_html=False)
+                sanitized[key] = new_val
+            else:
+                sanitized[key] = val
+        return sanitized
+
+    @field_validator('destinations', mode='before')
+    @classmethod
+    def sanitize_update_destinations(cls, v):
+        if v is None: return v
+        if not isinstance(v, list): return v
+        sanitized = []
+        for d in v:
+            if isinstance(d, dict):
+                new_d = dict(d)
+                for field in ('city', 'country'):
+                    if field in new_d and isinstance(new_d[field], str):
+                        new_d[field] = sanitize_text(new_d[field], allow_html=False)
+                sanitized.append(new_d)
+            else:
+                sanitized.append(d)
+        return sanitized
     is_public: Optional[bool] = None
     included_items: Optional[List[str]] = None
     excluded_items: Optional[List[str]] = None
@@ -286,6 +375,17 @@ class ItineraryItemUpdate(BaseModel):
     day_number: Optional[int] = None
     title: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = Field(None, max_length=1000)
+
+    @field_validator('title', 'description', mode='before')
+    @classmethod
+    def sanitize_itinerary_update_fields(cls, v, info):
+        if v is None: return v
+        if not isinstance(v, str): return v
+        # Allow HTML for description
+        allow_html = info.field_name == 'description'
+        v = sanitize_text(v, allow_html=allow_html)
+        reject_sql(v, info.field_name)
+        return v
     time_slot: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None

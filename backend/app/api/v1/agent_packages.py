@@ -19,7 +19,9 @@ from app.schemas.packages import (
 from app.schemas.packages import PackageImageResponse
 from app.api.deps import get_current_agent, check_permission
 from app.services.cancellation_service import validate_and_sort_rules
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func, or_, text
+from sqlalchemy.orm import selectinload
+import uuid
 from fastapi import File, UploadFile
 import json
 from fastapi_cache.decorator import cache
@@ -87,7 +89,6 @@ async def list_agent_packages(
                 raise HTTPException(status_code=400, detail=f"Invalid status filter: '{status_filter}'. Valid values are: draft, published, archived")
         
         if destination and destination != 'all':
-            from sqlalchemy import or_
             stmt = stmt.where(
                 or_(
                     Package.destination.ilike(f"%{destination}%"),
@@ -96,7 +97,6 @@ async def list_agent_packages(
             )
             
         # Get total count first
-        from sqlalchemy import func
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await db.execute(count_stmt)
         total = total_result.scalar() or 0
@@ -108,7 +108,6 @@ async def list_agent_packages(
             order_column = getattr(Package, sort_by).asc()
             
         # Eager load relationships for list view too, or maybe just images
-        from sqlalchemy.orm import selectinload
         stmt = stmt.options(
             selectinload(Package.images),
             selectinload(Package.itinerary_items),
@@ -144,7 +143,6 @@ async def create_agent_package(
 ):
     """Create a new package for the agent"""
     import logging
-    import uuid
     logger = logging.getLogger(__name__)
     
     try:
@@ -152,7 +150,6 @@ async def create_agent_package(
         logger.info(f"Creating package for agent {owner_id}: {package_data.dict()}")
         
         # Check for existing package with same title for this agent (case-insensitive)
-        from sqlalchemy import func
         stmt = select(Package).where(
             func.lower(Package.title) == func.lower(package_data.title),
             Package.created_by == owner_id
@@ -273,7 +270,6 @@ async def create_agent_package(
         # No refresh needed, we know the ID and we want to load relations safely
         
         # Re-fetch with relationships to ensure valid response model
-        from sqlalchemy.orm import selectinload
         stmt = select(Package).options(
             selectinload(Package.itinerary_items),
             selectinload(Package.images),
@@ -353,7 +349,6 @@ async def update_agent_package(
         
     # Check for duplicate title if being updated
     if package_data.title and package_data.title != package.title:
-        from sqlalchemy import func
         stmt = select(Package).where(
             func.lower(Package.title) == func.lower(package_data.title),
             Package.created_by == owner_id,
@@ -468,7 +463,6 @@ async def update_agent_package(
     generate_package_pdf_task.delay(str(package_id))
     
     # Re-fetch with relationships to ensure valid response model
-    from sqlalchemy.orm import selectinload
     stmt = select(Package).options(
         selectinload(Package.itinerary_items),
         selectinload(Package.images),
@@ -529,7 +523,6 @@ async def delete_agent_package(
     # but the existing code deletes the sessions. We will stick to existing logic or safer set NULL.)
     # Existing logic: DELETE FROM trip_planning_sessions... 
     # Let's keep existing logic to avoid changing behavior, assuming sessions are ephemeral.
-    from sqlalchemy import text
     await db.execute(
         text("DELETE FROM trip_planning_sessions WHERE matched_package_id = :package_id"),
         {"package_id": str(package_id)}

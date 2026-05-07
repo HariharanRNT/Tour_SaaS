@@ -14,6 +14,7 @@ import { getValidImageUrl } from '@/lib/utils/image'
 import { API_URL, uploadFileToS3 } from '@/lib/api'
 import { compressImage } from '@/lib/image-upload-utils'
 import { cn } from '@/lib/utils'
+import { sanitizeText } from '@/lib/sanitize'
 import {
     DndContext,
     closestCenter,
@@ -720,8 +721,8 @@ export function ItineraryBuilder({ packageId, durationDays, onDurationChange, pa
 
             const body = {
                 day_number: currentDay,
-                title: newActivity.title,
-                description: newActivity.description,
+                title: sanitizeText(newActivity.title),
+                description: sanitizeText(newActivity.description),
                 image_url: validImages, // Send list directly to image_url
                 time_slot: selectedTimeSlot,
                 start_time: newActivity.start_time,

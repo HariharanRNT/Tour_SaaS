@@ -18,7 +18,7 @@ const SafeHTML: React.FC<SafeHTMLProps> = ({ html, className }) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html || '', 'text/html');
     
-    const ALLOWED_TAGS = ['B', 'I', 'EM', 'STRONG', 'P', 'BR', 'UL', 'OL', 'LI'];
+    const ALLOWED_TAGS = ['B', 'I', 'EM', 'STRONG', 'P', 'BR', 'UL', 'OL', 'LI', 'SPAN', 'DIV'];
 
     const renderNode = (node: Node, index: number): React.ReactNode => {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -36,28 +36,32 @@ const SafeHTML: React.FC<SafeHTMLProps> = ({ html, className }) => {
         }
         
         const children = Array.from(el.childNodes).map((child, i) => renderNode(child, i));
-        
         const key = `${tagName}-${index}`;
+        const className = el.className;
         
         switch (tagName) {
           case 'B': 
           case 'STRONG': 
-            return <strong key={key}>{children}</strong>;
+            return <strong key={key} className={className}>{children}</strong>;
           case 'I': 
           case 'EM': 
-            return <em key={key}>{children}</em>;
+            return <em key={key} className={className}>{children}</em>;
           case 'P': 
-            return <p key={key} className="mb-2">{children}</p>;
+            return <p key={key} className={className || "mb-2"}>{children}</p>;
           case 'BR': 
             return <br key={key} />;
           case 'UL': 
-            return <ul key={key} className="list-disc pl-5 mb-2">{children}</ul>;
+            return <ul key={key} className={className || "list-disc pl-5 mb-2"}>{children}</ul>;
           case 'OL': 
-            return <ol key={key} className="list-decimal pl-5 mb-2">{children}</ol>;
+            return <ol key={key} className={className || "list-decimal pl-5 mb-2"}>{children}</ol>;
           case 'LI': 
-            return <li key={key} className="mb-1">{children}</li>;
+            return <li key={key} className={className || "mb-1"}>{children}</li>;
+          case 'SPAN':
+            return <span key={key} className={className}>{children}</span>;
+          case 'DIV':
+            return <div key={key} className={className}>{children}</div>;
           default: 
-            return children;
+            return <span key={key} className={className}>{children}</span>;
         }
       }
       return null;

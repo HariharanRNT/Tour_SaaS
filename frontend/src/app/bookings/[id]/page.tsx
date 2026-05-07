@@ -9,6 +9,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { Booking } from '@/types'
 import { formatCurrency, formatDate, formatDuration } from '@/lib/utils'
 import { sanitizeHTML } from '@/lib/sanitize'
+import SafeHTML from '@/components/SafeHTML'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -1095,14 +1096,12 @@ export default function BookingDetailsPage() {
                                     <Separator className="bg-black/5 my-4" />
                                     
                                     {/* 5. Description Text Implementation */}
-                                    <p 
+                                    <SafeHTML 
                                         className="text-[#6B7280] leading-relaxed text-[12px] px-1"
-                                        dangerouslySetInnerHTML={{ 
-                                            __html: sanitizeHTML(cancelPreview.message
-                                                .replace(/(₹[\d,]+\.?\d*)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
-                                                .replace(/(\d+%\s*refund)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
-                                                .replace(/(\d+\s*day\(s\))/g, '<span class="text-[#F97316] font-bold">$1</span>'))
-                                        }}
+                                        html={sanitizeHTML(cancelPreview.message
+                                            .replace(/(₹[\d,]+\.?\d*)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
+                                            .replace(/(\d+%\s*refund)/g, '<strong class="text-[#1A1A2E] font-bold">$1</strong>')
+                                            .replace(/(\d+\s*day\(s\))/g, '<span class="text-[#F97316] font-bold">$1</span>'))}
                                     />
                                 </div>
 

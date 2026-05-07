@@ -892,8 +892,16 @@ export default function CreatePackagePage() {
                     ...formData,
                     description: sanitizeText(formData.description),
                     title: sanitizeText(formData.title),
+                    destination: sanitizeText(formData.destination),
+                    country: sanitizeText(formData.country),
+                    price_label: sanitizeText(formData.price_label || ''),
+                    included_items: formData.included_items.map(item => sanitizeText(item)),
                     inclusions: trimmedInclusions,
-                    custom_services: trimmedCustomServices,
+                    custom_services: trimmedCustomServices.map((s: any) => ({
+                        ...s,
+                        heading: sanitizeText(s.heading),
+                        description: sanitizeText(s.description || '')
+                    })),
                     gst_applicable: gstApplicableFinal,
                     // Clear GST details when not applicable — prevents default values (18%, exclusive)
                     // from being persisted to the database
@@ -1009,8 +1017,16 @@ export default function CreatePackagePage() {
                     ...formData,
                     description: sanitizeText(formData.description),
                     title: sanitizeText(formData.title),
+                    destination: sanitizeText(formData.destination),
+                    country: sanitizeText(formData.country),
+                    price_label: sanitizeText(formData.price_label || ''),
+                    included_items: formData.included_items.map(item => sanitizeText(item)),
                     inclusions: trimmedInclusions,
-                    custom_services: trimmedCustomServices,
+                    custom_services: trimmedCustomServices.map((s: any) => ({
+                        ...s,
+                        heading: sanitizeText(s.heading),
+                        description: sanitizeText(s.description || '')
+                    })),
                     gst_applicable: gstApplicableFinal,
                     // Clear GST details when not applicable
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
