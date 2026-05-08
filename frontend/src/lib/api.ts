@@ -115,6 +115,30 @@ api.interceptors.response.use(
         return response
     },
     (error) => {
+        // Log error to reporting API
+        const status = error.response?.status;
+        const isReportingUrl = error.config?.url?.includes('/report-frontend-error');
+        
+        if (status && !isReportingUrl && (status === 400 || status >= 500)) {
+            const errorData = {
+                type: 'ApiFailure',
+                message: error.message,
+                status_code: status,
+                endpoint: error.config?.url,
+                method: error.config?.method?.toUpperCase(),
+                request_body: error.config?.data,
+                response_error: error.response?.data,
+                url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+            };
+
+            // Use fetch for reporting to avoid interceptor recursion
+            fetch(`${API_URL}/api/v1/admin-simple/report-frontend-error`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(errorData),
+            }).catch(() => {}); // Ignore reporting failures
+        }
+
         if (error.response?.status === 401) {
             // Check if this is an auth request (login/register/otp)
             // We don't want to redirect to login page if the user just entered wrong credentials

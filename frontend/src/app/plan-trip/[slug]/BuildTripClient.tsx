@@ -92,18 +92,19 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const queryAdults = searchParams.get('adults')
     const queryChildren = searchParams.get('children')
     const queryInfants = searchParams.get('infants')
+    const urlSessionId = searchParams.get('session')
+    const ref = searchParams.get('ref')
 
     useEffect(() => {
         // Enforce booking details if accessing a package itinerary
         const mode = searchParams.get('mode')
-        if (slug && (!queryDate || !queryAdults) && mode !== 'preview') {
+        // Allow access if we have a session ID, as details are stored in the session
+        if (slug && !urlSessionId && (!queryDate || !queryAdults) && mode !== 'preview') {
             router.push('/plan-trip')
         }
-    }, [slug, queryDate, queryAdults, searchParams, router])
+    }, [slug, queryDate, queryAdults, urlSessionId, searchParams, router])
 
     // Support legacy URLs but prefer the cookie/slug combination
-    const urlSessionId = searchParams.get('session')
-    const ref = searchParams.get('ref')
     const [sessionId, setSessionId] = useState<string | null>(urlSessionId)
 
     useEffect(() => {
@@ -239,15 +240,21 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
         setSelectedReturnFlight(null)
         setLoading(true)
 
-        if (slug) {
-            console.log(`[BuildTrip] Loading package by slug: ${slug}`);
-            loadPackagePreviewBySlug(slug)
+        if (sessionId) {
+            console.log(`[BuildTrip] Loading session: ${sessionId}`);
+            loadSession()
         } else if (mode === 'preview' && packageId) {
             console.log(`[BuildTrip] Loading package preview: ${packageId}`);
             loadPackagePreview(packageId)
-        } else if (sessionId) {
-            console.log(`[BuildTrip] Loading session: ${sessionId}`);
-            loadSession()
+        } else if (slug) {
+            // Check if slug is a session-generated slug (origin-to-destination-N-days)
+            const isSessionSlug = /.+?-to-.+?-\d+-days/.test(slug);
+            if (!isSessionSlug) {
+                console.log(`[BuildTrip] Loading package by slug: ${slug}`);
+                loadPackagePreviewBySlug(slug)
+            } else {
+                console.log(`[BuildTrip] Ignoring session-style slug, waiting for sessionId...`);
+            }
         }
     }, [sessionId, mode, packageId, slug])
 

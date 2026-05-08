@@ -27,6 +27,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { headers } from "next/headers";
 import { FaviconHandler } from "@/components/FaviconHandler";
 import { ServiceUnavailable } from "@/components/ServiceUnavailable";
+import ErrorMonitor from "@/components/ErrorMonitor";
 
 export const dynamic = 'force-dynamic';
 
@@ -170,6 +171,7 @@ export default async function RootLayout({
                 ) : (
                     <ThemeProvider storageKey="customer-theme" initialSettings={homepageSettings}>
                         <Providers>
+                            <ErrorMonitor />
                             <ScrollToTop />
                             <MainLayout>
                                 {children}

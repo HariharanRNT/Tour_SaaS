@@ -268,13 +268,9 @@ async def get_dashboard_stats(
         # 8. Subscription Stats (Active & Nearing Expiry)
         # Subscription is imported at top level now
         
-        # Subscription Stats (Only truly active or trial plans)
+        # Subscription Stats (Include active, trial, upcoming, expired, cancelled)
         sub_total_query = select(func.count(Subscription.id)).where(
-            Subscription.status == 'active',
-            sql_case(
-                (Subscription.expires_at != None, Subscription.expires_at > now),
-                else_=Subscription.end_date >= now.date()
-            )
+            Subscription.status.in_(['active', 'upcoming', 'expired', 'completed', 'cancelled', 'trial', 'on_hold'])
         )
         result = await db.execute(sub_total_query)
         active_subscriptions = result.scalar() or 0
@@ -321,7 +317,7 @@ async def get_dashboard_stats(
         # Fetch subscriptions for trends
         trend_subs_stmt = select(Subscription.created_at).where(
             Subscription.created_at >= min(six_months_ago, jan_1st),
-            Subscription.status == 'active' 
+            Subscription.status.in_(['active', 'upcoming', 'expired', 'completed', 'cancelled', 'trial', 'on_hold'])
         )
         result = await db.execute(trend_subs_stmt)
         all_trend_subs = result.all()

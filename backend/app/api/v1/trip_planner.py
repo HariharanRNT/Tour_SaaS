@@ -586,6 +586,14 @@ async def create_trip_session(
             RETURNING id, created_at, expires_at
         """)
         
+        # Ensure pkg_id is a UUID object for the DB query if it exists
+        pkg_uuid = None
+        if matched_package_id:
+            try:
+                pkg_uuid = uuid.UUID(str(matched_package_id))
+            except (ValueError, TypeError):
+                pkg_uuid = None
+
         result = await db.execute(
             query,
             {
@@ -596,7 +604,7 @@ async def create_trip_session(
                 "start": start_date,
                 "travelers": json.dumps(travelers),
                 "prefs": json.dumps(preferences),
-                "pkg_id": matched_package_id,
+                "pkg_id": pkg_uuid,
                 "itin": json.dumps(initial_itinerary),
                 "status": "active",
                 "user_id": current_user.id if current_user else None
@@ -611,6 +619,7 @@ async def create_trip_session(
         return {
             "session_id": session_id,
             "destination": destination,
+            "source": preferences.get('departure_location', 'origin'),
             "duration_days": duration_days,
             "duration_nights": duration_nights,
             "matched_package_id": matched_package_id,

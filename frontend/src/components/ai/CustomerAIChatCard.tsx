@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Send, Sparkles, MapPin, Clock, ArrowRight, Loader2,
     Bot, User, Users, Baby, Calendar as CalendarIcon,
-    Minus, Plus, Plane, X, Minimize2, MessageSquare
+    Minus, Plus, Plane, X, Minimize2, MessageSquare, ShieldCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -164,7 +164,11 @@ export default function CustomerAIChatCard() {
         setIsCreatingSession(true)
         try {
             const token = localStorage.getItem('token')
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+            const headers: Record<string, string> = { 
+                'Content-Type': 'application/json',
+                'X-Domain': domain
+            }
             if (token) headers['Authorization'] = `Bearer ${token}`
 
             const payload = {
@@ -185,9 +189,16 @@ export default function CustomerAIChatCard() {
             const data = await response.json()
 
             if (response.ok && data.session_id) {
-                router.push(`/plan-trip/build?session=${data.session_id}`)
+                // Construct slug client-side to bypass build/route.ts intermediate redirect
+                const dest = (data.destination || 'destination').toLowerCase().replace(/\s+/g, '-')
+                const source = (data.source || 'origin').toLowerCase().replace(/\s+/g, '-')
+                const days = data.duration_days || 5
+                const slug = `${source}-to-${dest}-${days}-days`
+
+                router.push(`/plan-trip/${slug}?session=${data.session_id}`)
             } else {
-                alert("Failed to create trip session. Please try again.")
+                const errorMsg = data.detail || "Failed to create trip session. Please try again.";
+                alert(errorMsg)
             }
         } catch (error) {
             console.error("Error creating session:", error)
@@ -283,14 +294,18 @@ export default function CustomerAIChatCard() {
                                         >
                                             <div
                                                 className={cn(
-                                                    "max-w-[85%] p-3 rounded-[16px] text-sm shadow-sm",
+                                                    "max-w-[85%] p-2.5 rounded-[16px] text-[11px] shadow-sm",
                                                     msg.role === 'user'
                                                         ? "bg-gradient-to-br from-[var(--primary)] to-[#FFB38A] text-white rounded-tr-none shadow-[var(--primary)]/20"
                                                         : "bg-white/40 backdrop-blur-md border border-white/30 text-slate-800 rounded-tl-none"
                                                 )}
                                             >
-                                                <div className="prose prose-sm max-w-none">
-                                                    <ReactMarkdown>
+                                                <div className="prose prose-sm max-w-none text-inherit font-medium leading-normal !text-[11px]">
+                                                    <ReactMarkdown components={{
+                                                        p: ({children}) => <p className="m-0 p-0">{children}</p>,
+                                                        ul: ({children}) => <ul className="m-1 p-0 list-disc pl-4">{children}</ul>,
+                                                        li: ({children}) => <li className="m-0 p-0">{children}</li>
+                                                    }}>
                                                         {msg.content}
                                                     </ReactMarkdown>
                                                 </div>
@@ -332,6 +347,44 @@ export default function CustomerAIChatCard() {
                                                                 </div>
                                                             </Card>
                                                         ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Booking Details Rendering */}
+                                                {msg.tool_used === 'get_booking_details' && msg.tool_result && !msg.tool_result.error && (
+                                                    <div className="mt-3">
+                                                        <Card className="p-4 border-0 bg-white/60 backdrop-blur-sm shadow-sm overflow-hidden relative">
+                                                            <div className="absolute top-0 right-0 p-2 opacity-10">
+                                                                <ShieldCheck className="w-12 h-12 text-[var(--primary)]" />
+                                                            </div>
+                                                            <div className="relative z-10 space-y-3">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div>
+                                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Booking Reference</p>
+                                                                        <p className="font-bold text-sm text-slate-900">{msg.tool_result.booking_reference}</p>
+                                                                    </div>
+                                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[10px] font-bold">
+                                                                        {msg.tool_result.status}
+                                                                    </Badge>
+                                                                </div>
+                                                                
+                                                                <div>
+                                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Package Name</p>
+                                                                    <p className="font-bold text-sm text-[var(--primary)]">{msg.tool_result.package_name}</p>
+                                                                </div>
+
+                                                                <div className="flex justify-between">
+                                                                    <div>
+                                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Price</p>
+                                                                        <p className="font-bold text-sm">₹{msg.tool_result.total_price?.toLocaleString()}</p>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">GST Status</p>
+                                                                        <p className="font-bold text-sm">{msg.tool_result.gst_status}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </Card>
                                                     </div>
                                                 )}
                                             </div>
@@ -417,6 +470,15 @@ export default function CustomerAIChatCard() {
                                         onSelect={(d) => { setDate(d); setIsCalendarOpen(false); }}
                                         disabled={(d) => d < new Date()}
                                         initialFocus
+                                        className="text-black"
+                                        classNames={{
+                                            day: "text-black hover:bg-slate-100",
+                                            caption_label: "text-black font-bold",
+                                            head_cell: "text-black/60",
+                                            nav_button: "text-black",
+                                            day_today: "bg-slate-100 text-black",
+                                            day_selected: "bg-[var(--primary)] text-white hover:bg-[var(--primary)]"
+                                        }}
                                     />
                                 </PopoverContent>
                             </Popover>
@@ -428,9 +490,9 @@ export default function CustomerAIChatCard() {
                                 <div key={type} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                                     <span className="text-sm font-bold text-slate-700 capitalize">{type}</span>
                                     <div className="flex items-center gap-3">
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full border border-slate-200" onClick={() => updateGuest(type, -1)} disabled={type === 'adults' ? guests.adults <= 1 : guests[type] <= 0}><Minus className="h-3 w-3" /></Button>
-                                        <span className="w-4 text-center text-sm font-bold">{guests[type]}</span>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full border border-slate-200" onClick={() => updateGuest(type, 1)}><Plus className="h-3 w-3" /></Button>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full border border-slate-200 text-black hover:text-black" onClick={() => updateGuest(type, -1)} disabled={type === 'adults' ? guests.adults <= 1 : guests[type] <= 0}><Minus className="h-3 w-3" /></Button>
+                                        <span className="w-4 text-center text-sm font-bold text-black">{guests[type]}</span>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full border border-slate-200 text-black hover:text-black" onClick={() => updateGuest(type, 1)}><Plus className="h-3 w-3" /></Button>
                                     </div>
                                 </div>
                             ))}

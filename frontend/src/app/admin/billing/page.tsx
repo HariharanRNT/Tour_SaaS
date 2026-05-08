@@ -185,26 +185,23 @@ export default function AdminBillingPage() {
         const successSubscriptions = subscriptions.filter((s: Subscription) =>
             ['active', 'upcoming', 'completed', 'expired', 'cancelled', 'on_hold', 'trial'].includes(s.status)
         );
-        const activeSubs = subscriptions.filter((s: Subscription) => ['active', 'cancelled', 'upcoming'].includes(s.status));
+
+        // Monthly Revenue Calculation - Only subscriptions started this month
+        const monthlyRevenue = subscriptions
+            .filter((s: Subscription) =>
+                isCurrentMonth(s.start_date) &&
+                ['active', 'upcoming', 'completed', 'expired', 'cancelled', 'on_hold', 'trial'].includes(s.status)
+            )
+            .reduce((sum: number, s: Subscription) => {
+                const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
+                return sum + price;
+            }, 0);
+
+        const activeSubs = subscriptions.filter((s: Subscription) => ['active', 'cancelled', 'upcoming', 'trial'].includes(s.status));
         const activeCount = activeSubs.length;
 
-        // MRR Calculation with high precision
-        const mrr = activeSubs.reduce((sum: number, s: Subscription) => {
-            const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
-            const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
-            if (cycle === 'yearly') return sum + (price / 12);
-            if (cycle === 'quarterly') return sum + (price / 3);
-            return sum + price;
-        }, 0);
-
-        // ARR Calculation from original source prices
-        const arr = activeSubs.reduce((sum: number, s: Subscription) => {
-            const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
-            const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
-            if (cycle === 'yearly') return sum + price;
-            if (cycle === 'quarterly') return sum + (price * 4);
-            return sum + (price * 12);
-        }, 0);
+        // ARR Calculation: Monthly Revenue * 12
+        const arr = monthlyRevenue * 12;
 
         const totalRevenue = dashboardStats?.totalRevenue || 0;
         const payingCount = activeCount;
@@ -213,7 +210,7 @@ export default function AdminBillingPage() {
             totalSubscriptions: successSubscriptions.length,
             activeSubscriptions: subscriptions.filter((s: Subscription) => s.status === 'active').length,
             payingCount: payingCount,
-            mrr: mrr,
+            monthlyRevenue: monthlyRevenue,
             arr: arr,
             totalRevenue: totalRevenue,
             mostPopularPlan: planSubscriberCounts.sort((a: { count: number }, b: { count: number }) => b.count - a.count)[0]?.name || 'N/A',
@@ -432,18 +429,9 @@ export default function AdminBillingPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <h4 className="text-[36px] font-black text-[#111111] font-['Outfit'] tracking-tighter leading-none">
-                                        ₹{stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ₹{stats.monthlyRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </h4>
-                                    <div className="flex items-center gap-1.5 relative group">
-                                        <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">MRR from active & queued plans</p>
-                                        <Info className="h-3 w-3 text-[#92400e] opacity-60 cursor-help" />
-                                        
-                                        {/* Custom Premium Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900/95 backdrop-blur-md text-white text-[11px] font-medium rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 border border-white/10 scale-95 group-hover:scale-100">
-                                            MRR is calculated as yearly_price / 12 for yearly plans
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95" />
-                                        </div>
-                                    </div>
+                                    <p className="text-[10px] font-bold text-[#92400e] uppercase tracking-widest">Total revenue for current month</p>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full h-[4px] bg-orange-400" />
                             </CardContent>
@@ -760,11 +748,11 @@ export default function AdminBillingPage() {
                                                                             (sub.status === 'expired' || sub.status === 'completed') ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
                                                                                 "bg-amber-400/10 text-amber-600 border-amber-400/20"
                                                                 )}>
-                                                                    {sub.status === 'pending_payment' || sub.status === 'failed' ? 'Failed' : 
-                                                                     sub.status === 'upcoming' ? 'Queue' : 
-                                                                     (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' : 
-                                                                     sub.status === 'on_hold' ? 'Payment Failed' :
-                                                                     sub.status.replace('_', ' ')}
+                                                                    {sub.status === 'pending_payment' || sub.status === 'failed' ? 'Failed' :
+                                                                        sub.status === 'upcoming' ? 'Queue' :
+                                                                            (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' :
+                                                                                sub.status === 'on_hold' ? 'Payment Failed' :
+                                                                                    sub.status.replace('_', ' ')}
                                                                 </span>
                                                             </TableCell>
                                                             <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
@@ -817,16 +805,17 @@ export default function AdminBillingPage() {
                                     <div className="text-[20px] font-bold text-[#111111] mb-8 font-['Plus_Jakarta_Sans',sans-serif] tracking-[-0.2px]">Revenue Overview</div>
                                     <div className="space-y-6">
                                         {plans.map((plan: SubscriptionPlan, idx: number) => {
-                                            const planMRRContribution = subscriptions
-                                                .filter((s: Subscription) => s.plan.id === plan.id && ['active', 'cancelled', 'upcoming'].includes(s.status))
+                                            const planRevenueContribution = subscriptions
+                                                .filter((s: Subscription) =>
+                                                    s.plan.id === plan.id &&
+                                                    isCurrentMonth(s.start_date) &&
+                                                    ['active', 'cancelled', 'upcoming', 'trial', 'completed', 'expired', 'on_hold'].includes(s.status)
+                                                )
                                                 .reduce((sum: number, s: Subscription) => {
                                                     const price = Number(s.price_at_purchase ?? s.plan?.price) || 0;
-                                                    const cycle = (s.plan?.billing_cycle || 'monthly').toLowerCase();
-                                                    if (cycle === 'yearly') return sum + (price / 12);
-                                                    if (cycle === 'quarterly') return sum + (price / 3);
                                                     return sum + price;
                                                 }, 0);
-                                            const revenue = planMRRContribution;
+                                            const revenue = planRevenueContribution;
                                             const colors = ['#f97316', '#8b5cf6', '#f59e0b', '#10b981', '#6366f1', '#0ea5e9'];
                                             const color = colors[idx % colors.length];
 
@@ -837,7 +826,7 @@ export default function AdminBillingPage() {
                                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                         <motion.div
                                                             initial={{ width: 0 }}
-                                                            animate={{ width: `${Math.min(100, (revenue / (stats.mrr || 1)) * 100)}%` }}
+                                                            animate={{ width: `${Math.min(100, (revenue / (stats.monthlyRevenue || 1)) * 100)}%` }}
                                                             className="h-full rounded-full"
                                                             style={{ backgroundColor: color }}
                                                         />
@@ -848,9 +837,9 @@ export default function AdminBillingPage() {
                                         })}
 
                                         <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                                            <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Monthly Recurring Revenue (MRR)</div>
+                                            <div className="text-[10px] font-black text-[#7c3010] uppercase tracking-[0.2em]">Total Monthly Revenue</div>
                                             <div className="text-[20px] font-black text-[#111111] font-['Outfit'] tracking-tight">
-                                                ₹{stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                ₹{stats.monthlyRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                     </div>
@@ -858,13 +847,24 @@ export default function AdminBillingPage() {
 
                                 <div className="space-y-4">
                                     {[
-                                        { label: 'MRR', value: `₹${stats.mrr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp },
-                                        { label: 'ARR', value: `₹${stats.arr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar },
-                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? (stats.mrr / stats.activeSubscriptions).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
+                                        { label: 'MRR', value: `₹${stats.monthlyRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: '+12% this month', color: 'text-emerald-400', icon: TrendingUp, tooltip: "Includes full purchase amount for all plans started this month" },
+                                        { label: 'ARR', value: `₹${stats.arr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Projected Annual', color: 'text-indigo-400', icon: Calendar, tooltip: "Calculated as Monthly Revenue × 12" },
+                                        { label: 'Avg Revenue/Agent', value: `₹${stats.activeSubscriptions > 0 ? (stats.monthlyRevenue / stats.activeSubscriptions).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : 0}`, sub: 'Per active sub', color: 'text-orange-400', icon: Users }
                                     ].map((item, i) => (
-                                        <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group overflow-hidden relative">
+                                        <Card key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] group relative">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="text-[10px] font-black text-[#92400e] uppercase tracking-[0.2em]">{item.label}</div>
+                                                <div className="flex items-center gap-1.5 relative group/tooltip">
+                                                    <div className="text-[10px] font-black text-[#92400e] uppercase tracking-[0.2em]">{item.label}</div>
+                                                    {item.tooltip && (
+                                                        <>
+                                                            <Info className="h-3 w-3 text-[#92400e] opacity-60 cursor-help" />
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900/95 backdrop-blur-md text-white text-[11px] font-medium rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] border border-white/10 scale-95 group-hover/tooltip:scale-100">
+                                                                {item.tooltip}
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-slate-900/95" />
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                                 <div className={cn("p-2 rounded-xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500", item.color)}>
                                                     <item.icon className="h-4 w-4" />
                                                 </div>

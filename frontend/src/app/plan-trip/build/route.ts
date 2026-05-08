@@ -11,7 +11,15 @@ export async function GET(request: Request) {
 
         if (isUUID) {
             try {
+                // Extract exact host to maintain custom domains (like rnt.local)
+                const host = request.headers.get('host') || 'localhost:3000'
+                const domain = host.split(':')[0]
+                const isLocal = host.includes('localhost') || host.includes('.local') || host.includes('127.0.0.1')
+                const protocol = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https')
+                const baseUrl = `${protocol}://${host}`
+
                 const res = await fetch(`${API_URL}/api/v1/trip-planner/session/${sessionId}`, {
+                    headers: { 'X-Domain': domain },
                     cache: 'no-store'
                 })
 
@@ -23,13 +31,8 @@ export async function GET(request: Request) {
 
                     const slug = `${source}-to-${dest}-${days}-days`
 
-                    // Extract exact host to maintain custom domains (like rnt.local)
-                    const host = request.headers.get('host') || 'localhost:3000'
-                    const protocol = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
-                    const baseUrl = `${protocol}://${host}`
-
                     // Create response and set cookie
-                    const response = NextResponse.redirect(new URL(`/plan-trip/${slug}`, baseUrl))
+                    const response = NextResponse.redirect(new URL(`/plan-trip/${slug}?session=${sessionId}`, baseUrl))
 
                     response.cookies.set('tripSessionId', sessionId, {
                         httpOnly: false, // False so client JS can read it for session loading
@@ -38,6 +41,8 @@ export async function GET(request: Request) {
                     })
 
                     return response
+                } else {
+                    console.error(`Failed to fetch session ${sessionId}: ${res.status}`)
                 }
             } catch (e) {
                 console.error('Failed to resolve legacy session:', e)
@@ -46,7 +51,8 @@ export async function GET(request: Request) {
     }
 
     // Fallback if no session or error
-    const fallbackHost = request.headers.get('host') || 'localhost:3000'
-    const fallbackProtocol = request.headers.get('x-forwarded-proto') || (fallbackHost.includes('localhost') ? 'http' : 'https')
-    return NextResponse.redirect(new URL('/plan-trip', `${fallbackProtocol}://${fallbackHost}`))
+    const host = request.headers.get('host') || 'localhost:3000'
+    const isLocal = host.includes('localhost') || host.includes('.local') || host.includes('127.0.0.1')
+    const protocol = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https')
+    return NextResponse.redirect(new URL('/plan-trip', `${protocol}://${host}`))
 }

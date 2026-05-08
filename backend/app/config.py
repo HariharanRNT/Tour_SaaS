@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: str = ""
     FROM_EMAIL: str = "arunpandianreshandthosh2022@gmail.com"
     FROM_NAME: str = "Tour SaaS"
+    ADMIN_ERROR_EMAIL: str = ""
     
     # AWS
     AWS_ACCESS_KEY_ID: str = ""

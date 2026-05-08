@@ -315,3 +315,44 @@ async def purge_old_logs(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error purging logs: {str(e)}")
+
+
+# ──────────────────────────────────────────────────────────────
+# POST /report-frontend-error — capture client errors
+# ──────────────────────────────────────────────────────────────
+
+@router.post("/report-frontend-error")
+async def report_frontend_error(
+    error_data: dict,
+):
+    """
+    Receives an error report from the frontend (runtime or API failure)
+    and sends an email notification.
+    """
+    try:
+        from app.utils.error_monitor import ErrorMonitor
+        
+        # Extract basic info
+        message = error_data.get("message", "Unhandled Frontend Error")
+        error_type = error_data.get("type", "FrontendRuntimeError")
+        
+        # Add timestamp and other context if missing
+        if "timestamp" not in error_data:
+            error_data["timestamp"] = datetime.now().isoformat()
+            
+        # Trigger alert
+        import asyncio
+        asyncio.create_task(
+            ErrorMonitor.send_error_alert(
+                error_type=error_type,
+                message=message,
+                error_details=error_data,
+                is_frontend=True
+            )
+        )
+        
+        return {"status": "ok", "message": "Error report received"}
+    except Exception as e:
+        # Don't fail the request if reporting fails, just log it
+        print(f"FAILED TO REPORT FRONTEND ERROR: {e}")
+        return {"status": "error", "message": str(e)}

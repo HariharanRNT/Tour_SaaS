@@ -327,6 +327,33 @@ class APILoggerMiddleware:
                 # ── Fire-and-forget DB write ──
                 asyncio.create_task(_write_log(log_data))
 
+                # ── Trigger Error Alert Email ──
+                if not is_success and final_status_code != 401: # Don't alert on 401 Unauthorized
+                    # Only alert on 400 (Bad Request) or 500+ (Server Errors)
+                    if final_status_code == 400 or final_status_code >= 500:
+                        from app.utils.error_monitor import ErrorMonitor
+                        
+                        # Use a simple cache-key to throttle identical errors (e.g., same endpoint + status)
+                        # This prevents flooding the inbox if a single endpoint is failing repeatedly
+                        # In a multi-worker setup, this is worker-local, which is fine for basic throttling
+                        throttle_key = f"{request.method}:{path}:{final_status_code}"
+                        now = time.time()
+                        
+                        if not hasattr(self, "_error_throttle"):
+                            self._error_throttle = {}
+                        
+                        last_alert = self._error_throttle.get(throttle_key, 0)
+                        if now - last_alert > 300: # 5 minutes throttle per endpoint/status
+                            self._error_throttle[throttle_key] = now
+                            asyncio.create_task(
+                                ErrorMonitor.send_error_alert(
+                                    error_type=error_type or "API Error",
+                                    message=error_message or "An error occurred in the API",
+                                    error_details=log_data,
+                                    is_frontend=False
+                                )
+                            )
+
             except Exception as inner_exc:
                 # Never let logging logic crash the main thread
                 import logging as _logging

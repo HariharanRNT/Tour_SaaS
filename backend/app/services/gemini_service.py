@@ -554,11 +554,17 @@ RULES:
 5. Use emojis sparingly for visual appeal
 6. Never make up packages or prices - always query the database using the available tools
 7. If you don't understand, ask for clarification
+8. BOOKING LOOKUP:
+   - When a user mentions a booking reference number (usually starts with 'BK' followed by letters and numbers, e.g., 'BKSUO539177'):
+     - Call `get_booking_details` with that reference number.
+     - If the booking is found, display the details as requested (Package Name, Cancellation Policy, Inclusions, Exclusions, Price, GST Status).
+     - If not found, inform the user clearly.
 
 TOOLS:
 You have access to the following tools:
 - search_packages: Search for packages based on criteria.
 - get_package_details: Get full details for a specific package ID.
+- get_booking_details: Get full details for a booking using its reference number.
 
 IMPORTANT BEHAVIOR:
 - When a user asks about packages, ALWAYS use `search_packages` first.
@@ -567,6 +573,7 @@ IMPORTANT BEHAVIOR:
 - When a user wants to "Book", "Proceed", "Configure" or "Select" a specific package, YOU MUST call `get_package_details` with the package_id. 
 - DO NOT say "I cannot book". Instead, say "Great! Let's get that set up for you" and call `get_package_details`. This will show the booking interface to the user.
 - If the user selects a package from the list verbally (e.g., "I choose the first one" or "The Kerala package"), call `get_package_details` for that package.
+- When a user provides a booking reference (like BKSUO539177), call `get_booking_details`.
 - Never make up package details.
 
 RESPONSE FORMATTING RULES:
@@ -575,15 +582,23 @@ RESPONSE FORMATTING RULES:
    * **Package Name**
      * Duration: X Days
      * Price: ₹X,XXX
-3. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
-4. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
-5. CANCELLATION & REFUNDS:
+3. When booking details are found via `get_booking_details`, present them clearly in a structured list:
+   - **Package Name**: [Name]
+   - **Cancellation Policy**: [Policy Details]
+   - **Included Services**: [List of Inclusions]
+   - **Excluded Services**: [List of Exclusions]
+   - **Total Price**: ₹[Amount]
+   - **GST Status**: [Inclusive/Exclusive]
+4. CRITICAL: DO NOT include <package_card> tags, JSON, or any other structured data in your text response. The user interface will automatically render the interactive cards separately.
+5. Ask a follow-up question to guide the user (e.g., "Do any of these match your interest?").
+6. CANCELLATION & REFUNDS:
    - When a user asks about "cancellation", "refund", or "cancel policy":
+     - **REQUIRED**: Inform the user: "To cancel your booking, please visit the **My Bookings** page on your dashboard."
      - Identify the relevant package from the conversation context (the last one searched or selected).
-     - If a package is in context, check its cancellation policy details.
-     - If no package is referenced, ask: "Please let me know which package you're referring to for cancellation details."
+     - If a package is in context, check its cancellation policy details and summarize them.
+     - If no package is referenced, ask: "Please let me know which package you're referring to for specific cancellation details."
      - If cancellation details are not available for the package, show: "Cancellation details are not available for this package. Please contact support for more information."
-6. ENQUIRY-BASED PRICING:
+7. ENQUIRY-BASED PRICING:
    - If a package is marked as "ENQUIRY" type:
      - DO NOT mention a numeric price.
      - Instead, say something like "Price available on request" or "Contact us for pricing".
@@ -651,6 +666,17 @@ CURRENT CONVERSATION CONTEXT:
                                 "package_id": types.Schema(type="STRING", description="The ID of the package to retrieve")
                             },
                             required=["package_id"]
+                        )
+                    ),
+                    types.FunctionDeclaration(
+                        name="get_booking_details",
+                        description="Get detailed information about a booking using its reference number.",
+                        parameters=types.Schema(
+                            type="OBJECT",
+                            properties={
+                                "booking_reference": types.Schema(type="STRING", description="The booking reference number (e.g., BKSUO539177)")
+                            },
+                            required=["booking_reference"]
                         )
                     )
                 ])
@@ -1005,6 +1031,46 @@ CURRENT CONVERSATION CONTEXT:
 
                         return details
                     return {"error": "Package not found"}
+                
+                elif name == "get_booking_details":
+                    from app.models import Booking
+                    booking_ref = args.get("booking_reference")
+                    print(f"[GeminiService] Tool: get_booking_details for ref: {booking_ref}")
+                    
+                    # Search for the booking
+                    query = select(Booking).where(Booking.booking_reference == booking_ref)
+                    result = await db.execute(query)
+                    booking = result.scalar_one_or_none()
+                    
+                    if not booking:
+                        return {"error": f"Booking with reference {booking_ref} not found."}
+                    
+                    package = booking.package
+                    if not package:
+                        return {"error": "Associated package not found for this booking."}
+
+                    def parse_json_list(items):
+                        if not items: return []
+                        try:
+                            if isinstance(items, list): return items
+                            return json.loads(items)
+                        except: return []
+
+                    # Build details response
+                    details = {
+                        "booking_reference": booking.booking_reference,
+                        "package_name": package.title,
+                        "total_price": float(booking.total_amount),
+                        "gst_status": "Inclusive" if booking.is_gst_inclusive else "Exclusive",
+                        "gst_amount": float(booking.gst_amount) if booking.gst_amount else 0,
+                        "cancellation_policy": package.cancellation_rules if package.cancellation_enabled else "No cancellation details available.",
+                        "inclusions": parse_json_list(package.included_items),
+                        "exclusions": parse_json_list(package.excluded_items),
+                        "travel_date": booking.travel_date.isoformat() if booking.travel_date else None,
+                        "status": str(booking.status)
+                    }
+                    
+                    return details
                     
         except Exception as e:
             print(f"Tool execution error: {e}")
