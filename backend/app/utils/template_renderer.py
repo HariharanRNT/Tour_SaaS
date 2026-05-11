@@ -36,7 +36,7 @@ def render_template(content: Any, data: Dict[str, Any], template_type: str = Non
         return str(val)
 
     # Regex to find {{ variable_name }}
-    pattern = r"\{\{\s*([a-zA-Z0-0_]+)\s*\}\}"
+    pattern = r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}"
     
     try:
         rendered = re.sub(pattern, replace_match, html)

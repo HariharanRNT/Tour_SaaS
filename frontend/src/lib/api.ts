@@ -574,6 +574,10 @@ export const tripPlannerAPI = {
     deleteSession: async (sessionId: string) => {
         const response = await api.delete(`/trip-planner/session/${sessionId}`)
         return response.data
+    },
+    getLatestUserDraft: async () => {
+        const response = await api.get('/trip-planner/user-drafts/latest')
+        return response.data
     }
 }
 

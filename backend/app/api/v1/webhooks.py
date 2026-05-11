@@ -45,10 +45,12 @@ async def handle_razorpay_webhook(
     webhook_event = None
     try:
         event = json.loads(body_str)
-        event_id = event.get('id')
-        event_type = event.get('event')
+        # 1. Delivery Verification Log
+        event_type = event.get("event")
+        event_id = event.get("id")
+        logger.info(f"[Webhook Entry] Received event: {event_type} | ID: {event_id}")
         
-        # 1. IDEMPOTENCY CHECK (Create event record first)
+        # 2. Idempotency Check
         if event_id:
             existing_stmt = select(WebhookEvent).where(WebhookEvent.razorpay_event_id == event_id)
             existing_res = await db.execute(existing_stmt)
@@ -257,70 +259,121 @@ async def _handle_subscription_cancelled(payload: dict, db: AsyncSession):
         logger.info(f"Subscription {sub_id} cancelled via webhook.")
 
 async def _handle_subscription_pending(payload: dict, db: AsyncSession):
+    """
+    Handle subscription.pending: Triggered when a payment attempt fails.
+    Used to transition stuck 'payment_initiated' states to 'failed'.
+    """
     sub_obj = payload.get("subscription", {}).get("entity", {})
     sub_id = sub_obj.get("id")
     if not sub_id: return
     
+    logger.info(f"[Webhook] subscription.pending received for sub_id={sub_id}")
+    
     stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
     result = await db.execute(stmt)
     subscription = result.scalar_one_or_none()
+    
     if subscription:
-        if subscription.status != "active": # Don't override if already active
-            subscription.status = "pending"
+        logger.info(f"[Webhook] subscription.pending: sub={subscription.id}, current_status={subscription.status}")
+        
+        if subscription.status == 'payment_initiated':
+            logger.info(f"[Webhook] Initial payment failed for sub {subscription.id} -> setting status to 'failed'")
+            subscription.status = 'failed'
             await db.commit()
-            logger.info(f"Subscription {sub_id} set to pending.")
+            logger.info(f"[Webhook] SUCCESS: subscription {subscription.id} status updated to failed.")
+            
+        elif subscription.status == 'active':
+            # Renewal failed, subscription is pending retry
+            logger.info(f"[Webhook] Renewal failed for active sub {subscription.id} -> setting 7-day grace period")
+            subscription.grace_period_ends_at = func.now() + timedelta(days=7)
+            await db.commit()
+            logger.info(f"[Webhook] SUCCESS: grace period set for sub {subscription.id}")
+            
+        else:
+            logger.info(f"[Webhook] subscription.pending: No update needed for status '{subscription.status}'")
+    else:
+        logger.warning(f"[Webhook] subscription.pending: No subscription found for rzp_id={sub_id}")
 
 async def _handle_invoice_payment_failed(payload: dict, db: AsyncSession):
-    invoice_obj = payload.get("invoice", {}).get("entity", {})
-    sub_id = invoice_obj.get("subscription_id")
-    if sub_id:
-        stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
-        result = await db.execute(stmt)
-        subscription = result.scalar_one_or_none()
-        if subscription:
-            # If the payment failed during the initial purchase, mark it as failed
-            if subscription.status in ['payment_initiated', 'pending']:
-                subscription.status = 'failed'
-                logger.info(f"Initial payment failed for subscription {sub_id}. Status set to failed.")
-            else:
-                # For existing active subscriptions, set grace period when invoice fails 
-                # but subscription isn't necessarily halted yet
-                subscription.grace_period_ends_at = func.now() + timedelta(days=7)
-                logger.info(f"Invoice payment failed for subscription {sub_id}. Grace period activated.")
-            
-            await db.commit()
+    """
+    Handle invoice.payment_failed: Primary failure source for subscriptions.
+    """
+    invoice_ent = payload.get("invoice", {}).get("entity", {})
+    payment_ent = payload.get("payment", {}).get("entity", {})
+    
+    # Dual Lookup Priority
+    sub_id = invoice_ent.get("subscription_id") or payment_ent.get("subscription_id")
+    
+    logger.info(f"[Webhook] invoice.payment_failed: Extracted sub_id={sub_id}")
+
+    if not sub_id:
+        logger.warning(f"[Webhook] invoice.payment_failed: sub_id not found. Payload keys: {list(payload.keys())}")
+        return
+
+    stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
+    result = await db.execute(stmt)
+    subscription = result.scalar_one_or_none()
+
+    if not subscription:
+        logger.warning(f"[Webhook] invoice.payment_failed: No subscription record for {sub_id}")
+        return
+
+    logger.info(f"[Webhook] invoice.payment_failed: Found sub {subscription.id}, status={subscription.status}")
+
+    if subscription.status in ['payment_initiated', 'pending']:
+        logger.info(f"[Webhook] Transitioning sub {subscription.id} -> failed")
+        subscription.status = 'failed'
+        await db.commit()
+        logger.info(f"[Webhook] SUCCESS: sub {subscription.id} updated to failed.")
+    elif subscription.status == 'active':
+        subscription.grace_period_ends_at = func.now() + timedelta(days=7)
+        await db.commit()
+        logger.info(f"[Webhook] Active sub {subscription.id} failed renewal: Grace period set.")
 
 async def _handle_payment_failed(payload: dict, db: AsyncSession):
     """
-    Handle payment.failed: Specifically for subscription attempts.
+    Handle payment.failed: Fallback failure source for subscriptions.
     """
+    logger.info("[Webhook] Processing payment.failed event...")
     entity = payload.get("payment", {}).get("entity")
-    if not entity: return
+    if not entity: 
+        logger.warning("[Webhook] payment.failed: No payment entity found")
+        return
     
     notes = entity.get("notes", {})
-    sub_id = entity.get("subscription_id")
+    # Dual Lookup Priority
     local_sub_id = notes.get("local_subscription_id")
+    rzp_sub_id = entity.get("subscription_id")
+    
+    logger.info(f"[Webhook] payment.failed: local_id={local_sub_id}, rzp_sub_id={rzp_sub_id}")
     
     subscription = None
+    
+    # 1. Try local_subscription_id
     if local_sub_id:
         try:
             from uuid import UUID
             stmt = select(Subscription).where(Subscription.id == UUID(local_sub_id))
             result = await db.execute(stmt)
             subscription = result.scalar_one_or_none()
-        except:
-            pass
+        except (ValueError, AttributeError) as e:
+            logger.error(f"[Webhook] Invalid local_sub_id '{local_sub_id}': {e}")
             
-    if not subscription and sub_id:
-        stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
+    # 2. Try rzp_sub_id
+    if not subscription and rzp_sub_id:
+        stmt = select(Subscription).where(Subscription.razorpay_subscription_id == rzp_sub_id)
         result = await db.execute(stmt)
         subscription = result.scalar_one_or_none()
         
     if subscription:
+        logger.info(f"[Webhook] payment.failed: Found sub {subscription.id}, status={subscription.status}")
         if subscription.status == 'payment_initiated':
+            logger.info(f"[Webhook] Updating sub {subscription.id} -> failed")
             subscription.status = 'failed'
             await db.commit()
-            logger.info(f"Payment failed event processed for subscription {subscription.id}. Status updated to failed.")
+            logger.info(f"[Webhook] SUCCESS: sub {subscription.id} updated to failed.")
+    else:
+        logger.warning(f"[Webhook] payment.failed: No subscription found for local_id={local_sub_id} or rzp_id={rzp_sub_id}")
 
 
 async def _handle_refund_speed_changed(payload: dict, db: AsyncSession):

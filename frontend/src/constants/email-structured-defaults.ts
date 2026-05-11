@@ -37,7 +37,7 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
     booking_confirmation: {
         hero_title: "Booking Confirmed!",
         hero_subtitle: "Your adventure with {{agency_name}} begins soon.",
-        intro_text: "Hi {{customer_name}}, we're thrilled to confirm your booking for {{package_name}}. Our team is already preparing everything for your perfect trip.",
+        intro_text: "Hi {{customer_name}},<br>We&#39;re thrilled to confirm your booking for {{package_name}}. Our team is already preparing everything for your perfect trip.",
         details_title: "📌 Trip Details",
         footer_note: "Warm regards,",
         footer_team: "The {{agency_name}} Team",
@@ -113,11 +113,16 @@ export const DEFAULT_STRUCTURED_CONTENT: Record<EmailTemplateType, StructuredEma
 const renderHeader = (c: StructuredEmailContent) => {
     if (!c.show_header) return '';
     return `
-        <div style="padding: 20px; text-align: center; border-bottom: 1px solid #f1f5f9;">
-            <img src="${c.header_image_url || 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png'}" 
-                 style="height: ${c.header_image_height || '40px'}; width: auto; max-width: 100%; display: block; margin: 0 auto;" 
-                 alt="Agency Logo" />
-        </div>
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-bottom: 1px solid #f1f5f9; border-collapse: collapse;">
+            <tr>
+                <td align="center" style="padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; font-family: Arial, sans-serif;">
+                    <img src="${c.header_image_url || 'https://toursaas.s3.us-east-1.amazonaws.com/logo.png'}" 
+                         height="${parseInt(c.header_image_height || '40')}"
+                         style="height: ${c.header_image_height || '40px'}; width: auto; max-width: 100%; display: block; margin: 0 auto;" 
+                         alt="Agency Logo" />
+                </td>
+            </tr>
+        </table>
     `;
 };
 
@@ -129,13 +134,18 @@ const renderBodyImage = (c: StructuredEmailContent) => {
     const imgHtml = `
         <img src="${url}" 
              alt="${alt || ''}" 
+             width="${parseInt(width || '100')}%"
              style="width: ${width || '100%'}; max-width: 100%; height: auto; display: block; ${margin} border-radius: 8px;" />
     `;
 
     return `
-        <div style="margin: 25px 0; text-align: ${align};">
-            ${link ? `<a href="${link}" target="_blank" style="text-decoration: none;">${imgHtml}</a>` : imgHtml}
-        </div>
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;">
+            <tr>
+                <td align="${align}" style="font-family: Arial, sans-serif;">
+                    ${link ? `<a href="${link}" target="_blank" style="text-decoration: none;">${imgHtml}</a>` : imgHtml}
+                </td>
+            </tr>
+        </table>
     `;
 };
 
@@ -143,55 +153,64 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     booking_confirmation: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
                 <tr>
-                    <td align="center" style="background-color: #ffffff;">
+                    <td width="100%" align="center" style="width: 100%; background-color: #ffffff; font-family: Arial, sans-serif;">
                         ${renderHeader(c)}
                     </td>
                 </tr>
                 <tr>
-                    <td align="center" style="background-color: #1e293b; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                    <td width="100%" bgcolor="#1e293b" align="center" style="width: 100%; background-color: #1e293b; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
                         <h1 data-edit="hero_title" style="margin: 0; font-size: 24px; color: #ffffff; font-family: Arial, sans-serif;">${c.hero_title}</h1>
                         <p data-edit="hero_subtitle" style="margin-top: 8px; margin-bottom: 0; font-size: 14px; color: #ffffff; opacity: 0.8; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 0; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
                         ${renderBodyImage(c)}
-                        <p data-edit="intro_text" style="line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 25px;">${c.intro_text}</p>
-                        
-                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-collapse: collapse;">
+                    </td>
+                </tr>
+                <tr>
+                    <td width="100%" data-edit="intro_text" style="width: 100%; padding-top: 25px; padding-bottom: 25px; padding-left: 30px; padding-right: 30px; line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</td>
+                </tr>
+                <tr>
+                    <td width="100%" style="width: 100%; padding-top: 0; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f8fafc; border: 1px solid #f1f5f9; border-collapse: collapse;">
                             <tr>
-                                <td>
+                                <td width="100%" style="width: 100%; padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; font-family: Arial, sans-serif;">
                                     <h2 data-edit="details_title" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #000000; font-family: Arial, sans-serif;">${c.details_title}</h2>
-                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                                         <tr>
-                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Reference ID:</td>
-                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
+                                            <td width="50%" align="left" style="width: 50%; padding-top: 8px; padding-bottom: 8px; color: #555555; font-family: Arial, sans-serif; font-size: 14px;">Reference ID:</td>
+                                            <td width="50%" align="right" style="width: 50%; padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #111111; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
                                         </tr>
                                         <tr>
-                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Package:</td>
-                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
+                                            <td width="50%" align="left" style="width: 50%; padding-top: 8px; padding-bottom: 8px; color: #555555; font-family: Arial, sans-serif; font-size: 14px;">Package:</td>
+                                            <td width="50%" align="right" style="width: 50%; padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #111111; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
                                         </tr>
                                         <tr>
-                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Travel Date:</td>
-                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{travel_date}}</td>
+                                            <td width="50%" align="left" style="width: 50%; padding-top: 8px; padding-bottom: 8px; color: #555555; font-family: Arial, sans-serif; font-size: 14px;">Travel Date:</td>
+                                            <td width="50%" align="right" style="width: 50%; padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #111111; font-family: Arial, sans-serif; font-size: 14px;">{{travel_date}}</td>
                                         </tr>
                                     </table>
                                 </td>
                             </tr>
                         </table>
 
-                        <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
-                            <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
-                                <span data-edit="footer_note">${c.footer_note}</span><br>
-                                <strong data-edit="footer_team">${c.footer_team}</strong>
-                            </p>
-                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 30px; border-top: 1px solid #e2e8f0; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" align="center" style="width: 100%; padding-top: 20px; font-family: Arial, sans-serif;">
+                                    <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
+                                        <span data-edit="footer_note">${c.footer_note}</span><br>
+                                        <strong data-edit="footer_team">${c.footer_team}</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -206,34 +225,44 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     travel_itinerary: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
                 <tr>
-                    <td>${renderHeader(c)}</td>
+                    <td width="100%" style="width: 100%; font-family: Arial, sans-serif;">${renderHeader(c)}</td>
                 </tr>
                 <tr>
-                    <td align="center" style="background-color: #1e293b; padding: 25px;">
+                    <td width="100%" bgcolor="#1e293b" align="center" style="width: 100%; background-color: #1e293b; padding-top: 25px; padding-bottom: 25px; padding-left: 25px; padding-right: 25px; font-family: Arial, sans-serif;">
                         <h1 data-edit="hero_title" style="margin: 0; font-size: 22px; color: #ffffff; font-family: Arial, sans-serif;">${c.hero_title}</h1>
                         <p data-edit="hero_subtitle" style="margin-top: 5px; margin-bottom: 0; font-size: 14px; color: #ffffff; opacity: 0.8; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 0; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
                         ${renderBodyImage(c)}
-                        <p data-edit="intro_text" style="line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
-                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #f1f5f9; margin-top: 20px; margin-bottom: 20px; border-collapse: collapse;">
+                    </td>
+                </tr>
+                <tr>
+                    <td width="100%" data-edit="intro_text" style="width: 100%; padding-top: 25px; padding-bottom: 25px; padding-left: 30px; padding-right: 30px; line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</td>
+                </tr>
+                <tr>
+                    <td width="100%" style="width: 100%; padding-top: 0; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f1f5f9; margin-top: 20px; margin-bottom: 20px; border-collapse: collapse;">
                             <tr>
-                                <td style="font-style: italic; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{itinerary_summary}}</td>
+                                <td width="100%" style="width: 100%; padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; font-style: italic; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{itinerary_summary}}</td>
                             </tr>
                         </table>
-                        <p data-edit="attachment_note" style="font-size: 14px; color: #000000; font-family: Arial, sans-serif;">${c.attachment_note}</p>
+                        <p data-edit="attachment_note" style="font-size: 14px; color: #000000; font-family: Arial, sans-serif; margin-bottom: 15px;">${c.attachment_note}</p>
                         <p data-edit="closing_text" style="font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.closing_text}</p>
-                        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-                            <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">© {{agency_name}}. All rights reserved.</p>
-                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" align="center" style="width: 100%; padding-top: 20px; font-family: Arial, sans-serif;">
+                                    <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">© {{agency_name}}. All rights reserved.</p>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -248,18 +277,18 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     booking_invoice: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
                 <tr>
-                    <td>
+                    <td width="100%" style="width: 100%; padding-top: 40px; padding-bottom: 40px; padding-left: 40px; padding-right: 40px; font-family: Arial, sans-serif;">
                         ${renderHeader(c)}
-                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-bottom: 2px solid #000000; padding-bottom: 20px; margin-bottom: 30px; border-collapse: collapse;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-bottom: 2px solid #000000; border-collapse: collapse;">
                             <tr>
-                                <td align="left"><h1 data-edit="invoice_title" style="margin: 0; color: #000000; font-size: 28px; font-family: Arial, sans-serif;">${c.invoice_title}</h1></td>
-                                <td align="right" style="color: #000000; font-size: 13px; font-family: Arial, sans-serif;">
+                                <td width="50%" align="left" style="width: 50%; padding-bottom: 20px; font-family: Arial, sans-serif;"><h1 data-edit="invoice_title" style="margin: 0; color: #000000; font-size: 28px; font-family: Arial, sans-serif;">${c.invoice_title}</h1></td>
+                                <td width="50%" align="right" style="width: 50%; padding-bottom: 20px; color: #000000; font-size: 13px; font-family: Arial, sans-serif;">
                                     <strong>{{agency_name}}</strong><br>
                                     Invoice #: {{invoice_number}}<br>
                                     Date: {{payment_date}}
@@ -267,31 +296,41 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
                             </tr>
                         </table>
                         ${renderBodyImage(c)}
-                        <div style="margin-bottom: 30px;">
-                            <p data-edit="bill_to_label" style="color: #000000; margin-top: 0; margin-bottom: 5px; font-size: 13px; font-family: Arial, sans-serif;">${c.bill_to_label}</p>
-                            <strong style="font-size: 18px; color: #000000; font-family: Arial, sans-serif;">{{customer_name}}</strong>
-                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 30px; margin-bottom: 30px; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" style="width: 100%; font-family: Arial, sans-serif;">
+                                    <p data-edit="bill_to_label" style="color: #000000; margin-top: 0; margin-bottom: 5px; font-size: 13px; font-family: Arial, sans-serif;">${c.bill_to_label}</p>
+                                    <strong style="font-size: 18px; color: #000000; font-family: Arial, sans-serif;">{{customer_name}}</strong>
+                                </td>
+                            </tr>
+                        </table>
                         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                             <thead>
-                                <tr style="background-color: #f8fafc;">
-                                    <th data-edit="details_title" align="left" style="padding-top: 12px; padding-bottom: 12px; padding-left: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.details_title}</th>
-                                    <th align="right" style="padding-top: 12px; padding-bottom: 12px; padding-right: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Amount</th>
+                                <tr bgcolor="#f8fafc" style="background-color: #f8fafc;">
+                                    <th width="70%" data-edit="details_title" align="left" style="width: 70%; padding-top: 12px; padding-bottom: 12px; padding-left: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.details_title}</th>
+                                    <th width="30%" align="right" style="width: 30%; padding-top: 12px; padding-bottom: 12px; padding-right: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td align="left" style="padding: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Booking Ref: {{booking_reference}}</td>
-                                    <td align="right" style="padding: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">₹{{total_amount}}</td>
+                                    <td width="70%" align="left" style="width: 70%; padding-top: 12px; padding-bottom: 12px; padding-left: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Booking Ref: {{booking_reference}}</td>
+                                    <td width="30%" align="right" style="width: 30%; padding-top: 12px; padding-bottom: 12px; padding-right: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">₹{{total_amount}}</td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td data-edit="total_label" align="right" style="padding: 12px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.total_label}</td>
-                                    <td align="right" style="padding: 12px; font-weight: bold; color: #2563eb; font-size: 20px; font-family: Arial, sans-serif;">₹{{total_amount}}</td>
+                                    <td width="70%" data-edit="total_label" align="right" style="width: 70%; padding-top: 12px; padding-bottom: 12px; padding-right: 12px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.total_label}</td>
+                                    <td width="30%" align="right" style="width: 30%; padding-top: 12px; padding-bottom: 12px; padding-right: 12px; font-weight: bold; color: #2563eb; font-size: 20px; font-family: Arial, sans-serif;">₹{{total_amount}}</td>
                                 </tr>
                             </tfoot>
                         </table>
-                        <p data-edit="attachment_note" style="font-size: 13px; color: #000000; margin-top: 40px; font-family: Arial, sans-serif;">${c.attachment_note}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" style="width: 100%; font-family: Arial, sans-serif;">
+                                    <p data-edit="attachment_note" style="font-size: 13px; color: #000000; margin: 0; font-family: Arial, sans-serif;">${c.attachment_note}</p>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -306,66 +345,96 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     payment_receipt: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
                 <tr>
-                    <td>
+                    <td width="100%" style="width: 100%; padding-top: 40px; padding-bottom: 40px; padding-left: 40px; padding-right: 40px; font-family: Arial, sans-serif;">
                         ${renderHeader(c)}
-                        <p data-edit="hero_title" style="margin-top: 10px; margin-bottom: 15px; font-size: 16px; color: #000000; font-family: Arial, sans-serif;">${c.hero_title}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="hero_title" style="width: 100%; padding-top: 10px; padding-bottom: 15px; font-size: 16px; color: #000000; font-family: Arial, sans-serif;">${c.hero_title}</td>
+                            </tr>
+                        </table>
                         ${renderBodyImage(c)}
-                        <p data-edit="intro_text" style="line-height: 1.6; margin-bottom: 25px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="intro_text" style="width: 100%; line-height: 1.6; padding-bottom: 25px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</td>
+                            </tr>
+                        </table>
                         
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;"><tr><td width="100%" style="width: 100%; font-family: Arial, sans-serif;">&nbsp;</td></tr></table>
                         
                         <h3 data-edit="details_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 15px; font-family: Arial, sans-serif;">${c.details_title}</h3>
-                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Reference ID:</strong></td>
-                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
+                                <td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Reference ID:</strong></td>
+                                <td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
                             </tr>
                             <tr>
-                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Package:</strong></td>
-                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
+                                <td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Package:</strong></td>
+                                <td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
                             </tr>
                             <tr>
-                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Amount Paid:</strong></td>
-                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">₹{{amount_paid}}</td>
+                                <td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Amount Paid:</strong></td>
+                                <td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">₹{{amount_paid}}</td>
                             </tr>
                             <tr>
-                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Method:</strong></td>
-                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_method}}</td>
+                                <td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Method:</strong></td>
+                                <td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_method}}</td>
                             </tr>
                             <tr>
-                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Date:</strong></td>
-                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_date}}</td>
+                                <td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Date:</strong></td>
+                                <td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_date}}</td>
                             </tr>
                         </table>
 
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;"><tr><td width="100%" style="width: 100%; font-family: Arial, sans-serif;">&nbsp;</td></tr></table>
 
                         <h3 data-edit="invoice_note_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 10px; font-family: Arial, sans-serif;">${c.invoice_note_title}</h3>
-                        <p data-edit="invoice_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.invoice_note_text}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="invoice_note_text" style="width: 100%; font-size: 14px; line-height: 1.6; padding-bottom: 20px; color: #000000; font-family: Arial, sans-serif;">${c.invoice_note_text}</td>
+                            </tr>
+                        </table>
 
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;"><tr><td width="100%" style="width: 100%; font-family: Arial, sans-serif;">&nbsp;</td></tr></table>
 
                         <h3 data-edit="important_note_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 10px; font-family: Arial, sans-serif;">${c.important_note_title}</h3>
-                        <p data-edit="important_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 25px; color: #000000; font-family: Arial, sans-serif;">${c.important_note_text}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="important_note_text" style="width: 100%; font-size: 14px; line-height: 1.6; padding-bottom: 25px; color: #000000; font-family: Arial, sans-serif;">${c.important_note_text}</td>
+                            </tr>
+                        </table>
 
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;"><tr><td width="100%" style="width: 100%; font-family: Arial, sans-serif;">&nbsp;</td></tr></table>
 
-                        <p data-edit="footer_note" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.footer_note}</p>
-                        <p data-edit="footer_team" style="font-size: 14px; margin: 0; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.footer_team}</p>
-                        <div style="margin-top: 10px; font-size: 13px; font-family: Arial, sans-serif;">
-                            <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📧 {{agent_email}}</p>
-                            <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📞 {{agent_phone}}</p>
-                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="footer_note" style="width: 100%; font-size: 14px; line-height: 1.6; padding-bottom: 20px; color: #000000; font-family: Arial, sans-serif;">${c.footer_note}</td>
+                            </tr>
+                            <tr>
+                                <td width="100%" data-edit="footer_team" style="width: 100%; font-size: 14px; padding-bottom: 10px; color: #000000; font-family: Arial, sans-serif;">${c.footer_team}</td>
+                            </tr>
+                        </table>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" style="width: 100%; font-family: Arial, sans-serif; font-size: 13px;">
+                                    <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📧 {{agent_email}}</p>
+                                    <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📞 {{agent_phone}}</p>
+                                </td>
+                            </tr>
+                        </table>
 
-                        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; font-family: Arial, sans-serif;">
-                            <p style="margin: 0;">© RNT Travel. This is an automated notification.</p>
-                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" style="width: 100%; font-family: Arial, sans-serif; font-size: 11px; color: #94a3b8;">
+                                    <p style="margin: 0;">© RNT Travel. This is an automated notification.</p>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -380,37 +449,44 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     booking_cancellation: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="30" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #fee2e2; border-top: 4px solid #ef4444;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #fee2e2; border-top: 4px solid #ef4444;">
                 <tr>
-                    <td>
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
                         ${renderHeader(c)}
                         <h1 data-edit="hero_title" style="color: #991b1b; margin-top: 10px; margin-bottom: 15px; font-size: 24px; font-family: Arial, sans-serif;">${c.hero_title}</h1>
                         ${renderBodyImage(c)}
-                        <p data-edit="intro_text" style="color: #334155; line-height: 1.6; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
-                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #fef2f2; border: 1px solid #fee2e2; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;">
+                        <p data-edit="intro_text" style="color: #334155; line-height: 1.6; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 25px;">${c.intro_text}</p>
+                        
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #fef2f2; border: 1px solid #fee2e2; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;">
                             <tr>
-                                <td>
-                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                <td width="100%" bgcolor="#fef2f2" style="width: 100%; padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; font-family: Arial, sans-serif;">
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                                         <tr>
-                                            <td align="left"><p data-edit="details_title" style="margin: 0; color: #991b1b; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">${c.details_title}</p></td>
-                                            <td align="right"><p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000; font-family: Arial, sans-serif;">₹{{refund_amount}}</p></td>
+                                            <td width="50%" align="left" style="width: 50%; font-family: Arial, sans-serif;"><p data-edit="details_title" style="margin: 0; color: #991b1b; font-weight: bold; font-size: 14px; font-family: Arial, sans-serif;">${c.details_title}</p></td>
+                                            <td width="50%" align="right" style="width: 50%; font-family: Arial, sans-serif;"><p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000; font-family: Arial, sans-serif;">₹{{refund_amount}}</p></td>
                                         </tr>
                                     </table>
                                     <p data-edit="summary_label" style="margin-top: 5px; margin-bottom: 0; font-size: 14px; color: #b91c1c; font-family: Arial, sans-serif;">${c.summary_label}</p>
                                 </td>
                             </tr>
                         </table>
-                        <p data-edit="closing_text" style="color: #334155; font-family: Arial, sans-serif; font-size: 14px;">${c.closing_text}</p>
-                        <div style="margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-                            <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
-                                <span data-edit="footer_note">${c.footer_note}</span><br>
-                                <strong data-edit="footer_team">${c.footer_team}</strong>
-                            </p>
-                        </div>
+                        
+                        <p data-edit="closing_text" style="color: #334155; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 30px;">${c.closing_text}</p>
+                        
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #f1f5f9; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" style="width: 100%; padding-top: 20px; font-family: Arial, sans-serif;">
+                                    <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
+                                        <span data-edit="footer_note">${c.footer_note}</span><br>
+                                        <strong data-edit="footer_team">${c.footer_team}</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -425,25 +501,29 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
     trip_reminder: (c) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #eff6ff;">
             <!--[if mso]>
-            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
             <tr>
             <td align="center" valign="top" width="600" style="width:600px;">
             <![endif]-->
-            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; text-align: center;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; text-align: center;">
                 <tr>
-                    <td>
+                    <td width="100%" style="width: 100%; padding-top: 40px; padding-bottom: 40px; padding-left: 40px; padding-right: 40px; font-family: Arial, sans-serif;">
                         ${renderHeader(c)}
-                        <div style="font-size: 48px; margin-bottom: 20px;">✈️</div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" align="center" style="width: 100%; font-size: 48px; padding-bottom: 20px; font-family: Arial, sans-serif;">✈️</td>
+                            </tr>
+                        </table>
                         <h1 data-edit="hero_title" style="color: #1e40af; margin-top: 0; margin-bottom: 0; font-size: 28px; font-family: Arial, sans-serif;">${c.hero_title}</h1>
                         <p data-edit="hero_subtitle" style="color: #1e3a8a; font-size: 18px; margin-top: 10px; margin-bottom: 0; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
                         ${renderBodyImage(c)}
-                        <table width="100%" border="0" cellpadding="30" cellspacing="0" style="background-color: #ffffff; margin-top: 30px; margin-bottom: 30px; border-collapse: collapse;">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #ffffff; margin-top: 30px; margin-bottom: 30px; border-collapse: collapse;">
                             <tr>
-                                <td align="left">
+                                <td width="100%" align="left" style="width: 100%; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
                                     <p data-edit="intro_text" style="margin-top: 0; margin-bottom: 20px; line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
-                                    <table width="100%" border="0" cellpadding="15" cellspacing="0" style="background-color: #f8fafc; border-collapse: collapse;">
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f8fafc; border-collapse: collapse;">
                                         <tr>
-                                            <td align="center" style="font-size: 20px; font-weight: bold; color: #2563eb; font-family: Arial, sans-serif;">{{departure_date}}</td>
+                                            <td width="100%" align="center" style="width: 100%; padding-top: 15px; padding-bottom: 15px; padding-left: 15px; padding-right: 15px; font-size: 20px; font-weight: bold; color: #2563eb; font-family: Arial, sans-serif;">{{departure_date}}</td>
                                         </tr>
                                     </table>
                                     <p data-edit="message_text" style="margin-top: 20px; margin-bottom: 10px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.message_text}</p>
@@ -451,7 +531,11 @@ export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailC
                                 </td>
                             </tr>
                         </table>
-                        <p data-edit="footer_note" style="font-size: 12px; color: #000000; font-family: Arial, sans-serif; margin: 0;">${c.footer_note}</p>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" data-edit="footer_note" style="width: 100%; font-size: 12px; color: #000000; font-family: Arial, sans-serif; margin: 0;">${c.footer_note}</td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>

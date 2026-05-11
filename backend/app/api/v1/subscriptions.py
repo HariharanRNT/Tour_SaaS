@@ -200,7 +200,9 @@ async def list_all_subscriptions(
 ):
     """List all user subscriptions (Admin only)"""
     
-    stmt = select(Subscription).options(
+    stmt = select(Subscription).where(
+        Subscription.status.in_(['active', 'expired', 'halted', 'failed', 'upcoming'])
+    ).options(
         selectinload(Subscription.plan),
         selectinload(Subscription.user)
     )

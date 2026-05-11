@@ -9,6 +9,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app.tasks.subscription_tasks import sync_stuck_subscriptions
+from contextlib import asynccontextmanager
+
 
 # Initialize Limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -38,6 +42,30 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Initialize Scheduler
+scheduler = AsyncIOScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- STARTUP ---
+    # 1. Initialize Redis Cache
+    redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    
+    # 2. Start Scheduler Jobs
+    if not scheduler.running:
+        scheduler.add_job(sync_stuck_subscriptions, 'interval', minutes=30, id="sync_stuck_subs")
+        scheduler.start()
+        logger.info("APScheduler started: sync_stuck_subs job scheduled every 30m")
+    
+    yield
+    
+    # --- SHUTDOWN ---
+    if scheduler.running:
+        scheduler.shutdown()
+        logger.info("APScheduler shutdown.")
+
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.APP_NAME,
@@ -45,10 +73,12 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
+    lifespan=lifespan
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -123,11 +153,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Centralized API Logger (fire-and-forget, non-blocking)
 app.add_middleware(APILoggerMiddleware)
-
-@app.on_event("startup")
-async def startup():
-    redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 # Mount static files
 from fastapi.staticfiles import StaticFiles

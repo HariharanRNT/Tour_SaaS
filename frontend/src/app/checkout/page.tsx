@@ -147,14 +147,25 @@ function CheckoutContent() {
 
     // Load Session & Settings
     useEffect(() => {
-        if (!sessionId || sessionId === 'null') {
-            if (sessionId === 'null') setLoading(false);
-            return;
-        }
-
-        const fetchSession = async () => {
+        const fetchSessionData = async () => {
             try {
-                const data = await tripPlannerAPI.getSession(sessionId)
+                let activeSessionId = sessionId;
+
+                // If no sessionId in URL, try to fetch the latest active draft for the user
+                if (!activeSessionId || activeSessionId === 'null') {
+                    const latestDraft = await tripPlannerAPI.getLatestUserDraft();
+                    if (latestDraft && latestDraft.session_id) {
+                        activeSessionId = latestDraft.session_id;
+                        // Update URL without refreshing to keep it clean but functional
+                        const newUrl = `${window.location.pathname}?sessionId=${activeSessionId}${customerId ? `&customerId=${customerId}` : ''}`;
+                        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+                    } else {
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                const data = await tripPlannerAPI.getSession(activeSessionId)
                 setSessionData(data)
 
                 // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
@@ -222,6 +233,41 @@ function CheckoutContent() {
                 const basePrice = data.price_per_person || 18000
                 const flightPrice = data.flight_details?.price || 0
                 setTotalAmount((basePrice + flightPrice) * count)
+
+                // Initialize Session Timer (10 Minutes)
+                const expiryKey = `checkout_expiry_${activeSessionId}`
+                const storedExpiry = localStorage.getItem(expiryKey)
+                let expiryTime: number
+
+                if (storedExpiry) {
+                    expiryTime = parseInt(storedExpiry)
+                } else {
+                    expiryTime = Date.now() + 10 * 60 * 1000 // 10 minutes
+                    localStorage.setItem(expiryKey, expiryTime.toString())
+                }
+
+                const updateTimer = () => {
+                    const now = Date.now()
+                    const diff = Math.max(0, Math.floor((expiryTime - now) / 1000))
+                    setTimeLeft(diff)
+
+                    if (diff <= 0) {
+                        setIsSessionExpired(true)
+                        handleSessionExpiry()
+                        return false
+                    }
+                    return true
+                }
+
+                if (updateTimer()) {
+                    const interval = setInterval(() => {
+                        if (!updateTimer()) {
+                            clearInterval(interval)
+                        }
+                    }, 1000)
+                    // We can't easily return the interval cleanup from here, but this is a side effect
+                }
+
             } catch (e) {
                 console.error("Load session failed", e)
                 toast.error(formatError(e) || "Could not load trip details")
@@ -230,45 +276,7 @@ function CheckoutContent() {
             }
         }
 
-        fetchSession()
-
-        // Initialize Session Timer (10 Minutes)
-        const initTimer = () => {
-            const expiryKey = `checkout_expiry_${sessionId}`
-            const storedExpiry = localStorage.getItem(expiryKey)
-            let expiryTime: number
-
-            if (storedExpiry) {
-                expiryTime = parseInt(storedExpiry)
-            } else {
-                expiryTime = Date.now() + 10 * 60 * 1000 // 10 minutes
-                localStorage.setItem(expiryKey, expiryTime.toString())
-            }
-
-            const updateTimer = () => {
-                const now = Date.now()
-                const diff = Math.max(0, Math.floor((expiryTime - now) / 1000))
-                setTimeLeft(diff)
-
-                if (diff <= 0) {
-                    setIsSessionExpired(true)
-                    handleSessionExpiry()
-                    return false
-                }
-                return true
-            }
-
-            if (updateTimer()) {
-                const interval = setInterval(() => {
-                    if (!updateTimer()) {
-                        clearInterval(interval)
-                    }
-                }, 1000)
-                return () => clearInterval(interval)
-            }
-        }
-
-        const cleanupTimer = initTimer()
+        fetchSessionData()
 
         // Initialize Razorpay Script
         const script = document.createElement("script");
@@ -277,10 +285,7 @@ function CheckoutContent() {
         document.body.appendChild(script);
 
         setCountryStates(State.getStatesOfCountry('IN'))
-        return () => {
-            if (cleanupTimer) cleanupTimer()
-        }
-    }, [sessionId, handleSessionExpiry])
+    }, [sessionId, customerId, handleSessionExpiry])
 
     // Recalculate total when GST settings or travelers change
     useEffect(() => {

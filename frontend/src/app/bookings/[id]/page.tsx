@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Script from 'next/script'
 import { bookingsAPI, agentAPI, paymentsAPI } from '@/lib/api'
@@ -52,9 +52,49 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+const MOCK_BOOKING: Booking = {
+    id: 'preview-sample',
+    booking_reference: 'BK-PREVIEW',
+    package_id: 'pkg-1',
+    user_id: 'user-1',
+    travel_date: new Date().toISOString(),
+    number_of_travelers: 2,
+    total_amount: 50000,
+    status: 'confirmed',
+    payment_status: 'paid',
+    created_at: new Date().toISOString(),
+    travelers: [
+        { id: 't1', first_name: 'John', last_name: 'Doe', date_of_birth: '1990-01-01', gender: 'Male', nationality: 'Indian', is_primary: true },
+        { id: 't2', first_name: 'Jane', last_name: 'Doe', date_of_birth: '1992-01-01', gender: 'Female', nationality: 'Indian', is_primary: false }
+    ],
+    package: {
+        id: 'pkg-1',
+        title: 'Bora Bora Luxury Escape',
+        slug: 'bora-bora',
+        description: 'Mock package for preview',
+        destination: 'French Polynesia',
+        duration_days: 5,
+        duration_nights: 4,
+        category: 'Luxury',
+        price_per_person: 25000,
+        max_group_size: 10,
+        included_items: ['Airport Transfers', 'Luxury Resort', 'Snorkeling Tour'],
+        excluded_items: ['International Flights'],
+        status: 'published',
+        created_at: new Date().toISOString(),
+        images: [{ id: 'img-1', image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e', display_order: 1, created_at: '' }],
+        itinerary_items: [
+            { id: 'iti-1', day_number: 1, title: 'Arrival', description: 'Welcome to paradise', activities: [], meals_included: [] }
+        ],
+        availability: []
+    }
+}
+
 export default function BookingDetailsPage() {
     const params = useParams()
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const isPreview = searchParams.get('mode') === 'preview'
     const [booking, setBooking] = useState<Booking | null>(null)
     const [loading, setLoading] = useState(true)
     const [showFullItinerary, setShowFullItinerary] = useState(false)
@@ -99,6 +139,11 @@ export default function BookingDetailsPage() {
     }, [params.id])
 
     const loadBooking = async (id: string) => {
+        if (id === 'preview-sample') {
+            setBooking(MOCK_BOOKING)
+            setLoading(false)
+            return
+        }
         try {
             const data = await bookingsAPI.getById(id)
             setBooking(data)
@@ -529,7 +574,7 @@ export default function BookingDetailsPage() {
                             <div className="flex items-center gap-3 mb-2">
                                 <Button
                                     variant="ghost"
-                                    onClick={() => router.push('/bookings')}
+                                    onClick={() => isPreview ? window.close() : router.push('/bookings')}
                                     className="h-8 w-8 rounded-full bg-black/5 hover:bg-black/10 p-0"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
@@ -568,7 +613,7 @@ export default function BookingDetailsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {isConfirmed && (
+                            {!isPreview && isConfirmed && (
                                 <>
                                     <Button
                                         variant="ghost"
@@ -589,7 +634,7 @@ export default function BookingDetailsPage() {
                                     </Button>
                                 </>
                             )}
-                            {isFailed && (
+                            {!isPreview && isFailed && (
                                 <Button
                                     variant="secondary"
                                     size="sm"

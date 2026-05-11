@@ -513,6 +513,8 @@ export default function AgentThemeSettingsPage() {
     const [websitePages, setWebsitePages] = useState<WebsitePagesConfig>(DEFAULT_WEBSITE_PAGES);
     const [websiteSaving, setWebsiteSaving] = useState(false);
     const [activePageTab, setActivePageTab] = useState<'about' | 'contact'>('about');
+    const [lowestPackageSlug, setLowestPackageSlug] = useState<string | null>(null);
+    const [latestBookingId, setLatestBookingId] = useState<string | null>(null);
 
     // Body class helpers
     const applyBodyClasses = (btn: string, icon: string, card: string, dens: string, font: string) => {
@@ -657,6 +659,35 @@ export default function AgentThemeSettingsPage() {
                             }));
                         }
                         if (hs.font_color || hs.fontColor) setFontColor(hs.font_color || hs.fontColor);
+                    }
+                }
+
+                // Fetch packages to find the lowest priced one for preview
+                const packagesRes = await fetch(`${API_URL}/api/v1/agent/packages?limit=100`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (packagesRes.ok) {
+                    const packagesData = await packagesRes.json();
+                    if (packagesData.items && packagesData.items.length > 0) {
+                        // Filter for published packages first if possible, or just all owned packages
+                        const publishedPkgs = packagesData.items.filter((p: any) => p.status === 'PUBLISHED' || p.status === 'published');
+                        const targetPkgs = publishedPkgs.length > 0 ? publishedPkgs : packagesData.items;
+                        
+                        const lowestPricePkg = targetPkgs.reduce((prev: any, curr: any) => 
+                            (prev.price_per_person < curr.price_per_person) ? prev : curr
+                        );
+                        setLowestPackageSlug(lowestPricePkg.slug);
+                    }
+                }
+
+                // Fetch latest booking for preview
+                const bookingsRes = await fetch(`${API_URL}/api/v1/agent/bookings?limit=1`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (bookingsRes.ok) {
+                    const bookingsData = await bookingsRes.json();
+                    if (bookingsData.items && bookingsData.items.length > 0) {
+                        setLatestBookingId(bookingsData.items[0].id);
                     }
                 }
             } catch (err) {
@@ -2605,7 +2636,7 @@ export default function AgentThemeSettingsPage() {
                                 {activeTab === 'plantrip' && (
                                     <Button
                                         variant="outline"
-                                        onClick={() => window.open(`${window.location.origin}/plan-trip`, '_blank')}
+                                        onClick={() => window.open(`${window.location.origin}/plan-trip?search=all`, '_blank')}
                                         className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -2616,7 +2647,12 @@ export default function AgentThemeSettingsPage() {
                                 {activeTab === 'itinerary' && (
                                     <Button
                                         variant="outline"
-                                        onClick={() => window.open(`${window.location.origin}/plan-trip`, '_blank')}
+                                        onClick={() => {
+                                            const url = lowestPackageSlug 
+                                                ? `${window.location.origin}/plan-trip/${lowestPackageSlug}?mode=preview`
+                                                : `${window.location.origin}/plan-trip`;
+                                            window.open(url, '_blank');
+                                        }}
                                         className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -2638,7 +2674,11 @@ export default function AgentThemeSettingsPage() {
                                 {activeTab === 'mybooking' && (
                                     <Button
                                         variant="outline"
-                                        onClick={() => window.open(`${window.location.origin}/bookings`, '_blank')}
+                                        onClick={() => {
+                                            const bookingId = latestBookingId || "preview-sample";
+                                            const url = `${window.location.origin}/bookings/${bookingId}?mode=preview`;
+                                            window.open(url, '_blank');
+                                        }}
                                         className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />

@@ -44,9 +44,7 @@ class InvoiceService:
         # Data Preparation
         plan = subscription.plan
         base_price = float(plan.price)
-        gst_rate = 0.18
-        gst_amount = base_price * gst_rate
-        total_amount = base_price + gst_amount
+        total_amount = base_price
         invoice_date = datetime.now().strftime("%d-%b-%Y")
         invoice_number = f"INV-{str(subscription.id)[:8].upper()}"
         
@@ -136,16 +134,8 @@ class InvoiceService:
             </table>
 
             <table style="width: 50%; margin-left: auto;">
-                <tr>
-                    <td style="border: none;">Subtotal</td>
-                    <td style="text-align: right; border: none;">INR {base_price:.2f}</td>
-                </tr>
-                <tr>
-                    <td style="border: none;">GST (18%)</td>
-                    <td style="text-align: right; border: none;">INR {gst_amount:.2f}</td>
-                </tr>
                 <tr class="total-row">
-                    <td style="border-top: 2px solid #333; font-size: 16px;">Total</td>
+                    <td style="border-top: 2px solid #333; font-size: 16px;">Total Amount</td>
                     <td style="text-align: right; border-top: 2px solid #333; font-size: 16px;">INR {total_amount:.2f}</td>
                 </tr>
             </table>

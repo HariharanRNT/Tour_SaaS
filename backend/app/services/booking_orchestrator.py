@@ -331,76 +331,85 @@ class BookingOrchestrator:
 
         base_price = float(booking.total_amount) - flight_price
 
-        # 3. HTML Template
+        # 3. HTML Template (Refactored for Outlook)
         html_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 0; border-radius: 8px; overflow: hidden;">
-                <div style="background-color: #1e293b; color: white; padding: 20px; text-align: center;">
-                    <h2 style="margin: 0;">New Booking Received!</h2>
-                </div>
-                
-                <div style="padding: 20px;">
-                    <p>Dear {agent_user.first_name},</p>
-                    <p>You have received a new booking for <strong>{booking.package.title}</strong>.</p>
-                    
-                    <!-- Booking Summary -->
-                    <div style="background-color: #f1f5f9; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-                        <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Booking Summary</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 5px 0; color: #64748b;">Reference ID:</td><td style="font-weight: bold;">{booking.booking_reference}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #64748b;">Booking Date:</td><td>{booking.booking_date}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #64748b;">Status:</td><td><span style="background-color: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px;">{booking.status.value.upper()}</span></td></tr>
-                            <tr><td style="padding: 5px 0; color: #64748b;">Payment:</td><td><span style="background-color: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px;">{booking.payment_status.value.upper()}</span></td></tr>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <tr>
+                    <td width="100%" align="center" bgcolor="#1e293b" style="width: 100%; background-color: #1e293b; padding-top: 30px; padding-bottom: 30px; padding-left: 20px; padding-right: 20px; font-family: Arial, sans-serif;">
+                        <h2 style="margin: 0; color: #ffffff; font-size: 24px; font-family: Arial, sans-serif;">New Booking Received!</h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="100%" style="width: 100%; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px; font-family: Arial, sans-serif;">
+                        <p style="margin-top: 0; margin-bottom: 20px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">Dear {agent_user.first_name},</p>
+                        <p style="margin-bottom: 25px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">You have received a new booking for <strong>{booking.package.title}</strong>.</p>
+                        
+                        <!-- Booking Summary -->
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f1f5f9; border-collapse: collapse; margin-bottom: 25px;">
+                            <tr>
+                                <td width="100%" style="width: 100%; padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; font-family: Arial, sans-serif;">
+                                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-family: Arial, sans-serif; font-size: 16px;">Booking Summary</h3>
+                                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                                        <tr><td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Reference ID:</td><td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; font-weight: bold; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">{booking.booking_reference}</td></tr>
+                                        <tr><td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Booking Date:</td><td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">{booking.booking_date}</td></tr>
+                                        <tr><td width="50%" align="left" style="width: 50%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Status:</td><td width="50%" align="right" style="width: 50%; padding-top: 5px; padding-bottom: 5px; font-family: Arial, sans-serif; font-size: 14px;"><span style="background-color: #dcfce7; color: #166534; padding-top: 2px; padding-bottom: 2px; padding-left: 8px; padding-right: 8px; border-radius: 12px; font-size: 12px;">{booking.status.value.upper()}</span></td></tr>
+                                    </table>
+                                </td>
+                            </tr>
                         </table>
-                    </div>
 
-                    <!-- Customer Details -->
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Customer Details</h3>
-                        <p style="margin: 5px 0;"><strong>Name:</strong> {booking.user.first_name} {booking.user.last_name}</p>
-                        <p style="margin: 5px 0;"><strong>Email:</strong> {booking.user.email}</p>
-                        <p style="margin: 5px 0;"><strong>Phone:</strong> {booking.user.phone or 'N/A'}</p>
-                        <p style="margin: 5px 0;"><strong>Travelers:</strong> {booking.number_of_travelers}</p>
-                    </div>
-
-                    <!-- Package Details -->
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Package Details</h3>
-                        <p style="margin: 5px 0;"><strong>Package:</strong> {booking.package.title}</p>
-                        <p style="margin: 5px 0;"><strong>Destination:</strong> {booking.package.destination}</p>
-                        <p style="margin: 5px 0;"><strong>Duration:</strong> {booking.package.duration_days} Days / {booking.package.duration_nights} Nights</p>
-                        <p style="margin: 5px 0;"><strong>Travel Date:</strong> {booking.travel_date}</p>
-                    </div>
-
-                    <!-- Pricing Breakdown -->
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Pricing Breakdown</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 5px 0; color: #64748b;">Base Package:</td><td style="text-align: right;">₹{base_price:,.2f}</td></tr>
-                            <tr><td style="padding: 5px 0; color: #64748b;">Flight Add-on:</td><td style="text-align: right;">₹{flight_price:,.2f}</td></tr>
-                            <tr style="border-top: 1px dashed #cbd5e1;"><td style="padding: 10px 0; font-weight: bold;">Total Paid:</td><td style="text-align: right; font-weight: bold; color: #2563eb;">₹{float(booking.total_amount):,.2f}</td></tr>
+                        <!-- Customer Details -->
+                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-family: Arial, sans-serif; font-size: 16px;">Customer Details</h3>
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                            <tr><td width="40%" align="left" style="width: 40%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Name:</td><td width="60%" align="right" style="width: 60%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">{booking.user.first_name} {booking.user.last_name}</td></tr>
+                            <tr><td width="40%" align="left" style="width: 40%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Email:</td><td width="60%" align="right" style="width: 60%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">{booking.user.email}</td></tr>
+                            <tr><td width="40%" align="left" style="width: 40%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Phone:</td><td width="60%" align="right" style="width: 60%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">{booking.user.phone or 'N/A'}</td></tr>
                         </table>
-                    </div>
 
-                    <!-- Operational Info -->
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Operational Info</h3>
-                        <p style="margin: 5px 0;"><strong>Flight Booking ID / PNR:</strong> {flight_pnr}</p>
-                        <p style="margin: 5px 0;"><strong>Notes:</strong> Please review special requests in the dashboard.</p>
-                    </div>
+                        <!-- Pricing Breakdown -->
+                        <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-family: Arial, sans-serif; font-size: 16px;">Pricing Breakdown</h3>
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                            <tr><td width="60%" align="left" style="width: 60%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Base Package:</td><td width="40%" align="right" style="width: 40%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">₹{base_price:,.2f}</td></tr>
+                            <tr><td width="60%" align="left" style="width: 60%; padding-top: 5px; padding-bottom: 5px; color: #64748b; font-family: Arial, sans-serif; font-size: 14px;">Flight Add-on:</td><td width="40%" align="right" style="width: 40%; padding-top: 5px; padding-bottom: 5px; color: #333333; font-family: Arial, sans-serif; font-size: 14px;">₹{flight_price:,.2f}</td></tr>
+                            <tr style="border-top: 1px dashed #cbd5e1;"><td width="60%" align="left" style="width: 60%; padding-top: 15px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">Total Paid:</td><td width="40%" align="right" style="width: 40%; padding-top: 15px; font-weight: bold; color: #2563eb; font-family: Arial, sans-serif; font-size: 18px;">₹{float(booking.total_amount):,.2f}</td></tr>
+                        </table>
 
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="{settings.FRONTEND_URL}/agent/dashboard/bookings" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Booking in Dashboard</a>
-                    </div>
-                </div>
-                
-                <div style="background-color: #f8fafc; padding: 15px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                    <p>This is an automated notification from your Tour SaaS Platform.</p>
-                </div>
-            </div>
-        </body>
-        </html>
+                        <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 30px; border-collapse: collapse;">
+                            <tr>
+                                <td width="100%" align="center" style="width: 100%; font-family: Arial, sans-serif;">
+                                    <!--[if mso]>
+                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{settings.FRONTEND_URL}/agent/dashboard/bookings" style="height:45px;v-text-anchor:middle;width:220px;" arcsize="10%" stroke="f" fillcolor="#2563eb">
+                                    <w:anchorlock/>
+                                    <center>
+                                    <![endif]-->
+                                    <a href="{settings.FRONTEND_URL}/agent/dashboard/bookings" style="background-color: #2563eb; color: #ffffff; display: inline-block; padding-top: 12px; padding-bottom: 12px; padding-left: 24px; padding-right: 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">View Booking in Dashboard</a>
+                                    <!--[if mso]>
+                                    </center>
+                                    </v:roundrect>
+                                    <![endif]-->
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="100%" bgcolor="#f8fafc" align="center" style="width: 100%; background-color: #f8fafc; padding-top: 20px; padding-bottom: 20px; padding-left: 20px; padding-right: 20px; border-top: 1px solid #e2e8f0; font-family: Arial, sans-serif; font-size: 12px; color: #64748b;">
+                        This is an automated notification from your Tour SaaS Platform.
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </div>
         """
 
         logger.info(f"Sending Agent Notification to {agent_user.email}")

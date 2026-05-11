@@ -85,9 +85,18 @@ class CustomerNotificationService:
             support_phone = agent_user.phone if hasattr(agent_user, 'phone') and agent_user.phone else "N/A"
             
         # Standardize and add agent info
-        data["agency_name"] = agent_user.agency_name or "TourSaaS"
-        data["agent_email"] = agent_user.email
-        data["agent_phone"] = agent_user.phone or ""
+        if agent_user:
+            data["agency_name"] = (
+                agent_user.agent_profile.agency_name
+                if agent_user.agent_profile and agent_user.agent_profile.agency_name
+                else agent_user.first_name or "TourSaaS"
+            )
+            data["agent_email"] = agent_user.email or ""
+            data["agent_phone"] = agent_user.phone or ""
+        else:
+            data["agency_name"] = data.get("agency_name", "TourSaaS")
+            data["agent_email"] = ""
+            data["agent_phone"] = ""
         
         # Add aliases for common variables to support different shell naming preferences
         if "reference_id" in data and "booking_reference" not in data:
@@ -123,30 +132,50 @@ class CustomerNotificationService:
             subject = data.get("subject") or subject_map.get(template_type, "Notification")
         else:
             from app.utils.template_renderer import render_template
+            from app.utils.email_shells import EMAIL_SHELLS
             from app.utils.customer_email_templates import (
-                get_customer_notification_template_config, 
-                get_customer_notification_html_content,
+                get_customer_notification_template_config,
                 get_customer_notification_html
             )
-            
-            # 1. Get the template configuration (subject and HTML content)
-            template_config = get_customer_notification_template_config(template_type, data)
-            
-            # 2. Get the HTML content
-            html_content = template_config.get("html_content") or get_customer_notification_html_content(template_type)
-            
-            # 3. Render template with data
-            html_body = render_template(html_content, data, template_type=template_type)
-            subject = template_config.get("subject")
 
-            # 4. Fallback to legacy HTML template if still empty body
-            if not html_body:
+            # Get subject from existing config
+            template_config = get_customer_notification_template_config(template_type, data)
+            subject = template_config.get("subject") or "Notification"
+
+            # Use EMAIL_SHELLS as the default HTML renderer
+            if template_type in EMAIL_SHELLS:
+                structured = {
+                    "hero_title":          data.get("hero_title", ""),
+                    "hero_subtitle":       data.get("hero_subtitle", ""),
+                    "intro_text":          data.get("intro_text", ""),
+                    "details_title":       data.get("details_title", "📌 Trip Details"),
+                    "footer_note":         data.get("footer_note", "Warm regards,"),
+                    "footer_team":         f"The {data.get('agency_name', 'Team')} Team",
+                    "header_image_url":    data.get("header_image_url", ""),
+                    "header_image_height": data.get("header_image_height", "40px"),
+                    "show_header":         True,
+                    "show_body_image":     False,
+                    # Pass through invoice/receipt specific fields
+                    "invoice_title":       data.get("invoice_title", "INVOICE"),
+                    "bill_to_label":       data.get("bill_to_label", "Bill To:"),
+                    "total_label":         data.get("total_label", "Total Amount:"),
+                    "invoice_note_title":  data.get("invoice_note_title", "📄 Invoice Attached"),
+                    "invoice_note_text":   data.get("invoice_note_text", ""),
+                    "important_note_title":data.get("important_note_title", "🧾 Important Note"),
+                    "important_note_text": data.get("important_note_text", ""),
+                    "attachment_note":     data.get("attachment_note", ""),
+                    "closing_text":        data.get("closing_text", ""),
+                    "summary_label":       data.get("summary_label", ""),
+                    "message_text":        data.get("message_text", ""),
+                }
+                raw_html = EMAIL_SHELLS[template_type](structured)
+                html_body = render_template(raw_html, data, template_type=template_type)
+            else:
+                # Legacy fallback only for unknown template types
                 legacy_subject, legacy_html = get_customer_notification_html(template_type, data)
-                if legacy_html:
-                    html_body = legacy_html
-                    # Use legacy subject if modern one is generic/default
-                    if subject == "Notification" or not subject:
-                        subject = legacy_subject
+                html_body = legacy_html or ""
+                if not subject or subject == "Notification":
+                    subject = legacy_subject
         
         # Create a pending NotificationLog entry synchronously to pass to Celery
         try:
@@ -294,12 +323,13 @@ class CustomerNotificationService:
 
         # Prepare Data
         data = {
-            "customer_name": customer_name,
-            "reference_id": booking.booking_reference,
-            "package_name": booking.package.title,
-            "travel_date": str(booking.travel_date),
-            "travelers": booking.number_of_travelers,
-            "total_amount": float(booking.total_amount)
+            "customer_name":   customer_name,
+            "reference_id":    booking.booking_reference,
+            "booking_reference": booking.booking_reference,  # alias for shell
+            "package_name":    booking.package.title,
+            "travel_date":     str(booking.travel_date),
+            "travelers":       booking.number_of_travelers,
+            "total_amount":    float(booking.total_amount)
         }
         
         agent_user = CustomerNotificationService._resolve_agent(booking)
@@ -324,12 +354,13 @@ class CustomerNotificationService:
             return
 
         data = {
-            "customer_name": customer_name,
-            "package_name": booking.package.title,
-            "reference_id": booking.booking_reference,
-            "total_amount": payment_details.get("amount", float(booking.total_amount)),
-            "payment_method": payment_details.get("method", "Online"),
-            "payment_date": payment_details.get("date", "TBD")
+            "customer_name":   customer_name,
+            "package_name":    booking.package.title,
+            "reference_id":    booking.booking_reference,
+            "booking_reference": booking.booking_reference,  # alias for shell
+            "total_amount":    payment_details.get("amount", float(booking.total_amount)),
+            "payment_method":  payment_details.get("method", "Online"),
+            "payment_date":    payment_details.get("date", "TBD")
         }
 
         # Generate Invoice PDF
@@ -382,11 +413,12 @@ class CustomerNotificationService:
         itinerary_summary = f"{booking.package.duration_days} Days / {booking.package.duration_nights} Nights in {booking.package.destination}"
     
         data = {
-            "customer_name": customer_name,
-            "package_name": booking.package.title,
+            "customer_name":   customer_name,
+            "package_name":    booking.package.title,
             "itinerary_summary": itinerary_summary,
-            "reference_id": booking.booking_reference,
-            "travel_date": str(booking.travel_date)
+            "reference_id":    booking.booking_reference,
+            "booking_reference": booking.booking_reference,  # alias for shell
+            "travel_date":     str(booking.travel_date)
         }
     
         # Generate Itinerary PDF
@@ -423,11 +455,12 @@ class CustomerNotificationService:
             return
     
         data = {
-            "customer_name": customer_name,
-            "package_name": booking.package.title,
-            "reference_id": booking.booking_reference,
-            "total_amount": float(booking.total_amount),
-            "travel_date": str(booking.travel_date)
+            "customer_name":   customer_name,
+            "package_name":    booking.package.title,
+            "reference_id":    booking.booking_reference,
+            "booking_reference": booking.booking_reference,  # alias for shell
+            "total_amount":    float(booking.total_amount),
+            "travel_date":     str(booking.travel_date)
         }
     
         # Generate Invoice PDF

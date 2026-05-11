@@ -220,8 +220,8 @@ export default function AdminBillingPage() {
     })();
 
     const filteredSubscriptions = subscriptions.filter((sub: Subscription) => {
-        // Exclude internal 'payment_initiated' status (abandoned checkouts)
-        if (sub.status === 'payment_initiated') return false;
+        // Exclude internal 'payment_initiated' or 'abandoned' status
+        if (sub.status === 'payment_initiated' || sub.status === 'abandoned') return false;
 
         // Search filter
         if (!searchQuery.trim()) return true;
@@ -754,15 +754,17 @@ export default function AdminBillingPage() {
                                                                     sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" :
                                                                         (sub.status === 'cancelled' || sub.status === 'failed') ? "bg-red-400/10 text-red-600 border-red-400/20" :
                                                                             (sub.status === 'expired' || sub.status === 'completed') ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
-                                                                                sub.status === 'payment_initiated' ? "bg-blue-400/10 text-blue-600 border-blue-400/20" :
-                                                                                    "bg-amber-400/10 text-amber-600 border-amber-400/20"
+                                                                                sub.status === 'halted' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                                                                    sub.status === 'payment_initiated' ? "bg-blue-400/10 text-blue-600 border-blue-400/20" :
+                                                                                        "bg-slate-400/10 text-slate-400 border-slate-400/20"
                                                                 )}>
                                                                     {sub.status === 'failed' ? 'Failed' :
-                                                                        sub.status === 'payment_initiated' ? 'Initiated' :
-                                                                            sub.status === 'upcoming' ? 'Queue' :
-                                                                                (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' :
-                                                                                    sub.status === 'on_hold' ? 'Payment Failed' :
-                                                                                        sub.status.replace('_', ' ')}
+                                                                        sub.status === 'halted' ? 'Halted' :
+                                                                            sub.status === 'payment_initiated' ? 'Initiated' :
+                                                                                sub.status === 'upcoming' ? 'Queue' :
+                                                                                    (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' :
+                                                                                        sub.status === 'on_hold' ? 'Payment Failed' :
+                                                                                            sub.status.replace('_', ' ')}
                                                                 </span>
                                                             </TableCell>
                                                             <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>
