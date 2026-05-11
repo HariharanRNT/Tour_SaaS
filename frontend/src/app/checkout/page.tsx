@@ -165,7 +165,7 @@ function CheckoutContent() {
                     }
                 }
 
-                const data = await tripPlannerAPI.getSession(activeSessionId)
+                const data = await tripPlannerAPI.getSession(activeSessionId!)
                 setSessionData(data)
 
                 // Only set GST if it's explicitly applicable. If gst_applicable is false, suppress GST entirely.
