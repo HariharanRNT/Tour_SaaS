@@ -304,7 +304,7 @@ async def check_subscription_expiry(
     """
     Called on every subscription page load.
     1. Checks if current active plan is expired (by precise expires_at).
-    2. If expired → marks it complete, auto-activates next queued plan.
+    2. If expired → marks it expired, auto-activates next queued plan.
     3. Returns new state so frontend can show correct UI without a full reload.
     """
     from app.services.subscription_service import SubscriptionService
@@ -329,7 +329,7 @@ async def check_subscription_expiry(
         if was_expired:
             expired_plan_name = current_active_before.plan.name
 
-    # Run auto-activate logic (marks expired → completed, activates next queued)
+    # Run auto-activate logic (marks expired → expired, activates next queued)
     new_active = await SubscriptionService.check_and_auto_activate(current_user.agent_id_resolved, db)
 
     auto_activated_plan = None
@@ -461,10 +461,17 @@ async def purchase_subscription(
         raise HTTPException(status_code=404, detail="Plan not found")
 
     # Create pending subscription
+    # Generate unique reference
+    import random
+    import string
+    ref_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    sub_ref = f"SUB-{ref_id}"
+
     new_sub = Subscription(
         user_id=current_user.agent_id,
         plan_id=plan.id,
-        status='pending_payment',
+        subscription_reference=sub_ref,
+        status='payment_initiated',
         start_date=date.today(),
         end_date=date.today() + timedelta(days=365 if plan.billing_cycle == 'yearly' else 30),
         price_at_purchase=plan.price,

@@ -46,8 +46,8 @@ class SubscriptionService:
         """
         Core Logic:
         1. Check current active sub.
-        2. If expired (by expires_at or end_date) or limit reached -> Mark 'completed'.
-        3. If no active sub (or just completed) -> Find 'upcoming'.
+        2. If expired (by expires_at or end_date) or limit reached -> Mark 'expired'.
+        3. If no active sub (or just expired) -> Find 'upcoming'.
         4. If upcoming found -> Activate it.
         5. Return the potentially NEW active sub.
         """
@@ -86,7 +86,7 @@ class SubscriptionService:
                 sub.status = 'expired'
             elif is_expired_date or is_limit_reached:
                 print(f"[SubscriptionService] Expiring active sub {sub.id}. Reason: Expired={is_expired_date}, Limit={is_limit_reached}")
-                sub.status = 'completed'
+                sub.status = 'expired'
             elif best_active is None:
                 # This is the "best" valid active sub
                 best_active = sub
@@ -241,6 +241,10 @@ class SubscriptionService:
                                 
                                 <table class="details-table">
                                     <tr>
+                                        <th>Reference No</th>
+                                        <td style="font-family: monospace; font-weight: bold; color: #0056b3;">{new_sub.subscription_reference or 'N/A'}</td>
+                                    </tr>
+                                    <tr>
                                         <th>Plan Name</th>
                                         <td>{new_sub.plan.name}</td>
                                     </tr>
@@ -281,8 +285,7 @@ class SubscriptionService:
                         to_email=user.email,
                         subject=f"TourSaaS – Subscription Invoice & Payment Confirmation",
                         body=summary_html,
-                        attachment_bytes=pdf_bytes,
-                        attachment_filename=f"Invoice_{new_sub.id}.pdf"
+                        attachments=[{"bytes": pdf_bytes, "filename": f"Invoice_{new_sub.id}.pdf"}]
                     )
         except Exception as e:
             import traceback

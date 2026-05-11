@@ -33,8 +33,7 @@ async def test_attachment_email():
             to_email="customer@example.com",
             subject="Test Payment Receipt",
             body="<h1>Here is your receipt</h1>",
-            attachment_bytes=mock_pdf_bytes,
-            attachment_filename="Test_Invoice.pdf",
+            attachments=[{"bytes": mock_pdf_bytes, "filename": "Test_Invoice.pdf"}],
             smtp_config=dummy_smtp
         )
         print(f"Build succeeded. Connection failed gracefully if not localhost? Result: {success}")

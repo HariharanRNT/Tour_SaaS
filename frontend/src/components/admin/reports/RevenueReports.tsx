@@ -114,9 +114,6 @@ export default function RevenueReports({ dateRange }: RevenueReportsProps) {
                 <Card className="glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Monthly Revenue</CardTitle>
-                        <Button variant="outline" size="sm" className="h-[32px] text-[12px] font-medium text-[#0f172a] border-[#E2E8F0]">
-                            Filter <span className="ml-1">▼</span>
-                        </Button>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>

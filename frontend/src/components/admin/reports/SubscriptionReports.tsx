@@ -9,6 +9,14 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { API_URL } from '@/lib/api'
 
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog"
+
 interface SubscriptionReportsProps {
     dateRange: DateRange | undefined
 }
@@ -19,6 +27,7 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
     const [planAnalytics, setPlanAnalytics] = useState<any>(null)
     const [renewalStats, setRenewalStats] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [showAllPlans, setShowAllPlans] = useState(false)
 
     useEffect(() => {
         fetchReports()
@@ -295,7 +304,11 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                 <Card className="lg:col-span-2 glass-panel border-[1.5px] border-[#F1F5F9] shadow-[0_2px_16px_rgba(0,0,0,0.05)] rounded-[16px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#F1F5F9]">
                         <CardTitle className="text-[#0F172A] text-[17px] font-bold">Plan Revenue Summary</CardTitle>
-                        <Button variant="ghost" className="text-[#6366F1] text-[13px] font-semibold hover:bg-[#EEF2FF] hover:text-[#4F46E5] h-8 px-3">
+                        <Button 
+                            variant="ghost" 
+                            className="text-[#6366F1] text-[13px] font-semibold hover:bg-[#EEF2FF] hover:text-[#4F46E5] h-8 px-3"
+                            onClick={() => setShowAllPlans(true)}
+                        >
                             View All →
                         </Button>
                     </CardHeader>
@@ -310,7 +323,10 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {planAnalytics?.plans?.map((plan: any, index: number) => {
+                                    {[...(planAnalytics?.plans || [])]
+                                        .sort((a, b) => (b.subscription_count || 0) - (a.subscription_count || 0))
+                                        .slice(0, 4)
+                                        .map((plan: any, index: number) => {
                                         const maxRevenue = Math.max(...(planAnalytics?.plans?.map((p: any) => p.total_revenue) || [0]));
                                         const widthPercentage = maxRevenue ? (plan.total_revenue / maxRevenue) * 100 : 0;
                                         const colors = ['#6366F1', '#0EA5E9', '#8B5CF6', '#F59E0B', '#F97316'];
@@ -351,6 +367,71 @@ export default function SubscriptionReports({ dateRange }: SubscriptionReportsPr
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* View All Plans Modal */}
+                <Dialog open={showAllPlans} onOpenChange={setShowAllPlans}>
+                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto rounded-[24px] border-none shadow-2xl p-0 bg-white/95 backdrop-blur-xl">
+                        <DialogHeader className="p-8 pb-4 border-b border-slate-100">
+                            <DialogTitle className="text-2xl font-black text-[#0F172A] tracking-tight">Full Plan Revenue Summary</DialogTitle>
+                            <DialogDescription className="text-slate-500 font-medium">Detailed breakdown of revenue across all subscription plans</DialogDescription>
+                        </DialogHeader>
+                        <div className="p-0">
+                            <table className="w-full">
+                                <thead className="bg-slate-50/50 sticky top-0 backdrop-blur-sm z-10">
+                                    <tr className="border-b border-slate-100">
+                                        <th className="text-left text-slate-500 text-[10px] font-black uppercase tracking-widest py-4 px-8">Plan</th>
+                                        <th className="text-center text-slate-500 text-[10px] font-black uppercase tracking-widest py-4 px-8">Subscriptions</th>
+                                        <th className="text-right text-slate-500 text-[10px] font-black uppercase tracking-widest py-4 px-8">Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {[...(planAnalytics?.plans || [])]
+                                        .sort((a, b) => (b.subscription_count || 0) - (a.subscription_count || 0))
+                                        .map((plan: any, index: number) => {
+                                        const maxRevenue = Math.max(...(planAnalytics?.plans?.map((p: any) => p.total_revenue) || [0]));
+                                        const widthPercentage = maxRevenue ? (plan.total_revenue / maxRevenue) * 100 : 0;
+                                        const colors = ['#6366F1', '#0EA5E9', '#8B5CF6', '#F59E0B', '#F97316'];
+                                        const color = colors[index % colors.length];
+
+                                        return (
+                                            <tr key={plan.plan_id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="py-5 px-8">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                                                        <span className="text-[#0F172A] text-sm font-bold">{plan.plan_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-5 px-8 text-center text-slate-700 text-sm font-black">{plan.subscription_count}</td>
+                                                <td className="py-5 px-8 text-right">
+                                                    <div className="flex flex-col items-end gap-1.5">
+                                                        <span className="text-sm font-black text-[#10B981]">
+                                                            ₹{plan.total_revenue.toLocaleString()}
+                                                        </span>
+                                                        <div className="h-1.5 bg-slate-100 w-24 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full rounded-full"
+                                                                style={{
+                                                                    width: `${widthPercentage}%`,
+                                                                    backgroundColor: color,
+                                                                    opacity: 0.8
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 bg-slate-50/30 flex justify-end">
+                            <Button onClick={() => setShowAllPlans(false)} className="rounded-xl font-bold bg-[#0F172A] hover:bg-slate-800">
+                                Close Details
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     )

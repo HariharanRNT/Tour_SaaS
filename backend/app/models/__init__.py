@@ -880,6 +880,7 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    subscription_reference = Column(String, unique=True, index=True, nullable=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     plan_id = Column(UUID(as_uuid=True), ForeignKey("subscription_plans.id"), nullable=False)
     status = Column(String, default="active") # active, expired, cancelled, trial

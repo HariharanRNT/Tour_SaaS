@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models import (
     Package, PackageStatus, ItineraryItem, Booking, User, UserRole, 
     BookingStatus, Payment, PaymentStatus, Agent, Subscription,
-    BookingType, EnquiryPaymentType
+    BookingType, EnquiryPaymentType, ApprovalStatus
 )
 from sqlalchemy import func, desc, asc, outerjoin
 
@@ -128,7 +128,8 @@ async def get_dashboard_stats(
         stmt = select(
             func.count(User.id).label('total'),
             func.sum(sql_case((User.is_active == True, 1), else_=0)).label('active'),
-            func.sum(sql_case((User.is_active == False, 1), else_=0)).label('inactive')
+            func.sum(sql_case((User.is_active == False, 1), else_=0)).label('inactive'),
+            func.sum(sql_case((User.approval_status == ApprovalStatus.PENDING, 1), else_=0)).label('pending')
         ).join(Agent, Agent.user_id == User.id).where(User.role == UserRole.AGENT)
         
         result = await db.execute(stmt)
@@ -136,6 +137,7 @@ async def get_dashboard_stats(
         total_agents = row[0] or 0
         active_agents = row[1] or 0
         inactive_agents = row[2] or 0
+        pending_agents = row[3] or 0
 
         # Agent Growth (New registrations)
         curr_new_agents_stmt = select(func.count(User.id)).join(Agent, Agent.user_id == User.id).where(User.role == UserRole.AGENT)
@@ -268,12 +270,26 @@ async def get_dashboard_stats(
         # 8. Subscription Stats (Active & Nearing Expiry)
         # Subscription is imported at top level now
         
-        # Subscription Stats (Include active, trial, upcoming, expired, cancelled)
+        # Subscription Stats (Only active subscriptions as requested)
         sub_total_query = select(func.count(Subscription.id)).where(
-            Subscription.status.in_(['active', 'upcoming', 'expired', 'completed', 'cancelled', 'trial', 'on_hold'])
+            Subscription.status == 'active'
         )
         result = await db.execute(sub_total_query)
         active_subscriptions = result.scalar() or 0
+        
+        # Individual subscription counts for reports
+        expired_sub_query = select(func.count(Subscription.id)).where(Subscription.status == 'expired')
+        result = await db.execute(expired_sub_query)
+        expired_subscriptions = result.scalar() or 0
+        
+        cancelled_sub_query = select(func.count(Subscription.id)).where(Subscription.status == 'cancelled')
+        result = await db.execute(cancelled_sub_query)
+        cancelled_subscriptions = result.scalar() or 0
+        
+        # Trial Users count for health monitoring
+        trial_query = select(func.count(Subscription.id)).where(Subscription.status == 'trial')
+        result = await db.execute(trial_query)
+        trial_users_count = result.scalar() or 0
         
         # Nearing Expiry (Active + Ends within 3 days)
         expiry_threshold = now.date() + timedelta(days=3)
@@ -281,7 +297,8 @@ async def get_dashboard_stats(
         sub_expiry_stmt = select(
             Agent.first_name,
             Agent.last_name,
-            Subscription.end_date
+            Subscription.end_date,
+            func.coalesce(Subscription.price_at_purchase, 0)
         ).join(User, Subscription.user_id == User.id).join(Agent, User.id == Agent.user_id).where(
             Subscription.status == 'active',
             Subscription.end_date <= expiry_threshold
@@ -291,10 +308,13 @@ async def get_dashboard_stats(
         expiry_rows = result.all()
         
         subscriptions_nearing_expiry = len(expiry_rows)
+        total_renewal_revenue = sum(float(row[3]) for row in expiry_rows)
+        
         expiry_details = [
             {
                 "name": f"{row[0]} {row[1]}",
-                "date": row[2].strftime("%Y-%m-%d")
+                "date": row[2].strftime("%Y-%m-%d"),
+                "amount": float(row[3])
             }
             for row in expiry_rows
         ]
@@ -506,7 +526,8 @@ async def get_dashboard_stats(
                 renewals.append({
                     "name": exp["name"],
                     "date": exp_date.strftime("%b %d"),
-                    "daysLeft": max(0, days_left)
+                    "daysLeft": max(0, days_left),
+                    "amount": exp.get("amount", 0)
                 })
             except:
                 continue
@@ -515,7 +536,7 @@ async def get_dashboard_stats(
         health = {
             "activePlans": active_subscriptions,
             "expiringSoon": subscriptions_nearing_expiry,
-            "trialUsers": 0,
+            "trialUsers": trial_users_count,
             "churnRate": 2.4,
             "system": [
                 { "name": "API Status", "status": "Operational", "color": "text-emerald-500" },
@@ -541,7 +562,10 @@ async def get_dashboard_stats(
             "avgOrderValue": round(float(avg_order_value), 2),
             "conversionRate": conversion_rate,
             "activeSubscriptions": active_subscriptions,
+            "expiredSubscriptions": expired_subscriptions,
+            "cancelledSubscriptions": cancelled_subscriptions,
             "subscriptionsNearingExpiry": subscriptions_nearing_expiry,
+            "totalRenewalRevenue": total_renewal_revenue,
             "monthlyTrends": monthly_trends, 
             "ytmTrends": ytm_trends,
             "weeklyTrends": weekly_trends,
@@ -554,7 +578,7 @@ async def get_dashboard_stats(
                 "total": total_agents,
                 "active": active_agents,
                 "inactive": inactive_agents,
-                "pending": 0 # Placeholder if not tracked separately
+                "pending": pending_agents
             },
             "alerts": {
                 "paymentFailures": payment_failures,

@@ -40,7 +40,10 @@ const INITIAL_STATS = {
     conversionRate: 0,
     agents: { total: 0, active: 0, inactive: 0, pending: 0 },
     activeSubscriptions: 0,
+    expiredSubscriptions: 0,
+    cancelledSubscriptions: 0,
     subscriptionsNearingExpiry: 0,
+    totalRenewalRevenue: 0,
     revenueGrowth: 0,
     agentGrowth: 0,
     bookingGrowth: 0,
@@ -86,6 +89,30 @@ export default function AdminDashboard() {
     })
 
     const stats = { ...INITIAL_STATS, ...apiStats }
+
+    const handleGenerateReport = () => {
+        const reportData = [
+            ["Metric", "Value"],
+            ["Total Agents", stats.agents.total],
+            ["Active Subscriptions", stats.activeSubscriptions],
+            ["Expired Plans", stats.expiredSubscriptions],
+            ["Cancelled Plans", stats.cancelledSubscriptions],
+            ["Queue (Pending Approvals)", stats.agents.pending],
+            ["Total Revenue", `INR ${stats.totalRevenue}`],
+            ["Report Generated At", new Date().toLocaleString()]
+        ];
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + reportData.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Admin_Dashboard_Report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // Simple Sparkline Component
     function Sparkline({ data, color }: { data: number[], color: string }) {
@@ -212,7 +239,10 @@ export default function AdminDashboard() {
                                 <SelectItem value="30D" className="text-xs font-bold uppercase tracking-widest">Last 30 Days</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button className="bg-gradient-to-r from-[#FF692B] to-[#F59E0B] hover:scale-105 transition-all text-white shadow-xl shadow-orange-500/20 rounded-2xl h-12 px-8 font-black text-xs uppercase tracking-widest">
+                        <Button 
+                            onClick={handleGenerateReport}
+                            className="bg-gradient-to-r from-[#FF692B] to-[#F59E0B] hover:scale-105 transition-all text-white shadow-xl shadow-orange-500/20 rounded-2xl h-12 px-8 font-black text-xs uppercase tracking-widest"
+                        >
                             <CreditCard className="h-4 w-4 mr-3" />
                             Generate Report
                         </Button>
@@ -226,7 +256,6 @@ export default function AdminDashboard() {
                         value={`₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
                         change={stats.revenueGrowth}
                         changeLabel={stats.changeLabel}
-                        secondMetric={`Avg booking: ₹${stats.avgOrderValue}`}
                         icon={DollarSign}
                         colorClass="bg-emerald-500"
                         accentColor="bg-emerald-500"
@@ -247,7 +276,7 @@ export default function AdminDashboard() {
                         title="Expiring Soon"
                         value={stats.renewals.filter((r: any) => r.daysLeft <= 7).length}
                         changeLabel={stats.renewals.length > 0 ? `Next: ${stats.renewals[0].date}` : "No upcoming expiries"}
-                        secondMetric={`Renewal revenue: ₹${stats.renewals.length * 400}`}
+                        secondMetric={`Renewal revenue: ₹${stats.totalRenewalRevenue}`}
                         icon={Clock}
                         colorClass="bg-rose-500"
                         accentColor="bg-rose-500"

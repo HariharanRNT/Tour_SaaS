@@ -141,171 +141,325 @@ const renderBodyImage = (c: StructuredEmailContent) => {
 
 export const MASTER_SHELLS: Record<EmailTemplateType, (content: StructuredEmailContent) => string> = {
     booking_confirmation: (c) => `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: white;">
-            ${renderHeader(c)}
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; color: white;">
-                <h1 data-edit="hero_title" style="margin: 0; font-size: 24px;">${c.hero_title}</h1>
-                <p data-edit="hero_subtitle" style="opacity: 0.8; margin-top: 8px; font-size: 14px;">${c.hero_subtitle}</p>
-            </div>
-            <div style="padding: 30px; color: #000000;">
-                ${renderBodyImage(c)}
-                <p data-edit="intro_text" style="line-height: 1.6;">${c.intro_text}</p>
-                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #f1f5f9;">
-                    <h2 data-edit="details_title" style="margin-top: 0; font-size: 16px; color: #000000;">${c.details_title}</h2>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                        <tr><td style="padding: 8px 0; color: #000000;">Reference ID:</td><td style="text-align: right; font-weight: bold;">{{booking_reference}}</td></tr>
-                        <tr><td style="padding: 8px 0; color: #000000;">Package:</td><td style="text-align: right; font-weight: bold;">{{package_name}}</td></tr>
-                        <tr><td style="padding: 8px 0; color: #000000;">Travel Date:</td><td style="text-align: right; font-weight: bold;">{{travel_date}}</td></tr>
-                    </table>
-                </div>
-                <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; color: #000000; font-size: 14px;">
-                    <p style="margin: 0;"><span data-edit="footer_note">${c.footer_note}</span><br><strong data-edit="footer_team">${c.footer_team}</strong></p>
-                </div>
-            </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
+                <tr>
+                    <td align="center" style="background-color: #ffffff;">
+                        ${renderHeader(c)}
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" style="background-color: #1e293b; padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                        <h1 data-edit="hero_title" style="margin: 0; font-size: 24px; color: #ffffff; font-family: Arial, sans-serif;">${c.hero_title}</h1>
+                        <p data-edit="hero_subtitle" style="margin-top: 8px; margin-bottom: 0; font-size: 14px; color: #ffffff; opacity: 0.8; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                        ${renderBodyImage(c)}
+                        <p data-edit="intro_text" style="line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 25px;">${c.intro_text}</p>
+                        
+                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-collapse: collapse;">
+                            <tr>
+                                <td>
+                                    <h2 data-edit="details_title" style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #000000; font-family: Arial, sans-serif;">${c.details_title}</h2>
+                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                        <tr>
+                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Reference ID:</td>
+                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Package:</td>
+                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td width="50%" align="left" style="padding-top: 8px; padding-bottom: 8px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Travel Date:</td>
+                                            <td width="50%" align="right" style="padding-top: 8px; padding-bottom: 8px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{travel_date}}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+                            <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
+                                <span data-edit="footer_note">${c.footer_note}</span><br>
+                                <strong data-edit="footer_team">${c.footer_team}</strong>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
         </div>
     `.trim(),
 
     travel_itinerary: (c) => `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: white;">
-            ${renderHeader(c)}
-            <div style="background: #1e293b; padding: 25px; text-align: center; color: white;">
-                <h1 data-edit="hero_title" style="margin: 0; font-size: 22px;">${c.hero_title}</h1>
-                <p data-edit="hero_subtitle" style="opacity: 0.8; margin-top: 5px; font-size: 14px;">${c.hero_subtitle}</p>
-            </div>
-            <div style="padding: 30px; color: #000000;">
-                ${renderBodyImage(c)}
-                <p data-edit="intro_text" style="line-height: 1.6;">${c.intro_text}</p>
-                <div style="background-color: #f1f5f9; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                    <p style="margin: 0; font-style: italic; color: #000000;">{{itinerary_summary}}</p>
-                </div>
-                <p data-edit="attachment_note" style="font-size: 14px;">${c.attachment_note}</p>
-                <p data-edit="closing_text" style="font-weight: bold; color: #000000;">${c.closing_text}</p>
-                <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #000000; border-top: 1px solid #f1f5f9; pt: 20px;">
-                    <p>© {{agency_name}}. All rights reserved.</p>
-                </div>
-            </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                <tr>
+                    <td>${renderHeader(c)}</td>
+                </tr>
+                <tr>
+                    <td align="center" style="background-color: #1e293b; padding: 25px;">
+                        <h1 data-edit="hero_title" style="margin: 0; font-size: 22px; color: #ffffff; font-family: Arial, sans-serif;">${c.hero_title}</h1>
+                        <p data-edit="hero_subtitle" style="margin-top: 5px; margin-bottom: 0; font-size: 14px; color: #ffffff; opacity: 0.8; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 30px; padding-bottom: 30px; padding-left: 30px; padding-right: 30px;">
+                        ${renderBodyImage(c)}
+                        <p data-edit="intro_text" style="line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
+                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #f1f5f9; margin-top: 20px; margin-bottom: 20px; border-collapse: collapse;">
+                            <tr>
+                                <td style="font-style: italic; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{itinerary_summary}}</td>
+                            </tr>
+                        </table>
+                        <p data-edit="attachment_note" style="font-size: 14px; color: #000000; font-family: Arial, sans-serif;">${c.attachment_note}</p>
+                        <p data-edit="closing_text" style="font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.closing_text}</p>
+                        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                            <p style="margin: 0; font-size: 12px; color: #64748b; font-family: Arial, sans-serif;">© {{agency_name}}. All rights reserved.</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
         </div>
     `.trim(),
 
     booking_invoice: (c) => `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 40px; background: white;">
-            ${renderHeader(c)}
-            <table style="width: 100%; border-bottom: 2px solid #000000; padding-bottom: 20px; margin-bottom: 30px;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
                 <tr>
-                    <td><h1 data-edit="invoice_title" style="margin: 0; color: #000000; font-size: 28px;">${c.invoice_title}</h1></td>
-                    <td style="text-align: right; color: #000000; font-size: 13px;">
-                        <strong>{{agency_name}}</strong><br>
-                        Invoice #: {{invoice_number}}<br>
-                        Date: {{payment_date}}
+                    <td>
+                        ${renderHeader(c)}
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-bottom: 2px solid #000000; padding-bottom: 20px; margin-bottom: 30px; border-collapse: collapse;">
+                            <tr>
+                                <td align="left"><h1 data-edit="invoice_title" style="margin: 0; color: #000000; font-size: 28px; font-family: Arial, sans-serif;">${c.invoice_title}</h1></td>
+                                <td align="right" style="color: #000000; font-size: 13px; font-family: Arial, sans-serif;">
+                                    <strong>{{agency_name}}</strong><br>
+                                    Invoice #: {{invoice_number}}<br>
+                                    Date: {{payment_date}}
+                                </td>
+                            </tr>
+                        </table>
+                        ${renderBodyImage(c)}
+                        <div style="margin-bottom: 30px;">
+                            <p data-edit="bill_to_label" style="color: #000000; margin-top: 0; margin-bottom: 5px; font-size: 13px; font-family: Arial, sans-serif;">${c.bill_to_label}</p>
+                            <strong style="font-size: 18px; color: #000000; font-family: Arial, sans-serif;">{{customer_name}}</strong>
+                        </div>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <thead>
+                                <tr style="background-color: #f8fafc;">
+                                    <th data-edit="details_title" align="left" style="padding-top: 12px; padding-bottom: 12px; padding-left: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.details_title}</th>
+                                    <th align="right" style="padding-top: 12px; padding-bottom: 12px; padding-right: 12px; border-bottom: 1px solid #e2e8f0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td align="left" style="padding: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">Booking Ref: {{booking_reference}}</td>
+                                    <td align="right" style="padding: 12px; border-bottom: 1px solid #f1f5f9; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">₹{{total_amount}}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td data-edit="total_label" align="right" style="padding: 12px; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.total_label}</td>
+                                    <td align="right" style="padding: 12px; font-weight: bold; color: #2563eb; font-size: 20px; font-family: Arial, sans-serif;">₹{{total_amount}}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <p data-edit="attachment_note" style="font-size: 13px; color: #000000; margin-top: 40px; font-family: Arial, sans-serif;">${c.attachment_note}</p>
                     </td>
                 </tr>
             </table>
-            ${renderBodyImage(c)}
-            <div style="margin-bottom: 30px;">
-                <p data-edit="bill_to_label" style="color: #000000; margin-bottom: 5px; font-size: 13px;">${c.bill_to_label}</p>
-                <strong style="font-size: 18px;">{{customer_name}}</strong>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px;">
-                <thead>
-                    <tr style="background-color: #f8fafc;">
-                        <th data-edit="details_title" style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">${c.details_title}</th>
-                        <th style="padding: 12px; text-align: right; border-bottom: 1px solid #e2e8f0;">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Booking Ref: {{booking_reference}}</td>
-                        <td style="padding: 12px; text-align: right; border-bottom: 1px solid #f1f5f9;">₹{{total_amount}}</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td data-edit="total_label" style="padding: 12px; text-align: right; font-weight: bold;">${c.total_label}</td>
-                        <td style="padding: 12px; text-align: right; font-weight: bold; color: #2563eb; font-size: 20px;">₹{{total_amount}}</td>
-                    </tr>
-                </tfoot>
+            <!--[if mso]>
+            </td>
+            </tr>
             </table>
-            <p data-edit="attachment_note" style="font-size: 13px; color: #000000; margin-top: 40px;">${c.attachment_note}</p>
+            <![endif]-->
         </div>
     `.trim(),
 
     payment_receipt: (c) => `
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; background-color: white; padding: 40px; color: #000000;">
-            ${renderHeader(c)}
-            <p data-edit="hero_title" style="margin-top: 10px; font-size: 16px;">${c.hero_title}</p>
-            ${renderBodyImage(c)}
-            <p data-edit="intro_text" style="line-height: 1.6; margin-bottom: 25px; white-space: pre-line;">${c.intro_text}</p>
-            
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;">
-            
-            <h3 data-edit="details_title" style="color: #000000; font-size: 17px; margin-bottom: 15px; display: flex; align-items: center;">${c.details_title}</h3>
-            <div style="padding-left: 20px;">
-                <ul style="list-style: none; padding: 0; margin: 0; font-size: 14px; line-height: 2;">
-                    <li><strong>Reference ID:</strong> {{booking_reference}}</li>
-                    <li><strong>Package:</strong> {{package_name}}</li>
-                    <li><strong>Amount Paid:</strong> ₹{{amount_paid}}</li>
-                    <li><strong>Payment Method:</strong> {{payment_method}}</li>
-                    <li><strong>Payment Date:</strong> {{payment_date}}</li>
-                </ul>
-            </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                <tr>
+                    <td>
+                        ${renderHeader(c)}
+                        <p data-edit="hero_title" style="margin-top: 10px; margin-bottom: 15px; font-size: 16px; color: #000000; font-family: Arial, sans-serif;">${c.hero_title}</p>
+                        ${renderBodyImage(c)}
+                        <p data-edit="intro_text" style="line-height: 1.6; margin-bottom: 25px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
+                        
+                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
+                        
+                        <h3 data-edit="details_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 15px; font-family: Arial, sans-serif;">${c.details_title}</h3>
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                            <tr>
+                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Reference ID:</strong></td>
+                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{booking_reference}}</td>
+                            </tr>
+                            <tr>
+                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Package:</strong></td>
+                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{package_name}}</td>
+                            </tr>
+                            <tr>
+                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Amount Paid:</strong></td>
+                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">₹{{amount_paid}}</td>
+                            </tr>
+                            <tr>
+                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Method:</strong></td>
+                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_method}}</td>
+                            </tr>
+                            <tr>
+                                <td width="50%" align="left" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;"><strong>Payment Date:</strong></td>
+                                <td width="50%" align="right" style="padding-top: 5px; padding-bottom: 5px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{payment_date}}</td>
+                            </tr>
+                        </table>
 
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;">
+                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
 
-            <h3 data-edit="invoice_note_title" style="color: #000000; font-size: 17px; margin-bottom: 10px;">${c.invoice_note_title}</h3>
-            <p data-edit="invoice_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line;">${c.invoice_note_text}</p>
+                        <h3 data-edit="invoice_note_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 10px; font-family: Arial, sans-serif;">${c.invoice_note_title}</h3>
+                        <p data-edit="invoice_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.invoice_note_text}</p>
 
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;">
+                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
 
-            <h3 data-edit="important_note_title" style="color: #000000; font-size: 17px; margin-bottom: 10px;">${c.important_note_title}</h3>
-            <p data-edit="important_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 25px; color: #000000;">${c.important_note_text}</p>
+                        <h3 data-edit="important_note_title" style="color: #000000; font-size: 17px; margin-top: 0; margin-bottom: 10px; font-family: Arial, sans-serif;">${c.important_note_title}</h3>
+                        <p data-edit="important_note_text" style="font-size: 14px; line-height: 1.6; margin-bottom: 25px; color: #000000; font-family: Arial, sans-serif;">${c.important_note_text}</p>
 
-            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;">
+                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 25px; margin-bottom: 25px;">
 
-            <p data-edit="footer_note" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line;">${c.footer_note}</p>
-            <p data-edit="footer_team" style="font-size: 14px; margin: 0; white-space: pre-line;">${c.footer_team}</p>
-            <div style="margin-top: 10px; font-size: 13px;">
-                <p style="margin: 3px 0; color: #2563eb;">📧 {{agent_email}}</p>
-                <p style="margin: 3px 0; color: #2563eb;">📞 {{agent_phone}}</p>
-            </div>
+                        <p data-edit="footer_note" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.footer_note}</p>
+                        <p data-edit="footer_team" style="font-size: 14px; margin: 0; white-space: pre-line; color: #000000; font-family: Arial, sans-serif;">${c.footer_team}</p>
+                        <div style="margin-top: 10px; font-size: 13px; font-family: Arial, sans-serif;">
+                            <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📧 {{agent_email}}</p>
+                            <p style="margin-top: 3px; margin-bottom: 3px; color: #2563eb;">📞 {{agent_phone}}</p>
+                        </div>
 
-            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
-                <p>© RNT Travel. This is an automated notification.</p>
-            </div>
+                        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; font-family: Arial, sans-serif;">
+                            <p style="margin: 0;">© RNT Travel. This is an automated notification.</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
         </div>
     `.trim(),
 
     booking_cancellation: (c) => `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-top: 4px solid #ef4444; padding: 30px; background: white;">
-            ${renderHeader(c)}
-            <h1 data-edit="hero_title" style="color: #991b1b; margin-top: 10px; font-size: 24px;">${c.hero_title}</h1>
-            ${renderBodyImage(c)}
-            <p data-edit="intro_text" style="color: #334155; line-height: 1.6;">${c.intro_text}</p>
-            <div style="background-color: #fef2f2; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #fee2e2;">
-                <p data-edit="details_title" style="margin: 0; color: #991b1b; font-weight: bold;">${c.details_title}</p>
-                <p style="margin: 10px 0 0; font-size: 24px; font-weight: bold;">₹{{refund_amount}}</p>
-                <p data-edit="summary_label" style="margin: 5px 0 0; font-size: 14px; color: #b91c1c;">${c.summary_label}</p>
-            </div>
-            <p data-edit="closing_text" style="color: #334155;">${c.closing_text}</p>
-            <div style="margin-top: 30px; font-size: 14px; color: #000000; border-top: 1px solid #f1f5f9; pt: 20px;">
-                <p style="margin: 0;"><span data-edit="footer_note">${c.footer_note}</span><br><strong data-edit="footer_team">${c.footer_team}</strong></p>
-            </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="30" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; border: 1px solid #fee2e2; border-top: 4px solid #ef4444;">
+                <tr>
+                    <td>
+                        ${renderHeader(c)}
+                        <h1 data-edit="hero_title" style="color: #991b1b; margin-top: 10px; margin-bottom: 15px; font-size: 24px; font-family: Arial, sans-serif;">${c.hero_title}</h1>
+                        ${renderBodyImage(c)}
+                        <p data-edit="intro_text" style="color: #334155; line-height: 1.6; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
+                        <table width="100%" border="0" cellpadding="20" cellspacing="0" style="background-color: #fef2f2; border: 1px solid #fee2e2; margin-top: 25px; margin-bottom: 25px; border-collapse: collapse;">
+                            <tr>
+                                <td>
+                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                        <tr>
+                                            <td align="left"><p data-edit="details_title" style="margin: 0; color: #991b1b; font-weight: bold; font-family: Arial, sans-serif; font-size: 14px;">${c.details_title}</p></td>
+                                            <td align="right"><p style="margin: 0; font-size: 24px; font-weight: bold; color: #000000; font-family: Arial, sans-serif;">₹{{refund_amount}}</p></td>
+                                        </tr>
+                                    </table>
+                                    <p data-edit="summary_label" style="margin-top: 5px; margin-bottom: 0; font-size: 14px; color: #b91c1c; font-family: Arial, sans-serif;">${c.summary_label}</p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p data-edit="closing_text" style="color: #334155; font-family: Arial, sans-serif; font-size: 14px;">${c.closing_text}</p>
+                        <div style="margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                            <p style="margin: 0; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">
+                                <span data-edit="footer_note">${c.footer_note}</span><br>
+                                <strong data-edit="footer_team">${c.footer_team}</strong>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
         </div>
     `.trim(),
 
     trip_reminder: (c) => `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #eff6ff; border-radius: 12px; padding: 40px; text-align: center;">
-            ${renderHeader(c)}
-            <div style="font-size: 48px; margin-bottom: 20px;">✈️</div>
-            <h1 data-edit="hero_title" style="color: #1e40af; margin: 0; font-size: 28px;">${c.hero_title}</h1>
-            <p data-edit="hero_subtitle" style="color: #1e3a8a; font-size: 18px; margin-top: 10px;">${c.hero_subtitle}</p>
-            ${renderBodyImage(c)}
-            <div style="background-color: white; border-radius: 12px; padding: 30px; margin: 30px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: left; color: #000000;">
-                <p data-edit="intro_text" style="margin-top: 0; line-height: 1.6;">${c.intro_text}</p>
-                <p style="font-size: 20px; font-weight: bold; color: #2563eb; text-align: center; background: #f8fafc; padding: 15px; border-radius: 8px;">{{departure_date}}</p>
-                <p data-edit="message_text" style="margin-bottom: 10px;">${c.message_text}</p>
-                <p style="margin: 0; font-weight: bold;">{{agent_name}} | {{agent_contact}}</p>
-            </div>
-            <p data-edit="footer_note" style="font-size: 12px; color: #000000;">${c.footer_note}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #eff6ff;">
+            <!--[if mso]>
+            <table align="center" border="0" cellspacing="0" cellpadding="0" width="600" style="width:600px;">
+            <tr>
+            <td align="center" valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table width="100%" border="0" cellpadding="40" cellspacing="0" style="max-width: 600px; margin: 0 auto; border-collapse: collapse; text-align: center;">
+                <tr>
+                    <td>
+                        ${renderHeader(c)}
+                        <div style="font-size: 48px; margin-bottom: 20px;">✈️</div>
+                        <h1 data-edit="hero_title" style="color: #1e40af; margin-top: 0; margin-bottom: 0; font-size: 28px; font-family: Arial, sans-serif;">${c.hero_title}</h1>
+                        <p data-edit="hero_subtitle" style="color: #1e3a8a; font-size: 18px; margin-top: 10px; margin-bottom: 0; font-family: Arial, sans-serif;">${c.hero_subtitle}</p>
+                        ${renderBodyImage(c)}
+                        <table width="100%" border="0" cellpadding="30" cellspacing="0" style="background-color: #ffffff; margin-top: 30px; margin-bottom: 30px; border-collapse: collapse;">
+                            <tr>
+                                <td align="left">
+                                    <p data-edit="intro_text" style="margin-top: 0; margin-bottom: 20px; line-height: 1.6; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.intro_text}</p>
+                                    <table width="100%" border="0" cellpadding="15" cellspacing="0" style="background-color: #f8fafc; border-collapse: collapse;">
+                                        <tr>
+                                            <td align="center" style="font-size: 20px; font-weight: bold; color: #2563eb; font-family: Arial, sans-serif;">{{departure_date}}</td>
+                                        </tr>
+                                    </table>
+                                    <p data-edit="message_text" style="margin-top: 20px; margin-bottom: 10px; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">${c.message_text}</p>
+                                    <p style="margin: 0; font-weight: bold; color: #000000; font-family: Arial, sans-serif; font-size: 14px;">{{agent_name}} | {{agent_contact}}</p>
+                                </td>
+                            </tr>
+                        </table>
+                        <p data-edit="footer_note" style="font-size: 12px; color: #000000; font-family: Arial, sans-serif; margin: 0;">${c.footer_note}</p>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
         </div>
     `.trim()
 };

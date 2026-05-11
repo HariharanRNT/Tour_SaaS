@@ -39,6 +39,7 @@ interface Plan {
 
 interface Subscription {
     id: string;
+    subscription_reference?: string;
     plan_id: string;
     status: string;
     start_date: string;
@@ -54,7 +55,7 @@ export default function SubscriptionPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { refreshUser, hasPermission, isSubUser } = useAuth();
-    
+
     // Check permissions
     useEffect(() => {
         if (isSubUser && !hasPermission('billing', 'view')) {
@@ -160,10 +161,10 @@ export default function SubscriptionPage() {
         },
         onSuccess: async (updatedSub) => {
             queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
-            
+
             // Refresh global auth state to update SubscriptionGuard
             await refreshUser();
-            
+
             toast.success(`Success! Your ${updatedSub.plan.name} plan is now active.`);
 
             const userStr = localStorage.getItem('user');
@@ -330,7 +331,7 @@ export default function SubscriptionPage() {
     const handleActivate = (subId: string, isPaused = false) => {
         const confirmMsg = isPaused
             ? "Ready to switch plans? We'll pause your current plan and resume this one immediately."
-            : "Activate this plan now? Your current plan will be paused and saved for later.";
+            : "Activate this plan now? Your current plan will expire after activation.";
 
         setConfirmDialog({
             open: true,
@@ -613,7 +614,7 @@ export default function SubscriptionPage() {
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button 
+                                            <Button
                                                 className="bg-white/60 backdrop-blur-sm text-violet-700 hover:bg-white/80 border border-white/70 shadow-sm font-semibold group rounded-full"
                                                 disabled={isSubUser && !hasPermission('billing', 'edit')}
                                             >
@@ -625,7 +626,7 @@ export default function SubscriptionPage() {
                                             <DropdownMenuItem onClick={() => document.getElementById('available-plans')?.scrollIntoView({ behavior: 'smooth' })}>
                                                 Upgrade Plan
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem 
+                                            <DropdownMenuItem
                                                 className="text-red-600 focus:text-red-600 focus:bg-red-50"
                                                 onClick={() => handleCancelRequest(activeSub.id)}
                                                 disabled={cancelMutation.isPending}
@@ -1060,8 +1061,8 @@ export default function SubscriptionPage() {
                                         max={format(new Date(), 'yyyy-MM-dd')}
                                         onChange={(e) => {
                                             const newStart = e.target.value;
-                                            setHistoryDateFilter(prev => ({ 
-                                                ...prev, 
+                                            setHistoryDateFilter(prev => ({
+                                                ...prev,
                                                 start: newStart,
                                                 end: (prev.end && newStart && newStart > prev.end) ? newStart : prev.end
                                             }))
@@ -1077,8 +1078,8 @@ export default function SubscriptionPage() {
                                         max={format(new Date(), 'yyyy-MM-dd')}
                                         onChange={(e) => {
                                             const newEnd = e.target.value;
-                                            setHistoryDateFilter(prev => ({ 
-                                                ...prev, 
+                                            setHistoryDateFilter(prev => ({
+                                                ...prev,
                                                 end: newEnd,
                                                 start: (prev.start && newEnd && newEnd < prev.start) ? newEnd : prev.start
                                             }))
@@ -1104,6 +1105,7 @@ export default function SubscriptionPage() {
                                     <thead className="bg-transparent border-b border-slate-100 text-[var(--color-primary-font)]/60 font-medium">
                                         <tr>
                                             <th className="px-6 py-4">PLAN NAME</th>
+                                            <th className="px-6 py-4">REF ID</th>
                                             <th className="px-6 py-4">STATUS</th>
                                             <th className="px-6 py-4">DATES</th>
                                             <th className="px-6 py-4 text-right">USAGE</th>
@@ -1119,6 +1121,9 @@ export default function SubscriptionPage() {
                                                             <Sparkles className={`h-3 w-3 ${theme.text}`} />
                                                         </div>
                                                         <span className="break-all">{sub.plan.name}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="font-mono text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">{sub.subscription_reference || 'N/A'}</span>
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <Badge variant="secondary" className={`
@@ -1144,7 +1149,7 @@ export default function SubscriptionPage() {
                                         })}
                                         {paginatedHistory.length === 0 && (
                                             <tr>
-                                                <td colSpan={4} className="text-center py-8 text-gray-400">
+                                                <td colSpan={5} className="text-center py-8 text-gray-400">
                                                     No history found matching filters.
                                                 </td>
                                             </tr>

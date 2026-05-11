@@ -1444,6 +1444,7 @@ class SubscriptionPlanResponse(SubscriptionPlanBase):
 
 class SubscriptionBase(BaseModel):
     plan_id: UUID4
+    subscription_reference: Optional[str] = None
     status: str
     start_date: date
     end_date: date

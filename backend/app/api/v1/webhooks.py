@@ -76,6 +76,8 @@ async def handle_razorpay_webhook(
             await _handle_subscription_halted(event['payload'], db)
         elif event_type == 'subscription.pending':
             await _handle_subscription_pending(event['payload'], db)
+        elif event_type == 'subscription.cancelled':
+            await _handle_subscription_cancelled(event['payload'], db)
         
         # Invoice Events
         elif event_type == 'invoice.payment_failed':
@@ -96,6 +98,8 @@ async def handle_razorpay_webhook(
             await _handle_settlement_processed(event['payload'], db)
             
         # Payment/Order Events (New)
+        elif event_type == 'payment.failed':
+            await _handle_payment_failed(event['payload'], db)
         elif event_type in ['payment.captured', 'order.paid']:
             await _handle_payment_captured(event['payload'], db)
         if webhook_event:
@@ -239,6 +243,19 @@ async def _handle_subscription_halted(payload: dict, db: AsyncSession):
         await db.commit()
         logger.info(f"Subscription {sub_id} halted. Grace period set.")
 
+async def _handle_subscription_cancelled(payload: dict, db: AsyncSession):
+    sub_obj = payload.get("subscription", {}).get("entity", {})
+    sub_id = sub_obj.get("id")
+    if not sub_id: return
+    
+    stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
+    result = await db.execute(stmt)
+    subscription = result.scalar_one_or_none()
+    if subscription:
+        subscription.status = "cancelled"
+        await db.commit()
+        logger.info(f"Subscription {sub_id} cancelled via webhook.")
+
 async def _handle_subscription_pending(payload: dict, db: AsyncSession):
     sub_obj = payload.get("subscription", {}).get("entity", {})
     sub_id = sub_obj.get("id")
@@ -261,10 +278,50 @@ async def _handle_invoice_payment_failed(payload: dict, db: AsyncSession):
         result = await db.execute(stmt)
         subscription = result.scalar_one_or_none()
         if subscription:
-            # Set grace period when invoice fails but subscription isn't necessarily halted yet
-            subscription.grace_period_ends_at = func.now() + timedelta(days=7)
+            # If the payment failed during the initial purchase, mark it as failed
+            if subscription.status in ['payment_initiated', 'pending']:
+                subscription.status = 'failed'
+                logger.info(f"Initial payment failed for subscription {sub_id}. Status set to failed.")
+            else:
+                # For existing active subscriptions, set grace period when invoice fails 
+                # but subscription isn't necessarily halted yet
+                subscription.grace_period_ends_at = func.now() + timedelta(days=7)
+                logger.info(f"Invoice payment failed for subscription {sub_id}. Grace period activated.")
+            
             await db.commit()
-            logger.info(f"Invoice payment failed for subscription {sub_id}. Grace period activated.")
+
+async def _handle_payment_failed(payload: dict, db: AsyncSession):
+    """
+    Handle payment.failed: Specifically for subscription attempts.
+    """
+    entity = payload.get("payment", {}).get("entity")
+    if not entity: return
+    
+    notes = entity.get("notes", {})
+    sub_id = entity.get("subscription_id")
+    local_sub_id = notes.get("local_subscription_id")
+    
+    subscription = None
+    if local_sub_id:
+        try:
+            from uuid import UUID
+            stmt = select(Subscription).where(Subscription.id == UUID(local_sub_id))
+            result = await db.execute(stmt)
+            subscription = result.scalar_one_or_none()
+        except:
+            pass
+            
+    if not subscription and sub_id:
+        stmt = select(Subscription).where(Subscription.razorpay_subscription_id == sub_id)
+        result = await db.execute(stmt)
+        subscription = result.scalar_one_or_none()
+        
+    if subscription:
+        if subscription.status == 'payment_initiated':
+            subscription.status = 'failed'
+            await db.commit()
+            logger.info(f"Payment failed event processed for subscription {subscription.id}. Status updated to failed.")
+
 
 async def _handle_refund_speed_changed(payload: dict, db: AsyncSession):
     refund_obj = payload.get("refund", {}).get("entity", {})

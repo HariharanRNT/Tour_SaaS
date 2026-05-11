@@ -55,6 +55,7 @@ interface SubscriptionPlan {
 
 interface Subscription {
     id: string;
+    subscription_reference?: string;
     user_id: string;
     user?: {
         agency_name: string;
@@ -219,6 +220,9 @@ export default function AdminBillingPage() {
     })();
 
     const filteredSubscriptions = subscriptions.filter((sub: Subscription) => {
+        // Exclude internal 'payment_initiated' status (abandoned checkouts)
+        if (sub.status === 'payment_initiated') return false;
+
         // Search filter
         if (!searchQuery.trim()) return true;
         const searchLower = searchQuery.toLowerCase();
@@ -672,6 +676,7 @@ export default function AdminBillingPage() {
                                             <TableHeader>
                                                 <TableRow className="bg-white/5 hover:bg-transparent transition-colors h-12 border-b border-slate-100">
                                                     <TableHead className="pl-8 !text-[#000000] font-black uppercase text-[10px] tracking-wider">Agent</TableHead>
+                                                    <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Reference</TableHead>
                                                     <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Plan</TableHead>
                                                     <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Status</TableHead>
                                                     <TableHead className="!text-[#000000] font-black uppercase text-[10px] tracking-wider">Started</TableHead>
@@ -738,21 +743,26 @@ export default function AdminBillingPage() {
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="p-4">
+                                                                <span className="text-[12px] font-bold text-indigo-600 font-['Outfit'] uppercase tracking-wider">{sub.subscription_reference || 'N/A'}</span>
+                                                            </TableCell>
+                                                            <TableCell className="p-4">
                                                                 <span className="text-[13px] font-medium text-[#1c1c1c] font-['Plus_Jakarta_Sans',sans-serif]">{sub.plan.name}</span>
                                                             </TableCell>
                                                             <TableCell>
                                                                 <span className={cn(
                                                                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap",
                                                                     sub.status === 'active' ? "bg-emerald-400/10 text-emerald-600 border-emerald-400/20" :
-                                                                        (sub.status === 'cancelled' || sub.status === 'failed' || sub.status === 'pending_payment') ? "bg-red-400/10 text-red-600 border-red-400/20" :
+                                                                        (sub.status === 'cancelled' || sub.status === 'failed') ? "bg-red-400/10 text-red-600 border-red-400/20" :
                                                                             (sub.status === 'expired' || sub.status === 'completed') ? "bg-slate-400/10 text-slate-600 border-slate-400/20" :
-                                                                                "bg-amber-400/10 text-amber-600 border-amber-400/20"
+                                                                                sub.status === 'payment_initiated' ? "bg-blue-400/10 text-blue-600 border-blue-400/20" :
+                                                                                    "bg-amber-400/10 text-amber-600 border-amber-400/20"
                                                                 )}>
-                                                                    {sub.status === 'pending_payment' || sub.status === 'failed' ? 'Failed' :
-                                                                        sub.status === 'upcoming' ? 'Queue' :
-                                                                            (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' :
-                                                                                sub.status === 'on_hold' ? 'Payment Failed' :
-                                                                                    sub.status.replace('_', ' ')}
+                                                                    {sub.status === 'failed' ? 'Failed' :
+                                                                        sub.status === 'payment_initiated' ? 'Initiated' :
+                                                                            sub.status === 'upcoming' ? 'Queue' :
+                                                                                (sub.status === 'completed' || sub.status === 'expired') ? 'Expired' :
+                                                                                    sub.status === 'on_hold' ? 'Payment Failed' :
+                                                                                        sub.status.replace('_', ' ')}
                                                                 </span>
                                                             </TableCell>
                                                             <TableCell className="text-[#1c1c1c] font-medium text-[13px] font-['Plus_Jakarta_Sans',sans-serif]">{format(new Date(sub.start_date), 'MMM dd, yyyy')}</TableCell>

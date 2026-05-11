@@ -19,7 +19,7 @@ async def get_subscription_summary(
     current_admin = Depends(get_current_admin)
 ):
     """Get subscription summary statistics"""
-    query = select(func.count(Subscription.id)).filter(Subscription.status.notin_(['pending_payment', 'failed']))
+    query = select(func.count(Subscription.id)).filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed']))
     
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -50,7 +50,7 @@ async def get_subscription_summary(
     )).scalar() or 0
     
     paused = (await db.execute(
-        query.filter(Subscription.status.in_(['on_hold', 'failed', 'pending_payment']))
+        query.filter(Subscription.status.in_(['on_hold', 'failed', 'pending_payment', 'payment_initiated']))
     )).scalar() or 0
     
     cancelled = (await db.execute(
@@ -80,7 +80,7 @@ async def get_subscription_trends(
         month_col = extract('month', Subscription.created_at).label('month')
         count_col = func.count(Subscription.id).label('count')
         
-        stmt = select(year_col, month_col, count_col).filter(Subscription.status.notin_(['pending_payment', 'failed']))
+        stmt = select(year_col, month_col, count_col).filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed']))
         
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -113,7 +113,7 @@ async def get_subscription_trends(
         year_col = extract('year', Subscription.created_at).label('year')
         count_col = func.count(Subscription.id).label('count')
         
-        stmt = select(year_col, count_col).filter(Subscription.status.notin_(['pending_payment', 'failed']))
+        stmt = select(year_col, count_col).filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed']))
         
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -156,7 +156,7 @@ async def get_plan_analytics(
         func.count(Subscription.id).label('subscription_count'),
         func.sum(func.coalesce(Subscription.price_at_purchase, SubscriptionPlan.price)).label('total_revenue')
     ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+     .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
 
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -245,7 +245,7 @@ async def get_revenue_summary(
     """Get total revenue summary"""
     stmt = select(func.sum(func.coalesce(Subscription.price_at_purchase, SubscriptionPlan.price)))\
         .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-        .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+        .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
     
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
@@ -282,7 +282,7 @@ async def get_revenue_trends(
         
         stmt = select(year_col, month_col, revenue_col)\
             .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+            .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
 
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -317,7 +317,7 @@ async def get_revenue_trends(
         
         stmt = select(year_col, revenue_col)\
             .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-            .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+            .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
 
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -364,7 +364,7 @@ async def get_revenue_by_agent(
     ).join(Subscription, Subscription.user_id == Agent.user_id)\
      .join(User, User.id == Agent.user_id)\
      .join(SubscriptionPlan, Subscription.plan_id == SubscriptionPlan.id)\
-     .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+     .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
         if start_dt.tzinfo is None:
@@ -409,7 +409,7 @@ async def get_revenue_by_plan(
         func.count(Subscription.id).label('subscription_count'),
         func.sum(func.coalesce(Subscription.price_at_purchase, SubscriptionPlan.price)).label('total_revenue')
     ).join(Subscription, Subscription.plan_id == SubscriptionPlan.id)\
-     .filter(Subscription.status.notin_(['pending_payment', 'failed', 'on_hold']))
+     .filter(Subscription.status.notin_(['pending_payment', 'payment_initiated', 'failed', 'on_hold']))
 
     if start_date:
         start_dt = datetime.fromisoformat(start_date)
