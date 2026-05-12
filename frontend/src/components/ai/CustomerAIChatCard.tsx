@@ -107,9 +107,11 @@ export default function CustomerAIChatCard() {
         try {
             const conversationId = localStorage.getItem('ai_package_search_id')
             const token = localStorage.getItem('token')
+            const domain = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
 
             const headers: Record<string, string> = {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Domain': domain
             }
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`

@@ -35,6 +35,13 @@ def render_template(content: Any, data: Dict[str, Any], template_type: str = Non
         
         return str(val)
 
+    # Normalize non-breaking spaces that cause gaps in Outlook
+    import re
+    # Replace non-breaking space character but not &nbsp; entity
+    html = html.replace('\xa0', ' ')
+    # Only collapse 4+ consecutive &nbsp; in the MIDDLE of text (not at line start)
+    html = re.sub(r'(?<!>)(&nbsp;){4,}', ' ', html)
+
     # Regex to find {{ variable_name }}
     pattern = r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}"
     

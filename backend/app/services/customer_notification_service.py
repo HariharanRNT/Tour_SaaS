@@ -144,6 +144,18 @@ class CustomerNotificationService:
 
             # Use EMAIL_SHELLS as the default HTML renderer
             if template_type in EMAIL_SHELLS:
+                # Resolve logo URL and height for inlining
+                logo_url = data.get("header_image_url", "")
+                logo_height = data.get("header_image_height", "40px")
+                
+                if agent_user and agent_user.agent_profile:
+                    ap = agent_user.agent_profile
+                    if ap.homepage_settings:
+                        email_templates = ap.homepage_settings.get("email_templates", {})
+                        saved = email_templates.get(template_type, {})
+                        logo_url = saved.get("header_image_url", logo_url)
+                        logo_height = saved.get("header_image_height", logo_height)
+
                 structured = {
                     "hero_title":          data.get("hero_title", ""),
                     "hero_subtitle":       data.get("hero_subtitle", ""),
@@ -151,8 +163,8 @@ class CustomerNotificationService:
                     "details_title":       data.get("details_title", "📌 Trip Details"),
                     "footer_note":         data.get("footer_note", "Warm regards,"),
                     "footer_team":         f"The {data.get('agency_name', 'Team')} Team",
-                    "header_image_url":    data.get("header_image_url", ""),
-                    "header_image_height": data.get("header_image_height", "40px"),
+                    "header_image_url":    logo_url,
+                    "header_image_height": logo_height,
                     "show_header":         True,
                     "show_body_image":     False,
                     # Pass through invoice/receipt specific fields

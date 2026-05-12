@@ -984,6 +984,8 @@ CURRENT CONVERSATION CONTEXT:
                 elif name == "get_package_details":
                     pkg_id = args.get("package_id")
                     query = select(Package).where(Package.id == pkg_id)
+                    if admin_id:
+                        query = query.where(Package.created_by == admin_id)
                     result = await db.execute(query)
                     package = result.scalar_one_or_none()
                     
@@ -1039,6 +1041,8 @@ CURRENT CONVERSATION CONTEXT:
                     
                     # Search for the booking
                     query = select(Booking).where(Booking.booking_reference == booking_ref)
+                    if admin_id:
+                        query = query.join(Booking.package).where(Package.created_by == admin_id)
                     result = await db.execute(query)
                     booking = result.scalar_one_or_none()
                     
