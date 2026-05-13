@@ -335,7 +335,7 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
 };
 
 // ─── Website Pages Builder Types ──────────────────────────────────────────────
-export type BlockType = 'hero' | 'text' | 'image' | 'image_text' | 'team' | 'stats' | 'contact_info' | 'contact_form' | 'divider' | 'gallery';
+export type BlockType = 'hero' | 'text' | 'image' | 'image_text' | 'team' | 'stats' | 'contact_info' | 'contact_form' | 'divider' | 'gallery' | 'faq' | 'map';
 
 export interface ContentBlock {
     id: string;
@@ -385,10 +385,12 @@ const BLOCK_TEMPLATES: Record<BlockType, any> = {
     image_text: { title: 'Heading', content: 'Text here...', imageUrl: '', layout: 'left' },
     team: { title: 'Our Team', members: [{ name: 'John Doe', role: 'Founder', bio: '', imageUrl: '' }] },
     stats: { stats: [{ label: 'Happy Customers', value: '10,000+', icon: 'Users' }] },
-    contact_info: { title: 'Get in Touch', address: '', phone: '', email: '', whatsapp: '' },
-    contact_form: { title: 'Send us a message', subtitle: 'We will get back to you shortly', btnText: 'Send Message' },
+    contact_info: { title: 'Get in Touch', address: '', phone: '', email: '', whatsapp: '', hours: '' },
+    contact_form: { title: 'Send us a message', subtitle: 'We will get back to you shortly', btnText: 'Send Message', showName: true, showEmail: true, showPhone: true, showMessage: true },
     divider: { style: 'solid', color: '#E2E8F0', thickness: 1 },
-    gallery: { title: 'Our Moments', columns: 3, images: [] }
+    gallery: { title: 'Our Moments', columns: 3, images: [] },
+    faq: { title: 'Frequently Asked Questions', questions: [{ question: 'What is your cancellation policy?', answer: 'We offer full refunds...' }] },
+    map: { mapUrl: '' }
 };
 
 // ─── Tab Definitions ─────────────────────────────────────────────────────────
@@ -515,6 +517,7 @@ export default function AgentThemeSettingsPage() {
     const [activePageTab, setActivePageTab] = useState<'about' | 'contact'>('about');
     const [lowestPackageSlug, setLowestPackageSlug] = useState<string | null>(null);
     const [latestBookingId, setLatestBookingId] = useState<string | null>(null);
+    const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
 
     // Body class helpers
     const applyBodyClasses = (btn: string, icon: string, card: string, dens: string, font: string) => {
@@ -2055,6 +2058,45 @@ export default function AgentThemeSettingsPage() {
             wpField(activePageTab, 'blocks', newBlocks);
         };
 
+        const handleBlockFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string, field: string, index?: number) => {
+            const file = e.target.files?.[0]; if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size must be less than 5MB');
+                return;
+            }
+            const toastId = toast.loading('Optimizing and uploading image...');
+            try {
+                const compressedFile = await compressImage(file, {
+                    maxWidthOrHeight: 1920,
+                    initialQuality: 0.8
+                });
+                const finalUrl = await uploadFileToS3(compressedFile, 'website_pages');
+                if (!finalUrl) throw new Error('Upload failed. Please try again.');
+                
+                if (index !== undefined) {
+                    const block = activePage.blocks.find(b => b.id === blockId);
+                    if (block && Array.isArray(block.fields[field])) {
+                        const newArray = [...block.fields[field]];
+                        newArray[index] = finalUrl;
+                        updateBlockField(blockId, field, newArray);
+                    }
+                } else {
+                    updateBlockField(blockId, field, finalUrl);
+                }
+                
+                toast.success('Image updated! ✓', { id: toastId });
+            } catch (err: any) {
+                console.error(err);
+                toast.error(err.message || 'Upload failed', { id: toastId });
+            } finally {
+                if (e.target) e.target.value = '';
+            }
+        };
+
+        const toggleBlock = (id: string) => {
+            setExpandedBlocks(prev => ({ ...prev, [id]: !prev[id] }));
+        };
+
         return (
             <div className="space-y-6">
                 {/* Tab Switcher */}
@@ -2178,29 +2220,45 @@ export default function AgentThemeSettingsPage() {
                                                         <p className="text-[10px] text-slate-500 font-medium uppercase">{block.id}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => toggleBlock(block.id)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-black transition-all" title="Toggle Expand">
+                                                        {expandedBlocks[block.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                    </button>
                                                     <button onClick={() => {
                                                         const newBlock = { ...block, id: Math.random().toString(36).substr(2, 9) };
                                                         wpField(activePageTab, 'blocks', [...activePage.blocks, newBlock]);
-                                                    }} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-black transition-all" title="Duplicate"><Copy className="h-4 w-4" /></button>
-                                                    <button onClick={() => removeBlock(block.id)} className="p-2 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                                                    }} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-black transition-all opacity-0 group-hover:opacity-100" title="Duplicate"><Copy className="h-4 w-4" /></button>
+                                                    <button onClick={() => removeBlock(block.id)} className="p-2 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100" title="Delete"><Trash2 className="h-4 w-4" /></button>
                                                 </div>
                                             </div>
 
                                             {/* Dynamic Fields per Block Type */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {expandedBlocks[block.id] && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100/50 mt-4">
                                                 {block.type === 'hero' && (
                                                     <>
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Subtitle</Label><Input value={block.fields.subtitle} onChange={e => updateBlockField(block.id, 'subtitle', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Button Text</Label><Input value={block.fields.btnText} onChange={e => updateBlockField(block.id, 'btnText', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
-                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Image URL</Label><Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="https://..." /></div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Image URL</Label>
+                                                            <div className="flex gap-2">
+                                                                <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" placeholder="https://..." />
+                                                                <Button size="sm" variant="outline" onClick={() => {
+                                                                    const input = document.createElement('input');
+                                                                    input.type = 'file';
+                                                                    input.accept = 'image/*';
+                                                                    input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
+                                                                    input.click();
+                                                                }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3 mr-1" /> Upload</Button>
+                                                            </div>
+                                                        </div>
                                                     </>
                                                 )}
                                                 {block.type === 'text' && (
                                                     <div className="col-span-full space-y-1">
-                                                        <Label className="text-xs font-bold text-black">Content</Label>
-                                                        <Textarea value={block.fields.content} onChange={e => updateBlockField(block.id, 'content', e.target.value)} className="min-h-[120px] rounded-2xl glass-input text-xs" />
+                                                        <Label className="text-xs font-bold text-black">Content <span className="font-normal text-black/80">({block.fields.content?.length || 0}/1000)</span></Label>
+                                                        <Textarea maxLength={1000} value={block.fields.content} onChange={e => updateBlockField(block.id, 'content', e.target.value)} className="min-h-[120px] rounded-2xl glass-input text-xs" />
                                                     </div>
                                                 )}
                                                 {block.type === 'image' && (
@@ -2252,11 +2310,180 @@ export default function AgentThemeSettingsPage() {
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Email</Label><Input value={block.fields.email} onChange={e => updateBlockField(block.id, 'email', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                         <div className="space-y-1"><Label className="text-xs font-bold text-black">Phone</Label><Input value={block.fields.phone} onChange={e => updateBlockField(block.id, 'phone', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">WhatsApp</Label><Input value={block.fields.whatsapp} onChange={e => updateBlockField(block.id, 'whatsapp', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
                                                         <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Address</Label><Input value={block.fields.address} onChange={e => updateBlockField(block.id, 'address', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                        <div className="col-span-full space-y-1"><Label className="text-xs font-bold text-black">Working Hours</Label><Input value={block.fields.hours} onChange={e => updateBlockField(block.id, 'hours', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="e.g. Mon-Fri 9AM - 6PM" /></div>
+                                                    </>
+                                                )}
+                                                {block.type === 'team' && (
+                                                    <div className="col-span-full space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className="text-xs font-bold text-black">Team Members</Label>
+                                                            <Button size="sm" variant="ghost" onClick={() => {
+                                                                const newMembers = [...(block.fields.members || []), { name: 'New Member', role: 'Role', bio: '', imageUrl: '' }];
+                                                                updateBlockField(block.id, 'members', newMembers);
+                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Member</Button>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                            {block.fields.members?.map((m: any, mIdx: number) => (
+                                                                <div key={mIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/member flex flex-col gap-2">
+                                                                    <button onClick={() => {
+                                                                        const newMembers = block.fields.members.filter((_: any, i: number) => i !== mIdx);
+                                                                        updateBlockField(block.id, 'members', newMembers);
+                                                                    }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/member:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
+                                                                    <Input value={m.name} onChange={e => {
+                                                                        const newM = [...block.fields.members]; newM[mIdx].name = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                    }} className="h-8 text-xs font-bold bg-white" placeholder="Name" />
+                                                                    <Input value={m.role} onChange={e => {
+                                                                        const newM = [...block.fields.members]; newM[mIdx].role = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                    }} className="h-8 text-xs bg-white" placeholder="Role" />
+                                                                    <Input value={m.imageUrl} onChange={e => {
+                                                                        const newM = [...block.fields.members]; newM[mIdx].imageUrl = e.target.value; updateBlockField(block.id, 'members', newM);
+                                                                    }} className="h-8 text-xs bg-white" placeholder="Avatar URL" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {block.type === 'divider' && (
+                                                    <div className="space-y-1 col-span-full">
+                                                        <Label className="text-xs font-bold text-black">Style</Label>
+                                                        <select value={block.fields.style} onChange={e => updateBlockField(block.id, 'style', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
+                                                            <option value="solid">Solid Line</option>
+                                                            <option value="dashed">Dashed Line</option>
+                                                            <option value="space">Invisible Space</option>
+                                                            <option value="decorative">Decorative</option>
+                                                        </select>
+                                                    </div>
+                                                )}
+                                                {block.type === 'gallery' && (
+                                                    <div className="col-span-full space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className="text-xs font-bold text-black">Gallery Images</Label>
+                                                            <Button size="sm" variant="ghost" onClick={() => {
+                                                                const newImgs = [...(block.fields.images || []), ''];
+                                                                updateBlockField(block.id, 'images', newImgs);
+                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Image</Button>
+                                                        </div>
+                                                        <div className="space-y-1 mb-2">
+                                                            <Label className="text-xs font-bold text-black">Grid Layout</Label>
+                                                            <select value={block.fields.columns} onChange={e => updateBlockField(block.id, 'columns', parseInt(e.target.value))} className="w-full md:w-1/3 h-9 rounded-xl glass-input text-xs px-3">
+                                                                <option value="2">2 Columns</option>
+                                                                <option value="3">3 Columns</option>
+                                                                <option value="4">4 Columns</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                            {block.fields.images?.map((img: string, iIdx: number) => (
+                                                                <div key={iIdx} className="relative group/img flex gap-2 items-center">
+                                                                    <div className="flex gap-2 flex-1">
+                                                                        <Input value={img} onChange={e => {
+                                                                            const newImgs = [...block.fields.images]; newImgs[iIdx] = e.target.value; updateBlockField(block.id, 'images', newImgs);
+                                                                        }} className="h-9 text-xs glass-input flex-1" placeholder="Image URL" />
+                                                                        <Button size="sm" variant="outline" onClick={() => {
+                                                                            const input = document.createElement('input');
+                                                                            input.type = 'file';
+                                                                            input.accept = 'image/*';
+                                                                            input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'images', iIdx);
+                                                                            input.click();
+                                                                        }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3" /></Button>
+                                                                    </div>
+                                                                    <button onClick={() => {
+                                                                        const newImgs = block.fields.images.filter((_: any, i: number) => i !== iIdx);
+                                                                        updateBlockField(block.id, 'images', newImgs);
+                                                                    }} className="w-8 h-8 bg-red-50 text-red-500 rounded-xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all"><X className="h-4 w-4" /></button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {block.type === 'image_text' && (
+                                                    <>
+                                                        <div className="space-y-1"><Label className="text-xs font-bold text-black">Heading</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Image URL</Label>
+                                                            <div className="flex gap-2">
+                                                                <Input value={block.fields.imageUrl} onChange={e => updateBlockField(block.id, 'imageUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs flex-1" />
+                                                                <Button size="sm" variant="outline" onClick={() => {
+                                                                    const input = document.createElement('input');
+                                                                    input.type = 'file';
+                                                                    input.accept = 'image/*';
+                                                                    input.onchange = (e: any) => handleBlockFileUpload(e, block.id, 'imageUrl');
+                                                                    input.click();
+                                                                }} className="h-9 rounded-xl text-xs"><Upload className="h-3 w-3 mr-1" /> Upload</Button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Alignment</Label>
+                                                            <select value={block.fields.layout} onChange={e => updateBlockField(block.id, 'layout', e.target.value)} className="w-full h-9 rounded-xl glass-input text-xs px-3">
+                                                                <option value="left">Image on Left</option>
+                                                                <option value="right">Image on Right</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="col-span-full space-y-1">
+                                                            <Label className="text-xs font-bold text-black">Content Text <span className="font-normal text-black/80">({block.fields.content?.length || 0}/1000)</span></Label>
+                                                            <Textarea maxLength={1000} value={block.fields.content} onChange={e => updateBlockField(block.id, 'content', e.target.value)} className="min-h-[80px] rounded-xl glass-input text-xs" />
+                                                        </div>
                                                     </>
                                                 )}
                                                 {/* Add more block types editors as needed */}
+                                                {block.type === 'contact_form' && (
+                                                    <div className="col-span-full space-y-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Form Title</Label><Input value={block.fields.title} onChange={e => updateBlockField(block.id, 'title', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Subtitle</Label><Input value={block.fields.subtitle} onChange={e => updateBlockField(block.id, 'subtitle', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                            <div className="space-y-1"><Label className="text-xs font-bold text-black">Button Text</Label><Input value={block.fields.btnText} onChange={e => updateBlockField(block.id, 'btnText', e.target.value)} className="h-9 rounded-xl glass-input text-xs" /></div>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs font-bold text-black">Visible Fields</Label>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-white/40 rounded-2xl border border-slate-100">
+                                                                <ToggleSwitch checked={block.fields.showName} onChange={v => updateBlockField(block.id, 'showName', v)} label="Name Field" />
+                                                                <ToggleSwitch checked={block.fields.showEmail} onChange={v => updateBlockField(block.id, 'showEmail', v)} label="Email Field" />
+                                                                <ToggleSwitch checked={block.fields.showPhone} onChange={v => updateBlockField(block.id, 'showPhone', v)} label="Phone Field" />
+                                                                <ToggleSwitch checked={block.fields.showMessage} onChange={v => updateBlockField(block.id, 'showMessage', v)} label="Message Field" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {block.type === 'map' && (
+                                                    <div className="col-span-full space-y-1">
+                                                        <Label className="text-xs font-bold text-black">Google Maps Embed URL / Iframe src</Label>
+                                                        <Input value={block.fields.mapUrl} onChange={e => updateBlockField(block.id, 'mapUrl', e.target.value)} className="h-9 rounded-xl glass-input text-xs" placeholder="https://www.google.com/maps/embed?..." />
+                                                    </div>
+                                                )}
+                                                {block.type === 'faq' && (
+                                                    <div className="col-span-full space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className="text-xs font-bold text-black">Questions & Answers</Label>
+                                                            <Button size="sm" variant="ghost" onClick={() => {
+                                                                const newQs = [...block.fields.questions, { question: 'New Question', answer: 'New Answer' }];
+                                                                updateBlockField(block.id, 'questions', newQs);
+                                                            }} className="h-7 text-[10px] font-bold"><Plus className="h-3 w-3 mr-1" /> Add Question</Button>
+                                                        </div>
+                                                        <div className="space-y-3">
+                                                            {block.fields.questions.map((q: any, qIdx: number) => (
+                                                                <div key={qIdx} className="p-3 bg-white/50 rounded-2xl border border-white/60 relative group/faq flex flex-col gap-2">
+                                                                    <button onClick={() => {
+                                                                        const newQs = block.fields.questions.filter((_: any, i: number) => i !== qIdx);
+                                                                        updateBlockField(block.id, 'questions', newQs);
+                                                                    }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/faq:opacity-100 transition-all shadow-lg"><X className="h-3 w-3" /></button>
+                                                                    <Input value={q.question} onChange={e => {
+                                                                        const newQs = [...block.fields.questions];
+                                                                        newQs[qIdx].question = e.target.value;
+                                                                        updateBlockField(block.id, 'questions', newQs);
+                                                                    }} className="h-8 text-xs font-bold bg-white" placeholder="Question" />
+                                                                    <Textarea value={q.answer} onChange={e => {
+                                                                        const newQs = [...block.fields.questions];
+                                                                        newQs[qIdx].answer = e.target.value;
+                                                                        updateBlockField(block.id, 'questions', newQs);
+                                                                    }} className="min-h-[60px] text-xs resize-none bg-white" placeholder="Answer" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
+                                            )}
                                         </div>
                                     </div>
                                 </Card>
@@ -2268,7 +2495,7 @@ export default function AgentThemeSettingsPage() {
                     <div className="pt-6">
                         <SectionCard icon={<Plus className="h-5 w-5" />} title="Add Content Block" subtitle="Choose a component to add to your page">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                {(Object.keys(BLOCK_TEMPLATES) as BlockType[]).map(t => (
+                                {(Object.keys(BLOCK_TEMPLATES) as BlockType[]).filter(t => t !== 'contact_form' && t !== 'divider').map(t => (
                                     <button key={t} onClick={() => addBlock(t)}
                                         className="flex flex-col items-center gap-2 p-4 rounded-[24px] bg-white border-2 border-slate-100 hover:border-[var(--primary)] hover:bg-[var(--primary-glow)] transition-all group">
                                         <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-white text-slate-400 group-hover:text-[var(--primary)] transition-all">
@@ -2279,9 +2506,9 @@ export default function AgentThemeSettingsPage() {
                                             {t === 'team' && <Users className="h-5 w-5" />}
                                             {t === 'stats' && <Award className="h-5 w-5" />}
                                             {t === 'contact_info' && <Mail className="h-5 w-5" />}
-                                            {t === 'contact_form' && <CheckCircle className="h-5 w-5" />}
-                                            {t === 'divider' && <RotateCcw className="h-5 w-5 rotate-45" />}
                                             {t === 'gallery' && <Globe className="h-5 w-5" />}
+                                            {t === 'faq' && <Info className="h-5 w-5" />}
+                                            {t === 'map' && <MapIcon className="h-5 w-5" />}
                                         </div>
                                         <span className="text-[10px] font-black text-black uppercase tracking-wider">{t.replace('_', ' ')}</span>
                                     </button>
@@ -2683,6 +2910,20 @@ export default function AgentThemeSettingsPage() {
                                     >
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Preview My Booking
+                                    </Button>
+                                )}
+
+                                {activeTab === 'website_pages' && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            const pageUrl = `${window.location.origin.replace('agent.', '')}/${activePageTab}`;
+                                            window.open(pageUrl, '_blank');
+                                        }}
+                                        className="h-10 text-sm rounded-2xl border-slate-200 px-4 !text-black font-bold"
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Preview Page
                                     </Button>
                                 )}
 
