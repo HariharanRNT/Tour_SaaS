@@ -590,95 +590,138 @@ async def google_login(
          if agent_profile:
              agent_id = agent_profile.user_id
 
-    # 1. Check if user exists (domain-scoped for customers)
-    stmt = select(User).where(User.email == email)
+    # 1. Check if user exists by google_id first (most reliable)
+    logger.warning(f"🔍 Searching for user with google_id: {google_id}")
+    stmt = select(User).where(User.google_id == google_id)
     if agent_id:
-        # Match customer of this agent OR any global user (Admin/Agent)
+        # Scope to current agent for customers
         stmt = stmt.where((User.agent_id == agent_id) | (User.role != UserRole.CUSTOMER))
-    
-    stmt = stmt.options(
-        selectinload(User.admin_profile),
-        selectinload(User.agent_profile),
-        selectinload(User.customer_profile)
-    )
-    try:
-        result = await db.execute(stmt)
-        users = result.scalars().all()
         
-        # Resolve which user to use if multiple found
-        user = None
-        if len(users) == 1:
-            user = users[0]
-        elif len(users) > 1:
-            # Prioritize Admin/Agent roles over Customer roles if multiple matches found
-            # This handles cases where an admin might also have a customer account with the same email
-            user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
-            logger.info(f"Multiple users found for {email}, resolved to role: {user.role}")
-    except Exception as e:
-        logger.error(f"Error during user lookup for Google login: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while looking up your account. Please try again later."
-        )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    logger.warning(f"🔍 Search by google_id result: {user}")
 
     if user:
-        # Update google_id if not set
-        if not user.google_id:
-            user.google_id = google_id
-            if picture and not user.profile_picture_url:
-                user.profile_picture_url = picture
+        # Found user by Google ID
+        
+        # Update profile picture if available and not set
+        if picture and not user.profile_picture_url:
+            user.profile_picture_url = picture
             await db.commit()
             await db.refresh(user)
-        
+            
         # If user exists but is inactive
         if not user.is_active:
              raise HTTPException(status_code=400, detail="Your account is currently inactive. Please contact support.")
              
     else:
-        # Registration Flow for New User
-        # Only allow creating CUSTOMER accounts via Google Login
-        if data.role != UserRole.CUSTOMER:
-             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Google login is only available for traveler accounts. Please use your email and password to log in as an agent."
-            )
-
-        # Handle formatting
-        import secrets
-        random_password = secrets.token_urlsafe(16)
+        # 2. If not found by google_id, check by email (fallback/linking flow)
+        stmt = select(User).where(User.email == email)
+        if agent_id:
+            # Match customer of this agent OR any global user (Admin/Agent)
+            stmt = stmt.where((User.agent_id == agent_id) | (User.role != UserRole.CUSTOMER))
         
-        # Create User
-        user = User(
-            email=email,
-            password_hash=get_password_hash(random_password),
-            role=UserRole.CUSTOMER,
-            agent_id=agent_id,
-            is_active=True,
-            email_verified=True, # Trusted via Google
-            google_id=google_id,
-            profile_picture_url=picture
-        )
-        db.add(user)
-        await db.flush()
-        
-        # Create Customer Profile
-        customer = Customer(
-            user_id=user.id,
-            first_name=first_name,
-            last_name=last_name,
-            phone=None,
-            agent_id=agent_id
-        )
-        
-        db.add(customer)
-        await db.commit()
-        
-        # Reload user with profiles
-        stmt = select(User).where(User.id == user.id).options(
+        stmt = stmt.options(
+            selectinload(User.admin_profile),
+            selectinload(User.agent_profile),
             selectinload(User.customer_profile)
         )
-        result = await db.execute(stmt)
-        user = result.scalar_one()
+        try:
+            result = await db.execute(stmt)
+            users = result.scalars().all()
+            
+            # Resolve which user to use if multiple found
+            user = None
+            if len(users) == 1:
+                user = users[0]
+            elif len(users) > 1:
+                user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
+                logger.info(f"Multiple users found for {email}, resolved to role: {user.role}")
+        except Exception as e:
+            logger.error(f"Error during user lookup for Google login: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred while looking up your account. Please try again later."
+            )
+
+        if user:
+            # Found by email, link google_id
+            if not user.google_id:
+                user.google_id = google_id
+                if picture and not user.profile_picture_url:
+                    user.profile_picture_url = picture
+                await db.commit()
+                await db.refresh(user)
+            
+            # If user exists but is inactive
+            if not user.is_active:
+                 raise HTTPException(status_code=400, detail="Your account is currently inactive. Please contact support.")
+        else:
+            # 3. Registration Flow for New User
+            # Only allow creating CUSTOMER accounts via Google Login
+            if data.role != UserRole.CUSTOMER:
+                 raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Google login is only available for traveler accounts. Please use your email and password to log in as an agent."
+                )
+
+            # Handle formatting
+            import secrets
+            random_password = secrets.token_urlsafe(16)
+            
+            # Create User
+            user = User(
+                email=email,
+                password_hash=get_password_hash(random_password),
+                role=UserRole.CUSTOMER,
+                agent_id=agent_id,
+                is_active=True,
+                email_verified=True, # Trusted via Google
+                google_id=google_id,
+                profile_picture_url=picture
+            )
+            try:
+                db.add(user)
+                await db.flush()
+                
+                # Create Customer Profile
+                customer = Customer(
+                    user_id=user.id,
+                    first_name=first_name,
+                    last_name=last_name,
+                    phone=None,
+                    agent_id=agent_id
+                )
+                
+                db.add(customer)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                from sqlalchemy.exc import IntegrityError
+                if isinstance(e, IntegrityError) or "UniqueViolationError" in str(e):
+                    logger.error(f"Duplicate key error during Google registration: {str(e)}")
+                    # Try to find the user one last time by google_id
+                    stmt = select(User).where(User.google_id == google_id)
+                    if agent_id:
+                        stmt = stmt.where((User.agent_id == agent_id) | (User.role != UserRole.CUSTOMER))
+                    result = await db.execute(stmt)
+                    user = result.scalar_one_or_none()
+                    if user:
+                        logger.warning(f"Recovered user after duplicate key error: {user.id}")
+                    else:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="An account with this Google ID already exists. Please try logging in again."
+                        )
+                else:
+                    raise e
+            
+            # Reload user with profiles
+            stmt = select(User).where(User.id == user.id).options(
+                selectinload(User.customer_profile)
+            )
+            result = await db.execute(stmt)
+            user = result.scalar_one()
 
     # Create access token
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})

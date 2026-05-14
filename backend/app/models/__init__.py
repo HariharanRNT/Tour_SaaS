@@ -89,7 +89,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Google Auth
-    google_id = Column(String, unique=True, index=True, nullable=True)
+    google_id = Column(String, index=True, nullable=True)
     profile_picture_url = Column(String, nullable=True)
 
     __table_args__ = (
@@ -105,6 +105,19 @@ class User(Base):
             "agent_id",
             unique=True,
             postgresql_where=text("role = 'CUSTOMER'")
+        ),
+        Index(
+            "uq_user_google_id_agent",
+            "google_id",
+            "agent_id",
+            unique=True,
+            postgresql_where=text("role = 'CUSTOMER'")
+        ),
+        Index(
+            "uq_user_google_id_global",
+            "google_id",
+            unique=True,
+            postgresql_where=text("role != 'CUSTOMER'")
         ),
     )
 

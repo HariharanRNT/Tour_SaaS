@@ -1349,31 +1349,17 @@ export default function AgentDashboard() {
                 </div>
 
 
-                {/* New AI Assistant Floating Card */}
                 <AIAssistantCard
                     chatHistory={chatHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))}
                     isLoading={chatMutation.isPending || generatePackageMutation.isPending}
                     onSendMessage={sendMessage}
+                    onGeneratePackage={generatePackage}
+                    onCreatePackage={createPackageFromAI}
                     suggestions={["Japan 7 Days", "Maldives Honeymoon"]}
+                    showFloatingButton={false}
+                    isOpen={isAIOpen}
+                    onOpenChange={setIsAIOpen}
                 />
-
-                {/* Desktop Floating AI Button */}
-                <div className="fixed bottom-8 right-8 hidden md:block z-50">
-                    <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        initial={{ opacity: 0, scale: 0.5, y: 100 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{
-                            type: "spring",
-                            stiffness: 260,
-                            damping: 20,
-                            delay: 1
-                        }}
-                    >
-
-                    </motion.div>
-                </div>
             </div>
         </div>
     )

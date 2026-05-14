@@ -346,21 +346,42 @@ export default function CreatePackagePage() {
                 try {
                     const packageData = JSON.parse(aiPackageData)
 
+                    // Extract trip styles from category or trip_style
+                    const aiTripStyles = packageData.category || (packageData.trip_style ? [packageData.trip_style] : [])
+                    
+                    // Extract activities from itinerary
+                    const aiActivities: string[] = []
+                    if (packageData.itinerary) {
+                        packageData.itinerary.forEach((day: any) => {
+                            if (day.activities) {
+                                day.activities.forEach((act: any) => {
+                                    if (act.category) aiActivities.push(act.category)
+                                    else if (act.title) aiActivities.push(act.title)
+                                })
+                            }
+                        })
+                    }
+                    const uniqueActivities = Array.from(new Set(aiActivities)).filter(Boolean)
+
                     // Pre-fill form with AI data
                     setFormData({
-                        title: packageData.packageTitle || '',
+                        title: (packageData.packageTitle || '')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&#39;/g, "'")
+                            .replace(/&#x27;/g, "'")
+                            .replace(/&quot;/g, '"'),
                         destination: packageData.destination || '',
                         country: packageData.country || '',
                         duration_days: packageData.duration?.days || 7,
                         duration_nights: packageData.duration?.nights || 6,
-                        trip_styles: packageData.trip_style ? [packageData.trip_style] : [],
+                        trip_styles: aiTripStyles,
                         price_per_person: packageData.pricePerPerson || 0,
                         description: packageData.packageOverview || '',
                         is_public: true,
                         feature_image_url: '',
                         package_mode: 'single',
                         destinations: [],
-                        activities: [],
+                        activities: uniqueActivities,
                         included_items: [],
                         slug: '',
                         gst_applicable: false,
@@ -415,6 +436,59 @@ export default function CreatePackagePage() {
             }
         }
     }, [searchParams])
+
+    // Resolve AI strings to IDs when master data is loaded
+    useEffect(() => {
+        const fromAI = searchParams.get('from')
+        if (fromAI === 'ai' && (tripStyles.length > 0 || activityTags.length > 0)) {
+            const currentStyles = formData.trip_styles;
+            const currentActivities = formData.activities;
+            
+            const aiToDbMapping: Record<string, string> = {
+                "cultural & heritage": "cultural",
+                "beach & relaxation": "leisure",
+                "budget-friendly": "leisure",
+                "city tours": "sightseeing",
+                "nature & wildlife": "adventure"
+            };
+
+            const resolvedStyles = Array.from(new Set(currentStyles.map(style => {
+                if (style && style.length < 36) { // Assume string label
+                    let searchLabel = style.toLowerCase();
+                    if (aiToDbMapping[searchLabel]) {
+                        searchLabel = aiToDbMapping[searchLabel];
+                    }
+                    const matched = tripStyles.find(ts => ts.label.toLowerCase() === searchLabel);
+                    return matched ? matched.id : style;
+                }
+                return style;
+            })));
+
+            const resolvedActivities = Array.from(new Set(currentActivities.map(activity => {
+                if (activity && activity.length < 36) { // Assume string label
+                    let searchLabel = activity.toLowerCase();
+                    if (aiToDbMapping[searchLabel]) {
+                        searchLabel = aiToDbMapping[searchLabel];
+                    }
+                    const matched = activityTags.find(at => at.name.toLowerCase() === searchLabel);
+                    return matched ? matched.id : activity;
+                }
+                return activity;
+            })));
+
+            // Check if anything changed
+            const stylesChanged = JSON.stringify(resolvedStyles) !== JSON.stringify(currentStyles);
+            const activitiesChanged = JSON.stringify(resolvedActivities) !== JSON.stringify(currentActivities);
+
+            if (stylesChanged || activitiesChanged) {
+                setFormData(prev => ({
+                    ...prev,
+                    trip_styles: resolvedStyles,
+                    activities: resolvedActivities
+                }));
+            }
+        }
+    }, [tripStyles, activityTags, searchParams, formData.trip_styles, formData.activities])
 
     // Auto-generate slug from title
     useEffect(() => {
@@ -474,7 +548,11 @@ export default function CreatePackagePage() {
                 setIsSlugEdited(true)
 
                 setFormData({
-                    title: pkg.title || '',
+                    title: (pkg.title || '')
+                        .replace(/&amp;/g, '&')
+                        .replace(/&#39;/g, "'")
+                        .replace(/&#x27;/g, "'")
+                        .replace(/&quot;/g, '"'),
                     destination: pkg.destination || '',
                     country: pkg.country || '',
                     duration_days: pkg.duration_days || 7,
@@ -908,8 +986,8 @@ export default function CreatePackagePage() {
                     gst_percentage: gstApplicableFinal ? formData.gst_percentage : null,
                     gst_mode: gstApplicableFinal ? formData.gst_mode : null,
                     cancellation_rules: sanitisedRules,
-                    trip_style_ids: formData.trip_styles,
-                    activity_tag_ids: formData.activities
+                    trip_style_ids: formData.trip_styles.filter(id => id && id.length === 36),
+                    activity_tag_ids: formData.activities.filter(id => id && id.length === 36)
                 })
             })
 
