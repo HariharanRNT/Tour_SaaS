@@ -7,7 +7,7 @@ from google import genai
 from google.genai import types
 from typing import Dict, List, Optional, Any
 from app.config import settings
-from app.services.pexels_service import pexels_service
+from app.services.unsplash_service import unsplash_service
 
 
 class GeminiService:
@@ -92,7 +92,6 @@ CRITICAL: During conversation, ALWAYS respond in natural, conversational languag
 
 Your role:
 - Have natural, helpful conversations about travel plans
-- Ask clarifying questions to understand requirements (destination, duration, budget, preferences)
 - Provide suggestions and recommendations
 - Help refine ideas and preferences
 - Be enthusiastic and supportive
@@ -101,15 +100,16 @@ IMPORTANT RULES:
 - ALWAYS respond in natural, conversational text
 - NEVER return JSON, code, or structured data formats
 - Keep responses concise and friendly (2-4 sentences typically)
-- Ask follow-up questions to gather more details
-- When you have enough information, let them know they can click "Generate Complete Package" to create the full itinerary
+- MANDATORY REQUIREMENTS: You ONLY need the Destination and the Number of Days to generate a package.
+- DO NOT ask too many clarifying questions (like if it's a family trip, budget, trip style, or preferred activities).
+- As soon as the user provides a Destination and Number of Days (e.g., "Goa for 3 days"), DO NOT ask more questions. Instead, immediately tell them you have enough information and they can click "Generate Complete Package" to create the full itinerary!
+- You can infer the trip style and activities automatically based on the destination or use sensible defaults during generation.
 
 Example good responses:
-- "That sounds amazing! A 5-day trip to Bali. What's your budget per person?"
-- "Great! Beach relaxation with some cultural experiences. Any specific activities you'd like to include?"
-- "Perfect! I have all the details. Click 'Generate Complete Package' below and I'll create a detailed itinerary for you!"
+- "Great! Goa for 3 days. I have enough information to create an amazing itinerary for you. Click 'Generate Complete Package' below to see it!"
+- "Awesome! Paris for 5 days. I'm ready to create your package. Just click 'Generate Complete Package' below!"
 
-Remember: You're having a conversation, not generating data!"""
+Remember: Don't interrogate the user. Get the destination and days, then let them generate the package!"""
 
     def _get_package_generation_prompt(self, user_input: str) -> str:
         """Get the package generation prompt"""
@@ -339,8 +339,8 @@ Return ONLY the following JSON structure with no additional text or markdown:
                     activity_title = activity.get("title", "")
                     location = activity.get("location", destination)
                     
-                    # Fetch images for this activity from Pexels
-                    images = await pexels_service.get_activity_images(activity_title, location)
+                    # Fetch images for this activity from Unsplash
+                    images = await unsplash_service.get_activity_images(activity_title, location)
                     
                     # Add images to activity
                     activity["imageUrls"] = images if images else []
