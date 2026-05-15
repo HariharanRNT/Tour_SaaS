@@ -535,6 +535,8 @@ class HomepageSettingsUpdate(BaseModel):
     afternoon_label: Optional[str] = Field(None, max_length=50)
     evening_label: Optional[str] = Field(None, max_length=50)
     night_label: Optional[str] = Field(None, max_length=50)
+    full_day_label: Optional[str] = Field(None, max_length=50)
+    half_day_label: Optional[str] = Field(None, max_length=50)
     show_activity_images: Optional[bool] = None
     cart_summary_title: Optional[str] = Field(None, max_length=100)
     cart_cta_text: Optional[str] = Field(None, max_length=100)
@@ -585,7 +587,7 @@ class HomepageSettingsUpdate(BaseModel):
         'destinations_heading', 'destinations_subtext', 'destinations_link_text',
         'destinations_cta_text', 'packages_title', 'packages_subtitle',
         'ai_optimized_text', 'morning_label', 'afternoon_label', 
-        'evening_label', 'night_label', 'cart_summary_title', 
+        'evening_label', 'night_label', 'full_day_label', 'half_day_label', 'cart_summary_title', 
         'cart_cta_text', 'modal_cta_text', 'package_cta_text',
         'priority_support_phone', 'priority_support_email', 'payment_summary_title',
         'payment_summary_base_cost_label', 'payment_summary_taxes_label', 

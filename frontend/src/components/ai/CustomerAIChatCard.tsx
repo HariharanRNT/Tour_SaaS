@@ -352,6 +352,52 @@ export default function CustomerAIChatCard() {
                                                     </div>
                                                 )}
 
+                                                {/* Single Package Details Rendering */}
+                                                {(msg.tool_used === 'get_package_details' || msg.tool_used === 'get_package_by_name') && msg.tool_result && !msg.tool_result.error && (
+                                                    <div className="mt-3">
+                                                        <Card className="overflow-hidden border-0 bg-white/60 backdrop-blur-sm shadow-sm group">
+                                                            <div className="h-32 relative">
+                                                                <img
+                                                                    src={`https://source.unsplash.com/400x300/?${msg.tool_result.destination || msg.tool_result.title},travel`}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/20" />
+                                                                <div className="absolute bottom-2 left-3 text-white">
+                                                                    <p className="text-[10px] font-bold uppercase tracking-wider">{msg.tool_result.destination}</p>
+                                                                    <p className="font-bold text-sm leading-tight">{msg.tool_result.title}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-3 space-y-2">
+                                                                <div className="flex items-center gap-3 text-[10px] text-slate-600">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {msg.tool_result.duration}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-1">
+                                                                    <div>
+                                                                        <p className="text-[9px] text-slate-500">
+                                                                            {msg.tool_result.booking_type === 'ENQUIRY' ? 'Pricing' : 'Starting from'}
+                                                                        </p>
+                                                                        <p className="font-bold text-base text-[var(--primary)]">
+                                                                            {msg.tool_result.booking_type === 'ENQUIRY' 
+                                                                                ? (msg.tool_result.price_label || 'Price on request') 
+                                                                                : `₹${msg.tool_result.price.toLocaleString()}`}
+                                                                        </p>
+                                                                    </div>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleSelectPackage(msg.tool_result)}
+                                                                        className="bg-[var(--primary)] hover:bg-[var(--primary)] text-white h-9 px-5 rounded-xl text-xs font-bold transition-all shadow-md shadow-[var(--primary)]/20"
+                                                                    >
+                                                                        View Trip
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </Card>
+                                                    </div>
+                                                )}
+
                                                 {/* Booking Details Rendering */}
                                                 {msg.tool_used === 'get_booking_details' && msg.tool_result && !msg.tool_result.error && (
                                                     <div className="mt-3">

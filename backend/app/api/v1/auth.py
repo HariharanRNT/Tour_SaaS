@@ -31,7 +31,7 @@ async def register(
         # 1. Resolve Agent Domain Context
         registration_domain = domain
         agent_user_id = None
-        if registration_domain and registration_domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+        if registration_domain and registration_domain not in ["localhost", "127.0.0.1"]:
             agent_query = await db.execute(select(Agent).where(Agent.domain == registration_domain))
             agent_profile = agent_query.scalar_one_or_none()
             if agent_profile:
@@ -228,7 +228,7 @@ async def login(
 
     # 0. Resolve Agent from domain
     agent_id = None
-    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+    if domain and domain not in ["localhost", "127.0.0.1"]:
         agent_q = await db.execute(select(Agent).where(Agent.domain == domain))
         agent_profile = agent_q.scalar_one_or_none()
         if agent_profile:
@@ -584,7 +584,7 @@ async def google_login(
 
     # 0. Resolve Agent Domain Context
     agent_id = None
-    if domain and domain not in ["localhost", "127.0.0.1", "rnt.local"]:
+    if domain and domain not in ["localhost", "127.0.0.1"]:
          agent_query = await db.execute(select(Agent).where(Agent.domain == domain))
          agent_profile = agent_query.scalar_one_or_none()
          if agent_profile:
@@ -1006,7 +1006,15 @@ async def verify_login_otp(
         selectinload(User.subscription)
     )
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    users = result.scalars().all()
+    
+    # Resolve user if multiple matches found
+    user = None
+    if len(users) == 1:
+        user = users[0]
+    elif len(users) > 1:
+        # Prioritize non-customer roles for OTP login
+        user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -1149,7 +1157,15 @@ async def forgot_password(
         # 3. Check if email exists in this scope
         stmt = select(User).where(User.email == data.email)
         if agent_id:
-             stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
+             # Scope to: 
+             # 1. Customers/Sub-users of this agent
+             # 2. The Agent themselves (User.id == agent_id)
+             # 3. Global Admins
+             stmt = stmt.where(
+                 (User.agent_id == agent_id) | 
+                 (User.id == agent_id) | 
+                 (User.role == UserRole.ADMIN)
+             )
         
         stmt = stmt.options(
             selectinload(User.admin_profile),
@@ -1158,7 +1174,16 @@ async def forgot_password(
             selectinload(User.sub_user_profile)
         )
         result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        users = result.scalars().all()
+        
+        # Resolve which user to use if multiple found (prioritize non-customer roles)
+        user = None
+        if len(users) == 1:
+            user = users[0]
+        elif len(users) > 1:
+            # Try to find a match that isn't a customer, or just pick the first one
+            user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
+            logger.info(f"Multiple users found for forgot-password {data.email}, resolved to role: {user.role}")
         
         if not user:
             raise HTTPException(
@@ -1210,7 +1235,9 @@ async def forgot_password(
             greeting_name = user.admin_profile.first_name or "Admin"
         elif user.role == UserRole.AGENT and user.agent_profile:
             greeting_name = user.agent_profile.first_name or "Agent"
-        elif user.customer_profile: # Covers CUSTOMER and SUB_USER (who has a customer profile)
+        elif user.role == UserRole.SUB_USER and user.sub_user_profile:
+            greeting_name = user.sub_user_profile.first_name or "Agent"
+        elif user.customer_profile:
             greeting_name = user.customer_profile.first_name or "there"
 
         # 7. Build Email
@@ -1271,11 +1298,11 @@ async def forgot_password(
         if isinstance(e, HTTPException):
             raise e
         import traceback
-        logger.error(f"Unhandled error in forgot_password: {str(e)}")
+        logger.exception(f"Unhandled error in forgot_password for {data.email}: {str(e)}")
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="An unexpected error occurred while processing your request. Please try again later."
+            detail=f"An unexpected error occurred while processing your request: {str(e)}" if settings.DEBUG else "An unexpected error occurred while processing your request. Please try again later."
         )
 
 
@@ -1328,10 +1355,25 @@ async def reset_password(
     # 2. Update password
     stmt = select(User).where(User.email == data.email)
     if agent_id:
-         stmt = stmt.where((User.agent_id == agent_id) | (User.role == UserRole.ADMIN))
+         # Scope to: 
+         # 1. Customers/Sub-users of this agent
+         # 2. The Agent themselves
+         # 3. Global Admins
+         stmt = stmt.where(
+             (User.agent_id == agent_id) | 
+             (User.id == agent_id) | 
+             (User.role == UserRole.ADMIN)
+         )
     
     result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    users = result.scalars().all()
+    
+    # Resolve user
+    user = None
+    if len(users) == 1:
+        user = users[0]
+    elif len(users) > 1:
+        user = next((u for u in users if u.role != UserRole.CUSTOMER), users[0])
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatCurrency, formatDate, formatDuration, cn } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDuration, cn, decodeHtmlEntities } from '@/lib/utils'
 import { sanitizeText } from '@/lib/sanitize'
 import { format } from 'date-fns'
 import { Loader2, MapPin, Calendar as CalendarIcon, Users, Sparkles, Plus, Trash2, CheckCircle, ShieldCheck, Headphones, Clock, Wallet, Save, Plane, Hotel, Camera, Car, Download, Bot, ArrowLeft, XCircle, AlertCircle, Shield, Star, Heart, Globe, X, Map as MapIcon, Mail } from 'lucide-react'
@@ -45,6 +45,8 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { ShareEmailModal } from '@/components/itinerary/ShareEmailModal'
+import { useTheme } from '@/context/ThemeContext'
+
 
 interface Activity {
     id?: string
@@ -157,7 +159,10 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
     const { openAuthModal, openAgentSelector } = useAuthModal()
     const { user } = useAuth()
+    const { publicSettings } = useTheme()
+    const settings = session?.homepage_settings || publicSettings?.homepage_settings || {}
     const [showMobileFilters, setShowMobileFilters] = useState(false)
+
 
     // Enquiry Modal State
     const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false)
@@ -834,8 +839,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
 
     const preferences = session.preferences || {}
 
+    const buttonRadius = settings.itinerary_button_style === 'pill' ? 'rounded-full' :
+        settings.itinerary_button_style === 'square' ? 'rounded-none' :
+            'rounded-xl';
+
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen" style={{
+            '--itinerary-primary': settings.itinerary_primary_color || 'var(--primary)',
+            '--itinerary-secondary': settings.itinerary_secondary_color || 'var(--primary-light)',
+            fontFamily: settings.itinerary_font_family || 'inherit'
+        } as any}>
+
             {/* Preview Banner */}
             {mode === 'preview' && (
                 <div className="glass-panel border-b border-amber-200/50 px-4 py-3 sticky top-0 z-50">
@@ -875,64 +889,8 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                 <div className="absolute inset-0 z-[11] opacity-[0.035] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }}></div>
 
                 <div className="container mx-auto px-4 relative z-20 text-center">
-                    <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Destination Tag — replaces floating pin */}
-                        <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                            <div className="inline-flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-4 py-1.5 border border-white/20 shadow-sm">
-                                <span className="text-[var(--primary-light)] text-[11px]">📍</span>
-                                <span className="text-white text-[11px] font-bold uppercase tracking-widest">{session.destination}, {session.country || 'India'}</span>
-                            </div>
-
-                        </div>
-
-                        {/* Title */}
-                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 break-anywhere">
-                            Trip to <span className="text-white italic bg-clip-text drop-shadow-sm">
-                                {(session.package_mode === 'multi' || session.type === 'multi-city' || (session.destinations && session.destinations.length > 1))
-                                    ? "Multi City Tour"
-                                    : session.destination
-                                }
-                            </span>
-                        </h1>
-
-                        {/* Trip Details Grid - Info Chips */}
-                        <div className="flex flex-wrap items-center justify-center gap-3 pt-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
-                                <div className="p-2 bg-[var(--button-bg)] rounded-xl shadow-inner">
-                                    <CalendarIcon className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-[9px] text-white/70 font-bold uppercase tracking-[0.15em] leading-none mb-1">Dates</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap">{formatDate(session.start_date)}</p>
-                                </div>
-                            </div>
-
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
-                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
-                                    <Clock className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-[9px] text-white font-black uppercase tracking-[0.15em] leading-none mb-1">Duration</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap">
-                                        {formatDuration(session.duration_days)}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="glass-chip-premium px-5 py-3 rounded-2xl flex items-center gap-3 border border-white/20 shadow-lg bg-[var(--primary-soft)] backdrop-blur-md">
-                                <div className="p-2 bg-[var(--primary)] rounded-xl shadow-inner">
-                                    <Users className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-[9px] text-white font-black uppercase tracking-[0.15em] leading-none mb-1">Travelers</p>
-                                    <p className="font-bold text-white text-sm whitespace-nowrap">{travelers.adults + travelers.children + travelers.infants} People</p>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
+                    {/* Hero content removed as per user request for editorial look */}
                 </div>
-
             </div>
 
             <div className="container mx-auto px-4 -mt-16 pb-8 relative z-30">
@@ -953,7 +911,7 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                 </div>
                                 <div className="space-y-6 min-w-0 flex-1">
                                     <h2 className="text-3xl md:text-4xl font-black text-black leading-tight break-anywhere">
-                                        {session.title}
+                                        {decodeHtmlEntities(session.title)}
                                     </h2>
                                     <div
                                         className="text-black font-medium leading-relaxed text-lg max-w-5xl break-anywhere line-clamp-6"
@@ -999,17 +957,19 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                         <TabsTrigger
                                             key={day.day_number}
                                             value={day.day_number.toString()}
-                                            className="
-                                                px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
-                                                data-[state=active]:bg-white data-[state=active]:shadow-md
-                                                text-black hover:text-black hover:bg-black/5
-                                            "
+                                            className={cn(
+                                                "px-5 py-2.5 text-sm font-bold transition-all duration-300",
+                                                buttonRadius,
+                                                "data-[state=active]:bg-white data-[state=active]:shadow-md",
+                                                "text-black hover:text-black hover:bg-black/5"
+                                            )}
                                             style={{
-                                                color: currentDay === day.day_number ? '#1d4ed8' : ''
+                                                color: currentDay === day.day_number ? (settings.itinerary_primary_color || 'var(--primary)') : ''
                                             }}
                                         >
                                             Day {day.day_number}
                                         </TabsTrigger>
+
                                     ))}
                                 </TabsList>
 
@@ -1028,7 +988,17 @@ export default function BuildTripPage({ slug }: { slug?: string }) {
                                             dayBadgeColor={undefined}
                                             isReadonly={mode === 'preview'}
                                             tripStyles={session?.trip_styles || (session?.trip_style ? [session.trip_style] : [])}
+                                            cardStyle={settings.itinerary_card_style || 'glassy'}
+                                            buttonStyle={settings.itinerary_button_style || 'pill'}
+                                            primaryColor={settings.itinerary_primary_color}
+                                            fullDayLabel={decodeHtmlEntities(settings.full_day_label) || 'Full Day'}
+                                            halfDayLabel={decodeHtmlEntities(settings.half_day_label) || 'Half Day'}
+                                            morningLabel={decodeHtmlEntities(settings.morning_label) || 'Morning'}
+                                            afternoonLabel={decodeHtmlEntities(settings.afternoon_label) || 'Afternoon'}
+                                            eveningLabel={decodeHtmlEntities(settings.evening_label) || 'Evening'}
+                                            nightLabel={decodeHtmlEntities(settings.night_label) || 'Night'}
                                         />
+
                                     </TabsContent>
                                 ))}
                             </Tabs>
